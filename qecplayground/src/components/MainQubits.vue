@@ -14,7 +14,7 @@ export default {
 	props: {
 		L: {
 			type: Number,
-			default: 11,
+			default: 5,
 		},
 
 		enableStats: {  // performance monitor
@@ -49,19 +49,19 @@ export default {
 			type: Number,
 			default: 1.3
 		},
-		xStabWaveColor: {
+		zStabWaveColor: {
 			type: Object,
 			default: () => new THREE.Color( 0, 0.75, 1 )
 		},
-		xStabWaveConcetrate: {
+		zStabWaveConcetrate: {
 			type: Number,
 			default: 4
 		},
-		zStabWaveColor: {
+		xStabWaveColor: {
 			type: Object,
 			default: () => new THREE.Color( 0, 0.8, 0 )
 		},
-		zStabWaveConcetrate: {
+		xStabWaveConcetrate: {
 			type: Number,
 			default: 4
 		},
@@ -124,33 +124,28 @@ export default {
 	methods: {
 		generatePointCloud() {
 			const geometry = new THREE.BufferGeometry()
-			const width = this.L * this.pointDense
+			const extend = this.pointDense
+			const width = (this.L - 1) * this.pointDense + 2 * extend
 			const numPoints = width * width
 			const positions = new Float32Array( numPoints * 3 )
 			const colors = new Float32Array( numPoints * 3 )
 			let k = 0
-			const bias = -this.qubitInterval * this.L / 2
-			for ( let i = 0; i < width; i ++ ) {
-				for ( let j = 0; j < width; j ++ ) {
-					const x = bias + i * this.qubitInterval / this.pointDense
-					const y = - ( Math.cos( i * Math.PI * 2 / this.pointDense ) + Math.cos( j * Math.PI * 2 / this.pointDense ) ) * (this.waveHeight / 4)
-					const z = bias + j * this.qubitInterval / this.pointDense
-					positions[ 3 * k ] = x
-					positions[ 3 * k + 1 ] = y
-					positions[ 3 * k + 2 ] = z
-					let dataQubitIntensity = ( 2 - Math.cos( (i+j) / this.pointDense * Math.PI ) - Math.cos( (i-j) / this.pointDense * Math.PI + Math.PI ) ) / 4
-					dataQubitIntensity = Math.max(0, 1 - (1-dataQubitIntensity) * this.dataQubitWaveConcetrate)
-					let xStabIntensity = ( 2 - Math.cos( (i / this.pointDense - 0.5) * Math.PI ) - Math.cos( (j / this.pointDense + 0.5) * Math.PI ) ) / 4
-					xStabIntensity = Math.max(0, 1 - (1-xStabIntensity) * this.xStabWaveConcetrate)
-					let zStabIntensity = ( 2 - Math.cos( (i / this.pointDense + 0.5) * Math.PI ) - Math.cos( (j / this.pointDense - 0.5) * Math.PI ) ) / 4
-					zStabIntensity = Math.max(0, 1 - (1-zStabIntensity) * this.zStabWaveConcetrate)
-					colors[ 3 * k ] = this.dataQubitWaveColor.r * dataQubitIntensity + this.xStabWaveColor.r * xStabIntensity
-						+ this.zStabWaveColor.r * zStabIntensity
-					colors[ 3 * k + 1 ] = this.dataQubitWaveColor.g * dataQubitIntensity + this.xStabWaveColor.g * xStabIntensity
-						+ this.zStabWaveColor.g * zStabIntensity
-					colors[ 3 * k + 2 ] = this.dataQubitWaveColor.b * dataQubitIntensity + this.xStabWaveColor.b * xStabIntensity
-						+ this.zStabWaveColor.b * zStabIntensity
-					k ++
+			const bias = (this.L - 1) / 2
+			const start = - extend
+			const end = width - extend
+			for ( let i = start; i < end; i++ ) {
+				for ( let j = start; j < end; j++ ) {
+					let [x, y, z, r, g, b] = this.wavePositionColor(i / this.pointDense, j / this.pointDense)
+					x = (x - bias) * this.qubitInterval
+					z = (z - bias) * this.qubitInterval
+					y = (y - 1) * this.waveHeight
+					positions[ k ] = x
+					positions[ k + 1 ] = y
+					positions[ k + 2 ] = z
+					colors[ k ] = r
+					colors[ k + 1 ] = g
+					colors[ k + 2 ] = b
+					k += 3
 				}
 			}
 			geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) )
@@ -158,6 +153,30 @@ export default {
 			geometry.computeBoundingSphere()
 			const material = new THREE.PointsMaterial( { size: this.pointSize, vertexColors: true } )
 			return new THREE.Points( geometry, material )
+		},
+		wavePositionColor(i, j) {
+			const x = i
+			const y = ( 2 + Math.cos( i * Math.PI * 2 ) + Math.cos( j * Math.PI * 2 ) ) / 4
+			const z = j
+			let dataQubitIntensity = ( 2 + Math.cos( i * Math.PI * 2 ) + Math.cos( j * Math.PI * 2 ) ) / 4
+			dataQubitIntensity = Math.max(0, 1 - (1-dataQubitIntensity) * this.dataQubitWaveConcetrate)
+			if (i < -0.5 || i > this.L - 0.5 || j < -0.5 || j > this.L - 0.5) {
+				dataQubitIntensity = 0
+			}
+			let zStabIntensity = 0
+			if (i >= 0 && i <= this.L - 1) {
+				zStabIntensity = ( 2 + Math.cos( (i + j - 1) * Math.PI ) + Math.cos( (i - j) * Math.PI ) ) / 4
+				zStabIntensity = Math.max(0, 1 - (1-zStabIntensity) * this.zStabWaveConcetrate)
+			}
+			let xStabIntensity = 0
+			if (j >= 0 && j <= this.L - 1) {
+				xStabIntensity = ( 2 + Math.cos( (i + j) * Math.PI ) + Math.cos( (i - j + 1) * Math.PI ) ) / 4
+				xStabIntensity = Math.max(0, 1 - (1-xStabIntensity) * this.xStabWaveConcetrate)
+			}
+			const r = this.dataQubitWaveColor.r * dataQubitIntensity + this.xStabWaveColor.r * xStabIntensity + this.zStabWaveColor.r * zStabIntensity
+			const g = this.dataQubitWaveColor.g * dataQubitIntensity + this.xStabWaveColor.g * xStabIntensity + this.zStabWaveColor.g * zStabIntensity
+			const b = this.dataQubitWaveColor.b * dataQubitIntensity + this.xStabWaveColor.b * xStabIntensity + this.zStabWaveColor.b * zStabIntensity
+			return [x, y, z, r, g, b]
 		},
 	},
 }
