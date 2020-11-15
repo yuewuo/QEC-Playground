@@ -104,13 +104,15 @@ export default {
 		const windowWidth = window.innerWidth-this.panelWidth
 		const windowHeight = window.innerHeight
 		const camera = this.usePerspectiveCamera ? 
-			new THREE.PerspectiveCamera( 75, (window.innerWidth-this.panelWidth) / window.innerHeight, 0.1, 10000 ) :
+			new THREE.PerspectiveCamera( 75, windowWidth / window.innerHeight, 0.1, 10000 ) :
 			new THREE.OrthographicCamera( windowWidth / windowHeight * -3, windowWidth / windowHeight * 3, 3, -3, 0.1, 10000 )
+		this.three.camera = camera
 		const initCameraRatio = this.L * 0.5
 		camera.position.set( -2 * initCameraRatio, 1 * initCameraRatio, 1 * initCameraRatio )
 		camera.lookAt( scene.position )
 		camera.updateMatrix()
 		const renderer = new THREE.WebGLRenderer({ antialias: true })
+		this.three.renderer = renderer
 		renderer.setPixelRatio( window.devicePixelRatio )
 		renderer.setSize( windowWidth, windowHeight )
 		window.addEventListener( 'resize', () => {
@@ -131,36 +133,50 @@ export default {
 			scene.background = texture;
 		}
 
+		// add raycaster
+		const raycaster = new THREE.Raycaster()
+		this.three.raycaster = raycaster
+		const mouse = new THREE.Vector2( 1, 1 )
+		this.three.mouse = mouse
+		document.addEventListener( 'mousemove', event => {
+			event.preventDefault()
+			mouse.x = ( event.clientX / windowWidth ) * 2 - 1
+			mouse.y = - ( event.clientY / windowHeight ) * 2 + 1
+		}, false )
+
 		// add qubits
 		const pointCloud = this.generatePointCloud()
 		scene.add( pointCloud )
 		this.generateDataQubits()
-		scene.add( this.internals.dataQubitsGroup )
 		this.generateAncillaQubits()
-		scene.add( this.internals.ancillaQubitsGroup )
-
-		// const sphereGeometry = new THREE.SphereBufferGeometry( 5, 32, 32 )
-		// const sphereMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } )
-		// const sphere = new THREE.Mesh( sphereGeometry, sphereMaterial )
-		// scene.add( sphere )
-
-		
-		// start rendering
-		let stats = undefined
-		const animate = () => {
-			requestAnimationFrame( animate )
-			if (stats) stats.update()  // update stats if exists
-			renderer.render( scene, camera )
-		}
-		animate()
+		const clickableGroup = new THREE.Group()
+		for (const obj of this.internals.dataQubitsArray) clickableGroup.add(obj)
+		for (const obj of this.internals.ancillaQubitsArray) clickableGroup.add(obj)
+		scene.add( clickableGroup )
+		this.internals.clickableGroup = clickableGroup
 
 		// add stats if enabled
 		if (this.enableStats) {
-			stats = new Stats()
-			container.appendChild( stats.dom )
+			this.three.stats = new Stats()
+			container.appendChild( this.three.stats.dom )
 		}
+
+		// start rendering
+		this.animate()
+
 	},
 	methods: {
+		animate() {
+			requestAnimationFrame( this.animate )  // call first
+			this.three.raycaster.setFromCamera( this.three.mouse, this.three.camera )
+			const intersection = this.three.raycaster.intersectObject( this.internals.clickableGroup, true )
+			if ( intersection.length > 0 ) {
+				const object = intersection[0].object
+				console.log(object)
+			}
+			if (this.three.stats) this.three.stats.update()  // update stats if exists
+			this.three.renderer.render( this.three.scene, this.three.camera )
+		},
 		generatePointCloud() {
 			const geometry = new THREE.BufferGeometry()
 			const extend = Math.round(this.pointDense * 0.7)
@@ -219,7 +235,7 @@ export default {
 		},
 		generateDataQubits() {
 			const qubits = []
-			const group = new THREE.Group()
+			const array = []
 			const bias = (this.L - 1) / 2
 			for (let i=0; i < this.L; ++i) {
 				const row = []
@@ -234,17 +250,17 @@ export default {
 					mesh.position.y = this.dataQubitYBias
 					mesh.position.z = i - bias
 					mesh.position.x = j - bias
-					group.add(mesh)
+					array.push(mesh)
 					row.push(mesh)
 				}
 				qubits.push(row)
 			}
 			this.internals.dataQubits = qubits
-			this.internals.dataQubitsGroup = group
+			this.internals.dataQubitsArray = array
 		},
 		generateAncillaQubits() {
 			const qubits = []
-			const group = new THREE.Group()
+			const array = []
 			const bias = (this.L - 1) / 2 + 0.5 // TODO
 			for (let i=0; i <= this.L; ++i) {
 				const row = []
@@ -268,14 +284,15 @@ export default {
 					mesh.position.y = this.dataQubitYBias - this.waveHeight
 					mesh.position.z = i - bias
 					mesh.position.x = j - bias
-					group.add(mesh)
+					array.push(mesh)
 					row.push(mesh)
 				}
 				qubits.push(row)
 			}
 			this.internals.ancillaQubits = qubits
-			this.internals.ancillaQubitsGroup = group
+			this.internals.ancillaQubitsArray = array
 		},
+
 	},
 }
 </script>
