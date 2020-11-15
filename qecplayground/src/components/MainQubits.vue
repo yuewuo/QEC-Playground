@@ -17,6 +17,18 @@ export default {
 			default: 5,
 		},
 
+		dataQubitYBias: {  // Y bias of data qubits
+			type: Number,
+			default: 0.3
+		},
+		dataQubitSize: {  // radius of data qubits
+			type: Number,
+			default: 0.2
+		},
+		enableBackground: {  // fancy background
+			type: Boolean,
+			default: true
+		},
 		enableStats: {  // performance monitor
 			type: Boolean,
 			default: true
@@ -32,10 +44,6 @@ export default {
 		panelWidth: {
 			type: Number,
 			default: 480
-		},
-		qubitInterval: {
-			type: Number,
-			default: 1.0
 		},
 		waveHeight: {
 			type: Number,
@@ -68,16 +76,18 @@ export default {
 	},
 	data() {
 		return {
-			qubitsGroup: undefined,
+			three: { },  // save necessary THREE.js objects
+			internals: { },  // internal data for control
 		}
 	},
 	mounted() {
 		const scene = new THREE.Scene()
+		this.three.scene = scene
 
 		// add camera and renderer
-		const camera = new THREE.PerspectiveCamera( 45, (window.innerWidth-this.panelWidth) / window.innerHeight, 0.1, 10000 )
-		const initCameraRatio = this.L * 0.6
-		camera.position.set( 1 * initCameraRatio, 1 * initCameraRatio, 2 * initCameraRatio )
+		const camera = new THREE.PerspectiveCamera( 75, (window.innerWidth-this.panelWidth) / window.innerHeight, 0.1, 10000 )
+		const initCameraRatio = this.L * 0.5
+		camera.position.set( -2 * initCameraRatio, 1 * initCameraRatio, 1 * initCameraRatio )
 		camera.lookAt( scene.position )
 		camera.updateMatrix()
 		const renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -92,13 +102,20 @@ export default {
 		let orbitControl = new OrbitControls( camera, renderer.domElement )
 		container.appendChild(renderer.domElement)
 
+		// add background
+		if (this.enableBackground) {
+			const loader = new THREE.CubeTextureLoader();
+			const texture = loader.load([
+				'/px.jpg', '/nx.jpg', '/py.jpg', '/ny.jpg', '/pz.jpg', '/nz.jpg',
+			]);
+			scene.background = texture;
+		}
 
 		// add qubits
-		this.generatePointCloud()
-	
-		const pointCloud = this.generatePointCloud(100)
+		const pointCloud = this.generatePointCloud()
 		scene.add( pointCloud )
-		console.log(pointCloud)
+		this.generateDataQubits()
+		scene.add( this.internals.dataQubitsGroup )
 
 		// const sphereGeometry = new THREE.SphereBufferGeometry( 5, 32, 32 )
 		// const sphereMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } )
@@ -124,7 +141,7 @@ export default {
 	methods: {
 		generatePointCloud() {
 			const geometry = new THREE.BufferGeometry()
-			const extend = this.pointDense
+			const extend = Math.round(this.pointDense * 0.7)
 			const width = (this.L - 1) * this.pointDense + 2 * extend
 			const numPoints = width * width
 			const positions = new Float32Array( numPoints * 3 )
@@ -136,8 +153,8 @@ export default {
 			for ( let i = start; i < end; i++ ) {
 				for ( let j = start; j < end; j++ ) {
 					let [x, y, z, r, g, b] = this.wavePositionColor(i / this.pointDense, j / this.pointDense)
-					x = (x - bias) * this.qubitInterval
-					z = (z - bias) * this.qubitInterval
+					x -= bias
+					z -= bias
 					y = (y - 1) * this.waveHeight
 					positions[ k ] = x
 					positions[ k + 1 ] = y
@@ -178,6 +195,31 @@ export default {
 			const b = this.dataQubitWaveColor.b * dataQubitIntensity + this.xStabWaveColor.b * xStabIntensity + this.zStabWaveColor.b * zStabIntensity
 			return [x, y, z, r, g, b]
 		},
+		generateDataQubits() {
+			const qubits = []
+			const group = new THREE.Group()
+			const bias = (this.L - 1) / 2
+			for (let i=0; i < this.L; ++i) {
+				const row = []
+				for (let j=0; j < this.L; ++j) {
+					const geometry = new THREE.SphereBufferGeometry( this.dataQubitSize, 48, 24 )
+					const material = new THREE.MeshBasicMaterial( {
+						color: 0xFFA600,
+						envMap: this.three.scene.background,
+						reflectivity: 0.5,
+					} )
+					const mesh = new THREE.Mesh( geometry, material )
+					mesh.position.y = this.dataQubitYBias
+					mesh.position.x = i - bias
+					mesh.position.z = j - bias
+					group.add(mesh)
+					row.push(mesh)
+				}
+				qubits.push(row)
+			}
+			this.internals.dataQubits = qubits
+			this.internals.dataQubitsGroup = group
+		}
 	},
 }
 </script>
