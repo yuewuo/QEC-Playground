@@ -262,6 +262,10 @@ export default {
 			if (T2 == null) T2 = this.hoverDefaultT2
 			return 1 - Math.exp( - delta / T1 ) * Math.cos( delta / T2 )
 		},
+		disposeOnRefresh(resource) {
+			this.internals.disposable.push(resource)
+			return resource
+		},
 		animate() {
 			requestAnimationFrame( this.animate )  // call first
 			const delta = this.three.clock.getDelta()
@@ -303,12 +307,12 @@ export default {
 			for (let i = 0; i < this.internals.dataQubits.length; ++i) {
 				for (let j = 0; j < this.internals.dataQubits[i].length; ++j) {
 					let dataQubitTargetColor = this.dataQubitWaveColor
-					this.dataQubitsDynamicYBias[i][j] = 0
+					let dataQubitYBias = 0
 					if (this.hoverDataQubit != null && this.hoverDataQubit[0] == i && this.hoverDataQubit[1] == j) {
-						this.dataQubitsDynamicYBias[i][j] = this.hoverAmplitude * this.hoverAnimation(absTime - this.hoverDataQubit[2])
+						dataQubitYBias = this.hoverAmplitude * this.hoverAnimation(absTime - this.hoverDataQubit[2])
 						dataQubitTargetColor = this.hoverColor
 					}
-					const bias = this.smoothValue(this.dataQubitYBias + this.dataQubitsDynamicYBias[i][j]
+					const bias = this.smoothValue(this.dataQubitYBias + this.dataQubitsDynamicYBias[i][j] + dataQubitYBias
 						, this.internals.dataQubits[i][j].position.y, delta)
 					this.internals.dataQubits[i][j].position.y = bias
 					this.internals.zDataErrors[i][j].position.y = bias
@@ -337,7 +341,7 @@ export default {
 			this.three.renderer.render( this.three.scene, this.three.camera )
 		},
 		generatePointCloud() {
-			const geometry = new THREE.BufferGeometry()
+			const geometry = this.disposeOnRefresh(new THREE.BufferGeometry())
 			const extend = Math.round(this.pointDense * 0.7)
 			const width = (this.L - 1) * this.pointDense + 2 * extend
 			const numPoints = width * width
@@ -365,7 +369,6 @@ export default {
 			geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) )
 			geometry.setAttribute( 'color', new THREE.BufferAttribute( colors, 3 ) )
 			geometry.computeBoundingSphere()
-			this.internals.disposable.push(geometry)
 			this.internals.pointCloud = new THREE.Points( geometry, this.three.pointCloudMaterial )
 		},
 		wavePositionColor(i, j) {
@@ -410,11 +413,12 @@ export default {
 			this.dataQubitsDynamicYBias = this.makeSquareArray(this.L)
 			this.zDataQubitsErrors = this.makeSquareArray(this.L)
 			this.xDataQubitsErrors = this.makeSquareArray(this.L)
-			this.internals.dataQubitsMaterials = this.makeSquareArray(this.L, (() => new THREE.MeshBasicMaterial( {
+			const disposeOnRefresh = this.disposeOnRefresh
+			this.internals.dataQubitsMaterials = this.makeSquareArray(this.L, (() => disposeOnRefresh(new THREE.MeshBasicMaterial( {
 				color: this.dataQubitColor,
 				envMap: this.three.scene.background,
 				reflectivity: 0.5,
-			} )))
+			} ))))
 			for (let i=0; i < this.L; ++i) {
 				const row = []
 				for (let j=0; j < this.L; ++j) {
@@ -465,21 +469,22 @@ export default {
 			const xErrors = []
 			const array = []
 			const bias = (this.L - 1) / 2
-			this.internals.zDataErrorMaterials = this.makeSquareArray(this.L, (() => new THREE.MeshPhongMaterial( {
+			const disposeOnRefresh = this.disposeOnRefresh
+			this.internals.zDataErrorMaterials = this.makeSquareArray(this.L, (() => disposeOnRefresh(new THREE.MeshPhongMaterial( {
 				transparent: true,
 				opacity: 0,
 				emissive: this.zStabQubitColor,
-			} )))
-			this.internals.xDataErrorMaterials = this.makeSquareArray(this.L, (() => new THREE.MeshPhongMaterial( {
+			} ))))
+			this.internals.xDataErrorMaterials = this.makeSquareArray(this.L, (() => disposeOnRefresh(new THREE.MeshPhongMaterial( {
 				transparent: true,
 				opacity: 0,
 				emissive: this.xStabQubitColor,
-			} )))
-			const dataErrorTopMaterialsGenerator = (() => new THREE.MeshPhongMaterial( {
+			} ))))
+			const dataErrorTopMaterialsGenerator = (() => disposeOnRefresh(new THREE.MeshPhongMaterial( {
 				transparent: true,
 				opacity: 0,
 				emissive: 0xFF0000,
-			} ))
+			} )))
 			this.internals.zDataErrorTopMaterials = this.makeSquareArray(this.L, dataErrorTopMaterialsGenerator)
 			this.internals.xDataErrorTopMaterials = this.makeSquareArray(this.L, dataErrorTopMaterialsGenerator)
 			for (let i=0; i < this.L; ++i) {
@@ -489,9 +494,7 @@ export default {
 					for (let isZ = 0; isZ < 2; ++isZ) {
 						const group = new THREE.Group()
 						const dataErrorMaterial = (isZ ? this.internals.zDataErrorMaterials : this.internals.xDataErrorMaterials)[i][j]
-						this.internals.disposable.push(dataErrorMaterial)
 						const dataErrorTopMaterial = (isZ ? this.internals.zDataErrorTopMaterials : this.internals.xDataErrorTopMaterials)[i][j]
-						this.internals.disposable.push(dataErrorTopMaterial)
 						for (let k = -1; k < 2; k += 2) {
 							const z = !isZ * k * this.dataQubitSize * 1.2 + i - bias
 							const x = isZ * k * this.dataQubitSize * 1.2 + j - bias
