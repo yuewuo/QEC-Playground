@@ -243,6 +243,20 @@ export default {
 				this.three.xDataErrorTopGeometries[idx].rotateZ(Math.PI * 2 * cyclePerSec * delta)
 				this.three.zDataErrorTopGeometries[idx].rotateX(Math.PI * 2 * cyclePerSec * delta)
 			}
+			for (const i in this.internals.dataQubits) {
+				for (const j in this.internals.dataQubits[i]) {
+					const bias = this.dataQubitYBias + this.internals.dataQubitsDynamicYBias[i][j]
+					this.internals.dataQubits[i][j].position.y = bias
+					this.internals.zDataErrors[i][j].position.y = bias
+					this.internals.xDataErrors[i][j].position.y = bias
+				}
+			}
+			for (const i in this.internals.ancillaQubits) {
+				for (const j in this.internals.ancillaQubits[i]) {
+					let qubit = this.internals.ancillaQubits[i][j]
+					if (qubit) qubit.position.y = this.dataQubitYBias - this.waveHeight + this.internals.ancillaQubitsDynamicYBias[i][j]
+				}
+			}
 			if (this.three.stats) this.three.stats.update()  // update stats if exists
 			this.three.renderer.render( this.three.scene, this.three.camera )
 		},
@@ -306,9 +320,12 @@ export default {
 			const qubits = []
 			const array = []
 			const bias = (this.L - 1) / 2
+			this.internals.dataQubitsDynamicYBias = []
 			for (let i=0; i < this.L; ++i) {
 				const row = []
+				const dynamicYBiasRow = []
 				for (let j=0; j < this.L; ++j) {
+					dynamicYBiasRow.push(0)
 					const mesh = new THREE.Mesh( this.three.dataQubitGeometry, this.three.dataQubitMaterial )
 					mesh.position.y = this.dataQubitYBias
 					mesh.position.z = i - bias
@@ -317,6 +334,7 @@ export default {
 					row.push(mesh)
 				}
 				qubits.push(row)
+				this.internals.dataQubitsDynamicYBias.push(dynamicYBiasRow)
 			}
 			this.internals.dataQubits = qubits
 			this.internals.dataQubitsArray = array
@@ -325,9 +343,12 @@ export default {
 			const qubits = []
 			const array = []
 			const bias = (this.L - 1) / 2 + 0.5
+			this.internals.ancillaQubitsDynamicYBias = []
 			for (let i=0; i <= this.L; ++i) {
 				const row = []
+				const dynamicYBiasRow = []
 				for (let j=0; j <= this.L; ++j) {
+					dynamicYBiasRow.push(0)
 					const isZ = ((i + j) % 2) == 0
 					let exist = true
 					if (isZ && (j < 1 || j >= this.L)) exist = false
@@ -346,6 +367,7 @@ export default {
 					row.push(mesh)
 				}
 				qubits.push(row)
+				this.internals.ancillaQubitsDynamicYBias.push(dynamicYBiasRow)
 			}
 			this.internals.ancillaQubits = qubits
 			this.internals.ancillaQubitsArray = array
@@ -364,21 +386,22 @@ export default {
 						for (let k = -1; k < 2; k += 2) {
 							const z = !isZ * k * this.dataQubitSize * 1.2 + i - bias
 							const x = isZ * k * this.dataQubitSize * 1.2 + j - bias
-							const y = this.dataQubitYBias
 							const material = isZ ? this.three.zDataErrorMaterial : this.three.xDataErrorMaterial
 							const geometry = isZ ? this.three.zDataErrorGeometry : this.three.xDataErrorGeometry
 							const mesh = new THREE.Mesh( geometry, material )
-							mesh.position.set(x, y, z)
+							mesh.position.set(x, 0, z)
 							group.add(mesh)
 							// add error tops for fancy visualization
 							for (const geometry of (isZ ? this.three.zDataErrorTopGeometries : this.three.xDataErrorTopGeometries)) {
 								const mesh = new THREE.Mesh( geometry, this.three.dataErrorTopMaterial )
-								mesh.position.set(x, y, z)
+								mesh.position.set(x, 0, z)
 								group.add(mesh)
 							}
 
 						}
-						(isZ ? zRow : xRow).push(group)
+						group.position.y = this.dataQubitYBias
+						const row = isZ ? zRow : xRow
+						row.push(group)
 						array.push(group)
 					}
 				}
