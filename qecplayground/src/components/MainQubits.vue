@@ -109,11 +109,29 @@ export default {
 			type: Number,
 			default: 0.5,
 		},
+		hoverAmplitude: {
+			type: Number,
+			default: 0.1
+		},
+		hoverDefaultT1: {
+			type: Number,
+			default: 0.3,
+		},
+		hoverDefaultT2: {
+			type: Number,
+			default: 0.07,
+		},
+		hoverColor: {
+			type: Object,
+			default: () => new THREE.Color( 1, 1, 1 )
+		},
 	},
 	data() {
 		return {
 			three: { },  // save necessary THREE.js objects
 			internals: { },  // internal data for control
+			hoverDataQubit: null,  // null or [i, j, time]
+			hoverAncillaQubit: null,  // null or [i, j, time]
 
 			// controllable parameters for visualization
 			dataQubitsDynamicYBias: [ ],  // [L][L] float numbers
@@ -126,6 +144,7 @@ export default {
 		const scene = new THREE.Scene()
 		this.three.scene = scene
 		this.three.clock = new THREE.Clock()
+		this.three.clockAbs = new THREE.Clock()
 
 		// add camera and renderer
 		const windowWidth = window.innerWidth-this.panelWidth
@@ -178,11 +197,6 @@ export default {
 		// create general materials to avoid recreating
 		this.three.pointCloudMaterial = new THREE.PointsMaterial( { size: this.pointSize, vertexColors: true } )
 		this.three.dataQubitGeometry = new THREE.SphereBufferGeometry( this.dataQubitSize, 48, 24 )
-		this.three.dataQubitMaterial = new THREE.MeshBasicMaterial( {
-			color: this.dataQubitColor,
-			envMap: this.three.scene.background,
-			reflectivity: 0.5,
-		} )
 		this.three.ancillaQubitGeometry = new THREE.SphereBufferGeometry( this.dataQubitSize, 48, 24 )
 		this.three.zStabMaterial = new THREE.MeshBasicMaterial( {
 			color: this.zStabQubitColor,
@@ -235,28 +249,70 @@ export default {
 			if (Math.abs(val - old) <= threshold) return val
 			return val + (old - val) * Math.exp( - delta / T )
 		},
+		smoothColor(val, old, delta, T=null, threshold=0.01) {
+			const r = this.smoothValue(val.r, old.r, delta, T, threshold)
+			const g = this.smoothValue(val.g, old.g, delta, T, threshold)
+			const b = this.smoothValue(val.b, old.b, delta, T, threshold)
+			return new THREE.Color( r, g, b )
+		},
+		hoverAnimation(delta, T1=null, T2=null) {  // 1 - exp(-delta/T1) * cos(delta/T2)
+			if (T1 == null) T1 = this.hoverDefaultT1
+			if (T2 == null) T2 = this.hoverDefaultT2
+			return 1 - Math.exp( - delta / T1 ) * Math.cos( delta / T2 )
+		},
 		animate() {
 			requestAnimationFrame( this.animate )  // call first
 			const delta = this.three.clock.getDelta()
+			const absTime = this.three.clockAbs.getElapsedTime()
 			this.three.raycaster.setFromCamera( this.three.mouse, this.three.camera )
 			if (this.internals.clickableGroup) {
 				const intersection = this.three.raycaster.intersectObject( this.internals.clickableGroup, true )
+				const hoverDataQubitLast = this.hoverDataQubit
+				this.hoverDataQubit = null
+				const hoverAncillaQubitLast = this.hoverAncillaQubit
+				this.hoverAncillaQubit = null
 				if ( intersection.length > 0 ) {
 					const object = intersection[0].object
-					// console.log(object)
+					this.internals.dataQubits.forEach((item, i) => {
+						item.forEach((qubit, j) => {
+							if (object == qubit) {
+								if (hoverDataQubitLast && i == hoverDataQubitLast[0] && j == hoverDataQubitLast[1])
+								this.hoverDataQubit = hoverDataQubitLast
+								else this.hoverDataQubit = [i, j, absTime]
+							}
+						})
+					})
+					this.internals.ancillaQubits.forEach((item, i) => {
+						item.forEach((qubit, j) => {
+							if (object == qubit) {
+								if (hoverAncillaQubitLast && i == hoverAncillaQubitLast[0] && j == hoverAncillaQubitLast[1])
+									this.hoverAncillaQubit = hoverAncillaQubitLast
+								else this.hoverAncillaQubit = [i, j, absTime]
+							}
+						})
+					})
 				}
 			}
-			for (const idx in this.dataErrorTopParameters) {  // rotate error tops
+			for (let idx = 0; idx < this.dataErrorTopParameters.length; ++idx) {  // rotate error tops
 				const cyclePerSec = this.dataErrorTopParameters[idx][3]
 				this.three.xDataErrorTopGeometries[idx].rotateZ(Math.PI * 2 * cyclePerSec * delta)
 				this.three.zDataErrorTopGeometries[idx].rotateX(Math.PI * 2 * cyclePerSec * delta)
 			}
-			for (const i in this.internals.dataQubits) {
-				for (const j in this.internals.dataQubits[i]) {
-					const bias = this.dataQubitYBias + this.dataQubitsDynamicYBias[i][j]
+			for (let i = 0; i < this.internals.dataQubits.length; ++i) {
+				for (let j = 0; j < this.internals.dataQubits[i].length; ++j) {
+					let dataQubitTargetColor = this.dataQubitWaveColor
+					this.dataQubitsDynamicYBias[i][j] = 0
+					if (this.hoverDataQubit != null && this.hoverDataQubit[0] == i && this.hoverDataQubit[1] == j) {
+						this.dataQubitsDynamicYBias[i][j] = this.hoverAmplitude * this.hoverAnimation(absTime - this.hoverDataQubit[2])
+						dataQubitTargetColor = this.hoverColor
+					}
+					const bias = this.smoothValue(this.dataQubitYBias + this.dataQubitsDynamicYBias[i][j]
+						, this.internals.dataQubits[i][j].position.y, delta)
 					this.internals.dataQubits[i][j].position.y = bias
 					this.internals.zDataErrors[i][j].position.y = bias
 					this.internals.xDataErrors[i][j].position.y = bias
+					this.internals.dataQubitsMaterials[i][j].color = this.smoothColor(dataQubitTargetColor
+						, this.internals.dataQubitsMaterials[i][j].color, delta)
 					const zDataError = this.zDataQubitsErrors[i][j]
 					this.internals.zDataErrorMaterials[i][j].opacity = this.smoothValue(zDataError * this.DataErrorOpacity
 						, this.internals.zDataErrorMaterials[i][j].opacity, delta)
@@ -269,8 +325,8 @@ export default {
 						, this.internals.xDataErrorTopMaterials[i][j].opacity, delta)
 				}
 			}
-			for (const i in this.internals.ancillaQubits) {
-				for (const j in this.internals.ancillaQubits[i]) {
+			for (let i = 0; i < this.internals.ancillaQubits.length; ++i) {
+				for (let j = 0; j < this.internals.ancillaQubits[i].length; ++j) {
 					let qubit = this.internals.ancillaQubits[i][j]
 					if (qubit) qubit.position.y = this.dataQubitYBias - this.waveHeight + this.ancillaQubitsDynamicYBias[i][j]
 				}
@@ -352,10 +408,15 @@ export default {
 			this.dataQubitsDynamicYBias = this.makeSquareArray(this.L)
 			this.zDataQubitsErrors = this.makeSquareArray(this.L)
 			this.xDataQubitsErrors = this.makeSquareArray(this.L)
+			this.internals.dataQubitsMaterials = this.makeSquareArray(this.L, (() => new THREE.MeshBasicMaterial( {
+				color: this.dataQubitColor,
+				envMap: this.three.scene.background,
+				reflectivity: 0.5,
+			} )))
 			for (let i=0; i < this.L; ++i) {
 				const row = []
 				for (let j=0; j < this.L; ++j) {
-					const mesh = new THREE.Mesh( this.three.dataQubitGeometry, this.three.dataQubitMaterial )
+					const mesh = new THREE.Mesh( this.three.dataQubitGeometry, this.internals.dataQubitsMaterials[i][j] )
 					mesh.position.y = this.dataQubitYBias
 					mesh.position.z = i - bias
 					mesh.position.x = j - bias
