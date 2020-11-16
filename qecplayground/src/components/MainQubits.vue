@@ -190,6 +190,8 @@ export default {
 		this.three.mouse = mouse
 		document.addEventListener( 'mousemove', event => {
 			event.preventDefault()
+			const windowWidth = window.innerWidth-this.panelWidth
+			const windowHeight = window.innerHeight
 			mouse.x = ( event.clientX / windowWidth ) * 2 - 1
 			mouse.y = - ( event.clientY / windowHeight ) * 2 + 1
 		}, false )
