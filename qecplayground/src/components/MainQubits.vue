@@ -97,11 +97,28 @@ export default {
 			type: Number,
 			default: 4
 		},
+		defaultT: {  // the characteristic time of smooth animation
+			type: Number,
+			default: 0.1,
+		},
+		DataErrorOpacity: {
+			type: Number,
+			default: 0.9,
+		},
+		DataErrorTopOpacity: {
+			type: Number,
+			default: 0.5,
+		},
 	},
 	data() {
 		return {
 			three: { },  // save necessary THREE.js objects
 			internals: { },  // internal data for control
+
+			// controllable parameters for visualization
+			dataQubitsDynamicYBias: [ ],  // [L][L] float numbers
+			zDataQubitsErrors: [ ],  // [L][L] 0 ~ 1
+			xDataQubitsErrors: [ ],  // [L][L] 0 ~ 1
 		}
 	},
 	mounted() {
@@ -180,16 +197,6 @@ export default {
 		this.three.zDataErrorGeometry = new THREE.TorusGeometry( 0.1, 0.03, 32, 32 )
 		this.three.zDataErrorGeometry.rotateY(Math.PI /2)
 		this.three.xDataErrorGeometry = new THREE.TorusGeometry( 0.1, 0.03, 32, 32 )
-		this.three.zDataErrorMaterial = new THREE.MeshPhongMaterial( {
-			transparent: true,
-			opacity: 0.9,
-			emissive: this.zStabQubitColor,
-		} )
-		this.three.xDataErrorMaterial = new THREE.MeshPhongMaterial( {
-			transparent: true,
-			opacity: 0.9,
-			emissive: this.xStabQubitColor,
-		} )
 		this.three.xDataErrorTopGeometries = []
 		this.three.zDataErrorTopGeometries = []
 		for (const obj of this.dataErrorTopParameters) {
@@ -204,11 +211,6 @@ export default {
 			this.three.xDataErrorTopGeometries.push(xGeometry)
 			this.three.zDataErrorTopGeometries.push(zGeometry)
 		}
-		this.three.dataErrorTopMaterial = new THREE.MeshPhongMaterial( {
-			transparent: true,
-			opacity: 0.5,
-			emissive: 0xFF0000,
-		} )
 
 		// update L
 		this.onChangeL(this.L, null)
@@ -226,6 +228,12 @@ export default {
 	methods: {
 		test() {
 			this.three.xDataErrorGeometry.rotateY(Math.PI / 2)
+		},
+		// from old change to new, after `T` seconds, the value difference would be 1/e of the original one
+		smoothValue(val, old, delta, T=null, threshold=0.01) {
+			if (T == null) T = this.defaultT
+			if (Math.abs(val - old) <= threshold) return val
+			return val + (old - val) * Math.exp( - delta / T )
 		},
 		animate() {
 			requestAnimationFrame( this.animate )  // call first
@@ -245,16 +253,26 @@ export default {
 			}
 			for (const i in this.internals.dataQubits) {
 				for (const j in this.internals.dataQubits[i]) {
-					const bias = this.dataQubitYBias + this.internals.dataQubitsDynamicYBias[i][j]
+					const bias = this.dataQubitYBias + this.dataQubitsDynamicYBias[i][j]
 					this.internals.dataQubits[i][j].position.y = bias
 					this.internals.zDataErrors[i][j].position.y = bias
 					this.internals.xDataErrors[i][j].position.y = bias
+					const zDataError = this.zDataQubitsErrors[i][j]
+					this.internals.zDataErrorMaterials[i][j].opacity = this.smoothValue(zDataError * this.DataErrorOpacity
+						, this.internals.zDataErrorMaterials[i][j].opacity, delta)
+					this.internals.zDataErrorTopMaterials[i][j].opacity = this.smoothValue(zDataError * this.DataErrorTopOpacity
+						, this.internals.zDataErrorTopMaterials[i][j].opacity, delta)
+					const xDataError = this.xDataQubitsErrors[i][j]
+					this.internals.xDataErrorMaterials[i][j].opacity = this.smoothValue(xDataError * this.DataErrorOpacity
+						, this.internals.xDataErrorMaterials[i][j].opacity, delta)
+					this.internals.xDataErrorTopMaterials[i][j].opacity = this.smoothValue(xDataError * this.DataErrorTopOpacity
+						, this.internals.xDataErrorTopMaterials[i][j].opacity, delta)
 				}
 			}
 			for (const i in this.internals.ancillaQubits) {
 				for (const j in this.internals.ancillaQubits[i]) {
 					let qubit = this.internals.ancillaQubits[i][j]
-					if (qubit) qubit.position.y = this.dataQubitYBias - this.waveHeight + this.internals.ancillaQubitsDynamicYBias[i][j]
+					if (qubit) qubit.position.y = this.dataQubitYBias - this.waveHeight + this.ancillaQubitsDynamicYBias[i][j]
 				}
 			}
 			if (this.three.stats) this.three.stats.update()  // update stats if exists
@@ -316,16 +334,27 @@ export default {
 			const b = this.dataQubitWaveColor.b * dataQubitIntensity + this.xStabWaveColor.b * xStabIntensity + this.zStabWaveColor.b * zStabIntensity
 			return [x, y, z, r, g, b]
 		},
+		makeSquareArray(width, valueGen=(()=>0)) {
+			const array = []
+			for (let i=0; i<width; ++i) {
+				const row = []
+				for (let j=0; j<width; ++j) {
+					row.push(valueGen(i,j))
+				}
+				array.push(row)
+			}
+			return array
+		},
 		generateDataQubits() {
 			const qubits = []
 			const array = []
 			const bias = (this.L - 1) / 2
-			this.internals.dataQubitsDynamicYBias = []
+			this.dataQubitsDynamicYBias = this.makeSquareArray(this.L)
+			this.zDataQubitsErrors = this.makeSquareArray(this.L)
+			this.xDataQubitsErrors = this.makeSquareArray(this.L)
 			for (let i=0; i < this.L; ++i) {
 				const row = []
-				const dynamicYBiasRow = []
 				for (let j=0; j < this.L; ++j) {
-					dynamicYBiasRow.push(0)
 					const mesh = new THREE.Mesh( this.three.dataQubitGeometry, this.three.dataQubitMaterial )
 					mesh.position.y = this.dataQubitYBias
 					mesh.position.z = i - bias
@@ -334,7 +363,6 @@ export default {
 					row.push(mesh)
 				}
 				qubits.push(row)
-				this.internals.dataQubitsDynamicYBias.push(dynamicYBiasRow)
 			}
 			this.internals.dataQubits = qubits
 			this.internals.dataQubitsArray = array
@@ -343,12 +371,10 @@ export default {
 			const qubits = []
 			const array = []
 			const bias = (this.L - 1) / 2 + 0.5
-			this.internals.ancillaQubitsDynamicYBias = []
+			this.ancillaQubitsDynamicYBias = this.makeSquareArray(this.L + 1)
 			for (let i=0; i <= this.L; ++i) {
 				const row = []
-				const dynamicYBiasRow = []
 				for (let j=0; j <= this.L; ++j) {
-					dynamicYBiasRow.push(0)
 					const isZ = ((i + j) % 2) == 0
 					let exist = true
 					if (isZ && (j < 1 || j >= this.L)) exist = false
@@ -367,7 +393,6 @@ export default {
 					row.push(mesh)
 				}
 				qubits.push(row)
-				this.internals.ancillaQubitsDynamicYBias.push(dynamicYBiasRow)
 			}
 			this.internals.ancillaQubits = qubits
 			this.internals.ancillaQubitsArray = array
@@ -377,27 +402,47 @@ export default {
 			const xErrors = []
 			const array = []
 			const bias = (this.L - 1) / 2
+			this.internals.zDataErrorMaterials = this.makeSquareArray(this.L, (() => new THREE.MeshPhongMaterial( {
+				transparent: true,
+				opacity: 0,
+				emissive: this.zStabQubitColor,
+			} )))
+			this.internals.xDataErrorMaterials = this.makeSquareArray(this.L, (() => new THREE.MeshPhongMaterial( {
+				transparent: true,
+				opacity: 0,
+				emissive: this.xStabQubitColor,
+			} )))
+			const dataErrorTopMaterialsGenerator = (() => new THREE.MeshPhongMaterial( {
+				transparent: true,
+				opacity: 0,
+				emissive: 0xFF0000,
+			} ))
+			this.internals.zDataErrorTopMaterials = this.makeSquareArray(this.L, dataErrorTopMaterialsGenerator)
+			this.internals.xDataErrorTopMaterials = this.makeSquareArray(this.L, dataErrorTopMaterialsGenerator)
 			for (let i=0; i < this.L; ++i) {
 				const zRow = []
 				const xRow = []
 				for (let j=0; j < this.L; ++j) {
 					for (let isZ = 0; isZ < 2; ++isZ) {
 						const group = new THREE.Group()
+						const dataErrorMaterial = (isZ ? this.internals.zDataErrorMaterials : this.internals.xDataErrorMaterials)[i][j]
+						this.internals.disposable.push(dataErrorMaterial)
+						const dataErrorTopMaterial = (isZ ? this.internals.zDataErrorTopMaterials : this.internals.xDataErrorTopMaterials)[i][j]
+						this.internals.disposable.push(dataErrorTopMaterial)
 						for (let k = -1; k < 2; k += 2) {
 							const z = !isZ * k * this.dataQubitSize * 1.2 + i - bias
 							const x = isZ * k * this.dataQubitSize * 1.2 + j - bias
-							const material = isZ ? this.three.zDataErrorMaterial : this.three.xDataErrorMaterial
 							const geometry = isZ ? this.three.zDataErrorGeometry : this.three.xDataErrorGeometry
-							const mesh = new THREE.Mesh( geometry, material )
+							const mesh = new THREE.Mesh( geometry, dataErrorMaterial )
 							mesh.position.set(x, 0, z)
 							group.add(mesh)
 							// add error tops for fancy visualization
 							for (const geometry of (isZ ? this.three.zDataErrorTopGeometries : this.three.xDataErrorTopGeometries)) {
-								const mesh = new THREE.Mesh( geometry, this.three.dataErrorTopMaterial )
+								const mesh = new THREE.Mesh( geometry, dataErrorTopMaterial )
 								mesh.position.set(x, 0, z)
+								mesh.rotateY((k + 1) / 2 * Math.PI)
 								group.add(mesh)
 							}
-
 						}
 						group.position.y = this.dataQubitYBias
 						const row = isZ ? zRow : xRow
