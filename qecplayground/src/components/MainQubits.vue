@@ -17,6 +17,14 @@ export default {
 			default: 5,
 		},
 
+		dataErrorTopParameters: {  // list of [radius, angle, angleOffset, cyclePerSec] ...
+			type: Array,
+			default: () => [
+				[0.15, Math.PI * 2 / 3, 0, 0.5],
+				[0.175, Math.PI * 2 / 4, 0, 0.6],
+				[0.2, Math.PI * 2 / 6, 0, 0.9]
+			]
+		},
 		usePerspectiveCamera: {
 			type: Boolean,
 			default: true
@@ -97,8 +105,10 @@ export default {
 		}
 	},
 	mounted() {
+		window.$mainQubits = this  // for fast debugging
 		const scene = new THREE.Scene()
 		this.three.scene = scene
+		this.three.clock = new THREE.Clock()
 
 		// add camera and renderer
 		const windowWidth = window.innerWidth-this.panelWidth
@@ -115,14 +125,18 @@ export default {
 		this.three.renderer = renderer
 		renderer.setPixelRatio( window.devicePixelRatio )
 		renderer.setSize( windowWidth, windowHeight )
+		let container = document.getElementById('main_qubits_container')
+		let orbitControl = new OrbitControls( camera, renderer.domElement )
+		container.appendChild(renderer.domElement)
+
+		// support for resize
 		window.addEventListener( 'resize', () => {
+			const windowWidth = window.innerWidth-this.panelWidth
+			const windowHeight = window.innerHeight
 			camera.aspect = windowWidth / windowHeight
 			camera.updateProjectionMatrix()
 			renderer.setSize( windowWidth, windowHeight )
 		}, false )
-		let container = document.getElementById('main_qubits_container')
-		let orbitControl = new OrbitControls( camera, renderer.domElement )
-		container.appendChild(renderer.domElement)
 
 		// add background
 		if (this.enableBackground) {
@@ -144,16 +158,60 @@ export default {
 			mouse.y = - ( event.clientY / windowHeight ) * 2 + 1
 		}, false )
 
-		// add qubits
-		const pointCloud = this.generatePointCloud()
-		scene.add( pointCloud )
-		this.generateDataQubits()
-		this.generateAncillaQubits()
-		const clickableGroup = new THREE.Group()
-		for (const obj of this.internals.dataQubitsArray) clickableGroup.add(obj)
-		for (const obj of this.internals.ancillaQubitsArray) clickableGroup.add(obj)
-		scene.add( clickableGroup )
-		this.internals.clickableGroup = clickableGroup
+		// create general materials to avoid recreating
+		this.three.pointCloudMaterial = new THREE.PointsMaterial( { size: this.pointSize, vertexColors: true } )
+		this.three.dataQubitGeometry = new THREE.SphereBufferGeometry( this.dataQubitSize, 48, 24 )
+		this.three.dataQubitMaterial = new THREE.MeshBasicMaterial( {
+			color: this.dataQubitColor,
+			envMap: this.three.scene.background,
+			reflectivity: 0.5,
+		} )
+		this.three.ancillaQubitGeometry = new THREE.SphereBufferGeometry( this.dataQubitSize, 48, 24 )
+		this.three.zStabMaterial = new THREE.MeshBasicMaterial( {
+			color: this.zStabQubitColor,
+			envMap: this.three.scene.background,
+			reflectivity: 0.5,
+		} )
+		this.three.xStabMaterial = new THREE.MeshBasicMaterial( {
+			color: this.xStabQubitColor,
+			envMap: this.three.scene.background,
+			reflectivity: 0.5,
+		} )
+		this.three.zDataErrorGeometry = new THREE.TorusGeometry( 0.1, 0.03, 32, 32 )
+		this.three.zDataErrorGeometry.rotateY(Math.PI /2)
+		this.three.xDataErrorGeometry = new THREE.TorusGeometry( 0.1, 0.03, 32, 32 )
+		this.three.zDataErrorMaterial = new THREE.MeshPhongMaterial( {
+			transparent: true,
+			opacity: 0.9,
+			emissive: this.zStabQubitColor,
+		} )
+		this.three.xDataErrorMaterial = new THREE.MeshPhongMaterial( {
+			transparent: true,
+			opacity: 0.9,
+			emissive: this.xStabQubitColor,
+		} )
+		this.three.xDataErrorTopGeometries = []
+		this.three.zDataErrorTopGeometries = []
+		for (const obj of this.dataErrorTopParameters) {
+			const [radius, angle, angleOffset] = obj
+			const tube = 0.008
+			const segments = 32
+			const xGeometry = new THREE.TorusGeometry( radius, tube, segments, segments, angle )
+			xGeometry.rotateZ(angleOffset)
+			const zGeometry = new THREE.TorusGeometry( radius, tube, segments, segments, angle )
+			zGeometry.rotateZ(angleOffset)
+			zGeometry.rotateY(Math.PI / 2)
+			this.three.xDataErrorTopGeometries.push(xGeometry)
+			this.three.zDataErrorTopGeometries.push(zGeometry)
+		}
+		this.three.dataErrorTopMaterial = new THREE.MeshPhongMaterial( {
+			transparent: true,
+			opacity: 0.5,
+			emissive: 0xFF0000,
+		} )
+
+		// update L
+		this.onChangeL(this.L, null)
 
 		// add stats if enabled
 		if (this.enableStats) {
@@ -166,13 +224,24 @@ export default {
 
 	},
 	methods: {
+		test() {
+			this.three.xDataErrorGeometry.rotateY(Math.PI / 2)
+		},
 		animate() {
 			requestAnimationFrame( this.animate )  // call first
+			const delta = this.three.clock.getDelta()
 			this.three.raycaster.setFromCamera( this.three.mouse, this.three.camera )
-			const intersection = this.three.raycaster.intersectObject( this.internals.clickableGroup, true )
-			if ( intersection.length > 0 ) {
-				const object = intersection[0].object
-				console.log(object)
+			if (this.internals.clickableGroup) {
+				const intersection = this.three.raycaster.intersectObject( this.internals.clickableGroup, true )
+				if ( intersection.length > 0 ) {
+					const object = intersection[0].object
+					// console.log(object)
+				}
+			}
+			for (const idx in this.dataErrorTopParameters) {  // rotate error tops
+				const cyclePerSec = this.dataErrorTopParameters[idx][3]
+				this.three.xDataErrorTopGeometries[idx].rotateZ(Math.PI * 2 * cyclePerSec * delta)
+				this.three.zDataErrorTopGeometries[idx].rotateX(Math.PI * 2 * cyclePerSec * delta)
 			}
 			if (this.three.stats) this.three.stats.update()  // update stats if exists
 			this.three.renderer.render( this.three.scene, this.three.camera )
@@ -206,8 +275,8 @@ export default {
 			geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) )
 			geometry.setAttribute( 'color', new THREE.BufferAttribute( colors, 3 ) )
 			geometry.computeBoundingSphere()
-			const material = new THREE.PointsMaterial( { size: this.pointSize, vertexColors: true } )
-			return new THREE.Points( geometry, material )
+			this.internals.disposable.push(geometry)
+			this.internals.pointCloud = new THREE.Points( geometry, this.three.pointCloudMaterial )
 		},
 		wavePositionColor(i, j) {
 			const y = ( 2 + Math.cos( i * Math.PI * 2 ) + Math.cos( j * Math.PI * 2 ) ) / 4
@@ -240,13 +309,7 @@ export default {
 			for (let i=0; i < this.L; ++i) {
 				const row = []
 				for (let j=0; j < this.L; ++j) {
-					const geometry = new THREE.SphereBufferGeometry( this.dataQubitSize, 48, 24 )
-					const material = new THREE.MeshBasicMaterial( {
-						color: this.dataQubitColor,
-						envMap: this.three.scene.background,
-						reflectivity: 0.5,
-					} )
-					const mesh = new THREE.Mesh( geometry, material )
+					const mesh = new THREE.Mesh( this.three.dataQubitGeometry, this.three.dataQubitMaterial )
 					mesh.position.y = this.dataQubitYBias
 					mesh.position.z = i - bias
 					mesh.position.x = j - bias
@@ -261,7 +324,7 @@ export default {
 		generateAncillaQubits() {
 			const qubits = []
 			const array = []
-			const bias = (this.L - 1) / 2 + 0.5 // TODO
+			const bias = (this.L - 1) / 2 + 0.5
 			for (let i=0; i <= this.L; ++i) {
 				const row = []
 				for (let j=0; j <= this.L; ++j) {
@@ -273,17 +336,12 @@ export default {
 						row.push(null)
 						continue
 					}
-					const color = isZ ? this.zStabQubitColor : this.xStabQubitColor
-					const geometry = new THREE.SphereBufferGeometry( this.dataQubitSize, 48, 24 )
-					const material = new THREE.MeshBasicMaterial( {
-						color: color,
-						envMap: this.three.scene.background,
-						reflectivity: 0.5,
-					} )
-					const mesh = new THREE.Mesh( geometry, material )
+					const material = isZ ? this.three.zStabMaterial : this.three.xStabMaterial
+					const mesh = new THREE.Mesh( this.three.ancillaQubitGeometry, material )
 					mesh.position.y = this.dataQubitYBias - this.waveHeight
 					mesh.position.z = i - bias
 					mesh.position.x = j - bias
+					mesh.rotation.set(0, 0, isZ ? 0 : Math.PI / 2)
 					array.push(mesh)
 					row.push(mesh)
 				}
@@ -292,7 +350,72 @@ export default {
 			this.internals.ancillaQubits = qubits
 			this.internals.ancillaQubitsArray = array
 		},
+		generateDataQubitsErrors() {
+			const zErrors = []  // each element in this is a group of mesh
+			const xErrors = []
+			const array = []
+			const bias = (this.L - 1) / 2
+			for (let i=0; i < this.L; ++i) {
+				const zRow = []
+				const xRow = []
+				for (let j=0; j < this.L; ++j) {
+					for (let isZ = 0; isZ < 2; ++isZ) {
+						const group = new THREE.Group()
+						for (let k = -1; k < 2; k += 2) {
+							const z = !isZ * k * this.dataQubitSize * 1.2 + i - bias
+							const x = isZ * k * this.dataQubitSize * 1.2 + j - bias
+							const y = this.dataQubitYBias
+							const material = isZ ? this.three.zDataErrorMaterial : this.three.xDataErrorMaterial
+							const geometry = isZ ? this.three.zDataErrorGeometry : this.three.xDataErrorGeometry
+							const mesh = new THREE.Mesh( geometry, material )
+							mesh.position.set(x, y, z)
+							group.add(mesh)
+							// add error tops for fancy visualization
+							for (const geometry of (isZ ? this.three.zDataErrorTopGeometries : this.three.xDataErrorTopGeometries)) {
+								const mesh = new THREE.Mesh( geometry, this.three.dataErrorTopMaterial )
+								mesh.position.set(x, y, z)
+								group.add(mesh)
+							}
 
+						}
+						(isZ ? zRow : xRow).push(group)
+						array.push(group)
+					}
+				}
+				zErrors.push(zRow)
+				xErrors.push(xRow)
+			}
+			this.internals.zDataErrors = zErrors
+			this.internals.xDataErrors = xErrors
+			this.internals.dataErrorArray = array
+		},
+		onChangeL(val, old) {
+			if (old != null) {  // destroy things
+				for (const disposable of this.internals.disposable) disposable.dispose()
+				this.three.scene.remove( this.internals.pointCloud )
+				this.three.scene.remove( this.internals.clickableGroup )
+				for (const obj of this.internals.dataErrorArray) this.three.scene.remove( obj )
+				// return   // test the functionality of remove (check if all objects disappear when L changes)
+			}
+			this.internals.disposable = []
+			// add qubits
+			this.generatePointCloud()
+			this.three.scene.add( this.internals.pointCloud )
+			this.generateDataQubits()
+			this.generateAncillaQubits()
+			const clickableGroup = new THREE.Group()
+			for (const obj of this.internals.dataQubitsArray) clickableGroup.add(obj)
+			for (const obj of this.internals.ancillaQubitsArray) clickableGroup.add(obj)
+			this.three.scene.add( clickableGroup )
+			this.internals.clickableGroup = clickableGroup
+			this.generateDataQubitsErrors()
+			for (const obj of this.internals.dataErrorArray) this.three.scene.add(obj)
+		},
+	},
+	watch: {
+		L(val, old) {
+			this.onChangeL(val, old)
+		},
 	},
 }
 </script>
