@@ -1,6 +1,10 @@
 <template>
 	<div id="app">
-		<MainQubits class="main-qubits" msg="Welcome to Your Vue.js App" :panelWidth="0"/>
+		<MainQubits class="main-qubits" :panelWidth="480"/>
+		<div class="control-panel">
+			<h1 class="title"><img src="@/assets/logo.png" class="logo"/>QEC Playground</h1>
+			<p>This is an educational tool for Quantum Error Correction (QEC). You can learn the currently most promising QEC scheme called surface code (planar code) by following the introduction tutorial and then trying different error patterns interactively.</p>
+		</div>
 	</div>
 </template>
 
@@ -47,6 +51,29 @@ export default {
 	left: 0;
 	right: 480px;
 	bottom: 0;
+}
+
+.control-panel {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: 460px;
+	overflow: auto;
+	padding: 10px;
+}
+
+.title {
+	line-height: 48px;
+	position: relative;
+}
+
+.logo {
+	width: 48px;
+	height: 48px;
+	position: relative;
+	top: 10px;
+	right: 10px;
 }
 
 </style>

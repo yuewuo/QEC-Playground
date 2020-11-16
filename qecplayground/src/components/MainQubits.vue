@@ -179,8 +179,9 @@ export default {
 			const loader = new THREE.CubeTextureLoader();
 			const texture = loader.load([
 				'/px.jpg', '/nx.jpg', '/py.jpg', '/ny.jpg', '/pz.jpg', '/nz.jpg',
-			]);
-			scene.background = texture;
+			])
+			scene.background = texture
+			// scene.background = new THREE.Color(0xFFFFFF)
 		}
 
 		// add raycaster
