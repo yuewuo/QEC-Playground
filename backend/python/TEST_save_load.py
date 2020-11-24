@@ -2,9 +2,9 @@ import QECPutil
 import numpy as np
 import random
 
-N = 16
+N = 1600
 p = 1e-1
-L = 5
+L = 15
 
 # generate random errors on data
 data = np.zeros((N, L, L), dtype=np.bool)
@@ -18,9 +18,9 @@ head = {
 }
 
 QECPutil.save("TEST.bin", head, data)
-head_r, data_r = QECPutil.load("TEST.bin")
+# head_r, data_r = QECPutil.load("TEST.bin")
 
-# assertions
-assert (data == data_r).all()
-for key in head:
-    assert head[key] == head_r[key]
+# # assertions
+# assert (data == data_r).all()
+# for key in head:
+#     assert head[key] == head_r[key]

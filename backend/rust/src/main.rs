@@ -5,9 +5,9 @@ mod test;
 #[macro_use] extern crate serde_json;
 use serde_json::json;
 #[macro_use] extern crate ndarray;
+extern crate rand;
 
 fn main() {
-    println!("Hello, world!");
 
     let matches = clap_app!(QECPlayground =>
         (version: "1.0")
