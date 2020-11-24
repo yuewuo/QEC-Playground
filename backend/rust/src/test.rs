@@ -27,7 +27,6 @@ fn save_load() {
         for j in 0..L {
             for k in 0..L {
                 let is_error = rng.gen::<f64>() < p;
-                let is_error = false;
                 if is_error {
                     error_cnt += 1;
                 }
@@ -35,11 +34,13 @@ fn save_load() {
             }
         }
     }
-    let error_rate = 100. * error_cnt as f64 / ((N*L*L) as f64);
-    println!("error/total: {}/{} = {}%", error_cnt, N*L*L, error_rate);
+    let error_rate = error_cnt as f64 / ((N*L*L) as f64);
+    println!("error/total: {}/{} = {}%", error_cnt, N*L*L, 100. * error_rate);
     // prepare the head
     let head = serde_json::json!({
         "p": p,
+        "error_cnt": error_cnt,
+        "error_rate": error_rate,
     });
     // save to file
     util::save("TEST_save_load.bin", &head, &data_ro).unwrap();

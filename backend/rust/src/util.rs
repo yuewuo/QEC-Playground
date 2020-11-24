@@ -34,18 +34,18 @@ pub fn save(filepath: &str, head: &Value, data: &ndarray::Array3<bool>) -> std::
     serde_json::to_writer(&f, &head)?;
     f.write(b"\0")?;
     let cycle = (((L*L) as f64) / 8f64).ceil() as usize;
-    let mut vec = vec![0u8; cycle];
+    let mut vec = vec![0u8; cycle * N];
     for i in 0..N {
-        for item in &mut vec { *item = 0u8; }  // reset to 0
         let mut l = 0usize;
+        let base_idx = i * cycle;
         for j in 0..L {
             for k in 0..L {
                 if data[[i, j, k]] == true {
-                    let byte_idx = l / 8;
+                    let byte_idx = base_idx + l / 8;
                     let bit_idx = l % 8;
                     vec[byte_idx] |= 1 << bit_idx;
-                    l += 1;
                 }
+                l += 1;
             }
         }
     }

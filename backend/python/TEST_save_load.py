@@ -2,9 +2,9 @@ import QECPutil
 import numpy as np
 import random
 
-N = 1600
+N = 16
 p = 1e-1
-L = 15
+L = 5
 
 # generate random errors on data
 data = np.zeros((N, L, L), dtype=np.bool)
