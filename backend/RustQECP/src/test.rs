@@ -1,4 +1,5 @@
 use super::clap;
+use super::util;
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -10,5 +11,6 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
 }
 
 fn save_load() {
-    println!("save_load ....")
+    println!("save_load ....");
+    util::load("tmp/save_load.bin");
 }

@@ -2,6 +2,9 @@ mod util;
 mod test;
 
 #[macro_use] extern crate clap;
+#[macro_use] extern crate serde_json;
+use serde_json::json;
+#[macro_use] extern crate ndarray;
 
 fn main() {
     println!("Hello, world!");
