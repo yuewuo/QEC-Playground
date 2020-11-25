@@ -4,10 +4,11 @@ use super::serde_json::{json, Value, Map};
 use std::fs::File;
 use std::fs;
 use std::io::prelude::*;
+use super::types::*;
 
 /// load measurement or ground truth data from file
 #[allow(non_snake_case)]
-pub fn load(filepath: &str) -> std::io::Result<(Value, ndarray::Array3<bool>)> {
+pub fn load(filepath: &str) -> std::io::Result<(Value, BatchZxError)> {
     let file_bytes = fs::read(filepath)?;
     let split_idx = file_bytes.iter().position(|&x| x == 0).expect("should split with \\0");
     let head_bytes = &file_bytes[..split_idx];
@@ -33,12 +34,12 @@ pub fn load(filepath: &str) -> std::io::Result<(Value, ndarray::Array3<bool>)> {
             }
         }
     }
-    Ok((head, data_ro))
+    Ok((head, BatchZxError::new(data_ro)))
 }
 
-/// save measurement or gound truth data to file
+/// save measurement or ground truth data to file
 #[allow(non_snake_case)]
-pub fn save(filepath: &str, head: &Value, data: &ndarray::Array3<bool>) -> std::io::Result<()> {
+pub fn save(filepath: &str, head: &Value, data: &BatchZxError) -> std::io::Result<()> {
     // check input format
     assert_eq!(None, head.get("N"));
     assert_eq!(None, head.get("L"));
@@ -74,4 +75,47 @@ pub fn save(filepath: &str, head: &Value, data: &ndarray::Array3<bool>) -> std::
     }
     f.write(&vec)?;
     Ok(())
+}
+
+#[allow(non_snake_case)]
+pub fn generate_perfect_Z_measurement(error: &ZxError) -> ZxMeasurement {
+    let L = error.L();
+    let mut measurement_ro = ndarray::Array::from_shape_fn((L+1, L+1), |_| false);
+    let mut measurement = measurement_ro.view_mut();
+    for i in 0..L+1 {
+        for j in 0..L-1 {
+            if i + j % 2 == 1 {  // only when i+j is odd
+                // XOR a(i-1,j), b(i-1,j+1), c(i,j), d(i,j+1) if exist
+                let i_minus_exists = i > 0;
+                let i_exists = i < L;
+                let mut result = false;
+                if i_minus_exists {
+                    result |= error[[i-1, j]] | error[[i-1, j+1]];
+                }
+                if i_exists {
+                    result |= error[[i, j]] | error[[i, j+1]];
+                }
+                measurement[[i, j]] = result;
+            }
+        }
+    }
+    ZxMeasurement::new(measurement_ro)
+}
+
+#[allow(non_snake_case)]
+pub fn generate_perfect_measurements(z_error: &ZxError, x_error: &ZxError) -> (ZxMeasurement, ZxMeasurement) {
+    let z_measurement = generate_perfect_Z_measurement(z_error);
+    let shape = z_error.shape();
+    assert_eq!(shape, x_error.shape());
+    let L = shape[0];  // shape already checked to be [L][L] in `generate_perfect_Z_measurement`
+    // not efficient, just to reuse code
+    let mut rotated_ro = ndarray::Array::from_shape_fn((L, L), |_| false);
+    let mut rotated = rotated_ro.view_mut();
+    for i in 0..L {
+        for j in 0..L {
+            rotated[[i, j]] = x_error[[L-1-j, i]];
+        }
+    }
+    let x_measurement = generate_perfect_Z_measurement(&ZxError::new(rotated_ro));
+    (z_measurement, x_measurement)
 }

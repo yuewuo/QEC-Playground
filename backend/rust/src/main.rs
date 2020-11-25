@@ -1,6 +1,8 @@
 mod util;
 mod test;
 mod tool;
+mod types;
+mod qec;
 
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;

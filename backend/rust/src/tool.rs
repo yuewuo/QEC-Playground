@@ -1,9 +1,9 @@
 use super::clap;
 use super::util;
-use super::ndarray;
 use super::rand::prelude::*;
 use super::serde_json;
 use std::path::Path;
+use super::types::*;
 
 #[allow(non_snake_case)]
 pub fn run_matched_tool(matches: &clap::ArgMatches) {
@@ -34,7 +34,7 @@ fn generate_random_errors(Ls: &Vec<usize>, ps: &Vec<f64>, N: usize, directory: &
             let p = *pp;
             let L = *pL;
             println!("p: {}, L: {} starting", p, L);
-            let mut data_ro = ndarray::Array::from_shape_fn((N, L, L), |_| false);
+            let mut data_ro = BatchZxError::new_N_L(N, L);
             let mut data = data_ro.view_mut();
             let mut rng = thread_rng();
             let mut total_rounds = 0;

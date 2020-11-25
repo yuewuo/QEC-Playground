@@ -1,9 +1,9 @@
 use super::clap;
 use super::util;
-use super::ndarray;
 use super::rand::prelude::*;
 use super::serde_json;
 use super::serde_json::{Value, Map};
+use super::types::*;
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -20,7 +20,7 @@ fn save_load() {
     let L = 5;
     let p = 1e-1;
     // generate some random data
-    let mut data_ro = ndarray::Array::from_shape_fn((N, L, L), |_| false);
+    let mut data_ro = BatchZxError::new_N_L(N, L);
     let mut data = data_ro.view_mut();
     let mut rng = thread_rng();
     let mut error_cnt = 0;
