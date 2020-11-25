@@ -24,9 +24,9 @@ def load(filepath):
     N = head["N"]
     L = head["L"]
     assert N > 0 and L > 0
-    data = np.zeros((N, L, L), dtype=np.bool)
     cycle = math.ceil(L*L/8)
-    assert len(data_array) > 0 and len(data_array) % cycle == 0
+    assert len(data_array) > 0 and len(data_array) == cycle * N
+    data = np.zeros((N, L, L), dtype=np.bool)
     for i in range(N):
         base_idx = i * cycle
         l = 0

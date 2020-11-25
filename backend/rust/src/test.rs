@@ -3,6 +3,7 @@ use super::util;
 use super::ndarray;
 use super::rand::prelude::*;
 use super::serde_json;
+use super::serde_json::{Value, Map};
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -43,10 +44,14 @@ fn save_load() {
         "error_rate": error_rate,
     });
     // save to file
-    util::save("TEST_save_load.bin", &head, &data_ro).unwrap();
+    util::save("TEST_save_load.bin", &head, &data_ro).expect("save failed");
     // load from the same file
-    let (head_r, data_r) = util::load("TEST_save_load.bin");
+    let (head_r, data_r) = util::load("TEST_save_load.bin").expect("load failed");
     // check whether the file contains the same information
-    // println!("{:?}", head_r);
-    // println!("{:?}", data_r);
+    let mut head_N_L: Map<String, Value> = serde_json::from_value(head.clone()).expect("head JSON error");
+    head_N_L.insert("N".to_string(), json!(N));
+    head_N_L.insert("L".to_string(), json!(L));
+    let head_N_L: Value = serde_json::to_value(&head_N_L).expect("head JSON serialization error");
+    assert_eq!(head_N_L, head_r);
+    assert_eq!(data_ro, data_r);
 }

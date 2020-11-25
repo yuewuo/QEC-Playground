@@ -3,16 +3,15 @@ use super::util;
 use super::ndarray;
 use super::rand::prelude::*;
 use super::serde_json;
-use super::serde_json::{Value};
 use std::path::Path;
 
 #[allow(non_snake_case)]
 pub fn run_matched_tool(matches: &clap::ArgMatches) {
     match matches.subcommand() {
         ("generate_random_errors", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).unwrap();
+            let Ls = value_t!(matches, "Ls", String).expect("required");
             let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).unwrap();
+            let ps = value_t!(matches, "ps", String).expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
             let N = value_t!(matches, "N", usize).expect("N should be integer");
             let directory = value_t!(matches, "directory", String).unwrap_or("./".to_string());
@@ -70,7 +69,7 @@ fn generate_random_errors(Ls: &Vec<usize>, ps: &Vec<f64>, N: usize, directory: &
             // save to file
             let filename = format!("errors_{}_{}.bin", p, L);
             let path = Path::new(directory).join(filename);
-            util::save(path.to_str().unwrap(), &head, &data_ro).unwrap();
+            util::save(path.to_str().expect("path string"), &head, &data_ro).expect("save failed");
         }
     }
 }
