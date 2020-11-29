@@ -100,16 +100,22 @@ fn validate_correction() {
     x_error_ro.print();
     // correction of the same as error must succeed
     let mut x_correction_ro = x_error_ro.clone();
+    println!("x_correction_ro: (success)");
+    x_correction_ro.print();
     assert_eq!(x_error_ro.validate_x_correction(&x_correction_ro), Ok(()));
     // if there is a -1 Z stabilizer, it fails
     let mut x_correction = x_correction_ro.view_mut();
     x_correction[[1, 0]] = false;  // does not correct because Z stabilizer at (1, 1)
+    println!("x_correction_ro: (Z stabilizer is at -1 eigenstate at (1,1))");
+    x_correction_ro.print();
     assert_eq!(x_error_ro.validate_x_correction(&x_correction_ro), Err("Z stabilizer is at -1 eigenstate at (1,1)".to_string()));
     // if there is a logical operator, it fails
     let mut x_correction = x_correction_ro.view_mut();
     for i in 1..L {
         x_correction[[1, i]] = true;
     }
+    println!("x_correction_ro: (there is logical operator after correction)");
+    x_correction_ro.print();
     assert_eq!(x_error_ro.validate_x_correction(&x_correction_ro), Err("there is logical operator after correction".to_string()));
 }
 
