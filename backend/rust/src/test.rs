@@ -6,6 +6,7 @@ use super::rand::prelude::*;
 use super::serde_json;
 use super::serde_json::{Value, Map};
 use super::types::*;
+use super::qec;
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -15,11 +16,21 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
         ("perfect_measurement", Some(_)) => {
             perfect_measurement()
         }
+        ("validate_correction", Some(_)) => {
+            validate_correction()
+        }
+        ("stupid_correction", Some(_)) => {
+            stupid_correction()
+        }
         ("debug_tests", Some(_)) => {
             debug_tests()
         }
-        ("validate_correction", Some(_)) => {
-            validate_correction()
+        ("all", Some(_)) => {  // remember to add new test functions here
+            save_load();
+            perfect_measurement();
+            validate_correction();
+            stupid_correction();
+            debug_tests();
         }
         _ => unreachable!()
     }
@@ -69,7 +80,8 @@ fn save_load() {
 }
 
 fn perfect_measurement() {
-    let mut x_error_ro = ZxError::new(ndarray::Array::from_elem((5, 5), false));
+    let L = 5;
+    let mut x_error_ro = ZxError::new_L(L);
     let mut x_error = x_error_ro.view_mut();
     x_error[[1, 0]] = true;
     x_error[[3, 2]] = true;
@@ -133,6 +145,23 @@ fn validate_correction() {
     }
     z_correction[[1, 0]] = false;
     assert_eq!(z_error_ro.validate_z_correction(&z_correction_ro), Err("there is Z_L logical operator after correction".to_string()));
+}
+
+fn stupid_correction() {
+    let L = 5;
+    let mut x_error_ro = ZxError::new_L(L);
+    let mut x_error = x_error_ro.view_mut();
+    x_error[[1, 0]] = true;
+    x_error[[3, 2]] = true;
+    x_error[[3, 3]] = true;
+    println!("z_error_ro:");
+    x_error_ro.print();
+    let zx_measurement= util::generate_perfect_measurements(&x_error_ro, &x_error_ro);
+    println!("zx_measurement:");
+    zx_measurement.print();
+    let (x_correction, z_correction) = qec::stupid_correction(&zx_measurement);
+    assert_eq!(x_error_ro.validate_x_correction(&x_correction), Ok(()));
+    assert_eq!(x_error_ro.validate_z_correction(&z_correction), Ok(()));
 }
 
 fn debug_tests() {

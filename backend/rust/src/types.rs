@@ -33,12 +33,12 @@ impl DerefMut for ZxError {
 }
 
 impl ZxError {
-    pub fn new(array: ndarray::Array2<bool>) -> Self {
-        let shape = array.shape();
-        assert_eq!(shape.len(), 2);
-        assert_eq!(shape[0], shape[1]);
-        Self(array)
-    }
+    // pub fn new(array: ndarray::Array2<bool>) -> Self {
+    //     let shape = array.shape();
+    //     assert_eq!(shape.len(), 2);
+    //     assert_eq!(shape[0], shape[1]);
+    //     Self(array)
+    // }
     pub fn new_L(L: usize) -> Self {
         Self(ndarray::Array::from_elem((L, L), false))
     }
@@ -119,11 +119,18 @@ impl DerefMut for ZxMeasurement {
 }
 
 impl ZxMeasurement {
-    pub fn new(array: ndarray::Array2<bool>) -> Self {
-        let shape = array.shape();
-        assert_eq!(shape.len(), 2);
-        assert_eq!(shape[0], shape[1]);
-        Self(array)
+    // pub fn new(array: ndarray::Array2<bool>) -> Self {
+    //     let shape = array.shape();
+    //     assert_eq!(shape.len(), 2);
+    //     assert_eq!(shape[0], shape[1]);
+    //     assert_eq!(shape[0] >= 1, true);
+    //     Self(array)
+    // }
+    pub fn new_L(L: usize) -> Self {
+        Self(ndarray::Array::from_elem((L+1, L+1), false))
+    }
+    pub fn L(&self) -> usize {
+        self.shape()[0] - 1  // because measurement is of size (L+1, L+1)
     }
     pub fn rotate_x2z(&self) -> Self {
         Self(rotate_array(self, true))

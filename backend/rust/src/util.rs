@@ -81,7 +81,7 @@ pub fn save(filepath: &str, head: &Value, data: &BatchZxError) -> std::io::Resul
 pub fn generate_perfect_measurements(x_error: &ZxError, z_error: &ZxError) -> ZxMeasurement {
     assert_eq!(x_error.shape(), z_error.shape());
     let L = x_error.L();
-    let mut measurement_ro = ndarray::Array::from_elem((L+1, L+1), false);
+    let mut measurement_ro = ZxMeasurement::new_L(L);
     let mut measurement = measurement_ro.view_mut();
     for i in 0..L+1 {
         for j in 0..L+1 {
@@ -113,5 +113,5 @@ pub fn generate_perfect_measurements(x_error: &ZxError, z_error: &ZxError) -> Zx
             }
         }
     }
-    ZxMeasurement::new(measurement_ro)
+    measurement_ro
 }
