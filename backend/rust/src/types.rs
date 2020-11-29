@@ -69,6 +69,9 @@ impl ZxError {
     pub fn validate_x_correction(&self, x_correction: &ZxCorrection) -> Result<(), String> {
         validate_x_correction(&self, x_correction)
     }
+    pub fn validate_z_correction(&self, z_correction: &ZxCorrection) -> Result<(), String> {
+        validate_z_correction(&self, z_correction)
+    }
 }
 
 impl Deref for BatchZxError {
@@ -193,7 +196,7 @@ pub fn if_all_z_stabilizers_plus1(x_error: &ZxError) -> Result<(), String> {
     Ok(())
 }
 
-/// validate the correction from Z stabilizers, which correct x errors.
+/// validate the correction from Z stabilizers, which correct X errors.
 /// return `true` if the correction is successful, `false` if some of the stabilizers are not back to -1 eigenstate or it introduces X_L operator
 pub fn validate_x_correction(x_error: &ZxError, x_correction: &ZxCorrection) -> Result<(), String> {
     let combined = x_error.do_correction(x_correction);
@@ -206,7 +209,49 @@ pub fn validate_x_correction(x_error: &ZxError, x_correction: &ZxCorrection) -> 
         }
     }
     if count_left % 2 == 1 {  // correction is successful only if count_left is even number
-        return Err("there is logical operator after correction".to_string())
+        return Err("there is X_L logical operator after correction".to_string())
+    }
+    Ok(())
+}
+
+pub fn if_all_x_stabilizers_plus1(z_error: &ZxError) -> Result<(), String> {
+    let L = z_error.L();
+    for i in 0..L+1 {
+        for j in 0..L+1 {
+            if i != 0 && i != L && (i + j) % 2 == 1 {  // X stabilizer only when i+j is odd
+                // XOR a(i-1,j-1), b(i-1,j), c(i,j-1), d(i,j) if exist
+                let j_minus_exists = j > 0;
+                let j_exists = j < L;
+                let mut result = false;
+                if j_minus_exists {
+                    result ^= z_error[[i-1, j-1]] ^ z_error[[i, j-1]];
+                }
+                if j_exists {
+                    result ^= z_error[[i-1, j]] ^ z_error[[i, j]];
+                }
+                if result {
+                    return Err(format!("X stabilizer is at -1 eigenstate at ({},{})", i, j).to_string())
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// validate the correction from X stabilizers, which correct Z errors.
+/// return `true` if the correction is successful, `false` if some of the stabilizers are not back to -1 eigenstate or it introduces X_L operator
+pub fn validate_z_correction(z_error: &ZxError, z_correction: &ZxCorrection) -> Result<(), String> {
+    let combined = z_error.do_correction(z_correction);
+    if_all_x_stabilizers_plus1(&combined)?;
+    // count the errors on the top side
+    let mut count_top = 0;
+    for i in 0..combined.L() {
+        if combined[[0, i]] {
+            count_top += 1;
+        }
+    }
+    if count_top % 2 == 1 {  // correction is successful only if count_top is even number
+        return Err("there is Z_L logical operator after correction".to_string())
     }
     Ok(())
 }

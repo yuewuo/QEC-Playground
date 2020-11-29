@@ -105,18 +105,34 @@ fn validate_correction() {
     assert_eq!(x_error_ro.validate_x_correction(&x_correction_ro), Ok(()));
     // if there is a -1 Z stabilizer, it fails
     let mut x_correction = x_correction_ro.view_mut();
-    x_correction[[1, 0]] = false;  // does not correct because Z stabilizer at (1, 1)
+    x_correction[[1, 0]] = false;  // does not correct because Z stabilizer at (1, 1) has -1 eigenstate
     println!("x_correction_ro: (Z stabilizer is at -1 eigenstate at (1,1))");
     x_correction_ro.print();
     assert_eq!(x_error_ro.validate_x_correction(&x_correction_ro), Err("Z stabilizer is at -1 eigenstate at (1,1)".to_string()));
-    // if there is a logical operator, it fails
+    // if there is a logical operator, it also fails
     let mut x_correction = x_correction_ro.view_mut();
     for i in 1..L {
         x_correction[[1, i]] = true;
     }
     println!("x_correction_ro: (there is logical operator after correction)");
     x_correction_ro.print();
-    assert_eq!(x_error_ro.validate_x_correction(&x_correction_ro), Err("there is logical operator after correction".to_string()));
+    assert_eq!(x_error_ro.validate_x_correction(&x_correction_ro), Err("there is X_L logical operator after correction".to_string()));
+    
+    // then try X stabilizers
+    let z_error_ro = x_error_ro;  // use the same error pattern
+    let mut z_correction_ro = z_error_ro.clone();
+    assert_eq!(z_error_ro.validate_z_correction(&z_correction_ro), Ok(()));
+    // // if there is a -1 X stabilizer, it fails
+    let mut z_correction = z_correction_ro.view_mut();
+    z_correction[[1, 0]] = false;  // does not correct because X stabilizer at (1, 0) has -1 eigenstate
+    assert_eq!(z_error_ro.validate_z_correction(&z_correction_ro), Err("X stabilizer is at -1 eigenstate at (1,0)".to_string()));
+    // if there is a logical operator, it also fails
+    let mut z_correction = z_correction_ro.view_mut();
+    for i in 0..L {
+        z_correction[[i, 0]] = true;
+    }
+    z_correction[[1, 0]] = false;
+    assert_eq!(z_error_ro.validate_z_correction(&z_correction_ro), Err("there is Z_L logical operator after correction".to_string()));
 }
 
 fn debug_tests() {
