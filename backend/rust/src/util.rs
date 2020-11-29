@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use super::serde_json;
 use super::ndarray;
 use super::serde_json::{json, Value, Map};
@@ -7,7 +9,6 @@ use std::io::prelude::*;
 use super::types::*;
 
 /// load measurement or ground truth data from file
-#[allow(non_snake_case)]
 pub fn load(filepath: &str) -> std::io::Result<(Value, BatchZxError)> {
     let file_bytes = fs::read(filepath)?;
     let split_idx = file_bytes.iter().position(|&x| x == 0).expect("should split with \\0");
@@ -20,7 +21,7 @@ pub fn load(filepath: &str) -> std::io::Result<(Value, BatchZxError)> {
     let cycle = (((L*L) as f64) / 8f64).ceil() as usize;
     assert!(data_bytes.len() > 0 && data_bytes.len() == cycle * N);
     // generate data
-    let mut data_ro = ndarray::Array::from_shape_fn((N, L, L), |_| false);
+    let mut data_ro = ndarray::Array::from_elem((N, L, L), false);
     let mut data = data_ro.view_mut();
     for i in 0..N {
         let base_idx = i * cycle;
@@ -38,7 +39,6 @@ pub fn load(filepath: &str) -> std::io::Result<(Value, BatchZxError)> {
 }
 
 /// save measurement or ground truth data to file
-#[allow(non_snake_case)]
 pub fn save(filepath: &str, head: &Value, data: &BatchZxError) -> std::io::Result<()> {
     // check input format
     assert_eq!(None, head.get("N"));
@@ -77,23 +77,61 @@ pub fn save(filepath: &str, head: &Value, data: &BatchZxError) -> std::io::Resul
     Ok(())
 }
 
-#[allow(non_snake_case)]
-pub fn generate_perfect_Z_measurement(error: &ZxError) -> ZxMeasurement {
-    let L = error.L();
-    let mut measurement_ro = ndarray::Array::from_shape_fn((L+1, L+1), |_| false);
+// pub fn generate_perfect_Z_measurement(error: &ZxError) -> ZxMeasurement {
+//     let L = error.L();
+//     let mut measurement_ro = ndarray::Array::from_elem((L+1, L+1), false);
+//     let mut measurement = measurement_ro.view_mut();
+//     for i in 0..L+1 {
+//         for j in 0..L-1 {
+//             if i + j % 2 == 1 {  // only when i+j is odd
+//                 // XOR a(i-1,j), b(i-1,j+1), c(i,j), d(i,j+1) if exist
+//                 let i_minus_exists = i > 0;
+//                 let i_exists = i < L;
+//                 let mut result = false;
+//                 if i_minus_exists {
+//                     result |= error[[i-1, j]] | error[[i-1, j+1]];
+//                 }
+//                 if i_exists {
+//                     result |= error[[i, j]] | error[[i, j+1]];
+//                 }
+//                 measurement[[i, j]] = result;
+//             }
+//         }
+//     }
+//     ZxMeasurement::new(measurement_ro)
+// }
+
+/// X errors are only detected by Z stabilizers
+pub fn generate_perfect_measurements(x_error: &ZxError, z_error: &ZxError) -> ZxMeasurement {
+    assert_eq!(x_error.shape(), z_error.shape());
+    let L = z_error.L();
+    let mut measurement_ro = ndarray::Array::from_elem((L+1, L+1), false);
     let mut measurement = measurement_ro.view_mut();
     for i in 0..L+1 {
-        for j in 0..L-1 {
-            if i + j % 2 == 1 {  // only when i+j is odd
-                // XOR a(i-1,j), b(i-1,j+1), c(i,j), d(i,j+1) if exist
+        for j in 0..L+1 {
+            if j != 0 && j != L && (i + j) % 2 == 0 {  // Z stabilizer only when i+j is even
+                // XOR a(i-1,j-1), b(i-1,j), c(i,j-1), d(i,j) if exist
                 let i_minus_exists = i > 0;
                 let i_exists = i < L;
                 let mut result = false;
                 if i_minus_exists {
-                    result |= error[[i-1, j]] | error[[i-1, j+1]];
+                    result ^= x_error[[i-1, j-1]] ^ x_error[[i-1, j]];
                 }
                 if i_exists {
-                    result |= error[[i, j]] | error[[i, j+1]];
+                    result ^= x_error[[i, j-1]] ^ x_error[[i, j]];
+                }
+                measurement[[i, j]] = result;
+            }
+            if i != 0 && i != L && (i + j) % 2 == 1 {  // X stabilizer only when i+j is odd
+                // XOR a(i-1,j-1), b(i-1,j), c(i,j-1), d(i,j) if exist
+                let j_minus_exists = j > 0;
+                let j_exists = j < L;
+                let mut result = false;
+                if j_minus_exists {
+                    result ^= z_error[[i-1, j-1]] ^ z_error[[i, j-1]];
+                }
+                if j_exists {
+                    result ^= z_error[[i-1, j]] ^ z_error[[i, j]];
                 }
                 measurement[[i, j]] = result;
             }
@@ -102,20 +140,6 @@ pub fn generate_perfect_Z_measurement(error: &ZxError) -> ZxMeasurement {
     ZxMeasurement::new(measurement_ro)
 }
 
-#[allow(non_snake_case)]
-pub fn generate_perfect_measurements(z_error: &ZxError, x_error: &ZxError) -> (ZxMeasurement, ZxMeasurement) {
-    let z_measurement = generate_perfect_Z_measurement(z_error);
-    let shape = z_error.shape();
-    assert_eq!(shape, x_error.shape());
-    let L = shape[0];  // shape already checked to be [L][L] in `generate_perfect_Z_measurement`
-    // not efficient, just to reuse code
-    let mut rotated_ro = ndarray::Array::from_shape_fn((L, L), |_| false);
-    let mut rotated = rotated_ro.view_mut();
-    for i in 0..L {
-        for j in 0..L {
-            rotated[[i, j]] = x_error[[L-1-j, i]];
-        }
-    }
-    let x_measurement = generate_perfect_Z_measurement(&ZxError::new(rotated_ro));
-    (z_measurement, x_measurement)
-}
+// pub fn validate_correction_perfect_measurement(zx_error: &ZxError, zx_correction: &ZxCorrection) {
+
+// }

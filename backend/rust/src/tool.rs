@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use super::clap;
 use super::util;
 use super::rand::prelude::*;
@@ -5,7 +7,6 @@ use super::serde_json;
 use std::path::Path;
 use super::types::*;
 
-#[allow(non_snake_case)]
 pub fn run_matched_tool(matches: &clap::ArgMatches) {
     match matches.subcommand() {
         ("generate_random_errors", Some(matches)) => {
@@ -27,7 +28,6 @@ default example:
     p = 3e-2,1e-2,3e-3,1e-3,3e-4,1e-4
 `cargo run --release -- tool generate_random_errors [5,9,13,21,29] [3e-2,1e-2,3e-3,1e-3,3e-4,1e-4] 1`
 **/
-#[allow(non_snake_case)]
 fn generate_random_errors(Ls: &Vec<usize>, ps: &Vec<f64>, N: usize, directory: &str) {
     for pp in ps {
         for pL in Ls {

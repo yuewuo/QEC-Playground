@@ -20,6 +20,8 @@ fn main() {
         (@subcommand test => (about: "testing features")
             (setting: clap::AppSettings::SubcommandRequiredElseHelp)
             (@subcommand save_load => (about: "testing save and load functionality"))
+            (@subcommand perfect_measurement => (about: "print a perfect measurement"))
+            (@subcommand debug_tests => (about: "test for debug"))
         )
         (@subcommand tool => (about: "tools")
             (setting: clap::AppSettings::SubcommandRequiredElseHelp)
