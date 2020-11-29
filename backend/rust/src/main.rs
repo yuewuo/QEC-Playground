@@ -21,6 +21,7 @@ fn main() {
             (setting: clap::AppSettings::SubcommandRequiredElseHelp)
             (@subcommand save_load => (about: "testing save and load functionality"))
             (@subcommand perfect_measurement => (about: "print a perfect measurement"))
+            (@subcommand validate_correction => (about: "validate x and z correction"))
             (@subcommand debug_tests => (about: "test for debug"))
         )
         (@subcommand tool => (about: "tools")

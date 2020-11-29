@@ -77,34 +77,10 @@ pub fn save(filepath: &str, head: &Value, data: &BatchZxError) -> std::io::Resul
     Ok(())
 }
 
-// pub fn generate_perfect_Z_measurement(error: &ZxError) -> ZxMeasurement {
-//     let L = error.L();
-//     let mut measurement_ro = ndarray::Array::from_elem((L+1, L+1), false);
-//     let mut measurement = measurement_ro.view_mut();
-//     for i in 0..L+1 {
-//         for j in 0..L-1 {
-//             if i + j % 2 == 1 {  // only when i+j is odd
-//                 // XOR a(i-1,j), b(i-1,j+1), c(i,j), d(i,j+1) if exist
-//                 let i_minus_exists = i > 0;
-//                 let i_exists = i < L;
-//                 let mut result = false;
-//                 if i_minus_exists {
-//                     result |= error[[i-1, j]] | error[[i-1, j+1]];
-//                 }
-//                 if i_exists {
-//                     result |= error[[i, j]] | error[[i, j+1]];
-//                 }
-//                 measurement[[i, j]] = result;
-//             }
-//         }
-//     }
-//     ZxMeasurement::new(measurement_ro)
-// }
-
 /// X errors are only detected by Z stabilizers
 pub fn generate_perfect_measurements(x_error: &ZxError, z_error: &ZxError) -> ZxMeasurement {
     assert_eq!(x_error.shape(), z_error.shape());
-    let L = z_error.L();
+    let L = x_error.L();
     let mut measurement_ro = ndarray::Array::from_elem((L+1, L+1), false);
     let mut measurement = measurement_ro.view_mut();
     for i in 0..L+1 {
@@ -139,7 +115,3 @@ pub fn generate_perfect_measurements(x_error: &ZxError, z_error: &ZxError) -> Zx
     }
     ZxMeasurement::new(measurement_ro)
 }
-
-// pub fn validate_correction_perfect_measurement(zx_error: &ZxError, zx_correction: &ZxCorrection) {
-
-// }

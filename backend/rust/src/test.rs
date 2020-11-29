@@ -18,6 +18,9 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
         ("debug_tests", Some(_)) => {
             debug_tests()
         }
+        ("validate_correction", Some(_)) => {
+            validate_correction()
+        }
         _ => unreachable!()
     }
 }
@@ -66,31 +69,50 @@ fn save_load() {
 }
 
 fn perfect_measurement() {
-    let mut z_error_ro = ZxError::new_L(5);
-    let mut z_error = z_error_ro.view_mut();
-    z_error[[1, 0]] = true;
-    z_error[[3, 2]] = true;
-    z_error[[3, 3]] = true;
-    println!("z_error_ro:");
-    z_error_ro.print();
-    let zx_measurement= util::generate_perfect_measurements(&z_error_ro, &z_error_ro);
+    let mut x_error_ro = ZxError::new(ndarray::Array::from_elem((5, 5), false));
+    let mut x_error = x_error_ro.view_mut();
+    x_error[[1, 0]] = true;
+    x_error[[3, 2]] = true;
+    x_error[[3, 3]] = true;
+    println!("x_error_ro:");
+    x_error_ro.print();
+    let zx_measurement= util::generate_perfect_measurements(&x_error_ro, &x_error_ro);
     println!("zx_measurement:");
     zx_measurement.print();
     // test rotation of measurement
     assert_eq!(zx_measurement.rotate_x2z().rotate_z2x(), zx_measurement);
-}
-
-fn debug_tests() {
-    let mut z_error_ro = ZxError::new_L(5);
-    let mut z_error = z_error_ro.view_mut();
-    z_error[[1, 0]] = true;
-    z_error[[3, 2]] = true;
-    z_error[[3, 3]] = true;
-    println!("z_error_ro:");
-    z_error_ro.print();
-    let rotated_clockwise = z_error_ro.rotate_x2z();
+    // test rotation of ZxError
+    let rotated_clockwise = x_error_ro.rotate_x2z();
     println!("rotated_clockwise:");
     rotated_clockwise.print();
     let rotated_back = rotated_clockwise.rotate_z2x();
-    assert_eq!(z_error_ro, rotated_back);
+    assert_eq!(x_error_ro, rotated_back);
+}
+
+fn validate_correction() {
+    let L = 5;
+    let mut x_error_ro = ZxError::new_L(L);
+    let mut x_error = x_error_ro.view_mut();
+    x_error[[1, 0]] = true;
+    x_error[[3, 2]] = true;
+    x_error[[3, 3]] = true;
+    println!("z_error_ro:");
+    x_error_ro.print();
+    // correction of the same as error must succeed
+    let mut x_correction_ro = x_error_ro.clone();
+    assert_eq!(x_error_ro.validate_x_correction(&x_correction_ro), Ok(()));
+    // if there is a -1 Z stabilizer, it fails
+    let mut x_correction = x_correction_ro.view_mut();
+    x_correction[[1, 0]] = false;  // does not correct because Z stabilizer at (1, 1)
+    assert_eq!(x_error_ro.validate_x_correction(&x_correction_ro), Err("Z stabilizer is at -1 eigenstate at (1,1)".to_string()));
+    // if there is a logical operator, it fails
+    let mut x_correction = x_correction_ro.view_mut();
+    for i in 1..L {
+        x_correction[[1, i]] = true;
+    }
+    assert_eq!(x_error_ro.validate_x_correction(&x_correction_ro), Err("there is logical operator after correction".to_string()));
+}
+
+fn debug_tests() {
+    
 }
