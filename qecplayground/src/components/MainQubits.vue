@@ -267,11 +267,13 @@ export default {
 			this.zDataQubitsErrors[3][3] = 1
 			console.log(await this.get_correction())
 		},
-		async get_correction(decoder="stupid_decoder") {
+		async get_correction(decoder="stupid_decoder", x_error, z_error) {
+			x_error = x_error || this.xDataQubitsErrors
+			z_error = z_error || this.zDataQubitsErrors
 			let request_data = {
 				L: this.L,
-				x_error: this.xDataQubitsErrors,
-				z_error: this.zDataQubitsErrors,
+				x_error: x_error,
+				z_error: z_error,
 			}
 			return (await this.internals.axios.request({
 				url: "/" + decoder,
@@ -458,6 +460,9 @@ export default {
 				array.push(row)
 			}
 			return array
+		},
+		copySquareArray(array) {
+			return this.makeSquareArray(array.length, (i,j) => array[i][j])
 		},
 		generateDataQubits() {
 			const qubits = []

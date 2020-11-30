@@ -16,11 +16,11 @@
 					Code Distance:
 					<el-input-number v-model="code_distance" @change="code_distance_changed"></el-input-number>
 					<div style="height: 20px;"></div>
-					Pauli Operators:
-					<el-radio-group v-model="pauli_display">
-						<el-radio-button label="error_only">Error Only</el-radio-button>
+					Display:
+					<el-radio-group v-model="display_mode">
+						<el-radio-button label="error_only">Error</el-radio-button>
 						<el-radio-button label="correction_only">Correction</el-radio-button>
-						<el-radio-button label="both">Both</el-radio-button>
+						<el-radio-button label="corrected">Corrected</el-radio-button>
 					</el-radio-group>
 					<div style="height: 20px;"></div>
 					<el-switch v-model="measurement_display" active-text="display measurement" inactive-text="Do not display measuremnt"></el-switch>
@@ -32,13 +32,17 @@
 					<span>Customize Error Pattern</span>
 					<el-button style="float: right; padding: 3px 0" type="text" disabled>help</el-button>
 				</div>
-				<div style="position: relative;">
+				<div style="position: relative; width: 100%">
 					<el-button type="success" class="toggle-error-button" :plain="!toggle_X_error" @click="enable_toggle_error(true)">
 						Toggle X Error (bit-flip error)</el-button>
 					<div style="height: 10px;"></div>
 					<el-button type="primary" class="toggle-error-button" :plain="!toggle_Z_error" @click="enable_toggle_error(false)">
 						Toggle Z Error (phase-flip error)</el-button>
-					<el-button type="danger" class="clear-error-button" @click="clear_error()" :disabled="pauli_display!='error_only'">Clear Error</el-button>
+					<el-button type="danger" class="clear-error-button" @click="clear_error()" :disabled="display_mode!='error_only'">Clear Error</el-button>
+				</div>
+				<div style="position: relative; margin-top: 10px;">
+					<el-button type="info" class="full-width" @click="use_as_error()">
+						Use Current Pauli Operators as Error Syndrome</el-button>
 				</div>
 			</el-card>
 			<div style="height: 10px;"></div>
@@ -75,7 +79,12 @@ export default {
 
 			toggle_X_error: false,
 			toggle_Z_error: false,
-			pauli_display: "error_only",
+			display_mode: "error_only",
+			modes: {
+				error_only: "error_only",
+				correction_only: "correction_only",
+				corrected: "corrected",
+			},
 			measurement_display: true,
 			code_distance: 5,
 			L: 5,
@@ -111,17 +120,31 @@ export default {
 				}
 			}
 		},
-		refresh() {
-			if (this.pauli_display == "error_only") {
-				this.copy_matrix(this.$refs.qubits.xDataQubitsErrors, this.x_error)
-				this.copy_matrix(this.$refs.qubits.zDataQubitsErrors, this.z_error)
-				this.$refs.qubits.update_measurement()
+		combined_L2(a, b) {  // a and b should both be [L][L] of 0 ~ 1
+			return this.$refs.qubits.makeSquareArray(this.L, (i,j) => a[i][j] ^ b[i][j])
+		},
+		get_displayed_errors() {
+			if (this.display_mode == this.modes.error_only) {
+				return [this.x_error, this.z_error]
 			}
+			if (this.display_mode == this.modes.correction_only) {
+				return [this.x_correction, this.z_correction]
+			}
+			if (this.display_mode == this.modes.corrected) {
+				return [this.combined_L2(this.x_error, this.x_correction), this.combined_L2(this.z_error, this.z_correction)]
+			}
+			throw "unknown display mode"
+		},
+		refresh() {
+			let [display_x_error, display_z_error] = this.get_displayed_errors()
+			this.copy_matrix(this.$refs.qubits.xDataQubitsErrors, display_x_error)
+			this.copy_matrix(this.$refs.qubits.zDataQubitsErrors, display_z_error)
+			this.$refs.qubits.update_measurement()
 		},
 		dataQubitClicked(data) {
 			let [i, j, absTime] = data
 			if (!this.toggle_X_error && !this.toggle_Z_error) return  // ignore event
-			if (this.pauli_display != "error_only") {
+			if (this.display_mode != this.modes.error_only) {
 				this.$notify.error({
 					title: 'Action Failed',
 					message: 'You can only customize error pattern in "Error Only" mode (see "Global Settings" -> "Pauli Operators")'
@@ -152,14 +175,25 @@ export default {
 			}
 			this.refresh()
 		},
+		use_as_error() {
+			let [display_x_error, display_z_error] = this.get_displayed_errors()
+			this.x_error = this.$refs.qubits.copySquareArray(display_x_error)
+			this.z_error = this.$refs.qubits.copySquareArray(display_z_error)
+			this.display_mode = this.modes.error_only
+			this.refresh()
+		},
 		code_distance_changed(val, oldVal) {
 			if (val < oldVal) this.code_distance = Math.floor((val - 1) / 2) * 2 + 1
 			else this.code_distance = Math.ceil((val - 1) / 2) * 2 + 1
 			this.L = this.code_distance
 		},
 		async run_correction() {
-			let data = await this.$refs.qubits.get_correction(this.decoder)
-			console.log(data)
+			let data = await this.$refs.qubits.get_correction(this.decoder, this.x_error, this.z_error)
+			// console.log(data)
+			this.x_correction = data.x_correction
+			this.z_correction = data.z_correction
+			this.display_mode = this.modes.corrected
+			this.refresh()
 		},
 		onChangeL() {
 			this.x_error = this.$refs.qubits.makeSquareArray(this.L)
@@ -172,6 +206,9 @@ export default {
 	watch: {
 		L() {
 			this.onChangeL()
+		},
+		display_mode() {
+			this.refresh()
 		},
 	},
 }
@@ -233,9 +270,17 @@ export default {
 	bottom: 0;
 }
 
+.full-width {
+	width: 100%;
+}
+
 .big-button {
 	width: 100%;
 	height: 100px;
+}
+
+div::-webkit-scrollbar {
+	width: 0;
 }
 
 </style>
