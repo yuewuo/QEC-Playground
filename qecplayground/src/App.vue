@@ -1,6 +1,6 @@
 <template>
 	<div id="app">
-		<MainQubits class="main-qubits" :panelWidth="480"/>
+		<MainQubits class="main-qubits" :panelWidth="480" :enableStats="enableStats" :decoderServerRootUrl="decoderServerRootUrl"/>
 		<div class="control-panel">
 			<h1 class="title"><img src="@/assets/logo.png" class="logo"/>QEC Playground</h1>
 			<p>This is an educational tool for Quantum Error Correction (QEC). You can learn the currently most promising QEC scheme called surface code (planar code) by following the introduction tutorial and then trying different error patterns interactively.</p>
@@ -10,6 +10,7 @@
 
 <script>
 import MainQubits from './components/MainQubits.vue'
+let deploy_mode = process.env.NODE_ENV != "development"
 
 export default {
 	name: 'app',
@@ -18,8 +19,16 @@ export default {
 	},
 	data() {
 		return {
-			
+			deploy_mode: deploy_mode,
 		}
+	},
+	computed: {
+		enableStats() {
+			return !deploy_mode
+		},
+		decoderServerRootUrl() {
+			return deploy_mode ? "/api/qecp/" : "http://127.0.0.1:8066/"
+		},
 	},
 	mounted() {
 		
