@@ -66,8 +66,10 @@ async fn stupid_decoder(form: web::Json<DecodeSingleForm>) -> Result<HttpRespons
     let x_corrected = x_error.do_correction(&x_correction);
     let z_corrected = z_error.do_correction(&z_correction);
     let corrected_measurement = util::generate_perfect_measurements(&x_corrected, &z_corrected);
-    let x_validate = x_error.validate_x_correction(&x_correction).is_ok();
-    let z_validate = z_error.validate_z_correction(&z_correction).is_ok();
+    let x_valid = x_error.validate_x_correction(&x_correction).is_ok();
+    let z_valid = z_error.validate_z_correction(&z_correction).is_ok();
+    let if_all_x_stabilizers_plus1 = z_corrected.if_all_x_stabilizers_plus1();  // x stabilizers only detect z errors
+    let if_all_z_stabilizers_plus1 = x_corrected.if_all_z_stabilizers_plus1();
     let ret = json!({
         "x_error": output_L2_bit_array_to_json(&x_error),
         "z_error": output_L2_bit_array_to_json(&z_error),
@@ -76,9 +78,11 @@ async fn stupid_decoder(form: web::Json<DecodeSingleForm>) -> Result<HttpRespons
         "z_correction": output_L2_bit_array_to_json(&z_correction),
         "x_corrected": output_L2_bit_array_to_json(&x_corrected),
         "z_corrected": output_L2_bit_array_to_json(&z_corrected),
-        "corrected_measurement": output_L2_bit_array_to_json(&corrected_measurement),        
-        "x_validate": x_validate,
-        "z_validate": z_validate,
+        "corrected_measurement": output_L2_bit_array_to_json(&corrected_measurement),
+        "x_valid": x_valid,
+        "z_valid": z_valid,
+        "if_all_x_stabilizers_plus1": if_all_x_stabilizers_plus1,
+        "if_all_z_stabilizers_plus1": if_all_z_stabilizers_plus1,
     });
     Ok(HttpResponse::Ok().body(serde_json::to_string(&ret)?))
 }

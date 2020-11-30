@@ -72,6 +72,12 @@ impl ZxError {
     pub fn validate_z_correction(&self, z_correction: &ZxCorrection) -> Result<(), String> {
         validate_z_correction(&self, z_correction)
     }
+    pub fn if_all_z_stabilizers_plus1(&self) -> bool {
+        if_all_z_stabilizers_plus1(&self).is_ok()
+    }
+    pub fn if_all_x_stabilizers_plus1(&self) -> bool {
+        if_all_x_stabilizers_plus1(&self).is_ok()
+    }
 }
 
 impl Deref for BatchZxError {
