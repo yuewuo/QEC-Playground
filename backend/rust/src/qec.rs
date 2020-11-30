@@ -50,7 +50,7 @@ pub fn stupid_correction(measurement: &ZxMeasurement) -> (ZxCorrection, ZxCorrec
                         vertex.connect_to_boundary = Some((i-1, 0));
                     }
                     if j == L - 1 {  // boundary is on right
-                        vertex.connect_to_boundary = Some((i+1, L-1));
+                        vertex.connect_to_boundary = Some((i, L-1));
                     }
                     pos_to_index[[i, j]] = vertices.len() as isize;
                     if measurement[[i, j]] {

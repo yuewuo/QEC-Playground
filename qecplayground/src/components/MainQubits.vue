@@ -579,6 +579,14 @@ export default {
 			this.internals.xDataErrors = xErrors
 			this.internals.dataErrorArray = array
 		},
+		clear_error() {
+			for (let i=0; i < this.L; ++i) {
+				for (let j=0; j < this.L; ++j) {
+					this.xDataQubitsErrors[i][j] = 0
+					this.zDataQubitsErrors[i][j] = 0
+				}
+			}
+		},
 		onChangeL(val, old) {
 			if (old != null) {  // destroy things
 				for (const disposable of this.internals.disposable) disposable.dispose()
