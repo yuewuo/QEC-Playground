@@ -13,6 +13,7 @@
   },
   "main": "background.js",
   "dependencies": {
+    "axios": "^0.21.0",
     "core-js": "^2.6.5",
     "electron": "^10.1.5",
     "three": "^0.122.0",

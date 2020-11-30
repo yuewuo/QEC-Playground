@@ -8,6 +8,7 @@
 import * as THREE from 'three'
 import Stats from 'three/examples/jsm/libs/stats.module.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import axios from 'axios'
 
 export default {
 	name: 'MainQubits',
@@ -17,6 +18,10 @@ export default {
 			default: 5,
 		},
 
+		decoderServerRootUrl: {
+			type: String,
+			default: () => "http://127.0.0.1:8066/"
+		},
 		dataErrorTopParameters: {  // list of [radius, angle, angleOffset, cyclePerSec] ...
 			type: Array,
 			default: () => [
@@ -146,6 +151,17 @@ export default {
 		this.three.clock = new THREE.Clock()
 		this.three.clockAbs = new THREE.Clock()
 
+		// create axios instance
+		this.internals.axios = axios.create({
+            baseURL: this.decoderServerRootUrl,
+            method: 'get,post,put,patch,delete',
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type,X-Auth-Token",
+                "Access-Control-Allow-Methods": "PUT,POST,GET",
+            },
+        })
+
 		// add camera and renderer
 		const windowWidth = window.innerWidth-this.panelWidth
 		const windowHeight = window.innerHeight
@@ -243,8 +259,25 @@ export default {
 
 	},
 	methods: {
-		test() {
-			this.three.xDataErrorGeometry.rotateY(Math.PI / 2)
+		async test() {
+			// let ret = await this.internals.axios.get("/hello")
+			this.xDataQubitsErrors[1][0] = 1
+			this.xDataQubitsErrors[3][2] = 1
+			this.xDataQubitsErrors[3][3] = 1
+			this.zDataQubitsErrors[3][3] = 1
+			console.log(await this.get_correction())
+		},
+		async get_correction(decoder="stupid_decoder") {
+			let request_data = {
+				L: this.L,
+				x_error: this.xDataQubitsErrors,
+				z_error: this.zDataQubitsErrors,
+			}
+			return (await this.internals.axios.request({
+				url: "/" + decoder,
+				method: "post",
+				data: request_data,
+			})).data
 		},
 		// from old change to new, after `T` seconds, the value difference would be 1/e of the original one
 		smoothValue(val, old, delta, T=null, threshold=0.01) {

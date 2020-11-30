@@ -3,13 +3,18 @@ mod test;
 mod tool;
 mod types;
 mod qec;
+mod web;
 
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;
 extern crate ndarray;
 extern crate rand;
+extern crate actix_web;
+extern crate actix_cors;
+extern crate serde;
 
-fn main() {
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
 
     let matches = clap_app!(QECPlayground =>
         (version: "1.0")
@@ -35,6 +40,11 @@ fn main() {
                 (@arg directory: -d +takes_value "directory to output files, default to ./")
             )
         )
+        (@subcommand server => (about: "HTTP server for decoding information")
+            (@arg port: -p --port +takes_value "listening on <addr>:<port>, default to 8066")
+            (@arg addr: -a --addr +takes_value "listening on <addr>:<port>, default to \"127.0.0.1\"")
+            (@arg root_url: -r --root_url +takes_value "root url")
+        )
     ).get_matches();
 
     match matches.subcommand() {
@@ -44,7 +54,18 @@ fn main() {
         ("tool", Some(matches)) => {
             tool::run_matched_tool(&matches);
         }
+        ("server", Some(matches)) => {
+            let port = matches.value_of("port").unwrap_or("8066").to_string().parse::<i32>().unwrap();
+            let addr = matches.value_of("addr").unwrap_or("127.0.0.1").to_string();
+            let root_url = matches.value_of("root_url").unwrap_or("/").to_string();
+            println!("QECP server booting...");
+            println!("visit http://{}:{}{}<commands>", addr, port, root_url);
+            println!("supported commands include `hello`, `stupid_decoder`, etc. See `web.rs` for more commands");
+            web::run_server(port, addr, root_url).await?;
+        }
         _ => unreachable!()
     }
+
+    Ok(())
 
 }

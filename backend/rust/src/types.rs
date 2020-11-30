@@ -33,12 +33,12 @@ impl DerefMut for ZxError {
 }
 
 impl ZxError {
-    // pub fn new(array: ndarray::Array2<bool>) -> Self {
-    //     let shape = array.shape();
-    //     assert_eq!(shape.len(), 2);
-    //     assert_eq!(shape[0], shape[1]);
-    //     Self(array)
-    // }
+    pub fn new(array: ndarray::Array2<bool>) -> Self {
+        let shape = array.shape();
+        assert_eq!(shape.len(), 2);
+        assert_eq!(shape[0], shape[1]);
+        Self(array)
+    }
     pub fn new_L(L: usize) -> Self {
         Self(ndarray::Array::from_elem((L, L), false))
     }
