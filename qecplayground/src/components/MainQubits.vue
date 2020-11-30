@@ -1,7 +1,5 @@
 <template>
-  <div class="main" id="main_qubits_container">
-	
-  </div>
+  <div class="main" id="main_qubits_container"></div>
 </template>
 
 <script>
@@ -43,16 +41,24 @@ export default {
 			default: true
 		},
 		dataQubitColor: {
-			type: Number,
-			default: 0xFFA600
+			type: Object,
+			default: () => new THREE.Color( 1, 0.65, 0 )
 		},
 		zStabQubitColor: {
-			type: Number,
-			default: 0x00BFFF
+			type: Object,
+			default: () => new THREE.Color( 0, 0.75, 1 )
 		},
 		xStabQubitColor: {
-			type: Number,
-			default: 0x00CC00
+			type: Object,
+			default: () => new THREE.Color( 0, 0.8, 0 )
+		},
+		zStabErrorColor: {
+			type: Object,
+			default: () => new THREE.Color( 1, 0.15, 0.2 )
+		},
+		xStabErrorColor: {
+			type: Object,
+			default: () => new THREE.Color( 1, 0.16, 0 )
 		},
 		dataQubitYBias: {  // Y bias of data qubits
 			type: Number,
@@ -150,6 +156,7 @@ export default {
 			dataQubitsDynamicYBias: [ ],  // [L][L] float numbers
 			zDataQubitsErrors: [ ],  // [L][L] 0 ~ 1
 			xDataQubitsErrors: [ ],  // [L][L] 0 ~ 1
+			ancillaQubitsErrors: [ ],  // [L+1][L+1] 0 ~ 1
 		}
 	},
 	mounted() {
@@ -225,16 +232,6 @@ export default {
 		this.three.pointCloudMaterial = new THREE.PointsMaterial( { size: this.pointSize, vertexColors: true } )
 		this.three.dataQubitGeometry = new THREE.SphereBufferGeometry( this.dataQubitSize, 48, 24 )
 		this.three.ancillaQubitGeometry = new THREE.SphereBufferGeometry( this.dataQubitSize, 48, 24 )
-		this.three.zStabMaterial = new THREE.MeshBasicMaterial( {
-			color: this.zStabQubitColor,
-			envMap: this.three.scene.background,
-			reflectivity: 0.5,
-		} )
-		this.three.xStabMaterial = new THREE.MeshBasicMaterial( {
-			color: this.xStabQubitColor,
-			envMap: this.three.scene.background,
-			reflectivity: 0.5,
-		} )
 		this.three.zDataErrorGeometry = new THREE.TorusGeometry( 0.1, 0.03, 32, 32 )
 		this.three.zDataErrorGeometry.rotateY(Math.PI /2)
 		this.three.xDataErrorGeometry = new THREE.TorusGeometry( 0.1, 0.03, 32, 32 )
@@ -387,6 +384,19 @@ export default {
 						, this.internals.xDataErrorTopMaterials[i][j].opacity, delta)
 				}
 			}
+			for (let i=0; i <= this.L; ++i) {
+				for (let j=0; j <= this.L; ++j) {
+					const isZ = ((i + j) % 2) == 0
+					let exist = true
+					if (isZ && (j < 1 || j >= this.L)) exist = false
+					if (!isZ && (i < 1 || i >= this.L)) exist = false
+					if (!exist) continue
+					let targetColor = isZ ? this.zStabQubitColor : this.xStabQubitColor
+					if (this.ancillaQubitsErrors[i][j]) targetColor = isZ ? this.zStabErrorColor : this.xStabErrorColor
+					this.internals.ancillaQubitsMaterials[i][j].color = this.smoothColor(targetColor
+						, this.internals.ancillaQubitsMaterials[i][j].color, delta)
+				}
+			}
 			for (let i = 0; i < this.internals.ancillaQubits.length; ++i) {
 				for (let j = 0; j < this.internals.ancillaQubits[i].length; ++j) {
 					let qubit = this.internals.ancillaQubits[i][j]
@@ -495,6 +505,13 @@ export default {
 			const array = []
 			const bias = (this.L - 1) / 2 + 0.5
 			this.ancillaQubitsDynamicYBias = this.makeSquareArray(this.L + 1)
+			this.ancillaQubitsErrors = this.makeSquareArray(this.L + 1)
+			const disposeOnRefresh = this.disposeOnRefresh
+			this.internals.ancillaQubitsMaterials = this.makeSquareArray(this.L + 1, ((i,j) => disposeOnRefresh(new THREE.MeshBasicMaterial( {
+				color: ((i + j) % 2) == 0 ? this.zStabQubitColor : this.xStabQubitColor,
+				envMap: this.three.scene.background,
+				reflectivity: 0.5,
+			} ))))
 			for (let i=0; i <= this.L; ++i) {
 				const row = []
 				for (let j=0; j <= this.L; ++j) {
@@ -506,8 +523,7 @@ export default {
 						row.push(null)
 						continue
 					}
-					const material = isZ ? this.three.zStabMaterial : this.three.xStabMaterial
-					const mesh = new THREE.Mesh( this.three.ancillaQubitGeometry, material )
+					const mesh = new THREE.Mesh( this.three.ancillaQubitGeometry, this.internals.ancillaQubitsMaterials[i][j] )
 					mesh.position.y = this.dataQubitYBias - this.waveHeight
 					mesh.position.z = i - bias
 					mesh.position.x = j - bias
