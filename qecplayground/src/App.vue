@@ -48,7 +48,7 @@
 			<div style="height: 10px;"></div>
 			<el-card>
 				<div slot="header" class="clearfix">
-					<span>Error Correction</span>
+					<span>Run Error Correction</span>
 					<el-button style="float: right; padding: 3px 0" type="text" disabled>help</el-button>
 				</div>
 				<div style="position: relative;">
@@ -56,7 +56,12 @@
 					<el-select v-model="decoder" placeholder="Select a decoder">
 						<el-option v-for="item in available_decoders" :key="item.value" :label="item.label" :value="item.value"> </el-option>
 					</el-select>
+					<el-button type="danger" style="width: 75px; margin-left: 5px;" @click="clear_correction">Clear</el-button>
 					<div style="height: 15px;"></div>
+					<div v-if="has_correction">
+						<el-alert :title="correction_succeed ? 'Error correction succeeds without breaking the logical state' : 'Error correction fails because ' + correction_fail_reason" :type="correction_succeed ? 'success' : 'error'" :closable="false" show-icon></el-alert>
+						<div style="height: 15px;"></div>
+					</div>
 					<el-button type="success" class="big-button" @click="run_correction" :disabled="L < 3">Run Correction</el-button>
 				</div>
 			</el-card>
@@ -92,6 +97,9 @@ export default {
 			available_decoders: [
 				{ value: "stupid_decoder", label: "Stupid Decoder" },
 			],
+			has_correction: false,
+			correction_succeed: false,
+			correction_fail_reason: "some very very long long long reason",
 
 			x_error: [ ],  // [L][L] 0 ~ 1
 			z_error: [ ],  // [L][L] 0 ~ 1
@@ -113,6 +121,11 @@ export default {
 		this.onChangeL()
 	},
 	methods: {
+		clear_correction() {
+			this.x_correction = this.$refs.qubits.makeSquareArray(this.L)
+			this.z_correction = this.$refs.qubits.makeSquareArray(this.L)
+			this.has_correction = false
+		},
 		copy_matrix(target, source) {
 			for (let i=0; i<source.length; ++i) {
 				for (let j=0; j<source[i].length; ++j) {
@@ -194,6 +207,21 @@ export default {
 			this.x_correction = data.x_correction
 			this.z_correction = data.z_correction
 			this.display_mode = this.modes.corrected
+			this.has_correction = true
+			this.correction_succeed = data.x_valid && data.z_valid
+			if (!this.correction_succeed) {  // get some reason
+				let reason = null
+				if (!data.x_valid) {
+					if (!data.if_all_z_stabilizers_plus1) reason = "some of the Z stabilizers are not +1"
+					else reason = "a X logical operator destroys the logical state"
+				}
+				if (!data.z_valid) {
+					reason = reason ? reason + " and " : ""
+					if (!data.if_all_x_stabilizers_plus1) reason += "some of the X stabilizers are not +1"
+					else reason += "a Z logical operator destroys the logical state"
+				}
+				this.correction_fail_reason = reason
+			}
 			this.refresh()
 		},
 		onChangeL() {
