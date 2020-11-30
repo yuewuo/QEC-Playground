@@ -57,7 +57,7 @@
 						<el-option v-for="item in available_decoders" :key="item.value" :label="item.label" :value="item.value"> </el-option>
 					</el-select>
 					<div style="height: 15px;"></div>
-					<el-button type="success" class="big-button" @click="run_correction">Run Correction</el-button>
+					<el-button type="success" class="big-button" @click="run_correction" :disabled="L < 3">Run Correction</el-button>
 				</div>
 			</el-card>
 		</div>
@@ -139,7 +139,7 @@ export default {
 			let [display_x_error, display_z_error] = this.get_displayed_errors()
 			this.copy_matrix(this.$refs.qubits.xDataQubitsErrors, display_x_error)
 			this.copy_matrix(this.$refs.qubits.zDataQubitsErrors, display_z_error)
-			this.$refs.qubits.update_measurement()
+			if (this.measurement_display) this.$refs.qubits.update_measurement()
 		},
 		dataQubitClicked(data) {
 			let [i, j, absTime] = data
@@ -185,7 +185,8 @@ export default {
 		code_distance_changed(val, oldVal) {
 			if (val < oldVal) this.code_distance = Math.floor((val - 1) / 2) * 2 + 1
 			else this.code_distance = Math.ceil((val - 1) / 2) * 2 + 1
-			this.L = this.code_distance
+			if (this.code_distance < 1) this.code_distance = 1  // 1 is just for demonstration
+			if (this.L != this.code_distance) this.L = this.code_distance
 		},
 		async run_correction() {
 			let data = await this.$refs.qubits.get_correction(this.decoder, this.x_error, this.z_error)
@@ -208,6 +209,12 @@ export default {
 			this.onChangeL()
 		},
 		display_mode() {
+			this.refresh()
+		},
+		measurement_display() {
+			if (!this.measurement_display) {
+				for (let i=0; i<=this.L; ++i) for (let j=0; j<=this.L; ++j) this.$refs.qubits.ancillaQubitsErrors[i][j] = 0
+			}
 			this.refresh()
 		},
 	},
