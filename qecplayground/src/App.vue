@@ -1,9 +1,25 @@
 <template>
 	<div id="app">
-		<MainQubits class="main-qubits" :panelWidth="480" :enableStats="enableStats" :decoderServerRootUrl="decoderServerRootUrl"/>
+		<MainQubits class="main-qubits" :panelWidth="480" :enableStats="enableStats" :decoderServerRootUrl="decoderServerRootUrl"
+			:toggleXError="toggle_X_error" :toggleZError="toggle_Z_error"/>
 		<div class="control-panel">
-			<h1 class="title"><img src="@/assets/logo.png" class="logo"/>QEC Playground</h1>
-			<p>This is an educational tool for Quantum Error Correction (QEC). You can learn the currently most promising QEC scheme called surface code (planar code) by following the introduction tutorial and then trying different error patterns interactively.</p>
+			<div style="text-align: center;">
+				<h1 class="title"><img src="@/assets/logo.png" class="logo"/>QEC Playground</h1>
+				<p>This is an educational tool for Quantum Error Correction (QEC). You can learn the currently most promising QEC scheme called surface code (planar code) by following the introduction tutorial and then trying different error patterns interactively.</p>
+			</div>
+			<el-card>
+				<div slot="header" class="clearfix">
+					<span>Customize Error Pattern</span>
+					<el-button style="float: right; padding: 3px 0" type="text">help</el-button>
+				</div>
+				<div>
+					<el-button type="success" class="full-width-button" :plain="!toggle_X_error" @click="enable_toggle_error(true)">
+						Toggle X Error (bit-flip error)</el-button>
+					<br><br>
+					<el-button type="primary" class="full-width-button" :plain="!toggle_Z_error" @click="enable_toggle_error(false)">
+						Toggle Z Error (phase-flip error)</el-button>
+				</div>
+			</el-card>
 		</div>
 	</div>
 </template>
@@ -20,6 +36,9 @@ export default {
 	data() {
 		return {
 			deploy_mode: deploy_mode,
+
+			toggle_X_error: false,
+			toggle_Z_error: false,
 		}
 	},
 	computed: {
@@ -34,7 +53,13 @@ export default {
 		
 	},
 	methods: {
-		
+		enable_toggle_error(is_X) {
+			if (is_X) {
+				this.toggle_X_error = !this.toggle_X_error
+			} else {
+				this.toggle_Z_error = !this.toggle_Z_error
+			}
+		},
 	},
 }
 </script>
@@ -45,7 +70,6 @@ export default {
 	font-family: 'Avenir', Helvetica, Arial, sans-serif;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
-	text-align: center;
 	color: #2c3e50;
 	position: fixed;
 	top: 0;
@@ -83,6 +107,10 @@ export default {
 	position: relative;
 	top: 10px;
 	right: 10px;
+}
+
+.full-width-button {
+	width: 100%;
 }
 
 </style>

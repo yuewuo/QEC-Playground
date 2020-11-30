@@ -61,8 +61,11 @@ async fn stupid_decoder(form: web::Json<DecodeSingleForm>) -> Result<HttpRespons
     if L < 2 { return Err(error::ErrorBadRequest("L must be no less than 2")) }
     let x_error = ZxError::new(parse_L2_bit_array_from_json(L, &form.x_error).map_err(|e| error::ErrorBadRequest(e))?);
     let z_error = ZxError::new(parse_L2_bit_array_from_json(L, &form.z_error).map_err(|e| error::ErrorBadRequest(e))?);
-    let measurement= util::generate_perfect_measurements(&x_error, &z_error);
+    let measurement = util::generate_perfect_measurements(&x_error, &z_error);
     let (x_correction, z_correction) = qec::stupid_correction(&measurement);
+    let x_corrected = x_error.do_correction(&x_correction);
+    let z_corrected = z_error.do_correction(&z_correction);
+    let corrected_measurement = util::generate_perfect_measurements(&x_corrected, &z_corrected);
     let x_validate = x_error.validate_x_correction(&x_correction).is_ok();
     let z_validate = z_error.validate_z_correction(&z_correction).is_ok();
     let ret = json!({
@@ -71,6 +74,9 @@ async fn stupid_decoder(form: web::Json<DecodeSingleForm>) -> Result<HttpRespons
         "measurement": output_L2_bit_array_to_json(&measurement),
         "x_correction": output_L2_bit_array_to_json(&x_correction),
         "z_correction": output_L2_bit_array_to_json(&z_correction),
+        "x_corrected": output_L2_bit_array_to_json(&x_corrected),
+        "z_corrected": output_L2_bit_array_to_json(&z_corrected),
+        "corrected_measurement": output_L2_bit_array_to_json(&corrected_measurement),        
         "x_validate": x_validate,
         "z_validate": z_validate,
     });

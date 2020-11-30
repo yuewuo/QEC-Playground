@@ -17,6 +17,14 @@ export default {
 			type: Number,
 			default: 5,
 		},
+		toggleXError: {
+			type: Boolean,
+			default: false
+		},
+		toggleZError: {
+			type: Boolean,
+			default: false
+		},
 
 		decoderServerRootUrl: {
 			type: String,
@@ -257,6 +265,9 @@ export default {
 		// start rendering
 		this.animate()
 
+		// add mouse down event listener
+		container.addEventListener( 'click', this.onMouseClicked, false );
+
 	},
 	methods: {
 		async test() {
@@ -278,6 +289,17 @@ export default {
 				method: "post",
 				data: request_data,
 			})).data
+		},
+		onMouseClicked() {
+			if (this.hoverDataQubit != null) {
+				let [i, j, absTime] = this.hoverDataQubit
+				if (this.toggleXError) {
+					this.xDataQubitsErrors[i][j] = 1 - this.xDataQubitsErrors[i][j]
+				}
+				if (this.toggleZError) {
+					this.zDataQubitsErrors[i][j] = 1 - this.zDataQubitsErrors[i][j]
+				}
+			}
 		},
 		// from old change to new, after `T` seconds, the value difference would be 1/e of the original one
 		smoothValue(val, old, delta, T=null, threshold=0.01) {
