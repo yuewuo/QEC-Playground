@@ -15,15 +15,7 @@ export default {
 			type: Number,
 			default: 5,
 		},
-		toggleXError: {
-			type: Boolean,
-			default: false
-		},
-		toggleZError: {
-			type: Boolean,
-			default: false
-		},
-
+		
 		decoderServerRootUrl: {
 			type: String,
 			default: () => "http://127.0.0.1:8066/"
@@ -290,12 +282,7 @@ export default {
 		onMouseClicked() {
 			if (this.hoverDataQubit != null) {
 				let [i, j, absTime] = this.hoverDataQubit
-				if (this.toggleXError) {
-					this.xDataQubitsErrors[i][j] = 1 - this.xDataQubitsErrors[i][j]
-				}
-				if (this.toggleZError) {
-					this.zDataQubitsErrors[i][j] = 1 - this.zDataQubitsErrors[i][j]
-				}
+				this.$emit('dataQubitClicked', [i, j, absTime])
 			}
 		},
 		// from old change to new, after `T` seconds, the value difference would be 1/e of the original one
@@ -595,14 +582,6 @@ export default {
 			this.internals.xDataErrors = xErrors
 			this.internals.dataErrorArray = array
 		},
-		clear_error() {
-			for (let i=0; i < this.L; ++i) {
-				for (let j=0; j < this.L; ++j) {
-					this.xDataQubitsErrors[i][j] = 0
-					this.zDataQubitsErrors[i][j] = 0
-				}
-			}
-		},
 		onChangeL(val, old) {
 			if (old != null) {  // destroy things
 				for (const disposable of this.internals.disposable) disposable.dispose()
@@ -624,6 +603,38 @@ export default {
 			this.internals.clickableGroup = clickableGroup
 			this.generateDataQubitsErrors()
 			for (const obj of this.internals.dataErrorArray) this.three.scene.add(obj)
+		},
+		update_measurement() {  // measure `this.zDataQubitsErrors` and `this.xDataQubitsErrors` then update `this.ancillaQubitsErrors`
+			for (let i=0; i<=this.L; ++i) {
+				for (let j=0; j<=this.L; ++j) {
+					if (j != 0 && j != this.L && (i+j)%2 == 0) {  // Z stabilizer only when i+j is even
+						// XOR a(i-1,j-1), b(i-1,j), c(i,j-1), d(i,j) if exist
+						let i_minus_exists = i > 0
+						let i_exists = i < this.L
+						let result = 0
+						if (i_minus_exists) {
+							result ^= this.xDataQubitsErrors[i-1][j-1] ^ this.xDataQubitsErrors[i-1][j]
+						}
+						if (i_exists) {
+							result ^= this.xDataQubitsErrors[i][j-1] ^ this.xDataQubitsErrors[i][j]
+						}
+						this.ancillaQubitsErrors[i][j] = result
+					}
+					if (i != 0 && i != this.L && (i+j)%2 == 1) {  // X stabilizer only when i+j is odd
+						// XOR a(i-1,j-1), b(i-1,j), c(i,j-1), d(i,j) if exist
+						let j_minus_exists = j > 0
+						let j_exists = j < this.L
+						let result = 0
+						if (j_minus_exists) {
+							result ^= this.zDataQubitsErrors[i-1][j-1] ^ this.zDataQubitsErrors[i][j-1];
+						}
+						if (j_exists) {
+							result ^= this.zDataQubitsErrors[i-1][j] ^ this.zDataQubitsErrors[i][j];
+						}
+						this.ancillaQubitsErrors[i][j] = result
+					}
+				}
+			}
 		},
 	},
 	watch: {
