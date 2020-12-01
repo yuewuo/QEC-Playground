@@ -156,10 +156,10 @@ fn stupid_correction() {
     x_error[[3, 3]] = true;
     println!("z_error_ro:");
     x_error_ro.print();
-    let zx_measurement= util::generate_perfect_measurements(&x_error_ro, &x_error_ro);
-    println!("zx_measurement:");
-    zx_measurement.print();
-    let (x_correction, z_correction) = qec::stupid_correction(&zx_measurement);
+    let measurement = util::generate_perfect_measurements(&x_error_ro, &x_error_ro);
+    println!("measurement:");
+    measurement.print();
+    let (x_correction, z_correction) = qec::stupid_correction(&measurement);
     assert_eq!(x_error_ro.validate_x_correction(&x_correction), Ok(()));
     assert_eq!(x_error_ro.validate_z_correction(&z_correction), Ok(()));
 }

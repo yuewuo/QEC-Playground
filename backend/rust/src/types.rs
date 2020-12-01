@@ -35,7 +35,6 @@ impl DerefMut for ZxError {
 impl ZxError {
     pub fn new(array: ndarray::Array2<bool>) -> Self {
         let shape = array.shape();
-        assert_eq!(shape.len(), 2);
         assert_eq!(shape[0], shape[1]);
         Self(array)
     }
@@ -96,7 +95,6 @@ impl DerefMut for BatchZxError {
 impl BatchZxError {
     pub fn new(array: ndarray::Array3<bool>) -> Self {
         let shape = array.shape();
-        assert_eq!(shape.len(), 3);
         assert_eq!(shape[1], shape[2]);
         Self(array)
     }

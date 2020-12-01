@@ -137,53 +137,53 @@ pub fn stupid_correction(measurement: &ZxMeasurement) -> (ZxCorrection, ZxCorrec
                     let v_idx = *v_idx;
                     let last_idx = *last_idx;
                     if let Some(propagated_error) = vertices[v_idx].propagated_error {
-                        // only care if it's not propagating back and also the propagated target is not yet matched, then match them
-                        if propagated_error != index && error_points[propagated_error].connected_to.is_none() {
-                            // mark both error points as connected
-                            error_points[propagated_error].connected_to = Some(Connection::ErrorPoint(index));
-                            error_points[index].connected_to = Some(Connection::ErrorPoint(propagated_error));
-                            // change the correction matrix along this path
-                            let mut idx = last_idx;
-                            let stop_error_idx = error_points[index].at;
-                            while idx != stop_error_idx {
-                                let i1 = vertices[idx].i;
-                                let j1 = vertices[idx].j;
-                                let back_idx = vertices[idx].propagated_from.expect("must have set `propagated_from`");  // must have `propagated_from`
-                                let i2 = vertices[back_idx].i;
-                                let j2 = vertices[back_idx].j;
+                        // only care if it's not propagating back
+                        if propagated_error != index {
+                            // if the propagated target is not yet matched, then match them
+                            if error_points[propagated_error].connected_to.is_none() {
+                                // mark both error points as connected
+                                error_points[propagated_error].connected_to = Some(Connection::ErrorPoint(index));
+                                error_points[index].connected_to = Some(Connection::ErrorPoint(propagated_error));
+                                // change the correction matrix along this path
+                                let mut idx = last_idx;
+                                let stop_error_idx = error_points[index].at;
+                                while idx != stop_error_idx {
+                                    let i1 = vertices[idx].i;
+                                    let j1 = vertices[idx].j;
+                                    let back_idx = vertices[idx].propagated_from.expect("must have set `propagated_from`");  // must have `propagated_from`
+                                    let i2 = vertices[back_idx].i;
+                                    let j2 = vertices[back_idx].j;
+                                    let i = (i1 + i2 - 1) / 2;
+                                    let j = (j1 + j2 - 1) / 2;
+                                    correction[[i, j]] ^= true;
+                                    idx = back_idx;
+                                }
+                                let stop_error_idx = error_points[propagated_error].at;
+                                idx = v_idx;
+                                while idx != stop_error_idx {
+                                    let i1 = vertices[idx].i;
+                                    let j1 = vertices[idx].j;
+                                    let back_idx = vertices[idx].propagated_from.expect("must have set `propagated_from`");  // must have `propagated_from`
+                                    let i2 = vertices[back_idx].i;
+                                    let j2 = vertices[back_idx].j;
+                                    let i = (i1 + i2 - 1) / 2;
+                                    let j = (j1 + j2 - 1) / 2;
+                                    correction[[i, j]] ^= true;
+                                    idx = back_idx;
+                                }
+                                let i1 = vertices[v_idx].i;
+                                let j1 = vertices[v_idx].j;
+                                let i2 = vertices[last_idx].i;
+                                let j2 = vertices[last_idx].j;
                                 let i = (i1 + i2 - 1) / 2;
                                 let j = (j1 + j2 - 1) / 2;
                                 correction[[i, j]] ^= true;
-                                // println!("line 1 correction at ({},{}) [{}, {}, {}, {}]", i, j, i1, j1, i2, j2);
-                                idx = back_idx;
+                                break  // stop propagating because it already matches with others
+                            } else {  // also propagate here
+                                something_changed = true;
+                                vertices[v_idx].propagated_from = Some(last_idx);
+                                vertices[v_idx].propagated_error = Some(index);
                             }
-                            let stop_error_idx = error_points[propagated_error].at;
-                            idx = v_idx;
-                            while idx != stop_error_idx {
-                                let i1 = vertices[idx].i;
-                                let j1 = vertices[idx].j;
-                                let back_idx = vertices[idx].propagated_from.expect("must have set `propagated_from`");  // must have `propagated_from`
-                                let i2 = vertices[back_idx].i;
-                                let j2 = vertices[back_idx].j;
-                                let i = (i1 + i2 - 1) / 2;
-                                let j = (j1 + j2 - 1) / 2;
-                                correction[[i, j]] ^= true;
-                                // println!("line 2 correction at ({},{}) [{}, {}, {}, {}]", i, j, i1, j1, i2, j2);
-                                idx = back_idx;
-                            }
-                            let i1 = vertices[v_idx].i;
-                            let j1 = vertices[v_idx].j;
-                            let i2 = vertices[last_idx].i;
-                            let j2 = vertices[last_idx].j;
-                            let i = (i1 + i2 - 1) / 2;
-                            let j = (j1 + j2 - 1) / 2;
-                            correction[[i, j]] ^= true;
-                            // println!("line 3 correction at ({},{}) [{}, {}, {}, {}]", i, j, i1, j1, i2, j2);
-                            break  // stop propagating because it already matches with others
-                        } else {  // also propagate here
-                            something_changed = true;
-                            vertices[v_idx].propagated_from = Some(last_idx);
-                            vertices[v_idx].propagated_error = Some(index);
                         }
                     } else {  // propagate here
                         something_changed = true;
@@ -191,15 +191,14 @@ pub fn stupid_correction(measurement: &ZxMeasurement) -> (ZxCorrection, ZxCorrec
                         vertices[v_idx].propagated_error = Some(index);
                     }
                 }
-                // then see if it propagates to boundary
                 if error_points[index].connected_to.is_some() {
                     continue  // stop propagating those matched ones
                 }
+                // then see if it propagates to boundary    
                 if let Some((v_idx, boundary_i, boundary_j)) = boundary_v_idx {  // connected to boundary through `v_idx`
                     error_points[index].connected_to = Some(Connection::Boundary);
                     // change the correction matrix along this path
                     correction[[boundary_i, boundary_j]] ^= true;
-                    // println!("boundary correction at ({},{})", boundary_i, boundary_j);
                     let mut idx = v_idx;
                     let stop_error_idx = error_points[index].at;
                     while idx != stop_error_idx {
@@ -211,11 +210,9 @@ pub fn stupid_correction(measurement: &ZxMeasurement) -> (ZxCorrection, ZxCorrec
                         let i = (i1 + i2 - 1) / 2;
                         let j = (j1 + j2 - 1) / 2;
                         correction[[i, j]] ^= true;
-                        // println!("boundary correction at ({},{}) [{}, {}, {}, {}]", i, j, i1, j1, i2, j2);
                         idx = back_idx;
                     }
                 }
-                // println!("{}: {:?}", index, error_points[index]);
             }
         }
         corrections.push(correction);
