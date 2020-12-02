@@ -17,7 +17,7 @@ pub async fn run_server(port: i32, addr: String, root_url: String) -> std::io::R
                 web::scope(root_url.as_str())
                     .route("/hello", web::get().to(|| { HttpResponse::Ok().body("hello world") }))
                     .route("/stupid_decoder", web::post().to(stupid_decoder))
-                    .route("/maximum_max_weight_matching_decoder", web::post().to(maximum_max_weight_matching_decoder))
+                    .route("/MWPM_decoder", web::post().to(maximum_max_weight_matching_decoder))
             )
         }).bind(format!("{}:{}", addr, port))?.run().await
 }
