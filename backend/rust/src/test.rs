@@ -7,6 +7,9 @@ use super::serde_json;
 use super::serde_json::{Value, Map};
 use super::types::*;
 use super::qec;
+use super::blossom;
+use super::pyo3::prelude::*;
+use super::pyo3::types::{IntoPyDict};
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -21,6 +24,9 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
         }
         ("stupid_correction", Some(_)) => {
             stupid_correction()
+        }
+        ("try_blossom_correction", Some(_)) => {
+            try_blossom_correction()
         }
         ("debug_tests", Some(_)) => {
             debug_tests()
@@ -164,6 +170,63 @@ fn stupid_correction() {
     assert_eq!(x_error_ro.validate_z_correction(&z_correction), Ok(()));
 }
 
+fn try_blossom_correction() {
+    let L = 5;
+    let mut x_error_ro = ZxError::new_L(L);
+    let mut x_error = x_error_ro.view_mut();
+    x_error[[1, 0]] = true;
+    x_error[[3, 2]] = true;
+    x_error[[3, 3]] = true;
+    println!("z_error_ro:");
+    x_error_ro.print();
+    let measurement = util::generate_perfect_measurements(&x_error_ro, &x_error_ro);
+    println!("measurement:");
+    measurement.print();
+    let (x_correction, z_correction) = qec::try_blossom_correction(&measurement);
+    assert_eq!(x_error_ro.validate_x_correction(&x_correction), Ok(()));
+    assert_eq!(x_error_ro.validate_z_correction(&z_correction), Ok(()));
+}
+
 fn debug_tests() {
-    
+    let graph = blossom::weighted::WeightedGraph::new([
+        (0, (vec![1, 2, 3], vec![-3., -3., -1.])),
+        (1, (vec![0, 2, 4], vec![-3., -2., -2.])),
+        (2, (vec![0, 1, 5], vec![-3., -2., -1.])),
+        (3, (vec![0, 4, 5], vec![-1., 0., 0.])),
+        (4, (vec![1, 3, 5], vec![-2., 0., 0.])),
+        (5, (vec![2, 3, 4], vec![-1., 0., 0.]))
+    ].iter().cloned().collect());
+    {  // use blossom library, however `maximin_matching` is not optimal at all. see `qec.rs/try_blossom_correction` for more information
+        let matching = graph.maximin_matching().unwrap();
+        // let matching = graph.maximum_matching();
+        let matching_edges = matching.edges();
+        println!("{:?}", matching_edges);
+    }
+    {  // call python networkx.algorithms.matching.max_weight_matching
+        Python::with_gil(|py| {
+            (|py: Python| -> PyResult<()> {
+                let networkx = py.import("networkx")?;
+                let G = networkx.call_method0("Graph")?;
+                let weighted_edges = vec![
+                    (0, 1, -3.),
+                    (1, 2, -2.),
+                    (2, 0, -3.),
+                    (0, 3, -1.),
+                    (1, 4, -2.),
+                    (2, 5, -1.),
+                    (3, 4, 0.),
+                    (3, 5, 0.),
+                    (4, 5, 0.),
+                ].to_object(py);
+                G.call_method1("add_weighted_edges_from", (weighted_edges,))?;
+                let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
+                let dict = vec![("maxcardinality", true)].into_py_dict(py);
+                let matched: std::collections::HashSet<(usize, usize)> = max_weight_matching.call((G,), Some(dict))?.extract()?;
+                println!("{:?}", matched);
+                Ok(())
+            })(py).map_err(|e| {
+                e.print_and_set_sys_last_vars(py);
+            })
+        }).expect("python run failed");
+    }
 }

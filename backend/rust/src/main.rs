@@ -12,6 +12,8 @@ extern crate rand;
 extern crate actix_web;
 extern crate actix_cors;
 extern crate serde;
+extern crate blossom;
+extern crate pyo3;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -28,6 +30,7 @@ async fn main() -> std::io::Result<()> {
             (@subcommand perfect_measurement => (about: "print a perfect measurement"))
             (@subcommand validate_correction => (about: "validate x and z correction"))
             (@subcommand stupid_correction => (about: "a stupid error correction algorithm"))
+            (@subcommand try_blossom_correction => (about: "try to use blossom library to decoder"))
             (@subcommand debug_tests => (about: "test for debug"))
             (@subcommand all => (about: "run all tests"))
         )
