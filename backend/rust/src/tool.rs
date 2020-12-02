@@ -8,6 +8,8 @@ use std::path::Path;
 use super::types::*;
 use super::ndarray::{Axis};
 use super::qec;
+use super::pyo3::prelude::*;
+use super::pyo3::types::{IntoPyDict};
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -174,5 +176,61 @@ fn automatic_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_c
                 println!("{} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate);
             }
         }
+    }
+    if qec_decoder == "maximum_max_weight_matching_correction" {
+        Python::with_gil(|py| {
+            (|py: Python| -> PyResult<()> {
+                // prepare python library
+                let networkx = py.import("networkx")?;
+                let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
+                let maximum_max_weight_matching = |weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
+                    let G = networkx.call_method0("Graph").unwrap();
+                    let weighted_edges = weighted_edges.to_object(py);
+                    G.call_method1("add_weighted_edges_from", (weighted_edges,)).unwrap();
+                    let dict = vec![("maxcardinality", true)].into_py_dict(py);
+                    let matched: std::collections::HashSet<(usize, usize)> = max_weight_matching.call((G,), Some(dict)).unwrap().extract().unwrap();
+                    matched
+                };
+                // prepare error syndrome
+                for L in Ls {
+                    for p in ps {
+                        let p = *p;
+                        let L = *L;
+                        let no_error = ZxError::new_L(L);
+                        let mut x_error_ro = ZxError::new_L(L);
+                        let mut rng = thread_rng();
+                        let mut total_rounds = 0;
+                        let mut qec_failed = 0;
+                        while total_rounds < max_N && qec_failed < min_error_cases {
+                            let mut x_error = x_error_ro.view_mut();
+                            let mut has_error = false;
+                            for i in 0..L {
+                                for j in 0..L {
+                                    let is_error = rng.gen::<f64>() < p;
+                                    x_error[[i, j]] = is_error;
+                                    if is_error {
+                                        has_error = true;
+                                    }
+                                }
+                            }
+                            total_rounds += 1;  // record the total round
+                            if !has_error {
+                                continue
+                            }
+                            let measurement = util::generate_perfect_measurements(&x_error_ro, &no_error);
+                            let (x_correction, _z_correction) = qec::maximum_max_weight_matching_correction(&measurement, maximum_max_weight_matching);
+                            if x_error_ro.validate_x_correction(&x_correction).is_err() {
+                                qec_failed += 1;
+                            }
+                        }
+                        let error_rate = qec_failed as f64 / total_rounds as f64;
+                        println!("{} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate);
+                    }
+                }
+                Ok(())
+            })(py).map_err(|e| {
+                e.print_and_set_sys_last_vars(py);
+            })
+        }).expect("python run failed");
     }
 }
