@@ -31,6 +31,7 @@ async fn main() -> std::io::Result<()> {
             (@subcommand validate_correction => (about: "validate x and z correction"))
             (@subcommand stupid_correction => (about: "a stupid error correction algorithm"))
             (@subcommand try_blossom_correction => (about: "try to use blossom library to decoder"))
+            (@subcommand maximum_max_weight_matching_correction => (about: "try to use networkx python library to decoder"))
             (@subcommand debug_tests => (about: "test for debug"))
             (@subcommand all => (about: "run all tests"))
         )

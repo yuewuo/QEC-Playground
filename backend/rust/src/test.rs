@@ -28,6 +28,9 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
         ("try_blossom_correction", Some(_)) => {
             try_blossom_correction()
         }
+        ("maximum_max_weight_matching_correction", Some(_)) => {
+            maximum_max_weight_matching_correction()
+        }
         ("debug_tests", Some(_)) => {
             debug_tests()
         }
@@ -185,6 +188,42 @@ fn try_blossom_correction() {
     let (x_correction, z_correction) = qec::try_blossom_correction(&measurement);
     assert_eq!(x_error_ro.validate_x_correction(&x_correction), Ok(()));
     assert_eq!(x_error_ro.validate_z_correction(&z_correction), Ok(()));
+}
+
+fn maximum_max_weight_matching_correction() {
+    Python::with_gil(|py| {
+        (|py: Python| -> PyResult<()> {
+            // prepare python library
+            let networkx = py.import("networkx")?;
+            let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
+            let maximum_max_weight_matching = |weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
+                let G = networkx.call_method0("Graph").unwrap();
+                let weighted_edges = weighted_edges.to_object(py);
+                G.call_method1("add_weighted_edges_from", (weighted_edges,)).unwrap();
+                let dict = vec![("maxcardinality", true)].into_py_dict(py);
+                let matched: std::collections::HashSet<(usize, usize)> = max_weight_matching.call((G,), Some(dict)).unwrap().extract().unwrap();
+                matched
+            };
+            // prepare error syndrome
+            let L = 5;
+            let mut x_error_ro = ZxError::new_L(L);
+            let mut x_error = x_error_ro.view_mut();
+            x_error[[1, 0]] = true;
+            x_error[[3, 2]] = true;
+            x_error[[3, 3]] = true;
+            println!("z_error_ro:");
+            x_error_ro.print();
+            let measurement = util::generate_perfect_measurements(&x_error_ro, &x_error_ro);
+            println!("measurement:");
+            measurement.print();
+            let (x_correction, z_correction) = qec::maximum_max_weight_matching_correction(&measurement, maximum_max_weight_matching);
+            assert_eq!(x_error_ro.validate_x_correction(&x_correction), Ok(()));
+            assert_eq!(x_error_ro.validate_z_correction(&z_correction), Ok(()));
+            Ok(())
+        })(py).map_err(|e| {
+            e.print_and_set_sys_last_vars(py);
+        })
+    }).expect("python run failed");
 }
 
 fn debug_tests() {

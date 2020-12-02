@@ -223,7 +223,7 @@ pub fn stupid_correction(measurement: &ZxMeasurement) -> (ZxCorrection, ZxCorrec
     (x_correction, z_correction)
 }
 
-/// Try to us blossom graph library to decode
+/// Try to use blossom graph library to decode
 /// return `(x_correction, z_correction)`
 pub fn try_blossom_correction(measurement: &ZxMeasurement) -> (ZxCorrection, ZxCorrection) {
     let L = measurement.L();
@@ -285,6 +285,129 @@ pub fn try_blossom_correction(measurement: &ZxMeasurement) -> (ZxCorrection, ZxC
             // it matches [(2, 5), (0, 3), (1, 4)]
             // this is absolutely not optimal. It seems to find a local maximal and stop there.
 
+        }
+        corrections.push(correction);
+    }
+    let x_correction = corrections[1].clone();
+    let z_correction = corrections[0].clone();
+    (x_correction, z_correction)
+}
+
+/// Try to use some `maximum_max_weight_matching` function to decode
+/// return `(x_correction, z_correction)`
+pub fn maximum_max_weight_matching_correction<F>(measurement: &ZxMeasurement, maximum_max_weight_matching: F) -> (ZxCorrection, ZxCorrection)
+        where F: Fn(Vec<(usize, usize, f64)>) -> std::collections::HashSet<(usize, usize)> {
+    let L = measurement.L();
+    let mut corrections = Vec::<ZxCorrection>::new();
+    for is_z_stabilizer in [false, true].iter() {
+        let is_z_stabilizer = *is_z_stabilizer;
+        let mut correction = ZxCorrection::new_L(L);
+        let mut error_vertices = Vec::<(usize, usize, usize)>::new();  // (i, j, boundary)
+        let is_z_stab_i_j = |i, j| j != 0 && j != L && (i + j) % 2 == 0;
+        let is_x_stab_i_j = |i, j| i != 0 && i != L && (i + j) % 2 == 1;
+        for i in 0..L+1 {
+            for j in 0..L+1 {
+                if is_z_stabilizer && is_z_stab_i_j(i, j) && measurement[[i, j]] {  // Z stabilizer only when i+j is even
+                    // boundary is on left and right
+                    error_vertices.push((i, j, std::cmp::min(j, L - j)))
+                }
+                if !is_z_stabilizer && is_x_stab_i_j(i, j) && measurement[[i, j]] {  // X stabilizer only when i+j is odd
+                    // boundary is on top and bottom
+                    error_vertices.push((i, j, std::cmp::min(i, L - i)))
+                }
+            }
+        }
+        let error_counts = error_vertices.len();
+        if error_counts != 0 {  // only when some error occurs
+            let distance_delta = |i: isize, j: isize| ((i+j).abs() + (i-j).abs()) / 2;
+            let distance = |i1: isize, j1: isize, i2: isize, j2: isize| distance_delta(i2 - i1, j2 - j1);
+            let weight_of = |i1: usize, j1: usize, i2: usize, j2: usize| - distance(i1 as isize, j1 as isize, i2 as isize, j2 as isize);
+            let mut edges = Vec::new();
+            for a in 0..error_counts {
+                let (i1, j1, boundary) = error_vertices[a];
+                if a+1 < error_counts {  // add edges to other vertices
+                    for b in a+1..error_counts {
+                        let (i2, j2, _) = error_vertices[b];
+                        edges.push((a, b, weight_of(i1, j1, i2, j2) as f64));
+                    }
+                }
+                // add boundary connection to this
+                edges.push((a, a + error_counts, - (boundary as f64)));
+                // add boundary connections of `boundary_vertex_idx`
+                if a+1 < error_counts {
+                    for b in a+1..error_counts {
+                        edges.push((a + error_counts, b + error_counts, 0 as f64));
+                    }
+                }
+            }
+            let matched = maximum_max_weight_matching(edges);
+            let is_boundary = |a| a >= error_counts;
+            for (a, b) in &matched {
+                let a = *a;
+                let b = *b;
+                let connect_qubits = |a, b, correction: &mut ZxCorrection| {
+                    let (mut i1, mut j1, _) = error_vertices[a];  // moving (i1,j1) -> (i2,j2)
+                    let (i2, j2, _) = error_vertices[b];
+                    while i1 != i2 || j1 != j2 {
+                        let dist = distance(i1 as isize, j1 as isize, i2 as isize, j2 as isize);
+                        for (delta_i, delta_j) in [(-1,-1), (-1,1), (1,-1), (1,1)].iter() {
+                            let i1n = i1 as isize + *delta_i;
+                            let j1n = j1 as isize + *delta_j;
+                            let is_valid_stab_i_j = |i, j| i >= 0 && j >= 0 && i <= L as isize && j <= L as isize && (
+                                if is_z_stabilizer { is_z_stab_i_j(i as usize, j as usize) } else { is_x_stab_i_j(i as usize, j as usize) });
+                            if is_valid_stab_i_j(i1n, j1n) && distance(i1n, j1n, i2 as isize, j2 as isize) < dist {
+                                // println!("from ({},{}) to ({},{})", i1, j1, i1n, j1n);
+                                let i = (i1 + i1n as usize - 1) / 2;
+                                let j = (j1 + j1n as usize - 1) / 2;
+                                correction[[i, j]] ^= true;  // correct the data qubit on this path
+                                i1 = i1n as usize;
+                                j1 = j1n as usize;
+                                break
+                            }
+                        }
+                    }
+                };
+                let connect_boundary = |a, correction: &mut ZxCorrection| {
+                    let (mut i1, mut j1, _) = error_vertices[a];  // moving (i1,j1) -> boundary
+                    // if `is_z_stabilizer` then boundary is on left and right (+-j) otherwise the boundary is on top and bottom
+                    let is_boundary_i_j = |i, j| if is_z_stabilizer { j == 0 || j == L } else { i == 0 || i == L };
+                    while !is_boundary_i_j(i1, j1) {
+                        let delta = if is_z_stabilizer {
+                            if j1 < L - j1 {
+                                [(-1, -1), (1, -1)]
+                            } else {
+                                [(-1, 1), (1, 1)]
+                            }
+                        } else {
+                            if i1 < L - i1 {
+                                [(-1, -1), (-1, 1)]
+                            } else {
+                                [(1, -1), (1, 1)]
+                            }
+                        };
+                        for (delta_i, delta_j) in delta.iter() {
+                            let i1n = i1 as isize + *delta_i;
+                            let j1n = j1 as isize + *delta_j;
+                            let is_valid_i_j = |i, j| i >= 0 && j >= 0 && i <= L as isize && j <= L as isize;
+                            if is_valid_i_j(i1n, i1n) {
+                                // println!("from ({},{}) to ({},{})", i1, j1, i1n, j1n);
+                                let i = (i1 + i1n as usize - 1) / 2;
+                                let j = (j1 + j1n as usize - 1) / 2;
+                                correction[[i, j]] ^= true;  // correct the data qubit on this path
+                                i1 = i1n as usize;
+                                j1 = j1n as usize;
+                                break
+                            }
+                        }
+                    }
+                };
+                match (is_boundary(a), is_boundary(b)) {
+                    (false, false) => { connect_qubits(a, b, &mut correction); }
+                    (false, true) => { connect_boundary(a, &mut correction); }
+                    (true, false) => { connect_boundary(b, &mut correction); }
+                    _ => { }
+                }
+            }
         }
         corrections.push(correction);
     }
