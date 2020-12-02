@@ -176,8 +176,7 @@ fn automatic_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_c
                 println!("{} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate);
             }
         }
-    }
-    if qec_decoder == "maximum_max_weight_matching_correction" {
+    } else if qec_decoder == "maximum_max_weight_matching_decoder" {
         Python::with_gil(|py| {
             (|py: Python| -> PyResult<()> {
                 // prepare python library
@@ -232,5 +231,7 @@ fn automatic_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_c
                 e.print_and_set_sys_last_vars(py);
             })
         }).expect("python run failed");
+    } else {
+        println!("[error] unknown decoder");
     }
 }

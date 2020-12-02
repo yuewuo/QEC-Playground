@@ -96,6 +96,7 @@ export default {
 			decoder: "stupid_decoder",
 			available_decoders: [
 				{ value: "stupid_decoder", label: "Stupid Decoder" },
+				{ value: "maximum_max_weight_matching_decoder", label: "MWPM Decoder" },
 			],
 			has_correction: false,
 			correction_succeed: false,
