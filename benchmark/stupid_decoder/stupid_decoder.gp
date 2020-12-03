@@ -31,8 +31,8 @@ plot "d_3.txt" using 1:5 with linespoints lt rgb "red" linewidth 5 pointtype 6 p
     "d_7.txt" using 1:5 with linespoints lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 title "d = 7",\
     "d_9.txt" using 1:5 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "d = 9",\
     "d_11.txt" using 1:5 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
-    "d_15.txt" using 1:5 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 15",\
     "d_25.txt" using 1:5 with linespoints lt rgb "black" linewidth 5 pointtype 2 pointsize 1.5 title "d = 25"
+    # "d_15.txt" using 1:5 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 15",\
 
 set output '|ps2pdf -dEPSCrop stupid_decoder.eps stupid_decoder.pdf'
 replot
