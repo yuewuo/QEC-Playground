@@ -297,6 +297,14 @@ pub fn try_blossom_correction(measurement: &ZxMeasurement) -> (ZxCorrection, ZxC
 /// return `(x_correction, z_correction)`
 pub fn maximum_max_weight_matching_correction<F>(measurement: &ZxMeasurement, maximum_max_weight_matching: F) -> (ZxCorrection, ZxCorrection)
         where F: Fn(Vec<(usize, usize, f64)>) -> std::collections::HashSet<(usize, usize)> {
+    let distance_delta = |i: isize, j: isize| ((i+j).abs() + (i-j).abs()) / 2;
+    let distance = |i1: isize, j1: isize, i2: isize, j2: isize| distance_delta(i2 - i1, j2 - j1);
+    let weight_of = |i1: usize, j1: usize, i2: usize, j2: usize| - distance(i1 as isize, j1 as isize, i2 as isize, j2 as isize) as f64;
+    return maximum_max_weight_matching_correction_weighted(measurement, maximum_max_weight_matching, weight_of);
+}
+pub fn maximum_max_weight_matching_correction_weighted<F, F2>(measurement: &ZxMeasurement, maximum_max_weight_matching: F, weight_of: F2) -> (ZxCorrection, ZxCorrection)
+        where F: Fn(Vec<(usize, usize, f64)>) -> std::collections::HashSet<(usize, usize)>, 
+        F2: Fn(usize, usize, usize, usize) -> f64 {
     let L = measurement.L();
     let mut corrections = Vec::<ZxCorrection>::new();
     for is_z_stabilizer in [false, true].iter() {
@@ -321,7 +329,6 @@ pub fn maximum_max_weight_matching_correction<F>(measurement: &ZxMeasurement, ma
         if error_counts != 0 {  // only when some error occurs
             let distance_delta = |i: isize, j: isize| ((i+j).abs() + (i-j).abs()) / 2;
             let distance = |i1: isize, j1: isize, i2: isize, j2: isize| distance_delta(i2 - i1, j2 - j1);
-            let weight_of = |i1: usize, j1: usize, i2: usize, j2: usize| - distance(i1 as isize, j1 as isize, i2 as isize, j2 as isize);
             let mut edges = Vec::new();
             for a in 0..error_counts {
                 let (i1, j1, boundary) = error_vertices[a];

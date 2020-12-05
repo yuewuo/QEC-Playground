@@ -7,6 +7,10 @@
 				<h1 class="title"><img src="@/assets/logo.png" class="logo"/>QEC Playground</h1>
 				<p>This is an educational tool for Quantum Error Correction (QEC). You can learn the currently most promising QEC scheme called surface code (planar code) by following the introduction tutorial and then trying different error patterns interactively.</p>
 			</div>
+			<div>
+				<el-button type="warning" class="full-width">Start Tutorial</el-button>
+				<div style="height: 10px;"></div>
+			</div>
 			<el-card>
 				<div slot="header" class="clearfix">
 					<span>Global Settings</span>

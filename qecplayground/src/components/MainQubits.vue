@@ -255,17 +255,35 @@ export default {
 		this.animate()
 
 		// add mouse down event listener
-		container.addEventListener( 'click', this.onMouseClicked, false );
+		container.addEventListener( 'click', this.onMouseClicked, false )
 
 	},
 	methods: {
 		async test() {
-			// let ret = await this.internals.axios.get("/hello")
-			this.xDataQubitsErrors[1][0] = 1
-			this.xDataQubitsErrors[3][2] = 1
-			this.xDataQubitsErrors[3][3] = 1
-			this.zDataQubitsErrors[3][3] = 1
-			console.log(await this.get_correction())
+
+		},
+		paper_figure_prepare_white_background(sleep_ms = 500) {
+			let that = this
+			setTimeout(() => {
+				that.three.scene.background = new THREE.Color( 1, 1, 1 )
+			}, sleep_ms)  // run <500ms> later so that all the instances already have their texture mapping
+		},
+		async paper_figure_single_qubit_operator(x, z) {
+			this.paper_figure_prepare_white_background()
+			this.L = 1
+			await this.vue_next_tick()  // so that matrix are updated
+			const initCameraRatio = this.L * 1.0
+			this.three.camera.position.set( -2 * initCameraRatio, 1 * initCameraRatio, 1 * initCameraRatio )
+			this.xDataQubitsErrors[0][0] = x ? 1 : 0
+			this.zDataQubitsErrors[0][0] = z ? 1 : 0
+			// stop the error animation
+			for (let i=0; i<this.dataErrorTopParameters.length; ++i) this.dataErrorTopParameters[i][3] = 0
+		},
+		async vue_next_tick() {
+			let that = this
+			await new Promise((resolve, reject) => {
+				that.$nextTick(() => { resolve() })
+			})
 		},
 		async get_correction(decoder="stupid_decoder", x_error, z_error) {
 			x_error = x_error || this.xDataQubitsErrors
@@ -608,6 +626,8 @@ export default {
 			this.internals.clickableGroup = clickableGroup
 			this.generateDataQubitsErrors()
 			for (const obj of this.internals.dataErrorArray) this.three.scene.add(obj)
+			const initCameraRatio = this.L * 0.5
+			this.three.camera.position.set( -2 * initCameraRatio, 1 * initCameraRatio, 1 * initCameraRatio )
 		},
 		update_measurement() {  // measure `this.zDataQubitsErrors` and `this.xDataQubitsErrors` then update `this.ancillaQubitsErrors`
 			for (let i=0; i<=this.L; ++i) {
