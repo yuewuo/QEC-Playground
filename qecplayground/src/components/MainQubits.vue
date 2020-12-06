@@ -149,6 +149,8 @@ export default {
 			zDataQubitsErrors: [ ],  // [L][L] 0 ~ 1
 			xDataQubitsErrors: [ ],  // [L][L] 0 ~ 1
 			ancillaQubitsErrors: [ ],  // [L+1][L+1] 0 ~ 1
+			hideZancilla: false,
+			hideXancilla: false,
 		}
 	},
 	mounted() {
@@ -262,22 +264,43 @@ export default {
 		async test() {
 
 		},
-		paper_figure_prepare_white_background(sleep_ms = 500) {
-			let that = this
-			setTimeout(() => {
-				that.three.scene.background = new THREE.Color( 1, 1, 1 )
-			}, sleep_ms)  // run <500ms> later so that all the instances already have their texture mapping
+		// run <500ms> later so that all the instances already have their texture mapping
+		async paper_figure_prepare_white_background(sleep_ms = 500) {
+			await this.sleep_ms(sleep_ms)
+			this.three.scene.background = new THREE.Color( 1, 1, 1 )
+		},
+		async paper_figure_single_stabilizer(x1, x2, x3, x4) {
+			this.paper_figure_prepare_white_background()  // do not await
+			this.L = 2  // only for plotting
+			await this.vue_next_tick()  // so that matrix are updated
+			this.three.camera.position.set( -1.8393678660619175, 2.0783821441393284, 0.2983748596088124 )
+			this.three.camera.lookAt( this.three.scene.position )
+			// set error
+			this.xDataQubitsErrors[0][0] = x1
+			this.xDataQubitsErrors[0][1] = x2
+			this.xDataQubitsErrors[1][1] = x3
+			this.xDataQubitsErrors[1][0] = x4
+			this.ancillaQubitsErrors[1][1] = x1 ^ x2 ^ x3 ^ x4
+			this.hideXancilla = true  // do not display them
+			// stop the error animation (but will stop at random phase...)
+			for (let i=0; i<this.dataErrorTopParameters.length; ++i) this.dataErrorTopParameters[i][3] = 0
 		},
 		async paper_figure_single_qubit_operator(x, z) {
-			this.paper_figure_prepare_white_background()
+			this.paper_figure_prepare_white_background()  // do not await
 			this.L = 1
 			await this.vue_next_tick()  // so that matrix are updated
 			const initCameraRatio = this.L * 1.0
+			// use $mainQubits.three.camera.position to see current position
 			this.three.camera.position.set( -2 * initCameraRatio, 1 * initCameraRatio, 1 * initCameraRatio )
 			this.xDataQubitsErrors[0][0] = x ? 1 : 0
 			this.zDataQubitsErrors[0][0] = z ? 1 : 0
-			// stop the error animation
+			// stop the error animation (but will stop at random phase...)
 			for (let i=0; i<this.dataErrorTopParameters.length; ++i) this.dataErrorTopParameters[i][3] = 0
+		},
+		async sleep_ms(ms) {
+			return new Promise((resolve, reject) => {
+				setTimeout(() => { resolve() }, ms)
+			})
 		},
 		async vue_next_tick() {
 			let that = this
@@ -402,6 +425,8 @@ export default {
 					if (this.ancillaQubitsErrors[i][j]) targetColor = isZ ? this.zStabErrorColor : this.xStabErrorColor
 					this.internals.ancillaQubitsMaterials[i][j].color = this.smoothColor(targetColor
 						, this.internals.ancillaQubitsMaterials[i][j].color, delta)
+					this.internals.ancillaQubitsMaterials[i][j].opacity = this.smoothValue(((isZ && !this.hideZancilla) || (!isZ && !this.hideXancilla)) ? 1. : 0.
+						, this.internals.ancillaQubitsMaterials[i][j].opacity, delta)
 				}
 			}
 			for (let i = 0; i < this.internals.ancillaQubits.length; ++i) {
@@ -521,6 +546,8 @@ export default {
 				color: ((i + j) % 2) == 0 ? this.zStabQubitColor : this.xStabQubitColor,
 				envMap: this.three.scene.background,
 				reflectivity: 0.5,
+				transparent: true,  // allow opacity,
+				opacity: 1,
 			} ))))
 			for (let i=0; i <= this.L; ++i) {
 				const row = []
