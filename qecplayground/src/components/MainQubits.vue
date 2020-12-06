@@ -191,11 +191,12 @@ export default {
 		container.appendChild(renderer.domElement)
 
 		// support for resize
+		let that = this
 		window.addEventListener( 'resize', () => {
 			const windowWidth = window.innerWidth-this.panelWidth
 			const windowHeight = window.innerHeight
-			camera.aspect = windowWidth / windowHeight
-			camera.updateProjectionMatrix()
+			that.three.camera.aspect = windowWidth / windowHeight
+			that.three.camera.updateProjectionMatrix()
 			renderer.setSize( windowWidth, windowHeight )
 		}, false )
 
@@ -268,6 +269,28 @@ export default {
 		async paper_figure_prepare_white_background(sleep_ms = 500) {
 			await this.sleep_ms(sleep_ms)
 			this.three.scene.background = new THREE.Color( 1, 1, 1 )
+		},
+		async paper_figure_random_errors() {
+			this.paper_figure_prepare_white_background()  // do not await
+			this.L = 5
+			await this.vue_next_tick()  // so that matrix are updated
+			this.zDataQubitsErrors[0][0] = 1
+			this.zDataQubitsErrors[3][2] = 1
+			this.xDataQubitsErrors[3][2] = 1
+			this.xDataQubitsErrors[1][4] = 1
+			this.update_measurement()
+			// reset camera
+			const windowWidth = window.innerWidth - this.panelWidth
+			const windowHeight = window.innerHeight
+			const range = 3.5
+			const camera = new THREE.OrthographicCamera( windowWidth / windowHeight * -range, windowWidth / windowHeight * range, range, -range, 0.1, 10000 )
+			this.three.camera = camera
+			camera.position.set( 0, 1, 0 )
+			camera.lookAt( this.three.scene.position )
+			camera.updateMatrix()
+			this.three.scene.remove( this.internals.pointCloud )  // will cause exception when change L. OK because this is not interactive.
+			// stop the error animation (but will stop at random phase...)
+			for (let i=0; i<this.dataErrorTopParameters.length; ++i) this.dataErrorTopParameters[i][3] = 0
 		},
 		async paper_figure_single_stabilizer(x1, x2, x3, x4) {
 			this.paper_figure_prepare_white_background()  // do not await

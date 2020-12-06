@@ -99,8 +99,8 @@ export default {
 			L: 5,
 			decoder: "stupid_decoder",
 			available_decoders: [
-				{ value: "stupid_decoder", label: "Stupid Decoder" },
 				{ value: "MWPM_decoder", label: "MWPM Decoder" },
+				{ value: "stupid_decoder", label: "Stupid Decoder" },
 			],
 			has_correction: false,
 			correction_succeed: false,
