@@ -1,6 +1,6 @@
 <template>
 	<div id="app">
-		<MainQubits class="main-qubits" ref="qubits" :panelWidth="480" :enableStats="enableStats" :decoderServerRootUrl="decoderServerRootUrl"
+		<MainQubits :removeView="true" class="main-qubits" ref="qubits" :panelWidth="480" :enableStats="enableStats" :decoderServerRootUrl="decoderServerRootUrl"
 			:L="L" @dataQubitClicked="dataQubitClicked"></MainQubits>
 		<div class="control-panel">
 			<div style="text-align: center;">
@@ -8,7 +8,8 @@
 				<p>This is an educational tool for Quantum Error Correction (QEC). You can learn the currently most promising QEC scheme called surface code (planar code) by following the introduction tutorial and then trying different error patterns interactively.</p>
 			</div>
 			<div>
-				<el-button type="warning" class="full-width">Start Tutorial</el-button>
+				<el-button :type="tutorial_show ? 'danger' : 'success'" class="full-width" @click="toggle_tutorial">
+					{{tutorial_show ? "Quit Interactive Tutorial" : "Start Interactive Tutorial"}}</el-button>
 				<div style="height: 10px;"></div>
 			</div>
 			<el-card>
@@ -70,17 +71,20 @@
 				</div>
 			</el-card>
 		</div>
+		<Tutorial ref="tutorial" :show="tutorial_show"></Tutorial>
 	</div>
 </template>
 
 <script>
 import MainQubits from './components/MainQubits.vue'
+import Tutorial from './components/Tutorial.vue'
 let deploy_mode = process.env.NODE_ENV != "development"
 
 export default {
 	name: 'app',
 	components: {
 		MainQubits,
+		Tutorial,
 	},
 	data() {
 		return {
@@ -111,6 +115,9 @@ export default {
 			x_correction: [ ],  // [L][L] 0 ~ 1
 			z_correction: [ ],  // [L][L] 0 ~ 1
 			measurement: [ ],  // [L+1][L+1] 0 ~ 1
+
+			// tutorial related
+			tutorial_show: true,
 		}
 	},
 	computed: {
@@ -235,6 +242,22 @@ export default {
 			this.x_correction = this.$refs.qubits.makeSquareArray(this.L)
 			this.z_correction = this.$refs.qubits.makeSquareArray(this.L)
 			this.measurement = this.$refs.qubits.makeSquareArray(this.L + 1)
+		},
+		async toggle_tutorial() {
+			if (this.tutorial_show) {
+				await this.$confirm('Are you sure to quit this tutorial? The current state will be reserved, and you can restart tutorial at any time you want.', 'Message', {
+					confirmButtonText: 'Yes',
+					cancelButtonText: 'Cancel',
+					type: 'error'
+				})
+			} else {
+				await this.$confirm('You are starting interactive tutorial. Your current state will NOT be reserved if continued.', 'Message', {
+					confirmButtonText: 'Continue',
+					cancelButtonText: 'Cancel',
+					type: 'success'
+				})
+			}
+			this.tutorial_show = !this.tutorial_show
 		},
 	},
 	watch: {

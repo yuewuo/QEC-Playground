@@ -16,6 +16,10 @@ export default {
 			default: 5,
 		},
 		
+		removeView: {  // used to debug other GUI, e.g. tutorial. This will remove all the initialization of 3D objects to speed up rendering
+			type: Boolean,
+			default: false,
+		},
 		decoderServerRootUrl: {
 			type: String,
 			default: () => "http://127.0.0.1:8066/"
@@ -155,6 +159,8 @@ export default {
 	},
 	mounted() {
 		window.$mainQubits = this  // for fast debugging
+		if (this.removeView) return
+
 		const scene = new THREE.Scene()
 		this.three.scene = scene
 		this.three.clock = new THREE.Clock()
@@ -721,5 +727,9 @@ export default {
 </script>
 
 <style scoped>
+
+.main {
+	background: black;
+}
 
 </style>
