@@ -344,7 +344,7 @@ export default {
 				that.$nextTick(() => { resolve() })
 			})
 		},
-		async get_correction(decoder="stupid_decoder", x_error, z_error) {
+		async get_correction(decoder="naive_decoder", x_error, z_error) {
 			x_error = x_error || this.xDataQubitsErrors
 			z_error = z_error || this.zDataQubitsErrors
 			let request_data = {

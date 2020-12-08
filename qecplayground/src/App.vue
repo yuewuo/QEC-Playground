@@ -65,10 +65,10 @@
 					</el-tooltip>
 					<div style="height: 20px;"></div>
 					<el-switch v-model="has_tooltip" active-text="Display tool tips" inactive-text="Do not display tool tips"></el-switch>
-					<div style="height: 10px;"></div>
+					<!-- <div style="height: 10px;"></div>
 					<el-tooltip :disabled="!has_tooltip" effect="dark" content="whether display measurement results. this is helpful in interactive tutorial" placement="left">
 						<el-switch v-model="measurement_display" active-text="Display measurement" inactive-text="Do not display measuremnt"></el-switch>
-					</el-tooltip>
+					</el-tooltip> -->
 				</div>
 			</el-card>
 			<div style="height: 10px;"></div>
@@ -125,7 +125,7 @@
 		</div>
 		<Tutorial ref="tutorial" :show="tutorial_show" @showing="tutorial_show = $event" @running="running = $event"
 			@running_idx="running_idx = $event" @L="tutorial_on_change_L" @hideZancilla="hideZancilla = $event"
-			@hideXancilla="hideXancilla = $event"></Tutorial>
+			@hideXancilla="hideXancilla = $event" @set_errors="tutorial_set_errors"></Tutorial>
 	</div>
 </template>
 
@@ -156,10 +156,10 @@ export default {
 			max_code_distance: 11,  // otherwise it's too large to render and manipulate
 			code_distance: 5,
 			L: 5,
-			decoder: "stupid_decoder",
+			decoder: "MWPM_decoder",
 			available_decoders: [
 				{ value: "MWPM_decoder", label: "MWPM Decoder" },
-				{ value: "stupid_decoder", label: "Stupid Decoder" },
+				{ value: "naive_decoder", label: "Naive Decoder" },
 			],
 			has_correction: false,
 			correction_succeed: false,
@@ -172,7 +172,7 @@ export default {
 			measurement: [ ],  // [L+1][L+1] 0 ~ 1
 
 			// tutorial related
-			tutorial_show: true,
+			tutorial_show: false,
 			remove_3d_view: false,
 			has_tooltip: deploy_mode ? true : false,  // close tool tips by default when developing
 			running: null,
@@ -301,6 +301,7 @@ export default {
 				}
 				this.correction_fail_reason = reason
 			}
+			this.$refs.tutorial.on_decoder_run(this.decoder)
 			this.refresh()
 		},
 		onChangeL() {
@@ -338,6 +339,11 @@ export default {
 			this.L = L
 			this.code_distance = L
 		},
+		tutorial_set_errors(errors) {
+			this.x_error = errors.x_error
+			this.z_error = errors.z_error
+			this.refresh()
+		},
 	},
 	watch: {
 		L() {
@@ -351,6 +357,9 @@ export default {
 				for (let i=0; i<=this.L; ++i) for (let j=0; j<=this.L; ++j) this.$refs.qubits.ancillaQubitsErrors[i][j] = 0
 			}
 			this.refresh()
+		},
+		decoder() {
+			this.$refs.tutorial.on_decoder_changed(this.decoder)
 		},
 	},
 }

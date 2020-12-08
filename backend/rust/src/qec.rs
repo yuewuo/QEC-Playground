@@ -3,10 +3,10 @@
 use super::types::*;
 use super::blossom;
 
-/// This is a STUPID error correction algorithm !!!
+/// This is a NAIVE error correction algorithm !!!
 /// It's even not fault tolerant at all. It just make sure all the stabilizers are back to +1 eigenstate
 /// return `(x_correction, z_correction)`
-pub fn stupid_correction(measurement: &ZxMeasurement) -> (ZxCorrection, ZxCorrection) {
+pub fn naive_correction(measurement: &ZxMeasurement) -> (ZxCorrection, ZxCorrection) {
     #[derive(Debug, Clone)]
     enum Connection {
         Boundary,

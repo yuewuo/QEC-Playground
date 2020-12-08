@@ -91,7 +91,9 @@
 						<p>Existing works have proposed several decoders for surface code, for example Lookup Table (LUT) decoder, Minimum Weight Perfect Matching (MWPM) decoder, Machine Learning (ML) decoder, Tensor Network (TN) decoder and Union-Find (UF) decoder. We use MWPM decoder as a baseline, and propose a new sub-optimal surface code decoder called "naive decoder" to demonstrate how our tool can help developers to visualize failed error corrections and further reason about why this would happen. MWPM decoder is the default decoder in the tutorial to teach people how quantum error correction works interactively.</p>
 						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#FF5151' }">
 							<p class="interactive-message">Interactive Part: run surface code decoders
-								<el-button class="interactive-start" type="primary" disabled>Start</el-button></p>
+								<el-button class="interactive-start" type="primary" @click="start_interactive('decoders')"
+									:icon="running == 'decoders' ?  'el-icon-loading' : 'none'"
+									:disabled="running != null">{{ running == "decoders" ? "Running" : "Start" }}</el-button></p>
 						</el-card>
 					</div>
 					<div v-show="step == 5"><!-- All Finished! -->
@@ -155,7 +157,14 @@ export default {
 				],
 				"both_errors": [
 					{ type: "text", content: "You can now try to play with both types of Pauli errors and their measurement results. Try to add more than one errors on data qubit and still keep all the stabilizers at +1 result. See what is the minimum amount of errors to do that. Tips: how about adding logical operators? Is it minimum?" },
-					{ type: "text", content: "Wonderful! You've got the core of surface code. With larger and larger code distance, it's exponentially unlikely that an undetectable logical operator is introduced with random distributed errors." },
+					{ type: "text", content: "Wonderful! You've got the core of surface code. With larger and larger code distance, it's exponentially unlikely that an undetectable logical operator is introduced with random distributed errors, thus the logical state is protected." },
+				],
+				"decoders": [
+					{ type: "text", content: "Try to add some random errors. After doing that, click 'Run Correction' in 'Run Error Correction' panel. It will request remote server to decode the error syndrome and return the error correction pattern. Please have a look at the 'Display' option in 'Global Settings' panel, it will change automatically after you click the 'Run Correction' button." },
+					{ type: "text", content: "Now you can see the display mode is set to 'Corrected', which means you're viewing the combination of error pattern and correction pattern. In this display mode, all the stabilizer should return to +1 (no red stabilizers) and you will see a message above the 'Run Correction' button you just clicked. It will analyze whether the error correction is successful or not, and give reasons of failure. Now select 'Naive Decoder' as decoder." },
+					{ type: "text", content: "We've found an error pattern (already updated to your data qubits) that fails with 'Naive Decoder' but succeeds with 'MWPM Decoder'. Try to run the two decoders one by one and see their difference. Click 'Next' to continue." },
+					{ type: "text", content: "You can easily fool the decoder by directly adding logical errors to the data qubits. Since the decoder will simply assume that there is no error at all, an logical error is definitely introduced after correction. Click 'Next' to continue." },
+					{ type: "text", content: "Note that although we're applying the error correction to data qubits to help you visualize the result, in practice we don't need to do that. We just need to remember the error happened before and change the behavior of quantum gates, measurements, etc. Well, that's the end of interactive tutorial. Have fun with it!" },
 				],
 			},
 		}
@@ -166,7 +175,6 @@ export default {
 		this.update_size()
 		window.addEventListener( 'resize', this.update_size, false )
 		this.MathjaxConfig.MathQueue("tutorial-has-math")
-		this.start_interactive("both_errors")  // TODO: for debug
 	},
 	methods: {
 		start_tutorial() {  // reinitialize
@@ -231,20 +239,46 @@ export default {
 				this.$emit("L", 5)
 				this.collapsed = true
 			}
+			if (name == "decoders" && idx == 0) {
+				this.$emit("L", 5)
+				this.collapsed = true
+			}
 			this.$emit("hideZancilla", hideZancilla)
 			this.$emit("hideXancilla", hideXancilla)
 			this.update_interactive()
 		},
-		update_interactive() {
+		async vue_next_tick() {
+			let that = this
+			await new Promise((resolve, reject) => {
+				that.$nextTick(() => { resolve() })
+			})
+		},
+		makeSquareArray(width, valueGen=(()=>0)) {
+			const array = []
+			for (let i=0; i<width; ++i) {
+				const row = []
+				for (let j=0; j<width; ++j) {
+					row.push(valueGen(i,j))
+				}
+				array.push(row)
+			}
+			return array
+		},
+		async update_interactive() {
 			if (this.running == null) return
 			let name = this.running
 			let idx = this.running_idx
-			if (name == "introduction") {
-				if (idx == 0) {  // click collapse
-					
-				} else if (idx == 1) {
-
-				}
+			if (name == "decoders" && idx == 2) {
+				this.$emit("L", 5)
+				await this.vue_next_tick()
+				let x_error = this.makeSquareArray(5)
+				let z_error = this.makeSquareArray(5)
+				x_error[1][1] = 1
+				x_error[1][2] = 1
+				x_error[2][3] = 1
+				this.$emit("set_errors", {
+					x_error, z_error
+				})
 			}
 		},
 		last_interactive() {
@@ -316,6 +350,20 @@ export default {
 				}
 			}
 		},
+		on_decoder_run(decoder_name) {
+			if (this.running == "decoders") {
+				if (this.running_idx == 0) {
+					this.next_interactive()
+				}
+			}
+		},
+		on_decoder_changed(decoder_name) {
+			if (this.running == "decoders") {
+				if (this.running_idx == 1 && decoder_name == "naive_decoder") {
+					this.next_interactive()
+				}
+			}
+		}
 	},
 	watch: {
 		show() {

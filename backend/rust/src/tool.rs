@@ -29,7 +29,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let ps = value_t!(matches, "ps", String).expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
             let directory = value_t!(matches, "directory", String).unwrap_or("./".to_string());
-            let qec_decoder = value_t!(matches, "qec_decoder", String).unwrap_or("stupid_decoder".to_string());
+            let qec_decoder = value_t!(matches, "qec_decoder", String).unwrap_or("naive_decoder".to_string());
             decoder_benchmark(&Ls, &ps, &directory, &qec_decoder);
         }
         ("automatic_benchmark", Some(matches)) => {
@@ -39,7 +39,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
             let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
             let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(1000);  // default to 1e3
-            let qec_decoder = value_t!(matches, "qec_decoder", String).unwrap_or("stupid_decoder".to_string());
+            let qec_decoder = value_t!(matches, "qec_decoder", String).unwrap_or("naive_decoder".to_string());
             automatic_benchmark(&Ls, &ps, max_N, min_error_cases, &qec_decoder);
         }
         ("error_rate_MWPM_with_weight", Some(matches)) => {
@@ -112,7 +112,7 @@ fn generate_random_errors(Ls: &Vec<usize>, ps: &Vec<f64>, N: usize, directory: &
 default example:
     d = L = 3,5,7,9,11,15,25
     p = 3e-2,1e-2,3e-3,1e-3,3e-4,1e-4
-`cargo run --release -- tool decoder_benchmark [3,5,7,9,11,15,25] [3e-2,1e-2,3e-3,1e-3,3e-4,1e-4] -d ./tmp/random_errors -q stupid_decoder`
+`cargo run --release -- tool decoder_benchmark [3,5,7,9,11,15,25] [3e-2,1e-2,3e-3,1e-3,3e-4,1e-4] -d ./tmp/random_errors -q naive_decoder`
 **/
 fn decoder_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, directory: &str, qec_decoder: &str) {
     println!("format: <p> <L> <total_rounds> <qec_failed> <error_rate>");
@@ -131,7 +131,7 @@ fn decoder_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, directory: &str, qec_decode
             for i in 0..N {
                 let x_error = ZxError::new(data.index_axis(Axis(0), i).to_owned());
                 let measurement = util::generate_perfect_measurements(&x_error, &no_error);
-                let (x_correction, _z_correction) = qec::stupid_correction(&measurement);
+                let (x_correction, _z_correction) = qec::naive_correction(&measurement);
                 if x_error.validate_x_correction(&x_correction).is_err() {
                     qec_failed += 1;
                 }
@@ -140,18 +140,18 @@ fn decoder_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, directory: &str, qec_decode
             println!("{} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate);
         }
     }
-    if qec_decoder == "stupid_decoder" {
+    if qec_decoder == "naive_decoder" {
 
     }
 }
 
 /**
 default example:
-`cargo run --release -- tool automatic_benchmark [3] [3e-2,1e-2,3e-3] -q stupid_decoder`
+`cargo run --release -- tool automatic_benchmark [3] [3e-2,1e-2,3e-3] -q naive_decoder`
 **/
 fn automatic_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, qec_decoder: &str) {
     println!("format: <p> <L> <total_rounds> <qec_failed> <error_rate>");
-    if qec_decoder == "stupid_decoder" || qec_decoder == "maximum_max_weight_matching_decoder" {
+    if qec_decoder == "naive_decoder" || qec_decoder == "maximum_max_weight_matching_decoder" {
         for L in Ls {
             for p in ps {
                 let p = *p;
@@ -178,8 +178,8 @@ fn automatic_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_c
                         continue
                     }
                     let measurement = util::generate_perfect_measurements(&x_error_ro, &no_error);
-                    let (x_correction, _z_correction) = if qec_decoder == "stupid_decoder" {
-                        qec::stupid_correction(&measurement)
+                    let (x_correction, _z_correction) = if qec_decoder == "naive_decoder" {
+                        qec::naive_correction(&measurement)
                     } else {  // maximum_max_weight_matching_decoder
                         let maximum_max_weight_matching = |weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
                             Python::with_gil(|py| {
