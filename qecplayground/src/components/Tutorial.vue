@@ -2,7 +2,7 @@
 	<el-collapse-transition>
 		<div class="holder" v-show="showing">
 			<el-steps :active="step" align-center>
-				<el-step @click.native="jump_step(0)" title="Basic Quantum Mechanics"></el-step>
+				<el-step @click.native="jump_step(0)" title="Quantum Mechanics"></el-step>
 				<el-step @click.native="jump_step(1)" title="Quantum Computing"></el-step>
 				<el-step @click.native="jump_step(2)" title="Quantum Error Corrrection"></el-step>
 				<el-step @click.native="jump_step(3)" title="Surface Code"></el-step>
@@ -10,6 +10,8 @@
 			</el-steps>
 			<el-button type="success" :icon="collapsed ? 'el-icon-arrow-down' : 'el-icon-arrow-up'" circle class="collapse-btn"
 				@click="toggle_collapse"></el-button>
+			<el-button type="danger" icon="el-icon-close" v-show="running != null" circle class="close-btn"
+				@click="close_interactive_part"></el-button>
 			<el-collapse-transition>
 				<div id="tutorial-has-math" v-show="!collapsed" class="collapse-div" :style="{ 'max-height': max_height + 'px' }">
 					<div v-show="step == 0"><!-- Basic Quantum Mechanics -->
@@ -18,7 +20,9 @@
 						<p>This is an <strong>interactive tutorial</strong> that can help you get some preliminary knowledge about quantum error correction techniques, more specifically, error correction based on surface code. You can read through all the materials or simply jump to <strong style="color: red;">red interactive part like below</strong> if you're already expert in this field. At the end of this tutorial you'll be able to manipulate qubit (quantum bit) errors and run error correction algorithms to correct them.</p>
 						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#FF5151' }">
 							<p class="interactive-message">Interactive Part: click "Start" button on the right
-								<el-button class="interactive-start" type="primary" disabled>Start</el-button></p>
+								<el-button class="interactive-start" type="primary" @click="start_interactive('introduction')"
+									:icon="running == 'introduction' ?  'el-icon-loading' : 'none'"
+									:disabled="running != null">{{ running == "introduction" ? "Running" : "Start" }}</el-button></p>
 						</el-card>
 						<h1>Basic Quantum Mechanics</h1>
 						<p>In quantum computing, the qubit or quantum bit is the basic unit of quantum information. One can analogize qubit to the classical bit, which is represented by 0 and 1 in classical computing. For a qubit, there are two computational bases denoted as $|0\rangle$ and $|1\rangle$. They are different from classical bit in that the pure state of a qubit $|\psi\rangle$ can be a superposition of the two bases $|\psi\rangle=\alpha|0\rangle+\beta|1\rangle$ where $\alpha,\beta\in\mathbb{C}$. Since qubit pure states $|\psi_0\rangle$ and $|\psi_1\rangle$ are indistinguishable from each other if $|\psi_0\rangle = c|\psi_1\rangle$ given $c\in\mathbb{C}$, one can simply add constrains that $|\alpha|^2+|\beta|^2 = 1$ and $\alpha\in\mathbb{R}$ to make the state unique under each pair of $\alpha, \beta$. This can be reparameterized as    $|\psi\rangle = \cos{\frac{\theta}{2}}|0\rangle + \mathrm{e}^{i\phi}\sin{\frac{\theta}{2}}|1\rangle$ given $\theta\in [0,\pi]$ and $\phi\in [0,2\pi]$. The parameters $\theta$ and $\phi$ can be visualized in spherical coordinates shown below, which is called a <a href="https://en.wikipedia.org/wiki/Bloch_sphere" target="_blank">Bloch sphere</a>.</p>
@@ -56,7 +60,7 @@
 						<div style="text-align: center;">
 							<img style="height: 250px;" src="@/assets/rotated_planar_code_annotated.svg"/>
 						</div>
-						<p>The rotated planar code is consist of $d\times d$ data qubits. We use only odd number $d$ so that the error correction ability on X and Z Pauli errors is balanced. It has $(d^2-1)/2$ Z stabilizers and $(d^2-1)/2$ X stabilizers, each measures the adjacent 4 or 2 data qubits, according to whether the stabilizer is on the boundary. A demonstration of $d=3$ rotated planar code is shown above. Each piece of rotated planar code forms a single logical qubit, because there are $d^2-1$ stabilizers each locks down a degree of freedom of a data qubit, leaving $d^2-(d^2-1) = 1$ degree of freedom. The goal of quantum error correction is to recover the logical state from random errors, which means the logical state should not be changed after correction. If a logical operator is introduced after correction, then the error correction fails. Logical Pauli X operator and logical Pauli Z operator is shown above as arrows, meaning that if all the qubits on that arrow has Pauli X or Z error then a logical X or Z operator is introduced respectively. Note that the CX gates and H·CX·H gates are used to implement the measurement with the help of stabilizer ancilla qubits, each is a quantum gate operating on two qubits. We'll not dig into the concrete implementation of measurement using those gates but just take the result that the joint measurement of the adjacent 4 or 2 qubits is feasible.</p>
+						<p>The rotated planar code is consist of $d\times d$ data qubits. We use only odd number $d$ so that the error correction ability on X and Z Pauli errors is balanced. It has $\frac{(d^2-1)}{2}$ Z stabilizers and $\frac{(d^2-1)}{2}$ X stabilizers, each measures the adjacent 4 or 2 data qubits, according to whether the stabilizer is on the boundary. A demonstration of $d=3$ rotated planar code is shown above. Each piece of rotated planar code forms a single logical qubit, because there are $d^2-1$ stabilizers each locks down a degree of freedom of a data qubit, leaving $d^2-(d^2-1) = 1$ degree of freedom. The goal of quantum error correction is to recover the logical state from random errors, which means the logical state should not be changed after correction. If a logical operator is introduced after correction, then the error correction fails. Logical Pauli X operator and logical Pauli Z operator is shown above as arrows, meaning that if all the qubits on that arrow has Pauli X or Z error then a logical X or Z operator is introduced respectively. Note that the CX gates and H·CX·H gates are used to implement the measurement with the help of stabilizer ancilla qubits, each is a quantum gate operating on two qubits. We'll not dig into the concrete implementation of measurement using those gates but just take the result that the joint measurement of the adjacent 4 or 2 qubits is feasible.</p>
 						<div style="text-align: center;">
 							<img style="height: 150px;" src="@/assets/Stab.png"/>
 						</div>
@@ -114,6 +118,19 @@ export default {
 			collapsed: false,
 
 			max_height: 300,  // this will be changed when window resize
+			running: null,  // running interactive part, should be object if running
+			running_idx: 0,
+			
+			contents: {
+				"introduction": [
+					{ type: "text", content: "Use the green button on the right-bottom corner of the tutorial page to collapse it." },
+					{ type: "text", content: "Great! Now click it again to unfold it. " + 
+						"This is useful when you want to switch focusing on the 3D content or the tutorial." },
+					{ type: "text", content: "Well done! If you want to quit any interactive tutorial, you can either click the red " + 
+						"button on the left-bottom corner of the tutorial, or click 'Quit' button in this card. " + 
+						"Now try other interactive tutorials, have fun!" }
+				]
+			},
 		}
 	},
 	mounted() {
@@ -132,6 +149,12 @@ export default {
 			// remove all the strange settings of GUI
 		},
 		toggle_collapse() {
+			if (this.running == "introduction" && this.running_idx == 0 && this.collapsed == false) {
+				this.next_interactive()
+			}
+			if (this.running == "introduction" && this.running_idx == 1 && this.collapsed == true) {
+				this.next_interactive()
+			}
 			this.collapsed = !this.collapsed
 		},
 		update_size() {
@@ -152,6 +175,45 @@ export default {
 		finish_tutorials() {
 			this.$emit('showing', false)
 		},
+		close_interactive_part() {
+			this.running = null
+			this.collapsed = false  // show up the tutorial so that user can continue reading it
+		},
+		start_interactive(name, idx = 0) {
+			this.running = name
+			this.running_idx = idx
+			this.update_interactive()
+		},
+		update_interactive() {
+			if (this.running == null) return
+			let name = this.running
+			let idx = this.running_idx
+			if (name == "introduction") {
+				if (idx == 0) {  // click collapse
+					
+				} else if (idx == 1) {
+
+				}
+			}
+		},
+		last_interactive() {
+			if (this.running == null) return
+			let idx = this.running_idx - 1
+			if (idx < 0) idx = 0
+			this.running_idx = idx
+			this.update_interactive()
+		},
+		next_interactive() {
+			if (this.running == null) return
+			const name = this.running
+			let idx = this.running_idx + 1
+			if (idx >= this.contents[this.running].length) {
+				this.close_interactive_part()
+				return
+			}
+			this.running_idx = idx
+			this.update_interactive()
+		},
 	},
 	watch: {
 		show() {
@@ -161,6 +223,12 @@ export default {
 			} else {
 				this.stop_tutorial()
 			}
+		},
+		running() {
+			this.$emit("running", this.running)
+		},
+		running_idx() {
+			this.$emit("running_idx", this.running_idx)
 		},
 	},
 }
@@ -186,6 +254,12 @@ export default {
 	position: absolute;
 	bottom: 5px;
 	right: 5px;
+}
+
+.close-btn {
+	position: absolute;
+	bottom: 5px;
+	left: -5px;
 }
 
 .collapse-div {
@@ -220,14 +294,14 @@ p {
 }
 
 .interactive-message {
-	margin: 10px 90px 10px 0;
+	margin: 10px 120px 10px 0;
 	color: white;
 	position: relative;
 }
 
 .interactive-start {
 	position: absolute;
-	right: -90px;
+	right: -120px;
 	top: -5px;
 }
 

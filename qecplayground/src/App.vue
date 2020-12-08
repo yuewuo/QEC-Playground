@@ -1,12 +1,32 @@
 <template>
 	<div id="app">
-		<MainQubits :removeView="true" class="main-qubits" ref="qubits" :panelWidth="480" :enableStats="enableStats" :decoderServerRootUrl="decoderServerRootUrl"
-			:L="L" @dataQubitClicked="dataQubitClicked"></MainQubits>
+		<MainQubits :removeView="remove_3d_view" class="main-qubits" ref="qubits" :panelWidth="480" :enableStats="enableStats" 
+			:decoderServerRootUrl="decoderServerRootUrl" :L="L" @dataQubitClicked="dataQubitClicked"></MainQubits>
 		<div class="control-panel no-scrollbar">
 			<div style="text-align: center;">
 				<h1 class="title"><img src="@/assets/logo.png" class="logo"/>QEC Playground</h1>
 				<p>This is an educational tool for Quantum Error Correction (QEC). You can learn the currently most promising QEC scheme called surface code (planar code) by following the introduction tutorial and then trying different error patterns interactively.</p>
 			</div>
+			<el-collapse-transition>
+				<div v-show="running != null" v-if="tutorial_contents != null">
+					<el-card :body-style="{ padding: '20px', background: 'yellow', position: 'relative' }">
+						<div v-for="(list, name, index) of tutorial_contents" v-bind:key="index" v-show="running == name">
+							<div v-for="(item, i) in list" v-bind:key="i" v-show="running_idx == i">
+								<h3 style="margin: 0;" v-if="item.type == 'text'">{{ item.content }}</h3>
+							</div>
+						</div>
+						<div style="margin-top: 15px;">
+							<el-button type="info" plain :disabled="running_idx <= 0" @click="tutorial_last">Last</el-button>
+							<el-steps :active="running_idx" finish-status="success" style="width: 200px; position: absolute; bottom: 32px; left: 128px;">
+								<el-step v-for="(item, i) in tutorial_contents[running]" v-bind:key="i" title=""></el-step>
+							</el-steps>
+							<el-button type="info" plain style="float: right;" @click="tutorial_next">
+								{{ (running && running_idx >= tutorial_contents[running].length - 1) ? "Quit" : "Next" }}</el-button>
+						</div>
+					</el-card>
+					<div style="height: 10px;"></div>
+				</div>
+			</el-collapse-transition>
 			<div>
 				<el-button :type="tutorial_show ? 'danger' : 'success'" class="full-width" @click="toggle_tutorial">
 					{{tutorial_show ? "Quit Interactive Tutorial" : "Start Interactive Tutorial"}}</el-button>
@@ -102,7 +122,8 @@
 				</div>
 			</el-card>
 		</div>
-		<Tutorial ref="tutorial" :show="tutorial_show" @showing="tutorial_show = $event"></Tutorial>
+		<Tutorial ref="tutorial" :show="tutorial_show" @showing="tutorial_show = $event" @running="running = $event"
+			@running_idx="running_idx = $event"></Tutorial>
 	</div>
 </template>
 
@@ -149,7 +170,11 @@ export default {
 
 			// tutorial related
 			tutorial_show: true,
+			remove_3d_view: true,
 			has_tooltip: deploy_mode ? true : false,  // close tool tips by default when developing
+			running: null,
+			running_idx: 0,
+			tutorial_contents: null,  // `mounted` will copy data from Tutorial.vue
 		}
 	},
 	computed: {
@@ -163,6 +188,7 @@ export default {
 	mounted() {
 		window.$app = this  // for fast debugging
 		this.onChangeL()
+		this.tutorial_contents = this.$refs.tutorial.contents
 	},
 	methods: {
 		clear_correction() {
@@ -283,13 +309,19 @@ export default {
 					type: 'error'
 				})
 			} else {
-				await this.$confirm('You are starting interactive tutorial. Your current state will NOT be reserved if continued.', 'Message', {
+				await this.$confirm('You are starting interactive tutorial. Your current state may NOT be reserved if continued.', 'Message', {
 					confirmButtonText: 'Continue',
 					cancelButtonText: 'Cancel',
 					type: 'success'
 				})
 			}
 			this.tutorial_show = !this.tutorial_show
+		},
+		tutorial_last() {
+			this.$refs.tutorial.last_interactive()
+		},
+		tutorial_next() {
+			this.$refs.tutorial.next_interactive()
 		},
 	},
 	watch: {
