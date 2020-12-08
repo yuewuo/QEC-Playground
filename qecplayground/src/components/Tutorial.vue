@@ -81,7 +81,9 @@
 						<p>The X stabilizer measurements are similar, which only detects odd amounts of Pauli Z errors in the adjacent 4 or 2 data qubits. A demonstration of a random error pattern with both Pauli X errors, Pauli Z errors and Pauli Y errors (having both X and Z errors) is shown above. An error syndrome refers to the stabilizer measurement results. A surface code decoder tries to predict the error pattern from error syndrome and the decoding is successful only if there is no logical operator introduced after the correction and all the stabilizers are back to +1 measurement result after the correction. Note that in practice we only need to remember the errors but do not need to actually correct them by applying quantum gates, but we'll not dig into it here.</p>
 						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#FF5151' }">
 							<p class="interactive-message">Interactive Part: play with both types of Pauli errors and see the measurement result
-								<el-button class="interactive-start" type="primary" disabled>Start</el-button></p>
+								<el-button class="interactive-start" type="primary" @click="start_interactive('both_errors')"
+									:icon="running == 'both_errors' ?  'el-icon-loading' : 'none'"
+									:disabled="running != null">{{ running == "both_errors" ? "Running" : "Start" }}</el-button></p>
 						</el-card>
 					</div>
 					<div v-show="step == 4"><!-- Error Decoder -->
@@ -151,6 +153,10 @@ export default {
 					{ type: "text", content: "It becomes blue again, indicating that the stabilizer is no longer be able to detect these errors! But don't worry, we can later see that large surface code can suppress the probability of undetectable errors. Now try to add Pauli X errors to all 4 data qubits, and try to find the pattern of measurement result." },
 					{ type: "text", content: "Perfect! You've learned what is the measurement result of stabilizers. Just one thing to remember, Z stabilizers only detect odd number of adjacent Pauli X errors, and X stabilizers only detect odd number of adjacent Pauli Z errors. You can also remember them by color, that is, blue sphere only detects green errors and green sphere only detects blue errors." },
 				],
+				"both_errors": [
+					{ type: "text", content: "You can now try to play with both types of Pauli errors and their measurement results. Try to add more than one errors on data qubit and still keep all the stabilizers at +1 result. See what is the minimum amount of errors to do that. Tips: how about adding logical operators? Is it minimum?" },
+					{ type: "text", content: "Wonderful! You've got the core of surface code. With larger and larger code distance, it's exponentially unlikely that an undetectable logical operator is introduced with random distributed errors." },
+				],
 			},
 		}
 	},
@@ -160,7 +166,7 @@ export default {
 		this.update_size()
 		window.addEventListener( 'resize', this.update_size, false )
 		this.MathjaxConfig.MathQueue("tutorial-has-math")
-		this.start_interactive("z_measurement")  // TODO: for debug
+		this.start_interactive("both_errors")  // TODO: for debug
 	},
 	methods: {
 		start_tutorial() {  // reinitialize
@@ -217,9 +223,13 @@ export default {
 				hideXancilla = true
 			}
 			if (name == "z_measurement" && idx == 0) {
-				this.$emit("L", 2)  // set to single qubit
+				this.$emit("L", 2)
 				this.collapsed = true
 				hideXancilla = true
+			}
+			if (name == "both_errors" && idx == 0) {
+				this.$emit("L", 5)
+				this.collapsed = true
 			}
 			this.$emit("hideZancilla", hideZancilla)
 			this.$emit("hideXancilla", hideXancilla)
@@ -255,15 +265,17 @@ export default {
 			this.running_idx = idx
 			this.update_interactive()
 		},
-		on_data_qubit_changed(x_error, z_error) {
-			if (this.running == "single_qubit" && this.running_idx == 1 && x_error[0][0] == 1) {
-				this.next_interactive()
-			}
-			if (this.running == "single_qubit" && this.running_idx == 2 && z_error[0][0] == 1 && x_error[0][0] == 1) {
-				this.next_interactive()
-			}
-			if (this.running == "single_qubit" && this.running_idx == 3 && z_error[0][0] == 0 && x_error[0][0] == 0) {
-				this.next_interactive()
+		on_data_qubit_changed(x_error, z_error, measurement) {
+			if (this.running == "single_qubit") {
+				if (this.running_idx == 1 && x_error[0][0] == 1) {
+					this.next_interactive()
+				}
+				if (this.running_idx == 2 && z_error[0][0] == 1 && x_error[0][0] == 1) {
+					this.next_interactive()
+				}
+				if (this.running_idx == 3 && z_error[0][0] == 0 && x_error[0][0] == 0) {
+					this.next_interactive()
+				}
 			}
 			if (this.running == "qubit_amount" && this.running_idx == 0 && x_error.length == 5) {
 				this.next_interactive()
@@ -282,6 +294,24 @@ export default {
 					this.next_interactive()
 				}
 				if (this.running_idx == 2 && cnt == 4) {
+					this.next_interactive()
+				}
+			}
+			if (this.running == "both_errors") {
+				let error_cnt = 0
+				for (let i=0; i < x_error.length; ++i) {
+					for (let j=0; j < x_error[i].length; ++j) {
+						error_cnt += x_error[i][j]
+						error_cnt += z_error[i][j]
+					}
+				}
+				let measurement_error_cnt = 0
+				for (let i=0; i < measurement.length; ++i) {
+					for (let j=0; j < measurement[i].length; ++j) {
+						measurement_error_cnt += measurement[i][j]
+					}
+				}
+				if (error_cnt != 0 && measurement_error_cnt == 0) {
 					this.next_interactive()
 				}
 			}

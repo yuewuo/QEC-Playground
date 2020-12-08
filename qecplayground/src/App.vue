@@ -230,7 +230,7 @@ export default {
 			this.copy_matrix(this.$refs.qubits.xDataQubitsErrors, display_x_error)
 			this.copy_matrix(this.$refs.qubits.zDataQubitsErrors, display_z_error)
 			if (this.measurement_display) this.$refs.qubits.update_measurement()
-			this.$refs.tutorial.on_data_qubit_changed(this.x_error, this.z_error)
+			this.$refs.tutorial.on_data_qubit_changed(this.x_error, this.z_error, this.$refs.qubits.ancillaQubitsErrors)
 		},
 		dataQubitClicked(data) {
 			let [i, j, absTime] = data
