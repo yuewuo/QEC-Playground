@@ -123,7 +123,7 @@
 			</el-card>
 		</div>
 		<Tutorial ref="tutorial" :show="tutorial_show" @showing="tutorial_show = $event" @running="running = $event"
-			@running_idx="running_idx = $event"></Tutorial>
+			@running_idx="running_idx = $event" @L="code_distance = L = $event"></Tutorial>
 	</div>
 </template>
 
@@ -151,6 +151,7 @@ export default {
 				corrected: "corrected",
 			},
 			measurement_display: true,
+			max_code_distance: 11,  // otherwise it's too large to render and manipulate
 			code_distance: 5,
 			L: 5,
 			decoder: "stupid_decoder",
@@ -170,7 +171,7 @@ export default {
 
 			// tutorial related
 			tutorial_show: true,
-			remove_3d_view: true,
+			remove_3d_view: false,
 			has_tooltip: deploy_mode ? true : false,  // close tool tips by default when developing
 			running: null,
 			running_idx: 0,
@@ -223,6 +224,7 @@ export default {
 			this.copy_matrix(this.$refs.qubits.xDataQubitsErrors, display_x_error)
 			this.copy_matrix(this.$refs.qubits.zDataQubitsErrors, display_z_error)
 			if (this.measurement_display) this.$refs.qubits.update_measurement()
+			this.$refs.tutorial.on_data_qubit_changed(this.x_error, this.z_error)
 		},
 		dataQubitClicked(data) {
 			let [i, j, absTime] = data
@@ -269,6 +271,7 @@ export default {
 			if (val < oldVal) this.code_distance = Math.floor((val - 1) / 2) * 2 + 1
 			else this.code_distance = Math.ceil((val - 1) / 2) * 2 + 1
 			if (this.code_distance < 1) this.code_distance = 1  // 1 is just for demonstration
+			if (this.code_distance > this.max_code_distance) this.code_distance = this.max_code_distance
 			if (this.L != this.code_distance) this.L = this.code_distance
 		},
 		async run_correction() {

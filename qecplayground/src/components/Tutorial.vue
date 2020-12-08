@@ -33,7 +33,9 @@
 						<p>Quantum operators can change the state of a qubit, just like classical gates. Analogous to classical NOT gate that maps 0 to 1 and 1 to 0, a Pauli X operator in quantum mechanics maps $|0\rangle$ to $|1\rangle$ and $|1\rangle$ to $|0\rangle$. Thus, Pauli X operator is also known as bit-flip operator that maps any state $\alpha|0\rangle+\beta|1\rangle$ to $\alpha|1\rangle+\beta|0\rangle$. On the contrary, Pauli Z operator does not have correspondence in classical circuit, which is only introduced in the existence of superposition. Pauli Z operator is also known as phase-flip operator because it changes the relative phase of $|1\rangle$ to $\mathrm{e}^{\mathrm{i}\pi}|1\rangle=-|1\rangle$, mapping any state $\alpha|0\rangle+\beta|1\rangle$ to $\alpha|0\rangle-\beta|1\rangle$. With Bloch sphere, one can visualize the effect of Pauli operators as rotating the state along its corresponding axis, for example, Pauli X operator rotates the state along X axis and Pauli Z operator rotates the state along Z axis with $\pi$ angle (180$\deg$). Similarly, Pauli Y operator rotates the state along Y axis, which is equivalent to first applying Z operator then X operator. We use this visualization in our GUI, see the interactive part below.</p>
 						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#FF5151' }">
 							<p class="interactive-message">Interactive Part: customize single qubit errors by adding Pauli operators (Pauli errors)
-								<el-button class="interactive-start" type="primary" disabled>Start</el-button></p>
+								<el-button class="interactive-start" type="primary" @click="start_interactive('single_qubit')"
+									:icon="running == 'single_qubit' ?  'el-icon-loading' : 'none'"
+									:disabled="running != null">{{ running == "single_qubit" ? "Running" : "Start" }}</el-button></p>
 						</el-card>
 						<p>Different from the classical world where measurement is non-destructive to the information, in quantum world measurement usually changes the quantum state by projecting it to a random base of the measurement operator. We can measure the qubit along Z axis, who has the same orthogonal bases $|0\rangle$ and $|1\rangle$ as the computational bases of a qubit. When measuring a qubit along Z axis, it will collapse to one of the orthogonal bases $|0\rangle$ and $|1\rangle$ with probability $|\alpha|^2$ and $|\beta|^2$ respectively. If the measurement result is +1, then after measurement the qubit is in $|0\rangle$ state, otherwise the measurement result is -1 and the qubit is in $|1\rangle$ state after measurement. The measurement of quantum state is destructive in general because it collapses the superposition state $\alpha|0\rangle+\beta|1\rangle$ to either $|0\rangle$ or $|1\rangle$, losing the information of their relative phase $\phi$ and relative amplitude $\tan{\frac{\theta}{2}}=|\frac{\beta}{\alpha}|$.</p>
 					</div>
@@ -124,12 +126,16 @@ export default {
 			contents: {
 				"introduction": [
 					{ type: "text", content: "Use the green button on the right-bottom corner of the tutorial page to collapse it." },
-					{ type: "text", content: "Great! Now click it again to unfold it. " + 
-						"This is useful when you want to switch focusing on the 3D content or the tutorial." },
-					{ type: "text", content: "Well done! If you want to quit any interactive tutorial, you can either click the red " + 
-						"button on the left-bottom corner of the tutorial, or click 'Quit' button in this card. " + 
-						"Now try other interactive tutorials, have fun!" }
-				]
+					{ type: "text", content: "Great! Now click it again to unfold it. This is useful when you want to switch focusing on the 3D content or the tutorial." },
+					{ type: "text", content: "Well done! If you want to quit any interactive tutorial, you can either click the red button on the left-bottom corner of the tutorial, or click 'Quit' button in this card. Now try other interactive tutorials, have fun!" }
+				],
+				"single_qubit": [
+					{ type: "text", content: "Here is a data qubit (orange sphere). Try to rotate the view by press the left mouse and drag. Try to zoom in and out by rolling mouse wheel up and down. Click 'Next' to continue." },
+					{ type: "text", content: "Now you can add Pauli errors on this data qubit. To do that, first select 'Toggle X Error (bit-flip error)' in the 'Customize Error Pattern' panel below. Once selected, it will become dark green. Then hover your mouse over the data qubit, so that it jumps up and becomes silver. Click it and you'll see a Pauli X error over it." },
+					{ type: "text", content: "You can do the similar thing to add Pauli Z error. Pauli X error is green, Pauli Z error is blue. You can remember this by check the color of the toggle button. Now practice: change the data qubit to a state with both Pauli X error and Pauli Z error. This state is equivalent to adding a Pauli Y error." },
+					{ type: "text", content: "Now clear all the errors using 'Clear Error' button in the 'Customize Error Pattern' panel below." },
+					{ type: "text", content: "Great job! Now you have learned how to manipulate single qubit errors." },
+				],
 			},
 		}
 	},
@@ -139,6 +145,7 @@ export default {
 		this.update_size()
 		window.addEventListener( 'resize', this.update_size, false )
 		this.MathjaxConfig.MathQueue("tutorial-has-math")
+		this.start_interactive("single_qubit")  // TODO: for debug
 	},
 	methods: {
 		start_tutorial() {  // reinitialize
@@ -182,6 +189,10 @@ export default {
 		start_interactive(name, idx = 0) {
 			this.running = name
 			this.running_idx = idx
+			if (name == "single_qubit" && idx == 0) {
+				this.$emit("L", 1)  // set to single qubit
+				this.collapsed = true
+			}
 			this.update_interactive()
 		},
 		update_interactive() {
@@ -213,6 +224,17 @@ export default {
 			}
 			this.running_idx = idx
 			this.update_interactive()
+		},
+		on_data_qubit_changed(x_error, z_error) {
+			if (this.running == "single_qubit" && this.running_idx == 1 && x_error[0][0] == 1) {
+				this.next_interactive()
+			}
+			if (this.running == "single_qubit" && this.running_idx == 2 && z_error[0][0] == 1 && x_error[0][0] == 1) {
+				this.next_interactive()
+			}
+			if (this.running == "single_qubit" && this.running_idx == 3 && z_error[0][0] == 0 && x_error[0][0] == 0) {
+				this.next_interactive()
+			}
 		},
 	},
 	watch: {

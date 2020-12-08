@@ -684,6 +684,7 @@ export default {
 			for (const obj of this.internals.dataErrorArray) this.three.scene.add(obj)
 			const initCameraRatio = this.L * 0.5
 			this.three.camera.position.set( -2 * initCameraRatio, 1 * initCameraRatio, 1 * initCameraRatio )
+			this.three.camera.lookAt( this.three.scene.position )
 		},
 		update_measurement() {  // measure `this.zDataQubitsErrors` and `this.xDataQubitsErrors` then update `this.ancillaQubitsErrors`
 			for (let i=0; i<=this.L; ++i) {
