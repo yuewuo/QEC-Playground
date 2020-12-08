@@ -70,8 +70,10 @@
 						</div>
 						<p>Take a Z stabilizer with 4 adjacent data qubits as an example, as show above, it measures $Z_1 Z_2 Z_3 Z_4$ of these data qubits. Suppose at first the measurement result is +1, then if one of the four data qubits has a Pauli X error which bit-flip that data qubit, then the measurement result becomes -1 because $1^3\times(-1)^1 = -1$. However, if two data qubits or all four data qubits have Pauli X errors, then the measurement result is still +1 given that $1^2\times(-1)^2 = 1$ and $(-1)^4 = 1$, meaning that this stabilizer is not able to detect those errors.</p>
 						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#FF5151' }">
-							<p class="interactive-message">Interactive Part: add Pauli errors to data qubits and see the measurement result
-								<el-button class="interactive-start" type="primary" disabled>Start</el-button></p>
+							<p class="interactive-message">Interactive Part: add Pauli X errors to data qubits and see the Z stabilizer measurement result
+								<el-button class="interactive-start" type="primary" @click="start_interactive('z_measurement')"
+									:icon="running == 'z_measurement' ?  'el-icon-loading' : 'none'"
+									:disabled="running != null">{{ running == "z_measurement" ? "Running" : "Start" }}</el-button></p>
 						</el-card>
 						<div style="text-align: center;">
 							<img style="height: 300px; margin-top: 30px;" src="@/assets/random_errors.png"/>
@@ -143,6 +145,12 @@ export default {
 					{ type: "text", content: "How many computational bases are there with 25 qubits? Click 'Next' to check the answer." },
 					{ type: "text", content: "The answer is $2^{25}$. Cool! You've finished half of the interactive tutorials." },
 				],
+				"z_measurement": [
+					{ type: "text", content: "The blue sphere in the middle is an ancilla qubit that assists Z stabilizer measurement. If the measurement result of $Z_1 Z_2 Z_3 Z_4$ changes from +1 to -1, it becomes red indicating there is some Pauli X errors on the adjacent 4 data qubits. Try add a Pauli X error to any of the data qubits." },
+					{ type: "text", content: "You can see that the stabilizer becomes red because there is one Pauli X error nearby. Now try to add one more Pauli X errors to any of the data qubits. It should have 2 Pauli X errors in total after doing that." },
+					{ type: "text", content: "It becomes blue again, indicating that the stabilizer is no longer be able to detect these errors! But don't worry, we can later see that large surface code can suppress the probability of undetectable errors. Now try to add Pauli X errors to all 4 data qubits, and try to find the pattern of measurement result." },
+					{ type: "text", content: "Perfect! You've learned what is the measurement result of stabilizers. Just one thing to remember, Z stabilizers only detect odd number of adjacent Pauli X errors, and X stabilizers only detect odd number of adjacent Pauli Z errors. You can also remember them by color, that is, blue sphere only detects green errors and green sphere only detects blue errors." },
+				],
 			},
 		}
 	},
@@ -152,7 +160,7 @@ export default {
 		this.update_size()
 		window.addEventListener( 'resize', this.update_size, false )
 		this.MathjaxConfig.MathQueue("tutorial-has-math")
-		this.start_interactive("qubit_amount")  // TODO: for debug
+		this.start_interactive("z_measurement")  // TODO: for debug
 	},
 	methods: {
 		start_tutorial() {  // reinitialize
@@ -208,6 +216,11 @@ export default {
 				hideZancilla = true
 				hideXancilla = true
 			}
+			if (name == "z_measurement" && idx == 0) {
+				this.$emit("L", 2)  // set to single qubit
+				this.collapsed = true
+				hideXancilla = true
+			}
 			this.$emit("hideZancilla", hideZancilla)
 			this.$emit("hideXancilla", hideXancilla)
 			this.update_interactive()
@@ -254,6 +267,23 @@ export default {
 			}
 			if (this.running == "qubit_amount" && this.running_idx == 0 && x_error.length == 5) {
 				this.next_interactive()
+			}
+			if (this.running == "z_measurement") {
+				let cnt = 0
+				for (let i=0; i < x_error.length; ++i) {
+					for (let j=0; j < x_error[i].length; ++j) {
+						cnt += x_error[i][j]
+					}
+				}
+				if (this.running_idx == 0 && cnt == 1) {
+					this.next_interactive()
+				}
+				if (this.running_idx == 1 && cnt == 2) {
+					this.next_interactive()
+				}
+				if (this.running_idx == 2 && cnt == 4) {
+					this.next_interactive()
+				}
 			}
 		},
 	},

@@ -124,7 +124,7 @@
 			</el-card>
 		</div>
 		<Tutorial ref="tutorial" :show="tutorial_show" @showing="tutorial_show = $event" @running="running = $event"
-			@running_idx="running_idx = $event" @L="code_distance = L = $event" @hideZancilla="hideZancilla = $event"
+			@running_idx="running_idx = $event" @L="tutorial_on_change_L" @hideZancilla="hideZancilla = $event"
 			@hideXancilla="hideXancilla = $event"></Tutorial>
 	</div>
 </template>
@@ -333,6 +333,10 @@ export default {
 		},
 		tutorial_next() {
 			this.$refs.tutorial.next_interactive()
+		},
+		tutorial_on_change_L(L) {
+			this.L = L
+			this.code_distance = L
 		},
 	},
 	watch: {
