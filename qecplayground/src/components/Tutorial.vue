@@ -17,13 +17,14 @@
 					<div v-show="step == 0"><!-- Basic Quantum Mechanics -->
 						<h1>Introduction</h1>
 						<p>Hello! Welcome to the world of quantum computing!</p>
-						<p>This is an <strong>interactive tutorial</strong> that can help you get some preliminary knowledge about quantum error correction techniques, more specifically, error correction based on surface code. You can read through all the materials or simply jump to <strong style="color: red;">red interactive part like below</strong> if you're already expert in this field. At the end of this tutorial you'll be able to manipulate qubit (quantum bit) errors and run error correction algorithms to correct them.</p>
-						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#FF5151' }">
+						<p>This is an <strong>interactive tutorial</strong> that can help you get some preliminary knowledge about quantum error correction techniques, more specifically, error correction based on surface code. You can read through all the materials or simply jump to <strong style="color: #2A5CAA;">blue interactive part like below</strong> if you're already expert in this field. At the end of this tutorial you'll be able to manipulate qubit (quantum bit) errors and run error correction algorithms to correct them.</p>
+						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#2A5CAA' }">
 							<p class="interactive-message">Interactive Part: click "Start" button on the right
 								<el-button class="interactive-start" type="primary" @click="start_interactive('introduction')"
 									:icon="running == 'introduction' ?  'el-icon-loading' : 'none'"
 									:disabled="running != null">{{ running == "introduction" ? "Running" : "Start" }}</el-button></p>
 						</el-card>
+						<p>This is an open-source project at <a href="https://github.com/yuewuo/QEC-Playground" target="_blank">https://github.com/yuewuo/QEC-Playground</a>.</p>
 						<h1>Basic Quantum Mechanics</h1>
 						<p>In quantum computing, the qubit or quantum bit is the basic unit of quantum information. One can analogize qubit to the classical bit, which is represented by 0 and 1 in classical computing. For a qubit, there are two computational bases denoted as $|0\rangle$ and $|1\rangle$. They are different from classical bit in that the pure state of a qubit $|\psi\rangle$ can be a superposition of the two bases $|\psi\rangle=\alpha|0\rangle+\beta|1\rangle$ where $\alpha,\beta\in\mathbb{C}$. Since qubit pure states $|\psi_0\rangle$ and $|\psi_1\rangle$ are indistinguishable from each other if $|\psi_0\rangle = c|\psi_1\rangle$ given $c\in\mathbb{C}$, one can simply add constrains that $|\alpha|^2+|\beta|^2 = 1$ and $\alpha\in\mathbb{R}$ to make the state unique under each pair of $\alpha, \beta$. This can be reparameterized as    $|\psi\rangle = \cos{\frac{\theta}{2}}|0\rangle + \mathrm{e}^{i\phi}\sin{\frac{\theta}{2}}|1\rangle$ given $\theta\in [0,\pi]$ and $\phi\in [0,2\pi]$. The parameters $\theta$ and $\phi$ can be visualized in spherical coordinates shown below, which is called a <a href="https://en.wikipedia.org/wiki/Bloch_sphere" target="_blank">Bloch sphere</a>.</p>
 						<div style="text-align: center;">
@@ -31,7 +32,7 @@
 						</div>
 						<p>We use this geometrical representation of single qubit in pure state throughout the project. That means, you can view the spheres in GUI as qubits in Bloch sphere.</p>
 						<p>Quantum operators can change the state of a qubit, just like classical gates. Analogous to classical NOT gate that maps 0 to 1 and 1 to 0, a Pauli X operator in quantum mechanics maps $|0\rangle$ to $|1\rangle$ and $|1\rangle$ to $|0\rangle$. Thus, Pauli X operator is also known as bit-flip operator that maps any state $\alpha|0\rangle+\beta|1\rangle$ to $\alpha|1\rangle+\beta|0\rangle$. On the contrary, Pauli Z operator does not have correspondence in classical circuit, which is only introduced in the existence of superposition. Pauli Z operator is also known as phase-flip operator because it changes the relative phase of $|1\rangle$ to $\mathrm{e}^{\mathrm{i}\pi}|1\rangle=-|1\rangle$, mapping any state $\alpha|0\rangle+\beta|1\rangle$ to $\alpha|0\rangle-\beta|1\rangle$. With Bloch sphere, one can visualize the effect of Pauli operators as rotating the state along its corresponding axis, for example, Pauli X operator rotates the state along X axis and Pauli Z operator rotates the state along Z axis with $\pi$ angle (180$\deg$). Similarly, Pauli Y operator rotates the state along Y axis, which is equivalent to first applying Z operator then X operator. We use this visualization in our GUI, see the interactive part below.</p>
-						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#FF5151' }">
+						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#2A5CAA' }">
 							<p class="interactive-message">Interactive Part: customize single qubit errors by adding Pauli operators (Pauli errors)
 								<el-button class="interactive-start" type="primary" @click="start_interactive('single_qubit')"
 									:icon="running == 'single_qubit' ?  'el-icon-loading' : 'none'"
@@ -42,7 +43,7 @@
 					<div v-show="step == 1"><!-- Quantum Computing -->
 						<h1>Quantum Computing</h1>
 						<p>The exponentially faster quantum computing comes from the superposition of quantum states. If a quantum computer has $n$ qubits, then there are $2^n$ computational bases $|00..000\rangle$, $|00..001\rangle$, $|00..010\rangle$, ..., $|11..111\rangle$. Unlike a classical circuit with $n$ bits, a quantum circuit with $n$ qubits has $2^n$ bits information because each of its $2^n$ computational bases can be individually superposed. The essence of quantum computing is to use these exponentially larger computational bases to search the result in parallel. Quantum algorithms based on <a href="https://en.wikipedia.org/wiki/Quantum_algorithm#Algorithms_based_on_quantum_walks" target="_blank">quantum walks</a> is proved to give exponential speedups on some tasks by preparing all computational bases and run through a black box to get the result in parallel. Other quantum algorithms based on <a href="https://en.wikipedia.org/wiki/Quantum_algorithm#Algorithms_based_on_the_quantum_Fourier_transform" target="_blank">quantum Fourier transform</a> also perform exponentially faster than classical computers, among which the <a href="https://en.wikipedia.org/wiki/Shor%27s_algorithm" target="_blank">Shor's algorithm</a> solving the integer factorization problem is famous for its threat to today's widely-used encryption technologies.</p>
-						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#FF5151' }">
+						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#2A5CAA' }">
 							<p class="interactive-message">Interactive Part: change the amount of data qubits and see how many computational bases are there
 								<el-button class="interactive-start" type="primary" @click="start_interactive('qubit_amount')"
 									:icon="running == 'qubit_amount' ?  'el-icon-loading' : 'none'"
@@ -69,7 +70,7 @@
 							<img style="height: 150px;" src="@/assets/Stab.png"/>
 						</div>
 						<p>Take a Z stabilizer with 4 adjacent data qubits as an example, as show above, it measures $Z_1 Z_2 Z_3 Z_4$ of these data qubits. Suppose at first the measurement result is +1, then if one of the four data qubits has a Pauli X error which bit-flip that data qubit, then the measurement result becomes -1 because $1^3\times(-1)^1 = -1$. However, if two data qubits or all four data qubits have Pauli X errors, then the measurement result is still +1 given that $1^2\times(-1)^2 = 1$ and $(-1)^4 = 1$, meaning that this stabilizer is not able to detect those errors.</p>
-						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#FF5151' }">
+						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#2A5CAA' }">
 							<p class="interactive-message">Interactive Part: add Pauli X errors to data qubits and see the Z stabilizer measurement result
 								<el-button class="interactive-start" type="primary" @click="start_interactive('z_measurement')"
 									:icon="running == 'z_measurement' ?  'el-icon-loading' : 'none'"
@@ -79,7 +80,7 @@
 							<img style="height: 300px; margin-top: 30px;" src="@/assets/random_errors.png"/>
 						</div>
 						<p>The X stabilizer measurements are similar, which only detects odd amounts of Pauli Z errors in the adjacent 4 or 2 data qubits. A demonstration of a random error pattern with both Pauli X errors, Pauli Z errors and Pauli Y errors (having both X and Z errors) is shown above. An error syndrome refers to the stabilizer measurement results. A surface code decoder tries to predict the error pattern from error syndrome and the decoding is successful only if there is no logical operator introduced after the correction and all the stabilizers are back to +1 measurement result after the correction. Note that in practice we only need to remember the errors but do not need to actually correct them by applying quantum gates, but we'll not dig into it here.</p>
-						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#FF5151' }">
+						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#2A5CAA' }">
 							<p class="interactive-message">Interactive Part: play with both types of Pauli errors and see the measurement result
 								<el-button class="interactive-start" type="primary" @click="start_interactive('both_errors')"
 									:icon="running == 'both_errors' ?  'el-icon-loading' : 'none'"
@@ -89,7 +90,7 @@
 					<div v-show="step == 4"><!-- Error Decoder -->
 						<h1>Surface Code Decoders</h1>
 						<p>Existing works have proposed several decoders for surface code, for example Lookup Table (LUT) decoder, Minimum Weight Perfect Matching (MWPM) decoder, Machine Learning (ML) decoder, Tensor Network (TN) decoder and Union-Find (UF) decoder. We use MWPM decoder as a baseline, and propose a new sub-optimal surface code decoder called "naive decoder" to demonstrate how our tool can help developers to visualize failed error corrections and further reason about why this would happen. MWPM decoder is the default decoder in the tutorial to teach people how quantum error correction works interactively.</p>
-						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#FF5151' }">
+						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#2A5CAA' }">
 							<p class="interactive-message">Interactive Part: run surface code decoders
 								<el-button class="interactive-start" type="primary" @click="start_interactive('decoders')"
 									:icon="running == 'decoders' ?  'el-icon-loading' : 'none'"
