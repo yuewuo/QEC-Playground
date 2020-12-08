@@ -44,7 +44,9 @@
 						<p>The exponentially faster quantum computing comes from the superposition of quantum states. If a quantum computer has $n$ qubits, then there are $2^n$ computational bases $|00..000\rangle$, $|00..001\rangle$, $|00..010\rangle$, ..., $|11..111\rangle$. Unlike a classical circuit with $n$ bits, a quantum circuit with $n$ qubits has $2^n$ bits information because each of its $2^n$ computational bases can be individually superposed. The essence of quantum computing is to use these exponentially larger computational bases to search the result in parallel. Quantum algorithms based on <a href="https://en.wikipedia.org/wiki/Quantum_algorithm#Algorithms_based_on_quantum_walks" target="_blank">quantum walks</a> is proved to give exponential speedups on some tasks by preparing all computational bases and run through a black box to get the result in parallel. Other quantum algorithms based on <a href="https://en.wikipedia.org/wiki/Quantum_algorithm#Algorithms_based_on_the_quantum_Fourier_transform" target="_blank">quantum Fourier transform</a> also perform exponentially faster than classical computers, among which the <a href="https://en.wikipedia.org/wiki/Shor%27s_algorithm" target="_blank">Shor's algorithm</a> solving the integer factorization problem is famous for its threat to today's widely-used encryption technologies.</p>
 						<el-card shadow="always" :body-style="{ padding: '10px 20px', background: '#FF5151' }">
 							<p class="interactive-message">Interactive Part: change the amount of data qubits and see how many computational bases are there
-								<el-button class="interactive-start" type="primary" disabled>Start</el-button></p>
+								<el-button class="interactive-start" type="primary" @click="start_interactive('qubit_amount')"
+									:icon="running == 'qubit_amount' ?  'el-icon-loading' : 'none'"
+									:disabled="running != null">{{ running == "qubit_amount" ? "Running" : "Start" }}</el-button></p>
 						</el-card>
 					</div>
 					<div v-show="step == 2"><!-- Quantum Error Corrrection -->
@@ -136,6 +138,11 @@ export default {
 					{ type: "text", content: "Now clear all the errors using 'Clear Error' button in the 'Customize Error Pattern' panel below." },
 					{ type: "text", content: "Great job! Now you have learned how to manipulate single qubit errors." },
 				],
+				"qubit_amount": [
+					{ type: "text", content: "With single qubit, there are 2 computational bases $|0\\rangle$ and $|1\\rangle$. Now change the 'Code Distance' to 5 in 'Global Settings' panel by clicking '+' on the right. After that there will be 25 qubits." },
+					{ type: "text", content: "How many computational bases are there with 25 qubits? Click 'Next' to check the answer." },
+					{ type: "text", content: "The answer is $2^{25}$. Cool! You've finished half of the interactive tutorials." },
+				],
 			},
 		}
 	},
@@ -145,7 +152,7 @@ export default {
 		this.update_size()
 		window.addEventListener( 'resize', this.update_size, false )
 		this.MathjaxConfig.MathQueue("tutorial-has-math")
-		this.start_interactive("single_qubit")  // TODO: for debug
+		this.start_interactive("qubit_amount")  // TODO: for debug
 	},
 	methods: {
 		start_tutorial() {  // reinitialize
@@ -189,10 +196,20 @@ export default {
 		start_interactive(name, idx = 0) {
 			this.running = name
 			this.running_idx = idx
+			let hideZancilla = false
+			let hideXancilla = false
 			if (name == "single_qubit" && idx == 0) {
 				this.$emit("L", 1)  // set to single qubit
 				this.collapsed = true
 			}
+			if (name == "qubit_amount" && idx == 0) {
+				this.$emit("L", 1)  // set to single qubit
+				this.collapsed = true
+				hideZancilla = true
+				hideXancilla = true
+			}
+			this.$emit("hideZancilla", hideZancilla)
+			this.$emit("hideXancilla", hideXancilla)
 			this.update_interactive()
 		},
 		update_interactive() {
@@ -233,6 +250,9 @@ export default {
 				this.next_interactive()
 			}
 			if (this.running == "single_qubit" && this.running_idx == 3 && z_error[0][0] == 0 && x_error[0][0] == 0) {
+				this.next_interactive()
+			}
+			if (this.running == "qubit_amount" && this.running_idx == 0 && x_error.length == 5) {
 				this.next_interactive()
 			}
 		},

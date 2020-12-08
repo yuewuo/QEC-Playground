@@ -1,7 +1,8 @@
 <template>
 	<div id="app">
 		<MainQubits :removeView="remove_3d_view" class="main-qubits" ref="qubits" :panelWidth="480" :enableStats="enableStats" 
-			:decoderServerRootUrl="decoderServerRootUrl" :L="L" @dataQubitClicked="dataQubitClicked"></MainQubits>
+			:decoderServerRootUrl="decoderServerRootUrl" :L="L" @dataQubitClicked="dataQubitClicked"
+			:hideZancilla="running != null && hideZancilla" :hideXancilla="running != null && hideXancilla"></MainQubits>
 		<div class="control-panel no-scrollbar">
 			<div style="text-align: center;">
 				<h1 class="title"><img src="@/assets/logo.png" class="logo"/>QEC Playground</h1>
@@ -9,7 +10,7 @@
 			</div>
 			<el-collapse-transition>
 				<div v-show="running != null" v-if="tutorial_contents != null">
-					<el-card :body-style="{ padding: '20px', background: 'yellow', position: 'relative' }">
+					<el-card :body-style="{ padding: '20px', background: 'yellow', position: 'relative' }" id="tutorial-contents">
 						<div v-for="(list, name, index) of tutorial_contents" v-bind:key="index" v-show="running == name">
 							<div v-for="(item, i) in list" v-bind:key="i" v-show="running_idx == i">
 								<h3 style="margin: 0;" v-if="item.type == 'text'">{{ item.content }}</h3>
@@ -123,7 +124,8 @@
 			</el-card>
 		</div>
 		<Tutorial ref="tutorial" :show="tutorial_show" @showing="tutorial_show = $event" @running="running = $event"
-			@running_idx="running_idx = $event" @L="code_distance = L = $event"></Tutorial>
+			@running_idx="running_idx = $event" @L="code_distance = L = $event" @hideZancilla="hideZancilla = $event"
+			@hideXancilla="hideXancilla = $event"></Tutorial>
 	</div>
 </template>
 
@@ -176,6 +178,8 @@ export default {
 			running: null,
 			running_idx: 0,
 			tutorial_contents: null,  // `mounted` will copy data from Tutorial.vue
+			hideZancilla: false,
+			hideXancilla: false,
 		}
 	},
 	computed: {
@@ -190,6 +194,8 @@ export default {
 		window.$app = this  // for fast debugging
 		this.onChangeL()
 		this.tutorial_contents = this.$refs.tutorial.contents
+		let that = this
+		this.$nextTick(() => { that.MathjaxConfig.MathQueue("tutorial-contents") })
 	},
 	methods: {
 		clear_correction() {
@@ -303,6 +309,8 @@ export default {
 			this.x_correction = this.$refs.qubits.makeSquareArray(this.L)
 			this.z_correction = this.$refs.qubits.makeSquareArray(this.L)
 			this.measurement = this.$refs.qubits.makeSquareArray(this.L + 1)
+			let that = this
+			this.$nextTick(() => { that.refresh() })
 		},
 		async toggle_tutorial() {
 			if (this.tutorial_show) {

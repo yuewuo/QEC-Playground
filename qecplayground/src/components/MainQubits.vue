@@ -16,6 +16,15 @@ export default {
 			default: 5,
 		},
 		
+		
+		hideZancilla: {
+			type: Boolean,
+			default: false,
+		},
+		hideXancilla: {
+			type: Boolean,
+			default: false,
+		},
 		removeView: {  // used to debug other GUI, e.g. tutorial. This will remove all the initialization of 3D objects to speed up rendering
 			type: Boolean,
 			default: false,
@@ -153,8 +162,6 @@ export default {
 			zDataQubitsErrors: [ ],  // [L][L] 0 ~ 1
 			xDataQubitsErrors: [ ],  // [L][L] 0 ~ 1
 			ancillaQubitsErrors: [ ],  // [L+1][L+1] 0 ~ 1
-			hideZancilla: false,
-			hideXancilla: false,
 		}
 	},
 	mounted() {
