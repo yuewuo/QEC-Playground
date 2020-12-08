@@ -15,59 +15,88 @@
 			<el-card>
 				<div slot="header" class="clearfix">
 					<span>Global Settings</span>
-					<el-button style="float: right; padding: 3px 0" type="text" disabled>help</el-button>
+					<!-- <el-button style="float: right; padding: 3px 0" type="text" disabled>help</el-button> -->
 				</div>
 				<div style="position: relative;">
-					Code Distance:
-					<el-input-number v-model="code_distance" @change="code_distance_changed"></el-input-number>
+					<el-tooltip effect="dark" placement="left">
+						<div slot="content">the size of the surface code, containing d<sup>2</sup> data qubits</div>
+						<div>
+							Code Distance:
+							<el-input-number v-model="code_distance" @change="code_distance_changed"></el-input-number>
+						</div>
+					</el-tooltip>
 					<div style="height: 20px;"></div>
-					Display:
-					<el-radio-group v-model="display_mode">
-						<el-radio-button label="error_only">Error</el-radio-button>
-						<el-radio-button label="correction_only">Correction</el-radio-button>
-						<el-radio-button label="corrected">Corrected</el-radio-button>
-					</el-radio-group>
+					<el-tooltip effect="dark" content="change current display to customized error pattern, correction or corrected result" placement="left">
+						<div>
+							Display:
+							<el-radio-group v-model="display_mode">
+								<el-tooltip effect="dark" content="customized error pattern which you can edit" placement="top">
+									<el-radio-button label="error_only">Error</el-radio-button>
+								</el-tooltip>
+								<el-tooltip effect="dark" content="the error correction pattern returned by the decoder" placement="top">
+									<el-radio-button label="correction_only">Correction</el-radio-button>
+								</el-tooltip>
+								<el-tooltip effect="dark" content="the combine of the former two, to see if the correction is successful" placement="top">
+									<el-radio-button label="corrected">Corrected</el-radio-button>
+								</el-tooltip>
+							</el-radio-group>
+						</div>
+					</el-tooltip>
 					<div style="height: 20px;"></div>
-					<el-switch v-model="measurement_display" active-text="display measurement" inactive-text="Do not display measuremnt"></el-switch>
+					<el-tooltip effect="dark" content="whether display measurement results. this is helpful in interactive tutorial" placement="left">
+						<el-switch v-model="measurement_display" active-text="Display measurement" inactive-text="Do not display measuremnt"></el-switch>
+					</el-tooltip>
 				</div>
 			</el-card>
 			<div style="height: 10px;"></div>
 			<el-card>
 				<div slot="header" class="clearfix">
 					<span>Customize Error Pattern</span>
-					<el-button style="float: right; padding: 3px 0" type="text" disabled>help</el-button>
+					<!-- <el-button style="float: right; padding: 3px 0" type="text" disabled>help</el-button> -->
 				</div>
 				<div style="position: relative; width: 100%">
-					<el-button type="success" class="toggle-error-button" :plain="!toggle_X_error" @click="enable_toggle_error(true)">
-						Toggle X Error (bit-flip error)</el-button>
+					<el-tooltip effect="dark" :content="(toggle_X_error ? 'stop' : 'start') + ' toggling qubit X error on clicking'" placement="left">
+						<el-button type="success" class="toggle-error-button" :plain="!toggle_X_error" @click="enable_toggle_error(true)">
+							Toggle X Error (bit-flip error)</el-button>
+					</el-tooltip>
 					<div style="height: 10px;"></div>
-					<el-button type="primary" class="toggle-error-button" :plain="!toggle_Z_error" @click="enable_toggle_error(false)">
-						Toggle Z Error (phase-flip error)</el-button>
-					<el-button type="danger" class="clear-error-button" @click="clear_error()" :disabled="display_mode!='error_only'">Clear Error</el-button>
+					<el-tooltip effect="dark" :content="(toggle_Z_error ? 'stop' : 'start') + ' toggling qubit Z error on clicking'" placement="left">
+						<el-button type="primary" class="toggle-error-button" :plain="!toggle_Z_error" @click="enable_toggle_error(false)">
+							Toggle Z Error (phase-flip error)</el-button>
+					</el-tooltip>
+					<el-tooltip effect="dark" content="clear all errors" placement="top">
+						<el-button type="danger" class="clear-error-button" @click="clear_error()" :disabled="display_mode!='error_only'">Clear Error</el-button>
+					</el-tooltip>
 				</div>
 				<div style="position: relative; margin-top: 10px;">
-					<el-button type="info" class="full-width" @click="use_as_error()">
-						Use Current Pauli Operators as Error Syndrome</el-button>
+					<el-tooltip effect="dark" content="take current visible errors as your customized error pattern, change display mode to 'Error'" placement="left">
+						<el-button type="info" class="full-width" @click="use_as_error()">
+							Use Current Pauli Operators as Error Syndrome</el-button>
+					</el-tooltip>
 				</div>
 			</el-card>
 			<div style="height: 10px;"></div>
 			<el-card>
 				<div slot="header" class="clearfix">
 					<span>Run Error Correction</span>
-					<el-button style="float: right; padding: 3px 0" type="text" disabled>help</el-button>
+					<!-- <el-button style="float: right; padding: 3px 0" type="text" disabled>help</el-button> -->
 				</div>
 				<div style="position: relative;">
 					Select Decoder:
 					<el-select v-model="decoder" placeholder="Select a decoder">
 						<el-option v-for="item in available_decoders" :key="item.value" :label="item.label" :value="item.value"> </el-option>
 					</el-select>
-					<el-button type="danger" style="width: 75px; margin-left: 5px;" @click="clear_correction">Clear</el-button>
+					<el-tooltip effect="dark" content="clear the correction result" placement="top">
+						<el-button type="danger" style="width: 75px; margin-left: 5px;" @click="clear_correction">Clear</el-button>
+					</el-tooltip>
 					<div style="height: 15px;"></div>
 					<div v-if="has_correction">
 						<el-alert :title="correction_succeed ? 'Error correction succeeds without breaking the logical state' : 'Error correction fails because ' + correction_fail_reason" :type="correction_succeed ? 'success' : 'error'" :closable="false" show-icon></el-alert>
 						<div style="height: 15px;"></div>
 					</div>
-					<el-button type="success" class="big-button" @click="run_correction" :disabled="L < 3">Run Correction</el-button>
+					<el-tooltip effect="dark" content="run decoder from remote server" placement="left">
+						<el-button type="success" class="big-button" @click="run_correction" :disabled="L < 3">Run Correction</el-button>
+					</el-tooltip>
 				</div>
 			</el-card>
 		</div>
@@ -344,6 +373,18 @@ export default {
 
 div::-webkit-scrollbar {
 	width: 0;
+}
+
+.el-button--success.is-plain:hover, .el-button--success.is-plain:focus {
+    color: #67C23A !important;
+    background: #f0f9eb !important;
+    border-color: #c2e7b0 !important;
+}
+
+.el-button--primary.is-plain:hover, .el-button--primary.is-plain:focus {
+    color: #409EFF !important;
+    background: #ecf5ff !important;
+    border-color: #b3d8ff !important;
 }
 
 </style>
