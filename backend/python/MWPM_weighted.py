@@ -7,28 +7,41 @@ see `main`
 """
 
 import numpy as np
-import os, sys
+import os, sys, math
 
 """
 weights: see `output_weights_to_file` and `generate_default_weights_to_file`
 p: physical qubit error rate, default to 0.01
 min_error_cases: if reaches the minimum error cases, the error rate is returned immediately. speed up computation
 max_N: the maximum cases to try before return. This is useful when logical error rate is too small to be found in reasonable time
+parallel: use how many processes for parallel computing. <= 1 will automatically use os.cpu_count()-1 instead
 """
-def compute_error_rate(weights, p=0.01, min_error_cases=1000, max_N=100000000, rust_qecp_path=None, rust_qecp_name="rust_qecp"):
+def compute_error_rate(weights, p=0.01, min_error_cases=1000, max_N=100000000, rust_qecp_path=None, rust_qecp_name="rust_qecp", parallel=1):
+    if parallel < 1:
+        parallel = os.cpu_count() - 1
     if rust_qecp_path is None:  # automatically find the rust_qecp binary
         rust_qecp_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "rust", "target", "release")
         rust_qecp_binary = os.path.join(rust_qecp_path, rust_qecp_name)
     d = sanity_check_weights_return_d(weights)
     weights_path = os.path.join(rust_qecp_path, "weights.txt")
     output_weights_to_file(weights, weights_path)
-    cmd = rust_qecp_binary + " tool error_rate_MWPM_with_weight [%d] [%f] -m %d -e %d -w " % (d, p, max_N, min_error_cases) + weights_path
+    max_N_each = math.ceil(max_N / parallel)
+    min_error_cases_each = math.ceil(min_error_cases / parallel)
+    cmd = rust_qecp_binary + " tool error_rate_MWPM_with_weight [%d] [%f] -m %d -e %d -w " % (d, p, max_N_each, min_error_cases_each) + weights_path
     # print("cmd:", cmd)
-    r = os.popen(cmd)
-    text = r.read()
-    elements = text.split(" ")
-    assert int(elements[1]) == d, "strange output from rust_qecp"
-    return float(elements[4].strip())
+    runnings = []
+    for i in range(parallel):
+        r = os.popen(cmd)
+        runnings.append(r)
+    total_rounds = 0
+    qec_failed = 0
+    for r in runnings:
+        text = r.read()
+        elements = text.split(" ")
+        assert int(elements[1]) == d, "strange output from rust_qecp"
+        total_rounds += int(elements[2].strip())
+        qec_failed += int(elements[3].strip())
+    return qec_failed / total_rounds
 
 """
 weights should be 4 dimensional numpy array.
@@ -83,5 +96,5 @@ if __name__ == "__main__":
 
     # test calling rust functions
     default_weights = generate_weights_from_function(5, default_weights)
-    error_rate = compute_error_rate(default_weights, min_error_cases=10)
+    error_rate = compute_error_rate(default_weights, min_error_cases=1000, parallel=0)  # parallel=0 to use number of CPUs - 1 processes
     print("error_rate:", error_rate)

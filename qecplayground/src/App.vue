@@ -238,7 +238,7 @@ export default {
 			if (this.display_mode != this.modes.error_only) {
 				this.$notify.error({
 					title: 'Action Failed',
-					message: 'You can only customize error pattern in "Error Only" mode (see "Global Settings" -> "Pauli Operators")'
+					message: 'You can only customize error pattern in "Error" mode (see "Global Settings" -> "Display")'
 				})
 				return
 			}

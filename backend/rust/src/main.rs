@@ -14,6 +14,7 @@ extern crate actix_cors;
 extern crate serde;
 extern crate blossom;
 extern crate pyo3;
+extern crate num_cpus;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -62,6 +63,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg max_N: -m --max_N +takes_value "maximum total count, default to 100000000")
                 (@arg min_error_cases: -e --min_error_cases +takes_value "minimum error cases, default to 1000")
                 (@arg weights: -w --weights +takes_value "path to weights file, e.g. `default_weights.txt`")
+                (@arg parallel: -p --parallel +takes_value "how many parallel threads to use. 0 will use number of CPUs - 1. WARNING: this doesn't work well! seems like it has global python locks or so. try to parallel using processes instead! DO NOT USE THIS!")
             )
         )
         (@subcommand server => (about: "HTTP server for decoding information")
