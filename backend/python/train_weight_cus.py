@@ -11,19 +11,6 @@ from MWPM_weighted import compute_error_rate
 from MWPM_weighted import generate_weights_from_function
 from MWPM_weighted import default_weights
 
-# pip3 install tinynn
-from tinynn.core.layer import Dense
-from tinynn.core.layer import ReLU
-from tinynn.core.layer import Sigmoid
-from tinynn.core.loss import MSE
-from tinynn.core.model import Model
-from tinynn.core.net import Net
-from tinynn.core.optimizer import Adam
-from tinynn.utils.data_iterator import BatchIterator
-from tinynn.utils.metric import mean_square_error
-from tinynn.utils.seeder import random_seed
-from tinynn.core.loss import Loss
-
 
 def load_data():
     def distance_delta(i, j):
