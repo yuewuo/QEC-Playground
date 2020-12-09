@@ -15,7 +15,6 @@ from MWPM_weighted import default_weights
 def load_data():
     def distance_delta(i, j):
         return (abs(i + j) + abs(i - j)) / 2.
-
     d = 5
 
     edges = np.zeros((1, (d + 1) * (d + 1)))
@@ -68,9 +67,15 @@ def main(epochs, lr, gr, logs_dir):
         "The input and target arrays had different amounts of data ({} vs {})".format(N, target.shape[0]) # sanity check!
     print("Loaded {} training examples.".format(N))
 
+    loss_list = []
+
+    file = open(logs_dir + "/loss.txt", "w+")
+    filer = open(logs_dir + "/loss_running.txt", "w+")
 
     for epoch in range(epochs):
         last_loss = weights_to_loss(target, True)
+        filer.write(str(last_loss) + "\n")
+        loss_list.append(last_loss)
         print("loss: {}".format(last_loss))
         delta_loss = np.zeros((1, (d + 1) * (d + 1)))
         for i in range(d + 1):
@@ -82,7 +87,9 @@ def main(epochs, lr, gr, logs_dir):
         print(delta_loss)
         target -= delta_loss * lr
 
-
+    
+    for x in loss_list:
+        file.write(str(x) + "\n")
 
 
 
@@ -90,7 +97,7 @@ if __name__ == "__main__":
     # script arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", help="number of epochs for training",
-                        type=int, default=10000)
+                        type=int, default=10)
     parser.add_argument("--lr", help="learning rate for training",
                         type=float, default=1e0)
     parser.add_argument("--gr", help="gradient rate for training",
