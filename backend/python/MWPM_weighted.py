@@ -41,6 +41,7 @@ def compute_error_rate(weights, p=0.01, min_error_cases=1000, max_N=100000000, r
         assert int(elements[1]) == d, "strange output from rust_qecp"
         total_rounds += int(elements[2].strip())
         qec_failed += int(elements[3].strip())
+    # print(total_rounds, qec_failed)
     return qec_failed / total_rounds
 
 """
