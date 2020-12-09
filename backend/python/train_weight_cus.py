@@ -36,12 +36,12 @@ def load_data():
     for i in range(d + 1):
         for j in range(d + 1):
             edges[0, i * (d + 1) + j] = (i * (d + 1) + j) / float(d + 1) / float(d + 1)
-            weights[0, i * (d + 1) + j] = distance_delta(i, j)
+            weights[0, i * (d + 1) + j] = distance_delta(i, j) + 1 # add 1 bias
 
     return edges, weights
 
 
-def weights_to_loss(weights, debug):
+def weights_to_loss(weights, debug=False):
     if debug:
         print(weights)
     d = 5
@@ -85,7 +85,7 @@ class LMWPM(Loss):
         return grads
 
 
-def main(batch_size, epochs, gr, logs_dir, seed):
+def main(epochs, lr, gr, logs_dir):
     """
     Main function that performs training and test on a validation set
     :param weight_file: weight input file with training data
@@ -96,8 +96,7 @@ def main(batch_size, epochs, gr, logs_dir, seed):
     :param logs_dir: directory where to save logs and trained parameters/weights
     """
 
-    if seed >= 0:
-        random_seed(seed)
+    d = 5
 
     print("Importing weights...")
     input, target = load_data()
@@ -109,31 +108,19 @@ def main(batch_size, epochs, gr, logs_dir, seed):
         "The input and target arrays had different amounts of data ({} vs {})".format(N, target.shape[0]) # sanity check!
     print("Loaded {} training examples.".format(N))
 
-    net = Net([
-        Dense(32),
-        ReLU(),
-        Dense(128),
-        ReLU(),
-        Dense(64),
-        ReLU(),
-        Dense(36),
-        Sigmoid()
-    ])
 
-    model = Model(net=net, loss=LMWPM(gr=gr), optimizer=Adam())
-
-    
-    iterator = BatchIterator(batch_size=batch_size)
     for epoch in range(epochs):
-        for batch in iterator(input, target):
-            preds = model.forward(batch.inputs)
-            loss, grads = model.backward(preds, batch.targets)
-            model.apply_grads(grads)
+        last_loss = weights_to_loss(target, True)
+        print("loss: {}".format(last_loss))
+        delta_loss = np.zeros((1, (d + 1) * (d + 1)))
+        for i in range(d + 1):
+            for j in range(d + 1):
+                delta_target = np.copy(target)
+                delta_target[0, i * (d + 1) + j] += gr
+                delta_loss[0, i * (d + 1) + j] = (weights_to_loss(delta_target) - last_loss) / gr
+        target -= delta_loss * lr
 
-        # evaluate
-        preds = net.forward(input)
-        mse = mean_square_error(preds, target)
-        print("Epoch %d %s" % (epoch, mse))
+
 
 
 
@@ -142,8 +129,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", help="number of epochs for training",
                         type=int, default=10000)
-    parser.add_argument("--batch_size", help="batch size used for training",
-                        type=int, default=1)
+    parser.add_argument("--lr", help="learning rate for training",
+                        type=float, default=1e-1)
     parser.add_argument("--gr", help="gradient rate for training",
                         type=float, default=1e-2)
     # parser.add_argument("--val", help="percent of training data to use for validation",
@@ -152,7 +139,6 @@ if __name__ == "__main__":
     #                     type=str, required=True)
     parser.add_argument("--logs_dir", help="logs directory",
                         type=str, default="")
-    parser.add_argument("--seed", default=-1, type=int)
     args = parser.parse_args()
 
     if len(args.logs_dir) == 0: # parameter was not specified
@@ -162,7 +148,7 @@ if __name__ == "__main__":
         os.makedirs(args.logs_dir)
 
     # # run the main function
-    main(args.batch_size, args.epochs, args.gr, args.logs_dir, args.seed)
+    main(args.epochs, args.lr, args.gr, args.logs_dir)
     # sys.exit(0)
 
     # default_weights = generate_weights_from_function(5, default_weights)
