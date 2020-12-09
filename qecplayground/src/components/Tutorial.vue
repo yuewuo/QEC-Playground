@@ -183,7 +183,9 @@ export default {
 			this.step = 0
 		},
 		stop_tutorial() {
-			// remove all the strange settings of GUI
+			this.running = null
+			this.$emit("hideZancilla", false)
+			this.$emit("hideXancilla", false)
 		},
 		toggle_collapse() {
 			if (this.running == "introduction" && this.running_idx == 0 && this.collapsed == false) {
