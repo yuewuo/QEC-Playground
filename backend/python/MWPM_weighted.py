@@ -54,11 +54,11 @@ def sanity_check_weights_return_d(weights):
     return d
 
 def generate_weights_from_function(d, func):
-    weights = np.zeros((d+1, d+1, d+1, d+1), dtype=np.double)
-    for i1 in range(d+1):
-        for j1 in range(d+1):
-            for i2 in range(d+1):
-                for j2 in range(d+1):
+    weights = np.zeros((d + 1, d + 1, d + 1, d + 1), dtype=np.double)
+    for i1 in range(d + 1):
+        for j1 in range(d + 1):
+            for i2 in range(d + 1):
+                for j2 in range(d + 1):
                     weights[i1, j1, i2, j2] = func(i1, j1, i2, j2)
     return weights
 
@@ -67,11 +67,13 @@ def default_weights(i1, j1, i2, j2):
         return (abs(i + j) + abs(i - j)) / 2.
     def distance(i1, j1, i2, j2):
         return distance_delta(i2 - i1, j2 - j1)
-    return - distance(i1, j1, i2, j2)
+    return -distance(i1, j1, i2, j2)
 
 def generate_default_weights_to_file(d, filename):
     weights = generate_weights_from_function(d, default_weights)
     output_weights_to_file(weights, filename)
+
+
 
 if __name__ == "__main__":
     # generate correct default weights
