@@ -43,34 +43,6 @@ def weights_to_loss(weights, debug=False):
 
     return compute_error_rate(nweights, min_error_cases=10)
 
-class LMWPM(Loss):
-    def __init__(self, gr):
-        self.last_loss = 0.0
-        self.curr_loss = 0.0
-        self.gr = gr
-        self.init_inputs, self.init_weights = load_data()
-
-    def loss(self, predicted, actual):
-        # print("predicted shape: {}".format(predicted.shape))
-        # er = weights_to_loss(self.init_weights + (predicted - 0.5) * 10.)
-        er = weights_to_loss(predicted, True)
-        self.curr_loss = er
-        print("error rate: {}".format(er))
-        return er
-    
-    def grad(self, predicted, actual):
-        d = 5
-        grads = np.zeros((1, (d + 1) * (d + 1)))
-        for i in range(d + 1):
-            for j in range(d + 1):
-                r_pred = np.copy(predicted)
-                r_pred[0, i * (d + 1) + j] += self.gr
-                grads[0, i * (d + 1) + j] = (weights_to_loss(r_pred, False) - self.curr_loss) / self.gr
-        
-        self.last_loss = self.curr_loss
-        print("grad: {}".format(grads))
-        return grads
-
 
 def main(epochs, lr, gr, logs_dir):
     """
