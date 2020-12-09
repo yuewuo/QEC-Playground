@@ -30,6 +30,7 @@ def load_data():
 
 def weights_to_loss(weights, debug=False):
     if debug:
+        print("weights: ")
         print(weights)
     d = 5
     nweights = np.zeros((d + 1, d + 1, d + 1, d + 1))
@@ -41,7 +42,7 @@ def weights_to_loss(weights, debug=False):
                     dj = j2 - j1
                     nweights[i1, j1, i2, j2] = weights[0, di * (d + 1) + dj]
 
-    return compute_error_rate(nweights, min_error_cases=1000, parallel=0)
+    return compute_error_rate(nweights, min_error_cases=100, parallel=0)
 
 
 def main(epochs, lr, gr, logs_dir):
@@ -77,6 +78,8 @@ def main(epochs, lr, gr, logs_dir):
                 delta_target = np.copy(target)
                 delta_target[0, i * (d + 1) + j] += gr
                 delta_loss[0, i * (d + 1) + j] = (weights_to_loss(delta_target) - last_loss) / gr
+        print("delta: ")
+        print(delta_loss)
         target -= delta_loss * lr
 
 
@@ -89,9 +92,9 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", help="number of epochs for training",
                         type=int, default=10000)
     parser.add_argument("--lr", help="learning rate for training",
-                        type=float, default=1e-1)
+                        type=float, default=1e0)
     parser.add_argument("--gr", help="gradient rate for training",
-                        type=float, default=1e-2)
+                        type=float, default=1e-1)
     # parser.add_argument("--val", help="percent of training data to use for validation",
     #                     type=float, default=0.8)
     # parser.add_argument("--input", help="input weights",
