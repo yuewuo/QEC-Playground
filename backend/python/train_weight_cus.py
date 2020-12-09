@@ -41,7 +41,7 @@ def weights_to_loss(weights, debug=False):
                     dj = j2 - j1
                     nweights[i1, j1, i2, j2] = weights[0, di * (d + 1) + dj]
 
-    return compute_error_rate(nweights, min_error_cases=1000, parallel=0)
+    return compute_error_rate(nweights, min_error_cases=100, parallel=0)
 
 
 def main(epochs, lr, gr, logs_dir):
@@ -100,9 +100,9 @@ if __name__ == "__main__":
     # script arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", help="number of epochs for training",
-                        type=int, default=10)
+                        type=int, default=100)
     parser.add_argument("--lr", help="learning rate for training",
-                        type=float, default=1e0)
+                        type=float, default=1e2)
     parser.add_argument("--gr", help="gradient rate for training",
                         type=float, default=1e-1)
     # parser.add_argument("--val", help="percent of training data to use for validation",
