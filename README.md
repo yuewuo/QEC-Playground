@@ -118,3 +118,9 @@ cargo run --release -- tool automatic_benchmark [15] [5e-1,2e-1,1e-1,5e-2,2e-2,1
 cargo run --release -- tool automatic_benchmark [25] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -q maximum_max_weight_matching_decoder -m 1000000
 ```
 
+## Contributions
+
+Guojun: design GUI. design and implement machine learning based weight optimized MWPM decoder.
+
+Yue: implement 3D GUI. design and implement interactive tutorial. propose and implement naïve decoder. implement MWPM decoder.
+
