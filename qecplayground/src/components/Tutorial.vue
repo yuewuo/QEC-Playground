@@ -401,6 +401,10 @@ export default {
 	overflow: auto;
 }
 
+.holder::-webkit-scrollbar {
+	width: 0;
+}
+
 .collapse-btn {
 	position: absolute;
 	bottom: 5px;
@@ -418,7 +422,7 @@ export default {
 	overflow: auto;
 	margin-left: 50px;
 	margin-right: 50px;
-	min-height: 150px;
+	// min-height: 150px;
 }
 
 .left-right-btn {
