@@ -41,7 +41,7 @@ def weights_to_loss(weights, debug=False):
                     dj = j2 - j1
                     nweights[i1, j1, i2, j2] = weights[0, di * (d + 1) + dj]
 
-    return compute_error_rate(nweights, min_error_cases=100, parallel=0)
+    return compute_error_rate(nweights, min_error_cases=1000, parallel=0)
 
 
 def main(epochs, lr, gr, logs_dir):
