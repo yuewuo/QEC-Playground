@@ -16,7 +16,7 @@ pub async fn run_server(port: i32, addr: String, root_url: String) -> std::io::R
             .service(
                 web::scope(root_url.as_str())
                     .route("/hello", web::get().to(|| { HttpResponse::Ok().body("hello world") }))
-                    .route("/stupid_decoder", web::post().to(stupid_decoder))
+                    .route("/naive_decoder", web::post().to(naive_decoder))
                     .route("/MWPM_decoder", web::post().to(maximum_max_weight_matching_decoder))
             )
         }).bind(format!("{}:{}", addr, port))?.run().await
@@ -58,14 +58,14 @@ fn output_L2_bit_array_to_json(array: &ndarray::Array2<bool>) -> serde_json::Val
     json!(matrix)
 }
 
-/// Decode a single error pattern using stupid_correction
-async fn stupid_decoder(form: web::Json<DecodeSingleForm>) -> Result<HttpResponse, Error> {
+/// Decode a single error pattern using naive_correction
+async fn naive_decoder(form: web::Json<DecodeSingleForm>) -> Result<HttpResponse, Error> {
     let L = form.L;
     if L < 2 { return Err(error::ErrorBadRequest("L must be no less than 2")) }
     let x_error = ZxError::new(parse_L2_bit_array_from_json(L, &form.x_error).map_err(|e| error::ErrorBadRequest(e))?);
     let z_error = ZxError::new(parse_L2_bit_array_from_json(L, &form.z_error).map_err(|e| error::ErrorBadRequest(e))?);
     let measurement = util::generate_perfect_measurements(&x_error, &z_error);
-    let (x_correction, z_correction) = qec::stupid_correction(&measurement);
+    let (x_correction, z_correction) = qec::naive_correction(&measurement);
     let x_corrected = x_error.do_correction(&x_correction);
     let z_corrected = z_error.do_correction(&z_correction);
     let corrected_measurement = util::generate_perfect_measurements(&x_corrected, &z_corrected);
@@ -90,7 +90,7 @@ async fn stupid_decoder(form: web::Json<DecodeSingleForm>) -> Result<HttpRespons
     Ok(HttpResponse::Ok().body(serde_json::to_string(&ret)?))
 }
 
-/// Decode a single error pattern using stupid_correction
+/// Decode a single error pattern using naive_correction
 async fn maximum_max_weight_matching_decoder(form: web::Json<DecodeSingleForm>) -> Result<HttpResponse, Error> {
     let L = form.L;
     if L < 2 { return Err(error::ErrorBadRequest("L must be no less than 2")) }

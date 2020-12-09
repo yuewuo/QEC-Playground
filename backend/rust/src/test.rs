@@ -22,8 +22,8 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
         ("validate_correction", Some(_)) => {
             validate_correction()
         }
-        ("stupid_correction", Some(_)) => {
-            stupid_correction()
+        ("naive_correction", Some(_)) => {
+            naive_correction()
         }
         ("try_blossom_correction", Some(_)) => {
             try_blossom_correction()
@@ -38,7 +38,7 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
             save_load();
             perfect_measurement();
             validate_correction();
-            stupid_correction();
+            naive_correction();
             debug_tests();
         }
         _ => unreachable!()
@@ -156,7 +156,7 @@ fn validate_correction() {
     assert_eq!(z_error_ro.validate_z_correction(&z_correction_ro), Err("there is Z_L logical operator after correction".to_string()));
 }
 
-fn stupid_correction() {
+fn naive_correction() {
     let L = 5;
     let mut x_error_ro = ZxError::new_L(L);
     let mut x_error = x_error_ro.view_mut();
@@ -168,7 +168,7 @@ fn stupid_correction() {
     let measurement = util::generate_perfect_measurements(&x_error_ro, &x_error_ro);
     println!("measurement:");
     measurement.print();
-    let (x_correction, z_correction) = qec::stupid_correction(&measurement);
+    let (x_correction, z_correction) = qec::naive_correction(&measurement);
     assert_eq!(x_error_ro.validate_x_correction(&x_correction), Ok(()));
     assert_eq!(x_error_ro.validate_z_correction(&z_correction), Ok(()));
 }

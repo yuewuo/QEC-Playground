@@ -16,6 +16,19 @@ export default {
 			default: 5,
 		},
 		
+		
+		hideZancilla: {
+			type: Boolean,
+			default: false,
+		},
+		hideXancilla: {
+			type: Boolean,
+			default: false,
+		},
+		removeView: {  // used to debug other GUI, e.g. tutorial. This will remove all the initialization of 3D objects to speed up rendering
+			type: Boolean,
+			default: false,
+		},
 		decoderServerRootUrl: {
 			type: String,
 			default: () => "http://127.0.0.1:8066/"
@@ -153,6 +166,8 @@ export default {
 	},
 	mounted() {
 		window.$mainQubits = this  // for fast debugging
+		if (this.removeView) return
+
 		const scene = new THREE.Scene()
 		this.three.scene = scene
 		this.three.clock = new THREE.Clock()
@@ -189,11 +204,12 @@ export default {
 		container.appendChild(renderer.domElement)
 
 		// support for resize
+		let that = this
 		window.addEventListener( 'resize', () => {
 			const windowWidth = window.innerWidth-this.panelWidth
 			const windowHeight = window.innerHeight
-			camera.aspect = windowWidth / windowHeight
-			camera.updateProjectionMatrix()
+			that.three.camera.aspect = windowWidth / windowHeight
+			that.three.camera.updateProjectionMatrix()
 			renderer.setSize( windowWidth, windowHeight )
 		}, false )
 
@@ -262,22 +278,65 @@ export default {
 		async test() {
 
 		},
-		paper_figure_prepare_white_background(sleep_ms = 500) {
-			let that = this
-			setTimeout(() => {
-				that.three.scene.background = new THREE.Color( 1, 1, 1 )
-			}, sleep_ms)  // run <500ms> later so that all the instances already have their texture mapping
+		// run <500ms> later so that all the instances already have their texture mapping
+		async paper_figure_prepare_white_background(sleep_ms = 500) {
+			await this.sleep_ms(sleep_ms)
+			this.three.scene.background = new THREE.Color( 1, 1, 1 )
+		},
+		async paper_figure_random_errors() {
+			this.paper_figure_prepare_white_background()  // do not await
+			this.L = 5
+			await this.vue_next_tick()  // so that matrix are updated
+			this.zDataQubitsErrors[0][0] = 1
+			this.zDataQubitsErrors[3][2] = 1
+			this.xDataQubitsErrors[3][2] = 1
+			this.xDataQubitsErrors[1][4] = 1
+			this.update_measurement()
+			// reset camera
+			const windowWidth = window.innerWidth - this.panelWidth
+			const windowHeight = window.innerHeight
+			const range = 3.5
+			const camera = new THREE.OrthographicCamera( windowWidth / windowHeight * -range, windowWidth / windowHeight * range, range, -range, 0.1, 10000 )
+			this.three.camera = camera
+			camera.position.set( 0, 1, 0 )
+			camera.lookAt( this.three.scene.position )
+			camera.updateMatrix()
+			this.three.scene.remove( this.internals.pointCloud )  // will cause exception when change L. OK because this is not interactive.
+			// stop the error animation (but will stop at random phase...)
+			for (let i=0; i<this.dataErrorTopParameters.length; ++i) this.dataErrorTopParameters[i][3] = 0
+		},
+		async paper_figure_single_stabilizer(x1, x2, x3, x4) {
+			this.paper_figure_prepare_white_background()  // do not await
+			this.L = 2  // only for plotting
+			await this.vue_next_tick()  // so that matrix are updated
+			this.three.camera.position.set( -1.8393678660619175, 2.0783821441393284, 0.2983748596088124 )
+			this.three.camera.lookAt( this.three.scene.position )
+			// set error
+			this.xDataQubitsErrors[0][0] = x1
+			this.xDataQubitsErrors[0][1] = x2
+			this.xDataQubitsErrors[1][1] = x3
+			this.xDataQubitsErrors[1][0] = x4
+			this.ancillaQubitsErrors[1][1] = x1 ^ x2 ^ x3 ^ x4
+			this.hideXancilla = true  // do not display them
+			// stop the error animation (but will stop at random phase...)
+			for (let i=0; i<this.dataErrorTopParameters.length; ++i) this.dataErrorTopParameters[i][3] = 0
 		},
 		async paper_figure_single_qubit_operator(x, z) {
-			this.paper_figure_prepare_white_background()
+			this.paper_figure_prepare_white_background()  // do not await
 			this.L = 1
 			await this.vue_next_tick()  // so that matrix are updated
 			const initCameraRatio = this.L * 1.0
+			// use $mainQubits.three.camera.position to see current position
 			this.three.camera.position.set( -2 * initCameraRatio, 1 * initCameraRatio, 1 * initCameraRatio )
 			this.xDataQubitsErrors[0][0] = x ? 1 : 0
 			this.zDataQubitsErrors[0][0] = z ? 1 : 0
-			// stop the error animation
+			// stop the error animation (but will stop at random phase...)
 			for (let i=0; i<this.dataErrorTopParameters.length; ++i) this.dataErrorTopParameters[i][3] = 0
+		},
+		async sleep_ms(ms) {
+			return new Promise((resolve, reject) => {
+				setTimeout(() => { resolve() }, ms)
+			})
 		},
 		async vue_next_tick() {
 			let that = this
@@ -285,7 +344,7 @@ export default {
 				that.$nextTick(() => { resolve() })
 			})
 		},
-		async get_correction(decoder="stupid_decoder", x_error, z_error) {
+		async get_correction(decoder="naive_decoder", x_error, z_error) {
 			x_error = x_error || this.xDataQubitsErrors
 			z_error = z_error || this.zDataQubitsErrors
 			let request_data = {
@@ -402,6 +461,8 @@ export default {
 					if (this.ancillaQubitsErrors[i][j]) targetColor = isZ ? this.zStabErrorColor : this.xStabErrorColor
 					this.internals.ancillaQubitsMaterials[i][j].color = this.smoothColor(targetColor
 						, this.internals.ancillaQubitsMaterials[i][j].color, delta)
+					this.internals.ancillaQubitsMaterials[i][j].opacity = this.smoothValue(((isZ && !this.hideZancilla) || (!isZ && !this.hideXancilla)) ? 1. : 0.
+						, this.internals.ancillaQubitsMaterials[i][j].opacity, delta)
 				}
 			}
 			for (let i = 0; i < this.internals.ancillaQubits.length; ++i) {
@@ -521,6 +582,8 @@ export default {
 				color: ((i + j) % 2) == 0 ? this.zStabQubitColor : this.xStabQubitColor,
 				envMap: this.three.scene.background,
 				reflectivity: 0.5,
+				transparent: true,  // allow opacity,
+				opacity: 1,
 			} ))))
 			for (let i=0; i <= this.L; ++i) {
 				const row = []
@@ -628,6 +691,7 @@ export default {
 			for (const obj of this.internals.dataErrorArray) this.three.scene.add(obj)
 			const initCameraRatio = this.L * 0.5
 			this.three.camera.position.set( -2 * initCameraRatio, 1 * initCameraRatio, 1 * initCameraRatio )
+			this.three.camera.lookAt( this.three.scene.position )
 		},
 		update_measurement() {  // measure `this.zDataQubitsErrors` and `this.xDataQubitsErrors` then update `this.ancillaQubitsErrors`
 			for (let i=0; i<=this.L; ++i) {
@@ -671,5 +735,9 @@ export default {
 </script>
 
 <style scoped>
+
+.main {
+	background: black;
+}
 
 </style>

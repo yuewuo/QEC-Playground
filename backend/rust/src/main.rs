@@ -29,7 +29,7 @@ async fn main() -> std::io::Result<()> {
             (@subcommand save_load => (about: "testing save and load functionality"))
             (@subcommand perfect_measurement => (about: "print a perfect measurement"))
             (@subcommand validate_correction => (about: "validate x and z correction"))
-            (@subcommand stupid_correction => (about: "a stupid error correction algorithm"))
+            (@subcommand naive_correction => (about: "a naive error correction algorithm"))
             (@subcommand try_blossom_correction => (about: "try to use blossom library to decoder"))
             (@subcommand maximum_max_weight_matching_correction => (about: "try to use networkx python library to decoder"))
             (@subcommand debug_tests => (about: "test for debug"))
@@ -47,14 +47,14 @@ async fn main() -> std::io::Result<()> {
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")
                 (@arg ps: +required "[p1,p2,p3,...,pm]")
                 (@arg directory: -d --directory +takes_value "directory to output files, default to ./")
-                (@arg qec_decoder: -q --qec_decoder +takes_value "available decoders, e.g. `stupid_decoder`")
+                (@arg qec_decoder: -q --qec_decoder +takes_value "available decoders, e.g. `naive_decoder`")
             )
             (@subcommand automatic_benchmark => (about: "automatically run benchmark with round upper bound, lower bound and minimum error cases")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")
                 (@arg ps: +required "[p1,p2,p3,...,pm]")
                 (@arg max_N: -m --max_N +takes_value "maximum total count, default to 100000000")
                 (@arg min_error_cases: -e --min_error_cases +takes_value "minimum error cases, default to 1000")
-                (@arg qec_decoder: -q --qec_decoder +takes_value "available decoders, e.g. `stupid_decoder`")
+                (@arg qec_decoder: -q --qec_decoder +takes_value "available decoders, e.g. `naive_decoder`")
             )
             (@subcommand error_rate_MWPM_with_weight => (about: "automatic benchmark on MWPM with weights from file")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")
@@ -84,7 +84,7 @@ async fn main() -> std::io::Result<()> {
             let root_url = matches.value_of("root_url").unwrap_or("/").to_string();
             println!("QECP server booting...");
             println!("visit http://{}:{}{}<commands>", addr, port, root_url);
-            println!("supported commands include `hello`, `stupid_decoder`, etc. See `web.rs` for more commands");
+            println!("supported commands include `hello`, `naive_decoder`, etc. See `web.rs` for more commands");
             web::run_server(port, addr, root_url).await?;
         }
         _ => unreachable!()
