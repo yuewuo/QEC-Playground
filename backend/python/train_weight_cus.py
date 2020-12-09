@@ -71,12 +71,14 @@ def main(epochs, lr, gr, logs_dir):
 
     file = open(logs_dir + "/loss.txt", "w+")
     filer = open(logs_dir + "/loss_running.txt", "w+")
+    filew = open(logs_dir + "/running_weights.txt", "a")
 
     for epoch in range(epochs):
         last_loss = weights_to_loss(target, True)
         filer.write(str(last_loss) + "\n")
+        np.savetxt(filew, target)
         loss_list.append(last_loss)
-        print("loss: {}".format(last_loss))
+        print("Epoch {}: loss = {}".format(epoch, last_loss))
         delta_loss = np.zeros((1, (d + 1) * (d + 1)))
         for i in range(d + 1):
             for j in range(d + 1):
@@ -90,6 +92,7 @@ def main(epochs, lr, gr, logs_dir):
     
     for x in loss_list:
         file.write(str(x) + "\n")
+    np.savetxt(logs_dir + '/final_weights.txt', target)
 
 
 
