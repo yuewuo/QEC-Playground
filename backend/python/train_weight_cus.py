@@ -43,6 +43,12 @@ def weights_to_loss(weights, debug=False):
 
     return compute_error_rate(nweights, min_error_cases=100, parallel=0)
 
+def negative_weights_check(weights):
+    d = 5
+    for i in range(d + 1):
+        for j in range(d + 1):
+            if weights[0, i * (d + 1) + j] < 0:
+                weights[0, i * (d + 1) + j] = 0
 
 def main(epochs, lr, gr, logs_dir):
     """
@@ -88,6 +94,7 @@ def main(epochs, lr, gr, logs_dir):
         print("delta: ")
         print(delta_loss)
         target -= delta_loss * lr
+        negative_weights_check(target)
 
     
     for x in loss_list:
