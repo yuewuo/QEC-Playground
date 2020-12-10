@@ -11,44 +11,52 @@ from MWPM_weighted import compute_error_rate
 from MWPM_weighted import generate_weights_from_function
 from MWPM_weighted import default_weights
 
-
-def load_data():
+def default_weights(i1, j1, i2, j2):
     def distance_delta(i, j):
         return (abs(i + j) + abs(i - j)) / 2.
+    def distance(i1, j1, i2, j2):
+        return distance_delta(i2 - i1, j2 - j1)
+    return -distance(i1, j1, i2, j2)
+
+def load_data():
     d = 5
 
-    edges = np.zeros((1, (d + 1) * (d + 1)))
-    weights = np.zeros((1, (d + 1) * (d + 1)))
-    for i in range(d + 1):
-        for j in range(d + 1):
-            edges[0, i * (d + 1) + j] = (i * (d + 1) + j) / float(d + 1) / float(d + 1)
-            weights[0, i * (d + 1) + j] = 2.5 #distance_delta(i, j) + 1 # add 1 bias
-
-    return edges, weights
-
-
-def weights_to_loss(weights, debug=False):
-    if debug:
-        print("weights: ")
-        print(weights)
-    d = 5
-    nweights = np.zeros((d + 1, d + 1, d + 1, d + 1))
+    edges = np.zeros((d + 1, d + 1, d + 1, d + 1))
+    weights = np.zeros((d + 1, d + 1, d + 1, d + 1))
     for i1 in range(d + 1):
         for j1 in range(d + 1):
             for i2 in range(d + 1):
                 for j2 in range(d + 1):
-                    di = i2 - i1
-                    dj = j2 - j1
-                    nweights[i1, j1, i2, j2] = weights[0, di * (d + 1) + dj]
+                    edges[i1, j1, i2, j2] = (i1 * (d + 1)**3 + j1 * (d + 1)**2 + i2 * (d + 1) + j2) / (float(d + 1) ** 4)
+                    weights[i1, j1, i2, j2] = default_weights(i1, j1, i2, j2) + 0 # add 1 bias
 
-    return compute_error_rate(nweights, min_error_cases=100, parallel=0)
+    return edges, weights
+
+
+# def weights_to_loss(weights, debug=False):
+#     if debug:
+#         print("weights: ")
+#         print(weights)
+#     d = 5
+#     nweights = np.zeros((d + 1, d + 1, d + 1, d + 1))
+#     for i1 in range(d + 1):
+#         for j1 in range(d + 1):
+#             for i2 in range(d + 1):
+#                 for j2 in range(d + 1):
+#                     di = i2 - i1
+#                     dj = j2 - j1
+#                     nweights[i1, j1, i2, j2] = weights[0, di * (d + 1) + dj]
+
+#     return compute_error_rate(nweights, min_error_cases=100, parallel=0)
 
 def negative_weights_check(weights):
     d = 5
-    for i in range(d + 1):
-        for j in range(d + 1):
-            if weights[0, i * (d + 1) + j] < 0:
-                weights[0, i * (d + 1) + j] = 0
+    for i1 in range(d + 1):
+        for j1 in range(d + 1):
+            for i2 in range(d + 1):
+                for j2 in range(d + 1):
+                    if weights[i1, j1, i2, j2] < 0:
+                        weights[i1, j1, i2, j2] = 0
 
 def main(epochs, lr, gr, logs_dir):
     """
@@ -80,17 +88,19 @@ def main(epochs, lr, gr, logs_dir):
     filew = open(logs_dir + "/running_weights.txt", "a")
 
     for epoch in range(epochs):
-        last_loss = weights_to_loss(target, True)
+        last_loss = compute_error_rate(target, min_error_cases=100, parallel=0)
         filer.write(str(last_loss) + "\n")
-        np.savetxt(filew, target)
+        # np.savetxt(filew, target)
         loss_list.append(last_loss)
         print("Epoch {}: loss = {}".format(epoch, last_loss))
-        delta_loss = np.zeros((1, (d + 1) * (d + 1)))
-        for i in range(d + 1):
-            for j in range(d + 1):
-                delta_target = np.copy(target)
-                delta_target[0, i * (d + 1) + j] += gr
-                delta_loss[0, i * (d + 1) + j] = (weights_to_loss(delta_target) - last_loss) / gr
+        delta_loss = np.zeros((d + 1, d + 1, d + 1, d + 1))
+        for i1 in range(d + 1):
+            for j1 in range(d + 1):
+                for i2 in range(d + 1):
+                    for j2 in range(d + 1):
+                        delta_target = np.copy(target)
+                        delta_target[i1, j1, i2, j2] += gr
+                        delta_loss[i1, j1, i2, j2] = (compute_error_rate(delta_target, min_error_cases=100, parallel=0) - last_loss) / gr
         print("delta: ")
         print(delta_loss)
         target -= delta_loss * lr
@@ -99,7 +109,7 @@ def main(epochs, lr, gr, logs_dir):
     
     for x in loss_list:
         file.write(str(x) + "\n")
-    np.savetxt(logs_dir + '/final_weights.txt', target)
+    # np.savetxt(logs_dir + '/final_weights.txt', target)
 
 
 

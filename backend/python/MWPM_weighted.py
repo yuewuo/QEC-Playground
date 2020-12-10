@@ -97,5 +97,6 @@ if __name__ == "__main__":
 
     # test calling rust functions
     default_weights = generate_weights_from_function(5, default_weights)
+    print(default_weights)
     error_rate = compute_error_rate(default_weights, min_error_cases=1000, parallel=0)  # parallel=0 to use number of CPUs - 1 processes
     print("error_rate:", error_rate)
