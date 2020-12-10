@@ -22,7 +22,7 @@ def load_data():
     for i in range(d + 1):
         for j in range(d + 1):
             edges[0, i * (d + 1) + j] = (i * (d + 1) + j) / float(d + 1) / float(d + 1)
-            weights[0, i * (d + 1) + j] = distance_delta(i, j) + 1 # add 1 bias
+            weights[0, i * (d + 1) + j] = 2.5 #distance_delta(i, j) + 1 # add 1 bias
 
     return edges, weights
 
@@ -41,7 +41,7 @@ def weights_to_loss(weights, debug=False):
                     dj = j2 - j1
                     nweights[i1, j1, i2, j2] = weights[0, di * (d + 1) + dj]
 
-    return compute_error_rate(nweights, min_error_cases=1000, parallel=0)
+    return compute_error_rate(nweights, min_error_cases=100, parallel=0)
 
 
 def main(epochs, lr, gr, logs_dir):
