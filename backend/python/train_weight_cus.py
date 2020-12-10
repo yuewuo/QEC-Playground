@@ -135,7 +135,7 @@ def main(epochs, lr, gr, logs_dir):
                         delta_loss[d-i2, d-j2, d-i1, d-j1] = tloss
                         delta_loss[d-j2, i2, d-j1, i1] = tloss
         print("delta: ")
-        # print(delta_loss)
+        print(delta_loss)
         target -= delta_loss * lr
         negative_weights_check(target)
 
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", help="number of epochs for training",
                         type=int, default=100)
     parser.add_argument("--lr", help="learning rate for training",
-                        type=float, default=1e2)
+                        type=float, default=1e1)
     parser.add_argument("--gr", help="gradient rate for training",
                         type=float, default=1e-1)
     # parser.add_argument("--val", help="percent of training data to use for validation",
