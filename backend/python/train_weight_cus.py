@@ -94,15 +94,48 @@ def main(epochs, lr, gr, logs_dir):
         loss_list.append(last_loss)
         print("Epoch {}: loss = {}".format(epoch, last_loss))
         delta_loss = np.zeros((d + 1, d + 1, d + 1, d + 1))
+        delta_flag = np.zeros((d + 1, d + 1, d + 1, d + 1))
+        cnt = 0
         for i1 in range(d + 1):
             for j1 in range(d + 1):
                 for i2 in range(d + 1):
                     for j2 in range(d + 1):
+                        if delta_flag[i1, j1, i2, j2] == 1:
+
+                            continue
                         delta_target = np.copy(target)
                         delta_target[i1, j1, i2, j2] += gr
-                        delta_loss[i1, j1, i2, j2] = (compute_error_rate(delta_target, min_error_cases=100, parallel=0) - last_loss) / gr
+                        delta_target[j1, d-i1, j2, d-i2] += gr
+                        delta_target[d-i1, d-j1, d-i2, d-j2] += gr
+                        delta_target[d-j1, i1, d-j2, i2] += gr
+
+                        delta_target[i2, j2, i1, j1] += gr
+                        delta_target[j2, d-i2, j1, d-i1] += gr
+                        delta_target[d-i2, d-j2, d-i1, d-j1] += gr
+                        delta_target[d-j2, i2, d-j1, i1] += gr
+
+                        delta_flag[i1, j1, i2, j2] = 1
+                        delta_flag[j1, d-i1, j2, d-i2] = 1
+                        delta_flag[d-i1, d-j1, d-i2, d-j2] = 1
+                        delta_flag[d-j1, i1, d-j2, i2] = 1
+
+                        delta_flag[i2, j2, i1, j1] = 1
+                        delta_flag[j2, d-i2, j1, d-i1] = 1
+                        delta_flag[d-i2, d-j2, d-i1, d-j1] = 1
+                        delta_flag[d-j2, i2, d-j1, i1] = 1
+
+                        tloss = (compute_error_rate(delta_target, min_error_cases=10, parallel=0) - last_loss) / gr
+                        delta_loss[i1, j1, i2, j2] = tloss
+                        delta_loss[j1, d-i1, j2, d-i2] = tloss
+                        delta_loss[d-i1, d-j1, d-i2, d-j2] = tloss
+                        delta_loss[d-j1, i1, d-j2, i2] = tloss
+
+                        delta_loss[i2, j2, i1, j1] = tloss
+                        delta_loss[j2, d-i2, j1, d-i1] = tloss
+                        delta_loss[d-i2, d-j2, d-i1, d-j1] = tloss
+                        delta_loss[d-j2, i2, d-j1, i1] = tloss
         print("delta: ")
-        print(delta_loss)
+        # print(delta_loss)
         target -= delta_loss * lr
         negative_weights_check(target)
 
