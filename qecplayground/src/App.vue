@@ -3,6 +3,7 @@
 		<MainQubits :removeView="remove_3d_view" class="main-qubits" ref="qubits" :panelWidth="480" :enableStats="enableStats" 
 			:decoderServerRootUrl="decoderServerRootUrl" :L="L" @dataQubitClicked="dataQubitClicked"
 			:hideZancilla="running != null && hideZancilla" :hideXancilla="running != null && hideXancilla"></MainQubits>
+		<FaultTolerantView class="main-qubits" :panelWidth="480"></FaultTolerantView>
 		<div class="control-panel no-scrollbar">
 			<div style="text-align: center;">
 				<h1 class="title"><img src="@/assets/logo.png" class="logo"/>QEC Playground</h1>
@@ -132,6 +133,7 @@
 <script>
 import MainQubits from './components/MainQubits.vue'
 import Tutorial from './components/Tutorial.vue'
+import FaultTolerantView from './components/FaultTolerantView'
 let deploy_mode = process.env.NODE_ENV != "development"
 
 export default {
@@ -139,6 +141,7 @@ export default {
 	components: {
 		MainQubits,
 		Tutorial,
+		FaultTolerantView,
 	},
 	data() {
 		return {
