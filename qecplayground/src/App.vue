@@ -2,127 +2,129 @@
 	<div id="app">
 		<MainQubits :removeView="remove_3d_view" class="main-qubits" ref="qubits" :panelWidth="480" :enableStats="enableStats" 
 			:decoderServerRootUrl="decoderServerRootUrl" :L="L" @dataQubitClicked="dataQubitClicked"
-			:hideZancilla="running != null && hideZancilla" :hideXancilla="running != null && hideXancilla"></MainQubits>
-		<FaultTolerantView class="main-qubits" :panelWidth="480"></FaultTolerantView>
+			:hideZancilla="running != null && hideZancilla" :hideXancilla="running != null && hideXancilla" v-show="!show_ft_view"></MainQubits>
+		<FaultTolerantView class="main-qubits" :panelWidth="480" v-show="show_ft_view"></FaultTolerantView>
 		<div class="control-panel no-scrollbar">
 			<div style="text-align: center;">
 				<h1 class="title"><img src="@/assets/logo.png" class="logo"/>QEC Playground</h1>
 				<p>This is an educational tool for Quantum Error Correction (QEC). You can learn the currently most promising QEC scheme called surface code (planar code) by following the introduction tutorial and then trying different error patterns interactively.</p>
 			</div>
-			<el-collapse-transition>
-				<div v-show="running != null" v-if="tutorial_contents != null">
-					<el-card :body-style="{ padding: '20px', background: 'yellow', position: 'relative' }" id="tutorial-contents">
-						<div v-for="(list, name, index) of tutorial_contents" v-bind:key="index" v-show="running == name">
-							<div v-for="(item, i) in list" v-bind:key="i" v-show="running_idx == i">
-								<h3 style="margin: 0;" v-if="item.type == 'text'">{{ item.content }}</h3>
+			<div v-show="!show_ft_view">
+				<el-collapse-transition>
+					<div v-show="running != null" v-if="tutorial_contents != null">
+						<el-card :body-style="{ padding: '20px', background: 'yellow', position: 'relative' }" id="tutorial-contents">
+							<div v-for="(list, name, index) of tutorial_contents" v-bind:key="index" v-show="running == name">
+								<div v-for="(item, i) in list" v-bind:key="i" v-show="running_idx == i">
+									<h3 style="margin: 0;" v-if="item.type == 'text'">{{ item.content }}</h3>
+								</div>
 							</div>
-						</div>
-						<div style="margin-top: 15px;">
-							<el-button type="info" plain :disabled="running_idx <= 0" @click="tutorial_last">Last</el-button>
-							<el-steps :active="running_idx" finish-status="success" style="width: 200px; position: absolute; bottom: 32px; left: 128px;">
-								<el-step v-for="(item, i) in tutorial_contents[running]" v-bind:key="i" title=""></el-step>
-							</el-steps>
-							<el-button type="info" plain style="float: right;" @click="tutorial_next">
-								{{ (running && running_idx >= tutorial_contents[running].length - 1) ? "Quit" : "Next" }}</el-button>
-						</div>
-					</el-card>
-					<div style="height: 10px;"></div>
-				</div>
-			</el-collapse-transition>
-			<div>
-				<el-button :type="tutorial_show ? 'danger' : 'success'" class="full-width" @click="toggle_tutorial">
-					{{tutorial_show ? "Quit Interactive Tutorial" : "Start Interactive Tutorial"}}</el-button>
-				<div style="height: 10px;"></div>
-			</div>
-			<el-card>
-				<div slot="header" class="clearfix">
-					<span>Global Settings</span>
-					<!-- <el-button style="float: right; padding: 3px 0" type="text" disabled>help</el-button> -->
-				</div>
-				<div style="position: relative;">
-					<el-tooltip :disabled="!has_tooltip" effect="dark" placement="left">
-						<div slot="content">the size of the surface code, containing d<sup>2</sup> data qubits</div>
-						<div>
-							Code Distance:
-							<el-input-number v-model="code_distance" @change="code_distance_changed"></el-input-number>
-						</div>
-					</el-tooltip>
-					<div style="height: 20px;"></div>
-					<el-tooltip :disabled="!has_tooltip" effect="dark" content="change current display to customized error pattern, correction or corrected result" placement="left">
-						<div>
-							Display:
-							<el-radio-group v-model="display_mode">
-								<el-tooltip :disabled="!has_tooltip" effect="dark" content="customized error pattern which you can edit" placement="top">
-									<el-radio-button label="error_only">Error</el-radio-button>
-								</el-tooltip>
-								<el-tooltip :disabled="!has_tooltip" effect="dark" content="the error correction pattern returned by the decoder" placement="top">
-									<el-radio-button label="correction_only">Correction</el-radio-button>
-								</el-tooltip>
-								<el-tooltip :disabled="!has_tooltip" effect="dark" content="the combine of the former two, to see if the correction is successful" placement="top">
-									<el-radio-button label="corrected">Corrected</el-radio-button>
-								</el-tooltip>
-							</el-radio-group>
-						</div>
-					</el-tooltip>
-					<div style="height: 20px;"></div>
-					<el-switch v-model="has_tooltip" active-text="Display tool tips" inactive-text="Do not display tool tips"></el-switch>
-					<!-- <div style="height: 10px;"></div>
-					<el-tooltip :disabled="!has_tooltip" effect="dark" content="whether display measurement results. this is helpful in interactive tutorial" placement="left">
-						<el-switch v-model="measurement_display" active-text="Display measurement" inactive-text="Do not display measuremnt"></el-switch>
-					</el-tooltip> -->
-				</div>
-			</el-card>
-			<div style="height: 10px;"></div>
-			<el-card>
-				<div slot="header" class="clearfix">
-					<span>Customize Error Pattern</span>
-					<!-- <el-button style="float: right; padding: 3px 0" type="text" disabled>help</el-button> -->
-				</div>
-				<div style="position: relative; width: 100%">
-					<el-tooltip :disabled="!has_tooltip" effect="dark" :content="(toggle_X_error ? 'stop' : 'start') + ' toggling qubit X error on clicking'" placement="left">
-						<el-button type="success" class="toggle-error-button" :plain="!toggle_X_error" @click="enable_toggle_error(true)">
-							Toggle X Error (bit-flip error)</el-button>
-					</el-tooltip>
-					<div style="height: 10px;"></div>
-					<el-tooltip :disabled="!has_tooltip" effect="dark" :content="(toggle_Z_error ? 'stop' : 'start') + ' toggling qubit Z error on clicking'" placement="left">
-						<el-button type="primary" class="toggle-error-button" :plain="!toggle_Z_error" @click="enable_toggle_error(false)">
-							Toggle Z Error (phase-flip error)</el-button>
-					</el-tooltip>
-					<el-tooltip :disabled="!has_tooltip" effect="dark" content="clear all errors" placement="top">
-						<el-button type="danger" class="clear-error-button" @click="clear_error()" :disabled="display_mode!='error_only'">Clear Error</el-button>
-					</el-tooltip>
-				</div>
-				<div style="position: relative; margin-top: 10px;">
-					<el-tooltip :disabled="!has_tooltip" effect="dark" content="take current visible errors as your customized error pattern, change display mode to 'Error'" placement="left">
-						<el-button type="info" class="full-width" @click="use_as_error()">
-							Use Current Pauli Operators as Error Syndrome</el-button>
-					</el-tooltip>
-				</div>
-			</el-card>
-			<div style="height: 10px;"></div>
-			<el-card>
-				<div slot="header" class="clearfix">
-					<span>Run Error Correction</span>
-					<!-- <el-button style="float: right; padding: 3px 0" type="text" disabled>help</el-button> -->
-				</div>
-				<div style="position: relative;">
-					Select Decoder:
-					<el-select v-model="decoder" placeholder="Select a decoder">
-						<el-option v-for="item in available_decoders" :key="item.value" :label="item.label" :value="item.value"> </el-option>
-					</el-select>
-					<el-tooltip :disabled="!has_tooltip" effect="dark" content="clear the correction result" placement="top">
-						<el-button type="danger" style="width: 75px; margin-left: 5px;" @click="clear_correction">Clear</el-button>
-					</el-tooltip>
-					<div style="height: 15px;"></div>
-					<div v-if="has_correction">
-						<el-alert :title="correction_succeed ? 'Error correction succeeds without breaking the logical state' : 'Error correction fails because ' + correction_fail_reason" :type="correction_succeed ? 'success' : 'error'" :closable="false" show-icon></el-alert>
-						<div style="height: 15px;"></div>
+							<div style="margin-top: 15px;">
+								<el-button type="info" plain :disabled="running_idx <= 0" @click="tutorial_last">Last</el-button>
+								<el-steps :active="running_idx" finish-status="success" style="width: 200px; position: absolute; bottom: 32px; left: 128px;">
+									<el-step v-for="(item, i) in tutorial_contents[running]" v-bind:key="i" title=""></el-step>
+								</el-steps>
+								<el-button type="info" plain style="float: right;" @click="tutorial_next">
+									{{ (running && running_idx >= tutorial_contents[running].length - 1) ? "Quit" : "Next" }}</el-button>
+							</div>
+						</el-card>
+						<div style="height: 10px;"></div>
 					</div>
-					<el-tooltip :disabled="!has_tooltip" effect="dark" content="run decoder from remote server" placement="left">
-						<el-button type="success" class="big-button" @click="run_correction" :disabled="L < 3">Run Correction</el-button>
-					</el-tooltip>
+				</el-collapse-transition>
+				<div>
+					<el-button :type="tutorial_show ? 'danger' : 'success'" class="full-width" @click="toggle_tutorial">
+						{{tutorial_show ? "Quit Interactive Tutorial" : "Start Interactive Tutorial"}}</el-button>
+					<div style="height: 10px;"></div>
 				</div>
-			</el-card>
+				<el-card>
+					<div slot="header" class="clearfix">
+						<span>Global Settings</span>
+						<!-- <el-button style="float: right; padding: 3px 0" type="text" disabled>help</el-button> -->
+					</div>
+					<div style="position: relative;">
+						<el-tooltip :disabled="!has_tooltip" effect="dark" placement="left">
+							<div slot="content">the size of the surface code, containing d<sup>2</sup> data qubits</div>
+							<div>
+								Code Distance:
+								<el-input-number v-model="code_distance" @change="code_distance_changed"></el-input-number>
+							</div>
+						</el-tooltip>
+						<div style="height: 20px;"></div>
+						<el-tooltip :disabled="!has_tooltip" effect="dark" content="change current display to customized error pattern, correction or corrected result" placement="left">
+							<div>
+								Display:
+								<el-radio-group v-model="display_mode">
+									<el-tooltip :disabled="!has_tooltip" effect="dark" content="customized error pattern which you can edit" placement="top">
+										<el-radio-button label="error_only">Error</el-radio-button>
+									</el-tooltip>
+									<el-tooltip :disabled="!has_tooltip" effect="dark" content="the error correction pattern returned by the decoder" placement="top">
+										<el-radio-button label="correction_only">Correction</el-radio-button>
+									</el-tooltip>
+									<el-tooltip :disabled="!has_tooltip" effect="dark" content="the combine of the former two, to see if the correction is successful" placement="top">
+										<el-radio-button label="corrected">Corrected</el-radio-button>
+									</el-tooltip>
+								</el-radio-group>
+							</div>
+						</el-tooltip>
+						<div style="height: 20px;"></div>
+						<el-switch v-model="has_tooltip" active-text="Display tool tips" inactive-text="Do not display tool tips"></el-switch>
+						<!-- <div style="height: 10px;"></div>
+						<el-tooltip :disabled="!has_tooltip" effect="dark" content="whether display measurement results. this is helpful in interactive tutorial" placement="left">
+							<el-switch v-model="measurement_display" active-text="Display measurement" inactive-text="Do not display measuremnt"></el-switch>
+						</el-tooltip> -->
+					</div>
+				</el-card>
+				<div style="height: 10px;"></div>
+				<el-card>
+					<div slot="header" class="clearfix">
+						<span>Customize Error Pattern</span>
+						<!-- <el-button style="float: right; padding: 3px 0" type="text" disabled>help</el-button> -->
+					</div>
+					<div style="position: relative; width: 100%">
+						<el-tooltip :disabled="!has_tooltip" effect="dark" :content="(toggle_X_error ? 'stop' : 'start') + ' toggling qubit X error on clicking'" placement="left">
+							<el-button type="success" class="toggle-error-button" :plain="!toggle_X_error" @click="enable_toggle_error(true)">
+								Toggle X Error (bit-flip error)</el-button>
+						</el-tooltip>
+						<div style="height: 10px;"></div>
+						<el-tooltip :disabled="!has_tooltip" effect="dark" :content="(toggle_Z_error ? 'stop' : 'start') + ' toggling qubit Z error on clicking'" placement="left">
+							<el-button type="primary" class="toggle-error-button" :plain="!toggle_Z_error" @click="enable_toggle_error(false)">
+								Toggle Z Error (phase-flip error)</el-button>
+						</el-tooltip>
+						<el-tooltip :disabled="!has_tooltip" effect="dark" content="clear all errors" placement="top">
+							<el-button type="danger" class="clear-error-button" @click="clear_error()" :disabled="display_mode!='error_only'">Clear Error</el-button>
+						</el-tooltip>
+					</div>
+					<div style="position: relative; margin-top: 10px;">
+						<el-tooltip :disabled="!has_tooltip" effect="dark" content="take current visible errors as your customized error pattern, change display mode to 'Error'" placement="left">
+							<el-button type="info" class="full-width" @click="use_as_error()">
+								Use Current Pauli Operators as Error Syndrome</el-button>
+						</el-tooltip>
+					</div>
+				</el-card>
+				<div style="height: 10px;"></div>
+				<el-card>
+					<div slot="header" class="clearfix">
+						<span>Run Error Correction</span>
+						<!-- <el-button style="float: right; padding: 3px 0" type="text" disabled>help</el-button> -->
+					</div>
+					<div style="position: relative;">
+						Select Decoder:
+						<el-select v-model="decoder" placeholder="Select a decoder">
+							<el-option v-for="item in available_decoders" :key="item.value" :label="item.label" :value="item.value"> </el-option>
+						</el-select>
+						<el-tooltip :disabled="!has_tooltip" effect="dark" content="clear the correction result" placement="top">
+							<el-button type="danger" style="width: 75px; margin-left: 5px;" @click="clear_correction">Clear</el-button>
+						</el-tooltip>
+						<div style="height: 15px;"></div>
+						<div v-if="has_correction">
+							<el-alert :title="correction_succeed ? 'Error correction succeeds without breaking the logical state' : 'Error correction fails because ' + correction_fail_reason" :type="correction_succeed ? 'success' : 'error'" :closable="false" show-icon></el-alert>
+							<div style="height: 15px;"></div>
+						</div>
+						<el-tooltip :disabled="!has_tooltip" effect="dark" content="run decoder from remote server" placement="left">
+							<el-button type="success" class="big-button" @click="run_correction" :disabled="L < 3">Run Correction</el-button>
+						</el-tooltip>
+					</div>
+				</el-card>
+			</div>
 		</div>
 		<Tutorial ref="tutorial" :show="tutorial_show" @showing="tutorial_show = $event" @running="running = $event"
 			@running_idx="running_idx = $event" @L="tutorial_on_change_L" @hideZancilla="hideZancilla = $event"
@@ -146,6 +148,7 @@ export default {
 	data() {
 		return {
 			deploy_mode: deploy_mode,
+			show_ft_view: true,
 
 			toggle_X_error: false,
 			toggle_Z_error: false,

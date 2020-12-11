@@ -7,16 +7,39 @@ import * as THREE from 'three'
 import Stats from 'three/examples/jsm/libs/stats.module.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
+// use this function to restriction modification to constants
+function readonly(target, keys) {
+    var _cloned = {}
+    function makeReadOnlyProperty(cloned, obj, prop) {
+        Object.defineProperty(cloned, prop, {
+            set: function() {
+                throw {
+                    name: 'UnableRewriteException',
+                    message: 'original cannot be rewrite'
+                }
+            },
+            get: function() {
+                return obj[prop]
+            },
+            enumerable: true
+        })
+    }
+    for (var prop in target) {
+        makeReadOnlyProperty(_cloned, target, prop)
+    }
+    return _cloned
+}
+
 export default {
 	name: 'FaultTolerantView',
 	props: {
 		L: {
 			type: Number,
-			default: 5,
+			default: 3,
 		},
-		H: {
+		T: {
 			type: Number,
-			default: 5,
+			default: 3,
 		},
 		
 		
@@ -40,16 +63,15 @@ export default {
 	data() {
 		return {
 			three: { },  // save necessary THREE.js objects
-			internals: { },  // internal data for control
+			internals: { bias: { x:0, y:0, z:0 } },  // internal data
 
-			// controllable parameters for visualization
-			dataQubitsDynamicYBias: [ ],  // [L][L] float numbers
-			zDataQubitsErrors: [ ],  // [L][L] 0 ~ 1
-			xDataQubitsErrors: [ ],  // [L][L] 0 ~ 1
-			ancillaQubitsErrors: [ ],  // [L+1][L+1] 0 ~ 1
+            // controllable parameters for visualization
+            snapshot: null,  // [t][i][j]
+            constants: null, // { QTYPE (qubit type), NTYPE (node type), etc. }
 		}
 	},
 	mounted() {
+        this.build_constants()
 		window.$ftview = this  // for fast debugging
 
 		const scene = new THREE.Scene()
@@ -60,11 +82,9 @@ export default {
 		// add camera and renderer
 		const windowWidth = window.innerWidth - this.panelWidth
         const windowHeight = window.innerHeight
-        console.log(windowWidth)
-        console.log(windowHeight)
 		const camera = new THREE.PerspectiveCamera( 75, windowWidth / window.innerHeight, 0.1, 10000 )
 		this.three.camera = camera
-		const initCameraRatio = this.L * 0.5
+		const initCameraRatio = this.L * 0.8
 		camera.position.set( -2 * initCameraRatio, 1 * initCameraRatio, 1 * initCameraRatio )
 		camera.lookAt( scene.position )
 		camera.updateMatrix()
@@ -103,13 +123,37 @@ export default {
 			container.appendChild( this.three.stats.dom )
         }
         
-        this.build_standard_planar_code()
+        this.create_static_resources()
+        this.swap_snapshot(this.build_standard_planar_code_snapshot())
 
 		// start rendering
 		this.animate()
 
 	},
 	methods: {
+        build_constants() {
+            this.constants = readonly({
+                QTYPE: readonly({  // qubit type
+                    DATA: 0,
+                    X: 1,
+                    Z: 2,
+                }),
+                NTYPE: readonly({  // node type, correspond to the nodes in time sequence fiure with detailed gate operations
+                    INITIALIZATION: 0,
+                    CONTROL: 1,
+                    TARGET: 2,
+                    MEASUREMENT: 3,
+                    NONE: 4,
+                    NONE_WITH_DATA_QUBIT: 5,  // for purpose of plotting data qubits
+                }),
+                ETYPE: readonly({  // node type, correspond to the nodes in time sequence fiure with detailed gate operations
+                    PY: 0,  // both Pauli X and Z error
+                    PX: 1,  // Pauli X error
+                    PZ: 2,  // Pauli Z error
+                }),
+                VERTICAL_INTERVAL: 0.333,
+            })
+        },
 		animate() {
 			requestAnimationFrame( this.animate )  // call first
 			const delta = this.three.clock.getDelta()
@@ -117,17 +161,208 @@ export default {
 			if (this.three.stats) this.three.stats.update()  // update stats if exists
 			this.three.renderer.render( this.three.scene, this.three.camera )
         },
-        build_standard_planar_code() {
-            for (let h=0; h<this.H; ++h) {
-                for (let i=0; i<this.L; ++i) {
-                    for (let j=0; j<this.L; ++j) {
-                        
+        reset_snapshot() {
+            // TODO: implement resource destroy if structure are meant to be changed dynamically
+            this.snapshot = null
+        },
+        swap_snapshot(snapshot) {
+            this.reset_snapshot()
+            this.snapshot = snapshot
+            this.establish_snapshot()
+        },
+        build_standard_planar_code_snapshot() {
+            console.assert(this.L % 2 == 1, "L should be even")
+            console.assert(this.T >= 1, "T should be at least 1, 1 is for perfect measurement condition")
+            const width = 2 * this.L - 1
+            const height = this.T * 6 + 1
+            const always = true
+            let snapshot = []
+            for (let t=0; t<height; ++t) {
+                let snapshot_row_0 = []
+                for (let i=0; i<width; ++i) {
+                    let snapshot_row_1 = []
+                    for (let j=0; j<width; ++j) {
+                        if (always) {  // if here exists a qubit (either data qubit or ancilla qubit)
+                            const stage = (t+6-1) % 6  // 0: preparation, 1,2,3,4: CNOT gate, 5: measurement
+                            const is_data_qubit = (i+j)%2 == 0 
+                            const q_type = is_data_qubit ? this.constants.QTYPE.DATA : (i % 2 == 0 ? this.constants.QTYPE.Z : this.constants.QTYPE.X)
+                            let n_type = -1
+                            let connection = null  // { t, i, j, }
+                            switch (stage) {
+                                case 0:
+                                    n_type = is_data_qubit ? this.constants.NTYPE.NONE : this.constants.NTYPE.INITIALIZATION
+                                    break
+                                case 1:
+                                    if (is_data_qubit) {
+                                        if (i+1 < width) {
+                                            if (j % 2 == 0) n_type = this.constants.NTYPE.TARGET
+                                            else n_type = this.constants.NTYPE.CONTROL
+                                            connection = { i:i+1, j, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    } else {
+                                        if (i-1 >= 0) {
+                                            if (j % 2 == 0) n_type = this.constants.NTYPE.CONTROL
+                                            else n_type = this.constants.NTYPE.TARGET
+                                            connection = { i:i-1, j, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    }
+                                    break
+                                case 2:
+                                    if (is_data_qubit) {
+                                        if (j+1 < width) {
+                                            if (i % 2 == 0) n_type = this.constants.NTYPE.CONTROL
+                                            else n_type = this.constants.NTYPE.TARGET
+                                            connection = { i, j:j+1, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    } else {
+                                        if (j-1 >= 0) {
+                                            if (i % 2 == 0) n_type = this.constants.NTYPE.TARGET
+                                            else n_type = this.constants.NTYPE.CONTROL
+                                            connection = { i, j:j-1, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    }
+                                    break
+                                case 3:
+                                    if (is_data_qubit) {
+                                        if (j-1 >= 0) {
+                                            if (i % 2 == 0) n_type = this.constants.NTYPE.CONTROL
+                                            else n_type = this.constants.NTYPE.TARGET
+                                            connection = { i, j:j-1, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    } else {
+                                        if (j+1 < width) {
+                                            if (i % 2 == 0) n_type = this.constants.NTYPE.TARGET
+                                            else n_type = this.constants.NTYPE.CONTROL
+                                            connection = { i, j:j+1, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    }
+                                    break
+                                case 4:
+                                    if (is_data_qubit) {
+                                        if (i-1 >= 0) {
+                                            if (j % 2 == 0) n_type = this.constants.NTYPE.TARGET
+                                            else n_type = this.constants.NTYPE.CONTROL
+                                            connection = { i:i-1, j, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    } else {
+                                        if (i+1 < width) {
+                                            if (j % 2 == 0) n_type = this.constants.NTYPE.CONTROL
+                                            else n_type = this.constants.NTYPE.TARGET
+                                            connection = { i:i+11, j, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    }
+                                    break
+                                case 5:
+                                    n_type = is_data_qubit ? this.constants.NTYPE.NONE_WITH_DATA_QUBIT : this.constants.NTYPE.MEASUREMENT
+                                    break
+                            }
+                            let qubit = {
+                                t, i, j,
+                                connection,
+                                n_type,
+                                q_type,
+                                error: null,  // an error happening from now to next
+                            }
+                            snapshot_row_1.push(qubit)
+                        } else {
+                            snapshot_row_1.push(null)
+                        }
                     }
+                    snapshot_row_0.push(snapshot_row_1)
                 }
+                snapshot.push(snapshot_row_0)
             }
+            return snapshot
         },
         build_rotated_planar_code() {
             // TODO
+        },
+        position_middle_set_bias() {
+            const [x, y, z] = this.position(0,0,0)
+            let mins = [x, y, z]
+            let maxs = [x, y, z]
+            let position = this.position
+            let search = [[this.snapshot.length-1,0,0], [0,this.snapshot[0].length-1,0], [0,0,this.snapshot[0][0].length-1]]
+            search.forEach(val => {
+                let pos = this.position(val[0], val[1], val[2])
+                for (let i=0; i<3; ++i) {
+                    if (pos[i] < mins[i]) mins[i] = pos[i]
+                    if (pos[i] > maxs[i]) maxs[i] = pos[i]
+                }
+            })
+            this.internals.bias.x = -0.5 * (maxs[0] - mins[0])
+            this.internals.bias.y = -0.5 * (maxs[1] - mins[1])
+            this.internals.bias.z = -0.5 * (maxs[2] - mins[2])
+        },
+        position(t, i, j) {
+            const x = j + this.internals.bias.x
+            const y = t * this.constants.VERTICAL_INTERVAL + this.internals.bias.y
+            const z = i + this.internals.bias.z
+            return [x, y, z]
+        },
+        create_static_resources() {
+            this.three.default_sphere = new THREE.SphereBufferGeometry( 0.2, 48, 24 )
+            this.three.initialization_node_geometry = new THREE.ConeBufferGeometry( 0.1, 0.15, 32 )
+            this.three.initialization_node_color_Z = new THREE.Color( 0, 0.75, 1 )
+            this.three.initialization_node_color_X = new THREE.Color( 0, 0.8, 0 )
+            this.three.measurement_node_geometry = new THREE.SphereBufferGeometry( 0.2, 48, 24 )
+            this.three.measurement_node_color_Z = new THREE.Color( 0, 0.75, 1 )
+            this.three.measurement_node_color_X = new THREE.Color( 0, 0.8, 0 )
+            this.three.data_node_geometry = new THREE.SphereBufferGeometry( 0.2, 48, 24 )
+            this.three.data_node_color = new THREE.Color( 1, 0.65, 0 )
+            const vertical_radius = 0.01
+            this.three.vertical_line_geometry = new THREE.CylinderBufferGeometry( vertical_radius, vertical_radius, this.constants.VERTICAL_INTERVAL, 6 )
+            this.three.vertical_line_color = new THREE.Color( 'black' )
+        },
+        establish_snapshot() {
+            // position all object in the middle
+            this.position_middle_set_bias()
+            // add objects
+            for (let t=0; t < this.snapshot.length; ++t) {
+                for (let i=0; i < this.snapshot[t].length; ++i) {
+                    for (let j=0; j < this.snapshot[t][i].length; ++j) {
+                        let node = this.snapshot[t][i][j]
+                        if (node != null) {
+                            const [x, y, z] = this.position(t, i, j)
+                            if (node.n_type == this.constants.NTYPE.INITIALIZATION) {
+                                const color = node.q_type == this.constants.QTYPE.Z ? this.three.initialization_node_color_Z : this.three.initialization_node_color_X
+                                node.mesh = new THREE.Mesh(this.three.initialization_node_geometry, new THREE.MeshBasicMaterial({
+                                    color,
+                                }))
+                                node.mesh.position.set(x, y, z)
+                                this.three.scene.add(node.mesh)
+                            }
+                            if (node.n_type == this.constants.NTYPE.MEASUREMENT) {
+                                const color = node.q_type == this.constants.QTYPE.Z ? this.three.measurement_node_color_Z : this.three.measurement_node_color_X
+                                node.mesh = new THREE.Mesh(this.three.measurement_node_geometry, new THREE.MeshBasicMaterial({
+                                    color,
+                                    envMap: this.three.scene.background,
+                                    reflectivity: 0.5,
+                                }))
+                                node.mesh.position.set(x, y, z)
+                                this.three.scene.add(node.mesh)
+                            }
+                            if (node.n_type == this.constants.NTYPE.NONE_WITH_DATA_QUBIT) {
+                                node.mesh = new THREE.Mesh(this.three.data_node_geometry, new THREE.MeshBasicMaterial({
+                                    color: this.three.data_node_color,
+                                    envMap: this.three.scene.background,
+                                    reflectivity: 0.5,
+                                }))
+                                node.mesh.position.set(x, y, z)
+                                this.three.scene.add(node.mesh)
+                            }
+                            // draw vertical line
+                            if (t+1 < this.snapshot.length) {
+                                node.vertical = new THREE.Mesh(this.three.vertical_line_geometry, new THREE.MeshBasicMaterial({
+                                    color: this.three.vertical_line_color,
+                                }))
+                                node.vertical.position.set(x, y, z)
+                                this.three.scene.add(node.vertical)
+                            }
+                        }
+                    }
+                }
+            }
         },
 	},
 	watch: {
