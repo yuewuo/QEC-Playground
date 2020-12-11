@@ -248,7 +248,7 @@ export default {
                                         if (i+1 < width) {
                                             if (j % 2 == 0) n_type = this.constants.NTYPE.CONTROL
                                             else n_type = this.constants.NTYPE.TARGET
-                                            connection = { i:i+11, j, t }
+                                            connection = { i:i+1, j, t }
                                         } else n_type = this.constants.NTYPE.NONE  // boundary
                                     }
                                     break
@@ -313,6 +313,22 @@ export default {
             const vertical_radius = 0.01
             this.three.vertical_line_geometry = new THREE.CylinderBufferGeometry( vertical_radius, vertical_radius, this.constants.VERTICAL_INTERVAL, 6 )
             this.three.vertical_line_color = new THREE.Color( 'black' )
+            const control_radius = 0.15
+            const control_tube = 0.02
+            this.three.CX_target_geometries = [
+                new THREE.TorusBufferGeometry( control_radius, control_tube, 16, 32 ),
+                new THREE.CylinderBufferGeometry( control_tube, control_tube, 2 * control_radius, 6 ),
+                new THREE.CylinderBufferGeometry( control_tube, control_tube, 2 * control_radius, 6 ),
+            ]
+            this.three.CX_target_geometries[0].rotateX(Math.PI / 2)
+            this.three.CX_target_geometries[1].rotateX(Math.PI / 2)
+            this.three.CX_target_geometries[2].rotateZ(Math.PI / 2)
+            this.three.CX_target_color = new THREE.Color( 'black' )
+            this.three.CX_link_geometry = new THREE.CylinderBufferGeometry( control_tube, control_tube, 1, 6 )
+            this.three.CX_link_geometry.translate(0, 0.5, 0)
+            this.three.CX_link_color = new THREE.Color( 'black' )
+            this.three.CX_control_geometry = new THREE.SphereBufferGeometry( 0.05, 12, 6 )
+            this.three.CX_control_color = new THREE.Color( 'black' )
         },
         establish_snapshot() {
             // position all object in the middle
@@ -347,6 +363,44 @@ export default {
                                     color: this.three.data_node_color,
                                     envMap: this.three.scene.background,
                                     reflectivity: 0.5,
+                                }))
+                                node.mesh.position.set(x, y, z)
+                                this.three.scene.add(node.mesh)
+                            }
+                            if (node.n_type == this.constants.NTYPE.TARGET) {
+                                node.mesh = []
+                                for (let k=0; k < this.three.CX_target_geometries.length; ++k) {
+                                    const geometry = this.three.CX_target_geometries[k]
+                                    let mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+                                        color: this.three.CX_target_color,
+                                    }))
+                                    node.mesh.push(mesh)
+                                    mesh.position.set(x, y, z)
+                                    this.three.scene.add(mesh)
+                                }
+                                // also add CX link here
+                                let mesh = new THREE.Mesh(this.three.CX_link_geometry, new THREE.MeshBasicMaterial({
+                                    color: this.three.CX_link_color,
+                                }))
+                                if (node.connection.i == i+1) {
+                                    mesh.rotateX(Math.PI / 2)
+                                }
+                                if (node.connection.i == i-1) {
+                                    mesh.rotateX(-Math.PI / 2)
+                                }
+                                if (node.connection.j == j+1) {
+                                    mesh.rotateZ(-Math.PI / 2)
+                                }
+                                if (node.connection.j == j-1) {
+                                    mesh.rotateZ(Math.PI / 2)
+                                }
+                                node.mesh.push(mesh)
+                                mesh.position.set(x, y, z)
+                                this.three.scene.add(mesh)
+                            }
+                            if (node.n_type == this.constants.NTYPE.CONTROL) {
+                                node.mesh = new THREE.Mesh(this.three.CX_control_geometry, new THREE.MeshBasicMaterial({
+                                    color: this.three.CX_control_color,
                                 }))
                                 node.mesh.position.set(x, y, z)
                                 this.three.scene.add(node.mesh)
