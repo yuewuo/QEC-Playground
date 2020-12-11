@@ -72,6 +72,7 @@ export default {
 	},
 	mounted() {
         this.build_constants()
+        window.THREE = THREE
 		window.$ftview = this  // for fast debugging
 
 		const scene = new THREE.Scene()
@@ -82,7 +83,8 @@ export default {
 		// add camera and renderer
 		const windowWidth = window.innerWidth - this.panelWidth
         const windowHeight = window.innerHeight
-		const camera = new THREE.PerspectiveCamera( 75, windowWidth / window.innerHeight, 0.1, 10000 )
+        const camera = new THREE.PerspectiveCamera( 75, windowWidth / window.innerHeight, 0.1, 10000 )
+        // const camera = new THREE.OrthographicCamera( windowWidth / windowHeight * -3, windowWidth / windowHeight * 3, 3, -3, 0.1, 10000 )
 		this.three.camera = camera
 		const initCameraRatio = this.L * 0.8
 		camera.position.set( -2 * initCameraRatio, 1 * initCameraRatio, 1 * initCameraRatio )
@@ -147,9 +149,10 @@ export default {
                     NONE_WITH_DATA_QUBIT: 5,  // for purpose of plotting data qubits
                 }),
                 ETYPE: readonly({  // node type, correspond to the nodes in time sequence fiure with detailed gate operations
-                    PY: 0,  // both Pauli X and Z error
-                    PX: 1,  // Pauli X error
-                    PZ: 2,  // Pauli Z error
+                    I: 0,  // no error
+                    X: 1,  // Pauli X error
+                    Z: 2,  // Pauli Z error
+                    Y: 3,  // both Pauli X and Z error
                 }),
                 VERTICAL_INTERVAL: 0.333,
             })
@@ -171,7 +174,7 @@ export default {
             this.establish_snapshot()
         },
         build_standard_planar_code_snapshot() {
-            console.assert(this.L % 2 == 1, "L should be even")
+            // console.assert(this.L % 2 == 1, "L should be even")
             console.assert(this.T >= 1, "T should be at least 1, 1 is for perfect measurement condition")
             const width = 2 * this.L - 1
             const height = this.T * 6 + 1
@@ -261,7 +264,8 @@ export default {
                                 connection,
                                 n_type,
                                 q_type,
-                                error: null,  // an error happening from now to next
+                                error: this.constants.ETYPE.I,  // an error happening from now to next
+                                propagated: this.constants.ETYPE.I,  // propagted error till now
                             }
                             snapshot_row_1.push(qubit)
                         } else {
@@ -276,6 +280,78 @@ export default {
         },
         build_rotated_planar_code() {
             // TODO
+        },
+        error_multiply(err1, err2) {  // return err1.err2
+            if (err1 == this.constants.ETYPE.I) return err2
+            if (err2 == this.constants.ETYPE.I) return err1
+            if (err1 == this.constants.ETYPE.X && err2 == this.constants.ETYPE.X) return this.constants.ETYPE.I
+            if (err1 == this.constants.ETYPE.X && err2 == this.constants.ETYPE.Z) return this.constants.ETYPE.Y
+            if (err1 == this.constants.ETYPE.X && err2 == this.constants.ETYPE.Y) return this.constants.ETYPE.Z
+            if (err1 == this.constants.ETYPE.Z && err2 == this.constants.ETYPE.X) return this.constants.ETYPE.Y
+            if (err1 == this.constants.ETYPE.Z && err2 == this.constants.ETYPE.Z) return this.constants.ETYPE.I
+            if (err1 == this.constants.ETYPE.Z && err2 == this.constants.ETYPE.Y) return this.constants.ETYPE.X
+            if (err1 == this.constants.ETYPE.Y && err2 == this.constants.ETYPE.X) return this.constants.ETYPE.Z
+            if (err1 == this.constants.ETYPE.Y && err2 == this.constants.ETYPE.Z) return this.constants.ETYPE.X
+            if (err1 == this.constants.ETYPE.Y && err2 == this.constants.ETYPE.Y) return this.constants.ETYPE.I
+        },
+        compute_propagated_error() {
+            // careful: t=0 will remain propagated error, others will be recomputed
+            for (let t=1; t < this.snapshot.length; ++t) {
+                for (let i=0; i < this.snapshot[t].length; ++i) {
+                    for (let j=0; j < this.snapshot[t][i].length; ++j) {
+                        this.snapshot[t][i][j].propagated = this.constants.ETYPE.I
+                    }
+                }
+            }
+            for (let t=0; t < this.snapshot.length-1; ++t) {
+                for (let i=0; i < this.snapshot[t].length; ++i) {
+                    for (let j=0; j < this.snapshot[t][i].length; ++j) {
+                        const node = this.snapshot[t][i][j]
+                        if (node.n_type == this.constants.NTYPE.INITIALIZATION) {
+                            node.propagated = this.constants.ETYPE.I  // no error when initialized
+                        }
+                        // error will definitely propagated to itself
+                        const direct_error = this.error_multiply(node.error, node.propagated)
+                        this.snapshot[t+1][i][j].propagated = this.error_multiply(direct_error, this.snapshot[t+1][i][j].propagated)
+                        // but sometimes it also propagated to other qubits through CX gate
+                        if (node.n_type == this.constants.NTYPE.CONTROL) {
+                            if (node.propagated == this.constants.ETYPE.X || node.propagated == this.constants.ETYPE.Y) {
+                                const peer_node = this.snapshot[t+1][node.connection.i][node.connection.j]
+                                peer_node.propagated = this.error_multiply(this.constants.ETYPE.X, peer_node.propagated)
+                            }
+                        }
+                        if (node.n_type == this.constants.NTYPE.TARGET) {
+                            if (node.propagated == this.constants.ETYPE.Z || node.propagated == this.constants.ETYPE.Y) {
+                                const peer_node = this.snapshot[t+1][node.connection.i][node.connection.j]
+                                peer_node.propagated = this.error_multiply(this.constants.ETYPE.Z, peer_node.propagated)
+                            }
+                        }
+                    }
+                }
+            }
+            for (let t=1; t < this.snapshot.length; ++t) {
+                for (let i=0; i < this.snapshot[t].length; ++i) {
+                    for (let j=0; j < this.snapshot[t][i].length; ++j) {
+                        const node = this.snapshot[t][i][j]
+                        if (node.n_type == this.constants.NTYPE.MEASUREMENT) {
+                            if (node.q_type == this.constants.QTYPE.Z) {
+                                if (node.propagated == this.constants.ETYPE.X || node.propagated == this.constants.ETYPE.Y) {
+                                    node.mesh.material.color = this.three.measurement_node_color_error
+                                } else node.mesh.material.color = this.three.initialization_node_color_Z
+                            } else {
+                                if (node.propagated == this.constants.ETYPE.Z || node.propagated == this.constants.ETYPE.Y) {
+                                    node.mesh.material.color = this.three.measurement_node_color_error
+                                } else node.mesh.material.color = this.three.initialization_node_color_X
+                            }
+                        }
+                        if (t > 0) {
+                            const vertical = this.snapshot[t][i][j].vertical
+                            if (node.propagated == this.constants.ETYPE.I) vertical.material.color = this.three.vertical_line_color
+                            else vertical.material.color = this.three.measurement_node_color_error
+                        }
+                    }
+                }
+            }
         },
         position_middle_set_bias() {
             const [x, y, z] = this.position(0,0,0)
@@ -308,10 +384,12 @@ export default {
             this.three.measurement_node_geometry = new THREE.SphereBufferGeometry( 0.2, 48, 24 )
             this.three.measurement_node_color_Z = new THREE.Color( 0, 0.75, 1 )
             this.three.measurement_node_color_X = new THREE.Color( 0, 0.8, 0 )
+            this.three.measurement_node_color_error = new THREE.Color( 'red' )
             this.three.data_node_geometry = new THREE.SphereBufferGeometry( 0.2, 48, 24 )
             this.three.data_node_color = new THREE.Color( 1, 0.65, 0 )
             const vertical_radius = 0.01
             this.three.vertical_line_geometry = new THREE.CylinderBufferGeometry( vertical_radius, vertical_radius, this.constants.VERTICAL_INTERVAL, 6 )
+            this.three.vertical_line_geometry.translate(0, - 0.5 * this.constants.VERTICAL_INTERVAL, 0)
             this.three.vertical_line_color = new THREE.Color( 'black' )
             const control_radius = 0.15
             const control_tube = 0.02
@@ -406,7 +484,7 @@ export default {
                                 this.three.scene.add(node.mesh)
                             }
                             // draw vertical line
-                            if (t+1 < this.snapshot.length) {
+                            if (t > 0) {
                                 node.vertical = new THREE.Mesh(this.three.vertical_line_geometry, new THREE.MeshBasicMaterial({
                                     color: this.three.vertical_line_color,
                                 }))
