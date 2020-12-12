@@ -19,7 +19,9 @@ fn main() {
         .file("../../backend/blossomV/misc.cpp")
         .file("../../backend/blossomV/MinCost/MinCost.cpp")
         .cpp_link_stdlib("stdc++") // use libstdc++
-        .flag("-Wreorder")
+        .flag("-Wno-unused-parameter")
+        .flag("-Wno-unused-variable")
+        .flag("-Wno-unused-but-set-variable")
         .compile("blossomV");
 
     println!("cargo:rerun-if-changed=../../backend/blossomV/test.c");

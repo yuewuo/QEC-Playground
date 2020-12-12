@@ -5,10 +5,10 @@
 
 
 PerfectMatching::PerfectMatching(int nodeNum, int edgeNumMax)
-	: node_num(nodeNum),
+	: trees(NULL),
+	  node_num(nodeNum),
 	  edge_num(0),
 	  edge_num_max(edgeNumMax),
-	  trees(NULL),
 	  tree_num_max(0),
 	  removed_first(NULL),
 	  blossom_num(0),
