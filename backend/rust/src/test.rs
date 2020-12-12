@@ -9,6 +9,7 @@ use super::types::*;
 use super::qec;
 use super::pyo3::prelude::*;
 use super::pyo3::types::{IntoPyDict};
+use super::blossom_v;
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -29,6 +30,9 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
         }
         ("debug_tests", Some(_)) => {
             debug_tests()
+        }
+        ("archived_debug_tests", Some(_)) => {
+            archived_debug_tests()
         }
         ("all", Some(_)) => {  // remember to add new test functions here
             save_load();
@@ -205,7 +209,7 @@ fn maximum_max_weight_matching_correction() {
     }).expect("python run failed");
 }
 
-fn debug_tests() {
+fn archived_debug_tests() {
     {  // call python networkx.algorithms.matching.max_weight_matching
         Python::with_gil(|py| {
             (|py: Python| -> PyResult<()> {
@@ -232,5 +236,14 @@ fn debug_tests() {
                 e.print_and_set_sys_last_vars(py);
             })
         }).expect("python run failed");
+    }
+}
+
+fn debug_tests() {
+    {  // test call c function
+        println!("{}", blossom_v::safe_square(5));
+        let input = vec![1., 2., 3., 4.];
+        let output = blossom_v::safe_square_all(input);
+        println!("{:?}", output);
     }
 }

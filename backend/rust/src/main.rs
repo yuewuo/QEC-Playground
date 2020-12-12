@@ -36,6 +36,7 @@ async fn main() -> std::io::Result<()> {
             (@subcommand try_blossom_correction => (about: "try to use blossom library to decoder"))
             (@subcommand maximum_max_weight_matching_correction => (about: "try to use networkx python library to decoder"))
             (@subcommand debug_tests => (about: "test for debug"))
+            (@subcommand archived_debug_tests => (about: "archived debug tests"))
             (@subcommand all => (about: "run all tests"))
         )
         (@subcommand tool => (about: "tools")

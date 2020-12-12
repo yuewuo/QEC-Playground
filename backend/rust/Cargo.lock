@@ -402,12 +402,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "blossom"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d2a9a3b589aea8a51b1cd3c07e9de3486a13f708ae99a3873863e0edbb1ba65"
-
-[[package]]
 name = "brotli-sys"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -462,9 +456,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.0.65"
+version = "1.0.66"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95752358c8f7552394baf48cd82695b345628ad3f170d607de3ca03b8dacca15"
+checksum = "4c0496836a84f8d0495758516b8621a622beb77c0fed418570e50764093ced48"
 
 [[package]]
 name = "cfg-if"
@@ -1454,8 +1448,8 @@ version = "0.1.0"
 dependencies = [
  "actix-cors",
  "actix-web",
- "blossom",
  "bytes 0.6.0",
+ "cc",
  "clap",
  "libc",
  "ndarray",
