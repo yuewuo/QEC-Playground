@@ -142,8 +142,8 @@ export default {
         }
         
         this.create_static_resources()
-        // this.swap_snapshot(this.build_standard_planar_code_snapshot())
-        this.swap_snapshot(this.build_rotated_planar_code())
+        this.swap_snapshot(this.build_standard_planar_code_snapshot())
+        // this.swap_snapshot(this.build_rotated_planar_code())
 
 		// start rendering
         this.animate()
@@ -153,7 +153,7 @@ export default {
 	},
 	methods: {
 		async test() {
-            // this.paper_figure_Z_stabilizer_connection()
+            this.paper_figure_Z_stabilizer_connection()
         },
         async paper_figure_Z_stabilizer_connection() {
             this.show_data_qubit = false
@@ -329,7 +329,32 @@ export default {
         },
         build_standard_planar_code_snapshot() {
             let snapshot = this.build_code_in_standard_planar_code()
-            // TODO: add boundary information
+            // add boundary information
+            for (let t=6; t < snapshot.length; t+=6) {
+                for (let i=0; i < snapshot[t].length; ++i) {
+                    for (let j=0; j < snapshot[t][i].length; ++j) {
+                        let node = snapshot[t][i][j]
+                        if (!node) continue
+                        if (node.n_type == this.constants.NTYPE.MEASUREMENT) {
+                            let bt = t
+                            let bi = i
+                            let bj = j
+                            if (i <= 1) bi -= 2
+                            if (i >= snapshot[t].length - 2) bi += 2
+                            if (j <= 1) bj -= 2
+                            if (j >= snapshot[t][i].length - 2) bj += 2
+                            if (t == snapshot.length - 1) bt += 6
+                            if (bi != i || bj != j || bt != t) {
+                                node.boundary = {
+                                    t: bt,
+                                    i: bi,
+                                    j: bj,
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             return snapshot
         },
         build_rotated_planar_code() {
@@ -574,31 +599,42 @@ export default {
                                 this.three.scene.add(node.vertical)
                             }
                             // draw edges (automatically built graph)
+                            const generate_half_edge_mesh = function(t, i, j, pt, pi, pj) {
+                                const mesh = new THREE.Mesh(this.three.edge_geometry, new THREE.MeshBasicMaterial({
+                                    color: this.three.edge_color,
+                                }))
+                                const [x, y, z] = this.position(t, i, j)
+                                mesh.position.set(x, y, z)
+                                const [dx, dy, dz] = this.no_bias_position(t - pt, i - pi, j - pj)
+                                const distance = Math.sqrt(dx*dx + dy*dy + dz*dz)
+                                mesh.scale.set(1, distance / 2, 1)  // only plot half of the distance
+                                // rotate
+                                let axis = new THREE.Vector3( 1, 0, 0 )
+                                let angle = 0
+                                if (pi == i && pj == j) {
+                                    if (pt < t) angle = Math.PI
+                                } else {
+                                    const normalize = 1 / Math.sqrt(dz*dz + dx*dx)
+                                    axis = new THREE.Vector3( dz * normalize, 0, -dx * normalize )
+                                    angle = -Math.atan2(Math.sqrt(dx*dx + dz*dz), dy)
+                                    if (angle < 0) angle = Math.PI - angle
+                                }
+                                mesh.rotateOnAxis(axis, angle)
+                                return mesh
+                            }.bind(this)
                             if (node.edges) {
                                 for (let edge of node.edges) {
-                                    edge.mesh = new THREE.Mesh(this.three.edge_geometry, new THREE.MeshBasicMaterial({
-                                        color: this.three.edge_color,
-                                    }))
-                                    edge.mesh.position.set(x, y, z)
-                                    const [dx, dy, dz] = this.no_bias_position(t - edge.t, i - edge.i, j - edge.j)
-                                    const distance = Math.sqrt(dx*dx + dy*dy + dz*dz)
-                                    edge.mesh.scale.set(1, distance / 2, 1)  // only plot half of the distance
-                                    // rotate
-                                    let axis = new THREE.Vector3( 1, 0, 0 )
-                                    let angle = 0
-                                    if (edge.i == i && edge.j == j) {
-                                        if (edge.t < t) angle = Math.PI
-                                    } else {
-                                        const normalize = 1 / Math.sqrt(dz*dz + dx*dx)
-                                        axis = new THREE.Vector3( dz * normalize, 0, -dx * normalize )
-                                        angle = -Math.atan2(Math.sqrt(dx*dx + dz*dz), dy)
-                                        if (angle < 0) angle = Math.PI - angle
-                                    }
-                                    edge.mesh.rotateOnAxis(axis, angle)
+                                    edge.mesh = generate_half_edge_mesh(t, i, j, edge.t, edge.i, edge.j)
                                     if (node.q_type == this.constants.QTYPE.X && !this.show_X_edges) edge.mesh.visible = false
                                     if (node.q_type == this.constants.QTYPE.Z && !this.show_Z_edges) edge.mesh.visible = false
                                     this.three.scene.add(edge.mesh)
                                 }
+                            }
+                            if (node.boundary && node.boundary.p != undefined) {
+                                node.boundary.mesh = generate_half_edge_mesh(t, i, j, node.boundary.t, node.boundary.i, node.boundary.j)
+                                if (node.q_type == this.constants.QTYPE.X && !this.show_X_edges) node.boundary.mesh.visible = false
+                                if (node.q_type == this.constants.QTYPE.Z && !this.show_Z_edges) node.boundary.mesh.visible = false
+                                this.three.scene.add(node.boundary.mesh)
                             }
                         }
                     }
@@ -635,7 +671,11 @@ export default {
                             this.compute_propagated_error(false)
                             const error_syndrome = this.get_error_syndrome_propagated()
                             if (error_syndrome.length == 1) {  // connect to boundary
-                                // TODO connect to boundary
+                                const [et, ei, ej] = error_syndrome[0]
+                                const boundary = this.snapshot[et][ei][ej].boundary
+                                console.assert(boundary, `there must be boundary on [${et}][${ei}][${ej}]`)
+                                if (boundary.p == undefined) boundary.p = 0
+                                boundary.p = boundary.p * (1 - p) + p * (1 - boundary.p)
                             } else if (error_syndrome.length == 2) {  // connect to other nodes
                                 const node1 = this.snapshot[error_syndrome[0][0]][error_syndrome[0][1]][error_syndrome[0][2]]
                                 const node2 = this.snapshot[error_syndrome[1][0]][error_syndrome[1][1]][error_syndrome[1][2]]
@@ -775,15 +815,17 @@ export default {
         },
         show_X_edges(show) {
             this.iterate_snapshot((node, t, i, j) => {
-                if (node.q_type == this.constants.QTYPE.X && node.edges) {
-                    for (let edge of node.edges) edge.mesh.visible = show
+                if (node.q_type == this.constants.QTYPE.X) {
+                    if (node.edges) for (let edge of node.edges) edge.mesh.visible = show
+                    if (node.boundary && node.boundary.mesh) node.boundary.mesh.visible = show
                 }
             })
         },
         show_Z_edges(show) {
             this.iterate_snapshot((node, t, i, j) => {
-                if (node.q_type == this.constants.QTYPE.Z && node.edges) {
-                    for (let edge of node.edges) edge.mesh.visible = show
+                if (node.q_type == this.constants.QTYPE.Z) {
+                    if (node.edges) for (let edge of node.edges) edge.mesh.visible = show
+                    if (node.boundary && node.boundary.mesh) node.boundary.mesh.visible = show
                 }
             })
         },
