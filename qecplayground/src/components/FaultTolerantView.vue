@@ -35,18 +35,26 @@ export default {
 	props: {
 		L: {
 			type: Number,
-			default: 3,
+			default: 4,
 		},
 		T: {
 			type: Number,
-			default: 3,
+			default: 4,
 		},
 		
 		
 		panelWidth: {
 			type: Number,
 			default: 480
-		},
+        },
+        errorModel: {
+            type: String,
+            default: "depolarizing",
+        },
+        depolarErrorRate: {  // used when errorModel = "depolarizing", (1-3p) + pX + pZ + pY, px = 2p, pz = 2p
+            type: Number,
+            default: 0.001,
+        },
 		dataQubitColor: {
 			type: Object,
 			default: () => new THREE.Color( 1, 0.65, 0 )
@@ -68,6 +76,14 @@ export default {
             // controllable parameters for visualization
             snapshot: null,  // [t][i][j]
             constants: null, // { QTYPE (qubit type), NTYPE (node type), etc. }
+            show_data_qubit: true,
+            show_X_ancilla: true,
+            show_Z_ancilla: true,
+            show_vertical_line: true,
+            show_initialization: true,
+            show_CX_gates: true,
+            show_X_edges: true,
+            show_Z_edges: true
 		}
 	},
 	mounted() {
@@ -129,10 +145,24 @@ export default {
         this.swap_snapshot(this.build_standard_planar_code_snapshot())
 
 		// start rendering
-		this.animate()
+        this.animate()
+        
+        this.test()
 
 	},
 	methods: {
+		async test() {
+            this.paper_figure_Z_stabilizer_connection()
+        },
+        async paper_figure_Z_stabilizer_connection() {
+            this.show_data_qubit = false
+            this.show_X_ancilla = false
+            this.show_X_ancilla = false
+            this.show_vertical_line = false
+            this.show_initialization = false
+            this.show_CX_gates = false
+            this.show_X_edges = false
+        },
         async paper_figure_single_error_two_syndrome() {
             this.snapshot[3][1][2].error = this.constants.ETYPE.X
             this.compute_propagated_error()
@@ -186,6 +216,7 @@ export default {
         swap_snapshot(snapshot) {
             this.reset_snapshot()
             this.snapshot = snapshot
+            this.build_graph_given_error_rate()
             this.establish_snapshot()
         },
         build_standard_planar_code_snapshot() {
@@ -281,6 +312,10 @@ export default {
                                 q_type,
                                 error: this.constants.ETYPE.I,  // an error happening from now to next
                                 propagated: this.constants.ETYPE.I,  // propagted error till now
+                            }
+                            if (this.errorModel == "depolarizing") {
+                                qubit.px = 2 * this.depolarErrorRate  // X error rate
+                                qubit.pz = 2 * this.depolarErrorRate  // Z error rate
                             }
                             snapshot_row_1.push(qubit)
                         } else {
@@ -380,24 +415,24 @@ export default {
             const [x, y, z] = this.position(0,0,0)
             let mins = [x, y, z]
             let maxs = [x, y, z]
-            let position = this.position
             let search = [[this.snapshot.length-1,0,0], [0,this.snapshot[0].length-1,0], [0,0,this.snapshot[0][0].length-1]]
-            search.forEach(val => {
+            for (let val of search) {
                 let pos = this.position(val[0], val[1], val[2])
                 for (let i=0; i<3; ++i) {
                     if (pos[i] < mins[i]) mins[i] = pos[i]
                     if (pos[i] > maxs[i]) maxs[i] = pos[i]
                 }
-            })
+            }
             this.internals.bias.x = -0.5 * (maxs[0] - mins[0])
             this.internals.bias.y = -0.5 * (maxs[1] - mins[1])
             this.internals.bias.z = -0.5 * (maxs[2] - mins[2])
         },
+        no_bias_position(t, i, j) {  // requires = 0 when t=i=j=0
+            return [j, t * this.constants.VERTICAL_INTERVAL, i]
+        },
         position(t, i, j) {
-            const x = j + this.internals.bias.x
-            const y = t * this.constants.VERTICAL_INTERVAL + this.internals.bias.y
-            const z = i + this.internals.bias.z
-            return [x, y, z]
+            let [x, y, z] = this.no_bias_position(t, i, j)
+            return [x + this.internals.bias.x, y + this.internals.bias.y, z + this.internals.bias.z]
         },
         create_static_resources() {
             this.three.default_sphere = new THREE.SphereBufferGeometry( 0.2, 48, 24 )
@@ -430,6 +465,10 @@ export default {
             this.three.CX_link_color = new THREE.Color( 'black' )
             this.three.CX_control_geometry = new THREE.SphereBufferGeometry( 0.03, 12, 6 )
             this.three.CX_control_color = new THREE.Color( 'black' )
+            const edge_default_radius = 0.05
+            this.three.edge_geometry = new THREE.CylinderBufferGeometry( edge_default_radius, edge_default_radius, 1, 6 ),
+            this.three.edge_geometry.translate(0, 0.5, 0)
+            this.three.edge_color = new THREE.Color( 'black' )
         },
         establish_snapshot() {
             // position all object in the middle
@@ -514,10 +553,79 @@ export default {
                                 node.vertical.position.set(x, y, z)
                                 this.three.scene.add(node.vertical)
                             }
+                            // draw edges (automatically built graph)
+                            if (node.edges) {
+                                for (let edge of node.edges) {
+                                    edge.mesh = new THREE.Mesh(this.three.edge_geometry, new THREE.MeshBasicMaterial({
+                                        color: this.three.edge_color,
+                                    }))
+                                    edge.mesh.position.set(x, y, z)
+                                    const [dx, dy, dz] = this.no_bias_position(t - edge.t, i - edge.i, j - edge.j)
+                                    const distance = Math.sqrt(dx*dx + dy*dy + dz*dz)
+                                    edge.mesh.scale.set(1, distance / 2, 1)  // only plot half of the distance
+                                    // rotate
+                                    let axis = new THREE.Vector3( 1, 0, 0 )
+                                    let angle = 0
+                                    if (edge.i == i && edge.j == j) {
+                                        if (edge.t < t) angle = Math.PI
+                                    } else {
+                                        const normalize = 1 / Math.sqrt(dz*dz + dx*dx)
+                                        axis = new THREE.Vector3( dz * normalize, 0, -dx * normalize )
+                                        angle = -Math.atan2(Math.sqrt(dx*dx + dz*dz), dy)
+                                        if (angle < 0) angle = Math.PI - angle
+                                    }
+                                    edge.mesh.rotateOnAxis(axis, angle)
+                                    if (node.q_type == this.constants.QTYPE.X && !this.show_X_edges) edge.mesh.visible = false
+                                    if (node.q_type == this.constants.QTYPE.Z && !this.show_Z_edges) edge.mesh.visible = false
+                                    this.three.scene.add(edge.mesh)
+                                }
+                            }
                         }
                     }
                 }
             }
+        },
+        build_graph_given_error_rate() {  // requirement: node.px and node.pz exists
+            function node_add_connection(node1, node2, p, _iterate=true) {  // DO NOT set _iterate
+                if (node1.edges == undefined) node1.edges = []
+                // first find node2 in its edges
+                let found = false
+                for (let i=0; i<node1.edges.length; ++i) {
+                    let edge = node1.edges[i]
+                    if (edge.t == node2.t && edge.i == node2.i && edge.j == node2.j) {
+                        found = true
+                        edge.p = edge.p * (1 - p) + p * (1 - edge.p)  // XOR
+                        break
+                    }
+                }
+                // create node2 edge if not found
+                if (found == false) {
+                    node1.edges.push({ t:node2.t, i:node2.i, j:node2.j, p })
+                }
+                if (_iterate) node_add_connection(node2, node1, p, false)  // add node1 to node2 connection
+            }
+            for (let t=0; t < this.snapshot.length-1; ++t) {
+                for (let i=0; i < this.snapshot[t].length; ++i) {
+                    for (let j=0; j < this.snapshot[t][i].length; ++j) {
+                        for (let e=0; e < 2; ++e) {
+                            this.clear_errors()
+                            this.snapshot[t][i][j].error = e == 0 ? this.constants.ETYPE.X : this.constants.ETYPE.Z
+                            const p = e == 0 ? this.snapshot[t][i][j].px : this.snapshot[t][i][j].pz
+                            this.compute_propagated_error(false)
+                            const error_syndrome = this.get_error_syndrome_propagated()
+                            if (error_syndrome.length == 1) {  // connect to boundary
+
+                            } else if (error_syndrome.length == 2) {  // connect to other nodes
+                                const node1 = this.snapshot[error_syndrome[0][0]][error_syndrome[0][1]][error_syndrome[0][2]]
+                                const node2 = this.snapshot[error_syndrome[1][0]][error_syndrome[1][1]][error_syndrome[1][2]]
+                                node_add_connection(node1, node2, p)
+                            }
+                            // console.log(error_syndrome)
+                        }
+                    }
+                }
+            }
+            this.clear_errors()
         },
         clear_errors() {
             for (let t=0; t < this.snapshot.length; ++t) {
@@ -529,8 +637,8 @@ export default {
                 }
             }
         },
-        count_error_syndrome_propagated() {
-            let count = 0
+        get_error_syndrome_propagated() {
+            let error_syndrome_propagated = []
             for (let t=6; t < this.snapshot.length; t += 6) {
                 for (let i=0; i < this.snapshot[t].length; ++i) {
                     for (let j=0; j < this.snapshot[t][i].length; ++j) {
@@ -541,21 +649,24 @@ export default {
                                 const last_node = this.snapshot[t-6][i][j]
                                 let last_result = last_node.propagated == this.constants.ETYPE.I || last_node.propagated == this.constants.ETYPE.Z
                                 if (this_result != last_result) {
-                                    count += 1
+                                    error_syndrome_propagated.push([t,i,j])
                                 }
                             } else {
                                 let this_result = node.propagated == this.constants.ETYPE.I || node.propagated == this.constants.ETYPE.X
                                 const last_node = this.snapshot[t-6][i][j]
                                 let last_result = last_node.propagated == this.constants.ETYPE.I || last_node.propagated == this.constants.ETYPE.X
                                 if (this_result != last_result) {
-                                count += 1
+                                    error_syndrome_propagated.push([t,i,j])
                                 }
                             }
                         }
                     }
                 }
             }
-            return count
+            return error_syndrome_propagated
+        },
+        count_error_syndrome_propagated() {
+            return this.get_error_syndrome_propagated().length
         },
         async verify_idea_all_single_error_only_has_at_most_two_syndrome() {
             for (let t=0; t < this.snapshot.length-1; ++t) {
@@ -576,11 +687,82 @@ export default {
                     }
                 }
             }
+            this.clear_errors()
+            this.compute_propagated_error()
             console.log("verified: all single error only has at most two syndrome")
         },
+        async verify_idea_at_most_12_neighbour_in_graph() {
+            this.iterate_snapshot((node, t, i, j) => {
+                if (node.edges) {
+                    console.assert(node.edges.length <= 12, `find [${t}][${i}][${j}] has ${node.edges.length} edges, greater than 12`)
+                }
+            })
+            console.log("verified: at most 12 neighbour in graph")
+        },
+        iterate_snapshot(func) {
+            for (let t=0; t < this.snapshot.length; ++t) {
+                for (let i=0; i < this.snapshot[t].length; ++i) {
+                    for (let j=0; j < this.snapshot[t][i].length; ++j) {
+                        func(this.snapshot[t][i][j], t, i, j)
+                    }
+                }
+            }
+        }
 	},
 	watch: {
-        
+        show_data_qubit(show) {
+            this.iterate_snapshot((node, t, i, j) => {
+                if (node.n_type == this.constants.NTYPE.NONE_WITH_DATA_QUBIT) {
+                    node.mesh.visible = show
+                }
+            })
+        },
+        show_X_ancilla(show) {
+            this.iterate_snapshot((node, t, i, j) => {
+                if (node.n_type == this.constants.NTYPE.MEASUREMENT && node.q_type == this.constants.QTYPE.X) {
+                    node.mesh.visible = show
+                }
+            })
+        },
+        show_Z_ancilla(show) {
+            this.iterate_snapshot((node, t, i, j) => {
+                if (node.n_type == this.constants.NTYPE.MEASUREMENT && node.q_type == this.constants.QTYPE.Z) {
+                    node.mesh.visible = show
+                }
+            })
+        },
+        show_vertical_line(show) {
+            this.iterate_snapshot((node, t, i, j) => {
+                if (node.vertical) node.vertical.visible = show
+            })
+        },
+        show_initialization(show) {
+            this.iterate_snapshot((node, t, i, j) => {
+                if (node.n_type == this.constants.NTYPE.INITIALIZATION) node.mesh.visible = show
+            })
+        },
+        show_CX_gates(show) {
+            this.iterate_snapshot((node, t, i, j) => {
+                if (node.n_type == this.constants.NTYPE.TARGET) {
+                    for (let mesh of node.mesh) mesh.visible = show
+                }
+                if (node.n_type == this.constants.NTYPE.CONTROL) node.mesh.visible = show
+            })
+        },
+        show_X_edges(show) {
+            this.iterate_snapshot((node, t, i, j) => {
+                if (node.q_type == this.constants.QTYPE.X && node.edges) {
+                    for (let edge of node.edges) edge.mesh.visible = show
+                }
+            })
+        },
+        show_Z_edges(show) {
+            this.iterate_snapshot((node, t, i, j) => {
+                if (node.q_type == this.constants.QTYPE.Z && node.edges) {
+                    for (let edge of node.edges) edge.mesh.visible = show
+                }
+            })
+        },
 	},
 }
 </script>
