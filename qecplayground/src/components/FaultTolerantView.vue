@@ -53,7 +53,7 @@ export default {
         },
         depolarErrorRate: {  // used when errorModel = "depolarizing", (1-3p) + pX + pZ + pY, px = 2p, pz = 2p
             type: Number,
-            default: 0.001,
+            default: 0.001,  // also used as normalization in computing weight
         },
 		dataQubitColor: {
 			type: Object,
@@ -153,7 +153,7 @@ export default {
 	},
 	methods: {
 		async test() {
-            this.paper_figure_Z_stabilizer_connection()
+            // this.paper_figure_Z_stabilizer_connection()
         },
         async paper_figure_Z_stabilizer_connection() {
             this.show_data_qubit = false
@@ -643,7 +643,7 @@ export default {
                                 this.three.scene.add(node.vertical)
                             }
                             // draw edges (automatically built graph)
-                            const generate_half_edge_mesh = function(t, i, j, pt, pi, pj) {
+                            const generate_half_edge_mesh = function(t, i, j, pt, pi, pj, p) {
                                 const mesh = new THREE.Mesh(this.three.edge_geometry, new THREE.MeshBasicMaterial({
                                     color: this.three.edge_color,
                                 }))
@@ -651,7 +651,11 @@ export default {
                                 mesh.position.set(x, y, z)
                                 const [dx, dy, dz] = this.no_bias_position(t - pt, i - pi, j - pj)
                                 const distance = Math.sqrt(dx*dx + dy*dy + dz*dz)
-                                mesh.scale.set(1, distance / 2, 1)  // only plot half of the distance
+                                let weight = 1
+                                // weight = Math.log(p) / Math.log(2 * this.depolarErrorRate)
+                                // weight = weight * weight * weight * 2  // to amplify the difference
+                                // console.log(weight)
+                                mesh.scale.set(weight, distance / 2, weight)  // only plot half of the distance
                                 // rotate
                                 let axis = new THREE.Vector3( 1, 0, 0 )
                                 let angle = 0
@@ -668,14 +672,14 @@ export default {
                             }.bind(this)
                             if (node.edges) {
                                 for (let edge of node.edges) {
-                                    edge.mesh = generate_half_edge_mesh(t, i, j, edge.t, edge.i, edge.j)
+                                    edge.mesh = generate_half_edge_mesh(t, i, j, edge.t, edge.i, edge.j, edge.p)
                                     if (node.q_type == this.constants.QTYPE.X && !this.show_X_edges) edge.mesh.visible = false
                                     if (node.q_type == this.constants.QTYPE.Z && !this.show_Z_edges) edge.mesh.visible = false
                                     this.three.scene.add(edge.mesh)
                                 }
                             }
                             if (node.boundary && node.boundary.p != undefined) {
-                                node.boundary.mesh = generate_half_edge_mesh(t, i, j, node.boundary.t, node.boundary.i, node.boundary.j)
+                                node.boundary.mesh = generate_half_edge_mesh(t, i, j, node.boundary.t, node.boundary.i, node.boundary.j, node.boundary.p)
                                 if (node.q_type == this.constants.QTYPE.X && !this.show_X_edges) node.boundary.mesh.visible = false
                                 if (node.q_type == this.constants.QTYPE.Z && !this.show_Z_edges) node.boundary.mesh.visible = false
                                 this.three.scene.add(node.boundary.mesh)
