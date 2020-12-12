@@ -35,7 +35,7 @@ export default {
 	props: {
 		L: {
 			type: Number,
-			default: 4,
+			default: 5,
 		},
 		T: {
 			type: Number,
@@ -83,7 +83,7 @@ export default {
             show_initialization: true,
             show_CX_gates: true,
             show_X_edges: true,
-            show_Z_edges: true
+            show_Z_edges: true,
 		}
 	},
 	mounted() {
@@ -142,7 +142,8 @@ export default {
         }
         
         this.create_static_resources()
-        this.swap_snapshot(this.build_standard_planar_code_snapshot())
+        // this.swap_snapshot(this.build_standard_planar_code_snapshot())
+        this.swap_snapshot(this.build_rotated_planar_code())
 
 		// start rendering
         this.animate()
@@ -152,7 +153,7 @@ export default {
 	},
 	methods: {
 		async test() {
-            this.paper_figure_Z_stabilizer_connection()
+            // this.paper_figure_Z_stabilizer_connection()
         },
         async paper_figure_Z_stabilizer_connection() {
             this.show_data_qubit = false
@@ -219,19 +220,17 @@ export default {
             this.build_graph_given_error_rate()
             this.establish_snapshot()
         },
-        build_standard_planar_code_snapshot() {
-            // console.assert(this.L % 2 == 1, "L should be even")
+        build_code_in_standard_planar_code(filter=((i,j)=>true)) {  // filter determines whether there is a qubit at [t][i][j]
             console.assert(this.T >= 1, "T should be at least 1, 1 is for perfect measurement condition")
             const width = 2 * this.L - 1
             const height = this.T * 6 + 1
-            const always = true
             let snapshot = []
             for (let t=0; t<height; ++t) {
                 let snapshot_row_0 = []
                 for (let i=0; i<width; ++i) {
                     let snapshot_row_1 = []
                     for (let j=0; j<width; ++j) {
-                        if (always) {  // if here exists a qubit (either data qubit or ancilla qubit)
+                        if (filter(i,j)) {  // if here exists a qubit (either data qubit or ancilla qubit)
                             const stage = (t+6-1) % 6  // 0: preparation, 1,2,3,4: CNOT gate, 5: measurement
                             const is_data_qubit = (i+j)%2 == 0 
                             const q_type = is_data_qubit ? this.constants.QTYPE.DATA : (i % 2 == 0 ? this.constants.QTYPE.Z : this.constants.QTYPE.X)
@@ -243,13 +242,13 @@ export default {
                                     break
                                 case 1:
                                     if (is_data_qubit) {
-                                        if (i+1 < width) {
+                                        if (i+1 < width && filter(i+1, j)) {
                                             if (j % 2 == 0) n_type = this.constants.NTYPE.TARGET
                                             else n_type = this.constants.NTYPE.CONTROL
                                             connection = { i:i+1, j, t }
                                         } else n_type = this.constants.NTYPE.NONE  // boundary
                                     } else {
-                                        if (i-1 >= 0) {
+                                        if (i-1 >= 0 && filter(i-1, j)) {
                                             if (j % 2 == 0) n_type = this.constants.NTYPE.CONTROL
                                             else n_type = this.constants.NTYPE.TARGET
                                             connection = { i:i-1, j, t }
@@ -258,13 +257,13 @@ export default {
                                     break
                                 case 2:
                                     if (is_data_qubit) {
-                                        if (j+1 < width) {
+                                        if (j+1 < width && filter(i, j+1)) {
                                             if (i % 2 == 0) n_type = this.constants.NTYPE.CONTROL
                                             else n_type = this.constants.NTYPE.TARGET
                                             connection = { i, j:j+1, t }
                                         } else n_type = this.constants.NTYPE.NONE  // boundary
                                     } else {
-                                        if (j-1 >= 0) {
+                                        if (j-1 >= 0 && filter(i, j-1)) {
                                             if (i % 2 == 0) n_type = this.constants.NTYPE.TARGET
                                             else n_type = this.constants.NTYPE.CONTROL
                                             connection = { i, j:j-1, t }
@@ -273,13 +272,13 @@ export default {
                                     break
                                 case 3:
                                     if (is_data_qubit) {
-                                        if (j-1 >= 0) {
+                                        if (j-1 >= 0 && filter(i, j-1)) {
                                             if (i % 2 == 0) n_type = this.constants.NTYPE.CONTROL
                                             else n_type = this.constants.NTYPE.TARGET
                                             connection = { i, j:j-1, t }
                                         } else n_type = this.constants.NTYPE.NONE  // boundary
                                     } else {
-                                        if (j+1 < width) {
+                                        if (j+1 < width && filter(i, j+1)) {
                                             if (i % 2 == 0) n_type = this.constants.NTYPE.TARGET
                                             else n_type = this.constants.NTYPE.CONTROL
                                             connection = { i, j:j+1, t }
@@ -288,13 +287,13 @@ export default {
                                     break
                                 case 4:
                                     if (is_data_qubit) {
-                                        if (i-1 >= 0) {
+                                        if (i-1 >= 0 && filter(i-1, j)) {
                                             if (j % 2 == 0) n_type = this.constants.NTYPE.TARGET
                                             else n_type = this.constants.NTYPE.CONTROL
                                             connection = { i:i-1, j, t }
                                         } else n_type = this.constants.NTYPE.NONE  // boundary
                                     } else {
-                                        if (i+1 < width) {
+                                        if (i+1 < width && filter(i+1, j)) {
                                             if (j % 2 == 0) n_type = this.constants.NTYPE.CONTROL
                                             else n_type = this.constants.NTYPE.TARGET
                                             connection = { i:i+1, j, t }
@@ -328,8 +327,26 @@ export default {
             }
             return snapshot
         },
+        build_standard_planar_code_snapshot() {
+            let snapshot = this.build_code_in_standard_planar_code()
+            // TODO: add boundary information
+            return snapshot
+        },
         build_rotated_planar_code() {
-            // TODO
+            console.assert(this.L % 2 == 1, "L should be odd")  // odd ensures a balanced x and z correction
+            const middle = this.L - 1
+            const constants = this.constants
+            function filter(i, j) {
+                const distance = Math.abs(i - middle) + Math.abs(j - middle)
+                if (distance <= middle) return true
+                if ((i+j)%2 == 0) return false  // data qubit
+                const q_type = i % 2 == 0 ? constants.QTYPE.Z : constants.QTYPE.X
+                if (q_type == constants.QTYPE.Z && (i-middle)*(j-middle) > 0) return distance <= middle + 1
+                if (q_type == constants.QTYPE.X && (i-middle)*(j-middle) < 0) return distance <= middle + 1
+            }
+            let snapshot = this.build_code_in_standard_planar_code(filter)
+            // TODO: add boundary information
+            return snapshot
         },
         error_multiply(err1, err2) {  // return err1.err2
             if (err1 == this.constants.ETYPE.I) return err2
@@ -349,6 +366,7 @@ export default {
             for (let t=1; t < this.snapshot.length; ++t) {
                 for (let i=0; i < this.snapshot[t].length; ++i) {
                     for (let j=0; j < this.snapshot[t][i].length; ++j) {
+                        if (!this.snapshot[t][i][j]) continue
                         this.snapshot[t][i][j].propagated = this.constants.ETYPE.I
                     }
                 }
@@ -357,6 +375,7 @@ export default {
                 for (let i=0; i < this.snapshot[t].length; ++i) {
                     for (let j=0; j < this.snapshot[t][i].length; ++j) {
                         const node = this.snapshot[t][i][j]
+                        if (!node) continue
                         if (node.n_type == this.constants.NTYPE.INITIALIZATION) {
                             node.propagated = this.constants.ETYPE.I  // no error when initialized
                         }
@@ -384,6 +403,7 @@ export default {
                     for (let i=0; i < this.snapshot[t].length; ++i) {
                         for (let j=0; j < this.snapshot[t][i].length; ++j) {
                             const node = this.snapshot[t][i][j]
+                            if (!node) continue
                             if (node.n_type == this.constants.NTYPE.MEASUREMENT) {
                                 if (node.q_type == this.constants.QTYPE.Z) {
                                     let this_result = node.propagated == this.constants.ETYPE.I || node.propagated == this.constants.ETYPE.Z
@@ -608,19 +628,19 @@ export default {
                 for (let i=0; i < this.snapshot[t].length; ++i) {
                     for (let j=0; j < this.snapshot[t][i].length; ++j) {
                         for (let e=0; e < 2; ++e) {
+                            if (!this.snapshot[t][i][j]) continue
                             this.clear_errors()
                             this.snapshot[t][i][j].error = e == 0 ? this.constants.ETYPE.X : this.constants.ETYPE.Z
                             const p = e == 0 ? this.snapshot[t][i][j].px : this.snapshot[t][i][j].pz
                             this.compute_propagated_error(false)
                             const error_syndrome = this.get_error_syndrome_propagated()
                             if (error_syndrome.length == 1) {  // connect to boundary
-
+                                // TODO connect to boundary
                             } else if (error_syndrome.length == 2) {  // connect to other nodes
                                 const node1 = this.snapshot[error_syndrome[0][0]][error_syndrome[0][1]][error_syndrome[0][2]]
                                 const node2 = this.snapshot[error_syndrome[1][0]][error_syndrome[1][1]][error_syndrome[1][2]]
                                 node_add_connection(node1, node2, p)
                             }
-                            // console.log(error_syndrome)
                         }
                     }
                 }
@@ -632,6 +652,7 @@ export default {
                 for (let i=0; i < this.snapshot[t].length; ++i) {
                     for (let j=0; j < this.snapshot[t][i].length; ++j) {
                         let node = this.snapshot[t][i][j]
+                        if (!node) continue
                         node.error = this.constants.ETYPE.I
                     }
                 }
@@ -643,6 +664,7 @@ export default {
                 for (let i=0; i < this.snapshot[t].length; ++i) {
                     for (let j=0; j < this.snapshot[t][i].length; ++j) {
                         let node = this.snapshot[t][i][j]
+                        if (!node) continue
                         if (node.n_type == this.constants.NTYPE.MEASUREMENT) {
                             if (node.q_type == this.constants.QTYPE.Z) {
                                 let this_result = node.propagated == this.constants.ETYPE.I || node.propagated == this.constants.ETYPE.Z
@@ -673,6 +695,7 @@ export default {
                 for (let i=0; i < this.snapshot[t].length; ++i) {
                     for (let j=0; j < this.snapshot[t][i].length; ++j) {
                         for (let e=0; e < 2; ++e) {
+                            if (!this.snapshot[t][i][j]) continue
                             this.clear_errors()
                             this.snapshot[t][i][j].error = e == 0 ? this.constants.ETYPE.X : this.constants.ETYPE.Z
                             this.compute_propagated_error()
@@ -703,6 +726,7 @@ export default {
             for (let t=0; t < this.snapshot.length; ++t) {
                 for (let i=0; i < this.snapshot[t].length; ++i) {
                     for (let j=0; j < this.snapshot[t][i].length; ++j) {
+                        if (!this.snapshot[t][i][j]) continue
                         func(this.snapshot[t][i][j], t, i, j)
                     }
                 }
