@@ -133,6 +133,21 @@ export default {
 
 	},
 	methods: {
+        async paper_figure_single_error_two_syndrome() {
+            this.snapshot[3][1][2].error = this.constants.ETYPE.X
+            this.compute_propagated_error()
+        },
+		async sleep_ms(ms) {
+			return new Promise((resolve, reject) => {
+				setTimeout(() => { resolve() }, ms)
+			})
+		},
+		async vue_next_tick() {
+			let that = this
+			await new Promise((resolve, reject) => {
+				that.$nextTick(() => { resolve() })
+			})
+		},
         build_constants() {
             this.constants = readonly({
                 QTYPE: readonly({  // qubit type
@@ -294,7 +309,7 @@ export default {
             if (err1 == this.constants.ETYPE.Y && err2 == this.constants.ETYPE.Z) return this.constants.ETYPE.X
             if (err1 == this.constants.ETYPE.Y && err2 == this.constants.ETYPE.Y) return this.constants.ETYPE.I
         },
-        compute_propagated_error() {
+        compute_propagated_error(update_view=true) {
             // careful: t=0 will remain propagated error, others will be recomputed
             for (let t=1; t < this.snapshot.length; ++t) {
                 for (let i=0; i < this.snapshot[t].length; ++i) {
@@ -329,25 +344,33 @@ export default {
                     }
                 }
             }
-            for (let t=1; t < this.snapshot.length; ++t) {
-                for (let i=0; i < this.snapshot[t].length; ++i) {
-                    for (let j=0; j < this.snapshot[t][i].length; ++j) {
-                        const node = this.snapshot[t][i][j]
-                        if (node.n_type == this.constants.NTYPE.MEASUREMENT) {
-                            if (node.q_type == this.constants.QTYPE.Z) {
-                                if (node.propagated == this.constants.ETYPE.X || node.propagated == this.constants.ETYPE.Y) {
-                                    node.mesh.material.color = this.three.measurement_node_color_error
-                                } else node.mesh.material.color = this.three.initialization_node_color_Z
-                            } else {
-                                if (node.propagated == this.constants.ETYPE.Z || node.propagated == this.constants.ETYPE.Y) {
-                                    node.mesh.material.color = this.three.measurement_node_color_error
-                                } else node.mesh.material.color = this.three.initialization_node_color_X
+            if (update_view) {
+                for (let t=1; t < this.snapshot.length; ++t) {  // t=1 necessary, do not update the lowest layer
+                    for (let i=0; i < this.snapshot[t].length; ++i) {
+                        for (let j=0; j < this.snapshot[t][i].length; ++j) {
+                            const node = this.snapshot[t][i][j]
+                            if (node.n_type == this.constants.NTYPE.MEASUREMENT) {
+                                if (node.q_type == this.constants.QTYPE.Z) {
+                                    let this_result = node.propagated == this.constants.ETYPE.I || node.propagated == this.constants.ETYPE.Z
+                                    const last_node = this.snapshot[t-6][i][j]
+                                    let last_result = last_node.propagated == this.constants.ETYPE.I || last_node.propagated == this.constants.ETYPE.Z
+                                    if (this_result != last_result) {
+                                        node.mesh.material.color = this.three.measurement_node_color_error
+                                    } else node.mesh.material.color = this.three.initialization_node_color_Z
+                                } else {
+                                    let this_result = node.propagated == this.constants.ETYPE.I || node.propagated == this.constants.ETYPE.X
+                                    const last_node = this.snapshot[t-6][i][j]
+                                    let last_result = last_node.propagated == this.constants.ETYPE.I || last_node.propagated == this.constants.ETYPE.X
+                                    if (this_result != last_result) {
+                                        node.mesh.material.color = this.three.measurement_node_color_error
+                                    } else node.mesh.material.color = this.three.initialization_node_color_X
+                                }
                             }
-                        }
-                        if (t > 0) {
-                            const vertical = this.snapshot[t][i][j].vertical
-                            if (node.propagated == this.constants.ETYPE.I) vertical.material.color = this.three.vertical_line_color
-                            else vertical.material.color = this.three.measurement_node_color_error
+                            if (t > 0) {
+                                const vertical = this.snapshot[t][i][j].vertical
+                                if (node.propagated == this.constants.ETYPE.I) vertical.material.color = this.three.vertical_line_color
+                                else vertical.material.color = this.three.measurement_node_color_error
+                            }
                         }
                     }
                 }
@@ -392,7 +415,7 @@ export default {
             this.three.vertical_line_geometry.translate(0, - 0.5 * this.constants.VERTICAL_INTERVAL, 0)
             this.three.vertical_line_color = new THREE.Color( 'black' )
             const control_radius = 0.15
-            const control_tube = 0.02
+            const control_tube = 0.005
             this.three.CX_target_geometries = [
                 new THREE.TorusBufferGeometry( control_radius, control_tube, 16, 32 ),
                 new THREE.CylinderBufferGeometry( control_tube, control_tube, 2 * control_radius, 6 ),
@@ -405,7 +428,7 @@ export default {
             this.three.CX_link_geometry = new THREE.CylinderBufferGeometry( control_tube, control_tube, 1, 6 )
             this.three.CX_link_geometry.translate(0, 0.5, 0)
             this.three.CX_link_color = new THREE.Color( 'black' )
-            this.three.CX_control_geometry = new THREE.SphereBufferGeometry( 0.05, 12, 6 )
+            this.three.CX_control_geometry = new THREE.SphereBufferGeometry( 0.03, 12, 6 )
             this.three.CX_control_color = new THREE.Color( 'black' )
         },
         establish_snapshot() {
@@ -495,6 +518,65 @@ export default {
                     }
                 }
             }
+        },
+        clear_errors() {
+            for (let t=0; t < this.snapshot.length; ++t) {
+                for (let i=0; i < this.snapshot[t].length; ++i) {
+                    for (let j=0; j < this.snapshot[t][i].length; ++j) {
+                        let node = this.snapshot[t][i][j]
+                        node.error = this.constants.ETYPE.I
+                    }
+                }
+            }
+        },
+        count_error_syndrome_propagated() {
+            let count = 0
+            for (let t=6; t < this.snapshot.length; t += 6) {
+                for (let i=0; i < this.snapshot[t].length; ++i) {
+                    for (let j=0; j < this.snapshot[t][i].length; ++j) {
+                        let node = this.snapshot[t][i][j]
+                        if (node.n_type == this.constants.NTYPE.MEASUREMENT) {
+                            if (node.q_type == this.constants.QTYPE.Z) {
+                                let this_result = node.propagated == this.constants.ETYPE.I || node.propagated == this.constants.ETYPE.Z
+                                const last_node = this.snapshot[t-6][i][j]
+                                let last_result = last_node.propagated == this.constants.ETYPE.I || last_node.propagated == this.constants.ETYPE.Z
+                                if (this_result != last_result) {
+                                    count += 1
+                                }
+                            } else {
+                                let this_result = node.propagated == this.constants.ETYPE.I || node.propagated == this.constants.ETYPE.X
+                                const last_node = this.snapshot[t-6][i][j]
+                                let last_result = last_node.propagated == this.constants.ETYPE.I || last_node.propagated == this.constants.ETYPE.X
+                                if (this_result != last_result) {
+                                count += 1
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return count
+        },
+        async verify_idea_all_single_error_only_has_at_most_two_syndrome() {
+            for (let t=0; t < this.snapshot.length-1; ++t) {
+                for (let i=0; i < this.snapshot[t].length; ++i) {
+                    for (let j=0; j < this.snapshot[t][i].length; ++j) {
+                        for (let e=0; e < 2; ++e) {
+                            this.clear_errors()
+                            this.snapshot[t][i][j].error = e == 0 ? this.constants.ETYPE.X : this.constants.ETYPE.Z
+                            this.compute_propagated_error()
+                            // await this.sleep_ms(100)  // for visualization purpose
+                            const count_error_syndrome = this.count_error_syndrome_propagated()
+                            if (count_error_syndrome > 2) {
+                                console.log("find error syndrome count = " + count_error_syndrome)
+                                console.log(`error at [${t}][${i}][${j}]`)
+                                return
+                            }
+                        }
+                    }
+                }
+            }
+            console.log("verified: all single error only has at most two syndrome")
         },
 	},
 	watch: {
