@@ -122,7 +122,7 @@ async fn maximum_max_weight_matching_decoder(form: web::Json<DecodeSingleForm>) 
             // prepare python library
             let networkx = py.import("networkx")?;
             let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
-            let maximum_max_weight_matching = |weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
+            let maximum_max_weight_matching = |_node_num: usize, weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
                 let G = networkx.call_method0("Graph").unwrap();
                 let weighted_edges = weighted_edges.to_object(py);
                 G.call_method1("add_weighted_edges_from", (weighted_edges,)).unwrap();

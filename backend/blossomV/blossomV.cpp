@@ -12,10 +12,11 @@ void minimum_weight_perfect_matching(int node_num, int edge_num, int* edges, dou
         pm->AddEdge(edges[2*e], edges[2*e+1], weights[e]);
     }
     struct PerfectMatching::Options options;  // use default option
+    options.verbose = false;
     pm->options = options;
+    pm->Solve();
     for (int i=0; i<node_num; i++) {
 		match[i] = pm->GetMatch(i);
 	}
-    pm->Solve();
     delete pm;
 }

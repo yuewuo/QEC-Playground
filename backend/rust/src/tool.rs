@@ -11,6 +11,7 @@ use super::qec;
 use super::pyo3::prelude::*;
 use super::pyo3::types::{IntoPyDict};
 use std::io::BufRead;
+use super::blossom_v;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -151,7 +152,7 @@ default example:
 **/
 fn automatic_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, qec_decoder: &str) {
     println!("format: <p> <L> <total_rounds> <qec_failed> <error_rate>");
-    if qec_decoder == "naive_decoder" || qec_decoder == "maximum_max_weight_matching_decoder" {
+    if qec_decoder == "naive_decoder" || qec_decoder == "maximum_max_weight_matching_decoder" || qec_decoder == "blossom_V" {
         for L in Ls {
             for p in ps {
                 let p = *p;
@@ -180,24 +181,29 @@ fn automatic_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_c
                     let measurement = util::generate_perfect_measurements(&x_error_ro, &no_error);
                     let (x_correction, _z_correction) = if qec_decoder == "naive_decoder" {
                         qec::naive_correction(&measurement)
-                    } else {  // maximum_max_weight_matching_decoder
-                        let maximum_max_weight_matching = |weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
-                            Python::with_gil(|py| {
-                                (|py: Python| -> PyResult<std::collections::HashSet<(usize, usize)>> {
-                                    let networkx = py.import("networkx")?;
-                                    let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
-                                    let G = networkx.call_method0("Graph")?;
-                                    let weighted_edges = weighted_edges.to_object(py);
-                                    G.call_method1("add_weighted_edges_from", (weighted_edges,))?;
-                                    let dict = vec![("maxcardinality", true)].into_py_dict(py);
-                                    let matched: std::collections::HashSet<(usize, usize)> = max_weight_matching.call((G,), Some(dict))?.extract()?;
-                                    Ok(matched)
-                                })(py).map_err(|e| {
-                                    e.print_and_set_sys_last_vars(py);
-                                })
-                            }).expect("python run failed")
-                        };
-                        qec::maximum_max_weight_matching_correction(&measurement, maximum_max_weight_matching)
+                    } else {  // "maximum_max_weight_matching_decoder" or "blossom_V"
+                        if qec_decoder == "maximum_max_weight_matching_decoder" {
+                            let maximum_max_weight_matching = |_node_num: usize, weighted_edges: Vec<(usize, usize, f64)>| 
+                                -> std::collections::HashSet<(usize, usize)> {
+                                    Python::with_gil(|py| {
+                                        (|py: Python| -> PyResult<std::collections::HashSet<(usize, usize)>> {
+                                            let networkx = py.import("networkx")?;
+                                            let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
+                                            let G = networkx.call_method0("Graph")?;
+                                            let weighted_edges = weighted_edges.to_object(py);
+                                            G.call_method1("add_weighted_edges_from", (weighted_edges,))?;
+                                            let dict = vec![("maxcardinality", true)].into_py_dict(py);
+                                            let matched: std::collections::HashSet<(usize, usize)> = max_weight_matching.call((G,), Some(dict))?.extract()?;
+                                            Ok(matched)
+                                        })(py).map_err(|e| {
+                                            e.print_and_set_sys_last_vars(py);
+                                        })
+                                    }).expect("python run failed")
+                                };
+                            qec::maximum_max_weight_matching_correction(&measurement, maximum_max_weight_matching)
+                        } else {
+                            qec::maximum_max_weight_matching_correction(&measurement, blossom_v::maximum_weight_perfect_matching_compatible)
+                        }
                     };
                     if x_error_ro.validate_x_correction(&x_correction).is_err() {
                         qec_failed += 1;
@@ -219,7 +225,7 @@ default example:
 **/
 fn error_rate_MWPM_with_weight(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, weights_filename: &str) {
     // println!("format: <p> <L> <total_rounds> <qec_failed> <error_rate>");
-    let maximum_max_weight_matching = |weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
+    let maximum_max_weight_matching = |_node_num: usize, weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
         Python::with_gil(|py| {
             (|py: Python| -> PyResult<std::collections::HashSet<(usize, usize)>> {
                 let networkx = py.import("networkx")?;

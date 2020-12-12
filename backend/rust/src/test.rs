@@ -179,7 +179,7 @@ fn maximum_max_weight_matching_correction() {
             // prepare python library
             let networkx = py.import("networkx")?;
             let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
-            let maximum_max_weight_matching = |weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
+            let maximum_max_weight_matching = |_node_num: usize, weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
                 let G = networkx.call_method0("Graph").unwrap();
                 let weighted_edges = weighted_edges.to_object(py);
                 G.call_method1("add_weighted_edges_from", (weighted_edges,)).unwrap();
@@ -237,13 +237,28 @@ fn archived_debug_tests() {
             })
         }).expect("python run failed");
     }
-}
-
-fn debug_tests() {
     {  // test call c function
         println!("{}", blossom_v::safe_square(5));
         let input = vec![1., 2., 3., 4.];
         let output = blossom_v::safe_square_all(input);
         println!("{:?}", output);
+    }
+}
+
+fn debug_tests() {
+    {  // call blossom V matching
+        let weighted_edges = vec![
+            (0, 1, -3.),
+            (1, 2, -2.),
+            (2, 0, -3.),
+            (0, 3, -1.),
+            (1, 4, -2.),
+            (2, 5, -1.),
+            (3, 4, 0.),
+            (3, 5, 0.),
+            (4, 5, 0.),
+        ];
+        let matched = blossom_v::maximum_weight_perfect_matching_compatible(6, weighted_edges);
+        println!("{:?}", matched);
     }
 }

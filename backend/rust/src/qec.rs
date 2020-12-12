@@ -225,14 +225,14 @@ pub fn naive_correction(measurement: &ZxMeasurement) -> (ZxCorrection, ZxCorrect
 /// Try to use some `maximum_max_weight_matching` function to decode
 /// return `(x_correction, z_correction)`
 pub fn maximum_max_weight_matching_correction<F>(measurement: &ZxMeasurement, maximum_max_weight_matching: F) -> (ZxCorrection, ZxCorrection)
-        where F: Fn(Vec<(usize, usize, f64)>) -> std::collections::HashSet<(usize, usize)> {
+        where F: Fn(usize, Vec<(usize, usize, f64)>) -> std::collections::HashSet<(usize, usize)> {
     let distance_delta = |i: isize, j: isize| ((i+j).abs() + (i-j).abs()) / 2;
     let distance = |i1: isize, j1: isize, i2: isize, j2: isize| distance_delta(i2 - i1, j2 - j1);
     let weight_of = |i1: usize, j1: usize, i2: usize, j2: usize| - distance(i1 as isize, j1 as isize, i2 as isize, j2 as isize) as f64;
     return maximum_max_weight_matching_correction_weighted(measurement, maximum_max_weight_matching, weight_of);
 }
 pub fn maximum_max_weight_matching_correction_weighted<F, F2>(measurement: &ZxMeasurement, maximum_max_weight_matching: F, weight_of: F2) -> (ZxCorrection, ZxCorrection)
-        where F: Fn(Vec<(usize, usize, f64)>) -> std::collections::HashSet<(usize, usize)>, 
+        where F: Fn(usize, Vec<(usize, usize, f64)>) -> std::collections::HashSet<(usize, usize)>, 
         F2: Fn(usize, usize, usize, usize) -> f64 {
     let L = measurement.L();
     let mut corrections = Vec::<ZxCorrection>::new();
@@ -276,7 +276,7 @@ pub fn maximum_max_weight_matching_correction_weighted<F, F2>(measurement: &ZxMe
                     }
                 }
             }
-            let matched = maximum_max_weight_matching(edges);
+            let matched = maximum_max_weight_matching(2 * error_counts, edges);
             let is_boundary = |a| a >= error_counts;
             for (a, b) in &matched {
                 let a = *a;
