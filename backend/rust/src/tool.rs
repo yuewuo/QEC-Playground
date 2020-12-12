@@ -12,6 +12,8 @@ use super::pyo3::prelude::*;
 use super::pyo3::types::{IntoPyDict};
 use std::io::BufRead;
 use super::blossom_v;
+use super::num_cpus;
+use std::sync::{Arc, Mutex};
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -51,7 +53,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
             let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(1000);  // default to 1e3
             let weights = value_t!(matches, "weights", String).unwrap_or("default_weights".to_string());
-            error_rate_MWPM_with_weight(&Ls, &ps, max_N, min_error_cases, &weights);
+            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
+            error_rate_MWPM_with_weight(&Ls, &ps, max_N, min_error_cases, &weights, parallel);
         }
         _ => unreachable!()
     }
@@ -223,24 +226,12 @@ default example:
 `cargo run --release -- tool error_rate_MWPM_with_weight [5] [1e-2] -w default_weights.txt`
 (run `python ../python/MWPM_weighted.py` to generate `default_weights.txt`)
 **/
-fn error_rate_MWPM_with_weight(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, weights_filename: &str) {
+fn error_rate_MWPM_with_weight(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, weights_filename: &str, parallel: usize) {
+    let mut parallel = parallel;
+    if parallel == 0 {
+        parallel = num_cpus::get() - 1;
+    }
     // println!("format: <p> <L> <total_rounds> <qec_failed> <error_rate>");
-    let maximum_max_weight_matching = |_node_num: usize, weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
-        Python::with_gil(|py| {
-            (|py: Python| -> PyResult<std::collections::HashSet<(usize, usize)>> {
-                let networkx = py.import("networkx")?;
-                let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
-                let G = networkx.call_method0("Graph")?;
-                let weighted_edges = weighted_edges.to_object(py);
-                G.call_method1("add_weighted_edges_from", (weighted_edges,))?;
-                let dict = vec![("maxcardinality", true)].into_py_dict(py);
-                let matched: std::collections::HashSet<(usize, usize)> = max_weight_matching.call((G,), Some(dict))?.extract()?;
-                Ok(matched)
-            })(py).map_err(|e| {
-                e.print_and_set_sys_last_vars(py);
-            })
-        }).expect("python run failed")
-    };
     // read weights from file
     let file = std::fs::File::open(weights_filename).expect("file open failed");
     let mut lines = std::io::BufReader::new(file).lines();
@@ -273,38 +264,73 @@ fn error_rate_MWPM_with_weight(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min
             }
         }
     }
-    let weights_of = |i1: usize, j1: usize, i2: usize, j2: usize| weights[[i1, j1, i2, j2]];
     for L in Ls {
         for p in ps {
-            let p = *p;
-            let L = *L;
-            let no_error = ZxError::new_L(L);
-            let mut x_error_ro = ZxError::new_L(L);
-            let mut rng = thread_rng();
-            let mut total_rounds = 0;
-            let mut qec_failed = 0;
-            while total_rounds < max_N && qec_failed < min_error_cases {
-                let mut x_error = x_error_ro.view_mut();
-                let mut has_error = false;
-                for i in 0..L {
-                    for j in 0..L {
-                        let is_error = rng.gen::<f64>() < p;
-                        x_error[[i, j]] = is_error;
-                        if is_error {
-                            has_error = true;
+            let total_rounds = Arc::new(Mutex::new(0));
+            let qec_failed = Arc::new(Mutex::new(0));
+            let mut handlers = Vec::new();
+            for _i in 0..parallel {
+                let p = *p;
+                let L = *L;
+                let total_rounds = Arc::clone(&total_rounds);
+                let qec_failed = Arc::clone(&qec_failed);
+                let weights = weights.clone();
+                handlers.push(std::thread::spawn(move || {
+                    // println!("thread {}", _i);
+                    let weights_of = |i1: usize, j1: usize, i2: usize, j2: usize| weights[[i1, j1, i2, j2]];
+                    let no_error = ZxError::new_L(L);
+                    let mut x_error_ro = ZxError::new_L(L);
+                    let mut rng = thread_rng();
+                    let mut current_total_rounds = {
+                        *total_rounds.lock().unwrap()
+                    };
+                    let mut current_qec_failed = {
+                        *qec_failed.lock().unwrap()
+                    };
+                    while current_total_rounds < max_N && current_qec_failed < min_error_cases {
+                        let mini_batch = 1000;
+                        let mut mini_qec_failed = 0;
+                        for _j in 0..mini_batch {  // run at least 200ms before sync with outside
+                            let mut x_error = x_error_ro.view_mut();
+                            let mut has_error = false;
+                            for i in 0..L {
+                                for j in 0..L {
+                                    let is_error = rng.gen::<f64>() < p;
+                                    x_error[[i, j]] = is_error;
+                                    if is_error {
+                                        has_error = true;
+                                    }
+                                }
+                            }
+                            if !has_error {
+                                continue
+                            }
+                            let measurement = util::generate_perfect_measurements(&x_error_ro, &no_error);
+                            let (x_correction, _z_correction) = qec::maximum_max_weight_matching_correction_weighted(&measurement,
+                                blossom_v::maximum_weight_perfect_matching_compatible, weights_of);
+                            if x_error_ro.validate_x_correction(&x_correction).is_err() {
+                                mini_qec_failed += 1;
+                            }
                         }
+                        // sync data from outside
+                        current_total_rounds = {
+                            let mut total_rounds = total_rounds.lock().unwrap();
+                            *total_rounds += mini_batch;
+                            *total_rounds
+                        };
+                        current_qec_failed = {
+                            let mut qec_failed = qec_failed.lock().unwrap();
+                            *qec_failed += mini_qec_failed;
+                            *qec_failed
+                        };
                     }
-                }
-                total_rounds += 1;  // record the total round
-                if !has_error {
-                    continue
-                }
-                let measurement = util::generate_perfect_measurements(&x_error_ro, &no_error);
-                let (x_correction, _z_correction) = qec::maximum_max_weight_matching_correction_weighted(&measurement, maximum_max_weight_matching, weights_of);
-                if x_error_ro.validate_x_correction(&x_correction).is_err() {
-                    qec_failed += 1;
-                }
+                }));
             }
+            for handler in handlers {
+                handler.join().unwrap();
+            }
+            let total_rounds = *total_rounds.lock().unwrap();
+            let qec_failed = *qec_failed.lock().unwrap();
             let error_rate = qec_failed as f64 / total_rounds as f64;
             println!("{} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate);
         }
