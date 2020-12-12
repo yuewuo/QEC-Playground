@@ -329,7 +329,7 @@ export default {
         },
         build_standard_planar_code_snapshot() {
             let snapshot = this.build_code_in_standard_planar_code()
-            // add boundary information
+            // add boundary information (only add possible boundaries. exact boundary will be added `p` after building the graph)
             for (let t=6; t < snapshot.length; t+=6) {
                 for (let i=0; i < snapshot[t].length; ++i) {
                     for (let j=0; j < snapshot[t][i].length; ++j) {
@@ -339,11 +339,13 @@ export default {
                             let bt = t
                             let bi = i
                             let bj = j
-                            if (i <= 1) bi -= 2
-                            if (i >= snapshot[t].length - 2) bi += 2
-                            if (j <= 1) bj -= 2
-                            if (j >= snapshot[t][i].length - 2) bj += 2
                             if (t == snapshot.length - 1) bt += 6
+                            else {
+                                if (i == 1) bi -= 2
+                                if (i == snapshot[t].length - 2) bi += 2
+                                if (j == 1) bj -= 2
+                                if (j == snapshot[t][i].length - 2) bj += 2
+                            }
                             if (bi != i || bj != j || bt != t) {
                                 node.boundary = {
                                     t: bt,
@@ -370,7 +372,49 @@ export default {
                 if (q_type == constants.QTYPE.X && (i-middle)*(j-middle) < 0) return distance <= middle + 1
             }
             let snapshot = this.build_code_in_standard_planar_code(filter)
-            // TODO: add boundary information
+            // add boundary information (only add possible boundaries. exact boundary will be added `p` after building the graph)
+            for (let t=6; t < snapshot.length; t+=6) {
+                for (let i=0; i < snapshot[t].length; ++i) {
+                    for (let j=0; j < snapshot[t][i].length; ++j) {
+                        let node = snapshot[t][i][j]
+                        if (!node) continue
+                        if (node.n_type == this.constants.NTYPE.MEASUREMENT) {
+                            let bt = t
+                            let bi = i
+                            let bj = j
+                            const distance = Math.abs(i - middle) + Math.abs(j - middle)
+                            if (t == snapshot.length - 1) bt += 6
+                            else if (distance >= middle - 3) {
+                                const q_type = i % 2 == 0 ? this.constants.QTYPE.Z : this.constants.QTYPE.X
+                                if (q_type == this.constants.QTYPE.Z) {
+                                    if (i > j) {
+                                        bi += 2
+                                        bj -= 2
+                                    } else {
+                                        bi -= 2
+                                        bj += 2
+                                    }
+                                } else {
+                                    if (i + j > 2 * middle) {
+                                        bi += 2
+                                        bj += 2
+                                    } else {
+                                        bi -= 2
+                                        bj -= 2
+                                    }
+                                }
+                            }
+                            if (bi != i || bj != j || bt != t) {
+                                node.boundary = {
+                                    t: bt,
+                                    i: bi,
+                                    j: bj,
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             return snapshot
         },
         error_multiply(err1, err2) {  // return err1.err2
