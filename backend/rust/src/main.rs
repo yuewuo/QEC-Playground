@@ -4,6 +4,7 @@ mod tool;
 mod types;
 mod qec;
 mod web;
+mod blossom_v;
 
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;
@@ -14,8 +15,8 @@ extern crate actix_web;
 #[cfg(not(feature="noserver"))]
 extern crate actix_cors;
 extern crate serde;
-extern crate blossom;
 extern crate pyo3;
+extern crate libc;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

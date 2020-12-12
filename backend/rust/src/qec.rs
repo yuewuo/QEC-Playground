@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 
 use super::types::*;
-use super::blossom;
 
 /// This is a NAIVE error correction algorithm !!!
 /// It's even not fault tolerant at all. It just make sure all the stabilizers are back to +1 eigenstate
@@ -215,76 +214,6 @@ pub fn naive_correction(measurement: &ZxMeasurement) -> (ZxCorrection, ZxCorrect
                     }
                 }
             }
-        }
-        corrections.push(correction);
-    }
-    let x_correction = corrections[1].clone();
-    let z_correction = corrections[0].clone();
-    (x_correction, z_correction)
-}
-
-/// Try to use blossom graph library to decode
-/// return `(x_correction, z_correction)`
-pub fn try_blossom_correction(measurement: &ZxMeasurement) -> (ZxCorrection, ZxCorrection) {
-    let L = measurement.L();
-    let mut corrections = Vec::<ZxCorrection>::new();
-    for is_z_stabilizer in [false, true].iter() {
-        let is_z_stabilizer = *is_z_stabilizer;
-        let correction = ZxCorrection::new_L(L);
-        let mut error_vertices = Vec::<(usize, usize, usize)>::new();  // (i, j, boundary)
-        for i in 0..L+1 {
-            for j in 0..L+1 {
-                if is_z_stabilizer && j != 0 && j != L && (i + j) % 2 == 0 && measurement[[i, j]] {  // Z stabilizer only when i+j is even
-                    // boundary is on left and right
-                    error_vertices.push((i, j, std::cmp::min(j, L - j)))
-                }
-                if !is_z_stabilizer && i != 0 && i != L && (i + j) % 2 == 1 && measurement[[i, j]] {  // X stabilizer only when i+j is odd
-                    // boundary is on top and bottom
-                    error_vertices.push((i, j, std::cmp::min(i, L - i)))
-                }
-            }
-        }
-        let error_counts = error_vertices.len();
-        if error_counts != 0 {  // only when some error occurs
-            let distance_delta = |i: isize, j: isize| ((i+j).abs() + (i-j).abs()) / 2;
-            let weight_of = |i1: usize, j1: usize, i2: usize, j2: usize| - distance_delta((i2 as isize) - (i1 as isize), (j2 as isize) - (j1 as isize));
-            let mut graph_vertices = std::collections::HashMap::new();
-            for i in 0..error_counts {
-                let (i1, j1, boundary) = error_vertices[i];
-                let boundary_vertex_idx = i + error_counts;
-                let mut vertices = vec![boundary_vertex_idx];
-                let mut weights = vec![-(boundary as blossom::weighted::Weight)];
-                for j in 0..error_counts {
-                    if j != i {
-                        let (i2, j2, _) = error_vertices[j];
-                        weights.push(weight_of(i1, j1, i2, j2) as blossom::weighted::Weight);
-                        vertices.push(j);
-                    }
-                }
-                graph_vertices.insert(i, (vertices, weights));
-                // add boundary connections of `boundary_vertex_idx`
-                let mut boundary_vertices = vec![i];
-                let mut boundary_weights = vec![-(boundary as blossom::weighted::Weight)];
-                for j in 0..error_counts {
-                    if j != i {
-                        boundary_weights.push(0 as blossom::weighted::Weight);
-                        boundary_vertices.push(j + error_counts);
-                    }
-                }
-                graph_vertices.insert(boundary_vertex_idx, (boundary_vertices, boundary_weights));
-            }
-            println!("{:?}", graph_vertices);
-            let graph = blossom::weighted::WeightedGraph::new(graph_vertices);
-            let matching = graph.maximin_matching().unwrap();
-            println!("matching: {:?}", matching);
-            let matching_edges = matching.edges();
-            println!("matching_edges: {:?}", matching_edges);
-
-            // FAILED: `graph.maximin_matching` does not work as expected.
-            // with input {3: ([0, 4, 5], [-1.0, 0.0, 0.0]), 2: ([5, 0, 1], [-1.0, -3.0, -2.0]), 4: ([1, 3, 5], [-2.0, 0.0, 0.0]), 0: ([3, 1, 2], [-1.0, -3.0, -3.0]), 1: ([4, 0, 2], [-2.0, -3.0, -2.0]), 5: ([2, 3, 4], [-1.0, 0.0, 0.0])}
-            // it matches [(2, 5), (0, 3), (1, 4)]
-            // this is absolutely not optimal. It seems to find a local maximal and stop there.
-
         }
         corrections.push(correction);
     }

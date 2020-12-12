@@ -1,13 +1,20 @@
 #![allow(non_snake_case)]
 
+#[cfg(not(feature="noserver"))]
 use super::util;
+#[cfg(not(feature="noserver"))]
 use super::serde_json;
+#[cfg(not(feature="noserver"))]
 use super::serde::Deserialize;
+#[cfg(not(feature="noserver"))]
 use super::types::*;
 #[cfg(not(feature="noserver"))]
 use super::actix_web::{web, App, HttpServer, HttpResponse, Error, error};
+#[cfg(not(feature="noserver"))]
 use super::qec;
+#[cfg(not(feature="noserver"))]
 use super::pyo3::prelude::*;
+#[cfg(not(feature="noserver"))]
 use super::pyo3::types::{IntoPyDict};
 
 #[cfg(not(feature="noserver"))]
