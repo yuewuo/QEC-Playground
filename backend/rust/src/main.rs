@@ -9,7 +9,9 @@ mod web;
 #[macro_use] extern crate serde_json;
 extern crate ndarray;
 extern crate rand;
+#[cfg(not(feature="noserver"))]
 extern crate actix_web;
+#[cfg(not(feature="noserver"))]
 extern crate actix_cors;
 extern crate serde;
 extern crate blossom;

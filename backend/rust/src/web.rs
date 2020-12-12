@@ -4,11 +4,13 @@ use super::util;
 use super::serde_json;
 use super::serde::Deserialize;
 use super::types::*;
+#[cfg(not(feature="noserver"))]
 use super::actix_web::{web, App, HttpServer, HttpResponse, Error, error};
 use super::qec;
 use super::pyo3::prelude::*;
 use super::pyo3::types::{IntoPyDict};
 
+#[cfg(not(feature="noserver"))]
 pub async fn run_server(port: i32, addr: String, root_url: String) -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
@@ -22,6 +24,13 @@ pub async fn run_server(port: i32, addr: String, root_url: String) -> std::io::R
         }).bind(format!("{}:{}", addr, port))?.run().await
 }
 
+
+#[cfg(feature="noserver")]
+pub async fn run_server(port: i32, addr: String, root_url: String) -> std::io::Result<()> {
+    panic!("compiled with feature `noserver`, cannot run server at {}:{}, root {}", port, addr, root_url)
+}
+
+#[cfg(not(feature="noserver"))]
 #[derive(Deserialize)]
 pub struct DecodeSingleForm {
     L: usize,
@@ -30,6 +39,7 @@ pub struct DecodeSingleForm {
 }
 
 // `array` should be JSON matrix of [L][L] where each element is 0 or 1
+#[cfg(not(feature="noserver"))]
 fn parse_L2_bit_array_from_json(L: usize, array: &serde_json::Value) -> Result<ndarray::Array2<bool>, String> {
     let mut ret_ro = ndarray::Array::from_elem((L, L), false);
     let mut ret = ret_ro.view_mut();
@@ -45,6 +55,7 @@ fn parse_L2_bit_array_from_json(L: usize, array: &serde_json::Value) -> Result<n
     Ok(ret_ro)
 }
 
+#[cfg(not(feature="noserver"))]
 fn output_L2_bit_array_to_json(array: &ndarray::Array2<bool>) -> serde_json::Value {
     let shape = array.shape();
     let mut matrix = Vec::<Vec<i32>>::new();
@@ -59,6 +70,7 @@ fn output_L2_bit_array_to_json(array: &ndarray::Array2<bool>) -> serde_json::Val
 }
 
 /// Decode a single error pattern using naive_correction
+#[cfg(not(feature="noserver"))]
 async fn naive_decoder(form: web::Json<DecodeSingleForm>) -> Result<HttpResponse, Error> {
     let L = form.L;
     if L < 2 { return Err(error::ErrorBadRequest("L must be no less than 2")) }
@@ -91,6 +103,7 @@ async fn naive_decoder(form: web::Json<DecodeSingleForm>) -> Result<HttpResponse
 }
 
 /// Decode a single error pattern using naive_correction
+#[cfg(not(feature="noserver"))]
 async fn maximum_max_weight_matching_decoder(form: web::Json<DecodeSingleForm>) -> Result<HttpResponse, Error> {
     let L = form.L;
     if L < 2 { return Err(error::ErrorBadRequest("L must be no less than 2")) }
