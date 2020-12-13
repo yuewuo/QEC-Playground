@@ -259,6 +259,18 @@ fn archived_debug_tests() {
         let matched = blossom_v::maximum_weight_perfect_matching_compatible(6, weighted_edges);
         println!("{:?}", matched);
     }
+    {  // use `prepare_correction` only with small L
+        let T = 4;
+        let L = 4;
+        let error_rate = 0.01;  // (1-3p)I + pX + pZ + pY
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(T, L);
+        model.set_depolarizing_error(error_rate);
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path();
+        model.prepare_correction();  // only call this with small L, otherwise initialization time and memory usage will be too high
+        // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
+    }
 }
 
 fn debug_tests() {
@@ -308,7 +320,9 @@ fn debug_tests() {
             assert!(max_edge_count <= 12, "verified: at most 12 neighbors in graph");
             // build exhausted path helps to speed up decoder
             model.build_exhausted_path();
+            // model.prepare_correction();  // only call this with small L, otherwise initialization time and memory usage will be too high
             // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
+            // println!("{:?}", model.get_correction_two_nodes(ftqec::Index::new(6, 0, 1), ftqec::Index::new(18, 4, 1)));
         }
     }
 }

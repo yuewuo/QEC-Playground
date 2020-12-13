@@ -28,6 +28,12 @@ pub struct Index {
     pub j: usize,
 }
 
+impl Index {
+    pub fn new(t: usize, i: usize, j: usize) -> Self {
+        Self { t: t, i: i, j: j }
+    }
+}
+
 /// Corresponds to `this.snapshot` in `FaultTolerantView.vue`
 #[derive(Debug)]
 pub struct Node {
@@ -363,13 +369,21 @@ impl PlanarCodeModel {
             }
         }
     }
+    /// generate default correction
+    pub fn generate_default_correction(&self) -> Correction {
+        let width = 2 * self.L - 1;
+        let x = ndarray::Array::from_elem((self.T, width, width), false);
+        let z = ndarray::Array::from_elem((self.T, width, width), false);
+        Correction {
+            x: x,
+            z: z,
+        }
+    }
     /// get data qubit error pattern based on current `propagated` error on t=6,12,18,...
     pub fn get_data_qubit_error_pattern(&self) -> Correction {
-        let width = 2 * self.L - 1;
-        let mut x = ndarray::Array::from_elem((self.T, width, width), false);
-        let mut x_mut = x.view_mut();
-        let mut z = ndarray::Array::from_elem((self.T, width, width), false);
-        let mut z_mut = z.view_mut();
+        let mut correction = self.generate_default_correction();
+        let mut x_mut = correction.x.view_mut();
+        let mut z_mut = correction.z.view_mut();
         for (idx, t) in (6..self.snapshot.len()).step_by(6).enumerate() {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
@@ -385,10 +399,7 @@ impl PlanarCodeModel {
                 }
             }
         }
-        Correction {
-            x: x,
-            z: z,
-        }
+        correction
     }
     /// corresponds to `build_graph_given_error_rate` in `FaultTolerantView.vue`
     pub fn build_graph(&mut self) {
@@ -509,6 +520,7 @@ impl PlanarCodeModel {
                         cost: *cost,
                         next: None,
                         correction: None,
+                        next_correction: None,
                     });
                 }
             }
@@ -554,7 +566,39 @@ impl PlanarCodeModel {
                 }
             }
         }
-        // use the shortest path to build `correction`, so that correction is done in O(1) time
+        // generate `next_correction` so that decoder works more efficiently
+        for t in (6..self.snapshot.len()).step_by(6) {
+            for i in 0..self.snapshot[t].len() {
+                for j in 0..self.snapshot[t][i].len() {
+                    if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
+                        let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                        let target_indexes: Vec::<Index> = node.exhausted_map.keys().cloned().collect();
+                        for target_index in target_indexes {
+                            // go along `next` and combine over the `correction`
+                            let this_index = Index{ t: t, i: i, j: j };
+                            let this_node = self.snapshot[this_index.t][this_index.i][this_index.j].as_ref().expect("exist");
+                            let next_index = this_node.exhausted_map[&target_index].next.as_ref().expect("exist");
+                            let mut correction = None;
+                            for edge in this_node.edges.iter() {  // find the edge of `next_index`
+                                if *next_index == Index::from(edge) {
+                                    correction = Some(edge.cases[0].0.clone());
+                                    break
+                                }
+                            }
+                            assert!(correction.is_some(), "next should be in `this_node.edges`");
+                            let correction = correction.expect("exist");
+                            // redefine node as a mutable one
+                            let node = self.snapshot[t][i][j].as_mut().expect("exist");
+                            node.exhausted_map.get_mut(&target_index).expect("exist").next_correction = Some(correction);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    /// use the shortest path to build `correction`, so that correction is done in O(1) time.
+    /// This have some drawbacks, e.g. the memory usage is extremely high >4GB when L=10, and initialization time is over 100s
+    pub fn prepare_correction(&mut self) {
         for t in (6..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
@@ -596,6 +640,31 @@ impl PlanarCodeModel {
                         }
                     }
                 }
+            }
+        }
+    }
+    /// get correction from two matched nodes
+    /// use `correction` (or `next_correction` if former not provided) in `exhausted_map`
+    pub fn get_correction_two_nodes(&self, a: Index, b: Index) -> Correction {
+        let node_a = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist");
+        let node_b = self.snapshot[b.t][b.i][b.j].as_ref().expect("exist");
+        assert_eq!(node_a.gate_type, GateType::Measurement);
+        assert_eq!(node_b.gate_type, GateType::Measurement);
+        assert_eq!(node_a.qubit_type, node_b.qubit_type);  // so that it has a path
+        if a == b {
+            return self.generate_default_correction()
+        }
+        match &node_a.exhausted_map[&b].correction {
+            Some(correction) => { correction.clone() }
+            None => {
+                let mut correction = node_a.exhausted_map[&b].next_correction.as_ref().expect("must call `build_exhausted_path`").clone();
+                let mut next_index = node_a.exhausted_map[&b].next.as_ref().expect("exist");
+                while *next_index != b {
+                    let this_node = self.snapshot[next_index.t][next_index.i][next_index.j].as_ref().expect("exist");
+                    correction.combine(&this_node.exhausted_map[&b].next_correction.as_ref().expect("must call `build_exhausted_path`"));
+                    next_index = this_node.exhausted_map[&b].next.as_ref().expect("exist");
+                }
+                correction
             }
         }
     }
@@ -778,5 +847,9 @@ pub struct PetGraphEdge {
 pub struct ExhaustedElement {
     pub cost: f64,
     pub next: Option<Index>,
+    /// either `correction` or `next_correction` is needed for decoder to work
+    /// `correction` will be used first if exists, which occupies too much memory and too many initialization time
     pub correction: Option<Correction>,
+    /// `next_correction` is generated by default
+    pub next_correction: Option<Correction>,
 }
