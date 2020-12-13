@@ -21,7 +21,7 @@ use super::petgraph;
 use std::collections::HashMap;
 
 /// uniquely index a node
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Index {
     pub t: usize,
     pub i: usize,
@@ -445,6 +445,33 @@ impl PlanarCodeModel {
         self.clear_error();
         self.propagate_error();
     }
+    /// combine and sort edges based on their probability.
+    /// This shouldn't have much effect on the decoding performance, but I'm not sure of this, so just implement it and see
+    pub fn optimize_correction_pattern(&mut self) {
+        self.iterate_measurement_stabilizers_mut(|_t, _i, _j, node, _qubit_type| {
+            for edge in node.edges.iter_mut() {
+                let mut cases = HashMap::<Correction, f64>::new();
+                for (correction, p) in edge.cases.iter() {
+                    if cases.contains_key(correction) {
+                        let case_p = cases.get_mut(correction).expect("exist");
+                        let case_p_value: f64 = *case_p;
+                        *case_p = case_p_value * (1. - p) + p * (1. - case_p_value);
+                    } else {
+                        cases.insert(correction.clone(), *p);
+                    }
+                }
+                edge.cases = Vec::with_capacity(cases.len());
+                for (correction, p) in cases.iter() {
+                    edge.cases.push((correction.clone(), *p));
+                }
+                // println!("cases count: {}", edge.cases.len());  // observation: the max amount of cases reduces from 7 to 3
+                // sort the corrections based on its probability
+                edge.cases.sort_by(|(_, p1), (_, p2)| p2.partial_cmp(&p1).expect("probabilities shouldn't be NaN"));
+                // let ps: Vec<f64> = edge.cases.iter().map(|(_, p)| *p).collect();
+                // println!("{:?}", ps);  // to check the order of it
+            }
+        });
+    }
     /// exhaustively search the minimum path from every measurement stabilizer to the others.
     /// Running `build_graph` required before running this function.
     pub fn build_exhausted_path(&mut self) {
@@ -486,10 +513,91 @@ impl PlanarCodeModel {
                 }
             }
         });
-        // TODO: use the result of dijkstra to build `next`, so that the shortest path is found is O(1) time
-
-        // TODO: use the shortest path to build `correction`, so that correction is done in O(1) time
-        
+        // use the result of dijkstra to build `next`, so that the shortest path is found is O(1) time
+        for t in (6..self.snapshot.len()).step_by(6) {
+            for i in 0..self.snapshot[t].len() {
+                for j in 0..self.snapshot[t][i].len() {
+                    if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
+                        let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                        let target_indexes: Vec::<Index> = node.exhausted_map.keys().cloned().collect();
+                        for target_index in target_indexes {
+                            // find the next element by searching in `edges`
+                            let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                            let mut min_cost = None;
+                            let mut min_index = None;
+                            for edge in &node.edges {
+                                let next_index = Index::from(edge);
+                                let mut current_cost = node.exhausted_map[&next_index].cost;
+                                if next_index != target_index {
+                                    let next_node = self.snapshot[next_index.t][next_index.i][next_index.j].as_ref().expect("exist");
+                                    current_cost += next_node.exhausted_map[&target_index].cost;
+                                }
+                                // compute the cost of node -> next_index -> target_index
+                                match min_cost.clone() {
+                                    Some(min_cost_value) => {
+                                        if current_cost < min_cost_value {
+                                            min_cost = Some(current_cost);
+                                            min_index = Some(next_index.clone());
+                                        }
+                                    }
+                                    None => {
+                                        min_cost = Some(current_cost);
+                                        min_index = Some(next_index.clone());
+                                    }
+                                }
+                            }
+                            // redefine node as a mutable one
+                            let node = self.snapshot[t][i][j].as_mut().expect("exist");
+                            node.exhausted_map.get_mut(&target_index).expect("exist").next = Some(min_index.expect("exist"));
+                        }
+                    }
+                }
+            }
+        }
+        // use the shortest path to build `correction`, so that correction is done in O(1) time
+        for t in (6..self.snapshot.len()).step_by(6) {
+            for i in 0..self.snapshot[t].len() {
+                for j in 0..self.snapshot[t][i].len() {
+                    if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
+                        let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                        let target_indexes: Vec::<Index> = node.exhausted_map.keys().cloned().collect();
+                        for target_index in target_indexes {
+                            // go along `next` and combine over the `correction`
+                            let this_index = Index{ t: t, i: i, j: j };
+                            let this_node = self.snapshot[this_index.t][this_index.i][this_index.j].as_ref().expect("exist");
+                            let mut next_index = this_node.exhausted_map[&target_index].next.as_ref().expect("exist");
+                            let mut correction = None;
+                            for edge in this_node.edges.iter() {  // find the edge of `next_index`
+                                if *next_index == Index::from(edge) {
+                                    correction = Some(edge.cases[0].0.clone());
+                                    break
+                                }
+                            }
+                            assert!(correction.is_some(), "next should be in `this_node.edges`");
+                            let mut correction = correction.expect("exist");
+                            while *next_index != target_index {
+                                let this_index = next_index.clone();
+                                let this_node = self.snapshot[this_index.t][this_index.i][this_index.j].as_ref().expect("exist");
+                                next_index = this_node.exhausted_map[&target_index].next.as_ref().expect("exist");
+                                let mut next_correction = None;
+                                for edge in this_node.edges.iter() {  // find the edge of `next_index`
+                                    if *next_index == Index::from(edge) {
+                                        next_correction = Some(edge.cases[0].0.clone());
+                                        break
+                                    }
+                                }
+                                assert!(next_correction.is_some(), "next should be in `this_node.edges`");
+                                // combine `correction` and `next_correction`
+                                correction.combine(&next_correction.expect("exist"));
+                            }
+                            // redefine node as a mutable one
+                            let node = self.snapshot[t][i][j].as_mut().expect("exist");
+                            node.exhausted_map.get_mut(&target_index).expect("exist").correction = Some(correction);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -554,6 +662,16 @@ pub struct Edge {
     pub cases: Vec::<(Correction, f64)>,
 }
 
+impl From<&Edge> for Index {
+    fn from(edge: &Edge) -> Self {
+        Self {
+            t: edge.t,
+            i: edge.i,
+            j: edge.j,
+        }
+    }
+}
+
 pub fn add_edge_case(edges: &mut Vec::<Edge>, t: usize, i: usize, j: usize, p: f64, correction: Correction) {
     for edge in edges.iter_mut() {
         if edge.t == t && edge.i == i && edge.j == j {
@@ -592,10 +710,29 @@ impl Boundary {
 
 /// Correction Information, including all the data qubit at measurement stage t=6,12,18,...
 /// Optimized for space because it will occupy O(L^4 T) memory in graph
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Correction {
     pub x: ndarray::Array3<bool>,
     pub z: ndarray::Array3<bool>,
+}
+
+impl Correction {
+    pub fn xor_ndarray3(a: &mut ndarray::Array3<bool>, b: &ndarray::Array3<bool>) {
+        let shape = b.shape();
+        assert_eq!(shape, a.shape());
+        let mut am = a.view_mut();
+        for t in 0..shape[0] {
+            for i in 0..shape[1] {
+                for j in 0..shape[2] {
+                    am[[t, i, j]] = am[[t, i, j]] ^ b[[t, i, j]];
+                }
+            }
+        }
+    }
+    pub fn combine(&mut self, next: &Self) {
+        Correction::xor_ndarray3(&mut self.x, &next.x);
+        Correction::xor_ndarray3(&mut self.z, &next.z);
+    }
 }
 
 /// Error type, corresponds to `ETYPE` in `FaultTolerantView.vue`

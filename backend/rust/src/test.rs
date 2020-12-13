@@ -299,6 +299,7 @@ fn debug_tests() {
         }
         {  // build auxiliary information to assist decoding
             model.build_graph();
+            model.optimize_correction_pattern();
             let mut max_edge_count = 0;
             model.iterate_measurement_stabilizers(|_t, _i, _j, node, _qubit_type| {
                 max_edge_count = std::cmp::max(max_edge_count, node.edges.len());
@@ -307,7 +308,7 @@ fn debug_tests() {
             assert!(max_edge_count <= 12, "verified: at most 12 neighbors in graph");
             // build exhausted path helps to speed up decoder
             model.build_exhausted_path();
-            println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
+            // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
         }
     }
 }
