@@ -23,6 +23,7 @@ actix-web = "3.3.0"
 actix-cors = "0.5.3"
 pyo3 = "0.12.4"
 libc = "0.2.81"
+petgraph = "0.5.1"
 
 [build-dependencies]
 cc = "1.0.66"

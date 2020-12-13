@@ -17,6 +17,16 @@
 #![allow(non_snake_case)]
 
 use super::ndarray;
+use super::petgraph;
+use std::collections::HashMap;
+
+/// uniquely index a node
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct Index {
+    pub t: usize,
+    pub i: usize,
+    pub j: usize,
+}
 
 /// Corresponds to `this.snapshot` in `FaultTolerantView.vue`
 #[derive(Debug)]
@@ -35,6 +45,8 @@ pub struct Node {
     // graph information
     pub edges: Vec::<Edge>,
     pub boundary: Option<Boundary>,  // if connects to boundary in graph, this is the probability
+    pub pet_node: Option<petgraph::graph::NodeIndex>,
+    pub exhausted_map: HashMap<Index, ExhaustedElement>,
 }
 
 /// The structure of surface code, including how quantum gates are implemented
@@ -44,6 +56,7 @@ pub struct PlanarCodeModel {
     pub snapshot: Vec::< Vec::< Vec::< Option<Node> > > >,
     pub L: usize,
     pub T: usize,
+    pub graph: Option<petgraph::graph::Graph<Index, PetGraphEdge>>,
 }
 
 impl PlanarCodeModel {
@@ -141,6 +154,8 @@ impl PlanarCodeModel {
                             propagated: ErrorType::I,
                             edges: Vec::new(),
                             boundary: None,
+                            pet_node: None,
+                            exhausted_map: HashMap::new(),
                         }))
                     } else {
                         snapshot_row_1.push(None);
@@ -154,6 +169,7 @@ impl PlanarCodeModel {
             snapshot: snapshot,
             L: L,
             T: T,
+            graph: None,
         }
     }
     pub fn iterate_snapshot_mut<F>(&mut self, mut func: F) where F: FnMut(usize, usize, usize, &mut Node) {
@@ -291,6 +307,21 @@ impl PlanarCodeModel {
         }
     }
     /// iterate over every measurement errors
+    pub fn iterate_measurement_stabilizers_mut<F>(&mut self, mut func: F) where F: FnMut(usize, usize, usize, &mut Node, QubitType) {
+        for t in (6..self.snapshot.len()).step_by(6) {
+            for i in 0..self.snapshot[t].len() {
+                for j in 0..self.snapshot[t][i].len() {
+                    let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                    let qubit_type = node.qubit_type.clone();
+                    if qubit_type == QubitType::StabZ || qubit_type == QubitType::StabX {
+                        assert_eq!(node.gate_type, GateType::Measurement);
+                        func(t, i, j, self.snapshot[t][i][j].as_mut().expect("exist"), qubit_type);
+                    }
+                }
+            }
+        }
+    }
+    /// iterate over every measurement errors
     pub fn iterate_measurement_stabilizers<F>(&self, mut func: F) where F: FnMut(usize, usize, usize, &Node, QubitType) {
         for t in (6..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
@@ -413,6 +444,52 @@ impl PlanarCodeModel {
         // reset graph to state without error
         self.clear_error();
         self.propagate_error();
+    }
+    /// exhaustively search the minimum path from every measurement stabilizer to the others.
+    /// Running `build_graph` required before running this function.
+    pub fn build_exhausted_path(&mut self) {
+        // first build petgraph
+        let mut graph = petgraph::graph::Graph::new_undirected();
+        // add nodes before adding edge, so that they all have node number
+        self.iterate_measurement_stabilizers_mut(|t, i, j, node, _qubit_type| {
+            node.pet_node = Some(graph.add_node(Index {
+                t: t, i: i, j: j
+            }));
+        });
+        // then add every edge
+        self.iterate_measurement_stabilizers(|t, i, j, node, _qubit_type| {
+            for edge in &node.edges {
+                let node_target = self.snapshot[edge.t][edge.i][edge.j].as_ref().expect("exist").pet_node.expect("exist");
+                graph.add_edge(node.pet_node.expect("exist"), node_target, PetGraphEdge {
+                    a: Index { t: t, i: i, j: j },
+                    b: Index { t: edge.t, i: edge.i, j: edge.j },
+                    weight: - edge.p.ln(),  // so that w1 + w2 = - log(p1) - log(p2) = - log(p1*p2) = - log(p_line)
+                    // we want p_line to be as large as possible, it meets the goal of minimizing -log(p) 
+                });
+            }
+        });
+        // then run dijkstra for every node
+        self.iterate_measurement_stabilizers_mut(|t, i, j, node, _qubit_type| {
+            let map = petgraph::algo::dijkstra(&graph, node.pet_node.expect("exist"), None, |e| e.weight().weight);
+            for (node_id, cost) in map.iter() {
+                let index = graph.node_weight(*node_id).expect("exist");
+                if index != &(Index{ t: t, i: i, j: j }) { // do not add map to itself
+                    node.exhausted_map.insert(Index {
+                        t: index.t,
+                        i: index.i,
+                        j: index.j,
+                    }, ExhaustedElement {
+                        cost: *cost,
+                        next: None,
+                        correction: None,
+                    });
+                }
+            }
+        });
+        // TODO: use the result of dijkstra to build `next`, so that the shortest path is found is O(1) time
+
+        // TODO: use the shortest path to build `correction`, so that correction is done in O(1) time
+        
     }
 }
 
@@ -551,4 +628,18 @@ impl ErrorType {
             (Self::Y, Self::Y) => Self::I,
         }
     }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct PetGraphEdge {
+    pub a: Index,
+    pub b: Index,
+    pub weight: f64,
+}
+
+#[derive(Debug)]
+pub struct ExhaustedElement {
+    pub cost: f64,
+    pub next: Option<Index>,
+    pub correction: Option<Correction>,
 }

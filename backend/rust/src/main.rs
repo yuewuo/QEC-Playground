@@ -19,6 +19,7 @@ extern crate serde;
 extern crate pyo3;
 extern crate libc;
 extern crate num_cpus;
+extern crate petgraph;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

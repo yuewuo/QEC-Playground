@@ -305,6 +305,9 @@ fn debug_tests() {
             });
             println!("maximum neighbor amount on a single stabilizer is {}", max_edge_count);
             assert!(max_edge_count <= 12, "verified: at most 12 neighbors in graph");
+            // build exhausted path helps to speed up decoder
+            model.build_exhausted_path();
+            println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
         }
     }
 }
