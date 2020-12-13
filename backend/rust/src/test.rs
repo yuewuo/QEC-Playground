@@ -10,6 +10,7 @@ use super::qec;
 use super::pyo3::prelude::*;
 use super::pyo3::types::{IntoPyDict};
 use super::blossom_v;
+use super::ftqec;
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -243,9 +244,6 @@ fn archived_debug_tests() {
         let output = blossom_v::safe_square_all(input);
         println!("{:?}", output);
     }
-}
-
-fn debug_tests() {
     {  // call blossom V matching
         let weighted_edges = vec![
             (0, 1, -3.),
@@ -260,5 +258,44 @@ fn debug_tests() {
         ];
         let matched = blossom_v::maximum_weight_perfect_matching_compatible(6, weighted_edges);
         println!("{:?}", matched);
+    }
+}
+
+fn debug_tests() {
+    {
+        let T = 4;
+        let L = 4;
+        let error_rate = 0.01;  // (1-3p)I + pX + pZ + pY
+        let mut error_model = ftqec::ErrorModel::new_standard_planar_code(T, L);
+        let nodes_count = error_model.count_nodes();
+        assert_eq!(nodes_count, (6 * T + 1) * (2 * L - 1) * (2 * L - 1));
+        // println!("{:?}", error_model);
+        error_model.set_depolarizing_error(error_rate);
+        let mut rng = thread_rng();
+        let error_count = error_model.generate_random_errors(|| rng.gen::<f64>());
+        println!("randomly generated error_count: {}/{}", error_count, nodes_count);
+        {  // verify that any single error will only have at most error syndromes
+            for t in 0..error_model.snapshot.len() {
+                for i in 0..error_model.snapshot[t].len() {
+                    for j in 0..error_model.snapshot[t][i].len() {
+                        if error_model.snapshot[t][i][j].is_some() {
+                            for error in [ftqec::ErrorType::X, ftqec::ErrorType::Z].iter() {
+                                error_model.clear_error();
+                                error_model.add_error_at(t, i, j, error);
+                                assert_eq!(error_model.count_error(), 1);
+                                error_model.propagate_error();
+                                let mut measurement_error_count = 0;
+                                error_model.iterate_measurement_errors(|_t, _i, _j, _node, _qubit_type| {
+                                    measurement_error_count += 1;
+                                });
+                                assert!(measurement_error_count <= 2, "single qubit error should not cause more than 2 measurement errors");
+                            }
+                        }
+                    }
+                }
+            }
+            error_model.clear_error();
+            println!("verified: any single qubit error only causes at most two measurement errors");
+        }
     }
 }

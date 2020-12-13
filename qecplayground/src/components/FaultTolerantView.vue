@@ -35,11 +35,11 @@ export default {
 	props: {
 		L: {
 			type: Number,
-			default: 5,
+			default: 3,
 		},
 		T: {
 			type: Number,
-			default: 4,
+			default: 3,
 		},
 		
 		
@@ -165,6 +165,8 @@ export default {
             this.show_X_edges = false
         },
         async paper_figure_single_error_two_syndrome() {
+            this.show_X_edges = false
+            this.show_Z_edges = false
             this.snapshot[3][1][2].error = this.constants.ETYPE.X
             this.compute_propagated_error()
         },
@@ -445,12 +447,12 @@ export default {
                     for (let j=0; j < this.snapshot[t][i].length; ++j) {
                         const node = this.snapshot[t][i][j]
                         if (!node) continue
-                        if (node.n_type == this.constants.NTYPE.INITIALIZATION) {
-                            node.propagated = this.constants.ETYPE.I  // no error when initialized
-                        }
                         // error will definitely propagated to itself
                         const direct_error = this.error_multiply(node.error, node.propagated)
                         this.snapshot[t+1][i][j].propagated = this.error_multiply(direct_error, this.snapshot[t+1][i][j].propagated)
+                        if (node.n_type == this.constants.NTYPE.INITIALIZATION) {
+                            this.snapshot[t+1][i][j].propagated = this.constants.ETYPE.I  // no error after initialization
+                        }
                         // but sometimes it also propagated to other qubits through CX gate
                         if (node.n_type == this.constants.NTYPE.CONTROL) {
                             if (node.propagated == this.constants.ETYPE.X || node.propagated == this.constants.ETYPE.Y) {

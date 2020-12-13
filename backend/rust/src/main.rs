@@ -5,6 +5,7 @@ mod types;
 mod qec;
 mod web;
 mod blossom_v;
+mod ftqec;
 
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;
