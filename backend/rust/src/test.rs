@@ -266,26 +266,26 @@ fn debug_tests() {
         let T = 4;
         let L = 4;
         let error_rate = 0.01;  // (1-3p)I + pX + pZ + pY
-        let mut error_model = ftqec::ErrorModel::new_standard_planar_code(T, L);
-        let nodes_count = error_model.count_nodes();
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(T, L);
+        let nodes_count = model.count_nodes();
         assert_eq!(nodes_count, (6 * T + 1) * (2 * L - 1) * (2 * L - 1));
-        // println!("{:?}", error_model);
-        error_model.set_depolarizing_error(error_rate);
+        // println!("{:?}", model);
+        model.set_depolarizing_error(error_rate);
         let mut rng = thread_rng();
-        let error_count = error_model.generate_random_errors(|| rng.gen::<f64>());
+        let error_count = model.generate_random_errors(|| rng.gen::<f64>());
         println!("randomly generated error_count: {}/{}", error_count, nodes_count);
         {  // verify that any single error will only have at most error syndromes
-            for t in 0..error_model.snapshot.len() {
-                for i in 0..error_model.snapshot[t].len() {
-                    for j in 0..error_model.snapshot[t][i].len() {
-                        if error_model.snapshot[t][i][j].is_some() {
+            for t in 0..model.snapshot.len() {
+                for i in 0..model.snapshot[t].len() {
+                    for j in 0..model.snapshot[t][i].len() {
+                        if model.snapshot[t][i][j].is_some() {
                             for error in [ftqec::ErrorType::X, ftqec::ErrorType::Z].iter() {
-                                error_model.clear_error();
-                                error_model.add_error_at(t, i, j, error);
-                                assert_eq!(error_model.count_error(), 1);
-                                error_model.propagate_error();
+                                model.clear_error();
+                                model.add_error_at(t, i, j, error);
+                                assert_eq!(model.count_error(), 1);
+                                model.propagate_error();
                                 let mut measurement_error_count = 0;
-                                error_model.iterate_measurement_errors(|_t, _i, _j, _node, _qubit_type| {
+                                model.iterate_measurement_errors(|_t, _i, _j, _node, _qubit_type| {
                                     measurement_error_count += 1;
                                 });
                                 assert!(measurement_error_count <= 2, "single qubit error should not cause more than 2 measurement errors");
@@ -294,8 +294,17 @@ fn debug_tests() {
                     }
                 }
             }
-            error_model.clear_error();
+            model.clear_error();
             println!("verified: any single qubit error only causes at most two measurement errors");
+        }
+        {  // build auxiliary information to assist decoding
+            model.build_graph();
+            let mut max_edge_count = 0;
+            model.iterate_measurement_stabilizers(|_t, _i, _j, node, _qubit_type| {
+                max_edge_count = std::cmp::max(max_edge_count, node.edges.len());
+            });
+            println!("maximum neighbor amount on a single stabilizer is {}", max_edge_count);
+            assert!(max_edge_count <= 12, "verified: at most 12 neighbors in graph");
         }
     }
 }

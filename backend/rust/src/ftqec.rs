@@ -16,6 +16,8 @@
 
 #![allow(non_snake_case)]
 
+use super::ndarray;
+
 /// Corresponds to `this.snapshot` in `FaultTolerantView.vue`
 #[derive(Debug)]
 pub struct Node {
@@ -30,18 +32,21 @@ pub struct Node {
     pub error_rate_z: f64,
     pub error_rate_y: f64,
     pub propagated: ErrorType,
+    // graph information
+    pub edges: Vec::<Edge>,
+    pub boundary: Option<Boundary>,  // if connects to boundary in graph, this is the probability
 }
 
 /// The structure of surface code, including how quantum gates are implemented
 #[derive(Debug)]
-pub struct ErrorModel {
+pub struct PlanarCodeModel {
     /// Corresponds to `this.snapshot` in `FaultTolerantView.vue`
     pub snapshot: Vec::< Vec::< Vec::< Option<Node> > > >,
     pub L: usize,
     pub T: usize,
 }
 
-impl ErrorModel {
+impl PlanarCodeModel {
     pub fn new_standard_planar_code(T: usize, L: usize) -> Self {
         Self::new_planar_code(T, L, |_i, _j| true)
     }
@@ -134,6 +139,8 @@ impl ErrorModel {
                             error_rate_z: 0.25,
                             error_rate_y: 0.25,
                             propagated: ErrorType::I,
+                            edges: Vec::new(),
+                            boundary: None,
                         }))
                     } else {
                         snapshot_row_1.push(None);
@@ -284,6 +291,21 @@ impl ErrorModel {
         }
     }
     /// iterate over every measurement errors
+    pub fn iterate_measurement_stabilizers<F>(&self, mut func: F) where F: FnMut(usize, usize, usize, &Node, QubitType) {
+        for t in (6..self.snapshot.len()).step_by(6) {
+            for i in 0..self.snapshot[t].len() {
+                for j in 0..self.snapshot[t][i].len() {
+                    let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                    let qubit_type = node.qubit_type.clone();
+                    if qubit_type == QubitType::StabZ || qubit_type == QubitType::StabX {
+                        assert_eq!(node.gate_type, GateType::Measurement);
+                        func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"), qubit_type);
+                    }
+                }
+            }
+        }
+    }
+    /// iterate over every measurement errors
     pub fn iterate_measurement_errors<F>(&self, mut func: F) where F: FnMut(usize, usize, usize, &Node, QubitType) {
         for t in (6..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
@@ -309,6 +331,88 @@ impl ErrorModel {
                 }
             }
         }
+    }
+    /// get data qubit error pattern based on current `propagated` error on t=6,12,18,...
+    pub fn get_data_qubit_error_pattern(&self) -> Correction {
+        let width = 2 * self.L - 1;
+        let mut x = ndarray::Array::from_elem((self.T, width, width), false);
+        let mut x_mut = x.view_mut();
+        let mut z = ndarray::Array::from_elem((self.T, width, width), false);
+        let mut z_mut = z.view_mut();
+        for (idx, t) in (6..self.snapshot.len()).step_by(6).enumerate() {
+            for i in 0..self.snapshot[t].len() {
+                for j in 0..self.snapshot[t][i].len() {
+                    let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                    if node.qubit_type == QubitType::Data {
+                        match node.propagated {
+                            ErrorType::X => { x_mut[[idx, i, j]] = true; }
+                            ErrorType::Z => { z_mut[[idx, i, j]] = true; }
+                            ErrorType::Y => { x_mut[[idx, i, j]] = true; z_mut[[idx, i, j]] = true; }
+                            ErrorType::I => { }
+                        }
+                    }
+                }
+            }
+        }
+        Correction {
+            x: x,
+            z: z,
+        }
+    }
+    /// corresponds to `build_graph_given_error_rate` in `FaultTolerantView.vue`
+    pub fn build_graph(&mut self) {
+        for t in 0..self.snapshot.len() {
+            for i in 0..self.snapshot[t].len() {
+                for j in 0..self.snapshot[t][i].len() {
+                    if self.snapshot[t][i][j].is_some() {
+                        for error in [ErrorType::X, ErrorType::Z].iter() {
+                            self.clear_error();
+                            let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                            let p = if *error == ErrorType::X {
+                                node.error_rate_x + node.error_rate_y
+                            } else {
+                                node.error_rate_z + node.error_rate_y
+                            };  // probability of this error to occur
+                            // simulate the error and measure it
+                            self.add_error_at(t, i, j, error);
+                            self.propagate_error();
+                            let mut measurement_errors = Vec::new();
+                            self.iterate_measurement_errors(|t, i, j, _node, _qubit_type| {
+                                measurement_errors.push((t, i, j));
+                            });
+                            if measurement_errors.len() == 0 {  // no way to detect it, ignore
+                                continue
+                            }
+                            assert!(measurement_errors.len() <= 2, "single qubit error should not cause more than 2 measurement errors");
+                            // compute correction pattern, so that applying this error pattern will exactly recover data qubit errors
+                            let correction = self.get_data_qubit_error_pattern();
+                            // add this to edges and update probability
+                            if measurement_errors.len() == 1 {  // boundary
+                                let (t1, i1, j1) = measurement_errors[0];
+                                let node = self.snapshot[t1][i1][j1].as_mut().expect("exist");
+                                if node.boundary.is_none() {
+                                    node.boundary = Some(Boundary {
+                                        p: 0.,
+                                        cases: Vec::new(),
+                                    });
+                                }
+                                node.boundary.as_mut().expect("exist").add(p, correction);
+                            } else if measurement_errors.len() == 2 {  // connection
+                                let (t1, i1, j1) = measurement_errors[0];
+                                let (t2, i2, j2) = measurement_errors[1];
+                                add_edge_case(&mut self.snapshot[t1][i1][j1].as_mut().expect("exist").edges,
+                                    t2, i2, j2, p, correction.clone());
+                                add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").edges,
+                                    t1, i1, j1, p, correction);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // reset graph to state without error
+        self.clear_error();
+        self.propagate_error();
     }
 }
 
@@ -361,6 +465,60 @@ pub struct Connection {
     pub t: usize,
     pub i: usize,
     pub j: usize,
+}
+
+/// Edge Information, corresponds to `node.edges` in `FaultTolerantView.vue`
+#[derive(Debug, Clone)]
+pub struct Edge {
+    pub t: usize,
+    pub i: usize,
+    pub j: usize,
+    pub p: f64,
+    pub cases: Vec::<(Correction, f64)>,
+}
+
+pub fn add_edge_case(edges: &mut Vec::<Edge>, t: usize, i: usize, j: usize, p: f64, correction: Correction) {
+    for edge in edges.iter_mut() {
+        if edge.t == t && edge.i == i && edge.j == j {
+            edge.add(p, correction);
+            return  // already found
+        }
+    }
+    let mut edge = Edge {
+        t: t, i: i, j: j, p: 0.,
+        cases: Vec::new(),
+    };
+    edge.add(p, correction);
+    edges.push(edge);
+}
+
+impl Edge {
+    pub fn add(&mut self, p: f64, correction: Correction) {
+        self.p = self.p * (1. - p) + p * (1. - self.p);  // XOR
+        self.cases.push((correction, p));
+    }
+}
+
+/// Boundary Information, corresponds to `node.boundary` in `FaultTolerantView.vue`
+#[derive(Debug, Clone)]
+pub struct Boundary {
+    pub p: f64,
+    pub cases: Vec::<(Correction, f64)>,
+}
+
+impl Boundary {
+    pub fn add(&mut self, p: f64, correction: Correction) {
+        self.p = self.p * (1. - p) + p * (1. - self.p);  // XOR
+        self.cases.push((correction, p));
+    }
+}
+
+/// Correction Information, including all the data qubit at measurement stage t=6,12,18,...
+/// Optimized for space because it will occupy O(L^4 T) memory in graph
+#[derive(Debug, Clone)]
+pub struct Correction {
+    pub x: ndarray::Array3<bool>,
+    pub z: ndarray::Array3<bool>,
 }
 
 /// Error type, corresponds to `ETYPE` in `FaultTolerantView.vue`
