@@ -267,7 +267,7 @@ fn archived_debug_tests() {
         model.set_depolarizing_error(error_rate);
         model.build_graph();
         model.optimize_correction_pattern();
-        model.build_exhausted_path();
+        model.build_exhausted_path_autotune();
         model.prepare_correction();  // only call this with small L, otherwise initialization time and memory usage will be too high
         // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
     }
@@ -297,7 +297,7 @@ fn debug_tests() {
                                 assert_eq!(model.count_error(), 1);
                                 model.propagate_error();
                                 let mut measurement_error_count = 0;
-                                model.iterate_measurement_errors(|_t, _i, _j, _node, _qubit_type| {
+                                model.iterate_measurement_errors(|_t, _i, _j, _node| {
                                     measurement_error_count += 1;
                                 });
                                 assert!(measurement_error_count <= 2, "single qubit error should not cause more than 2 measurement errors");
@@ -313,16 +313,18 @@ fn debug_tests() {
             model.build_graph();
             model.optimize_correction_pattern();
             let mut max_edge_count = 0;
-            model.iterate_measurement_stabilizers(|_t, _i, _j, node, _qubit_type| {
+            model.iterate_measurement_stabilizers(|_t, _i, _j, node| {
                 max_edge_count = std::cmp::max(max_edge_count, node.edges.len());
             });
             println!("maximum neighbor amount on a single stabilizer is {}", max_edge_count);
             assert!(max_edge_count <= 12, "verified: at most 12 neighbors in graph");
             // build exhausted path helps to speed up decoder
-            model.build_exhausted_path();
+            model.build_exhausted_path_autotune();
             // model.prepare_correction();  // only call this with small L, otherwise initialization time and memory usage will be too high
             // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
             // println!("{:?}", model.get_correction_two_nodes(ftqec::Index::new(6, 0, 1), ftqec::Index::new(18, 4, 1)));
+            let _correction = model.get_correction_two_nodes(ftqec::Index::new(6, 0, 1), ftqec::Index::new(6, 4, 1));
+            // println!("{:?}", _correction);
         }
     }
 }

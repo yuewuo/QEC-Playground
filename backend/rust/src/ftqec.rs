@@ -51,6 +51,7 @@ pub struct Node {
     // graph information
     pub edges: Vec::<Edge>,
     pub boundary: Option<Boundary>,  // if connects to boundary in graph, this is the probability
+    pub exhausted_boundary: Option<ExhaustedElement>,
     pub pet_node: Option<petgraph::graph::NodeIndex>,
     pub exhausted_map: HashMap<Index, ExhaustedElement>,
 }
@@ -160,6 +161,7 @@ impl PlanarCodeModel {
                             propagated: ErrorType::I,
                             edges: Vec::new(),
                             boundary: None,
+                            exhausted_boundary: None,
                             pet_node: None,
                             exhausted_map: HashMap::new(),
                         }))
@@ -313,7 +315,7 @@ impl PlanarCodeModel {
         }
     }
     /// iterate over every measurement errors
-    pub fn iterate_measurement_stabilizers_mut<F>(&mut self, mut func: F) where F: FnMut(usize, usize, usize, &mut Node, QubitType) {
+    pub fn iterate_measurement_stabilizers_mut<F>(&mut self, mut func: F) where F: FnMut(usize, usize, usize, &mut Node) {
         for t in (6..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
@@ -321,14 +323,14 @@ impl PlanarCodeModel {
                     let qubit_type = node.qubit_type.clone();
                     if qubit_type == QubitType::StabZ || qubit_type == QubitType::StabX {
                         assert_eq!(node.gate_type, GateType::Measurement);
-                        func(t, i, j, self.snapshot[t][i][j].as_mut().expect("exist"), qubit_type);
+                        func(t, i, j, self.snapshot[t][i][j].as_mut().expect("exist"));
                     }
                 }
             }
         }
     }
     /// iterate over every measurement errors
-    pub fn iterate_measurement_stabilizers<F>(&self, mut func: F) where F: FnMut(usize, usize, usize, &Node, QubitType) {
+    pub fn iterate_measurement_stabilizers<F>(&self, mut func: F) where F: FnMut(usize, usize, usize, &Node) {
         for t in (6..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
@@ -336,14 +338,14 @@ impl PlanarCodeModel {
                     let qubit_type = node.qubit_type.clone();
                     if qubit_type == QubitType::StabZ || qubit_type == QubitType::StabX {
                         assert_eq!(node.gate_type, GateType::Measurement);
-                        func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"), qubit_type);
+                        func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
                     }
                 }
             }
         }
     }
     /// iterate over every measurement errors
-    pub fn iterate_measurement_errors<F>(&self, mut func: F) where F: FnMut(usize, usize, usize, &Node, QubitType) {
+    pub fn iterate_measurement_errors<F>(&self, mut func: F) where F: FnMut(usize, usize, usize, &Node) {
         for t in (6..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
@@ -354,7 +356,7 @@ impl PlanarCodeModel {
                         let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
                         let last_result = last_node.propagated == ErrorType::I || last_node.propagated == ErrorType::Z;
                         if this_result != last_result {
-                            func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"), QubitType::StabZ);
+                            func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
                         }
                     } else if node.qubit_type == QubitType::StabX {
                         assert_eq!(node.gate_type, GateType::Measurement);
@@ -362,7 +364,7 @@ impl PlanarCodeModel {
                         let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
                         let last_result = last_node.propagated == ErrorType::I || last_node.propagated == ErrorType::X;
                         if this_result != last_result {
-                            func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"), QubitType::StabX);
+                            func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
                         }
                     }
                 }
@@ -419,7 +421,7 @@ impl PlanarCodeModel {
                             self.add_error_at(t, i, j, error);
                             self.propagate_error();
                             let mut measurement_errors = Vec::new();
-                            self.iterate_measurement_errors(|t, i, j, _node, _qubit_type| {
+                            self.iterate_measurement_errors(|t, i, j, _node| {
                                 measurement_errors.push((t, i, j));
                             });
                             if measurement_errors.len() == 0 {  // no way to detect it, ignore
@@ -456,58 +458,66 @@ impl PlanarCodeModel {
         self.clear_error();
         self.propagate_error();
     }
+    fn optimize_correction_cases(original_cases: &Vec::<(Correction, f64)>) -> Vec::<(Correction, f64)> {
+        let mut cases = HashMap::<Correction, f64>::new();
+        for (correction, p) in original_cases.iter() {
+            if cases.contains_key(correction) {
+                let case_p = cases.get_mut(correction).expect("exist");
+                let case_p_value: f64 = *case_p;
+                *case_p = case_p_value * (1. - p) + p * (1. - case_p_value);
+            } else {
+                cases.insert(correction.clone(), *p);
+            }
+        }
+        let mut optimized_cases = Vec::with_capacity(cases.len());
+        for (correction, p) in cases.iter() {
+            optimized_cases.push((correction.clone(), *p));
+        }
+        // println!("{} -> {}", original_cases.len(), optimized_cases.len());  // observation: the max amount of cases reduces from 7 to 3
+        // sort the corrections based on its probability
+        optimized_cases.sort_by(|(_, p1), (_, p2)| p2.partial_cmp(&p1).expect("probabilities shouldn't be NaN"));
+        // let ps: Vec<f64> = optimized_cases.iter().map(|(_, p)| *p).collect();
+        // println!("{:?}", ps);  // to check the order of it
+        optimized_cases
+    }
     /// combine and sort edges based on their probability.
     /// This shouldn't have much effect on the decoding performance, but I'm not sure of this, so just implement it and see
     pub fn optimize_correction_pattern(&mut self) {
-        self.iterate_measurement_stabilizers_mut(|_t, _i, _j, node, _qubit_type| {
+        self.iterate_measurement_stabilizers_mut(|_t, _i, _j, node| {
             for edge in node.edges.iter_mut() {
-                let mut cases = HashMap::<Correction, f64>::new();
-                for (correction, p) in edge.cases.iter() {
-                    if cases.contains_key(correction) {
-                        let case_p = cases.get_mut(correction).expect("exist");
-                        let case_p_value: f64 = *case_p;
-                        *case_p = case_p_value * (1. - p) + p * (1. - case_p_value);
-                    } else {
-                        cases.insert(correction.clone(), *p);
-                    }
-                }
-                edge.cases = Vec::with_capacity(cases.len());
-                for (correction, p) in cases.iter() {
-                    edge.cases.push((correction.clone(), *p));
-                }
-                // println!("cases count: {}", edge.cases.len());  // observation: the max amount of cases reduces from 7 to 3
-                // sort the corrections based on its probability
-                edge.cases.sort_by(|(_, p1), (_, p2)| p2.partial_cmp(&p1).expect("probabilities shouldn't be NaN"));
-                // let ps: Vec<f64> = edge.cases.iter().map(|(_, p)| *p).collect();
-                // println!("{:?}", ps);  // to check the order of it
+                edge.cases = Self::optimize_correction_cases(&edge.cases);
+            }
+            if node.boundary.is_some() {
+                let boundary = node.boundary.as_mut().expect("exist");
+                boundary.cases = Self::optimize_correction_cases(&boundary.cases);
             }
         });
     }
     /// exhaustively search the minimum path from every measurement stabilizer to the others.
     /// Running `build_graph` required before running this function.
-    pub fn build_exhausted_path(&mut self) {
+    pub fn build_exhausted_path<F>(&mut self, weight_of: F) where F: Fn(f64) -> f64 {
         // first build petgraph
         let mut graph = petgraph::graph::Graph::new_undirected();
         // add nodes before adding edge, so that they all have node number
-        self.iterate_measurement_stabilizers_mut(|t, i, j, node, _qubit_type| {
+        self.iterate_measurement_stabilizers_mut(|t, i, j, node| {
             node.pet_node = Some(graph.add_node(Index {
                 t: t, i: i, j: j
             }));
         });
         // then add every edge
-        self.iterate_measurement_stabilizers(|t, i, j, node, _qubit_type| {
+        self.iterate_measurement_stabilizers(|t, i, j, node| {
             for edge in &node.edges {
                 let node_target = self.snapshot[edge.t][edge.i][edge.j].as_ref().expect("exist").pet_node.expect("exist");
                 graph.add_edge(node.pet_node.expect("exist"), node_target, PetGraphEdge {
                     a: Index { t: t, i: i, j: j },
                     b: Index { t: edge.t, i: edge.i, j: edge.j },
-                    weight: - edge.p.ln(),  // so that w1 + w2 = - log(p1) - log(p2) = - log(p1*p2) = - log(p_line)
+                    weight: weight_of(edge.p),  // so that w1 + w2 = - log(p1) - log(p2) = - log(p1*p2) = - log(p_line)
                     // we want p_line to be as large as possible, it meets the goal of minimizing -log(p) 
                 });
             }
         });
         // then run dijkstra for every node
-        self.iterate_measurement_stabilizers_mut(|t, i, j, node, _qubit_type| {
+        self.iterate_measurement_stabilizers_mut(|t, i, j, node| {
             let map = petgraph::algo::dijkstra(&graph, node.pet_node.expect("exist"), None, |e| e.weight().weight);
             for (node_id, cost) in map.iter() {
                 let index = graph.node_weight(*node_id).expect("exist");
@@ -595,6 +605,66 @@ impl PlanarCodeModel {
                 }
             }
         }
+        // generate `boundary.correction` so that every node has a path to boundary
+        for t in (6..self.snapshot.len()).step_by(6) {
+            for i in 0..self.snapshot[t].len() {
+                for j in 0..self.snapshot[t][i].len() {
+                    if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
+                        let mut min_cost = None;
+                        let mut min_index = None;
+                        let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                        let index = Index::new(t, i, j);
+                        self.iterate_measurement_stabilizers(|tb, ib, jb, node_b| {
+                            match &node_b.boundary {
+                                Some(boundary) => {
+                                    // only try if this node is directly connected to boundary
+                                    if node.qubit_type == node_b.qubit_type {
+                                        let (_, p) = &boundary.cases[0];
+                                        let cost = weight_of(*p) + (if t == tb && i == ib && j == jb { 0. } else {
+                                            node_b.exhausted_map[&index].cost
+                                        });
+                                        // println!("[{}][{}][{}] [{}][{}][{}] {}", t, i, j, tb, ib, jb, cost);
+                                        match min_cost.clone() {
+                                            Some(min_cost_value) => {
+                                                if cost < min_cost_value {
+                                                    min_cost = Some(cost);
+                                                    min_index = Some(Index::new(tb, ib, jb));
+                                                }
+                                            }
+                                            None => {
+                                                min_cost = Some(cost);
+                                                min_index = Some(Index::new(tb, ib, jb));
+                                            }
+                                        }
+                                    }
+                                },
+                                None => { }
+                            }
+                        });
+                        let min_cost = min_cost.expect("exist");
+                        let min_index = min_index.expect("exist");
+                        // println!("[{}][{}][{}] {} {:?}", t, i, j, min_cost, min_index);
+                        let node_b = self.snapshot[min_index.t][min_index.i][min_index.j].as_ref().expect("exist");
+                        let mut correction = node_b.boundary.as_ref().expect("exist").cases[0].0.clone();
+                        if index != min_index {
+                            correction.combine(node_b.exhausted_map[&index].next_correction.as_ref().expect("exist"));
+                        }
+                        // redefine node as a mutable one
+                        let node = self.snapshot[t][i][j].as_mut().expect("exist");
+                        node.exhausted_boundary = Some(ExhaustedElement {
+                            cost: min_cost,
+                            next: Some(min_index),
+                            correction: Some(correction),
+                            next_correction: None,
+                        });
+                    }
+                }
+            }
+        }
+    }
+    /// Autotune: compute weight based on error model
+    pub fn build_exhausted_path_autotune(&mut self) {
+        self.build_exhausted_path(|p| - p.ln())
     }
     /// use the shortest path to build `correction`, so that correction is done in O(1) time.
     /// This have some drawbacks, e.g. the memory usage is extremely high >4GB when L=10, and initialization time is over 100s
