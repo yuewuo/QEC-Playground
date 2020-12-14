@@ -44,7 +44,7 @@ impl Index {
 }
 
 /// Corresponds to `this.snapshot` in `FaultTolerantView.vue`
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Node {
     pub t: usize,
     pub i: usize,
@@ -66,7 +66,7 @@ pub struct Node {
 }
 
 /// The structure of surface code, including how quantum gates are implemented
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PlanarCodeModel {
     /// Corresponds to `this.snapshot` in `FaultTolerantView.vue`
     pub snapshot: Vec::< Vec::< Vec::< Option<Node> > > >,
@@ -86,19 +86,19 @@ impl PlanarCodeModel {
         assert!(T >= 1, "at least one round of measurement is required");
         assert!(L >= 2, "at lease one stabilizer is required");
         let mut model = Self::new_planar_code(T, L, |_i, _j| true);
-        // create Z homology lines
-        for i in 0..L {
+        // create Z stabilizer homology lines, detecting X errors
+        for j in 0..L {
             let mut z_homology_line = Vec::new();
-            for j in 0..L-1 {
-                z_homology_line.push((2 * i, 2 * j + 1));
+            for i in 0..L {
+                z_homology_line.push((2 * i, 2 * j));
             }
             model.z_homology_lines.push(z_homology_line);
         }
-        // create X homology lines
-        for j in 0..L {
+        // create X stabilizer homology lines, detecting Z errors
+        for i in 0..L {
             let mut x_homology_line = Vec::new();
-            for i in 0..L-1 {
-                x_homology_line.push((2 * i + 1, 2 * j));
+            for j in 0..L {
+                x_homology_line.push((2 * i, 2 * j));
             }
             model.x_homology_lines.push(x_homology_line);
         }
@@ -846,8 +846,8 @@ impl PlanarCodeModel {
                 weighted_edges.push((i, i + m_len, cost));
             }
             let matching = blossom_v::safe_minimum_weight_perfect_matching(node_num, weighted_edges);
-            println!("{:?}", to_be_matched);
-            println!("matching: {:?}", matching);
+            // println!("{:?}", to_be_matched);
+            // println!("matching: {:?}", matching);
             let mut correction = self.generate_default_correction();
             for i in 0..m_len {
                 let j = matching[i];
@@ -877,7 +877,7 @@ impl PlanarCodeModel {
         for is_z in [false, true].iter() {
             let homology_results = if *is_z { &mut z_homology_results } else { &mut x_homology_results };
             let homology_lines = if *is_z { &self.z_homology_lines } else { &self.x_homology_lines };
-            let corrected_array = if *is_z { &corrected.z } else { &corrected.x };
+            let corrected_array = if *is_z { &corrected.x } else { &corrected.z };  // Z detects X, X detects Z
             for homology_line in homology_lines {
                 let mut xor = false;
                 for (i, j) in homology_line {
@@ -888,8 +888,8 @@ impl PlanarCodeModel {
         }
         let z_homology_counts = z_homology_results.iter().filter(|x| **x).count();
         let x_homology_counts = z_homology_results.iter().filter(|x| **x).count();
-        let z_has_logical = z_homology_counts * 2 >= z_homology_results.len();
-        let x_has_logical = x_homology_counts * 2 >= x_homology_results.len();
+        let z_has_logical = z_homology_counts * 2 > z_homology_results.len();
+        let x_has_logical = x_homology_counts * 2 > x_homology_results.len();
         // println!("z_homology_counts: {}, x_homology_counts: {}", z_homology_counts, x_homology_counts);
         if !z_has_logical && !x_has_logical {
             Ok(())
@@ -900,6 +900,11 @@ impl PlanarCodeModel {
         } else {
             Err(format!("X logical error is detected on measurement layer {}, homology count / len = {} / {}", layer, x_homology_counts, x_homology_results.len()))
         }
+    }
+    pub fn validate_correction_on_t_layer(&self, correction: &Correction, layer: usize) -> Result<(), String> {
+        let mut corrected = self.get_data_qubit_error_pattern();
+        corrected.combine(&correction);  // apply correction to error pattern
+        self.validate_corrected_on_layer(&corrected, layer)
     }
     pub fn validate_correction_on_top_layer(&self, correction: &Correction) -> Result<(), String> {
         let mut corrected = self.get_data_qubit_error_pattern();
@@ -1104,14 +1109,14 @@ impl ErrorType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct PetGraphEdge {
     pub a: Index,
     pub b: Index,
     pub weight: f64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ExhaustedElement {
     pub cost: f64,
     pub next: Option<Index>,
