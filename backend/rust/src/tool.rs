@@ -357,6 +357,7 @@ fn error_rate_MWPM_with_weight(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min
 /**
 default example:
 `cargo run --release -- tool fault_tolerant_benchmark [5] [5] [1e-3]`
+it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
 fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, validate_layer: String) {
     let mut parallel = parallel;
@@ -441,7 +442,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             while *total_rounds.lock().unwrap() < max_N && *qec_failed.lock().unwrap() < min_error_cases {
                 let progress = *total_rounds.lock().unwrap() / mini_batch;
                 pb.set(progress as u64);
-                std::thread::sleep(std::time::Duration::from_millis(500));
+                std::thread::sleep(std::time::Duration::from_millis(200));
             }
             pb.finish();
             for handler in handlers {
