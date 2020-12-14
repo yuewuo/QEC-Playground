@@ -442,13 +442,13 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                 }));
             }
             loop {
-                {
-                    if *total_rounds.lock().unwrap() >= max_N { break }
-                }
-                {
-                    if *qec_failed.lock().unwrap() >= min_error_cases { break }
-                }
-                let progress = *total_rounds.lock().unwrap() / mini_batch;
+                let total_rounds = *total_rounds.lock().unwrap();
+                if total_rounds >= max_N { break }
+                let qec_failed = *qec_failed.lock().unwrap();
+                if qec_failed >= min_error_cases { break }
+                let error_rate = qec_failed as f64 / total_rounds as f64;
+                pb.message(format!("{} {} {} {} {} {} ", p, L, T, total_rounds, qec_failed, error_rate).as_str());
+                let progress = total_rounds / mini_batch;
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
             }
