@@ -374,17 +374,22 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             let total_rounds = Arc::new(Mutex::new(0));
             let qec_failed = Arc::new(Mutex::new(0));
             let mut handlers = Vec::new();
+            let mini_batch_count = 1 + max_N / mini_batch;
+            let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
+            pb.set(0);
             // build general models
             let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(T, L);
             model.set_depolarizing_error(p);
             model.build_graph();
+            let model_error = model.clone();  // avoid copying decoding structure a lot of times
             model.optimize_correction_pattern();
             model.build_exhausted_path_autotune();
+            let model_decoder = Arc::new(model);  // only for decode, so that you're confident I'm not cheating by using information of original errors
             for _i in 0..parallel {
                 let total_rounds = Arc::clone(&total_rounds);
                 let qec_failed = Arc::clone(&qec_failed);
-                let mut model_error = model.clone();  // only for generating error and validating correction
-                // let model_decoder = model.clone();  // only for decode, so that you're confident I'm not cheating by using information of original errors
+                let mut model_error = model_error.clone();  // only for generating error and validating correction
+                let model_decoder = Arc::clone(&model_decoder);  // only for decode, so that you're confident I'm not cheating by using information of original errors
                 let validate_layer: isize = match validate_layer.as_str() {
                     "all" => -1,
                     "bottom" => 0,
@@ -411,8 +416,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                             model_error.propagate_error();
                             let measurement = model_error.generate_measurement();
                             // use `model_decoder` for decoding, so that it is blind to the real error information
-                            // let correction = model_decoder.decode_MWPM(&measurement);
-                            let correction = model_error.decode_MWPM(&measurement);
+                            let correction = model_decoder.decode_MWPM(&measurement);
                             if validate_layer < 0 {
                                 if model_error.validate_correction_on_all_layers(&correction).is_err() {
                                     mini_qec_failed += 1;
@@ -437,9 +441,13 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                     }
                 }));
             }
-            let mini_batch_count = 1 + max_N / mini_batch;
-            let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
-            while *total_rounds.lock().unwrap() < max_N && *qec_failed.lock().unwrap() < min_error_cases {
+            loop {
+                {
+                    if *total_rounds.lock().unwrap() >= max_N { break }
+                }
+                {
+                    if *qec_failed.lock().unwrap() >= min_error_cases { break }
+                }
                 let progress = *total_rounds.lock().unwrap() / mini_batch;
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
