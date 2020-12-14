@@ -67,9 +67,9 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let ps = value_t!(matches, "ps", String).expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
             let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(1000);  // default to 1e3
+            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
             let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("all".to_string());
+            let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("bottom".to_string());
             fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer);
         }
         _ => unreachable!()
@@ -389,7 +389,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                     "all" => -1,
                     "bottom" => 0,
                     "top" => (T - 1) as isize,
-                    _ => 0,
+                    _ => validate_layer.parse::<isize>().expect("integer"),
                 };
                 let mini_batch = mini_batch;
                 handlers.push(std::thread::spawn(move || {
