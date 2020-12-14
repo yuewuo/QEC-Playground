@@ -19,6 +19,8 @@
 use super::ndarray;
 use super::petgraph;
 use std::collections::HashMap;
+use std::ops::{Deref, DerefMut};
+use super::blossom_v;
 
 /// uniquely index a node
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -31,6 +33,13 @@ pub struct Index {
 impl Index {
     pub fn new(t: usize, i: usize, j: usize) -> Self {
         Self { t: t, i: i, j: j }
+    }
+    pub fn from_measurement_idx(mt: usize, mi: usize, mj: usize) -> Self {
+        Self { t: 6 * (mt + 1), i: mi, j: mj }
+    }
+    pub fn to_measurement_idx(&self) -> (usize, usize, usize) {
+        assert!(self.t >= 6 && self.t % 6 == 0, "only these indexes can be matched to measurement index");
+        (self.t / 6 - 1, self.i, self.j)
     }
 }
 
@@ -64,11 +73,36 @@ pub struct PlanarCodeModel {
     pub L: usize,
     pub T: usize,
     pub graph: Option<petgraph::graph::Graph<Index, PetGraphEdge>>,
+    /// for each line, XOR the result. Only if no less than half of the result is 1.
+    /// We do this because stabilizer operators will definitely have all 0 (because it generate 2 or 0 errors on every homology lines, XOR = 0)
+    /// Only logical error will pose all 1 results, but sometimes single qubit errors will "hide" the logical error (because it
+    ///    makes some result to 0), thus we determine there's a logical error if no less than half of the results are 1
+    z_homology_lines: Vec< Vec::<(usize, usize)> >,
+    x_homology_lines: Vec< Vec::<(usize, usize)> >,
 }
 
 impl PlanarCodeModel {
     pub fn new_standard_planar_code(T: usize, L: usize) -> Self {
-        Self::new_planar_code(T, L, |_i, _j| true)
+        assert!(T >= 1, "at least one round of measurement is required");
+        assert!(L >= 2, "at lease one stabilizer is required");
+        let mut model = Self::new_planar_code(T, L, |_i, _j| true);
+        // create Z homology lines
+        for i in 0..L {
+            let mut z_homology_line = Vec::new();
+            for j in 0..L-1 {
+                z_homology_line.push((2 * i, 2 * j + 1));
+            }
+            model.z_homology_lines.push(z_homology_line);
+        }
+        // create X homology lines
+        for j in 0..L {
+            let mut x_homology_line = Vec::new();
+            for i in 0..L-1 {
+                x_homology_line.push((2 * i + 1, 2 * j));
+            }
+            model.x_homology_lines.push(x_homology_line);
+        }
+        model
     }
     pub fn new_planar_code<F>(T: usize, L: usize, filter: F) -> Self
             where F: Fn(usize, usize) -> bool {
@@ -178,6 +212,8 @@ impl PlanarCodeModel {
             L: L,
             T: T,
             graph: None,
+            z_homology_lines: Vec::new(),
+            x_homology_lines: Vec::new(),
         }
     }
     pub fn iterate_snapshot_mut<F>(&mut self, mut func: F) where F: FnMut(usize, usize, usize, &mut Node) {
@@ -319,11 +355,13 @@ impl PlanarCodeModel {
         for t in (6..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
-                    let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                    let qubit_type = node.qubit_type.clone();
-                    if qubit_type == QubitType::StabZ || qubit_type == QubitType::StabX {
-                        assert_eq!(node.gate_type, GateType::Measurement);
-                        func(t, i, j, self.snapshot[t][i][j].as_mut().expect("exist"));
+                    if self.snapshot[t][i][j].is_some() {
+                        let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                        let qubit_type = node.qubit_type.clone();
+                        if qubit_type == QubitType::StabZ || qubit_type == QubitType::StabX {
+                            assert_eq!(node.gate_type, GateType::Measurement);
+                            func(t, i, j, self.snapshot[t][i][j].as_mut().expect("exist"));
+                        }
                     }
                 }
             }
@@ -334,11 +372,13 @@ impl PlanarCodeModel {
         for t in (6..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
-                    let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                    let qubit_type = node.qubit_type.clone();
-                    if qubit_type == QubitType::StabZ || qubit_type == QubitType::StabX {
-                        assert_eq!(node.gate_type, GateType::Measurement);
-                        func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
+                    if self.snapshot[t][i][j].is_some() {
+                        let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                        let qubit_type = node.qubit_type.clone();
+                        if qubit_type == QubitType::StabZ || qubit_type == QubitType::StabX {
+                            assert_eq!(node.gate_type, GateType::Measurement);
+                            func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
+                        }
                     }
                 }
             }
@@ -349,22 +389,24 @@ impl PlanarCodeModel {
         for t in (6..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
-                    let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                    if node.qubit_type == QubitType::StabZ {
-                        assert_eq!(node.gate_type, GateType::Measurement);
-                        let this_result = node.propagated == ErrorType::I || node.propagated == ErrorType::Z;
-                        let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
-                        let last_result = last_node.propagated == ErrorType::I || last_node.propagated == ErrorType::Z;
-                        if this_result != last_result {
-                            func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
-                        }
-                    } else if node.qubit_type == QubitType::StabX {
-                        assert_eq!(node.gate_type, GateType::Measurement);
-                        let this_result = node.propagated == ErrorType::I || node.propagated == ErrorType::X;
-                        let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
-                        let last_result = last_node.propagated == ErrorType::I || last_node.propagated == ErrorType::X;
-                        if this_result != last_result {
-                            func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
+                    if self.snapshot[t][i][j].is_some() {
+                        let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                        if node.qubit_type == QubitType::StabZ {
+                            assert_eq!(node.gate_type, GateType::Measurement);
+                            let this_result = node.propagated == ErrorType::I || node.propagated == ErrorType::Z;
+                            let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
+                            let last_result = last_node.propagated == ErrorType::I || last_node.propagated == ErrorType::Z;
+                            if this_result != last_result {
+                                func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
+                            }
+                        } else if node.qubit_type == QubitType::StabX {
+                            assert_eq!(node.gate_type, GateType::Measurement);
+                            let this_result = node.propagated == ErrorType::I || node.propagated == ErrorType::X;
+                            let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
+                            let last_result = last_node.propagated == ErrorType::I || last_node.propagated == ErrorType::X;
+                            if this_result != last_result {
+                                func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
+                            }
                         }
                     }
                 }
@@ -389,13 +431,15 @@ impl PlanarCodeModel {
         for (idx, t) in (6..self.snapshot.len()).step_by(6).enumerate() {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
-                    let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                    if node.qubit_type == QubitType::Data {
-                        match node.propagated {
-                            ErrorType::X => { x_mut[[idx, i, j]] = true; }
-                            ErrorType::Z => { z_mut[[idx, i, j]] = true; }
-                            ErrorType::Y => { x_mut[[idx, i, j]] = true; z_mut[[idx, i, j]] = true; }
-                            ErrorType::I => { }
+                    if self.snapshot[t][i][j].is_some() {
+                        let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                        if node.qubit_type == QubitType::Data {
+                            match node.propagated {
+                                ErrorType::X => { x_mut[[idx, i, j]] = true; }
+                                ErrorType::Z => { z_mut[[idx, i, j]] = true; }
+                                ErrorType::Y => { x_mut[[idx, i, j]] = true; z_mut[[idx, i, j]] = true; }
+                                ErrorType::I => { }
+                            }
                         }
                     }
                 }
@@ -539,38 +583,40 @@ impl PlanarCodeModel {
         for t in (6..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
-                    if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
-                        let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                        let target_indexes: Vec::<Index> = node.exhausted_map.keys().cloned().collect();
-                        for target_index in target_indexes {
-                            // find the next element by searching in `edges`
+                    if self.snapshot[t][i][j].is_some() {
+                        if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
                             let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                            let mut min_cost = None;
-                            let mut min_index = None;
-                            for edge in &node.edges {
-                                let next_index = Index::from(edge);
-                                let mut current_cost = node.exhausted_map[&next_index].cost;
-                                if next_index != target_index {
-                                    let next_node = self.snapshot[next_index.t][next_index.i][next_index.j].as_ref().expect("exist");
-                                    current_cost += next_node.exhausted_map[&target_index].cost;
-                                }
-                                // compute the cost of node -> next_index -> target_index
-                                match min_cost.clone() {
-                                    Some(min_cost_value) => {
-                                        if current_cost < min_cost_value {
+                            let target_indexes: Vec::<Index> = node.exhausted_map.keys().cloned().collect();
+                            for target_index in target_indexes {
+                                // find the next element by searching in `edges`
+                                let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                                let mut min_cost = None;
+                                let mut min_index = None;
+                                for edge in &node.edges {
+                                    let next_index = Index::from(edge);
+                                    let mut current_cost = node.exhausted_map[&next_index].cost;
+                                    if next_index != target_index {
+                                        let next_node = self.snapshot[next_index.t][next_index.i][next_index.j].as_ref().expect("exist");
+                                        current_cost += next_node.exhausted_map[&target_index].cost;
+                                    }
+                                    // compute the cost of node -> next_index -> target_index
+                                    match min_cost.clone() {
+                                        Some(min_cost_value) => {
+                                            if current_cost < min_cost_value {
+                                                min_cost = Some(current_cost);
+                                                min_index = Some(next_index.clone());
+                                            }
+                                        }
+                                        None => {
                                             min_cost = Some(current_cost);
                                             min_index = Some(next_index.clone());
                                         }
                                     }
-                                    None => {
-                                        min_cost = Some(current_cost);
-                                        min_index = Some(next_index.clone());
-                                    }
                                 }
+                                // redefine node as a mutable one
+                                let node = self.snapshot[t][i][j].as_mut().expect("exist");
+                                node.exhausted_map.get_mut(&target_index).expect("exist").next = Some(min_index.expect("exist"));
                             }
-                            // redefine node as a mutable one
-                            let node = self.snapshot[t][i][j].as_mut().expect("exist");
-                            node.exhausted_map.get_mut(&target_index).expect("exist").next = Some(min_index.expect("exist"));
                         }
                     }
                 }
@@ -580,26 +626,28 @@ impl PlanarCodeModel {
         for t in (6..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
-                    if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
-                        let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                        let target_indexes: Vec::<Index> = node.exhausted_map.keys().cloned().collect();
-                        for target_index in target_indexes {
-                            // go along `next` and combine over the `correction`
-                            let this_index = Index{ t: t, i: i, j: j };
-                            let this_node = self.snapshot[this_index.t][this_index.i][this_index.j].as_ref().expect("exist");
-                            let next_index = this_node.exhausted_map[&target_index].next.as_ref().expect("exist");
-                            let mut correction = None;
-                            for edge in this_node.edges.iter() {  // find the edge of `next_index`
-                                if *next_index == Index::from(edge) {
-                                    correction = Some(edge.cases[0].0.clone());
-                                    break
+                    if self.snapshot[t][i][j].is_some() {
+                        if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
+                            let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                            let target_indexes: Vec::<Index> = node.exhausted_map.keys().cloned().collect();
+                            for target_index in target_indexes {
+                                // go along `next` and combine over the `correction`
+                                let this_index = Index{ t: t, i: i, j: j };
+                                let this_node = self.snapshot[this_index.t][this_index.i][this_index.j].as_ref().expect("exist");
+                                let next_index = this_node.exhausted_map[&target_index].next.as_ref().expect("exist");
+                                let mut correction = None;
+                                for edge in this_node.edges.iter() {  // find the edge of `next_index`
+                                    if *next_index == Index::from(edge) {
+                                        correction = Some(edge.cases[0].0.clone());
+                                        break
+                                    }
                                 }
+                                assert!(correction.is_some(), "next should be in `this_node.edges`");
+                                let correction = correction.expect("exist");
+                                // redefine node as a mutable one
+                                let node = self.snapshot[t][i][j].as_mut().expect("exist");
+                                node.exhausted_map.get_mut(&target_index).expect("exist").next_correction = Some(correction);
                             }
-                            assert!(correction.is_some(), "next should be in `this_node.edges`");
-                            let correction = correction.expect("exist");
-                            // redefine node as a mutable one
-                            let node = self.snapshot[t][i][j].as_mut().expect("exist");
-                            node.exhausted_map.get_mut(&target_index).expect("exist").next_correction = Some(correction);
                         }
                     }
                 }
@@ -609,54 +657,56 @@ impl PlanarCodeModel {
         for t in (6..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
-                    if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
-                        let mut min_cost = None;
-                        let mut min_index = None;
-                        let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                        let index = Index::new(t, i, j);
-                        self.iterate_measurement_stabilizers(|tb, ib, jb, node_b| {
-                            match &node_b.boundary {
-                                Some(boundary) => {
-                                    // only try if this node is directly connected to boundary
-                                    if node.qubit_type == node_b.qubit_type {
-                                        let (_, p) = &boundary.cases[0];
-                                        let cost = weight_of(*p) + (if t == tb && i == ib && j == jb { 0. } else {
-                                            node_b.exhausted_map[&index].cost
-                                        });
-                                        // println!("[{}][{}][{}] [{}][{}][{}] {}", t, i, j, tb, ib, jb, cost);
-                                        match min_cost.clone() {
-                                            Some(min_cost_value) => {
-                                                if cost < min_cost_value {
+                    if self.snapshot[t][i][j].is_some() {
+                        if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
+                            let mut min_cost = None;
+                            let mut min_index = None;
+                            let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                            let index = Index::new(t, i, j);
+                            self.iterate_measurement_stabilizers(|tb, ib, jb, node_b| {
+                                match &node_b.boundary {
+                                    Some(boundary) => {
+                                        // only try if this node is directly connected to boundary
+                                        if node.qubit_type == node_b.qubit_type {
+                                            let (_, p) = &boundary.cases[0];
+                                            let cost = weight_of(*p) + (if t == tb && i == ib && j == jb { 0. } else {
+                                                node_b.exhausted_map[&index].cost
+                                            });
+                                            // println!("[{}][{}][{}] [{}][{}][{}] {}", t, i, j, tb, ib, jb, cost);
+                                            match min_cost.clone() {
+                                                Some(min_cost_value) => {
+                                                    if cost < min_cost_value {
+                                                        min_cost = Some(cost);
+                                                        min_index = Some(Index::new(tb, ib, jb));
+                                                    }
+                                                }
+                                                None => {
                                                     min_cost = Some(cost);
                                                     min_index = Some(Index::new(tb, ib, jb));
                                                 }
                                             }
-                                            None => {
-                                                min_cost = Some(cost);
-                                                min_index = Some(Index::new(tb, ib, jb));
-                                            }
                                         }
-                                    }
-                                },
-                                None => { }
+                                    },
+                                    None => { }
+                                }
+                            });
+                            let min_cost = min_cost.expect("exist");
+                            let min_index = min_index.expect("exist");
+                            // println!("[{}][{}][{}] {} {:?}", t, i, j, min_cost, min_index);
+                            let node_b = self.snapshot[min_index.t][min_index.i][min_index.j].as_ref().expect("exist");
+                            let mut correction = node_b.boundary.as_ref().expect("exist").cases[0].0.clone();
+                            if index != min_index {
+                                correction.combine(node_b.exhausted_map[&index].next_correction.as_ref().expect("exist"));
                             }
-                        });
-                        let min_cost = min_cost.expect("exist");
-                        let min_index = min_index.expect("exist");
-                        // println!("[{}][{}][{}] {} {:?}", t, i, j, min_cost, min_index);
-                        let node_b = self.snapshot[min_index.t][min_index.i][min_index.j].as_ref().expect("exist");
-                        let mut correction = node_b.boundary.as_ref().expect("exist").cases[0].0.clone();
-                        if index != min_index {
-                            correction.combine(node_b.exhausted_map[&index].next_correction.as_ref().expect("exist"));
+                            // redefine node as a mutable one
+                            let node = self.snapshot[t][i][j].as_mut().expect("exist");
+                            node.exhausted_boundary = Some(ExhaustedElement {
+                                cost: min_cost,
+                                next: Some(min_index),
+                                correction: Some(correction),
+                                next_correction: None,
+                            });
                         }
-                        // redefine node as a mutable one
-                        let node = self.snapshot[t][i][j].as_mut().expect("exist");
-                        node.exhausted_boundary = Some(ExhaustedElement {
-                            cost: min_cost,
-                            next: Some(min_index),
-                            correction: Some(correction),
-                            next_correction: None,
-                        });
                     }
                 }
             }
@@ -666,47 +716,53 @@ impl PlanarCodeModel {
     pub fn build_exhausted_path_autotune(&mut self) {
         self.build_exhausted_path(|p| - p.ln())
     }
+    /// Manhattan distance (but not exactly because there is 12 neighbors instead of 8) version
+    pub fn build_exhausted_path_equally_weighted(&mut self) {
+        self.build_exhausted_path(|_p| 1.)
+    }
     /// use the shortest path to build `correction`, so that correction is done in O(1) time.
     /// This have some drawbacks, e.g. the memory usage is extremely high >4GB when L=10, and initialization time is over 100s
     pub fn prepare_correction(&mut self) {
         for t in (6..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
-                    if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
-                        let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                        let target_indexes: Vec::<Index> = node.exhausted_map.keys().cloned().collect();
-                        for target_index in target_indexes {
-                            // go along `next` and combine over the `correction`
-                            let this_index = Index{ t: t, i: i, j: j };
-                            let this_node = self.snapshot[this_index.t][this_index.i][this_index.j].as_ref().expect("exist");
-                            let mut next_index = this_node.exhausted_map[&target_index].next.as_ref().expect("exist");
-                            let mut correction = None;
-                            for edge in this_node.edges.iter() {  // find the edge of `next_index`
-                                if *next_index == Index::from(edge) {
-                                    correction = Some(edge.cases[0].0.clone());
-                                    break
-                                }
-                            }
-                            assert!(correction.is_some(), "next should be in `this_node.edges`");
-                            let mut correction = correction.expect("exist");
-                            while *next_index != target_index {
-                                let this_index = next_index.clone();
+                    if self.snapshot[t][i][j].is_some() {
+                        if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
+                            let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                            let target_indexes: Vec::<Index> = node.exhausted_map.keys().cloned().collect();
+                            for target_index in target_indexes {
+                                // go along `next` and combine over the `correction`
+                                let this_index = Index{ t: t, i: i, j: j };
                                 let this_node = self.snapshot[this_index.t][this_index.i][this_index.j].as_ref().expect("exist");
-                                next_index = this_node.exhausted_map[&target_index].next.as_ref().expect("exist");
-                                let mut next_correction = None;
+                                let mut next_index = this_node.exhausted_map[&target_index].next.as_ref().expect("exist");
+                                let mut correction = None;
                                 for edge in this_node.edges.iter() {  // find the edge of `next_index`
                                     if *next_index == Index::from(edge) {
-                                        next_correction = Some(edge.cases[0].0.clone());
+                                        correction = Some(edge.cases[0].0.clone());
                                         break
                                     }
                                 }
-                                assert!(next_correction.is_some(), "next should be in `this_node.edges`");
-                                // combine `correction` and `next_correction`
-                                correction.combine(&next_correction.expect("exist"));
+                                assert!(correction.is_some(), "next should be in `this_node.edges`");
+                                let mut correction = correction.expect("exist");
+                                while *next_index != target_index {
+                                    let this_index = next_index.clone();
+                                    let this_node = self.snapshot[this_index.t][this_index.i][this_index.j].as_ref().expect("exist");
+                                    next_index = this_node.exhausted_map[&target_index].next.as_ref().expect("exist");
+                                    let mut next_correction = None;
+                                    for edge in this_node.edges.iter() {  // find the edge of `next_index`
+                                        if *next_index == Index::from(edge) {
+                                            next_correction = Some(edge.cases[0].0.clone());
+                                            break
+                                        }
+                                    }
+                                    assert!(next_correction.is_some(), "next should be in `this_node.edges`");
+                                    // combine `correction` and `next_correction`
+                                    correction.combine(&next_correction.expect("exist"));
+                                }
+                                // redefine node as a mutable one
+                                let node = self.snapshot[t][i][j].as_mut().expect("exist");
+                                node.exhausted_map.get_mut(&target_index).expect("exist").correction = Some(correction);
                             }
-                            // redefine node as a mutable one
-                            let node = self.snapshot[t][i][j].as_mut().expect("exist");
-                            node.exhausted_map.get_mut(&target_index).expect("exist").correction = Some(correction);
                         }
                     }
                 }
@@ -715,7 +771,7 @@ impl PlanarCodeModel {
     }
     /// get correction from two matched nodes
     /// use `correction` (or `next_correction` if former not provided) in `exhausted_map`
-    pub fn get_correction_two_nodes(&self, a: Index, b: Index) -> Correction {
+    pub fn get_correction_two_nodes(&self, a: &Index, b: &Index) -> Correction {
         let node_a = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist");
         let node_b = self.snapshot[b.t][b.i][b.j].as_ref().expect("exist");
         assert_eq!(node_a.gate_type, GateType::Measurement);
@@ -729,7 +785,7 @@ impl PlanarCodeModel {
             None => {
                 let mut correction = node_a.exhausted_map[&b].next_correction.as_ref().expect("must call `build_exhausted_path`").clone();
                 let mut next_index = node_a.exhausted_map[&b].next.as_ref().expect("exist");
-                while *next_index != b {
+                while next_index != b {
                     let this_node = self.snapshot[next_index.t][next_index.i][next_index.j].as_ref().expect("exist");
                     correction.combine(&this_node.exhausted_map[&b].next_correction.as_ref().expect("must call `build_exhausted_path`"));
                     next_index = this_node.exhausted_map[&b].next.as_ref().expect("exist");
@@ -737,6 +793,131 @@ impl PlanarCodeModel {
                 correction
             }
         }
+    }
+    pub fn generate_measurement(&self) -> Measurement {
+        let width = 2 * self.L - 1;
+        let mut measurement = Measurement(ndarray::Array::from_elem((self.T, width, width), false));
+        let mut measurement_mut = measurement.view_mut();
+        self.iterate_measurement_errors(|t, i, j, _node| {
+            let (mt, mi, mj) = Index::new(t, i, j).to_measurement_idx();
+            measurement_mut[[mt, mi, mj]] = true;
+        });
+        measurement
+    }
+    /// decode based on MWPM
+    pub fn decode_MWPM(&self, measurement: &Measurement) -> Correction {
+        // sanity check
+        let shape = measurement.shape();
+        let width = 2 * self.L - 1;
+        assert_eq!(shape[0], self.T);
+        assert_eq!(shape[1], width);
+        assert_eq!(shape[2], width);
+        // generate all the error measurements to be matched
+        let mut to_be_matched = Vec::new();
+        for mt in 0..self.T {
+            for mi in 0..width {
+                for mj in 0..width {
+                    if measurement[[mt, mi, mj]] {  // has a measurement error there
+                        to_be_matched.push(Index::from_measurement_idx(mt, mi, mj));
+                    }
+                }
+            }
+        }
+        if to_be_matched.len() != 0 {
+            // then add the edges to the graph
+            let m_len = to_be_matched.len();  // boundary connection to `i` is `i + m_len`
+            let node_num = m_len * 2;
+            // Z (X) stabilizers are fully connected, boundaries are fully connected
+            // stabilizer to boundary is one-to-one connected
+            let mut weighted_edges = Vec::<(usize, usize, f64)>::new();
+            for i in 0..m_len {
+                for j in 1..m_len {
+                    let a = &to_be_matched[i];
+                    let b = &to_be_matched[j];
+                    let path = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_map.get(&b);
+                    if path.is_some() {
+                        let cost = path.expect("exist").cost;
+                        weighted_edges.push((i, j, cost));
+                        weighted_edges.push((i + m_len, j + m_len, 0.));
+                    }
+                }
+                let a = &to_be_matched[i];
+                let cost = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_boundary.as_ref().expect("exist").cost;
+                weighted_edges.push((i, i + m_len, cost));
+            }
+            let matching = blossom_v::safe_minimum_weight_perfect_matching(node_num, weighted_edges);
+            println!("{:?}", to_be_matched);
+            println!("matching: {:?}", matching);
+            let mut correction = self.generate_default_correction();
+            for i in 0..m_len {
+                let j = matching[i];
+                let a = &to_be_matched[i];
+                if j < i {  // only add correction if j < i, so that the same correction is not applied twice
+                    // println!("match peer {:?} {:?}", to_be_matched[i], to_be_matched[j]);
+                    correction.combine(&self.get_correction_two_nodes(a, &to_be_matched[j]));
+                } else if j >= m_len {  // matched with boundary
+                    // println!("match boundary {:?}", to_be_matched[i]);
+                    let node = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist");
+                    correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
+                }
+            }
+            correction
+        } else {
+            // no measurement errors found
+            self.generate_default_correction()
+        }
+    }
+    /// validate correction on the bottom layer strictly, see if there is logical error or uncorrected stabilizers.
+    /// return Err(reason) if correction is not successful. reason is a readable string.
+    pub fn validate_corrected_on_layer(&self, corrected: &Correction, layer: usize) -> Result<(), String> {
+        assert!(layer < self.T, "layer ranges from 0 to T-1");
+        assert!(self.z_homology_lines.len() > 0 && self.x_homology_lines.len() > 0, "single boundary required");
+        let mut z_homology_results = Vec::new();
+        let mut x_homology_results = Vec::new();
+        for is_z in [false, true].iter() {
+            let homology_results = if *is_z { &mut z_homology_results } else { &mut x_homology_results };
+            let homology_lines = if *is_z { &self.z_homology_lines } else { &self.x_homology_lines };
+            let corrected_array = if *is_z { &corrected.z } else { &corrected.x };
+            for homology_line in homology_lines {
+                let mut xor = false;
+                for (i, j) in homology_line {
+                    xor = xor ^ corrected_array[[layer, *i, *j]];
+                }
+                homology_results.push(xor);
+            }
+        }
+        let z_homology_counts = z_homology_results.iter().filter(|x| **x).count();
+        let x_homology_counts = z_homology_results.iter().filter(|x| **x).count();
+        let z_has_logical = z_homology_counts * 2 >= z_homology_results.len();
+        let x_has_logical = x_homology_counts * 2 >= x_homology_results.len();
+        // println!("z_homology_counts: {}, x_homology_counts: {}", z_homology_counts, x_homology_counts);
+        if !z_has_logical && !x_has_logical {
+            Ok(())
+        } else if z_has_logical && x_has_logical {
+            Err(format!("X logical error and Z logical error are both detected on measurement layer {}", layer))
+        } else if z_has_logical {
+            Err(format!("Z logical error is detected on measurement layer {}, homology count / len = {} / {}", layer, z_homology_counts, z_homology_results.len()))
+        } else {
+            Err(format!("X logical error is detected on measurement layer {}, homology count / len = {} / {}", layer, x_homology_counts, x_homology_results.len()))
+        }
+    }
+    pub fn validate_correction_on_top_layer(&self, correction: &Correction) -> Result<(), String> {
+        let mut corrected = self.get_data_qubit_error_pattern();
+        corrected.combine(&correction);  // apply correction to error pattern
+        self.validate_corrected_on_layer(&corrected, self.T - 1)
+    }
+    pub fn validate_correction_on_bottom_layer(&self, correction: &Correction) -> Result<(), String> {
+        let mut corrected = self.get_data_qubit_error_pattern();
+        corrected.combine(&correction);  // apply correction to error pattern
+        self.validate_corrected_on_layer(&corrected, 0)
+    }
+    pub fn validate_correction_on_all_layers(&self, correction: &Correction) -> Result<(), String> {
+        let mut corrected = self.get_data_qubit_error_pattern();
+        corrected.combine(&correction);  // apply correction to error pattern
+        for mt in 0..self.T {
+            self.validate_corrected_on_layer(&corrected, mt)?;
+        }
+        Ok(())
     }
 }
 
@@ -853,6 +1034,23 @@ impl Boundary {
 pub struct Correction {
     pub x: ndarray::Array3<bool>,
     pub z: ndarray::Array3<bool>,
+}
+
+/// Measurement Result, including all the stabilizer at measurement stage t=6,12,18,...
+#[derive(Debug, Clone)]
+pub struct Measurement (ndarray::Array3<bool>);
+
+impl Deref for Measurement {
+    type Target = ndarray::Array3<bool>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Measurement {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
 impl Correction {

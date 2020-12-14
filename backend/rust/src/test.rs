@@ -267,7 +267,7 @@ fn archived_debug_tests() {
         model.set_depolarizing_error(error_rate);
         model.build_graph();
         model.optimize_correction_pattern();
-        model.build_exhausted_path_autotune();
+        model.build_exhausted_path_equally_weighted();
         model.prepare_correction();  // only call this with small L, otherwise initialization time and memory usage will be too high
         // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
     }
@@ -323,8 +323,40 @@ fn debug_tests() {
             // model.prepare_correction();  // only call this with small L, otherwise initialization time and memory usage will be too high
             // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
             // println!("{:?}", model.get_correction_two_nodes(ftqec::Index::new(6, 0, 1), ftqec::Index::new(18, 4, 1)));
-            let _correction = model.get_correction_two_nodes(ftqec::Index::new(6, 0, 1), ftqec::Index::new(6, 4, 1));
+            let _correction = model.get_correction_two_nodes(&ftqec::Index::new(6, 0, 1), &ftqec::Index::new(6, 4, 1));
             // println!("{:?}", _correction);
+        }
+        {  // decode the generated error
+            /*
+             * add error at Index { t: 4, i: 2, j: 6 } Y
+             * add error at Index { t: 20, i: 1, j: 5 } X
+             * add error at Index { t: 23, i: 6, j: 4 } Y
+             */
+            model.clear_error();
+            model.add_error_at(4, 2, 6, &ftqec::ErrorType::Y);
+            model.add_error_at(20, 1, 5, &ftqec::ErrorType::X);
+            model.add_error_at(23, 6, 4, &ftqec::ErrorType::Y);
+            // {  // generate random error and hard-code it just like above
+            //     model.generate_random_errors(|| rng.gen::<f64>());
+            //     model.iterate_snapshot(|t, i, j, node| {
+            //         if node.error != ftqec::ErrorType::I {
+            //             println!("add error at {:?} {:?}", ftqec::Index::new(t, i, j), node.error);
+            //         }
+            //     });
+            // }
+            model.propagate_error();
+            let measurement = model.generate_measurement();
+            // println!("{:?}", measurement);
+            // actually one can use another model to decode, if you're not comfortable with passing all internal error information into decoder
+            let correction = model.decode_MWPM(&measurement);
+            // println!("{:?}", correction);
+            let mut corrected = model.get_data_qubit_error_pattern();
+            // println!("error pattern: {:?}", corrected);
+            corrected.combine(&correction);  // apply correction to error pattern
+            // println!("corrected: {:?}", corrected);
+            println!("validate bottom layer: {:?}", model.validate_correction_on_bottom_layer(&correction));
+            println!("validate top layer: {:?}", model.validate_correction_on_top_layer(&correction));
+            println!("validate all layers: {:?}", model.validate_correction_on_all_layers(&correction));
         }
     }
 }

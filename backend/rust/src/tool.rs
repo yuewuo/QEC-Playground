@@ -272,6 +272,7 @@ fn error_rate_MWPM_with_weight(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min
             for _i in 0..parallel {
                 let p = *p;
                 let L = *L;
+                assert_eq!(weight_L, L);
                 let total_rounds = Arc::clone(&total_rounds);
                 let qec_failed = Arc::clone(&qec_failed);
                 let weights = weights.clone();

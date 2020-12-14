@@ -26,7 +26,7 @@ extern {
     fn minimum_weight_perfect_matching(node_num: c_int, edge_num: c_int, edges: *const c_int, weights: *const c_double, matched: *mut c_int);
 }
 
-pub fn maximum_weight_perfect_matching_compatible(node_num: usize, weighted_edges: Vec<(usize, usize, f64)>) -> std::collections::HashSet<(usize, usize)> {
+pub fn safe_minimum_weight_perfect_matching(node_num: usize, weighted_edges: Vec<(usize, usize, f64)>) -> Vec<usize> {
     let edge_num = weighted_edges.len();
     let mut edges = Vec::with_capacity(2 * edge_num);
     let mut weights = Vec::with_capacity(edge_num);
@@ -35,13 +35,22 @@ pub fn maximum_weight_perfect_matching_compatible(node_num: usize, weighted_edge
         edges.push(i as c_int);
         edges.push(j as c_int);
         assert!(i < node_num && j < node_num);
-        weights.push(- weight);  // blossom V is minimum weight perfect matching, this function is maximum
+        weights.push(weight);
     }
     let mut output = Vec::with_capacity(node_num);
     unsafe {
         minimum_weight_perfect_matching(node_num as c_int, edge_num as c_int, edges.as_ptr(), weights.as_ptr(), output.as_mut_ptr());
         output.set_len(node_num);
     }
+    let output: Vec<usize> = output.iter().map(|x| *x as usize).collect();
+    output
+}
+
+// important: only takes non-positive inputs
+pub fn maximum_weight_perfect_matching_compatible(node_num: usize, weighted_edges: Vec<(usize, usize, f64)>) -> std::collections::HashSet<(usize, usize)> {
+    // blossom V is minimum weight perfect matching, this function is maximum
+    let weighted_edges: Vec::<(usize, usize, f64)> = weighted_edges.iter().map(|(a, b, w)| (*a, *b, -*w)).collect();
+    let output = safe_minimum_weight_perfect_matching(node_num, weighted_edges);
     let mut matched = std::collections::HashSet::new();
     for i in 0..node_num {
         if output[i] as usize > i {
@@ -50,3 +59,4 @@ pub fn maximum_weight_perfect_matching_compatible(node_num: usize, weighted_edge
     }
     matched
 }
+
