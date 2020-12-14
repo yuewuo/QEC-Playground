@@ -21,6 +21,7 @@ use super::petgraph;
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 use super::blossom_v;
+use std::sync::{Arc};
 
 /// uniquely index a node
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -473,7 +474,7 @@ impl PlanarCodeModel {
                             }
                             assert!(measurement_errors.len() <= 2, "single qubit error should not cause more than 2 measurement errors");
                             // compute correction pattern, so that applying this error pattern will exactly recover data qubit errors
-                            let correction = self.get_data_qubit_error_pattern();
+                            let correction = Arc::new(self.get_data_qubit_error_pattern());
                             // add this to edges and update probability
                             if measurement_errors.len() == 1 {  // boundary
                                 let (t1, i1, j1) = measurement_errors[0];
@@ -488,10 +489,8 @@ impl PlanarCodeModel {
                             } else if measurement_errors.len() == 2 {  // connection
                                 let (t1, i1, j1) = measurement_errors[0];
                                 let (t2, i2, j2) = measurement_errors[1];
-                                add_edge_case(&mut self.snapshot[t1][i1][j1].as_mut().expect("exist").edges,
-                                    t2, i2, j2, p, correction.clone());
-                                add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").edges,
-                                    t1, i1, j1, p, correction);
+                                add_edge_case(&mut self.snapshot[t1][i1][j1].as_mut().expect("exist").edges, t2, i2, j2, p, correction.clone());
+                                add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").edges, t1, i1, j1, p, correction);
                             }
                         }
                     }
@@ -502,20 +501,20 @@ impl PlanarCodeModel {
         self.clear_error();
         self.propagate_error();
     }
-    fn optimize_correction_cases(original_cases: &Vec::<(Correction, f64)>) -> Vec::<(Correction, f64)> {
+    fn optimize_correction_cases(original_cases: &Vec::<(Arc<Correction>, f64)>) -> Vec::<(Arc<Correction>, f64)> {
         let mut cases = HashMap::<Correction, f64>::new();
         for (correction, p) in original_cases.iter() {
-            if cases.contains_key(correction) {
+            if cases.contains_key(&*correction) {
                 let case_p = cases.get_mut(correction).expect("exist");
                 let case_p_value: f64 = *case_p;
                 *case_p = case_p_value * (1. - p) + p * (1. - case_p_value);
             } else {
-                cases.insert(correction.clone(), *p);
+                cases.insert((**correction).clone(), *p);
             }
         }
         let mut optimized_cases = Vec::with_capacity(cases.len());
-        for (correction, p) in cases.iter() {
-            optimized_cases.push((correction.clone(), *p));
+        for (correction, p) in cases.drain() {
+            optimized_cases.push((Arc::new(correction), p));
         }
         // println!("{} -> {}", original_cases.len(), optimized_cases.len());  // observation: the max amount of cases reduces from 7 to 3
         // sort the corrections based on its probability
@@ -694,7 +693,7 @@ impl PlanarCodeModel {
                             let min_index = min_index.expect("exist");
                             // println!("[{}][{}][{}] {} {:?}", t, i, j, min_cost, min_index);
                             let node_b = self.snapshot[min_index.t][min_index.i][min_index.j].as_ref().expect("exist");
-                            let mut correction = node_b.boundary.as_ref().expect("exist").cases[0].0.clone();
+                            let mut correction: Correction = (*node_b.boundary.as_ref().expect("exist").cases[0].0).clone();
                             if index != min_index {
                                 correction.combine(node_b.exhausted_map[&index].next_correction.as_ref().expect("exist"));
                             }
@@ -703,7 +702,7 @@ impl PlanarCodeModel {
                             node.exhausted_boundary = Some(ExhaustedElement {
                                 cost: min_cost,
                                 next: Some(min_index),
-                                correction: Some(correction),
+                                correction: Some(Arc::new(correction)),
                                 next_correction: None,
                             });
                         }
@@ -720,55 +719,6 @@ impl PlanarCodeModel {
     pub fn build_exhausted_path_equally_weighted(&mut self) {
         self.build_exhausted_path(|_p| 1.)
     }
-    /// use the shortest path to build `correction`, so that correction is done in O(1) time.
-    /// This have some drawbacks, e.g. the memory usage is extremely high >4GB when L=10, and initialization time is over 100s
-    pub fn prepare_correction(&mut self) {
-        for t in (6..self.snapshot.len()).step_by(6) {
-            for i in 0..self.snapshot[t].len() {
-                for j in 0..self.snapshot[t][i].len() {
-                    if self.snapshot[t][i][j].is_some() {
-                        if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
-                            let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                            let target_indexes: Vec::<Index> = node.exhausted_map.keys().cloned().collect();
-                            for target_index in target_indexes {
-                                // go along `next` and combine over the `correction`
-                                let this_index = Index{ t: t, i: i, j: j };
-                                let this_node = self.snapshot[this_index.t][this_index.i][this_index.j].as_ref().expect("exist");
-                                let mut next_index = this_node.exhausted_map[&target_index].next.as_ref().expect("exist");
-                                let mut correction = None;
-                                for edge in this_node.edges.iter() {  // find the edge of `next_index`
-                                    if *next_index == Index::from(edge) {
-                                        correction = Some(edge.cases[0].0.clone());
-                                        break
-                                    }
-                                }
-                                assert!(correction.is_some(), "next should be in `this_node.edges`");
-                                let mut correction = correction.expect("exist");
-                                while *next_index != target_index {
-                                    let this_index = next_index.clone();
-                                    let this_node = self.snapshot[this_index.t][this_index.i][this_index.j].as_ref().expect("exist");
-                                    next_index = this_node.exhausted_map[&target_index].next.as_ref().expect("exist");
-                                    let mut next_correction = None;
-                                    for edge in this_node.edges.iter() {  // find the edge of `next_index`
-                                        if *next_index == Index::from(edge) {
-                                            next_correction = Some(edge.cases[0].0.clone());
-                                            break
-                                        }
-                                    }
-                                    assert!(next_correction.is_some(), "next should be in `this_node.edges`");
-                                    // combine `correction` and `next_correction`
-                                    correction.combine(&next_correction.expect("exist"));
-                                }
-                                // redefine node as a mutable one
-                                let node = self.snapshot[t][i][j].as_mut().expect("exist");
-                                node.exhausted_map.get_mut(&target_index).expect("exist").correction = Some(correction);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
     /// get correction from two matched nodes
     /// use `correction` (or `next_correction` if former not provided) in `exhausted_map`
     pub fn get_correction_two_nodes(&self, a: &Index, b: &Index) -> Correction {
@@ -781,9 +731,9 @@ impl PlanarCodeModel {
             return self.generate_default_correction()
         }
         match &node_a.exhausted_map[&b].correction {
-            Some(correction) => { correction.clone() }
+            Some(correction) => { (**correction).clone() }
             None => {
-                let mut correction = node_a.exhausted_map[&b].next_correction.as_ref().expect("must call `build_exhausted_path`").clone();
+                let mut correction: Correction = (**node_a.exhausted_map[&b].next_correction.as_ref().expect("must call `build_exhausted_path`")).clone();
                 let mut next_index = node_a.exhausted_map[&b].next.as_ref().expect("exist");
                 while next_index != b {
                     let this_node = self.snapshot[next_index.t][next_index.i][next_index.j].as_ref().expect("exist");
@@ -984,7 +934,7 @@ pub struct Edge {
     pub i: usize,
     pub j: usize,
     pub p: f64,
-    pub cases: Vec::<(Correction, f64)>,
+    pub cases: Vec::<(Arc<Correction>, f64)>,
 }
 
 impl From<&Edge> for Index {
@@ -997,7 +947,7 @@ impl From<&Edge> for Index {
     }
 }
 
-pub fn add_edge_case(edges: &mut Vec::<Edge>, t: usize, i: usize, j: usize, p: f64, correction: Correction) {
+pub fn add_edge_case(edges: &mut Vec::<Edge>, t: usize, i: usize, j: usize, p: f64, correction: Arc<Correction>) {
     for edge in edges.iter_mut() {
         if edge.t == t && edge.i == i && edge.j == j {
             edge.add(p, correction);
@@ -1013,7 +963,7 @@ pub fn add_edge_case(edges: &mut Vec::<Edge>, t: usize, i: usize, j: usize, p: f
 }
 
 impl Edge {
-    pub fn add(&mut self, p: f64, correction: Correction) {
+    pub fn add(&mut self, p: f64, correction: Arc<Correction>) {
         self.p = self.p * (1. - p) + p * (1. - self.p);  // XOR
         self.cases.push((correction, p));
     }
@@ -1023,11 +973,11 @@ impl Edge {
 #[derive(Debug, Clone)]
 pub struct Boundary {
     pub p: f64,
-    pub cases: Vec::<(Correction, f64)>,
+    pub cases: Vec::<(Arc<Correction>, f64)>,
 }
 
 impl Boundary {
-    pub fn add(&mut self, p: f64, correction: Correction) {
+    pub fn add(&mut self, p: f64, correction: Arc<Correction>) {
         self.p = self.p * (1. - p) + p * (1. - self.p);  // XOR
         self.cases.push((correction, p));
     }
@@ -1122,7 +1072,7 @@ pub struct ExhaustedElement {
     pub next: Option<Index>,
     /// either `correction` or `next_correction` is needed for decoder to work
     /// `correction` will be used first if exists, which occupies too much memory and too many initialization time
-    pub correction: Option<Correction>,
+    pub correction: Option< Arc<Correction> >,
     /// `next_correction` is generated by default
-    pub next_correction: Option<Correction>,
+    pub next_correction: Option< Arc<Correction> >,
 }
