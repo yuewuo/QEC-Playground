@@ -70,7 +70,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
             let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
             let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("bottom".to_string());
-            fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer);
+            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1000);  // default to 1000
+            fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch);
         }
         _ => unreachable!()
     }
@@ -359,7 +360,7 @@ default example:
 `cargo run --release -- tool fault_tolerant_benchmark [5] [5] [1e-3]`
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
-fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, validate_layer: String) {
+fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, validate_layer: String, mini_batch: usize) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -379,7 +380,6 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             model.build_graph();
             model.optimize_correction_pattern();
             model.build_exhausted_path_autotune();
-            let mini_batch = 1000;
             for _i in 0..parallel {
                 let total_rounds = Arc::clone(&total_rounds);
                 let qec_failed = Arc::clone(&qec_failed);

@@ -80,6 +80,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg min_error_cases: -e --min_error_cases +takes_value "minimum error cases, default to 10000")
                 (@arg parallel: -p --parallel +takes_value "how many parallel threads to use. 0 will use number of CPUs - 1")
                 (@arg validate_layer: -v --validate_layer +takes_value "validate correction on which layer (all/top/bottom/<layer>), default to `bottom`")
+                (@arg mini_batch: -b --mini_batch +takes_value "mini batch, default to 1000")
             )
         )
         (@subcommand server => (about: "HTTP server for decoding information")
