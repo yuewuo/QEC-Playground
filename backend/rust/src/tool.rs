@@ -15,6 +15,7 @@ use super::blossom_v;
 use super::num_cpus;
 use std::sync::{Arc, Mutex};
 use super::ftqec;
+use super::pbr::ProgressBar;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -377,6 +378,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             model.build_graph();
             model.optimize_correction_pattern();
             model.build_exhausted_path_autotune();
+            let mini_batch = 1000;
             for _i in 0..parallel {
                 let total_rounds = Arc::clone(&total_rounds);
                 let qec_failed = Arc::clone(&qec_failed);
@@ -388,6 +390,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                     "top" => (T - 1) as isize,
                     _ => 0,
                 };
+                let mini_batch = mini_batch;
                 handlers.push(std::thread::spawn(move || {
                     // println!("thread {}", _i);
                     let mut rng = thread_rng();
@@ -398,7 +401,6 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                         *qec_failed.lock().unwrap()
                     };
                     while current_total_rounds < max_N && current_qec_failed < min_error_cases {
-                        let mini_batch = 1000;
                         let mut mini_qec_failed = 0;
                         for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
                             let error_count = model_error.generate_random_errors(|| rng.gen::<f64>());
@@ -434,6 +436,14 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                     }
                 }));
             }
+            let mini_batch_count = 1 + max_N / mini_batch;
+            let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
+            while *total_rounds.lock().unwrap() < max_N && *qec_failed.lock().unwrap() < min_error_cases {
+                let progress = *total_rounds.lock().unwrap() / mini_batch;
+                pb.set(progress as u64);
+                std::thread::sleep(std::time::Duration::from_millis(500));
+            }
+            pb.finish();
             for handler in handlers {
                 handler.join().unwrap();
             }
