@@ -40,8 +40,43 @@ export default {
 		T: {
 			type: Number,
 			default: 3,
-		},
-		
+        },
+        useRotated: {
+            type: Boolean,
+            default: false,
+        },
+        showDataQubit: {
+            type: Boolean,
+            default: true,
+        },
+        showXAncilla: {
+            type: Boolean,
+            default: true,
+        },
+        showZAncilla: {
+            type: Boolean,
+            default: true,
+        },
+        showVerticalLine: {
+            type: Boolean,
+            default: true,
+        },
+        showInitialization: {
+            type: Boolean,
+            default: true,
+        },
+        showCXGates: {
+            type: Boolean,
+            default: true,
+        },
+        showXEdges: {
+            type: Boolean,
+            default: true,
+        },
+        showZEdges: {
+            type: Boolean,
+            default: true,
+        },
 		
 		panelWidth: {
 			type: Number,
@@ -76,20 +111,30 @@ export default {
             // controllable parameters for visualization
             snapshot: null,  // [t][i][j]
             constants: null, // { QTYPE (qubit type), NTYPE (node type), etc. }
-            show_data_qubit: true,
-            show_X_ancilla: true,
-            show_Z_ancilla: true,
-            show_vertical_line: true,
-            show_initialization: true,
-            show_CX_gates: true,
-            show_X_edges: true,
-            show_Z_edges: true,
+            show_data_qubit: false,
+            show_X_ancilla: false,
+            show_Z_ancilla: false,
+            show_vertical_line: false,
+            show_initialization: false,
+            show_CX_gates: false,
+            show_X_edges: false,
+            show_Z_edges: false,
 		}
 	},
 	mounted() {
         this.build_constants()
         window.THREE = THREE
-		window.$ftview = this  // for fast debugging
+        window.$ftview = this  // for fast debugging
+        
+        // copy config
+        this.show_data_qubit = this.showDataQubit
+        this.show_X_ancilla = this.showXAncilla
+        this.show_Z_ancilla = this.showZAncilla
+        this.show_vertical_line = this.showVerticalLine
+        this.show_initialization = this.showInitialization
+        this.show_CX_gates = this.showCXGates
+        this.show_X_edges = this.showXEdges
+        this.show_Z_edges = this.showZEdges
 
 		const scene = new THREE.Scene()
 		this.three.scene = scene
@@ -147,8 +192,9 @@ export default {
         }
         
         this.create_static_resources()
-        this.swap_snapshot(this.build_standard_planar_code_snapshot())
-        // this.swap_snapshot(this.build_rotated_planar_code())
+        if (this.useRotated) {
+            this.swap_snapshot(this.build_rotated_planar_code())
+        } else this.swap_snapshot(this.build_standard_planar_code_snapshot())
 
 		// start rendering
         this.animate()
@@ -242,12 +288,11 @@ export default {
             }
         },
         async paper_figure_Z_stabilizer_connection() {
-            this.show_data_qubit = false
-            this.show_X_ancilla = false
-            this.show_vertical_line = false
-            this.show_initialization = false
-            this.show_CX_gates = false
-            this.show_X_edges = false
+            this.show_nothing()
+            await this.vue_next_tick()  // so that everything is updated
+            this.show_Z_ancilla = true
+            this.show_Z_edges = true
+            this.three.scene.background = this.three.pure_background
         },
         async paper_figure_single_error_two_syndrome() {
             this.show_X_edges = false
@@ -273,13 +318,16 @@ export default {
                 node.mesh.visible = show
             }
         },
+        use_pure_background(pure_background = true) {
+            this.three.scene.background = pure_background ? this.three.pure_background : this.three.texture_background
+        },
         use_orthogonal_camera(orthogonal = true) {
             if (orthogonal) {
-                this.three.scene.background = this.three.pure_background
+                this.use_pure_background(true)
                 this.three.camera = this.three.orthogonalCamera
                 this.three.orbitControl = this.three.orbitControlOrthogonal
             } else {
-                this.three.scene.background = this.three.texture_background
+                this.use_pure_background(false)
                 this.three.camera = this.three.perspectiveCamera
                 this.three.orbitControl = this.three.orbitControlPerspective
             }
@@ -317,7 +365,34 @@ export default {
 			this.three.renderer.render( this.three.scene, this.three.camera )
         },
         reset_snapshot() {
-            // TODO: implement resource destroy if structure are meant to be changed dynamically
+            // implement resource destroy if structure are meant to be changed dynamically
+            if (this.snapshot) {
+                this.iterate_snapshot(((node, t, i, j) => {
+                    if (node.mesh instanceof Array) {
+                        for (let mesh of node.mesh) {
+                            this.three.scene.remove(mesh)
+                            mesh.material.dispose()
+                        }
+                    } else if (node.mesh) {
+                        this.three.scene.remove(node.mesh)
+                        node.mesh.material.dispose()
+                    }
+                    if (node.vertical) {
+                        this.three.scene.remove(node.vertical)
+                        node.vertical.material.dispose()
+                    }
+                    if (node.edges) {
+                        for (let edge of node.edges) {
+                            this.three.scene.remove(edge.mesh)
+                            edge.mesh.material.dispose()
+                        }
+                    }
+                    if (node.boundary && node.boundary.mesh) {
+                        this.three.scene.remove(node.boundary.mesh)
+                        node.boundary.mesh.material.dispose()
+                    }
+                }).bind(this))
+            }
             this.snapshot = null
         },
         swap_snapshot(snapshot) {
@@ -466,7 +541,10 @@ export default {
             return snapshot
         },
         build_rotated_planar_code() {
-            console.assert(this.L % 2 == 1, "L should be odd")  // odd ensures a balanced x and z correction
+            if (this.L % 2 != 1) {
+                console.assert(false, "L must be odd, add 1 to be odd")
+                this.L += 1;
+            }
             const middle = this.L - 1
             const constants = this.constants
             function filter(i, j) {
@@ -681,6 +759,7 @@ export default {
                                 node.mesh = new THREE.Mesh(this.three.initialization_node_geometry, new THREE.MeshBasicMaterial({
                                     color,
                                 }))
+                                node.mesh.visible = this.show_initialization
                                 node.mesh.position.set(x, y, z)
                                 this.three.scene.add(node.mesh)
                             }
@@ -691,6 +770,7 @@ export default {
                                     envMap: this.three.scene.background,
                                     reflectivity: 0.5,
                                 }))
+                                node.mesh.visible = node.q_type == this.constants.QTYPE.Z ? this.show_Z_ancilla : this.show_X_ancilla
                                 node.mesh.position.set(x, y, z)
                                 this.three.scene.add(node.mesh)
                             }
@@ -700,6 +780,7 @@ export default {
                                     envMap: this.three.scene.background,
                                     reflectivity: 0.5,
                                 }))
+                                node.mesh.visible = this.show_data_qubit
                                 node.mesh.position.set(x, y, z)
                                 this.three.scene.add(node.mesh)
                             }
@@ -711,6 +792,7 @@ export default {
                                         color: this.three.CX_target_color,
                                     }))
                                     node.mesh.push(mesh)
+                                    mesh.visible = this.show_CX_gates
                                     mesh.position.set(x, y, z)
                                     this.three.scene.add(mesh)
                                 }
@@ -730,6 +812,7 @@ export default {
                                 if (node.connection.j == j-1) {
                                     mesh.rotateZ(Math.PI / 2)
                                 }
+                                mesh.visible = this.show_CX_gates
                                 node.mesh.push(mesh)
                                 mesh.position.set(x, y, z)
                                 this.three.scene.add(mesh)
@@ -738,6 +821,7 @@ export default {
                                 node.mesh = new THREE.Mesh(this.three.CX_control_geometry, new THREE.MeshBasicMaterial({
                                     color: this.three.CX_control_color,
                                 }))
+                                node.mesh.visible = this.show_CX_gates
                                 node.mesh.position.set(x, y, z)
                                 this.three.scene.add(node.mesh)
                             }
@@ -746,6 +830,7 @@ export default {
                                 node.vertical = new THREE.Mesh(this.three.vertical_line_geometry, new THREE.MeshBasicMaterial({
                                     color: this.three.vertical_line_color,
                                 }))
+                                node.vertical.visible = this.show_vertical_line
                                 node.vertical.position.set(x, y, z)
                                 this.three.scene.add(node.vertical)
                             }
@@ -929,6 +1014,21 @@ export default {
         }
 	},
 	watch: {
+        L() {
+            if (this.useRotated) {
+                this.swap_snapshot(this.build_rotated_planar_code())
+            } else this.swap_snapshot(this.build_standard_planar_code_snapshot())
+        },
+        T() {
+            if (this.useRotated) {
+                this.swap_snapshot(this.build_rotated_planar_code())
+            } else this.swap_snapshot(this.build_standard_planar_code_snapshot())
+        },
+        useRotated() {
+            if (this.useRotated) {
+                this.swap_snapshot(this.build_rotated_planar_code())
+            } else this.swap_snapshot(this.build_standard_planar_code_snapshot())
+        },
         show_data_qubit(show) {
             this.iterate_snapshot((node, t, i, j) => {
                 if (node.n_type == this.constants.NTYPE.NONE_WITH_DATA_QUBIT) {
@@ -983,6 +1083,30 @@ export default {
                     if (node.boundary && node.boundary.mesh) node.boundary.mesh.visible = show
                 }
             })
+        },
+        showDataQubit(show) {
+            this.show_data_qubit = show
+        },
+        showXAncilla(show) {
+            this.show_X_ancilla = show
+        },
+        showZAncilla(show) {
+            this.show_Z_ancilla = show
+        },
+        showVerticalLine(show) {
+            this.show_vertical_line = show
+        },
+        showInitialization(show) {
+            this.show_initialization = show
+        },
+        showCXGates(show) {
+            this.show_CX_gates = show
+        },
+        showXEdges(show) {
+            this.show_X_edges = show
+        },
+        showZEdges(show) {
+            this.show_Z_edges = show
         },
 	},
 }
