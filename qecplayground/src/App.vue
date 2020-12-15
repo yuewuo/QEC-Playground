@@ -2,7 +2,8 @@
 	<div id="app">
 		<FaultTolerantView class="main-qubits" :panelWidth="480" :L="L" :T="T" :showDataQubit="show_data_qubit" :showXAncilla="show_X_ancilla"
 			:showZAncilla="show_Z_ancilla" :showVerticalLine="show_vertical_line" :showInitialization="show_initialization" :showCXGates="show_CX_gates"
-			:showXEdges="show_X_edges" :showZEdges="show_Z_edges" :useRotated="use_rotated" :depolarErrorRate="0.001" ref="ft_view"></FaultTolerantView>
+			:showXEdges="show_X_edges" :showZEdges="show_Z_edges" :useRotated="use_rotated" :depolarErrorRate="0.001" ref="ft_view"
+			:usePerspectiveCamera="use_perspective_camera"></FaultTolerantView>
 		<div class="control-panel no-scrollbar">
 			<div style="text-align: center;">
 				<h1 class="title"><img src="@/assets/logo.png" class="logo"/>QEC Playground</h1>
@@ -24,6 +25,8 @@
 					</div>
 					<div style="height: 20px;"></div>
 					<el-switch v-model="use_rotated" active-text="Rotated Planar Code" inactive-text="Standard Planar Code"></el-switch>
+					<div style="height: 20px;"></div>
+					<el-switch v-model="use_perspective_camera" active-text="Perspective Camera" inactive-text="Orthogonal Camera"></el-switch>
 					<div style="height: 20px;"></div>
 					<el-switch v-model="show_data_qubit" active-text="Show Data Qubits" inactive-text="Hide"></el-switch>
 					<div style="height: 20px;"></div>
@@ -121,6 +124,7 @@ export default {
             show_CX_gates: true,
             show_X_edges: false,
 			show_Z_edges: false,
+			use_perspective_camera: true,
 			
 			target_t: 0,
 			target_i: 0,

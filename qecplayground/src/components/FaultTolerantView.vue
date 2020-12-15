@@ -77,6 +77,10 @@ export default {
             type: Boolean,
             default: true,
         },
+		usePerspectiveCamera: {
+			type: Boolean,
+			default: true
+		},
 		
 		panelWidth: {
 			type: Number,
@@ -146,13 +150,12 @@ export default {
         const windowHeight = window.innerHeight
         this.three.perspectiveCamera = new THREE.PerspectiveCamera( 75, windowWidth / window.innerHeight, 0.1, 10000 )
         this.three.orthogonalCamera = new THREE.OrthographicCamera( windowWidth / windowHeight * -3, windowWidth / windowHeight * 3, 3, -3, 0.1, 10000 )
-        const camera = this.three.perspectiveCamera
-		this.three.camera = camera
-		const initCameraRatio = this.L * 0.8
-        this.three.orthogonalCamera.position.set( 0, 3 * initCameraRatio, 0 )  // otherwise orthogonal camera cannot be rotated
-		camera.position.set( -2 * initCameraRatio, 1 * initCameraRatio, 1 * initCameraRatio )
-		camera.lookAt( scene.position )
-		camera.updateMatrix()
+        this.update_camera()
+        if (this.usePerspectiveCamera) {
+            this.three.camera = this.three.perspectiveCamera
+        } else {
+            this.three.camera = this.three.orthogonalCamera
+        }
 		const renderer = new THREE.WebGLRenderer({ antialias: true })
 		this.three.renderer = renderer
 		renderer.setPixelRatio( window.devicePixelRatio )
@@ -167,8 +170,10 @@ export default {
 		window.addEventListener( 'resize', (() => {
 			const windowWidth = window.innerWidth - this.panelWidth
 			const windowHeight = window.innerHeight
-			this.three.camera.aspect = windowWidth / windowHeight
-			this.three.camera.updateProjectionMatrix()
+			this.three.orthogonalCamera.aspect = windowWidth / windowHeight
+			this.three.orthogonalCamera.updateProjectionMatrix()
+			this.three.perspectiveCamera.aspect = windowWidth / windowHeight
+			this.three.perspectiveCamera.updateProjectionMatrix()
 			renderer.setSize( windowWidth, windowHeight )
 		}).bind(this), false )
 
@@ -1041,22 +1046,34 @@ export default {
                 }
             }
         },
+        regenerate_everything() {
+            if (this.useRotated) {
+                this.swap_snapshot(this.build_rotated_planar_code())
+            } else this.swap_snapshot(this.build_standard_planar_code_snapshot())
+            this.update_camera()
+        },
+        update_camera() {
+            const initCameraRatio = this.L * 0.8
+            this.three.orthogonalCamera.position.set( -6 * initCameraRatio, 3 * initCameraRatio, 3 * initCameraRatio )  // otherwise orthogonal camera cannot be rotated
+            this.three.orthogonalCamera.lookAt( this.three.scene.position )
+            this.three.orthogonalCamera.updateMatrix()
+            this.three.perspectiveCamera.position.set( -2 * initCameraRatio, 1 * initCameraRatio, 1 * initCameraRatio )
+            this.three.perspectiveCamera.lookAt( this.three.scene.position )
+            this.three.perspectiveCamera.updateMatrix()
+        },
 	},
 	watch: {
         L() {
-            if (this.useRotated) {
-                this.swap_snapshot(this.build_rotated_planar_code())
-            } else this.swap_snapshot(this.build_standard_planar_code_snapshot())
+            this.regenerate_everything()
         },
         T() {
-            if (this.useRotated) {
-                this.swap_snapshot(this.build_rotated_planar_code())
-            } else this.swap_snapshot(this.build_standard_planar_code_snapshot())
+            this.regenerate_everything()
         },
         useRotated() {
-            if (this.useRotated) {
-                this.swap_snapshot(this.build_rotated_planar_code())
-            } else this.swap_snapshot(this.build_standard_planar_code_snapshot())
+            this.regenerate_everything()
+        },
+        usePerspectiveCamera() {
+            this.use_orthogonal_camera(!this.usePerspectiveCamera)
         },
         show_data_qubit(show) {
             this.iterate_snapshot((node, t, i, j) => {
