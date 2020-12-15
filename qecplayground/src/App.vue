@@ -3,7 +3,7 @@
 		<FaultTolerantView class="main-qubits" :panelWidth="480" :L="L" :T="T" :showDataQubit="show_data_qubit" :showXAncilla="show_X_ancilla"
 			:showZAncilla="show_Z_ancilla" :showVerticalLine="show_vertical_line" :showInitialization="show_initialization" :showCXGates="show_CX_gates"
 			:showXEdges="show_X_edges" :showZEdges="show_Z_edges" :useRotated="use_rotated" :depolarErrorRate="0.001" ref="ft_view"
-			:usePerspectiveCamera="use_perspective_camera"></FaultTolerantView>
+			:usePerspectiveCamera="use_perspective_camera" :enableStats="enableStats"></FaultTolerantView>
 		<div class="control-panel no-scrollbar">
 			<div style="text-align: center;">
 				<h1 class="title"><img src="@/assets/logo.png" class="logo"/>QEC Playground</h1>
@@ -79,18 +79,18 @@
 					<div style="height: 20px;" v-if="error_info.length > 0"></div>
 					<div>
 						<div class="index">t</div>
-						<el-input-number v-model="target_t" controls-position="right" :min="0" :max="6*T" size="medium"></el-input-number>
+						<el-input-number v-model="target_t" controls-position="right" :min="0" :max="6 * T" size="medium"></el-input-number>
 						<div class="index">i</div>
-						<el-input-number v-model="target_i" controls-position="right" :min="0" :max="2*L" size="medium"></el-input-number>
+						<el-input-number v-model="target_i" controls-position="right" :min="0" :max="2 * L - 2" size="medium"></el-input-number>
 						<div class="index">j</div>
-						<el-input-number v-model="target_j" controls-position="right" :min="0" :max="2*L" size="medium"></el-input-number>
+						<el-input-number v-model="target_j" controls-position="right" :min="0" :max="2 * L - 2" size="medium"></el-input-number>
 					</div>
 					<div style="height: 20px;"></div>
 					<div>
-						<el-button type="info" class="set-error-button" @click="set_error(false, false)">I</el-button>
-						<el-button type="success" class="set-error-button" @click="set_error(true, false)">X</el-button>
-						<el-button type="primary" class="set-error-button" @click="set_error(false, true)">Z</el-button>
-						<el-button type="danger" class="set-error-button" @click="set_error(true, true)">Y</el-button>
+						<el-button type="info" class="set-error-button" @click="set_error(false, false)" :plain="current_error != 0">I</el-button>
+						<el-button type="success" class="set-error-button" @click="set_error(true, false)" :plain="current_error != 1">X</el-button>
+						<el-button type="primary" class="set-error-button" @click="set_error(false, true)" :plain="current_error != 2">Z</el-button>
+						<el-button type="danger" class="set-error-button" @click="set_error(true, true)" :plain="current_error != 3">Y</el-button>
 					</div>
 				</div>
 			</el-card>
@@ -134,6 +134,7 @@ export default {
 			error_rate_z: "1e-3",
 			error_rate_y: "1e-3",
 
+			current_error: null,
 			error_info: [],  // [t, i, j, name, color]
 		}
 	},
@@ -219,9 +220,26 @@ export default {
 				}
 			})
 			this.error_info = error_info
+			this.target_t_i_j_updated()
+		},
+		target_t_i_j_updated() {
+			const ft_view = this.$refs.ft_view
+			const node = ft_view.get_snapshot_node(this.target_t, this.target_i, this.target_j)
+			if (node) {
+				this.current_error = node.error
+			} else this.current_error = null
 		},
 	},
 	watch: {
+		target_t() {
+			this.target_t_i_j_updated()
+		},
+		target_i() {
+			this.target_t_i_j_updated()
+		},
+		target_j() {
+			this.target_t_i_j_updated()
+		},
 		bufferedL(val, oldVal) {
 			if (val <= 0) {
 				this.bufferedL = 1
@@ -346,7 +364,7 @@ export default {
 }
 
 .set-error-button {
-	width: 90px;
+	width: 80px;
 	margin-right: 10px;
 }
 

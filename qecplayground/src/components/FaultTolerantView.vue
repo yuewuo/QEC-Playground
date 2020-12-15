@@ -1039,8 +1039,8 @@ export default {
         },
         get_snapshot_node(t, i, j) {
             if (t >= 0 && t < this.snapshot.length) {
-                if (i >= 0 && t < this.snapshot[t].length) {
-                    if (j >= 0 && t < this.snapshot[t][i].length) {
+                if (i >= 0 && i < this.snapshot[t].length) {
+                    if (j >= 0 && j < this.snapshot[t][i].length) {
                         return this.snapshot[t][i][j]
                     }
                 }
