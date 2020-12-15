@@ -494,8 +494,9 @@ export default {
                                 propagated: this.constants.ETYPE.I,  // propagted error till now
                             }
                             if (this.errorModel == "depolarizing") {
-                                qubit.px = 2 * this.depolarErrorRate  // X error rate
-                                qubit.pz = 2 * this.depolarErrorRate  // Z error rate
+                                qubit.error_rate_x = 2 * this.depolarErrorRate  // X error rate
+                                qubit.error_rate_z = 2 * this.depolarErrorRate  // Z error rate
+                                qubit.error_rate_y = 2 * this.depolarErrorRate  // Y error rate
                             }
                             snapshot_row_1.push(qubit)
                         } else {
@@ -613,6 +614,25 @@ export default {
             if (err1 == this.constants.ETYPE.Y && err2 == this.constants.ETYPE.X) return this.constants.ETYPE.Z
             if (err1 == this.constants.ETYPE.Y && err2 == this.constants.ETYPE.Z) return this.constants.ETYPE.X
             if (err1 == this.constants.ETYPE.Y && err2 == this.constants.ETYPE.Y) return this.constants.ETYPE.I
+        },
+        generate_random_error() {
+            let error_count = 0
+            this.iterate_snapshot(((node, t, i, j) => {
+                const random_number = Math.random()
+                if (random_number < node.error_rate_x) {
+                    node.error = this.constants.ETYPE.X
+                    error_count += 1
+                } else if (random_number < node.error_rate_x + node.error_rate_z) {
+                    node.error = this.constants.ETYPE.Z
+                    error_count += 1
+                } else if (random_number < node.error_rate_x + node.error_rate_z + node.error_rate_y) {
+                    node.error = this.constants.ETYPE.Y
+                    error_count += 1
+                } else {
+                    node.error = this.constants.ETYPE.I
+                }
+            }).bind(this))
+            return error_count
         },
         compute_propagated_error(update_view=true) {
             // careful: t=0 will remain propagated error, others will be recomputed
@@ -881,7 +901,7 @@ export default {
                 }
             }
         },
-        build_graph_given_error_rate() {  // requirement: node.px and node.pz exists
+        build_graph_given_error_rate() {  // requirement: node.error_rate_x and node.error_rate_x and node.error_rate_y exists
             function node_add_connection(node1, node2, p, _iterate=true) {  // DO NOT set _iterate
                 if (node1.edges == undefined) node1.edges = []
                 // first find node2 in its edges
@@ -907,7 +927,7 @@ export default {
                             if (!this.snapshot[t][i][j]) continue
                             this.clear_errors()
                             this.snapshot[t][i][j].error = e == 0 ? this.constants.ETYPE.X : this.constants.ETYPE.Z
-                            const p = e == 0 ? this.snapshot[t][i][j].px : this.snapshot[t][i][j].pz
+                            const p = (e == 0 ? this.snapshot[t][i][j].error_rate_x : this.snapshot[t][i][j].error_rate_z) + this.snapshot[t][i][j].error_rate_y
                             this.compute_propagated_error(false)
                             const error_syndrome = this.get_error_syndrome_propagated()
                             if (error_syndrome.length == 1) {  // connect to boundary
@@ -1011,7 +1031,16 @@ export default {
                     }
                 }
             }
-        }
+        },
+        get_snapshot_node(t, i, j) {
+            if (t >= 0 && t < this.snapshot.length) {
+                if (i >= 0 && t < this.snapshot[t].length) {
+                    if (j >= 0 && t < this.snapshot[t][i].length) {
+                        return this.snapshot[t][i][j]
+                    }
+                }
+            }
+        },
 	},
 	watch: {
         L() {
