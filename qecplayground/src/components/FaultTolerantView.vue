@@ -792,7 +792,7 @@ export default {
                                 const color = node.q_type == this.constants.QTYPE.Z ? this.three.measurement_node_color_Z : this.three.measurement_node_color_X
                                 node.mesh = new THREE.Mesh(this.three.measurement_node_geometry, new THREE.MeshBasicMaterial({
                                     color,
-                                    envMap: this.three.scene.background,
+                                    envMap: this.three.texture_background,
                                     reflectivity: 0.5,
                                 }))
                                 node.mesh.visible = node.q_type == this.constants.QTYPE.Z ? this.show_Z_ancilla : this.show_X_ancilla
@@ -802,7 +802,7 @@ export default {
                             if (node.n_type == this.constants.NTYPE.NONE_WITH_DATA_QUBIT) {
                                 node.mesh = new THREE.Mesh(this.three.data_node_geometry, new THREE.MeshBasicMaterial({
                                     color: this.three.data_node_color,
-                                    envMap: this.three.scene.background,
+                                    envMap: this.three.texture_background,
                                     reflectivity: 0.5,
                                 }))
                                 node.mesh.visible = this.show_data_qubit
