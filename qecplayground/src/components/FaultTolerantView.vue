@@ -560,6 +560,7 @@ export default {
                 const q_type = i % 2 == 0 ? constants.QTYPE.Z : constants.QTYPE.X
                 if (q_type == constants.QTYPE.Z && (i-middle)*(j-middle) > 0) return distance <= middle + 1
                 if (q_type == constants.QTYPE.X && (i-middle)*(j-middle) < 0) return distance <= middle + 1
+                return false
             }
             let snapshot = this.build_code_in_standard_planar_code(filter)
             // add boundary information (only add possible boundaries. exact boundary will be added `p` after building the graph)

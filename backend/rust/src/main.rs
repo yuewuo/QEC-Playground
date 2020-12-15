@@ -81,6 +81,8 @@ async fn main() -> std::io::Result<()> {
                 (@arg parallel: -p --parallel +takes_value "how many parallel threads to use. 0 will use number of CPUs - 1")
                 (@arg validate_layer: -v --validate_layer +takes_value "validate correction on which layer (all/top/bottom/<layer>), default to `bottom`")
                 (@arg mini_batch: -b --mini_batch +takes_value "mini batch, default to 1000")
+                (@arg autotune: -a --autotune +takes_value "whether enable autotune, default to true")
+                (@arg rotated_planar_code: -r --rotated_planar_code +takes_value "whether use rotated planar code, default to false")
             )
         )
         (@subcommand server => (about: "HTTP server for decoding information")

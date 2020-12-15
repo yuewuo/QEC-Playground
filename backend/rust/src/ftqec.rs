@@ -105,6 +105,49 @@ impl PlanarCodeModel {
         }
         model
     }
+    pub fn new_rotated_planar_code(T: usize, L: usize) -> Self {
+        assert!(T >= 1, "at least one round of measurement is required");
+        assert!(L >= 3 && L % 2 == 1, "at lease one stabilizer is required, L should be odd");
+        let filter = |i, j| {
+            let middle = (L - 1) as isize;
+            let distance = (i as isize - middle).abs() + (j as isize - middle).abs();
+            if distance <= middle {
+                return true
+            }
+            if (i + j) % 2 == 0 {
+                return false  // data qubit doesn't exist outside the middle radius in Manhattan distance
+            }
+            // but stabilizers exist outside that radius
+            if i % 2 == 0 {  // Z stabilizers
+                if (i as isize - middle) * (j as isize - middle) > 0 {
+                    return distance <= middle + 1
+                }
+            } else {  // X stabilizers
+                if (i as isize - middle) * (j as isize - middle) < 0 {
+                    return distance <= middle + 1
+                }
+            }
+            false
+        };
+        let mut model = Self::new_planar_code(T, L, filter);
+        // create Z stabilizer homology lines, detecting X errors
+        for j in 0..L {
+            let mut z_homology_line = Vec::new();
+            for i in 0..L {
+                z_homology_line.push((L - 1 - j + i, j + i));
+            }
+            model.z_homology_lines.push(z_homology_line);
+        }
+        // create X stabilizer homology lines, detecting Z errors
+        for i in 0..L {
+            let mut x_homology_line = Vec::new();
+            for j in 0..L {
+                x_homology_line.push((L - 1 + i - j, i + j));
+            }
+            model.x_homology_lines.push(x_homology_line);
+        }
+        model
+    }
     pub fn new_planar_code<F>(T: usize, L: usize, filter: F) -> Self
             where F: Fn(usize, usize) -> bool {
         let width = 2 * L - 1;
