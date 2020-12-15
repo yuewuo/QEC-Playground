@@ -4,12 +4,11 @@
 		<div class="control-panel no-scrollbar">
 			<div style="text-align: center;">
 				<h1 class="title"><img src="@/assets/logo.png" class="logo"/>QEC Playground</h1>
-				<p>This is an educational tool for Quantum Error Correction (QEC). You can learn the currently most promising QEC scheme called surface code (planar code) by following the introduction tutorial and then trying different error patterns interactively.</p>
+				<p>This page is dedicated to </p>
 			</div>
 			<div>
 				<p>something</p>
 			</div>
-			
 		</div>
 	</div>
 </template>
@@ -27,7 +26,7 @@ export default {
 		return {
 			deploy_mode: deploy_mode,
 
-			L: 3,
+			L: 4,
 			T: 3,
 		}
 	},

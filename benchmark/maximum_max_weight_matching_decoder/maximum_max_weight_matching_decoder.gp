@@ -1,6 +1,6 @@
 set terminal postscript eps color "Arial, 28"
-set xlabel "Depolarizing probability (p)" font "Arial, 28"
-set ylabel "Logical X error rate (p_L)" font "Arial, 28"
+set xlabel "Physical X Error Rate (p_X)" font "Arial, 28"
+set ylabel "Logical X Error Rate (p_L)" font "Arial, 28"
 set grid ytics
 set size 1,1
 

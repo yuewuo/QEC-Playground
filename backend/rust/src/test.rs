@@ -270,9 +270,6 @@ fn archived_debug_tests() {
         model.build_exhausted_path_equally_weighted();
         // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
     }
-}
-
-fn debug_tests() {
     {
         let T = 4;
         let L = 4;
@@ -355,6 +352,88 @@ fn debug_tests() {
             println!("validate bottom layer: {:?}", model.validate_correction_on_bottom_layer(&correction));
             println!("validate top layer: {:?}", model.validate_correction_on_top_layer(&correction));
             println!("validate all layers: {:?}", model.validate_correction_on_all_layers(&correction));
+        }
+    }
+}
+
+fn debug_tests() {
+    {  // find one example for each 12 boundaries
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(3, 4);
+        let very_small_error_rate = 0.0001;
+        model.set_depolarizing_error(very_small_error_rate);
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path_autotune();
+        let error_source = ftqec::Index::new(12, 2, 3);
+        let error_target = vec![
+            (ftqec::Index::new(12, 2, 1), "left"),
+            (ftqec::Index::new(12, 2, 5), "right"),
+            (ftqec::Index::new(12, 0, 3), "front"),
+            (ftqec::Index::new(12, 4, 3), "back"),
+            (ftqec::Index::new(6, 2, 3), "bottom"),
+            (ftqec::Index::new(18, 2, 3), "top"),
+            (ftqec::Index::new(6, 0, 3), "bottom front"),
+            (ftqec::Index::new(6, 2, 1), "bottom left"),
+            (ftqec::Index::new(6, 0, 5), "bottom front right"),
+            (ftqec::Index::new(18, 4, 3), "top back"),
+            (ftqec::Index::new(18, 2, 5), "top right"),
+            (ftqec::Index::new(18, 4, 1), "top back left"),
+        ];
+        for (target, name) in error_target.iter() {
+            let mut found_error = None;
+            let mut propagated_to = Vec::new();
+            for t in 0..model.snapshot.len() {
+                for i in 0..model.snapshot[t].len() {
+                    for j in 0..model.snapshot[t][i].len() {
+                        if model.snapshot[t][i][j].is_some() {
+                            for error in [ftqec::ErrorType::X, ftqec::ErrorType::Z].iter() {
+                                model.clear_error();
+                                model.add_error_at(t, i, j, error);
+                                model.propagate_error();
+                                let mut measurement_errors = Vec::new();
+                                model.iterate_measurement_errors(|t, i, j, _node| {
+                                    measurement_errors.push(ftqec::Index::new(t, i, j));
+                                });
+                                assert!(measurement_errors.len() <= 2, "single qubit error should not cause more than 2 measurement errors");
+                                if measurement_errors.len() == 2 {
+                                    let matched = (error_source == measurement_errors[0] && *target == measurement_errors[1]) ||
+                                        (error_source == measurement_errors[1] && *target == measurement_errors[0]);
+                                    if matched {
+                                        let mut this_propagated_to = Vec::new();
+                                        let width = 2 * model.L - 1;
+                                        let mut has_error = ndarray::Array::from_elem((width, width), false);
+                                        let mut has_error_mut = has_error.view_mut();
+                                        model.iterate_snapshot(|_t, i, j, node| {
+                                            if node.propagated != ftqec::ErrorType::I {
+                                                has_error_mut[[i, j]] = true;
+                                            }
+                                        });
+                                        for i in 0..width {
+                                            for j in 0..width {
+                                                if has_error[[i, j]] {
+                                                    this_propagated_to.push(vec![i, j]);
+                                                }
+                                            }
+                                        }
+                                        // optimize for propagating to less qubits (for the ease of drawing figure)
+                                        if found_error.is_none() || this_propagated_to.len() < propagated_to.len() {
+                                            found_error = Some(ftqec::Index::new(t, i, j));
+                                            propagated_to = this_propagated_to;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // println!("target {:?}: single error at {:?}", *target, found_error);
+            let found_error = found_error.unwrap();
+            let cost = model.snapshot[error_source.t][error_source.i][error_source.j].as_ref().unwrap().exhausted_map[target].cost;
+            let probability = (-cost).exp();
+            let case_count = (probability / very_small_error_rate).round() as usize;
+            println!("[[{}, {}, {}], [{}, {}, {}], {}, {}, {:?}],  // {}", target.t, target.i, target.j, found_error.t, found_error.i, found_error.j,
+                probability, case_count, propagated_to, name);
         }
     }
 }
