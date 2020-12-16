@@ -3,7 +3,7 @@
 		<FaultTolerantView class="main-qubits" :panelWidth="480" :L="L" :T="T" :showDataQubit="show_data_qubit" :showXAncilla="show_X_ancilla"
 			:showZAncilla="show_Z_ancilla" :showVerticalLine="show_vertical_line" :showInitialization="show_initialization" :showCXGates="show_CX_gates"
 			:showXEdges="show_X_edges" :showZEdges="show_Z_edges" :useRotated="use_rotated" :depolarErrorRate="0.001" ref="ft_view"
-			:usePerspectiveCamera="use_perspective_camera" :enableStats="enableStats"></FaultTolerantView>
+			:usePerspectiveCamera="use_perspective_camera" :enableStats="enableStats" :websiteRoot="websiteRoot"></FaultTolerantView>
 		<div class="control-panel no-scrollbar">
 			<div style="text-align: center;">
 				<h1 class="title"><img src="@/assets/logo.png" class="logo"/>QEC Playground</h1>
@@ -144,6 +144,9 @@ export default {
 		},
 		decoderServerRootUrl() {
 			return deploy_mode ? "/api/qecp/" : "http://127.0.0.1:8066/"
+		},
+		websiteRoot() {
+			return deploy_mode ? "/FT-QECPlayground" : ""  // like https://wuyue98.cn/FT-QECPlayground or https://yuewuo.github.io/FT-QECPlayground
 		},
 	},
 	mounted() {

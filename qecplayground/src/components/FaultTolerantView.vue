@@ -33,6 +33,10 @@ function readonly(target, keys) {
 export default {
 	name: 'FaultTolerantView',
 	props: {
+        websiteRoot: {
+            type: String,
+            default: '',  
+        },
 		L: {
 			type: Number,
 			default: 3,
@@ -181,7 +185,8 @@ export default {
         this.three.pure_background = new THREE.Color(0xFFFFFF)
         const loader = new THREE.CubeTextureLoader();
         const texture = loader.load([
-            '/px.jpg', '/nx.jpg', '/py.jpg', '/ny.jpg', '/pz.jpg', '/nz.jpg',
+            this.websiteRoot + '/px.jpg', this.websiteRoot + '/nx.jpg', this.websiteRoot + '/py.jpg'
+            , this.websiteRoot + '/ny.jpg', this.websiteRoot + '/pz.jpg', this.websiteRoot + '/nz.jpg',
         ])
         this.three.texture_background = texture
 		if (this.enableBackground) {
