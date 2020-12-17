@@ -74,7 +74,9 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let autotune = value_t!(matches, "autotune", bool).unwrap_or(true);  // default use autotune
             let rotated_planar_code = value_t!(matches, "rotated_planar_code", bool).unwrap_or(false);  // default use standard planar code
             let ignore_6_neighbors = value_t!(matches, "ignore_6_neighbors", bool).unwrap_or(false);  // default use 12 neighbors version
-            fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code, ignore_6_neighbors);
+            let extra_measurement_error = value_t!(matches, "extra_measurement_error", f64).unwrap_or(1.);  // default to 1.
+            fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
+                , ignore_6_neighbors, extra_measurement_error);
         }
         _ => unreachable!()
     }
@@ -364,7 +366,7 @@ default example:
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
 fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
-        , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool) {
+        , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -389,6 +391,13 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                 ftqec::PlanarCodeModel::new_standard_planar_code(T, L)
             };
             model.set_depolarizing_error(p);
+            model.iterate_snapshot_mut(|t, _i, _j, node| {
+                if t % 6 == 5 && node.qubit_type != ftqec::QubitType::Data {  // just add error before the measurement stage
+                    node.error_rate_x *= extra_measurement_error;
+                    node.error_rate_z *= extra_measurement_error;
+                    node.error_rate_y *= extra_measurement_error;
+                }
+            });
             model.build_graph();
             if ignore_6_neighbors {
                 model.iterate_snapshot_mut(|t, i, j, node| {

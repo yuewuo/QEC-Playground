@@ -84,6 +84,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg autotune: -a --autotune +takes_value "whether enable autotune, default to true")
                 (@arg rotated_planar_code: -r --rotated_planar_code +takes_value "whether use rotated planar code, default to false")
                 (@arg ignore_6_neighbors: -i --ignore_6_neighbors +takes_value "whether ignore 6 neighbors, so that only straight neighbors are kept, default to false")
+                (@arg extra_measurement_error: -x --extra_measurement_error +takes_value "the pure measurement error would be p*x, default to 1")
             )
         )
         (@subcommand server => (about: "HTTP server for decoding information")
