@@ -73,7 +73,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1000);  // default to 1000
             let autotune = value_t!(matches, "autotune", bool).unwrap_or(true);  // default use autotune
             let rotated_planar_code = value_t!(matches, "rotated_planar_code", bool).unwrap_or(false);  // default use standard planar code
-            fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code);
+            let ignore_6_neighbors = value_t!(matches, "ignore_6_neighbors", bool).unwrap_or(false);  // default use 12 neighbors version
+            fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code, ignore_6_neighbors);
         }
         _ => unreachable!()
     }
@@ -363,7 +364,7 @@ default example:
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
 fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
-        , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool) {
+        , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -389,6 +390,23 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             };
             model.set_depolarizing_error(p);
             model.build_graph();
+            if ignore_6_neighbors {
+                model.iterate_snapshot_mut(|t, i, j, node| {
+                    if node.edges.len() == 12 {
+                        let mut modified_edges = Vec::new();
+                        for edge in node.edges.drain(..) {
+                            let tc = t != edge.t;
+                            let ic = i != edge.i;
+                            let jc = j != edge.j;
+                            if (tc && !ic && !jc) || (!tc && ic && !jc) || (!tc && !ic && jc) {
+                                modified_edges.push(edge);
+                            }
+                        }
+                        assert!(modified_edges.len() <= 6, "we keep only 6 neighbors");
+                        node.edges = modified_edges;
+                    }
+                });
+            }
             let model_error = model.clone();  // avoid copying decoding structure a lot of times
             model.optimize_correction_pattern();
             if autotune {

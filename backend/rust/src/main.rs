@@ -83,6 +83,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg mini_batch: -b --mini_batch +takes_value "mini batch, default to 1000")
                 (@arg autotune: -a --autotune +takes_value "whether enable autotune, default to true")
                 (@arg rotated_planar_code: -r --rotated_planar_code +takes_value "whether use rotated planar code, default to false")
+                (@arg ignore_6_neighbors: -i --ignore_6_neighbors +takes_value "whether ignore 6 neighbors, so that only straight neighbors are kept, default to false")
             )
         )
         (@subcommand server => (about: "HTTP server for decoding information")

@@ -354,9 +354,6 @@ fn archived_debug_tests() {
             println!("validate all layers: {:?}", model.validate_correction_on_all_layers(&correction));
         }
     }
-}
-
-fn debug_tests() {
     {  // find one example for each 12 boundaries
         let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(3, 4);
         let very_small_error_rate = 0.0001;
@@ -436,4 +433,8 @@ fn debug_tests() {
                 probability, case_count, propagated_to, name);
         }
     }
+}
+
+fn debug_tests() {
+    
 }
