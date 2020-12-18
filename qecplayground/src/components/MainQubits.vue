@@ -15,6 +15,10 @@ export default {
 			type: Number,
 			default: 5,
 		},
+		websiteRoot: {
+            type: String,
+            default: '',  
+        },
 		
 		
 		hideZancilla: {
@@ -217,7 +221,8 @@ export default {
 		if (this.enableBackground) {
 			const loader = new THREE.CubeTextureLoader();
 			const texture = loader.load([
-				'/px.jpg', '/nx.jpg', '/py.jpg', '/ny.jpg', '/pz.jpg', '/nz.jpg',
+				this.websiteRoot + '/px.jpg', this.websiteRoot + '/nx.jpg', this.websiteRoot + '/py.jpg'
+				, this.websiteRoot + '/ny.jpg', this.websiteRoot + '/pz.jpg', this.websiteRoot + '/nz.jpg',
 			])
 			scene.background = texture
 			// scene.background = new THREE.Color(0xFFFFFF)

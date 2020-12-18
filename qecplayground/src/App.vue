@@ -1,7 +1,7 @@
 <template>
 	<div id="app">
 		<MainQubits :removeView="remove_3d_view" class="main-qubits" ref="qubits" :panelWidth="480" :enableStats="enableStats" 
-			:decoderServerRootUrl="decoderServerRootUrl" :L="L" @dataQubitClicked="dataQubitClicked"
+			:decoderServerRootUrl="decoderServerRootUrl" :L="L" @dataQubitClicked="dataQubitClicked" :websiteRoot="websiteRoot"
 			:hideZancilla="running != null && hideZancilla" :hideXancilla="running != null && hideXancilla"></MainQubits>
 		<div class="control-panel no-scrollbar">
 			<div style="text-align: center;">
@@ -188,6 +188,9 @@ export default {
 		},
 		decoderServerRootUrl() {
 			return deploy_mode ? "/api/qecp/" : "http://127.0.0.1:8066/"
+		},
+		websiteRoot() {
+			return deploy_mode ? "/QECPlayground" : ""  // like https://wuyue98.cn/QECPlayground or https://yuewuo.github.io/QECPlayground
 		},
 	},
 	mounted() {
