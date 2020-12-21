@@ -70,7 +70,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
             let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
             let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("bottom".to_string());
-            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1000);  // default to 1000
+            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1000
             let autotune = value_t!(matches, "autotune", bool).unwrap_or(true);  // default use autotune
             let rotated_planar_code = value_t!(matches, "rotated_planar_code", bool).unwrap_or(false);  // default use standard planar code
             let ignore_6_neighbors = value_t!(matches, "ignore_6_neighbors", bool).unwrap_or(false);  // default use 12 neighbors version
