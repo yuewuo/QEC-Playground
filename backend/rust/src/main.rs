@@ -5,6 +5,7 @@ mod types;
 mod qec;
 mod web;
 mod blossom_v;
+mod mwpm_approx;
 mod ftqec;
 
 #[macro_use] extern crate clap;

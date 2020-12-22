@@ -21,6 +21,7 @@ use super::petgraph;
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 use super::blossom_v;
+use super::mwpm_approx;
 use std::sync::{Arc};
 
 /// uniquely index a node
@@ -260,6 +261,7 @@ impl PlanarCodeModel {
             x_homology_lines: Vec::new(),
         }
     }
+
     pub fn iterate_snapshot_mut<F>(&mut self, mut func: F) where F: FnMut(usize, usize, usize, &mut Node) {
         for (t, array) in self.snapshot.iter_mut().enumerate() {
             for (i, array) in array.iter_mut().enumerate() {
@@ -816,6 +818,11 @@ impl PlanarCodeModel {
                 }
             }
         }
+        // if to_be_matched.len() > 2 {
+        //     println!{"TBM {:?}", to_be_matched};
+        // }
+        
+
         if to_be_matched.len() != 0 {
             // then add the edges to the graph
             let m_len = to_be_matched.len();  // boundary connection to `i` is `i + m_len`
@@ -824,7 +831,7 @@ impl PlanarCodeModel {
             // stabilizer to boundary is one-to-one connected
             let mut weighted_edges = Vec::<(usize, usize, f64)>::new();
             for i in 0..m_len {
-                for j in 1..m_len {
+                for j in (i+1)..m_len {
                     let a = &to_be_matched[i];
                     let b = &to_be_matched[j];
                     let path = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_map.get(&b);
@@ -832,15 +839,25 @@ impl PlanarCodeModel {
                         let cost = path.expect("exist").cost;
                         weighted_edges.push((i, j, cost));
                         weighted_edges.push((i + m_len, j + m_len, 0.));
+                        // if to_be_matched.len() > 2 {
+                        //     println!{"{} {} {} ", i, j, cost};
+                        // }
                     }
                 }
                 let a = &to_be_matched[i];
                 let cost = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_boundary.as_ref().expect("exist").cost;
                 weighted_edges.push((i, i + m_len, cost));
             }
+
+            // if to_be_matched.len() > 2 {
+            //     println!{"node num {:?}, weighted edges {:?}", node_num, weighted_edges};
+            // }
             let matching = blossom_v::safe_minimum_weight_perfect_matching(node_num, weighted_edges);
             // println!("{:?}", to_be_matched);
             // println!("matching: {:?}", matching);
+            // if to_be_matched.len() > 2 {
+            //     println!("matching: {:?}", matching);
+            // }
             let mut correction = self.generate_default_correction();
             for i in 0..m_len {
                 let j = matching[i];
@@ -854,12 +871,103 @@ impl PlanarCodeModel {
                     correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
                 }
             }
+            // if to_be_matched.len() > 2 {
+            //     println!("correction: {:?}", correction);
+            // }
             correction
         } else {
             // no measurement errors found
             self.generate_default_correction()
         }
     }
+
+    /// decode based on MWPM
+    pub fn decode_MWPM_approx(&self, measurement: &Measurement) -> Correction {
+        // sanity check
+        let shape = measurement.shape();
+        let width = 2 * self.L - 1;
+        assert_eq!(shape[0], self.T);
+        assert_eq!(shape[1], width);
+        assert_eq!(shape[2], width);
+        // generate all the error measurements to be matched
+        let mut to_be_matched = Vec::new();
+        for mt in 0..self.T {
+            for mi in 0..width {
+                for mj in 0..width {
+                    if measurement[[mt, mi, mj]] {  // has a measurement error there
+                        to_be_matched.push(Index::from_measurement_idx(mt, mi, mj));
+                    }
+                }
+            }
+        }
+        // if to_be_matched.len() > 2 {
+        //     println!{"TBM {:?}", to_be_matched};
+        // }
+        
+
+        if to_be_matched.len() != 0 {
+            // then add the edges to the graph
+            let m_len = to_be_matched.len();  // boundary connection to `i` is `i + m_len`
+            let node_num = m_len * 2;
+            // Z (X) stabilizers are fully connected, boundaries are fully connected
+            // stabilizer to boundary is one-to-one connected
+            let mut weighted_edges = Vec::<(usize, usize, f64)>::new();
+            for i in 0..m_len {
+                for j in (i+1)..m_len {
+                    let a = &to_be_matched[i];
+                    let b = &to_be_matched[j];
+                    let path = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_map.get(&b);
+                    if path.is_some() {
+                        let cost = path.expect("exist").cost;
+                        weighted_edges.push((i, j, cost));
+                        weighted_edges.push((i + m_len, j + m_len, 0.));
+                        // if to_be_matched.len() > 2 {
+                        //     println!{"{} {} {} ", i, j, cost};
+                        // }
+                    }
+                }
+                let a = &to_be_matched[i];
+                let cost = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_boundary.as_ref().expect("exist").cost;
+                weighted_edges.push((i, i + m_len, cost));
+            }
+
+            // if to_be_matched.len() > 2 {
+            //     println!{"node num {:?}, weighted edges {:?}", node_num, weighted_edges};
+            // }
+            let matching = mwpm_approx::minimum_weight_perfect_matching_approx(node_num, weighted_edges, self.L, 1);
+            // println!("{:?}", to_be_matched);
+            // println!("matching: {:?}", matching);
+            // if to_be_matched.len() > 2 {
+            //     println!("matching: {:?}", matching);
+            // }
+            let mut correction = self.generate_default_correction();
+            for i in 0..m_len {
+                let j = matching[i];
+                let a = &to_be_matched[i];
+                if j < i {  // only add correction if j < i, so that the same correction is not applied twice
+                    // println!("match peer {:?} {:?}", to_be_matched[i], to_be_matched[j]);
+                    correction.combine(&self.get_correction_two_nodes(a, &to_be_matched[j]));
+                } else if j >= m_len {  // matched with boundary
+                    // println!("match boundary {:?}", to_be_matched[i]);
+                    let node = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist");
+                    correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
+                }
+            }
+            // if to_be_matched.len() > 2 {
+            //     println!("correction: {:?}", correction);
+            // }
+            correction
+        } else {
+            // no measurement errors found
+            self.generate_default_correction()
+        }
+    }
+
+    /// decode do nothing. This should be the actual baseline
+    pub fn decode_do_nothing(&self, measurement: &Measurement) -> Correction {
+        self.generate_default_correction()
+    }
+
     /// validate correction on the bottom layer strictly, see if there is logical error or uncorrected stabilizers.
     /// return Err(reason) if correction is not successful. reason is a readable string.
     pub fn validate_corrected_on_layer(&self, corrected: &Correction, layer: usize) -> Result<(), String> {
@@ -896,6 +1004,7 @@ impl PlanarCodeModel {
     }
     pub fn validate_correction_on_t_layer(&self, correction: &Correction, layer: usize) -> Result<(), String> {
         let mut corrected = self.get_data_qubit_error_pattern();
+        // println!{"Corrected{:?}", corrected};
         corrected.combine(&correction);  // apply correction to error pattern
         self.validate_corrected_on_layer(&corrected, layer)
     }
@@ -911,6 +1020,7 @@ impl PlanarCodeModel {
     }
     pub fn validate_correction_on_all_layers(&self, correction: &Correction) -> Result<(), String> {
         let mut corrected = self.get_data_qubit_error_pattern();
+        // println!{"Corrected{:?}", corrected};
         corrected.combine(&correction);  // apply correction to error pattern
         for mt in 0..self.T {
             self.validate_corrected_on_layer(&corrected, mt)?;
