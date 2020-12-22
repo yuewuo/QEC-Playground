@@ -824,7 +824,7 @@ impl PlanarCodeModel {
             // stabilizer to boundary is one-to-one connected
             let mut weighted_edges = Vec::<(usize, usize, f64)>::new();
             for i in 0..m_len {
-                for j in 1..m_len {
+                for j in (i+1)..m_len {
                     let a = &to_be_matched[i];
                     let b = &to_be_matched[j];
                     let path = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_map.get(&b);
