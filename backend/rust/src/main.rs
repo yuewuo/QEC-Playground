@@ -27,10 +27,10 @@ extern crate pbr;
 async fn main() -> std::io::Result<()> {
 
     let matches = clap_app!(QECPlayground =>
-        (version: "1.0")
-        (author: "Yue Wu yue.wu@yale.edu")
+        (version: "1.1")
+        (author: "Yue Wu (yue.wu@yale.edu), Namitha Liyanage (namitha.liyanage@yale.edu)")
         (setting: clap::AppSettings::VersionlessSubcommands)
-        (about: "Quantum Error Correction Playground for BIM'20 course")
+        (about: "Quantum Error Correction Playground")
         (setting: clap::AppSettings::SubcommandRequiredElseHelp)
         (@subcommand test => (about: "testing features")
             (setting: clap::AppSettings::SubcommandRequiredElseHelp)
@@ -86,6 +86,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg rotated_planar_code: -r --rotated_planar_code +takes_value "whether use rotated planar code, default to false")
                 (@arg ignore_6_neighbors: -i --ignore_6_neighbors +takes_value "whether ignore 6 neighbors, so that only straight neighbors are kept, default to false")
                 (@arg extra_measurement_error: -x --extra_measurement_error +takes_value "the pure measurement error would be p*x, default to 1")
+                (@arg bypass_correction: --bypass_correction "bypass correction procedure to test is logical error rate calculation behaving good")
             )
         )
         (@subcommand server => (about: "HTTP server for decoding information")

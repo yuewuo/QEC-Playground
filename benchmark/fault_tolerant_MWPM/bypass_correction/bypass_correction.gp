@@ -27,7 +27,7 @@ set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder
 
-set output "fault_tolerant_MWPM.eps"
+set output "bypass_correction.eps"
 
 plot "d_3_3.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 3",\
     "d_5_5.txt" using 1:6 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 5",\
@@ -36,17 +36,17 @@ plot "d_3_3.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6
     "d_11_11.txt" using 1:6 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
     "d_13_13.txt" using 1:6 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
 
-set output '|ps2pdf -dEPSCrop fault_tolerant_MWPM.eps fault_tolerant_MWPM.pdf'
+set output '|ps2pdf -dEPSCrop bypass_correction.eps bypass_correction.pdf'
 replot
 
 set size 1,0.75
-set output "fault_tolerant_MWPM_w.eps"
+set output "bypass_correction_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop fault_tolerant_MWPM_w.eps fault_tolerant_MWPM_w.pdf'
+set output '|ps2pdf -dEPSCrop bypass_correction_w.eps bypass_correction_w.pdf'
 replot
 
 set size 1,0.6
-set output "fault_tolerant_MWPM_w_w.eps"
+set output "bypass_correction_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop fault_tolerant_MWPM_w_w.eps fault_tolerant_MWPM_w_w.pdf'
+set output '|ps2pdf -dEPSCrop bypass_correction_w_w.eps bypass_correction_w_w.pdf'
 replot
