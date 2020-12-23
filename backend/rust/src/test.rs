@@ -11,6 +11,7 @@ use super::pyo3::prelude::*;
 use super::pyo3::types::{IntoPyDict};
 use super::blossom_v;
 use super::ftqec;
+use super::disjoint_sets;
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -433,8 +434,33 @@ fn archived_debug_tests() {
                 probability, case_count, propagated_to, name);
         }
     }
+    {  // test Union-Find algorithm
+        let mut sets = disjoint_sets::UnionFind::<usize>::new(6);
+        println!("{:?}", sets.to_vec());
+        sets.union(0, 1);
+        sets.union(3, 1);
+        sets.union(4, 1);
+        println!("{:?}", sets.to_vec());
+    }
 }
 
 fn debug_tests() {
-    
+    {  // debug Union-Find decoder
+        let T = 4;
+        let L = 4;
+        let error_rate = 0.001;  // (1-3p)I + pX + pZ + pY
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(T, L);
+        model.set_depolarizing_error(error_rate);
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path_autotune();
+        model.clear_error();
+        model.add_error_at(4, 2, 6, &ftqec::ErrorType::Y);
+        model.add_error_at(20, 1, 5, &ftqec::ErrorType::X);
+        model.add_error_at(23, 6, 4, &ftqec::ErrorType::Y);
+        model.propagate_error();
+        let measurement = model.generate_measurement();
+        let correction = model.decode_UF_max(&measurement);
+        println!("validate bottom layer: {:?}", model.validate_correction_on_bottom_layer(&correction));
+    }
 }

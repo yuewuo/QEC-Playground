@@ -456,6 +456,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                             let measurement = model_error.generate_measurement();
                             // use `model_decoder` for decoding, so that it is blind to the real error information
                             let correction = model_decoder.decode_MWPM(&measurement);
+                            // let correction = model_decoder.decode_UF_max(&measurement);
                             if validate_layer < 0 {
                                 if model_error.validate_correction_on_all_layers(&correction).is_err() {
                                     mini_qec_failed += 1;

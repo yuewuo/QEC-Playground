@@ -21,6 +21,7 @@ extern crate libc;
 extern crate num_cpus;
 extern crate petgraph;
 extern crate pbr;
+extern crate disjoint_sets;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

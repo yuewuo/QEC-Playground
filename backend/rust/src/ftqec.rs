@@ -22,6 +22,7 @@ use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 use super::blossom_v;
 use std::sync::{Arc};
+use super::disjoint_sets;
 
 /// uniquely index a node
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -854,6 +855,206 @@ impl PlanarCodeModel {
                     correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
                 }
             }
+            correction
+        } else {
+            // no measurement errors found
+            self.generate_default_correction()
+        }
+    }
+    /// decode based on Union-Find with maximum performance (infinite weight threshold, so that the spanning forest is just a spanning tree for X amd Z respectively)
+    pub fn decode_UF_max(&self, measurement: &Measurement) -> Correction {
+        self.decode_UF(measurement, f64::MAX)
+    }
+    /// decode based on Union-Find, ignoring the edges that weight > weight_threshold
+    pub fn decode_UF(&self, measurement: &Measurement, weight_threshold: f64) -> Correction {
+        // sanity check
+        let shape = measurement.shape();
+        let width = 2 * self.L - 1;
+        assert_eq!(shape[0], self.T);
+        assert_eq!(shape[1], width);
+        assert_eq!(shape[2], width);
+        // generate all the error measurements to be matched
+        let mut to_be_matched = Vec::new();
+        for mt in 0..self.T {
+            for mi in 0..width {
+                for mj in 0..width {
+                    if measurement[[mt, mi, mj]] {  // has a measurement error there
+                        to_be_matched.push(Index::from_measurement_idx(mt, mi, mj));
+                    }
+                }
+            }
+        }
+        if to_be_matched.len() != 0 {
+            // then add the edges to the graph
+            let m_len = to_be_matched.len();  // boundary connection to `i` is `i + m_len`
+            // Z (X) stabilizers are fully connected, boundaries are fully connected
+            // stabilizer to boundary is one-to-one connected
+            let mut weighted_edges = Vec::<(usize, usize, f64)>::new();
+            let mut boundary_weights = Vec::<f64>::with_capacity(m_len);
+            let mut union_find = disjoint_sets::UnionFind::<usize>::new(m_len);  // use Union-Find to group vertices
+            for i in 0..m_len {
+                for j in i+1..m_len {
+                    let a = &to_be_matched[i];
+                    let b = &to_be_matched[j];
+                    let path = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_map.get(&b);
+                    if path.is_some() {  // path only exists when a and b are both X or both Z
+                        let cost = path.expect("exist").cost;
+                        if cost <= weight_threshold {
+                            weighted_edges.push((i, j, cost));
+                            union_find.union(i, j);
+                        }
+                    }
+                }
+                let a = &to_be_matched[i];
+                let cost = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_boundary.as_ref().expect("exist").cost;
+                boundary_weights.push(cost);
+            }
+            // sort the weights
+            weighted_edges.sort_by(|(_, _, c1), (_, _, c2)| c1.partial_cmp(&c2).expect("cost shouldn't be NaN"));
+            // group vertices
+            let mut vertice_groups: Vec< Vec::<(usize, usize, f64)> > = vec![Vec::new(); m_len];
+            let union_find_vec = union_find.to_vec();
+            for (i, j, cost) in weighted_edges.iter() {
+                vertice_groups[union_find_vec[*i]].push((*i, *j, *cost));
+            }
+            // println!("{:?}", vertice_groups);
+            // peel the forest to get a perfect matching. not optimized, just to test idea
+            let mut correction = self.generate_default_correction();
+            for x in 0..m_len {
+                if vertice_groups[x].len() > 0 {  // peel this tree
+                    let group = &vertice_groups[x];
+                    // println!("peel group: {:?}", group);
+                    // count nodes first
+                    let mut vertices = std::collections::BTreeSet::new();
+                    for (i, j, _cost) in group.iter() {
+                        vertices.insert(*i);
+                        vertices.insert(*j);
+                    }
+                    // peel a boundary if there are odd number of vertices
+                    if vertices.len() % 2 == 1 {
+                        let default_i = group[0].0;  // anyone is ok
+                        let mut best_boundary_vertice = (boundary_weights[default_i], default_i);
+                        for i in vertices.iter() {
+                            if boundary_weights[*i] < best_boundary_vertice.0 {
+                                best_boundary_vertice = (boundary_weights[*i], *i);
+                            }
+                        }
+                        // peel this boundary and modify the correction pattern
+                        let a = &to_be_matched[best_boundary_vertice.1];
+                        let node = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist");
+                        correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
+                        vertices.remove(&best_boundary_vertice.1);  // now it becomes even number
+                        // TODO: remove this vertex may break the connection of two parts.
+                        // for initial idea tests, just assume each group is fully connected.
+                        {  // check if this assumption fails. This code produces noisy error instead of silent fails
+                            let mut union_find = disjoint_sets::UnionFind::<usize>::new(m_len);  // use Union-Find to group vertices
+                            for (i, j, _cost) in group.iter() {
+                                if *i != best_boundary_vertice.1 && *j != best_boundary_vertice.1 {
+                                    union_find.union(*i, *j);
+                                }
+                            }
+                            let mut representitive = None;
+                            for i in vertices.iter() {  // every vertex should have the same representative
+                                if representitive.is_none() {
+                                    representitive = Some(union_find.find(*i));
+                                } else {
+                                    assert!(union_find.find(*i) == representitive.unwrap(), "removing vertex breaks the connection of two parts. you must solve the TODO here.");
+                                }
+                            }
+                        }
+                    }
+                    // then repeatedly peel the spanning tree with even numbers
+                    while vertices.len() > 0 {
+                        // peel a pair of boundaries if the worst internal path is even worse than the sum of best boundaries
+                        let mut set_iter = vertices.iter();
+                        let default_i = *set_iter.next().expect("len >= 2");
+                        let mut best_boundary = (boundary_weights[default_i], default_i);
+                        let default_j = *set_iter.next().expect("len >= 2");
+                        let mut second_boundary = (boundary_weights[default_j], default_j);  // the second best boundary
+                        // then find the real best and second best boundary
+                        for i in set_iter {  // must iterate using the `set_iter`, to avoid duplicate best or second boundaries
+                            let cost = boundary_weights[*i];
+                            if cost < best_boundary.0 {
+                                let original_best = best_boundary;
+                                best_boundary = (cost, *i);
+                                if original_best.0 < second_boundary.0 {
+                                    second_boundary = original_best;
+                                }
+                            } else if cost < second_boundary.0 {
+                                second_boundary = (cost, *i);
+                            }
+                        }
+                        // println!("best: {:?}", best_boundary);
+                        // println!("second: {:?}", second_boundary);
+                        // construct a spanning tree
+                        let mut spanning_tree_edges = Vec::new();  // this is sorted
+                        let mut in_spanning_tree = vec![false; m_len];
+                        let mut is_first_spanning_node = true;
+                        for (i, j, cost) in group.iter() {
+                            if vertices.get(i).is_some() && vertices.get(j).is_some() {
+                                if is_first_spanning_node {
+                                    in_spanning_tree[*i] = true;
+                                    in_spanning_tree[*j] = true;
+                                    spanning_tree_edges.push((i, j, cost));
+                                    is_first_spanning_node = false;
+                                } else {
+                                    if in_spanning_tree[*i] && !in_spanning_tree[*j] {
+                                        in_spanning_tree[*j] = true;
+                                        spanning_tree_edges.push((i, j, cost));
+                                    } else if !in_spanning_tree[*i] && in_spanning_tree[*j] {
+                                        in_spanning_tree[*i] = true;
+                                        spanning_tree_edges.push((i, j, cost));
+                                    }
+                                }
+                            }
+                        }
+                        // println!("spanning_tree_edges: {:?}", spanning_tree_edges);
+                        assert!(spanning_tree_edges.len() > 0, "why would spanning tree with 0 edge?");
+                        // then compare the worst edge in the spanning tree
+                        let sum_of_best_2_boundaries = best_boundary.0 + second_boundary.0;
+                        let worst_internal = *spanning_tree_edges[spanning_tree_edges.len() - 1].2;
+                        if worst_internal < sum_of_best_2_boundaries {
+                            // match vertices internally
+                            while vertices.len() > 0 {
+                                let mut vertices_iter = vertices.iter();
+                                let v1 = *vertices_iter.next().unwrap();
+                                let v2 = *vertices_iter.next().unwrap();
+                                vertices.remove(&v1);
+                                vertices.remove(&v2);
+                                correction.combine(&self.get_correction_two_nodes(&to_be_matched[v1], &to_be_matched[v2]));
+                            }
+                            break
+                        } else {
+                            // peel the 2 boundaries
+                            for boundary in [best_boundary.1, second_boundary.1].iter() {
+                                let a = &to_be_matched[*boundary];
+                                let node = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist");
+                                correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
+                                vertices.remove(boundary);
+                            }
+                        }
+                    }
+                    // println!("{:?}", vertices);
+                }
+            }
+
+            // println!("{:?}", to_be_matched);
+            // println!("weighted_edges: {:?}", weighted_edges);
+            // println!("boundary_weights: {:?}", boundary_weights);
+
+
+            // for i in 0..m_len {
+            //     let j = matching[i];
+            //     let a = &to_be_matched[i];
+            //     if j < i {  // only add correction if j < i, so that the same correction is not applied twice
+            //         // println!("match peer {:?} {:?}", to_be_matched[i], to_be_matched[j]);
+            //         correction.combine(&self.get_correction_two_nodes(a, &to_be_matched[j]));
+            //     } else if j >= m_len {  // matched with boundary
+            //         // println!("match boundary {:?}", to_be_matched[i]);
+            //         let node = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist");
+            //         correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
+            //     }
+            // }
             correction
         } else {
             // no measurement errors found
