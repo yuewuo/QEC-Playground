@@ -95,8 +95,9 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let rotated_planar_code = value_t!(matches, "rotated_planar_code", bool).unwrap_or(false);  // default use standard planar code
             let ignore_6_neighbors = value_t!(matches, "ignore_6_neighbors", bool).unwrap_or(false);  // default use 12 neighbors version
             let extra_measurement_error = value_t!(matches, "extra_measurement_error", f64).unwrap_or(1.);  // default to 1.
+            let substreams = value_t!(matches, "substreams", usize).unwrap_or(32);  // default to 32.
             decoder_comparison_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
-                , ignore_6_neighbors, extra_measurement_error);
+                , ignore_6_neighbors, extra_measurement_error, substreams);
         }
         _ => unreachable!()
     }
@@ -525,12 +526,12 @@ for (L_idx, L) in Ls.iter().enumerate() {
 
 
 fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
-        , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64) {
+        , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64, substreams: usize) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
     }
-    println!("format: <p> <L> <T> <total_rounds> <qec_failed> <error_rate>");
+    println!("format: <p> <L> <T> <total_rounds> <qec_failed_MWPM> <qec_failed_approx> <error_rate_MWPM> <error_rate_approx>");
     // println!("FT BM {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?}", Ls, Ts, ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code, ignore_6_neighbors, extra_measurement_error);
 
     for (L_idx, L) in Ls.iter().enumerate() {
@@ -626,10 +627,10 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
                             // use `model_decoder` for decoding, so that it is blind to the real error information
                             let correction_MWPM = model_decoder_MWPM.decode_MWPM(&measurement);
                             // println!("correction : {:?}", correction_MWPM);
-                            let correction_approx = model_decoder_approx.decode_MWPM_approx(&measurement);
+                            let correction_approx = model_decoder_approx.decode_MWPM_approx(&measurement, substreams);
                             // println!("correction approx: {:?}", correction_approx);
                             // We need a new model to test approx corrections
-                            let mut model_error_approx = model_error.clone();
+                            let model_error_approx = model_error.clone();
                             if validate_layer < 0 {
                                 if model_error.validate_correction_on_all_layers(&correction_MWPM).is_err() {
                                     // println!("MWPM failed");
@@ -673,7 +674,7 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
                 let qec_failed = *qec_failed.lock().unwrap();
                 if qec_failed.0 >= min_error_cases { break }
                 let error_rate = (qec_failed.0 as f64 / total_rounds as f64, qec_failed.1 as f64 / total_rounds as f64);
-                pb.message(format!("{} {} {} {} {:?} {:?} ", p, L, T, total_rounds, qec_failed, error_rate).as_str());
+                pb.message(format!("{} {} {} {} {} {} {} {} ", p, L, T, total_rounds, qec_failed.0, qec_failed.1,error_rate.0, error_rate.1).as_str());
                 let progress = total_rounds / mini_batch;
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
@@ -685,7 +686,7 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
             let total_rounds = *total_rounds.lock().unwrap();
             let qec_failed = *qec_failed.lock().unwrap();
             let error_rate = (qec_failed.0 as f64 / total_rounds as f64, qec_failed.1 as f64 / total_rounds as f64);
-            println!("{} {} {} {} {:?} {:?}", p, L, T, total_rounds, qec_failed, error_rate);
+            println!("{} {} {} {} {} {} {} {}", p, L, T, total_rounds, qec_failed.0, qec_failed.1,error_rate.0, error_rate.1);
         }
     }
 }

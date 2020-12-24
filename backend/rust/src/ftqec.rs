@@ -15,6 +15,7 @@
 
 
 #![allow(non_snake_case)]
+#![allow(dead_code)]
 
 use super::ndarray;
 use super::petgraph;
@@ -882,7 +883,7 @@ impl PlanarCodeModel {
     }
 
     /// decode based on MWPM
-    pub fn decode_MWPM_approx(&self, measurement: &Measurement) -> Correction {
+    pub fn decode_MWPM_approx(&self, measurement: &Measurement, substreams: usize) -> Correction {
         // sanity check
         let shape = measurement.shape();
         let width = 2 * self.L - 1;
@@ -920,7 +921,7 @@ impl PlanarCodeModel {
                     if path.is_some() {
                         let cost = path.expect("exist").cost;
                         weighted_edges.push((i, j, cost));
-                        weighted_edges.push((i + m_len, j + m_len, 0.));
+                        // weighted_edges.push((i + m_len, j + m_len, 0.));
                         // if to_be_matched.len() > 2 {
                         //     println!{"{} {} {} ", i, j, cost};
                         // }
@@ -934,23 +935,29 @@ impl PlanarCodeModel {
             // if to_be_matched.len() > 2 {
             //     println!{"node num {:?}, weighted edges {:?}", node_num, weighted_edges};
             // }
-            let matching = mwpm_approx::minimum_weight_perfect_matching_approx(node_num, weighted_edges, self.L, 1);
+            let matching = mwpm_approx::minimum_weight_perfect_matching_approx(node_num, weighted_edges, substreams);
             // println!("{:?}", to_be_matched);
             // println!("matching: {:?}", matching);
             // if to_be_matched.len() > 2 {
             //     println!("matching: {:?}", matching);
             // }
             let mut correction = self.generate_default_correction();
-            for i in 0..m_len {
-                let j = matching[i];
-                let a = &to_be_matched[i];
-                if j < i {  // only add correction if j < i, so that the same correction is not applied twice
-                    // println!("match peer {:?} {:?}", to_be_matched[i], to_be_matched[j]);
-                    correction.combine(&self.get_correction_two_nodes(a, &to_be_matched[j]));
-                } else if j >= m_len {  // matched with boundary
-                    // println!("match boundary {:?}", to_be_matched[i]);
+            for (i,j) in matching.iter() {
+                if *i < m_len && *j < m_len{
+                    correction.combine(&self.get_correction_two_nodes(&to_be_matched[*i], &to_be_matched[*j]));
+                }
+                else if *i < m_len {
+                    let a = &to_be_matched[*i];
                     let node = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist");
                     correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
+                }
+                else if *j < m_len {
+                    let a = &to_be_matched[*j];
+                    let node = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist");
+                    correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
+                }
+                else {
+                    println!{"This case cannot occur i,j,m_len {} {} {}",i,j,m_len};
                 }
             }
             // if to_be_matched.len() > 2 {
@@ -964,7 +971,7 @@ impl PlanarCodeModel {
     }
 
     /// decode do nothing. This should be the actual baseline
-    pub fn decode_do_nothing(&self, measurement: &Measurement) -> Correction {
+    pub fn decode_do_nothing(&self, _measurement: &Measurement) -> Correction {
         self.generate_default_correction()
     }
 
