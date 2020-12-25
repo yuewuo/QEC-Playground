@@ -335,6 +335,16 @@ impl PlanarCodeModel {
         });
         count
     }
+
+    pub fn print_errors(&self) {
+        self.iterate_snapshot(|t, i, j, node| {
+            if node.error != ErrorType::I {
+                println!("{:?} at {} {} {}",node.error,t,i,j);
+            }
+        });
+    }
+
+
     pub fn add_error_at(&mut self, t: usize, i: usize, j: usize, error: &ErrorType) -> Option<ErrorType> {
         if let Some(array) = self.snapshot.get_mut(t) {
             if let Some(array) = array.get_mut(i) {
@@ -935,14 +945,17 @@ impl PlanarCodeModel {
             // if to_be_matched.len() > 2 {
             //     println!{"node num {:?}, weighted edges {:?}", node_num, weighted_edges};
             // }
-            let matching = mwpm_approx::minimum_weight_perfect_matching_approx(node_num, weighted_edges, substreams);
+
+            // let matching = mwpm_approx::minimum_weight_perfect_matching_approx(node_num, weighted_edges, substreams);
+            let matching = mwpm_approx::minimum_weight_perfect_matching_approx_modified(node_num, weighted_edges, substreams);
+            
             // println!("{:?}", to_be_matched);
             // println!("matching: {:?}", matching);
             // if to_be_matched.len() > 2 {
             //     println!("matching: {:?}", matching);
             // }
             let mut correction = self.generate_default_correction();
-            for (i,j) in matching.iter() {
+            for (i,j,_w) in matching.iter() {
                 if *i < m_len && *j < m_len{
                     correction.combine(&self.get_correction_two_nodes(&to_be_matched[*i], &to_be_matched[*j]));
                 }

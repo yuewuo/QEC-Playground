@@ -627,8 +627,10 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
                             if error_count == 0 {
                                 continue
                             }
+                            // let original = model_error.clone();
                             // println!{"error_count {:?}", error_count};
                             model_error.propagate_error();
+                            // let propagate = model_error.clone();
                             let measurement = model_error.generate_measurement();
                             // println!{"Measurement {:?}", measurement};
                             // use `model_decoder` for decoding, so that it is blind to the real error information
@@ -657,6 +659,16 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
                                     mini_qec_failed.1 += 1;
                                 }
                             }
+                            // if mini_qec_failed.0 != mini_qec_failed.1 {
+                            //     println!("Original errors");
+                            //     original.print_errors();
+                            //     println!("Popagated Errors");
+                            //     propagate.print_errors();
+                            //     println!("{:?}", measurement);
+                            //     println!("{:?}", correction_MWPM);
+                            //     println!("{:?}", correction_approx);
+                            //     return;
+                            // }
                         }
                         // sync data from outside
                         current_total_rounds = {
