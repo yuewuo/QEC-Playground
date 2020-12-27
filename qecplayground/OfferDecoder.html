@@ -2,39 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
     <title>Offer Decoder</title>
-    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 </head>
 <body>
 
 <div id="app">
-    <div class="square-qubits" :style="{ 'height': square_height + 'px', 'width': square_height + 'px', 'left': square_left + 'px', 'top': square_top + 'px' }"
-            @click="select_qubit(null)">
-        <div v-for="(row, row_index) of qubits" v-bind:key="row_index" class="qubits-row" :style="{ 'top': (qubit_bias + row_index * qubit_interval) + 'px' }">
-            <div v-for="(qubit, index) of row" v-bind:key="index" class="qubits-container"
-                    :style="{ 'left': (qubit_bias + index * qubit_interval) + 'px', 'transform': `scale(${qubit_scale})` }">
-                <data-qubit v-if="qubit.qubit_type == CONST.QubitType.Data" v-model="row[index]" @select-qubit="select_qubit"></data-qubit>
-                <stabilizer-qubit v-if="qubit.qubit_type != CONST.QubitType.Data" v-model="row[index]" @select-qubit="select_qubit"></stabilizer-qubit>
+    <v-app>
+        <div class="square-qubits" :style="{ 'height': square_height + 'px', 'width': square_height + 'px', 'left': square_left + 'px', 'top': square_top + 'px' }"
+                @click="select_qubit(null)">
+            <div v-for="(row, row_index) of qubits" v-bind:key="row_index" class="qubits-row" :style="{ 'top': (qubit_bias + row_index * qubit_interval) + 'px' }">
+                <div v-for="(qubit, index) of row" v-bind:key="index" class="qubits-container"
+                        :style="{ 'left': (qubit_bias + index * qubit_interval) + 'px', 'transform': `scale(${qubit_scale})` }">
+                    <data-qubit v-if="qubit.qubit_type == CONST.QubitType.Data" v-model="row[index]" @select-qubit="select_qubit"
+                        @error-changed="error_changed"></data-qubit>
+                    <stabilizer-qubit v-if="qubit.qubit_type != CONST.QubitType.Data" v-model="row[index]" @select-qubit="select_qubit"></stabilizer-qubit>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="control-panel no-scrollbar">
-
-    </div>
+        <div class="control-panel no-scrollbar">
+            <h1>Offer Decoder Control Panel</h1>
+            <p>Offer Decoder is a fully distributed topological code decoder. Every stabilizer as a decoder unit runs individually and only communicates with neighbors. In bounded time, the whole system converges to a stable state which is the error matching with the highest probability. The key idea is that matched pairs can work as "broker" and associate with unmatched pair to optimize overall probability.</p>
+            <p style="color: lightblue;">This page aims at helping us understand how it works and try out different strategies.</p>
+            <v-text-field outlined label="Code Distance" type="number" v-model="L_input" :rules="L_input_rules"></v-text-field>
+        </div>
+    </v-app>
 </div>
 
 <template id="data-qubit">
     <div class="qubit-div" :style="{ 'transform': `scale(${qubit.sub_scale})` }">
         <div class="data-qubit-div" :class="{ 'qubit-selected': qubit.selected }" @click="select_self">
             <h1 class="noselect">data</h1>
+            <v-btn fab :width="120" :height="120" style="font-size: 100px;" :color="error_color" @click="change_error">{{ error_text }}</v-btn>
         </div>
     </div>
 </template>
 
 <template id="stabilizer-qubit">
     <div class="qubit-div" :style="{ 'transform': `scale(${qubit.sub_scale})` }">
-        <div :class="{ 'stabilizer-qubit-div-Z': qubit.qubit_type == CONST.QubitType.StabZ, 'stabilizer-qubit-div-X': qubit.qubit_type == CONST.QubitType.StabX, 'qubit-selected': qubit.selected }"
+        <div :class="{ 'stabilizer-qubit-div-Z': qubit.qubit_type == CONST.QubitType.StabZ, 'stabilizer-qubit-div-X': qubit.qubit_type == CONST.QubitType.StabX, 'qubit-selected': qubit.selected, 'stabilizer-qubit-div-X-no-error': qubit.qubit_type == CONST.QubitType.StabX && !qubit.measurement, 'stabilizer-qubit-div-X-with-error': qubit.qubit_type == CONST.QubitType.StabX && qubit.measurement, 'stabilizer-qubit-div-Z-no-error': qubit.qubit_type == CONST.QubitType.StabZ && !qubit.measurement, 'stabilizer-qubit-div-Z-with-error': qubit.qubit_type == CONST.QubitType.StabZ && qubit.measurement }"
                 @click="select_self">
             <h1 class="noselect">{{ qubit.qubit_type == CONST.QubitType.StabZ ? "Z" : "X" }}</h1>
         </div>
@@ -73,9 +85,21 @@ const CONST = readonly({
         StabZ: "StabZ",
         StabX: "StabX",
     }),
+    ErrorType: readonly({
+        I: "I",
+        X: "X",
+        Z: "Z",
+        Y: "Y",
+    }),
     // display related
     QubitDivWidth: 200,  // px
-    QubitWidthRatio: 0.8,
+    QubitWidthRatio: 0.9,
+    Colors: readonly({
+        I: "#FFFFFF",
+        X: "#00CC00",
+        Z: "#00BFFF",
+        Y: "#FF0000",
+    }),
 })
 
 Vue.component('data-qubit', {
@@ -94,9 +118,31 @@ Vue.component('data-qubit', {
             CONST: CONST,
         }
     },
+    computed: {
+        error_color() {
+            if (this.qubit.error == CONST.ErrorType.I) return CONST.Colors.I
+            if (this.qubit.error == CONST.ErrorType.X) return CONST.Colors.X
+            if (this.qubit.error == CONST.ErrorType.Z) return CONST.Colors.Z
+            if (this.qubit.error == CONST.ErrorType.Y) return CONST.Colors.Y
+        },
+        error_text() {
+            if (this.qubit.error == CONST.ErrorType.I) return "I"
+            if (this.qubit.error == CONST.ErrorType.X) return "X"
+            if (this.qubit.error == CONST.ErrorType.Z) return "Z"
+            if (this.qubit.error == CONST.ErrorType.Y) return "Y"
+        },
+    },
     methods: {
         select_self(event) {
             this.$emit('select-qubit', [this.qubit.i, this.qubit.j])
+            event.stopPropagation()
+        },
+        change_error(event) {
+            if (this.qubit.error == CONST.ErrorType.I) this.qubit.error = CONST.ErrorType.X
+            else if (this.qubit.error == CONST.ErrorType.X) this.qubit.error = CONST.ErrorType.Z
+            else if (this.qubit.error == CONST.ErrorType.Z) this.qubit.error = CONST.ErrorType.Y
+            else if (this.qubit.error == CONST.ErrorType.Y) this.qubit.error = CONST.ErrorType.I
+            this.$emit('error-changed')
             event.stopPropagation()
         },
     },
@@ -128,10 +174,20 @@ Vue.component('stabilizer-qubit', {
 
 var $app = new Vue({
     el : "#app",
+    vuetify: new Vuetify(),
     data() {
         return {
             // standard planar code
             L: 3,  // code distance
+            L_input: 3,  // user input L
+            L_max: 10,  // maximum value of L
+            L_input_rules: [v => {
+                const L = parseInt(v)
+                if (!(L >= 2)) { return "code distance must be in range [2, +∞)" }
+                if (L > this.L_max) return "large code distance may have GUI render performance problem. to increase the maximum code distance, run `$app.L_max = 20` in console"
+                this.L = L
+                return true
+            }],
             qubits: [],  // generated by `refresh_qubits`
 
             // display related
@@ -189,8 +245,10 @@ var $app = new Vue({
                     let qubit = {
                         i, j,
                         qubit_type,
-                        sub_scale: is_data_qubit ? 0.6 : 1,  // used to control relative size
+                        sub_scale: is_data_qubit ? 0.8 : 1,  // used to control relative size
                         selected: false,
+                        error: CONST.ErrorType.I,  // no error when initialized
+                        measurement: false,  // measurement result of XXXX or ZZZZ
                     }
                     row.push(qubit)
                 }
@@ -211,6 +269,34 @@ var $app = new Vue({
             const [i, j] = info
             this.qubits[i][j].selected = true
             this.selecting = [i, j]
+        },
+        error_changed() {  // recompute the stabilizer errors
+            for (let i=0; i < this.qubits.length; ++i) {
+                for (let j=0; j < this.qubits[i].length; ++j) {
+                    let qubit = this.qubits[i][j]
+                    if (qubit.qubit_type == CONST.QubitType.StabZ || qubit.qubit_type == CONST.QubitType.StabX) {
+                        let error_count = 0
+                        for (let [di, dj] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+                            const ti = i + di
+                            if (ti < 0 || ti >= this.qubits.length) continue
+                            const tj = j + dj
+                            if (tj < 0 || tj >= this.qubits[ti].length) continue
+                            const target_qubit = this.qubits[ti][tj]
+                            if (qubit.qubit_type == CONST.QubitType.StabZ) {  // Z stabilizer detects X errors
+                                if (target_qubit.error == CONST.ErrorType.X || target_qubit.error == CONST.ErrorType.Y) {
+                                    error_count += 1
+                                }
+                            }
+                            if (qubit.qubit_type == CONST.QubitType.StabX) {  // X stabilizer detects Z errors
+                                if (target_qubit.error == CONST.ErrorType.Z || target_qubit.error == CONST.ErrorType.Y) {
+                                    error_count += 1
+                                }
+                            }
+                        }
+                        qubit.measurement = error_count % 2 == 1
+                    }
+                }
+            }
         },
     },
     watch: {
@@ -242,7 +328,7 @@ body {
 	width: 460px;
 	overflow: auto;
     padding: 10px;
-    background: yellow;
+    /* background: yellow; */
 }
 
 .qubit-div {
@@ -256,12 +342,20 @@ body {
     width: 200px;
     height: 200px;
     border-radius: 100px;
+    transform-origin: center center;
+    transform: scale(1);
+    transition: transform .3s, box-shadow .3s;
+}
+
+.stabilizer-qubit-div-Z-no-error {
     /* THREE.Color( 0, 0.75, 1 ) */
     background: radial-gradient(circle at 100px 30px, #00BFFF, #005F7F);
     /* background: #00BFFF; */
-    transform-origin: center center;
-    transform: scale(1);
-    transition: all .3s;
+}
+
+.stabilizer-qubit-div-Z-with-error {
+    background: radial-gradient(circle at 100px 30px, #00BFFF, red);
+    /* background: red; */
 }
 
 .stabilizer-qubit-div-Z:hover {
@@ -273,12 +367,20 @@ body {
     width: 200px;
     height: 200px;
     border-radius: 100px;
+    transform-origin: center center;
+    transform: scale(1);
+    transition: transform .3s, box-shadow .3s;
+}
+
+.stabilizer-qubit-div-X-no-error {
     /* THREE.Color( 0, 0.8, 0 ) */
     background: radial-gradient(circle at 100px 30px, #00CC00, #006600);
     /* background: #00CC00; */
-    transform-origin: center center;
-    transform: scale(1);
-    transition: all .3s;
+}
+
+.stabilizer-qubit-div-X-with-error {
+    background: radial-gradient(circle at 100px 30px, #00CC00, red);
+    /* background: red; */
 }
 
 .stabilizer-qubit-div-X:hover {
@@ -295,7 +397,7 @@ body {
     /* background: #FFA500; */
     transform-origin: center center;
     transform: scale(1);
-    transition: all .3s;
+    transition: transform .3s, box-shadow .3s;
 }
 
 .data-qubit-div:hover {
@@ -305,18 +407,7 @@ body {
 
 .qubit-selected {
     transform: scale(1.1);
-    position: relative;
-}
-
-.qubit-selected:before {
-    content: "";
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    border-radius: 100px;
-    position: absolute;
-    box-shadow: 0px 0px 50px 50px yellow;
+    box-shadow: 0px 0px 50px 20px yellow;
 }
 
 .qubit-div h1 {
