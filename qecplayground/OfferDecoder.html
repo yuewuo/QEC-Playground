@@ -27,10 +27,30 @@
             </div>
         </div>
         <div class="control-panel no-scrollbar">
-            <h1>Offer Decoder Control Panel</h1>
-            <p>Offer Decoder is a fully distributed topological code decoder. Every stabilizer as a decoder unit runs individually and only communicates with neighbors. In bounded time, the whole system converges to a stable state which is the error matching with the highest probability. The key idea is that matched pairs can work as "broker" and associate with unmatched pair to optimize overall probability.</p>
+            <h1>Offer Decoder Testbed</h1>
+            <p>Offer Decoder is a fully distributed topological code decoder. Every stabilizer as a decoder unit runs individually and only communicates with neighbors. In bounded time, the whole system converges to a stable state which is the error matching with the highest probability. The key idea is that matched pairs can work as "broker" and associate with unmatched stabilizers to optimize overall probability.</p>
             <p style="color: lightblue;">This page aims at helping us understand how it works and try out different strategies.</p>
             <v-text-field outlined label="Code Distance" type="number" v-model="L_input" :rules="L_input_rules"></v-text-field>
+            <div v-if="selecting != null">
+                <h1>Selecting {{  }}</h1>
+                <v-card elevation="5" width="440" class="mx-auto">
+                    <v-virtual-scroll :items="log_items" :item-height="50" height="500">
+                        <template v-slot:default="{ item }">
+                            <v-list-item>
+                                <v-list-item-avatar>
+                                    <v-avatar :color="item.color" size="56" class="white--text">{{ item.initials }}</v-avatar>
+                                </v-list-item-avatar>
+                                <v-list-item-content>
+                                    <v-list-item-title>{{ item.full_message }}</v-list-item-title>
+                                </v-list-item-content>
+                                <v-list-item-action>
+                                    <v-btn depressed small @click="view_log(item)">View<v-icon color="orange darken-4" right>mdi-open-in-new</v-icon></v-btn>
+                                </v-list-item-action>
+                            </v-list-item>
+                        </template>
+                    </v-virtual-scroll>
+                </v-card>
+            </div>
         </div>
     </v-app>
 </div>
@@ -100,7 +120,37 @@ const CONST = readonly({
         Z: "#00BFFF",
         Y: "#FF0000",
     }),
+    // log information
+    LogType: readonly({
+        // https://vuetifyjs.com/en/styles/colors/#material-colors
+        Initialization: readonly({ name: "Initialization", initials: "IN", color: "#00897B" }),  // teal darken-1
+        SetQubitError: readonly({ name: "SetQubitError", initials: "SE", color: "#E53935" }),  // red darken-1
+    }),
 })
+
+function make_log_element(log_type, obj) {
+    let full_message = `unhandled log type: ${log_type.name}`
+    let initials = log_type.initials
+    let color = log_type.color
+    if (log_type === CONST.LogType.Initialization) {
+        full_message = `initialize data qubit (${obj.i}, ${obj.j})`
+    } else if (log_type === CONST.LogType.SetQubitError) {
+        full_message = `set qubit error "${obj.error}"`
+        initials = obj.error
+    } else {
+        console.error(full_message)
+        console.error(obj)
+        initials = "??"
+        color = "#D50000"  // red accent-4
+    }
+    return {
+        log_type: log_type,
+        color,
+        full_message,
+        initials,
+        obj_str: JSON.stringify(obj),
+    }
+}
 
 Vue.component('data-qubit', {
     template: '#data-qubit',
@@ -142,6 +192,7 @@ Vue.component('data-qubit', {
             else if (this.qubit.error == CONST.ErrorType.X) this.qubit.error = CONST.ErrorType.Z
             else if (this.qubit.error == CONST.ErrorType.Z) this.qubit.error = CONST.ErrorType.Y
             else if (this.qubit.error == CONST.ErrorType.Y) this.qubit.error = CONST.ErrorType.I
+            this.qubit.log.push(make_log_element(CONST.LogType.SetQubitError, { i: this.qubit.i, j: this.qubit.j, error: this.qubit.error }))
             this.$emit('error-changed')
             event.stopPropagation()
         },
@@ -198,6 +249,11 @@ var $app = new Vue({
         }
     },
     computed: {
+        log_items () {
+            if (this.selecting == null) return []
+            const [i, j] = this.selecting
+            return this.qubits[i][j].log
+        },
         square_max_width() {
             return this.window_width - 480
         },
@@ -242,6 +298,10 @@ var $app = new Vue({
                 for (let j=0; j < 2 * this.L - 1; ++j) {
                     const is_data_qubit = (i + j) % 2 == 0
                     const qubit_type = is_data_qubit ? CONST.QubitType.Data : (i % 2 == 0 ? CONST.QubitType.StabZ : CONST.QubitType.StabX)
+                    let log = []
+                    if (is_data_qubit) {
+                        log.push(make_log_element(CONST.LogType.Initialization, { i, j, }))
+                    }
                     let qubit = {
                         i, j,
                         qubit_type,
@@ -249,6 +309,8 @@ var $app = new Vue({
                         selected: false,
                         error: CONST.ErrorType.I,  // no error when initialized
                         measurement: false,  // measurement result of XXXX or ZZZZ
+                        mailbox: [],  // naive implementation of mailbox (because query is not efficient)
+                        log,  // debug logs
                     }
                     row.push(qubit)
                 }
@@ -256,6 +318,10 @@ var $app = new Vue({
             }
             this.qubits = qubits
             this.selecting = null
+        },
+        view_log(item) {
+            console.log(item.log_type.name)
+            console.log(JSON.parse(item.obj_str))  // create a copy object each time
         },
         select_qubit(info) {
             if (this.selecting != null) {
@@ -433,6 +499,10 @@ body {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+	width: 0;
 }
 
 </style>
