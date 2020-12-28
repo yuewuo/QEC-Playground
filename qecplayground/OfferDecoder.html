@@ -32,7 +32,7 @@
             <p style="color: lightblue;">This page aims at helping us understand how it works and try out different strategies.</p>
             <v-text-field outlined label="Code Distance" type="number" v-model="L_input" :rules="L_input_rules"></v-text-field>
             <div v-if="selecting != null">
-                <h1>Selecting {{  }}</h1>
+                <h2>Selecting {{ `(${selecting[0]}, ${selecting[1]})`}} ({{ selecting[0] + selecting[1] % 2 == 0 ? "data qubit" : "stabilizer" }})</h2>
                 <v-card elevation="5" width="440" class="mx-auto">
                     <v-virtual-scroll :items="log_items" :item-height="50" height="500">
                         <template v-slot:default="{ item }">
