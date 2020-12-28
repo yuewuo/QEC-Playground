@@ -77,8 +77,9 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let extra_measurement_error = value_t!(matches, "extra_measurement_error", f64).unwrap_or(1.);  // default to 1.
             let bypass_correction = matches.is_present("bypass_correction");
             let independent_px_pz = matches.is_present("independent_px_pz");
+            let only_count_logical_x = matches.is_present("only_count_logical_x");
             fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
-                , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz);
+                , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -390,7 +391,7 @@ it supports progress bar (in stderr), so you can run this in backend by redirect
 **/
 fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
         , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
-        , bypass_correction: bool, independent_px_pz: bool) {
+        , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -494,8 +495,17 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                                     mini_qec_failed += 1;
                                 }
                             } else {
-                                if model_error.validate_correction_on_t_layer(&correction, validate_layer as usize).is_err() {
-                                    mini_qec_failed += 1;
+                                let validation_ret = model_error.validate_correction_on_t_layer(&correction, validate_layer as usize);
+                                if validation_ret.is_err() {
+                                    if only_count_logical_x {  // only if contains logical X error will it count
+                                        match validation_ret {
+                                            Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed += 1; },
+                                            Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed += 1; },
+                                            _ => { },
+                                        }
+                                    } else {
+                                        mini_qec_failed += 1;
+                                    }
                                 }
                             }
                         }

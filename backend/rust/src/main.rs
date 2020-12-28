@@ -88,6 +88,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg extra_measurement_error: -x --extra_measurement_error +takes_value "the pure measurement error would be p*x, default to 1")
                 (@arg bypass_correction: --bypass_correction "bypass correction procedure to test is logical error rate calculation behaving good")
                 (@arg independent_px_pz: --independent_px_pz "change the error model to (1-px-pz-pxpz)I + px X + pz Z + pxpz Y")
+                (@arg only_count_logical_x: --only_count_logical_x "only count X logical errors but not all logical error. Alert: only available when validate_layer != all")
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")
