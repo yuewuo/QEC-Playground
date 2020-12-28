@@ -87,6 +87,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg ignore_6_neighbors: -i --ignore_6_neighbors +takes_value "whether ignore 6 neighbors, so that only straight neighbors are kept, default to false")
                 (@arg extra_measurement_error: -x --extra_measurement_error +takes_value "the pure measurement error would be p*x, default to 1")
                 (@arg bypass_correction: --bypass_correction "bypass correction procedure to test is logical error rate calculation behaving good")
+                (@arg independent_px_pz: --independent_px_pz "change the error model to (1-px-pz-pxpz)I + px X + pz Z + pxpz Y")
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")

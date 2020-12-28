@@ -76,8 +76,9 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let ignore_6_neighbors = value_t!(matches, "ignore_6_neighbors", bool).unwrap_or(false);  // default use 12 neighbors version
             let extra_measurement_error = value_t!(matches, "extra_measurement_error", f64).unwrap_or(1.);  // default to 1.
             let bypass_correction = matches.is_present("bypass_correction");
+            let independent_px_pz = matches.is_present("independent_px_pz");
             fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
-                , ignore_6_neighbors, extra_measurement_error, bypass_correction);
+                , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -388,7 +389,8 @@ default example:
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
 fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
-        , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64, bypass_correction: bool) {
+        , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
+        , bypass_correction: bool, independent_px_pz: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -418,6 +420,9 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                     node.error_rate_x *= extra_measurement_error;
                     node.error_rate_z *= extra_measurement_error;
                     node.error_rate_y *= extra_measurement_error;
+                }
+                if independent_px_pz {
+                    node.error_rate_y = node.error_rate_x * node.error_rate_z;
                 }
             });
             model.build_graph();
