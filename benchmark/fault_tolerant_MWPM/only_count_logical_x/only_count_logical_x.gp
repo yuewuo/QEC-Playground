@@ -1,15 +1,14 @@
 set terminal postscript eps color "Arial, 28"
 set xlabel "Depolarizing Error Rate (p)" font "Arial, 28"
-set ylabel "Logical Error Rate (p_L)" font "Arial, 28"
+set ylabel "X Logical Error Rate (p_L_X)" font "Arial, 28"
 set grid ytics
 set size 1,1
 
 # data generating commands:
 # cargo run --release -- tool fault_tolerant_benchmark [3] [3] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0 -b1000 -m100000000 --only_count_logical_x
 # cargo run --release -- tool fault_tolerant_benchmark [5] [5] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5] -b1000 -p0 -m100000000 --only_count_logical_x
-# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -p0 -m100000000 -b10 -e1000 --only_count_logical_x
-# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-4] -p0 -m100000000 -b10 -e200 --only_count_logical_x
-# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000 -b1 -e1000 --only_count_logical_x
+# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4] -p0 -m100000000 -b10 -e200 --only_count_logical_x
+# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000 -b1 -e200 --only_count_logical_x
 # cargo run --release -- tool fault_tolerant_benchmark [11] [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000 -b1 -e200 --only_count_logical_x
 # cargo run --release -- tool fault_tolerant_benchmark [13] [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000 -b1 -e200 --only_count_logical_x
 
