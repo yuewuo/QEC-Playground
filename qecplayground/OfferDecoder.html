@@ -31,9 +31,25 @@
             <h1>Offer Decoder Testbed</h1>
             <p>Offer Decoder is a fully distributed topological code decoder. Every stabilizer as a decoder unit runs in parallel. In bounded time, the whole system converges to a stable state which is the error matching with the highest probability. The key idea is that matched pairs can work as "broker" and associate with unmatched stabilizers to optimize overall probability.</p>
             <p style="color: lightblue;">This page aims at helping us understand how it works and try out different strategies.</p>
-            <v-text-field outlined label="Code Distance" type="number" v-model="L_input" :rules="L_input_rules"></v-text-field>
-            <div v-if="selecting != null">
-                <h2>Selecting {{ `(${selecting[0]}, ${selecting[1]})`}} ({{ selecting[0] + selecting[1] % 2 == 0 ? "data qubit" : "stabilizer" }})</h2>
+            <v-text-field outlined label="Code Distance" type="number" v-model="L_input" :rules="L_input_rules" hide-details="auto"></v-text-field>
+            <div style="margin-top: 10px;">
+                <h2>Actions</h2>
+                <v-btn color="green lighten-4" block @click="default_single_round" class="has-margin">default single round</v-btn>
+                <div style="text-justify: space-around; text-align: center;">
+                    <v-btn color="pink lighten-4" elevation="3" small @click="all_node_execute()" class="has-margin">node execute</v-btn>
+                    <v-btn color="blue lighten-4" elevation="3" small @click="all_resend_offer()" class="has-margin">resend offer</v-btn>
+                    <v-btn color="lime lighten-4" elevation="3" small @click="all_outqueue_send()" class="has-margin">outqueue send</v-btn>
+                </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <h2>Conditional Select</h2>
+                <v-btn color="blue-grey lighten-4" block @click="select_none" class="has-margin">clear selection</v-btn>
+                <div style="text-justify: space-around; text-align: center;">
+                    <v-btn color="deep-orange lighten-4" elevation="3" small @click="select_has_offer_from_focused" class="has-margin">has offer from focused</v-btn>
+                </div>
+            </div>
+            <div v-if="selecting != null" style="margin-top: 10px;">
+                <h2>Focus: {{ `(${selecting[0]}, ${selecting[1]})`}} ({{ selecting[0] + selecting[1] % 2 == 0 ? "data qubit" : "stabilizer" }})</h2>
                 <v-card elevation="5" width="440" class="mx-auto">
                     <v-virtual-scroll :items="log_items" :item-height="50" height="500">
                         <template v-slot:default="{ item }">
@@ -100,6 +116,17 @@ function readonly(target, keys) {
     return _cloned
 }
 
+// allow user to override options, and alert those unrecognized options
+function apply_override_options(default_options, override_options) {
+    for (let key in override_options) {
+        if (!(key in default_options)) {
+            console.error(`unknown option "${key}", please check available options for this function`)
+        }
+    }
+    Object.assign(default_options, override_options)
+    return default_options
+}
+
 const CONST = readonly({
     QubitType: readonly({
         Data: "Data",
@@ -127,6 +154,7 @@ const CONST = readonly({
         Initialization: readonly({ name: "Initialization", initials: "IN", color: "#00897B" }),  // teal darken-1
         SetQubitError: readonly({ name: "SetQubitError", initials: "SE", color: "#E53935" }),  // red darken-1
         UpdateMeasurement: readonly({ name: "UpdateMeasurement", initials: "UM", color: "#6D4C41" }),  // brown darken-1
+        SendMessage: readonly({ name: "SendMessage", initials: "SM", color: "#039BE5" }),  // light-blue darken-1
     }),
     // node states
     NodeState: readonly({
@@ -136,9 +164,10 @@ const CONST = readonly({
         WaitingContract: "WaitingContract",  // take offer and reply, then waiting for contract. 
         Matched: "Matched",
     }),
-    // offer type
-    OfferType: readonly({
-
+    // message type
+    MessageType: readonly({
+        MatchOffer: "MatchOffer",  // only sent out by unmatched pairs
+        AugmentOffer: "AugmentOffer",  // only sent out by matched pairs to find augmenting loop
     }),
 })
 
@@ -153,6 +182,8 @@ function make_log_element(log_type, obj) {
         initials = obj.error
     } else if (log_type === CONST.LogType.UpdateMeasurement) {
         full_message = `update measurement as "${obj.measurement}"`
+    } else if (log_type === CONST.LogType.SendMessage) {
+        full_message = `send message to (${obj.i}, ${obj.j})`
     } else {
         console.error(full_message)
         console.error(obj)
@@ -331,9 +362,78 @@ var $app = new Vue({
                         mailbox: [],  // naive implementation of mailbox (because query is not efficient)
                         outqueue: [],  // { target: [i, j], message } where message is then pushed into the target's mailbox
                         log,  // debug logs
-                        active_offer: null,  // { timestamp }
-                        brokered_offers: {},  // JSON.stringify([i, j]): { source, last, timestamp }
-                        state: CONST.NodeState.NoError,
+                    }
+                    if (!is_data_qubit) {
+                        // attributes for nodes only
+                        Object.assign(qubit, {
+                            active_offer: null,  // { timestamp }
+                            brokered_offers: {},  // JSON.stringify([i, j]): { source, last, timestamp }
+                            state: CONST.NodeState.NoError,
+                        })
+                        // methods for nodes only
+                        qubit.node_execute = ((override_options = {}) => {
+                            // override default options
+                            const options = apply_override_options({
+                                only_accept_offer_from_smaller_node: true,  // to avoid conflicting execution of 2 nodes, in which case they'll never be matched
+                                only_handle_one_message: false,  // only handle one message to debug
+                            }, override_options)
+                            // sanity check, we don't handle the logic if some measurement error disappears (have to break the matched pairs)
+                            if (qubit.measurement == false && qubit.state != CONST.NodeState.NoError) {
+                                console.error(`qubit (${i},${j}) measurement changed from "true" to "false", which is not supported yet`)
+                            }
+                            // read message
+                            while (qubit.mailbox.length > 0) {
+                                const message = qubit.mailbox.shift()  // take the first message in mailbox
+                                console.error(`drop unknown message with type: "${message.type}"`)
+                                console.error(message)
+                                if (options.only_handle_one_message) break  // only handle one message
+                            }
+                        }).bind(this)
+                        qubit.resend_offer = ((override_options = {}) => {
+                            // override default options
+                            const options = apply_override_options({
+
+                            }, override_options)
+                            // normal node never sends offer
+                            if (qubit.measurement == false) return
+                            // if the state of this qubit is matched, then the offer targets only self
+                            if (qubit.state == CONST.NodeState.Matched) {
+                                
+                            } else if (qubit.state == CONST.NodeState.NoError || qubit.state == CONST.NodeState.SentOffer) {
+                                for (let [ti, tj] of [[i-2, j], [i+2, j], [i, j-2], [i, j+2]]) if (this.is_valid_i_j(ti, tj)) {
+                                    qubit.outqueue.push({
+                                        target: [ti, tj],
+                                        message: {
+                                            type: CONST.MessageType.MatchOffer,
+                                            source: [i, j],
+                                            broker: [i, j],  // if broker == source then there is no broker
+                                        },
+                                    })
+                                }
+                                qubit.state = CONST.NodeState.SentOffer  // offer sent and waiting for replies
+                            } else {
+                                // TODO: what if in other states? during contract making? simply do nothing at this moment
+                            }
+                        }).bind(this)
+                        qubit.outqueue_send = ((override_options = {}) => {
+                            // override default options
+                            const options = apply_override_options({
+
+                            }, override_options)
+                            // send messages from outqueue
+                            while (qubit.outqueue.length > 0) {
+                                const out = qubit.outqueue.shift()
+                                const [ti, tj] = out.target
+                                if (this.is_valid_i_j(ti, tj)) {
+                                    const message = out.message
+                                    this.qubits[ti][tj].mailbox.push(message)
+                                    qubit.log.push(make_log_element(CONST.LogType.SendMessage, { i: ti, j: tj, message }))
+                                } else {
+                                    console.error(`(${i},${j})'s outqueue message has invalid target address: (${ti},${tj})`)
+                                    console.log(out)
+                                }
+                            }
+                        }).bind(this)
                     }
                     row.push(qubit)
                 }
@@ -341,6 +441,11 @@ var $app = new Vue({
             }
             this.qubits = qubits
             this.selecting = null
+        },
+        is_valid_i_j(i, j) {
+            if (i < 0 || i >= this.L * 2 - 1) return false
+            if (j < 0 || j >= this.L * 2 - 1) return false
+            return true
         },
         view_log(item) {
             console.log(`[${dayjs(item.create_time).format("HH:mm:ss.SSS")}] ${item.log_type.name}: ${item.full_message}`)
@@ -390,6 +495,45 @@ var $app = new Vue({
                     }
                 }
             }
+        },
+        for_each_qubit(func) {
+            for (let i=0; i < this.qubits.length; ++i) {
+                for (let j=0; j < this.qubits[i].length; ++j) {
+                    let qubit = this.qubits[i][j]
+                    func(i, j, qubit)
+                }
+            }
+        },
+        all_node_execute(override_options = {}) {
+            this.for_each_qubit((i, j, qubit) => {
+                if (qubit.node_execute) qubit.node_execute(override_options)
+            })
+        },
+        all_resend_offer(override_options = {}) {
+            this.for_each_qubit((i, j, qubit) => {
+                if (qubit.resend_offer) qubit.resend_offer(override_options)
+            })
+        },
+        all_outqueue_send(override_options = {}) {
+            this.for_each_qubit((i, j, qubit) => {
+                if (qubit.outqueue_send) qubit.outqueue_send(override_options)
+            })
+        },
+        default_single_round() {
+            this.for_each_qubit((i, j, qubit) => {
+                // only resend offer if it has not sent any offer yet
+                if (qubit.measurement == true && qubit.state == CONST.NodeState.NoError) {
+                    if (qubit.resend_offer) qubit.resend_offer()
+                }
+            })
+            this.all_node_execute()
+            this.all_outqueue_send()
+        },
+        select_none() {
+            
+        },
+        select_has_offer_from_focused() {
+
         },
     },
     watch: {
@@ -530,6 +674,11 @@ body {
 
 .no-scrollbar::-webkit-scrollbar {
 	width: 0;
+}
+
+.has-margin {
+    margin-top: 10px;
+    margin-left: 5px;
 }
 
 </style>
