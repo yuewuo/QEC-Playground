@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
     <title>Offer Decoder</title>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
     <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 </head>
 <body>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+<script src="https://unpkg.com/dayjs"></script>
 
 <div id="app">
     <v-app>
@@ -28,7 +29,7 @@
         </div>
         <div class="control-panel no-scrollbar">
             <h1>Offer Decoder Testbed</h1>
-            <p>Offer Decoder is a fully distributed topological code decoder. Every stabilizer as a decoder unit runs individually and only communicates with neighbors. In bounded time, the whole system converges to a stable state which is the error matching with the highest probability. The key idea is that matched pairs can work as "broker" and associate with unmatched stabilizers to optimize overall probability.</p>
+            <p>Offer Decoder is a fully distributed topological code decoder. Every stabilizer as a decoder unit runs in parallel. In bounded time, the whole system converges to a stable state which is the error matching with the highest probability. The key idea is that matched pairs can work as "broker" and associate with unmatched stabilizers to optimize overall probability.</p>
             <p style="color: lightblue;">This page aims at helping us understand how it works and try out different strategies.</p>
             <v-text-field outlined label="Code Distance" type="number" v-model="L_input" :rules="L_input_rules"></v-text-field>
             <div v-if="selecting != null">
@@ -125,11 +126,24 @@ const CONST = readonly({
         // https://vuetifyjs.com/en/styles/colors/#material-colors
         Initialization: readonly({ name: "Initialization", initials: "IN", color: "#00897B" }),  // teal darken-1
         SetQubitError: readonly({ name: "SetQubitError", initials: "SE", color: "#E53935" }),  // red darken-1
+        UpdateMeasurement: readonly({ name: "UpdateMeasurement", initials: "UM", color: "#6D4C41" }),  // brown darken-1
+    }),
+    // node states
+    NodeState: readonly({
+        NoError: "NoError",  // no error syndrome at this node. only work as offer repeator
+        SentOffer: "OfferSent",  // offer sent and waiting for responses
+        SentContract: "SentContract",  // contract sent and waiting for responses
+        WaitingContract: "WaitingContract",  // take offer and reply, then waiting for contract. 
+        Matched: "Matched",
+    }),
+    // offer type
+    OfferType: readonly({
+
     }),
 })
 
 function make_log_element(log_type, obj) {
-    let full_message = `unhandled log type: ${log_type.name}`
+    let full_message = `unhandled log type: ${log_type.name}, please update "make_log_element" function`
     let initials = log_type.initials
     let color = log_type.color
     if (log_type === CONST.LogType.Initialization) {
@@ -137,6 +151,8 @@ function make_log_element(log_type, obj) {
     } else if (log_type === CONST.LogType.SetQubitError) {
         full_message = `set qubit error "${obj.error}"`
         initials = obj.error
+    } else if (log_type === CONST.LogType.UpdateMeasurement) {
+        full_message = `update measurement as "${obj.measurement}"`
     } else {
         console.error(full_message)
         console.error(obj)
@@ -149,6 +165,7 @@ function make_log_element(log_type, obj) {
         full_message,
         initials,
         obj_str: JSON.stringify(obj),
+        create_time: new Date(),
     }
 }
 
@@ -301,6 +318,8 @@ var $app = new Vue({
                     let log = []
                     if (is_data_qubit) {
                         log.push(make_log_element(CONST.LogType.Initialization, { i, j, }))
+                    } else {
+                        log.push(make_log_element(CONST.LogType.UpdateMeasurement, { i, j, measurement: false }))
                     }
                     let qubit = {
                         i, j,
@@ -310,7 +329,11 @@ var $app = new Vue({
                         error: CONST.ErrorType.I,  // no error when initialized
                         measurement: false,  // measurement result of XXXX or ZZZZ
                         mailbox: [],  // naive implementation of mailbox (because query is not efficient)
+                        outqueue: [],  // { target: [i, j], message } where message is then pushed into the target's mailbox
                         log,  // debug logs
+                        active_offer: null,  // { timestamp }
+                        brokered_offers: {},  // JSON.stringify([i, j]): { source, last, timestamp }
+                        state: CONST.NodeState.NoError,
                     }
                     row.push(qubit)
                 }
@@ -320,7 +343,7 @@ var $app = new Vue({
             this.selecting = null
         },
         view_log(item) {
-            console.log(item.log_type.name)
+            console.log(`[${dayjs(item.create_time).format("HH:mm:ss.SSS")}] ${item.log_type.name}: ${item.full_message}`)
             console.log(JSON.parse(item.obj_str))  // create a copy object each time
         },
         select_qubit(info) {
@@ -359,7 +382,11 @@ var $app = new Vue({
                                 }
                             }
                         }
-                        qubit.measurement = error_count % 2 == 1
+                        const measurement = error_count % 2 == 1
+                        if (qubit.measurement != measurement) {
+                            qubit.log.push(make_log_element(CONST.LogType.UpdateMeasurement, { i, j, measurement }))
+                        }
+                        qubit.measurement = measurement
                     }
                 }
             }
