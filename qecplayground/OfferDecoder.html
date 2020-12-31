@@ -31,7 +31,14 @@
             <h1>Offer Decoder Testbed</h1>
             <p>Offer Decoder is a fully distributed topological code decoder. Every stabilizer as a decoder unit runs in parallel. In bounded time, the whole system converges to a stable state which is the error matching with the highest probability. The key idea is that matched pairs can work as "broker" and associate with unmatched stabilizers to optimize overall probability.</p>
             <p style="color: lightblue;">This page aims at helping us understand how it works and try out different strategies.</p>
-            <v-text-field outlined label="Code Distance" type="number" v-model="L_input" :rules="L_input_rules" hide-details="auto"></v-text-field>
+            <div style="display: flex;">
+                <div style="width: 360px;">
+                    <v-text-field outlined label="Code Distance" type="number" v-model="L_input" :rules="L_input_rules" hide-details="auto"></v-text-field>
+                </div>
+                <div style="width: 80px;">
+                    <v-btn color="deep-orange lighten-1" elevation="7" @click="refresh_qubits" style="height: 56px; width: 70px; margin-left: 10px;">Reset</v-btn>
+                </div>
+            </div>
             <div style="margin-top: 10px;">
                 <h2>Actions</h2>
                 <v-btn color="green lighten-4" block @click="default_single_round" class="has-margin">default single round</v-btn>
@@ -397,7 +404,16 @@ var $app = new Vue({
                             }, override_options)
                             // sanity check, we don't handle the logic if some measurement error disappears (have to break the matched pairs)
                             if (qubit.measurement == false && qubit.state != CONST.NodeState.NoError) {
-                                console.error(`qubit (${i},${j}) measurement changed from "true" to "false", which is not supported yet`)
+                                // this case is not happening in real system, so here we can simply use global information to process
+                                if (qubit.state == CONST.NodeState.Matched) {
+                                    const [mi, mj] = qubit.match_with
+                                    this.qubits[mi][mj].state = CONST.NodeState.NoError
+                                    this.qubits[mi][mj].brokered_offers = {}  // clear cache
+                                    qubit.state = CONST.NodeState.NoError
+                                    qubit.brokered_offers = {}  // clear cache
+                                } else {
+                                    console.error(`qubit (${i},${j}) measurement changed from "true" to "false", which is not supported yet`)
+                                }
                             }
                             // read message
                             while (qubit.mailbox.length > 0) {
