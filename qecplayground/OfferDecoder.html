@@ -89,6 +89,7 @@
         <div :class="{ 'stabilizer-qubit-div-Z': qubit.qubit_type == CONST.QubitType.StabZ, 'stabilizer-qubit-div-X': qubit.qubit_type == CONST.QubitType.StabX, 'qubit-focused': qubit.focused, 'stabilizer-qubit-div-X-no-error': qubit.qubit_type == CONST.QubitType.StabX && !qubit.measurement, 'stabilizer-qubit-div-X-with-error': qubit.qubit_type == CONST.QubitType.StabX && qubit.measurement, 'stabilizer-qubit-div-Z-no-error': qubit.qubit_type == CONST.QubitType.StabZ && !qubit.measurement, 'stabilizer-qubit-div-Z-with-error': qubit.qubit_type == CONST.QubitType.StabZ && qubit.measurement }"
                 @click="focus_on_self">
             <h1 class="noselect">{{ qubit.qubit_type == CONST.QubitType.StabZ ? "Z" : "X" }}</h1>
+            <h2 style="color: #FFCA28;">{{ qubit.state }}</h2>
             <!-- progress circular can help visualize which is newly added, because they'll not be synchronized if not added at the same time -->
             <v-progress-circular v-if="qubit.selecting" :size="200" :width="20" color="amber" indeterminate
                 style="position: absolute; top: 0; left: 0;"></v-progress-circular>
@@ -166,14 +167,16 @@ const CONST = readonly({
     NodeState: readonly({
         NoError: "NoError",  // no error syndrome at this node. only work as offer repeator
         SentOffer: "OfferSent",  // offer sent and waiting for responses
-        SentContract: "SentContract",  // contract sent and waiting for responses
-        WaitingContract: "WaitingContract",  // take offer and reply, then waiting for contract. 
-        Matched: "Matched",
+        WaitingContract: "WaitingContract",  // take offer and reply, then waiting for contract. this is also a locked state
+        Matched: "Matched",  // can work as broker, also is responsible of finding augmenting loops and path that connects 2 boundaries
     }),
     // message type
     MessageType: readonly({
         MatchOffer: "MatchOffer",  // only sent out by unmatched pairs
         AugmentOffer: "AugmentOffer",  // only sent out by matched pairs to find augmenting loop
+        AcceptOffer: "AcceptOffer",  // employee (and all brokers in the middle) set itself to `WaitingContract` state and send this message
+        RefuseAcceptance: "RefuseAcceptance",  // refuse the message `AcceptOffer`. should revert all brokers along the path
+        Contract: "Contract",
     }),
 })
 
@@ -283,8 +286,8 @@ var $app = new Vue({
     data() {
         return {
             // standard planar code
-            L: 5,  // code distance
-            L_input: 5,  // user input L
+            L: 7,  // code distance
+            L_input: 7,  // user input L
             L_max: 10,  // maximum value of L
             L_input_rules: [v => {
                 const L = parseInt(v)
@@ -365,7 +368,7 @@ var $app = new Vue({
                         log.push(make_log_element(CONST.LogType.UpdateMeasurement, { i, j, measurement: false }))
                     }
                     let qubit = {
-                        i, j,
+                        i, j,  // DO NOT CHANGE THIS!
                         qubit_type,
                         sub_scale: is_data_qubit ? 0.8 : 1,  // used to control relative size
                         focused: false,  // only one qubit can be focused at any time
@@ -379,10 +382,10 @@ var $app = new Vue({
                         Object.assign(qubit, {
                             mailbox: [],  // naive implementation of mailbox (because query is not efficient)
                             outqueue: [],  // { target: [i, j], message } where message is then pushed into the target's mailbox
-                            cache: {},  // cache offers so that there are no unnecessary loopbacks, JSON.stringify([i, j]): { source, last, timestamp }
                             active_offer: null,  // { timestamp }
-                            brokered_offers: {},  // JSON.stringify([i, j]): { source, last, timestamp }
+                            brokered_offers: {},  // JSON.stringify([i, j]): { employer, last, timestamp }
                             state: CONST.NodeState.NoError,
+                            match_with: null,  // by default match to bounary, which is null
                         })
                         // methods for nodes only
                         qubit.node_execute = ((override_options = {}) => {
@@ -400,11 +403,88 @@ var $app = new Vue({
                             while (qubit.mailbox.length > 0) {
                                 const message = qubit.mailbox.shift()  // take the first message in mailbox
                                 if (message.type == CONST.MessageType.MatchOffer) {
-                                    const [si, sj] = message.source
-                                    if (qubit.measurement == false) {  // propagate offer
-                                        // TODO: only propagate if it's better than cached one
+                                    const [si, sj] = message.employer
+                                    // propagate this offer anyway
+                                    // customized propagate directions. when using in real system, one have to analyze the structure to determine a logic
+                                    // so that offers are not duplicated nor suboptimal. Here is the example propagate logic for standard planar code.
+                                    let propagate_to = []
+                                    if (i > si) {  // propagate to down
+                                        propagate_to.push([i+2, j])
+                                    } else if (i < si) {  // propagate to up
+                                        propagate_to.push([i-2, j])
                                     } else {
-                                        // TODO: implement logic for error syndrome
+                                        if (j < sj) {  // i == si && j < sj, propagate to up, down, left
+                                            propagate_to.push([i+2, j])
+                                            propagate_to.push([i-2, j])
+                                            propagate_to.push([i, j-2])
+                                        } else if (j > sj) {  // i == si && j > sj, propagate to up, down, right
+                                            propagate_to.push([i+2, j])
+                                            propagate_to.push([i-2, j])
+                                            propagate_to.push([i, j+2])
+                                        }
+                                    }
+                                    for (let [ti, tj] of propagate_to) {
+                                        if (this.is_valid_i_j(ti, tj)) {
+                                            qubit.outqueue.push({
+                                                target: [ti, tj],
+                                                message: {
+                                                    type: CONST.MessageType.MatchOffer,
+                                                    employer: [...message.employer],
+                                                    broker: [...message.broker],  // if broker == employer then there is no broker
+                                                },
+                                            })
+                                        }
+                                    }
+                                    if (qubit.measurement == true) {
+                                        if (qubit.state == CONST.NodeState.NoError || qubit.state == CONST.NodeState.SentOffer) {
+                                            // take this offer only if employee is smaller than employer
+                                            if (this.compare_i_j(i, j, si, sj) < 0) {
+                                                qubit.state = CONST.NodeState.WaitingContract
+                                                qubit.outqueue.push({
+                                                    target: [...message.broker],  // send back to the last broker
+                                                    message: {
+                                                        type: CONST.MessageType.AcceptOffer,
+                                                        employee: [i, j],  // take this offer as employee
+                                                        employer: [...message.employer],
+                                                        broker: [i, j],  // employee is also the broker of this message
+                                                    },
+                                                })
+                                            }
+                                        }
+                                    }
+                                } else if (message.type == CONST.MessageType.AcceptOffer) {
+                                    const [si, sj] = message.employer
+                                    if (si == i && sj == j) {
+                                        if (qubit.state == CONST.NodeState.SentOffer) {
+                                            qubit.state = CONST.NodeState.Matched
+                                            qubit.match_with = [...message.broker]  // always match with the first-hop broker
+                                            qubit.outqueue.push({
+                                                target: [...message.broker],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.Contract,
+                                                    employee: [...message.employee],
+                                                    employer: [i, j],
+                                                    broker: [i, j],
+                                                },
+                                            })
+                                        } else {
+                                            // TODO: send refuse acceptance, so that peer qubit (and also brokers in the middle) is unlocked
+                                        }
+                                    } else {
+                                        // TODO:  judge if this is brokered offer
+                                    }
+                                } else if (message.type == CONST.MessageType.Contract) {
+                                    const [ti, tj] = message.employee
+                                    if (ti == i && tj == j) {
+                                        if (qubit.state == CONST.NodeState.WaitingContract) {
+                                            qubit.state = CONST.NodeState.Matched
+                                            qubit.match_with = [...message.broker]
+                                        } else {
+                                            console.error("This shoudn't happen! Contract is never sent to a node in state other than WaitingContract")
+                                            console.error(message)
+                                        }
+                                    } else {
+                                        // TODO: judge if this is brokered offer
                                     }
                                 } else {
                                     console.error(`drop unknown message with type: "${message.type}"`)
@@ -430,8 +510,8 @@ var $app = new Vue({
                                         target: [ti, tj],
                                         message: {
                                             type: CONST.MessageType.MatchOffer,
-                                            source: [i, j],
-                                            broker: [i, j],  // if broker == source then there is no broker
+                                            employer: [i, j],
+                                            broker: [i, j],  // if broker == employer then there is no broker
                                         },
                                     })
                                 }
@@ -472,6 +552,15 @@ var $app = new Vue({
             if (i < 0 || i >= this.L * 2 - 1) return false
             if (j < 0 || j >= this.L * 2 - 1) return false
             return true
+        },
+        compare_i_j(i1, j1, i2, j2) {
+            if (i1 == i2) {
+                if (j1 == j2) return 0
+                if (j1 < j2) return -1
+                else return 1
+            }
+            if (i1 < i2) return -1
+            else return 1
         },
         view_log(item) {
             console.log(`[${dayjs(item.create_time).format("HH:mm:ss.SSS")}] ${item.log_type.name}: ${item.full_message}`)
@@ -562,7 +651,6 @@ var $app = new Vue({
             this.need_to_update_conditional_selecting = true
         },
         update_conditional_selecting_immediate() {
-            console.log("update_conditional_selecting_immediate")
             const selecting_func = this.selecting_func || (() => false)
             this.for_each_qubit((i, j, qubit) => {
                 const select = selecting_func(i, j, qubit)
@@ -581,10 +669,11 @@ var $app = new Vue({
         },
         select_has_offer_from_focused(i, j, qubit) {
             if (this.focus == null) return false
+            if (!qubit.mailbox) return false
             const [fi, fj] = this.focus
             for (let message of qubit.mailbox) {
                 if (message.type == CONST.MessageType.MatchOffer) {
-                    const [si, sj] = message.source
+                    const [si, sj] = message.employer
                     if (fi == si && fj == sj) return true
                 } else {
                     console.error(`unknown message with type: "${message.type}"`)
