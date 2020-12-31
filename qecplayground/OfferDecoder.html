@@ -17,13 +17,13 @@
 <div id="app">
     <v-app>
         <div class="square-qubits" :style="{ 'height': square_height + 'px', 'width': square_height + 'px', 'left': square_left + 'px', 'top': square_top + 'px' }"
-                @click="select_qubit(null)">
+                @click="focus_on_qubit(null)">
             <div v-for="(row, row_index) of qubits" v-bind:key="row_index" class="qubits-row" :style="{ 'top': (qubit_bias + row_index * qubit_interval) + 'px' }">
                 <div v-for="(qubit, index) of row" v-bind:key="index" class="qubits-container"
                         :style="{ 'left': (qubit_bias + index * qubit_interval) + 'px', 'transform': `scale(${qubit_scale})` }">
-                    <data-qubit v-if="qubit.qubit_type == CONST.QubitType.Data" v-model="row[index]" @select-qubit="select_qubit"
+                    <data-qubit v-if="qubit.qubit_type == CONST.QubitType.Data" v-model="row[index]" @focus-on-qubit="focus_on_qubit"
                         @error-changed="error_changed"></data-qubit>
-                    <stabilizer-qubit v-if="qubit.qubit_type != CONST.QubitType.Data" v-model="row[index]" @select-qubit="select_qubit"></stabilizer-qubit>
+                    <stabilizer-qubit v-if="qubit.qubit_type != CONST.QubitType.Data" v-model="row[index]" @focus-on-qubit="focus_on_qubit"></stabilizer-qubit>
                 </div>
             </div>
         </div>
@@ -43,13 +43,13 @@
             </div>
             <div style="margin-top: 10px;">
                 <h2>Conditional Select</h2>
-                <v-btn color="blue-grey lighten-4" block @click="select_none" class="has-margin">clear selection</v-btn>
-                <div style="text-justify: space-around; text-align: center;">
-                    <v-btn color="deep-orange lighten-4" elevation="3" small @click="select_has_offer_from_focused" class="has-margin">has offer from focused</v-btn>
-                </div>
+                    <v-btn color="blue-grey lighten-4" block @click="select_none" class="has-margin">clear selection</v-btn>
+                    <v-chip-group v-model="conditional_select_func_names" column multiple active-class="primary--text">
+                        <v-chip v-for="ele of available_filters" :key="ele.func" filter outlined>{{ ele.display }}</v-chip>
+                    </v-chip-group>
             </div>
-            <div v-if="selecting != null" style="margin-top: 10px;">
-                <h2>Focus: {{ `(${selecting[0]}, ${selecting[1]})`}} ({{ selecting[0] + selecting[1] % 2 == 0 ? "data qubit" : "stabilizer" }})</h2>
+            <div v-if="focus != null" style="margin-top: 10px;">
+                <h2>Focus: {{ `(${focus[0]}, ${focus[1]})`}} ({{ focus[0] + focus[1] % 2 == 0 ? "data qubit" : "stabilizer" }})</h2>
                 <v-card elevation="5" width="440" class="mx-auto">
                     <v-virtual-scroll :items="log_items" :item-height="50" height="500">
                         <template v-slot:default="{ item }">
@@ -74,18 +74,24 @@
 
 <template id="data-qubit">
     <div class="qubit-div" :style="{ 'transform': `scale(${qubit.sub_scale})` }">
-        <div class="data-qubit-div" :class="{ 'qubit-selected': qubit.selected }" @click="select_self">
+        <div class="data-qubit-div" :class="{ 'qubit-focused': qubit.focused }" @click="focus_on_self">
             <h1 class="noselect">data</h1>
             <v-btn fab :width="120" :height="120" style="font-size: 100px;" :color="error_color" @click="change_error">{{ error_text }}</v-btn>
+            <!-- progress circular can help visualize which is newly added, because they'll not be synchronized if not added at the same time -->
+            <v-progress-circular v-if="qubit.selecting" :size="200" :width="20" color="purple" indeterminate
+                style="position: absolute; top: 0; left: 0;"></v-progress-circular>
         </div>
     </div>
 </template>
 
 <template id="stabilizer-qubit">
     <div class="qubit-div" :style="{ 'transform': `scale(${qubit.sub_scale})` }">
-        <div :class="{ 'stabilizer-qubit-div-Z': qubit.qubit_type == CONST.QubitType.StabZ, 'stabilizer-qubit-div-X': qubit.qubit_type == CONST.QubitType.StabX, 'qubit-selected': qubit.selected, 'stabilizer-qubit-div-X-no-error': qubit.qubit_type == CONST.QubitType.StabX && !qubit.measurement, 'stabilizer-qubit-div-X-with-error': qubit.qubit_type == CONST.QubitType.StabX && qubit.measurement, 'stabilizer-qubit-div-Z-no-error': qubit.qubit_type == CONST.QubitType.StabZ && !qubit.measurement, 'stabilizer-qubit-div-Z-with-error': qubit.qubit_type == CONST.QubitType.StabZ && qubit.measurement }"
-                @click="select_self">
+        <div :class="{ 'stabilizer-qubit-div-Z': qubit.qubit_type == CONST.QubitType.StabZ, 'stabilizer-qubit-div-X': qubit.qubit_type == CONST.QubitType.StabX, 'qubit-focused': qubit.focused, 'stabilizer-qubit-div-X-no-error': qubit.qubit_type == CONST.QubitType.StabX && !qubit.measurement, 'stabilizer-qubit-div-X-with-error': qubit.qubit_type == CONST.QubitType.StabX && qubit.measurement, 'stabilizer-qubit-div-Z-no-error': qubit.qubit_type == CONST.QubitType.StabZ && !qubit.measurement, 'stabilizer-qubit-div-Z-with-error': qubit.qubit_type == CONST.QubitType.StabZ && qubit.measurement }"
+                @click="focus_on_self">
             <h1 class="noselect">{{ qubit.qubit_type == CONST.QubitType.StabZ ? "Z" : "X" }}</h1>
+            <!-- progress circular can help visualize which is newly added, because they'll not be synchronized if not added at the same time -->
+            <v-progress-circular v-if="qubit.selecting" :size="200" :width="20" color="amber" indeterminate
+                style="position: absolute; top: 0; left: 0;"></v-progress-circular>
         </div>
     </div>
 </template>
@@ -231,8 +237,8 @@ Vue.component('data-qubit', {
         },
     },
     methods: {
-        select_self(event) {
-            this.$emit('select-qubit', [this.qubit.i, this.qubit.j])
+        focus_on_self(event) {
+            this.$emit('focus-on-qubit', [this.qubit.i, this.qubit.j])
             event.stopPropagation()
         },
         change_error(event) {
@@ -264,8 +270,8 @@ Vue.component('stabilizer-qubit', {
         }
     },
     methods: {
-        select_self(event) {
-            this.$emit('select-qubit', [this.qubit.i, this.qubit.j])
+        focus_on_self(event) {
+            this.$emit('focus-on-qubit', [this.qubit.i, this.qubit.j])
             event.stopPropagation()
         },
     },
@@ -277,8 +283,8 @@ var $app = new Vue({
     data() {
         return {
             // standard planar code
-            L: 3,  // code distance
-            L_input: 3,  // user input L
+            L: 5,  // code distance
+            L_input: 5,  // user input L
             L_max: 10,  // maximum value of L
             L_input_rules: [v => {
                 const L = parseInt(v)
@@ -293,13 +299,19 @@ var $app = new Vue({
             window_width: window.innerWidth,
             window_height: window.innerHeight,
             CONST: CONST,
-            selecting: null,  // or [i, j]
+            focus: null,  // or [i, j]
+            conditional_select_func_names: [],
+            available_filters: [
+                { func: "select_has_offer_from_focused", display: "has offer from focused", }
+            ],
+            selecting_func: null,  // if not null, then will select qubits with `true` returns
+            need_to_update_conditional_selecting: false,
         }
     },
     computed: {
         log_items () {
-            if (this.selecting == null) return []
-            const [i, j] = this.selecting
+            if (this.focus == null) return []
+            const [i, j] = this.focus
             return this.qubits[i][j].log
         },
         square_max_width() {
@@ -356,22 +368,25 @@ var $app = new Vue({
                         i, j,
                         qubit_type,
                         sub_scale: is_data_qubit ? 0.8 : 1,  // used to control relative size
-                        selected: false,
+                        focused: false,  // only one qubit can be focused at any time
                         error: CONST.ErrorType.I,  // no error when initialized
                         measurement: false,  // measurement result of XXXX or ZZZZ
-                        mailbox: [],  // naive implementation of mailbox (because query is not efficient)
-                        outqueue: [],  // { target: [i, j], message } where message is then pushed into the target's mailbox
                         log,  // debug logs
+                        selecting: false,  // display as seltting
                     }
                     if (!is_data_qubit) {
                         // attributes for nodes only
                         Object.assign(qubit, {
+                            mailbox: [],  // naive implementation of mailbox (because query is not efficient)
+                            outqueue: [],  // { target: [i, j], message } where message is then pushed into the target's mailbox
+                            cache: {},  // cache offers so that there are no unnecessary loopbacks, JSON.stringify([i, j]): { source, last, timestamp }
                             active_offer: null,  // { timestamp }
                             brokered_offers: {},  // JSON.stringify([i, j]): { source, last, timestamp }
                             state: CONST.NodeState.NoError,
                         })
                         // methods for nodes only
                         qubit.node_execute = ((override_options = {}) => {
+                            this.update_conditional_selecting()
                             // override default options
                             const options = apply_override_options({
                                 only_accept_offer_from_smaller_node: true,  // to avoid conflicting execution of 2 nodes, in which case they'll never be matched
@@ -384,12 +399,22 @@ var $app = new Vue({
                             // read message
                             while (qubit.mailbox.length > 0) {
                                 const message = qubit.mailbox.shift()  // take the first message in mailbox
-                                console.error(`drop unknown message with type: "${message.type}"`)
-                                console.error(message)
+                                if (message.type == CONST.MessageType.MatchOffer) {
+                                    const [si, sj] = message.source
+                                    if (qubit.measurement == false) {  // propagate offer
+                                        // TODO: only propagate if it's better than cached one
+                                    } else {
+                                        // TODO: implement logic for error syndrome
+                                    }
+                                } else {
+                                    console.error(`drop unknown message with type: "${message.type}"`)
+                                    console.error(message)
+                                }
                                 if (options.only_handle_one_message) break  // only handle one message
                             }
                         }).bind(this)
                         qubit.resend_offer = ((override_options = {}) => {
+                            this.update_conditional_selecting()
                             // override default options
                             const options = apply_override_options({
 
@@ -416,6 +441,7 @@ var $app = new Vue({
                             }
                         }).bind(this)
                         qubit.outqueue_send = ((override_options = {}) => {
+                            this.update_conditional_selecting()
                             // override default options
                             const options = apply_override_options({
 
@@ -440,7 +466,7 @@ var $app = new Vue({
                 qubits.push(row)
             }
             this.qubits = qubits
-            this.selecting = null
+            this.focus = null
         },
         is_valid_i_j(i, j) {
             if (i < 0 || i >= this.L * 2 - 1) return false
@@ -451,18 +477,19 @@ var $app = new Vue({
             console.log(`[${dayjs(item.create_time).format("HH:mm:ss.SSS")}] ${item.log_type.name}: ${item.full_message}`)
             console.log(JSON.parse(item.obj_str))  // create a copy object each time
         },
-        select_qubit(info) {
-            if (this.selecting != null) {
-                const [i, j] = this.selecting
-                this.qubits[i][j].selected = false
+        focus_on_qubit(info) {
+            this.update_conditional_selecting()
+            if (this.focus != null) {
+                const [i, j] = this.focus
+                this.qubits[i][j].focused = false
             }
             if (info == null) {  // deselect
-                this.selecting = null
+                this.focus = null
                 return
             }
             const [i, j] = info
-            this.qubits[i][j].selected = true
-            this.selecting = [i, j]
+            this.qubits[i][j].focused = true
+            this.focus = [i, j]
         },
         error_changed() {  // recompute the stabilizer errors
             for (let i=0; i < this.qubits.length; ++i) {
@@ -495,6 +522,7 @@ var $app = new Vue({
                     }
                 }
             }
+            this.update_conditional_selecting()
         },
         for_each_qubit(func) {
             for (let i=0; i < this.qubits.length; ++i) {
@@ -529,16 +557,74 @@ var $app = new Vue({
             this.all_node_execute()
             this.all_outqueue_send()
         },
-        select_none() {
-            
+        update_conditional_selecting() {
+            // to make sure that no matter how many times this function is called in a single execution, the update function will only execute once
+            this.need_to_update_conditional_selecting = true
         },
-        select_has_offer_from_focused() {
-
+        update_conditional_selecting_immediate() {
+            console.log("update_conditional_selecting_immediate")
+            const selecting_func = this.selecting_func || (() => false)
+            this.for_each_qubit((i, j, qubit) => {
+                const select = selecting_func(i, j, qubit)
+                if (typeof(select) != "boolean") {
+                    console.error(`selecting_func(${i}, ${j}, qubit) doesn't return boolean value, please check`)
+                }
+                if (select) {
+                    qubit.selecting = true
+                } else {
+                    qubit.selecting = false
+                }
+            })
+        },
+        select_none() {
+            this.conditional_select_func_names = []
+        },
+        select_has_offer_from_focused(i, j, qubit) {
+            if (this.focus == null) return false
+            const [fi, fj] = this.focus
+            for (let message of qubit.mailbox) {
+                if (message.type == CONST.MessageType.MatchOffer) {
+                    const [si, sj] = message.source
+                    if (fi == si && fj == sj) return true
+                } else {
+                    console.error(`unknown message with type: "${message.type}"`)
+                    console.error(message)
+                }
+            }
+            return false
         },
     },
     watch: {
         L() {
             this.refresh_qubits()
+        },
+        need_to_update_conditional_selecting() {
+            if (this.need_to_update_conditional_selecting) {
+                this.update_conditional_selecting_immediate()
+                this.need_to_update_conditional_selecting = false
+            }
+        },
+        conditional_select_func_names() {
+            let funcs = []
+            for (let i=0; i<this.conditional_select_func_names.length; ++i) {
+                const ele = this.available_filters[i]
+                const func = this[ele.func]
+                if (func == undefined) console.error(`cannot find function this.${ele.func}, which is filter displayed as "${ele.display}"`)
+                else funcs.push([ele.func, func])  // function name, function handler
+            }
+            this.selecting_func = funcs.length > 0 ? (i, j, qubit) => {
+                for (let [name, func] of funcs) {
+                    const select = func(i, j, qubit)
+                    if (typeof(select) != "boolean") {
+                        console.error(`${name}(${i}, ${j}, qubit) doesn't return boolean value, please check`)
+                    }
+                    if (!select) {
+                        return false
+                    }
+                }
+                return true
+            } : () => false
+            this.update_conditional_selecting()
         },
     },
 })
@@ -642,7 +728,7 @@ body {
     transform: scale(1.1);
 }
 
-.qubit-selected {
+.qubit-focused {
     transform: scale(1.1);
     box-shadow: 0px 0px 50px 20px yellow;
 }
