@@ -318,8 +318,8 @@ var $app = new Vue({
     data() {
         return {
             // standard planar code
-            L: 7,  // code distance
-            L_input: 7,  // user input L
+            L: 5,  // code distance
+            L_input: 5,  // user input L
             L_max: 10,  // maximum value of L
             L_input_rules: [v => {
                 const L = parseInt(v)
@@ -393,15 +393,70 @@ var $app = new Vue({
         this.debug_initial()
     },
     methods: {
-        debug_initial() {
-            {  // test matching visualization
-                this.qubits[6][6].error = CONST.ErrorType.X
-                this.qubits[5][5].error = CONST.ErrorType.X
-                this.qubits[4][4].error = CONST.ErrorType.X
-                this.error_changed()
-                for (let i=0; i < 6; ++i) this.default_single_round()
+        async debug_initial() {
+            // {  // test matching visualization
+            //     this.L = 7
+            //     this.L_input = this.L
+            //     this.show_X_stabilizer = false
+            //     await this.vue_next_tick()
+            //     this.qubits[6][6].error = CONST.ErrorType.X
+            //     this.qubits[5][5].error = CONST.ErrorType.X
+            //     this.qubits[4][4].error = CONST.ErrorType.X
+            //     this.error_changed()
+            //     // for (let i=0; i < 6; ++i) this.default_single_round()
+            // }
+            {  // test cost, do not match if boundary is better
+                this.L = 5
+                this.L_input = this.L
                 this.show_X_stabilizer = false
+                await this.vue_next_tick()
+                this.qubits[4][0].error = CONST.ErrorType.X
+                this.qubits[4][8].error = CONST.ErrorType.X
+                this.error_changed()
+                console.log("please click 'default single round' multiple times so to make sure [4][1] and [4][7] is never matched")
             }
+            // {  // test alternating path, in this case, qubits[4][3] should establish a augmenting path to [4][15] so that cost is minimized
+            //     this.L = 9
+            //     this.L_input = this.L
+            //     this.show_X_stabilizer = false
+            //     await this.vue_next_tick()
+            //     this.qubits[4][4].error = CONST.ErrorType.X
+            //     this.qubits[4][8].error = CONST.ErrorType.X
+            //     this.qubits[4][12].error = CONST.ErrorType.X
+            //     this.qubits[4][16].error = CONST.ErrorType.X
+            //     this.force_match_qubits(4, 5, 4, 7)
+            //     this.force_match_qubits(4, 9, 4, 11)
+            //     this.force_match_qubits(4, 13, 4, 15)
+            //     this.error_changed()
+            // }
+        },
+        force_match_qubits(i1, j1, i2, j2) {
+            if (i1 == i2 && j1 == j2) return  // why match the same qubit?
+            // break them first
+            const qubit1 = this.qubits[i1][j1]
+            const qubit2 = this.qubits[i2][j2]
+            this.force_break_matched(qubit1)
+            this.force_break_matched(qubit2)
+            // connect them
+            qubit1.state = CONST.NodeState.Matched
+            qubit2.state = CONST.NodeState.Matched
+            qubit1.match_with = [i2, j2]
+            qubit2.match_with = [i1, j1]
+        },
+        force_break_matched(qubit) {
+            if (qubit.state != CONST.NodeState.Matched) return   // no need to break
+            const [mi, mj] = qubit.match_with
+            this.qubits[mi][mj].state = CONST.NodeState.NoError
+            this.qubits[mi][mj].offer_cache = {}  // clear cache
+            this.qubits[mi][mj].match_with = null
+            qubit.state = CONST.NodeState.NoError
+            qubit.offer_cache = {}  // clear cache
+            qubit.match_with = null
+        },
+        async vue_next_tick() {
+			await new Promise(((resolve, reject) => {
+				this.$nextTick(() => { resolve() })
+			}).bind(this))
         },
         refresh_qubits() {
             let qubits = []
@@ -456,15 +511,9 @@ var $app = new Vue({
                             if (qubit.measurement == false && qubit.state != CONST.NodeState.NoError) {
                                 // this case is not happening in real system, so here we can simply use global information to process
                                 if (qubit.state == CONST.NodeState.Matched) {
-                                    const [mi, mj] = qubit.match_with
-                                    this.qubits[mi][mj].state = CONST.NodeState.NoError
-                                    this.qubits[mi][mj].offer_cache = {}  // clear cache
-                                    this.qubits[mi][mj].match_with = null
-                                    qubit.state = CONST.NodeState.NoError
-                                    qubit.offer_cache = {}  // clear cache
-                                    qubit.match_with = null
+                                    this.force_break_matched(qubit)
                                 } else {
-                                    console.error(`qubit (${i},${j}) measurement changed from "true" to "false", which is not supported yet`)
+                                    console.error(`qubit (${i},${j}) measurement changed from "true" to "false", which is not supported yet. this may cause deadlock.`)
                                 }
                             }
                             // read message
@@ -474,10 +523,10 @@ var $app = new Vue({
                                     const [si, sj] = message.source
                                     // cache and propagate this offer only if the cost is better than cached or timestamp is newer
                                     const cached_offer = qubit.offer_cache[i_j_as_key(si, sj)]
-                                    if (!cached_offer || cached_offer.timestamp < message.timestamp) {  // TODO: or the cost is better
+                                    if (!cached_offer || cached_offer.timestamp < message.timestamp || message.cost < cached_offer.cost) {
                                         qubit.offer_cache[i_j_as_key(si, sj)] = {
                                             timestamp: message.timestamp,
-                                            // cost: ??
+                                            cost: message.cost
                                         }
                                         // customized propagate directions. when using in real system, one have to analyze the structure to determine a logic
                                         // so that offers are not duplicated nor suboptimal. Here is the example propagate logic for standard planar code.
@@ -506,6 +555,7 @@ var $app = new Vue({
                                                         timestamp: message.timestamp,
                                                         source: [...message.source],
                                                         broker: [...message.broker],  // if broker == source then there is no broker
+                                                        cost: message.cost + 1,
                                                     },
                                                 })
                                             }
@@ -513,8 +563,8 @@ var $app = new Vue({
                                     }
                                     if (qubit.measurement == true) {
                                         if (qubit.state == CONST.NodeState.NoError || qubit.state == CONST.NodeState.SentOffer) {
-                                            // take this offer only if target is smaller than source
-                                            if (this.compare_i_j(i, j, si, sj) < 0) {
+                                            // take this offer only if target is smaller than source and cost is better than current
+                                            if (this.compare_i_j(i, j, si, sj) < 0 && message.cost < qubit.cost) {
                                                 qubit.state = CONST.NodeState.WaitingContract
                                                 qubit.outqueue.push({
                                                     receiver: [...message.broker],  // send back to the last broker
@@ -534,7 +584,8 @@ var $app = new Vue({
                                         if (qubit.state == CONST.NodeState.SentOffer) {
                                             qubit.state = CONST.NodeState.Matched
                                             qubit.match_with = [...message.broker]  // always match with the first-hop broker
-                                            qubit.cost = cost_of_matching(i, j, ...message.broker)
+                                            const [bi, bj] = message.broker
+                                            qubit.cost = cost_of_matching(i, j, bi, bj)
                                             qubit.outqueue.push({
                                                 receiver: [...message.broker],  // send back to the last broker
                                                 message: {
@@ -608,6 +659,7 @@ var $app = new Vue({
                                             timestamp: qubit.active_timestamp,
                                             source: [i, j],
                                             broker: [i, j],  // if broker == source then there is no broker
+                                            cost: 1 - qubit.boundary_cost  // if match, then the cost of boundary is reduced
                                         },
                                     })
                                 }
@@ -707,7 +759,8 @@ var $app = new Vue({
                             if (qubit.match_with == null) {
                                 qubit.cost = qubit.boundary_cost
                             } else {
-                                qubit.cost = cost_of_matching(i, j, ...qubit.match_with)  // TODO: update
+                                const [mi, mj] = qubit.match_with
+                                qubit.cost = cost_of_matching(i, j, mi, mj)
                             }
                         } else {
                             qubit.cost = 0  // no error syndrome here, so the cost is 0
