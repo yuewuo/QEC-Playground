@@ -782,9 +782,11 @@ var $app = new Vue({
                                         })
                                         qubit.state = CONST.NodeState.Matched
                                         qubit.match_with = [ni, nj]
+                                        qubit.cost = cost_of_matching(i, j, ni, nj)
                                         qubit.broker_next_hop = null
                                     } else {  // if no broker_next_hop, then it is the last node which should connect to boundary
-                                        qubit.state = CONST.NodeState.SentOffer  // unlock
+                                        qubit.state = CONST.NodeState.SentOffer  // unlock and connect to boundary
+                                        qubit.cost = qubit.boundary_cost
                                         qubit.match_with = null
                                     }
                                 } else {
