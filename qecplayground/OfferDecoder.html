@@ -690,8 +690,28 @@ var $app = new Vue({
                                     if (ti == i && tj == j) {
                                         qubit.state = CONST.NodeState.SentOffer
                                     } else {
-                                        // TODO: this is broker
-                                        console.error("this is broker, recovery state and send to peer")
+                                        qubit.state = CONST.NodeState.Matched
+                                        if (qubit.broker_next_hop == null) {  // send refuse to peer
+                                            qubit.outqueue.push({
+                                                receiver: [...qubit.match_with],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.RefuseAcceptance,
+                                                    target: [...message.target],
+                                                    source: [...message.source],
+                                                    broker: [i, j],
+                                                },
+                                            })
+                                        } else {  // send to next hop
+                                            qubit.outqueue.push({
+                                                receiver: [...qubit.broker_next_hop],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.RefuseAcceptance,
+                                                    target: [...message.target],
+                                                    source: [...message.source],
+                                                    broker: [i, j],
+                                                },
+                                            })
+                                        }
                                     }
                                 } else if (message.type == CONST.MessageType.BrokeredOffer) {
                                     if (qubit.state == CONST.NodeState.Matched) {
@@ -731,7 +751,7 @@ var $app = new Vue({
                                             }
                                         }
                                     } else {
-                                        console.error("why should an unmatched qubit receive a BrokeredOffer message?")
+                                        // TODO: console.error("why should an unmatched qubit receive a BrokeredOffer message?")
                                     }
                                 } else if (message.type == CONST.MessageType.AcceptBrokeredOffer) {
                                     if (qubit.state == CONST.NodeState.Matched) {
