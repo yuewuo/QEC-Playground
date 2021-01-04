@@ -62,6 +62,11 @@
                     <v-btn color="lime lighten-4" elevation="3" small @click="all_outqueue_send()" class="has-margin">outqueue send</v-btn>
                 </div>
             </div>
+            <div style="margin-top: 10px;" class="child-p-no-margin">
+                <h2>Statistics</h2>
+                <p>total message count: {{ message_count }}</p>
+                <p>message count in single round: {{ message_count_single_round }}</p>
+            </div>
             <div style="margin-top: 10px;">
                 <h2>Conditional Select</h2>
                     <v-btn color="blue-grey lighten-4" block @click="select_none" class="has-margin">clear selection</v-btn>
@@ -110,8 +115,9 @@
         <div :class="{ 'stabilizer-qubit-div-Z': qubit.qubit_type == CONST.QubitType.StabZ, 'stabilizer-qubit-div-X': qubit.qubit_type == CONST.QubitType.StabX, 'qubit-focused': qubit.focused, 'stabilizer-qubit-div-X-no-error': qubit.qubit_type == CONST.QubitType.StabX && !qubit.measurement, 'stabilizer-qubit-div-X-with-error': qubit.qubit_type == CONST.QubitType.StabX && qubit.measurement, 'stabilizer-qubit-div-Z-no-error': qubit.qubit_type == CONST.QubitType.StabZ && !qubit.measurement, 'stabilizer-qubit-div-Z-with-error': qubit.qubit_type == CONST.QubitType.StabZ && qubit.measurement }"
                 @click="focus_on_self">
             <h1 class="noselect">{{ qubit.qubit_type == CONST.QubitType.StabZ ? "Z" : "X" }}</h1>
-            <h2 style="color: #FFCA28;">{{ qubit.state }}</h2>
-            <h1 :style="{ 'color': qubit.match_with == null ? '#FFCCBC' : '#B2FF59' }">{{ qubit.measurement ? ((qubit.match_with != null ? "M " : "B ") + qubit.cost) : "" }}</h1>
+            <h2 style="color: #FFCA28;" class="noselect">{{ qubit.state }}</h2>
+            <h1 :style="{ 'color': qubit.match_with == null ? '#FFCCBC' : '#B2FF59' }" class="noselect">
+                {{ qubit.measurement ? ((qubit.match_with != null ? "M " : "B ") + qubit.cost) : "" }}</h1>
             <!-- progress circular can help visualize which is newly added, because they'll not be synchronized if not added at the same time -->
             <v-progress-circular v-if="qubit.selecting" :size="200" :width="20" color="amber" indeterminate
                 style="position: absolute; top: 0; left: 0;"></v-progress-circular>
@@ -209,6 +215,9 @@ const CONST = readonly({
         AcceptOffer: "AcceptOffer",  // target (and all brokers in the middle) set itself to `WaitingContract` state and send this message
         RefuseAcceptance: "RefuseAcceptance",  // refuse the message `AcceptOffer`. should revert all brokers along the path
         Contract: "Contract",
+        BrokeredOffer: "BrokeredOffer",  // send to the matched peer so that it propagates offer in the name of itself and also record it
+        AcceptBrokeredOffer: "AcceptBrokeredOffer",  // send to the matched peer so that it can check the cache to find the last broker
+        BrokeredContract: "BrokeredContract",  // when matched node receives a Contract, it will send a BrokeredContract to its original peer
     }),
 })
 
@@ -343,6 +352,10 @@ var $app = new Vue({
             need_to_update_conditional_selecting: false,
             show_Z_stabilizer: true,
             show_X_stabilizer: true,
+
+            // statistics
+            message_count: 0,
+            message_count_single_round: 0,
         }
     },
     computed: {
@@ -405,28 +418,38 @@ var $app = new Vue({
             //     this.error_changed()
             //     // for (let i=0; i < 6; ++i) this.default_single_round()
             // }
-            {  // test cost, do not match if boundary is better
-                this.L = 5
-                this.L_input = this.L
-                this.show_X_stabilizer = false
-                await this.vue_next_tick()
-                this.qubits[4][0].error = CONST.ErrorType.X
-                this.qubits[4][8].error = CONST.ErrorType.X
-                this.error_changed()
-                console.log("please click 'default single round' multiple times so to make sure [4][1] and [4][7] is never matched")
-            }
-            // {  // test alternating path, in this case, qubits[4][3] should establish a augmenting path to [4][15] so that cost is minimized
-            //     this.L = 9
+            // {  // test cost, do not match if boundary is better
+            //     this.L = 5
             //     this.L_input = this.L
             //     this.show_X_stabilizer = false
             //     await this.vue_next_tick()
-            //     this.qubits[4][4].error = CONST.ErrorType.X
+            //     this.qubits[4][0].error = CONST.ErrorType.X
             //     this.qubits[4][8].error = CONST.ErrorType.X
-            //     this.qubits[4][12].error = CONST.ErrorType.X
-            //     this.qubits[4][16].error = CONST.ErrorType.X
-            //     this.force_match_qubits(4, 5, 4, 7)
-            //     this.force_match_qubits(4, 9, 4, 11)
-            //     this.force_match_qubits(4, 13, 4, 15)
+            //     this.error_changed()
+            //     console.log("please click 'default single round' multiple times so to make sure [4][1] and [4][7] is never matched")
+            // }
+            {  // test augmenting path, in this case, qubits[4][3] should establish a augmenting path to [8][11] so that cost is minimized
+                this.L = 7
+                this.L_input = this.L
+                this.show_X_stabilizer = false
+                await this.vue_next_tick()
+                this.qubits[6][4].error = CONST.ErrorType.X
+                this.qubits[8][8].error = CONST.ErrorType.X
+                this.qubits[8][12].error = CONST.ErrorType.X
+                this.force_match_qubits(6, 5, 8, 7)
+                this.force_match_qubits(8, 9, 8, 11)
+                this.error_changed()
+            }
+            // {  // test augmenting path, with possible augmenting loop
+            //     this.L = 7
+            //     this.L_input = this.L
+            //     this.show_X_stabilizer = false
+            //     await this.vue_next_tick()
+            //     this.qubits[5][3].error = CONST.ErrorType.X
+            //     this.qubits[8][6].error = CONST.ErrorType.X
+            //     this.qubits[8][12].error = CONST.ErrorType.X
+            //     this.force_match_qubits(6, 3, 8, 5)
+            //     this.force_match_qubits(8, 7, 8, 11)
             //     this.error_changed()
             // }
         },
@@ -498,6 +521,7 @@ var $app = new Vue({
                             match_with: null,  // by default match to bounary, which is null
                             boundary_cost,  // the cost matching with boundary
                             cost: 0,  // by default the qubit has no error and thus has 0 cost
+                            broker_next_hop: null,  // record next hop when broker is set to WaitingContract state
                         })
                         // methods for nodes only
                         qubit.node_execute = ((override_options = {}) => {
@@ -523,29 +547,37 @@ var $app = new Vue({
                                     const [si, sj] = message.source
                                     // cache and propagate this offer only if the cost is better than cached or timestamp is newer
                                     const cached_offer = qubit.offer_cache[i_j_as_key(si, sj)]
-                                    if (!cached_offer || cached_offer.timestamp < message.timestamp || message.cost < cached_offer.cost) {
+                                    const not_caching_this_offer = !cached_offer || cached_offer.timestamp < message.timestamp || message.cost < cached_offer.cost
+                                    if (not_caching_this_offer) {
                                         qubit.offer_cache[i_j_as_key(si, sj)] = {
                                             timestamp: message.timestamp,
-                                            cost: message.cost
+                                            cost: message.cost,
+                                            broker: message.broker,
+                                            // as_broker_source: false,  // I am not broker of this offer
+                                            // as_broker_sink: false,  // I am not broker of this offer
                                         }
-                                        // customized propagate directions. when using in real system, one have to analyze the structure to determine a logic
-                                        // so that offers are not duplicated nor suboptimal. Here is the example propagate logic for standard planar code.
-                                        let propagate_to = []
-                                        if (i > si) {  // propagate to down
-                                            propagate_to.push([i+2, j])
-                                        } else if (i < si) {  // propagate to up
-                                            propagate_to.push([i-2, j])
-                                        } else {
-                                            if (j < sj) {  // i == si && j < sj, propagate to up, down, left
-                                                propagate_to.push([i+2, j])
-                                                propagate_to.push([i-2, j])
-                                                propagate_to.push([i, j-2])
-                                            } else if (j > sj) {  // i == si && j > sj, propagate to up, down, right
-                                                propagate_to.push([i+2, j])
-                                                propagate_to.push([i-2, j])
-                                                propagate_to.push([i, j+2])
-                                            }
+                                    }
+                                    // may broker this offer
+                                    if (qubit.state == CONST.NodeState.Matched) {
+                                        // when cost < cached_offer.cost, the farther node will not broker this offer backward
+                                        // and also, this makes an infinite ping-pong between the matched pairs impossible, which is harmful to the system
+                                        if (not_caching_this_offer) {
+                                            // qubit.offer_cache[i_j_as_key(si, sj)].as_broker_source = true  // broker this offer as source
+                                            // then inform the matched one as broker sink.  (source) --> (broker source) --- (broker sink) --> (target)
+                                            qubit.outqueue.push({
+                                                receiver: [...qubit.match_with],  // send to matched one
+                                                message: {
+                                                    type: CONST.MessageType.BrokeredOffer,
+                                                    timestamp: message.timestamp,
+                                                    source: [...message.source],
+                                                    broker: [...message.broker],
+                                                    cost: message.cost - qubit.cost  // minus the cost of matching pair
+                                                },
+                                            })
                                         }
+                                    }
+                                    if (not_caching_this_offer) {
+                                        let propagate_to = [[i+2, j], [i-2, j], [i, j+2], [i, j-2]]
                                         for (let [ri, rj] of propagate_to) {
                                             if (this.is_valid_i_j(ri, rj)) {
                                                 qubit.outqueue.push({
@@ -564,7 +596,7 @@ var $app = new Vue({
                                     if (qubit.measurement == true) {
                                         if (qubit.state == CONST.NodeState.NoError || qubit.state == CONST.NodeState.SentOffer) {
                                             // take this offer only if target is smaller than source and cost is better than current
-                                            if (this.compare_i_j(i, j, si, sj) < 0 && message.cost < qubit.cost) {
+                                            if (this.compare_i_j(i, j, si, sj) < 0 && message.cost - qubit.cost < 0) {  // the overall cost < 0 is an augmenting path
                                                 qubit.state = CONST.NodeState.WaitingContract
                                                 qubit.outqueue.push({
                                                     receiver: [...message.broker],  // send back to the last broker
@@ -605,24 +637,53 @@ var $app = new Vue({
                                                     broker: [i, j],
                                                 },
                                             })
-                                            // TODO: send refuse acceptance, so that peer qubit (and also brokers in the middle) is unlocked
                                         }
                                     } else {
-                                        // TODO:  judge if this is brokered offer
+                                        if (qubit.state == CONST.NodeState.Matched) {
+                                            qubit.state = CONST.NodeState.WaitingContract
+                                            qubit.broker_next_hop = message.broker
+                                            qubit.outqueue.push({
+                                                receiver: [...qubit.match_with],
+                                                message: {
+                                                    type: CONST.MessageType.AcceptBrokeredOffer,
+                                                    timestamp: message.timestamp,
+                                                    target: [...message.target],
+                                                    source: [...message.source],
+                                                },
+                                            })
+                                        } else {
+                                            qubit.outqueue.push({
+                                                receiver: [...message.broker],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.RefuseAcceptance,
+                                                    target: [...message.target],
+                                                    source: [i, j],
+                                                    broker: [i, j],
+                                                },
+                                            })
+                                        }
                                     }
                                 } else if (message.type == CONST.MessageType.Contract) {
                                     const [ti, tj] = message.target
-                                    if (ti == i && tj == j) {
-                                        if (qubit.state == CONST.NodeState.WaitingContract) {
-                                            qubit.state = CONST.NodeState.Matched
-                                            qubit.match_with = [...message.broker]
-                                            qubit.cost = cost_of_matching(i, j, ...message.broker)
-                                        } else {
-                                            console.error("This shoudn't happen! Contract is never sent to a node in state other than WaitingContract")
-                                            console.error(message)
+                                    if (qubit.state == CONST.NodeState.WaitingContract) {
+                                        qubit.state = CONST.NodeState.Matched
+                                        const last_match_with = qubit.match_with
+                                        qubit.match_with = [...message.broker]
+                                        qubit.cost = cost_of_matching(i, j, ...message.broker)
+                                        if (!(ti == i && tj == j)) {  // this is broker
+                                            qubit.outqueue.push({
+                                                receiver: [...last_match_with],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.BrokeredContract,
+                                                    target: [...message.target],
+                                                    source: [...message.source],
+                                                    broker: [i, j],  // I'm the broker
+                                                },
+                                            })
                                         }
                                     } else {
-                                        // TODO: judge if this is brokered offer
+                                        console.error("This shoudn't happen! Contract is never sent to a node in state other than WaitingContract")
+                                        console.error(message)
                                     }
                                 } else if (message.type == CONST.MessageType.RefuseAcceptance) {
                                     const [ti, tj] = message.target
@@ -630,6 +691,101 @@ var $app = new Vue({
                                         qubit.state = CONST.NodeState.SentOffer
                                     } else {
                                         // TODO: this is broker
+                                        console.error("this is broker, recovery state and send to peer")
+                                    }
+                                } else if (message.type == CONST.MessageType.BrokeredOffer) {
+                                    if (qubit.state == CONST.NodeState.Matched) {
+                                        const [si, sj] = message.source
+                                        const cached_offer = qubit.offer_cache[i_j_as_key(si, sj)]
+                                        const not_caching_this_offer = !cached_offer || cached_offer.timestamp < message.timestamp || message.cost < cached_offer.cost
+                                        if (not_caching_this_offer) {  // ignore if already brokered a similar offer
+                                            if (message.cost + qubit.boundary_cost < 0) {  // break this matched pair is an augmenting path
+                                                // TODO: this may also find augmenting loop!!! may cause deadlock, handle this later
+                                                // take this offer
+                                                qubit.state = CONST.NodeState.WaitingContract
+                                                qubit.outqueue.push({
+                                                    receiver: [...qubit.match_with],
+                                                    message: {
+                                                        type: CONST.MessageType.AcceptBrokeredOffer,
+                                                        timestamp: message.timestamp,
+                                                        target: [i, j],
+                                                        source: [...message.source],
+                                                    },
+                                                })
+                                            } else {  // propate this offer to neighbors
+                                                let propagate_to = [[i+2, j], [i-2, j], [i, j+2], [i, j-2]]
+                                                for (let [ri, rj] of propagate_to) {
+                                                    if (this.is_valid_i_j(ri, rj)) {
+                                                        qubit.outqueue.push({
+                                                            receiver: [ri, rj],
+                                                            message: {
+                                                                type: CONST.MessageType.MatchOffer,
+                                                                timestamp: message.timestamp,
+                                                                source: [...message.source],
+                                                                broker: [i, j],  // I'm the broker (sink) of this offer
+                                                                cost: message.cost + 1,
+                                                            },
+                                                        })
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        console.error("why should an unmatched qubit receive a BrokeredOffer message?")
+                                    }
+                                } else if (message.type == CONST.MessageType.AcceptBrokeredOffer) {
+                                    if (qubit.state == CONST.NodeState.Matched) {
+                                        const [si, sj] = message.source
+                                        const cached_offer = qubit.offer_cache[i_j_as_key(si, sj)]
+                                        if (cached_offer) {
+                                            qubit.state = CONST.NodeState.WaitingContract
+                                            qubit.outqueue.push({
+                                                receiver: [...cached_offer.broker],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.AcceptOffer,
+                                                    target: [...message.target],  // take this offer as target
+                                                    source: [...message.source],
+                                                    broker: [i, j],  // I'm the broker of this offer
+                                                },
+                                            })
+                                        } else {
+                                            qubit.outqueue.push({
+                                                receiver: [...qubit.match_with],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.RefuseAcceptance,
+                                                    target: [...message.target],
+                                                    source: [...message.source],
+                                                },
+                                            })
+                                        }
+                                    } else {
+                                        qubit.outqueue.push({
+                                            receiver: [...qubit.match_with],  // send back to the last broker
+                                            message: {
+                                                type: CONST.MessageType.RefuseAcceptance,
+                                                target: [...message.target],
+                                                source: [...message.source],
+                                            },
+                                        })
+                                    }
+                                } else if (message.type == CONST.MessageType.BrokeredContract) {
+                                    if (qubit.broker_next_hop) {
+                                        const [ni, nj] = qubit.broker_next_hop
+                                        qubit.outqueue.push({
+                                            receiver: [ni, nj],  // send contract to the next hop
+                                            message: {
+                                                type: CONST.MessageType.Contract,
+                                                target: [...message.target],
+                                                source: [...message.source],
+                                                broker: [i, j],  // I'm the broker
+                                            },
+                                        })
+                                        qubit.state = CONST.NodeState.Matched
+                                        qubit.match_with = [ni, nj]
+                                        qubit.broker_next_hop = null
+                                    } else {  // if no broker_next_hop, then it is the last node which should connect to boundary
+                                        qubit.state = CONST.NodeState.SentOffer  // unlock
+                                        qubit.match_with = null
                                     }
                                 } else {
                                     console.error(`drop unknown message with type: "${message.type}"`)
@@ -677,6 +833,8 @@ var $app = new Vue({
                             // send messages from outqueue
                             while (qubit.outqueue.length > 0) {
                                 const out = qubit.outqueue.shift()
+                                this.message_count_single_round += 1
+                                this.message_count += 1
                                 const [ri, rj] = out.receiver
                                 if (this.is_valid_i_j(ri, rj)) {
                                     const message = out.message
@@ -695,6 +853,8 @@ var $app = new Vue({
             }
             this.qubits = qubits
             this.focus = null
+            this.message_count = 0
+            this.message_count_single_round = 0
         },
         is_valid_i_j(i, j) {
             if (i < 0 || i >= this.L * 2 - 1) return false
@@ -795,6 +955,7 @@ var $app = new Vue({
             })
         },
         default_single_round() {
+            this.message_count_single_round = 0
             this.for_each_qubit((i, j, qubit) => {
                 // only resend offer if it has not sent any offer yet
                 if (qubit.measurement == true && qubit.state == CONST.NodeState.NoError) {
@@ -1019,6 +1180,10 @@ body {
 .has-margin {
     margin-top: 10px;
     margin-left: 5px;
+}
+
+.child-p-no-margin p {
+    margin: 0;
 }
 
 </style>
