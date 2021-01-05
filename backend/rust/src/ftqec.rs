@@ -992,6 +992,7 @@ impl PlanarCodeModel {
                     xor = xor ^ corrected_array[[layer, *i, *j]];
                 }
                 homology_results.push(xor);
+                break;  // vertical judgement. only check for a single line but not all lines
             }
         }
         let z_homology_counts = z_homology_results.iter().filter(|x| **x).count();

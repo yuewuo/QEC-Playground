@@ -459,11 +459,12 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                 let qec_failed = Arc::clone(&qec_failed);
                 let mut model_error = model_error.clone();  // only for generating error and validating correction
                 let model_decoder = Arc::clone(&model_decoder);  // only for decode, so that you're confident I'm not cheating by using information of original errors
-                let validate_layer: isize = match validate_layer.as_str() {
-                    "all" => -1,
-                    "bottom" => 0,
-                    "top" => (T - 1) as isize,
-                    _ => validate_layer.parse::<isize>().expect("integer"),
+                let validate_layers: Vec::<usize> = match validate_layer.as_str() {
+                    "all" => (0..T).collect(),
+                    "bottom" => vec![0],
+                    "top" => vec![T - 1],
+                    "except_top" => (0..T-1).collect(),  // except for the top layer
+                    _ => serde_json::from_str(&validate_layer).expect("validate_layer should be [l1,l2,l3,...,lm]"),
                 };
                 let mini_batch = mini_batch;
                 handlers.push(std::thread::spawn(move || {
@@ -490,23 +491,23 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                             } else {
                                 model_decoder.generate_default_correction()
                             };
-                            if validate_layer < 0 {
-                                if model_error.validate_correction_on_all_layers(&correction).is_err() {
-                                    mini_qec_failed += 1;
-                                }
-                            } else {
-                                let validation_ret = model_error.validate_correction_on_t_layer(&correction, validate_layer as usize);
+                            let mut check_result = true;  // AND
+                            for layer in validate_layers.iter() {
+                                let validation_ret = model_error.validate_correction_on_t_layer(&correction, *layer);
                                 if validation_ret.is_err() {
                                     if only_count_logical_x {  // only if contains logical X error will it count
                                         match validation_ret {
-                                            Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed += 1; },
-                                            Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed += 1; },
+                                            Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { check_result = false; },
+                                            Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { check_result = false; },
                                             _ => { },
                                         }
                                     } else {
-                                        mini_qec_failed += 1;
+                                        check_result = false;
                                     }
                                 }
+                            }
+                            if check_result == false {
+                                mini_qec_failed += 1;
                             }
                         }
                         // sync data from outside
