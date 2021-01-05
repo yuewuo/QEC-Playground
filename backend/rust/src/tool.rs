@@ -635,8 +635,9 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
                             // println!{"Measurement {:?}", measurement};
                             // use `model_decoder` for decoding, so that it is blind to the real error information
                             let correction_MWPM = model_decoder_MWPM.decode_MWPM(&measurement);
+                            // let correction_MWPM = model_decoder_MWPM.decode_MWPM_approx(&measurement, substreams, false);
                             // println!("correction : {:?}", correction_MWPM);
-                            let correction_approx = model_decoder_approx.decode_MWPM_approx(&measurement, substreams);
+                            let correction_approx = model_decoder_approx.decode_MWPM_approx(&measurement, substreams, false);
                             // println!("correction approx: {:?}", correction_approx);
                             // We need a new model to test approx corrections
                             let model_error_approx = model_error.clone();

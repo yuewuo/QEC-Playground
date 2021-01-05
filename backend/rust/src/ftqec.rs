@@ -893,7 +893,7 @@ impl PlanarCodeModel {
     }
 
     /// decode based on MWPM
-    pub fn decode_MWPM_approx(&self, measurement: &Measurement, substreams: usize) -> Correction {
+    pub fn decode_MWPM_approx(&self, measurement: &Measurement, substreams: usize, use_modified: bool) -> Correction {
         // sanity check
         let shape = measurement.shape();
         let width = 2 * self.L - 1;
@@ -946,9 +946,11 @@ impl PlanarCodeModel {
             //     println!{"node num {:?}, weighted edges {:?}", node_num, weighted_edges};
             // }
 
-            // let matching = mwpm_approx::minimum_weight_perfect_matching_approx(node_num, weighted_edges, substreams);
-            let matching = mwpm_approx::minimum_weight_perfect_matching_approx_modified(node_num, weighted_edges, substreams);
-            
+            let matching = match use_modified {
+                true => mwpm_approx::minimum_weight_perfect_matching_approx_modified(node_num, weighted_edges, substreams),
+                false =>  mwpm_approx::minimum_weight_perfect_matching_approx(node_num, weighted_edges, substreams),
+            };
+
             // println!("{:?}", to_be_matched);
             // println!("matching: {:?}", matching);
             // if to_be_matched.len() > 2 {
