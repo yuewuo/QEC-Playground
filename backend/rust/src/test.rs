@@ -40,7 +40,9 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
             perfect_measurement();
             validate_correction();
             naive_correction();
+            maximum_max_weight_matching_correction();
             debug_tests();
+            archived_debug_tests();
         }
         _ => unreachable!()
     }
@@ -271,11 +273,12 @@ fn archived_debug_tests() {
         // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
     }
     {
-        let T = 4;
+        let MeasurementRounds = 4;
         let L = 4;
         let error_rate = 0.01;  // (1-3p)I + pX + pZ + pY
-        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(T, L);
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, L);
         let nodes_count = model.count_nodes();
+        let T = model.T;
         assert_eq!(nodes_count, (6 * T + 1) * (2 * L - 1) * (2 * L - 1));
         // println!("{:?}", model);
         model.set_depolarizing_error(error_rate);
@@ -316,9 +319,9 @@ fn archived_debug_tests() {
             assert!(max_edge_count <= 12, "verified: at most 12 neighbors in graph");
             // build exhausted path helps to speed up decoder
             model.build_exhausted_path_autotune();
-            // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
-            // println!("{:?}", model.get_correction_two_nodes(ftqec::Index::new(6, 0, 1), ftqec::Index::new(18, 4, 1)));
-            let _correction = model.get_correction_two_nodes(&ftqec::Index::new(6, 0, 1), &ftqec::Index::new(6, 4, 1));
+            // println!("exhausted of Z stabilizer at [12][0][1]: {:?}", model.snapshot[12][0][1].as_ref().expect("exist").exhausted_map);
+            // println!("{:?}", model.get_correction_two_nodes(ftqec::Index::new(12, 0, 1), ftqec::Index::new(24, 4, 1)));
+            let _correction = model.get_correction_two_nodes(&ftqec::Index::new(12, 0, 1), &ftqec::Index::new(12, 4, 1));
             // println!("{:?}", _correction);
         }
         {  // decode the generated error
@@ -361,20 +364,20 @@ fn archived_debug_tests() {
         model.build_graph();
         model.optimize_correction_pattern();
         model.build_exhausted_path_autotune();
-        let error_source = ftqec::Index::new(12, 2, 3);
+        let error_source = ftqec::Index::new(18, 2, 3);
         let error_target = vec![
-            (ftqec::Index::new(12, 2, 1), "left"),
-            (ftqec::Index::new(12, 2, 5), "right"),
-            (ftqec::Index::new(12, 0, 3), "front"),
-            (ftqec::Index::new(12, 4, 3), "back"),
-            (ftqec::Index::new(6, 2, 3), "bottom"),
-            (ftqec::Index::new(18, 2, 3), "top"),
-            (ftqec::Index::new(6, 0, 3), "bottom front"),
-            (ftqec::Index::new(6, 2, 1), "bottom left"),
-            (ftqec::Index::new(6, 0, 5), "bottom front right"),
-            (ftqec::Index::new(18, 4, 3), "top back"),
-            (ftqec::Index::new(18, 2, 5), "top right"),
-            (ftqec::Index::new(18, 4, 1), "top back left"),
+            (ftqec::Index::new(18, 2, 1), "left"),
+            (ftqec::Index::new(18, 2, 5), "right"),
+            (ftqec::Index::new(18, 0, 3), "front"),
+            (ftqec::Index::new(18, 4, 3), "back"),
+            (ftqec::Index::new(12, 2, 3), "bottom"),
+            (ftqec::Index::new(24, 2, 3), "top"),
+            (ftqec::Index::new(12, 0, 3), "bottom front"),
+            (ftqec::Index::new(12, 2, 1), "bottom left"),
+            (ftqec::Index::new(12, 0, 5), "bottom front right"),
+            (ftqec::Index::new(24, 4, 3), "top back"),
+            (ftqec::Index::new(24, 2, 5), "top right"),
+            (ftqec::Index::new(24, 4, 1), "top back left"),
         ];
         for (target, name) in error_target.iter() {
             let mut found_error = None;

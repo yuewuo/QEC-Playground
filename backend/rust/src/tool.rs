@@ -398,7 +398,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
     }
     println!("format: <p> <L> <T> <total_rounds> <qec_failed> <error_rate>");
     for (L_idx, L) in Ls.iter().enumerate() {
-        let T = Ts[L_idx];
+        let MeasurementRounds = Ts[L_idx];
         for p in ps {
             let p = *p;
             assert!(3. * p < 0.5, "why should errors (X, Z, Y) happening more than half of a time?");
@@ -411,35 +411,35 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             pb.set(0);
             // build general models
             let mut model = if rotated_planar_code {
-                ftqec::PlanarCodeModel::new_rotated_planar_code(T, L)
+                ftqec::PlanarCodeModel::new_rotated_planar_code(MeasurementRounds, L)
             } else {
-                ftqec::PlanarCodeModel::new_standard_planar_code(T, L)
+                ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, L)
             };
-            // model.set_depolarizing_error(p);
-            {  // feel free to delete this part, it's not used anymore, just to test modification
-                // add perfect measurement layer on the top, and add another layer at the bottom
-                // if we use the `set_depolarizing_error` model, then old judgement doesn't work
-                // in order to verify that the modification is good, here we mimic the behavior of old model
-                // that is, we do not generate error on the added bottom layer, so that there is no bottom boundary
-                let height = model.snapshot.len();
-                let error_start_height = 6;  // prevent errors between 0~6
-                // let error_start_height = 0;  // has errors between 0~6, this is the same as calling `model.set_depolarizing_error`
-                model.iterate_snapshot_mut(|t, _i, _j, node| {
-                    if t >= height - 6 {  // no error on the top, as a perfect measurement round
-                        node.error_rate_x = 0.;
-                        node.error_rate_z = 0.;
-                        node.error_rate_y = 0.;
-                    } else if t <= error_start_height {
-                        node.error_rate_x = 0.;
-                        node.error_rate_z = 0.;
-                        node.error_rate_y = 0.;
-                    } else {
-                        node.error_rate_x = p;
-                        node.error_rate_z = p;
-                        node.error_rate_y = p;
-                    }
-                });
-            }
+            model.set_depolarizing_error(p);
+            // {  // feel free to delete this part, it's not used anymore, just to test modification
+            //     // add perfect measurement layer on the top, and add another layer at the bottom
+            //     // if we use the `set_depolarizing_error` model, then old judgement doesn't work
+            //     // in order to verify that the modification is good, here we mimic the behavior of old model
+            //     // that is, we do not generate error on the added bottom layer, so that there is no bottom boundary
+            //     let height = model.snapshot.len();
+            //     let error_start_height = 6;  // prevent errors between 0~6
+            //     // let error_start_height = 0;  // has errors between 0~6, this is the same as calling `model.set_depolarizing_error`
+            //     model.iterate_snapshot_mut(|t, _i, _j, node| {
+            //         if t >= height - 6 {  // no error on the top, as a perfect measurement round
+            //             node.error_rate_x = 0.;
+            //             node.error_rate_z = 0.;
+            //             node.error_rate_y = 0.;
+            //         } else if t <= error_start_height {
+            //             node.error_rate_x = 0.;
+            //             node.error_rate_z = 0.;
+            //             node.error_rate_y = 0.;
+            //         } else {
+            //             node.error_rate_x = p;
+            //             node.error_rate_z = p;
+            //             node.error_rate_y = p;
+            //         }
+            //     });
+            // }
             model.iterate_snapshot_mut(|t, _i, _j, node| {
                 if t % 6 == 5 && node.qubit_type != ftqec::QubitType::Data {  // just add error before the measurement stage
                     node.error_rate_x *= extra_measurement_error;
@@ -486,7 +486,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                 let validate_layer: isize = match validate_layer.as_str() {
                     "all" => -1,
                     "bottom" => 0,
-                    "top" => (T - 1) as isize,
+                    "top" => MeasurementRounds as isize,
                     _ => validate_layer.parse::<isize>().expect("integer"),
                 };
                 let mini_batch = mini_batch;
@@ -553,7 +553,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                 let qec_failed = *qec_failed.lock().unwrap();
                 if qec_failed >= min_error_cases { break }
                 let error_rate = qec_failed as f64 / total_rounds as f64;
-                pb.message(format!("{} {} {} {} {} {} ", p, L, T, total_rounds, qec_failed, error_rate).as_str());
+                pb.message(format!("{} {} {} {} {} {} ", p, L, MeasurementRounds, total_rounds, qec_failed, error_rate).as_str());
                 let progress = total_rounds / mini_batch;
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
@@ -565,7 +565,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             let total_rounds = *total_rounds.lock().unwrap();
             let qec_failed = *qec_failed.lock().unwrap();
             let error_rate = qec_failed as f64 / total_rounds as f64;
-            println!("{} {} {} {} {} {}", p, L, T, total_rounds, qec_failed, error_rate);
+            println!("{} {} {} {} {} {}", p, L, MeasurementRounds, total_rounds, qec_failed, error_rate);
         }
     }
 }

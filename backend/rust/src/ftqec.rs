@@ -1048,7 +1048,7 @@ impl PlanarCodeModel {
     pub fn validate_correction_on_top_layer(&self, correction: &Correction) -> Result<(), ValidationFailedReason> {
         let mut corrected = self.get_data_qubit_error_pattern();
         corrected.combine(&correction);  // apply correction to error pattern
-        self.validate_corrected_on_layer(&corrected, self.T - 1)
+        self.validate_corrected_on_layer(&corrected, self.MeasurementRounds)
     }
     pub fn validate_correction_on_bottom_layer(&self, correction: &Correction) -> Result<(), ValidationFailedReason> {
         let mut corrected = self.get_data_qubit_error_pattern();
@@ -1059,7 +1059,7 @@ impl PlanarCodeModel {
         let mut corrected = self.get_data_qubit_error_pattern();
         // println!{"Corrected{:?}", corrected};
         corrected.combine(&correction);  // apply correction to error pattern
-        for mt in 0..self.T {
+        for mt in 0..=self.MeasurementRounds {
             self.validate_corrected_on_layer(&corrected, mt)?;
         }
         Ok(())
