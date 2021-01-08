@@ -1,6 +1,7 @@
 <template>
 	<div id="app">
-		<FaultTolerantView class="main-qubits" :panelWidth="480" :L="L" :MeasurementRounds="MeasurementRounds" :showDataQubit="show_data_qubit" :showXAncilla="show_X_ancilla"
+		<FaultTolerantView class="main-qubits" :panelWidth="480" :L="L" :MeasurementRounds="MeasurementRounds" :showDataQubit="show_data_qubit"
+			:showXAncilla="show_X_ancilla" :IsPerfectInitialization="IsPerfectInitialization"
 			:showZAncilla="show_Z_ancilla" :showVerticalLine="show_vertical_line" :showInitialization="show_initialization" :showCXGates="show_CX_gates"
 			:showXEdges="show_X_edges" :showZEdges="show_Z_edges" :useRotated="use_rotated" :depolarErrorRate="0.001" ref="ft_view"
 			:usePerspectiveCamera="use_perspective_camera" :enableStats="enableStats" :websiteRoot="websiteRoot"></FaultTolerantView>
@@ -23,6 +24,8 @@
 						Measurement Round:
 						<el-input-number v-model="MeasurementRounds" :min="1"></el-input-number>
 					</div>
+					<div style="height: 20px;"></div>
+					<el-switch v-model="IsPerfectInitialization" active-text="Perfect Initialization" inactive-text="Imperfect Initialization"></el-switch>
 					<div style="height: 20px;"></div>
 					<el-switch v-model="use_rotated" active-text="Rotated Planar Code" inactive-text="Standard Planar Code"></el-switch>
 					<div style="height: 20px;"></div>
@@ -113,6 +116,7 @@ export default {
 
 			L: 4,
 			MeasurementRounds: 2,
+			IsPerfectInitialization: false,
 			use_rotated: false,
 
 			bufferedL: 4,  // to avoid invalid `L` pass into FaultTolerantView
@@ -181,6 +185,10 @@ export default {
 			const [error_rate_x, error_rate_z, error_rate_y] = this.get_error_rates()
 			ft_view.iterate_snapshot((node, t, i, j) => {
 				if (t >= ft_view.snapshot.length - 6) {
+					node.error_rate_x = 0
+					node.error_rate_z = 0
+					node.error_rate_y = 0
+				} else if (this.IsPerfectInitialization && t <= 6) {
 					node.error_rate_x = 0
 					node.error_rate_z = 0
 					node.error_rate_y = 0

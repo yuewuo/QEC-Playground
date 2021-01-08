@@ -304,6 +304,25 @@ impl PlanarCodeModel {
             }
         })
     }
+    // this will remove bottom boundary
+    pub fn set_depolarizing_error_with_perfect_initialization(&mut self, error_rate: f64) {  // (1-3p)I + pX + pZ + pY: X error rate = Z error rate = 2p(1-p)
+        let height = self.snapshot.len();
+        self.iterate_snapshot_mut(|t, _i, _j, node| {
+            if t >= height - 6 {  // no error on the top, as a perfect measurement round
+                node.error_rate_x = 0.;
+                node.error_rate_z = 0.;
+                node.error_rate_y = 0.;
+            } else if t <= 6 {
+                node.error_rate_x = 0.;
+                node.error_rate_z = 0.;
+                node.error_rate_y = 0.;
+            } else {
+                node.error_rate_x = error_rate;
+                node.error_rate_z = error_rate;
+                node.error_rate_y = error_rate;
+            }
+        })
+    }
     pub fn clear_error(&mut self) {
         self.iterate_snapshot_mut(|_t, _i, _j, node| {
             node.error = ErrorType::I;

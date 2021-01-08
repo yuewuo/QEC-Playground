@@ -78,8 +78,9 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let bypass_correction = matches.is_present("bypass_correction");
             let independent_px_pz = matches.is_present("independent_px_pz");
             let only_count_logical_x = matches.is_present("only_count_logical_x");
+            let perfect_initialization = matches.is_present("perfect_initialization");
             fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
-                , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x);
+                , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, perfect_initialization);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -391,7 +392,7 @@ it supports progress bar (in stderr), so you can run this in backend by redirect
 **/
 fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
         , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
-        , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool) {
+        , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -415,31 +416,14 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             } else {
                 ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, L)
             };
-            model.set_depolarizing_error(p);
-            // {  // feel free to delete this part, it's not used anymore, just to test modification
-            //     // add perfect measurement layer on the top, and add another layer at the bottom
-            //     // if we use the `set_depolarizing_error` model, then old judgement doesn't work
-            //     // in order to verify that the modification is good, here we mimic the behavior of old model
-            //     // that is, we do not generate error on the added bottom layer, so that there is no bottom boundary
-            //     let height = model.snapshot.len();
-            //     let error_start_height = 6;  // prevent errors between 0~6
-            //     // let error_start_height = 0;  // has errors between 0~6, this is the same as calling `model.set_depolarizing_error`
-            //     model.iterate_snapshot_mut(|t, _i, _j, node| {
-            //         if t >= height - 6 {  // no error on the top, as a perfect measurement round
-            //             node.error_rate_x = 0.;
-            //             node.error_rate_z = 0.;
-            //             node.error_rate_y = 0.;
-            //         } else if t <= error_start_height {
-            //             node.error_rate_x = 0.;
-            //             node.error_rate_z = 0.;
-            //             node.error_rate_y = 0.;
-            //         } else {
-            //             node.error_rate_x = p;
-            //             node.error_rate_z = p;
-            //             node.error_rate_y = p;
-            //         }
-            //     });
-            // }
+            if !perfect_initialization {
+                model.set_depolarizing_error(p);
+            } else {
+                // if we use the `set_depolarizing_error` model, then old judgement doesn't work
+                // in order to verify that the modification is good, here we mimic the behavior of old model
+                // that is, we do not generate error on the added bottom layer, so that there is no bottom boundary
+                model.set_depolarizing_error_with_perfect_initialization(p);
+            }
             model.iterate_snapshot_mut(|t, _i, _j, node| {
                 if t % 6 == 5 && node.qubit_type != ftqec::QubitType::Data {  // just add error before the measurement stage
                     node.error_rate_x *= extra_measurement_error;

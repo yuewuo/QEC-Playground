@@ -41,6 +41,10 @@ export default {
 			type: Number,
 			default: 3,
         },
+        IsPerfectInitialization: {
+            type: Boolean,
+			default: false,
+        },
         MeasurementRounds: {
 			type: Number,
 			default: 3,
@@ -550,6 +554,10 @@ export default {
                                 qubit.error_rate_x = 0
                                 qubit.error_rate_z = 0
                                 qubit.error_rate_y = 0
+                            } else if (this.IsPerfectInitialization && t <= 6) {
+                                qubit.error_rate_x = 0
+                                qubit.error_rate_z = 0
+                                qubit.error_rate_y = 0
                             } else {
                                 if (this.errorModel == "depolarizing") {
                                     qubit.error_rate_x = 2 * this.depolarErrorRate  // X error rate
@@ -580,7 +588,7 @@ export default {
                             let bt = t
                             let bi = i
                             let bj = j
-                            if (t == 12) bt -= 6
+                            if (!this.IsPerfectInitialization && t == 12) bt -= 6
                             else if (i == 1) bi -= 2
                             else if (i == snapshot[t].length - 2) bi += 2
                             else if (j == 1) bj -= 2
@@ -627,7 +635,7 @@ export default {
                             let bi = i
                             let bj = j
                             const distance = Math.abs(i - middle) + Math.abs(j - middle)
-                            if (t == 12) bt -= 6
+                            if (!this.IsPerfectInitialization && t == 12) bt -= 6
                             else if (distance >= middle - 3) {
                                 const q_type = i % 2 == 0 ? this.constants.QTYPE.Z : this.constants.QTYPE.X
                                 if (q_type == this.constants.QTYPE.Z) {
@@ -1140,6 +1148,9 @@ export default {
         },
         usePerspectiveCamera() {
             this.use_orthogonal_camera(!this.usePerspectiveCamera)
+        },
+        IsPerfectInitialization() {
+            this.regenerate_everything()
         },
         show_data_qubit(show) {
             this.iterate_snapshot((node, t, i, j) => {
