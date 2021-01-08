@@ -415,7 +415,31 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             } else {
                 ftqec::PlanarCodeModel::new_standard_planar_code(T, L)
             };
-            model.set_depolarizing_error(p);
+            // model.set_depolarizing_error(p);
+            {  // feel free to delete this part, it's not used anymore, just to test modification
+                // add perfect measurement layer on the top, and add another layer at the bottom
+                // if we use the `set_depolarizing_error` model, then old judgement doesn't work
+                // in order to verify that the modification is good, here we mimic the behavior of old model
+                // that is, we do not generate error on the added bottom layer, so that there is no bottom boundary
+                let height = model.snapshot.len();
+                let error_start_height = 6;  // prevent errors between 0~6
+                // let error_start_height = 0;  // has errors between 0~6, this is the same as calling `model.set_depolarizing_error`
+                model.iterate_snapshot_mut(|t, _i, _j, node| {
+                    if t >= height - 6 {  // no error on the top, as a perfect measurement round
+                        node.error_rate_x = 0.;
+                        node.error_rate_z = 0.;
+                        node.error_rate_y = 0.;
+                    } else if t <= error_start_height {
+                        node.error_rate_x = 0.;
+                        node.error_rate_z = 0.;
+                        node.error_rate_y = 0.;
+                    } else {
+                        node.error_rate_x = p;
+                        node.error_rate_z = p;
+                        node.error_rate_y = p;
+                    }
+                });
+            }
             model.iterate_snapshot_mut(|t, _i, _j, node| {
                 if t % 6 == 5 && node.qubit_type != ftqec::QubitType::Data {  // just add error before the measurement stage
                     node.error_rate_x *= extra_measurement_error;

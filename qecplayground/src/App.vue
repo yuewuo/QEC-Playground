@@ -1,6 +1,6 @@
 <template>
 	<div id="app">
-		<FaultTolerantView class="main-qubits" :panelWidth="480" :L="L" :T="T" :showDataQubit="show_data_qubit" :showXAncilla="show_X_ancilla"
+		<FaultTolerantView class="main-qubits" :panelWidth="480" :L="L" :MeasurementRounds="MeasurementRounds" :showDataQubit="show_data_qubit" :showXAncilla="show_X_ancilla"
 			:showZAncilla="show_Z_ancilla" :showVerticalLine="show_vertical_line" :showInitialization="show_initialization" :showCXGates="show_CX_gates"
 			:showXEdges="show_X_edges" :showZEdges="show_Z_edges" :useRotated="use_rotated" :depolarErrorRate="0.001" ref="ft_view"
 			:usePerspectiveCamera="use_perspective_camera" :enableStats="enableStats" :websiteRoot="websiteRoot"></FaultTolerantView>
@@ -21,7 +21,7 @@
 					<div style="height: 20px;"></div>
 					<div>
 						Measurement Round:
-						<el-input-number v-model="T" :min="1"></el-input-number>
+						<el-input-number v-model="MeasurementRounds" :min="1"></el-input-number>
 					</div>
 					<div style="height: 20px;"></div>
 					<el-switch v-model="use_rotated" active-text="Rotated Planar Code" inactive-text="Standard Planar Code"></el-switch>
@@ -79,7 +79,7 @@
 					<div style="height: 20px;" v-if="error_info.length > 0"></div>
 					<div>
 						<div class="index">t</div>
-						<el-input-number v-model="target_t" controls-position="right" :min="0" :max="6 * T" size="medium"></el-input-number>
+						<el-input-number v-model="target_t" controls-position="right" :min="0" :max="6 * (MeasurementRounds + 1)" size="medium"></el-input-number>
 						<div class="index">i</div>
 						<el-input-number v-model="target_i" controls-position="right" :min="0" :max="2 * L - 2" size="medium"></el-input-number>
 						<div class="index">j</div>
@@ -111,11 +111,11 @@ export default {
 		return {
 			deploy_mode: deploy_mode,
 
-			L: 3,
-			T: 3,
+			L: 4,
+			MeasurementRounds: 2,
 			use_rotated: false,
 
-			bufferedL: 1,  // to avoid invalid `L` pass into FaultTolerantView
+			bufferedL: 4,  // to avoid invalid `L` pass into FaultTolerantView
 			show_data_qubit: true,
             show_X_ancilla: true,
             show_Z_ancilla: true,
@@ -180,9 +180,15 @@ export default {
 			let ft_view = this.$refs.ft_view
 			const [error_rate_x, error_rate_z, error_rate_y] = this.get_error_rates()
 			ft_view.iterate_snapshot((node, t, i, j) => {
-				node.error_rate_x = error_rate_x
-				node.error_rate_z = error_rate_z
-				node.error_rate_y = error_rate_y
+				if (t >= ft_view.snapshot.length - 6) {
+					node.error_rate_x = 0
+					node.error_rate_z = 0
+					node.error_rate_y = 0
+				} else {
+					node.error_rate_x = error_rate_x
+					node.error_rate_z = error_rate_z
+					node.error_rate_y = error_rate_y
+				}
 			})
 			ft_view.generate_random_error()
 			ft_view.compute_propagated_error()

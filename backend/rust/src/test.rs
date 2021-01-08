@@ -436,5 +436,20 @@ fn archived_debug_tests() {
 }
 
 fn debug_tests() {
-    
+    {  // test functionality after adding the perfect measurement layer on top
+        let MeasurementRounds = 2;
+        let L = 4;
+        let error_rate = 0.01;  // (1-3p)I + pX + pZ + pY
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, L);
+        model.set_depolarizing_error(error_rate);
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path_equally_weighted();
+        println!("model.snapshot.len(): {}", model.snapshot.len());
+        let default_correction = model.generate_default_correction();
+        println!("default_correction.x.shape(): {:?}", default_correction.x.shape());
+        let measurement = model.generate_measurement();
+        println!("measurement.shape(): {:?}", measurement.shape());
+        // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
+    }
 }
