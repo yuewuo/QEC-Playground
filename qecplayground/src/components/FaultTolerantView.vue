@@ -40,8 +40,12 @@ export default {
 		L: {
 			type: Number,
 			default: 3,
-		},
-		T: {
+        },
+        IsPerfectInitialization: {
+            type: Boolean,
+			default: false,
+        },
+        MeasurementRounds: {
 			type: Number,
 			default: 3,
         },
@@ -113,6 +117,7 @@ export default {
 	},
 	data() {
 		return {
+            T: this.MeasurementRounds + 2,
 			three: { },  // save necessary THREE.js objects
 			internals: { bias: { x:0, y:0, z:0 } },  // internal data
 
@@ -463,7 +468,7 @@ export default {
                 for (let i=0; i<width; ++i) {
                     let snapshot_row_1 = []
                     for (let j=0; j<width; ++j) {
-                        if (filter(i,j)) {  // if here exists a qubit (either data qubit or ancilla qubit)
+                        if (filter(i,j) && t > 0) {  // if here exists a qubit (either data qubit or ancilla qubit)
                             const stage = (t+6-1) % 6  // 0: preparation, 1,2,3,4: CNOT gate, 5: measurement
                             const is_data_qubit = (i+j)%2 == 0 
                             const q_type = is_data_qubit ? this.constants.QTYPE.DATA : (i % 2 == 0 ? this.constants.QTYPE.Z : this.constants.QTYPE.X)
@@ -545,10 +550,20 @@ export default {
                                 error: this.constants.ETYPE.I,  // an error happening from now to next
                                 propagated: this.constants.ETYPE.I,  // propagted error till now
                             }
-                            if (this.errorModel == "depolarizing") {
-                                qubit.error_rate_x = 2 * this.depolarErrorRate  // X error rate
-                                qubit.error_rate_z = 2 * this.depolarErrorRate  // Z error rate
-                                qubit.error_rate_y = 2 * this.depolarErrorRate  // Y error rate
+                            if (t >= height - 6) {  // top layer is perfect measurement. by default 0 error rate
+                                qubit.error_rate_x = 0
+                                qubit.error_rate_z = 0
+                                qubit.error_rate_y = 0
+                            } else if (this.IsPerfectInitialization && t <= 6) {
+                                qubit.error_rate_x = 0
+                                qubit.error_rate_z = 0
+                                qubit.error_rate_y = 0
+                            } else {
+                                if (this.errorModel == "depolarizing") {
+                                    qubit.error_rate_x = 2 * this.depolarErrorRate  // X error rate
+                                    qubit.error_rate_z = 2 * this.depolarErrorRate  // Z error rate
+                                    qubit.error_rate_y = 2 * this.depolarErrorRate  // Y error rate
+                                }
                             }
                             snapshot_row_1.push(qubit)
                         } else {
@@ -564,7 +579,7 @@ export default {
         build_standard_planar_code_snapshot() {
             let snapshot = this.build_code_in_standard_planar_code()
             // add boundary information (only add possible boundaries. exact boundary will be added `p` after building the graph)
-            for (let t=6; t < snapshot.length; t+=6) {
+            for (let t=12; t < snapshot.length; t+=6) {
                 for (let i=0; i < snapshot[t].length; ++i) {
                     for (let j=0; j < snapshot[t][i].length; ++j) {
                         let node = snapshot[t][i][j]
@@ -573,13 +588,12 @@ export default {
                             let bt = t
                             let bi = i
                             let bj = j
-                            if (t == snapshot.length - 1) bt += 6
-                            else {
-                                if (i == 1) bi -= 2
-                                if (i == snapshot[t].length - 2) bi += 2
-                                if (j == 1) bj -= 2
-                                if (j == snapshot[t][i].length - 2) bj += 2
-                            }
+                            if (!this.IsPerfectInitialization && t == 12) bt -= 6
+                            else if (i == 1) bi -= 2
+                            else if (i == snapshot[t].length - 2) bi += 2
+                            else if (j == 1) bj -= 2
+                            else if (j == snapshot[t][i].length - 2) bj += 2
+                            else if (t == snapshot.length - 1) bt += 6
                             if (bi != i || bj != j || bt != t) {
                                 node.boundary = {
                                     t: bt,
@@ -611,7 +625,7 @@ export default {
             }
             let snapshot = this.build_code_in_standard_planar_code(filter)
             // add boundary information (only add possible boundaries. exact boundary will be added `p` after building the graph)
-            for (let t=6; t < snapshot.length; t+=6) {
+            for (let t=12; t < snapshot.length; t+=6) {
                 for (let i=0; i < snapshot[t].length; ++i) {
                     for (let j=0; j < snapshot[t][i].length; ++j) {
                         let node = snapshot[t][i][j]
@@ -621,7 +635,7 @@ export default {
                             let bi = i
                             let bj = j
                             const distance = Math.abs(i - middle) + Math.abs(j - middle)
-                            if (t == snapshot.length - 1) bt += 6
+                            if (!this.IsPerfectInitialization && t == 12) bt -= 6
                             else if (distance >= middle - 3) {
                                 const q_type = i % 2 == 0 ? this.constants.QTYPE.Z : this.constants.QTYPE.X
                                 if (q_type == this.constants.QTYPE.Z) {
@@ -641,7 +655,7 @@ export default {
                                         bj -= 2
                                     }
                                 }
-                            }
+                            } else if (t == snapshot.length - 1) bt += 6
                             if (bi != i || bj != j || bt != t) {
                                 node.boundary = {
                                     t: bt,
@@ -734,14 +748,16 @@ export default {
                                 if (node.q_type == this.constants.QTYPE.Z) {
                                     let this_result = node.propagated == this.constants.ETYPE.I || node.propagated == this.constants.ETYPE.Z
                                     const last_node = this.snapshot[t-6][i][j]
-                                    let last_result = last_node.propagated == this.constants.ETYPE.I || last_node.propagated == this.constants.ETYPE.Z
+                                    let last_result = last_node == null ? true :  // if last node doesn't exist, by default to `this.constants.ETYPE.I`
+                                        (last_node.propagated == this.constants.ETYPE.I || last_node.propagated == this.constants.ETYPE.Z)
                                     if (this_result != last_result) {
                                         node.mesh.material.color = this.three.measurement_node_color_error
                                     } else node.mesh.material.color = this.three.initialization_node_color_Z
                                 } else {
                                     let this_result = node.propagated == this.constants.ETYPE.I || node.propagated == this.constants.ETYPE.X
                                     const last_node = this.snapshot[t-6][i][j]
-                                    let last_result = last_node.propagated == this.constants.ETYPE.I || last_node.propagated == this.constants.ETYPE.X
+                                    let last_result = last_node == null ? true :  // if last node doesn't exist, by default to `this.constants.ETYPE.I`
+                                        (last_node.propagated == this.constants.ETYPE.I || last_node.propagated == this.constants.ETYPE.X)
                                     if (this_result != last_result) {
                                         node.mesh.material.color = this.three.measurement_node_color_error
                                     } else node.mesh.material.color = this.three.initialization_node_color_X
@@ -978,21 +994,30 @@ export default {
                     for (let j=0; j < this.snapshot[t][i].length; ++j) {
                         for (let e=0; e < 2; ++e) {
                             if (!this.snapshot[t][i][j]) continue
-                            this.clear_errors()
-                            this.snapshot[t][i][j].error = e == 0 ? this.constants.ETYPE.X : this.constants.ETYPE.Z
                             const p = (e == 0 ? this.snapshot[t][i][j].error_rate_x : this.snapshot[t][i][j].error_rate_z) + this.snapshot[t][i][j].error_rate_y
-                            this.compute_propagated_error(false)
-                            const error_syndrome = this.get_error_syndrome_propagated()
-                            if (error_syndrome.length == 1) {  // connect to boundary
-                                const [et, ei, ej] = error_syndrome[0]
-                                const boundary = this.snapshot[et][ei][ej].boundary
-                                console.assert(boundary, `there must be boundary on [${et}][${ei}][${ej}]`)
-                                if (boundary.p == undefined) boundary.p = 0
-                                boundary.p = boundary.p * (1 - p) + p * (1 - boundary.p)
-                            } else if (error_syndrome.length == 2) {  // connect to other nodes
-                                const node1 = this.snapshot[error_syndrome[0][0]][error_syndrome[0][1]][error_syndrome[0][2]]
-                                const node2 = this.snapshot[error_syndrome[1][0]][error_syndrome[1][1]][error_syndrome[1][2]]
-                                node_add_connection(node1, node2, p)
+                            if (p > 0) {
+                                this.clear_errors()
+                                this.snapshot[t][i][j].error = e == 0 ? this.constants.ETYPE.X : this.constants.ETYPE.Z
+                                this.compute_propagated_error(false)
+                                const error_syndrome = this.get_error_syndrome_propagated()
+                                if (error_syndrome.length == 1) {  // connect to boundary
+                                    const [et, ei, ej] = error_syndrome[0]
+                                    const boundary = this.snapshot[et][ei][ej].boundary
+                                    console.assert(boundary, `there must be boundary on [${et}][${ei}][${ej}]`)
+                                    if (boundary.p == undefined) boundary.p = 0
+                                    boundary.p = boundary.p * (1 - p) + p * (1 - boundary.p)
+                                } else if (error_syndrome.length == 2) {  // connect to other nodes
+                                    const node1 = this.snapshot[error_syndrome[0][0]][error_syndrome[0][1]][error_syndrome[0][2]]
+                                    const node2 = this.snapshot[error_syndrome[1][0]][error_syndrome[1][1]][error_syndrome[1][2]]
+                                    if (node1.t <= 6 || node2.t <= 6) {
+                                        console.assert(node1.t > 6 || node2.t > 6, `they shouldn't be both below 6. ${node1.t} ${node2.t}`)
+                                        const node = node1.t > 6 ? node1 : node2
+                                        const boundary = node.boundary
+                                        console.assert(boundary, `there must be boundary on [${node.t}][${node.i}][${node.j}]`)
+                                        if (boundary.p == undefined) boundary.p = 0
+                                        boundary.p = boundary.p * (1 - p) + p * (1 - boundary.p)
+                                    } else node_add_connection(node1, node2, p)
+                                }
                             }
                         }
                     }
@@ -1013,7 +1038,7 @@ export default {
         },
         get_error_syndrome_propagated() {
             let error_syndrome_propagated = []
-            for (let t=6; t < this.snapshot.length; t += 6) {
+            for (let t=12; t < this.snapshot.length; t += 6) {
                 for (let i=0; i < this.snapshot[t].length; ++i) {
                     for (let j=0; j < this.snapshot[t][i].length; ++j) {
                         let node = this.snapshot[t][i][j]
@@ -1114,7 +1139,8 @@ export default {
         L() {
             this.regenerate_everything()
         },
-        T() {
+        MeasurementRounds() {
+            this.T = this.MeasurementRounds + 2  // add top and bottom layer
             this.regenerate_everything()
         },
         useRotated() {
@@ -1122,6 +1148,9 @@ export default {
         },
         usePerspectiveCamera() {
             this.use_orthogonal_camera(!this.usePerspectiveCamera)
+        },
+        IsPerfectInitialization() {
+            this.regenerate_everything()
         },
         show_data_qubit(show) {
             this.iterate_snapshot((node, t, i, j) => {

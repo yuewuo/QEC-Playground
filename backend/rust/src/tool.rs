@@ -69,15 +69,18 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
             let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
             let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("bottom".to_string());
+            let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("boundary".to_string());
             let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
-            let autotune = value_t!(matches, "autotune", bool).unwrap_or(true);  // default use autotune
-            let rotated_planar_code = value_t!(matches, "rotated_planar_code", bool).unwrap_or(false);  // default use standard planar code
-            let ignore_6_neighbors = value_t!(matches, "ignore_6_neighbors", bool).unwrap_or(false);  // default use 12 neighbors version
+            let autotune = ! matches.is_present("no_autotune");  // default autotune is enabled
+            let rotated_planar_code = matches.is_present("rotated_planar_code");  // default use standard planar code
+            let ignore_6_neighbors = matches.is_present("ignore_6_neighbors");  // default use 12 neighbors version
             let extra_measurement_error = value_t!(matches, "extra_measurement_error", f64).unwrap_or(1.);  // default to 1.
             let bypass_correction = matches.is_present("bypass_correction");
+            let independent_px_pz = matches.is_present("independent_px_pz");
+            let only_count_logical_x = matches.is_present("only_count_logical_x");
+            let perfect_initialization = matches.is_present("perfect_initialization");
             fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
-                , ignore_6_neighbors, extra_measurement_error, bypass_correction);
+                , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, perfect_initialization);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -388,14 +391,17 @@ default example:
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
 fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
-        , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64, bypass_correction: bool) {
+        , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
+        , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
     }
     println!("format: <p> <L> <T> <total_rounds> <qec_failed> <error_rate>");
+    // println!("Perfect {} Rotated {} " ,perfect_initialization, rotated_planar_code);
+
     for (L_idx, L) in Ls.iter().enumerate() {
-        let T = Ts[L_idx];
+        let MeasurementRounds = Ts[L_idx];
         for p in ps {
             let p = *p;
             assert!(3. * p < 0.5, "why should errors (X, Z, Y) happening more than half of a time?");
@@ -408,16 +414,26 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             pb.set(0);
             // build general models
             let mut model = if rotated_planar_code {
-                ftqec::PlanarCodeModel::new_rotated_planar_code(T, L)
+                ftqec::PlanarCodeModel::new_rotated_planar_code(MeasurementRounds, L)
             } else {
-                ftqec::PlanarCodeModel::new_standard_planar_code(T, L)
+                ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, L)
             };
-            model.set_depolarizing_error(p);
+            if !perfect_initialization {
+                model.set_depolarizing_error(p);
+            } else {
+                // if we use the `set_depolarizing_error` model, then old judgement doesn't work
+                // in order to verify that the modification is good, here we mimic the behavior of old model
+                // that is, we do not generate error on the added bottom layer, so that there is no bottom boundary
+                model.set_depolarizing_error_with_perfect_initialization(p);
+            }
             model.iterate_snapshot_mut(|t, _i, _j, node| {
                 if t % 6 == 5 && node.qubit_type != ftqec::QubitType::Data {  // just add error before the measurement stage
                     node.error_rate_x *= extra_measurement_error;
                     node.error_rate_z *= extra_measurement_error;
                     node.error_rate_y *= extra_measurement_error;
+                }
+                if independent_px_pz {
+                    node.error_rate_y = node.error_rate_x * node.error_rate_z;
                 }
             });
             model.build_graph();
@@ -454,9 +470,10 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                 let mut model_error = model_error.clone();  // only for generating error and validating correction
                 let model_decoder = Arc::clone(&model_decoder);  // only for decode, so that you're confident I'm not cheating by using information of original errors
                 let validate_layer: isize = match validate_layer.as_str() {
+                    "boundary" => -2,
                     "all" => -1,
                     "bottom" => 0,
-                    "top" => (T - 1) as isize,
+                    "top" => MeasurementRounds as isize,
                     _ => validate_layer.parse::<isize>().expect("integer"),
                 };
                 let mini_batch = mini_batch;
@@ -484,13 +501,27 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                             } else {
                                 model_decoder.generate_default_correction()
                             };
-                            if validate_layer < 0 {
+                            if validate_layer == -2 {
+                                if model_error.validate_correction_on_boundary(&correction).is_err() {
+                                    mini_qec_failed += 1;
+                                }
+                            } else if validate_layer == -1 {
+                                // model_error.validate_correction_on_boundary(&correction);
                                 if model_error.validate_correction_on_all_layers(&correction).is_err() {
                                     mini_qec_failed += 1;
                                 }
                             } else {
-                                if model_error.validate_correction_on_t_layer(&correction, validate_layer as usize).is_err() {
-                                    mini_qec_failed += 1;
+                                let validation_ret = model_error.validate_correction_on_t_layer(&correction, validate_layer as usize);
+                                if validation_ret.is_err() {
+                                    if only_count_logical_x {  // only if contains logical X error will it count
+                                        match validation_ret {
+                                            Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed += 1; },
+                                            Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed += 1; },
+                                            _ => { },
+                                        }
+                                    } else {
+                                        mini_qec_failed += 1;
+                                    }
                                 }
                             }
                         }
@@ -514,7 +545,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                 let qec_failed = *qec_failed.lock().unwrap();
                 if qec_failed >= min_error_cases { break }
                 let error_rate = qec_failed as f64 / total_rounds as f64;
-                pb.message(format!("{} {} {} {} {} {} ", p, L, T, total_rounds, qec_failed, error_rate).as_str());
+                pb.message(format!("{} {} {} {} {} {} ", p, L, MeasurementRounds, total_rounds, qec_failed, error_rate).as_str());
                 let progress = total_rounds / mini_batch;
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
@@ -526,7 +557,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             let total_rounds = *total_rounds.lock().unwrap();
             let qec_failed = *qec_failed.lock().unwrap();
             let error_rate = qec_failed as f64 / total_rounds as f64;
-            println!("{} {} {} {} {} {}", p, L, T, total_rounds, qec_failed, error_rate);
+            println!("{} {} {} {} {} {}", p, L, MeasurementRounds, total_rounds, qec_failed, error_rate);
         }
     }
 }

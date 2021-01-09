@@ -38,11 +38,11 @@ impl Index {
         Self { t: t, i: i, j: j }
     }
     pub fn from_measurement_idx(mt: usize, mi: usize, mj: usize) -> Self {
-        Self { t: 6 * (mt + 1), i: mi, j: mj }
+        Self { t: 6 * (mt + 2), i: mi, j: mj }
     }
     pub fn to_measurement_idx(&self) -> (usize, usize, usize) {
         assert!(self.t >= 6 && self.t % 6 == 0, "only these indexes can be matched to measurement index");
-        (self.t / 6 - 1, self.i, self.j)
+        (self.t / 6 - 2, self.i, self.j)
     }
 }
 
@@ -74,6 +74,7 @@ pub struct PlanarCodeModel {
     /// Corresponds to `this.snapshot` in `FaultTolerantView.vue`
     pub snapshot: Vec::< Vec::< Vec::< Option<Node> > > >,
     pub L: usize,
+    pub MeasurementRounds: usize,
     pub T: usize,
     pub graph: Option<petgraph::graph::Graph<Index, PetGraphEdge>>,
     /// for each line, XOR the result. Only if no less than half of the result is 1.
@@ -85,10 +86,10 @@ pub struct PlanarCodeModel {
 }
 
 impl PlanarCodeModel {
-    pub fn new_standard_planar_code(T: usize, L: usize) -> Self {
-        assert!(T >= 1, "at least one round of measurement is required");
+    pub fn new_standard_planar_code(MeasurementRounds: usize, L: usize) -> Self {
+        // MeasurementRounds = 0 is means only one perfect measurement round
         assert!(L >= 2, "at lease one stabilizer is required");
-        let mut model = Self::new_planar_code(T, L, |_i, _j| true);
+        let mut model = Self::new_planar_code(MeasurementRounds, L, |_i, _j| true);
         // create Z stabilizer homology lines, detecting X errors
         for j in 0..L {
             let mut z_homology_line = Vec::new();
@@ -107,8 +108,8 @@ impl PlanarCodeModel {
         }
         model
     }
-    pub fn new_rotated_planar_code(T: usize, L: usize) -> Self {
-        assert!(T >= 1, "at least one round of measurement is required");
+    pub fn new_rotated_planar_code(MeasurementRounds: usize, L: usize) -> Self {
+        // MeasurementRounds = 0 is means only one perfect measurement round
         assert!(L >= 3 && L % 2 == 1, "at lease one stabilizer is required, L should be odd");
         let filter = |i, j| {
             let middle = (L - 1) as isize;
@@ -131,7 +132,7 @@ impl PlanarCodeModel {
             }
             false
         };
-        let mut model = Self::new_planar_code(T, L, filter);
+        let mut model = Self::new_planar_code(MeasurementRounds, L, filter);
         // create Z stabilizer homology lines, detecting X errors
         for j in 0..L {
             let mut z_homology_line = Vec::new();
@@ -150,9 +151,10 @@ impl PlanarCodeModel {
         }
         model
     }
-    pub fn new_planar_code<F>(T: usize, L: usize, filter: F) -> Self
+    pub fn new_planar_code<F>(MeasurementRounds: usize, L: usize, filter: F) -> Self
             where F: Fn(usize, usize) -> bool {
         let width = 2 * L - 1;
+        let T = MeasurementRounds + 2;
         let height = T * 6 + 1;
         let mut snapshot = Vec::with_capacity(height);
         for t in 0..height {
@@ -257,6 +259,7 @@ impl PlanarCodeModel {
             snapshot: snapshot,
             L: L,
             T: T,
+            MeasurementRounds: MeasurementRounds,
             graph: None,
             z_homology_lines: Vec::new(),
             x_homology_lines: Vec::new(),
@@ -288,10 +291,36 @@ impl PlanarCodeModel {
         }
     }
     pub fn set_depolarizing_error(&mut self, error_rate: f64) {  // (1-3p)I + pX + pZ + pY: X error rate = Z error rate = 2p(1-p)
-        self.iterate_snapshot_mut(|_t, _i, _j, node| {
-            node.error_rate_x = error_rate;
-            node.error_rate_z = error_rate;
-            node.error_rate_y = error_rate;
+        let height = self.snapshot.len();
+        self.iterate_snapshot_mut(|t, _i, _j, node| {
+            if t >= height - 6 {  // no error on the top, as a perfect measurement round
+                node.error_rate_x = 0.;
+                node.error_rate_z = 0.;
+                node.error_rate_y = 0.;
+            } else {
+                node.error_rate_x = error_rate;
+                node.error_rate_z = error_rate;
+                node.error_rate_y = error_rate;
+            }
+        })
+    }
+    // this will remove bottom boundary
+    pub fn set_depolarizing_error_with_perfect_initialization(&mut self, error_rate: f64) {  // (1-3p)I + pX + pZ + pY: X error rate = Z error rate = 2p(1-p)
+        let height = self.snapshot.len();
+        self.iterate_snapshot_mut(|t, _i, _j, node| {
+            if t >= height - 6 {  // no error on the top, as a perfect measurement round
+                node.error_rate_x = 0.;
+                node.error_rate_z = 0.;
+                node.error_rate_y = 0.;
+            } else if t <= 6 {
+                node.error_rate_x = 0.;
+                node.error_rate_z = 0.;
+                node.error_rate_y = 0.;
+            } else {
+                node.error_rate_x = error_rate;
+                node.error_rate_z = error_rate;
+                node.error_rate_y = error_rate;
+            }
         })
     }
     pub fn clear_error(&mut self) {
@@ -314,12 +343,15 @@ impl PlanarCodeModel {
             if random_number < node.error_rate_x {
                 node.error = ErrorType::X;
                 error_count += 1;
+                // println!("X error at {} {} {}",node.i, node.j, node.t);
             } else if random_number < node.error_rate_x + node.error_rate_z {
                 node.error = ErrorType::Z;
                 error_count += 1;
+                // println!("Z error at {} {} {}",node.i, node.j, node.t);
             } else if random_number < node.error_rate_x + node.error_rate_z + node.error_rate_y {
                 node.error = ErrorType::Y;
                 error_count += 1;
+                // println!("Y error at {} {} {}",node.i, node.j, node.t);
             } else {
                 node.error = ErrorType::I;
             }
@@ -409,7 +441,7 @@ impl PlanarCodeModel {
     }
     /// iterate over every measurement errors
     pub fn iterate_measurement_stabilizers_mut<F>(&mut self, mut func: F) where F: FnMut(usize, usize, usize, &mut Node) {
-        for t in (6..self.snapshot.len()).step_by(6) {
+        for t in (12..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
                     if self.snapshot[t][i][j].is_some() {
@@ -426,7 +458,7 @@ impl PlanarCodeModel {
     }
     /// iterate over every measurement errors
     pub fn iterate_measurement_stabilizers<F>(&self, mut func: F) where F: FnMut(usize, usize, usize, &Node) {
-        for t in (6..self.snapshot.len()).step_by(6) {
+        for t in (12..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
                     if self.snapshot[t][i][j].is_some() {
@@ -443,7 +475,7 @@ impl PlanarCodeModel {
     }
     /// iterate over every measurement errors
     pub fn iterate_measurement_errors<F>(&self, mut func: F) where F: FnMut(usize, usize, usize, &Node) {
-        for t in (6..self.snapshot.len()).step_by(6) {
+        for t in (12..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
                     if self.snapshot[t][i][j].is_some() {
@@ -473,8 +505,8 @@ impl PlanarCodeModel {
     /// generate default correction
     pub fn generate_default_correction(&self) -> Correction {
         let width = 2 * self.L - 1;
-        let x = ndarray::Array::from_elem((self.T, width, width), false);
-        let z = ndarray::Array::from_elem((self.T, width, width), false);
+        let x = ndarray::Array::from_elem((self.MeasurementRounds + 1, width, width), false);
+        let z = ndarray::Array::from_elem((self.MeasurementRounds + 1, width, width), false);
         Correction {
             x: x,
             z: z,
@@ -485,7 +517,7 @@ impl PlanarCodeModel {
         let mut correction = self.generate_default_correction();
         let mut x_mut = correction.x.view_mut();
         let mut z_mut = correction.z.view_mut();
-        for (idx, t) in (6..self.snapshot.len()).step_by(6).enumerate() {
+        for (idx, t) in (12..self.snapshot.len()).step_by(6).enumerate() {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
                     if self.snapshot[t][i][j].is_some() {
@@ -506,7 +538,7 @@ impl PlanarCodeModel {
     }
     /// corresponds to `build_graph_given_error_rate` in `FaultTolerantView.vue`
     pub fn build_graph(&mut self) {
-        for t in 0..self.snapshot.len() {
+        for t in 1..self.snapshot.len() {  // 0 doesn't generate error
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
                     if self.snapshot[t][i][j].is_some() {
@@ -518,35 +550,55 @@ impl PlanarCodeModel {
                             } else {
                                 node.error_rate_z + node.error_rate_y
                             };  // probability of this error to occur
-                            // simulate the error and measure it
-                            self.add_error_at(t, i, j, error);
-                            self.propagate_error();
-                            let mut measurement_errors = Vec::new();
-                            self.iterate_measurement_errors(|t, i, j, _node| {
-                                measurement_errors.push((t, i, j));
-                            });
-                            if measurement_errors.len() == 0 {  // no way to detect it, ignore
-                                continue
-                            }
-                            assert!(measurement_errors.len() <= 2, "single qubit error should not cause more than 2 measurement errors");
-                            // compute correction pattern, so that applying this error pattern will exactly recover data qubit errors
-                            let correction = Arc::new(self.get_data_qubit_error_pattern());
-                            // add this to edges and update probability
-                            if measurement_errors.len() == 1 {  // boundary
-                                let (t1, i1, j1) = measurement_errors[0];
-                                let node = self.snapshot[t1][i1][j1].as_mut().expect("exist");
-                                if node.boundary.is_none() {
-                                    node.boundary = Some(Boundary {
-                                        p: 0.,
-                                        cases: Vec::new(),
-                                    });
+                            if p > 0. {
+                                // simulate the error and measure it
+                                self.add_error_at(t, i, j, error);
+                                self.propagate_error();
+                                let mut measurement_errors = Vec::new();
+                                self.iterate_measurement_errors(|t, i, j, _node| {
+                                    measurement_errors.push((t, i, j));
+                                });
+                                if measurement_errors.len() == 0 {  // no way to detect it, ignore
+                                    continue
                                 }
-                                node.boundary.as_mut().expect("exist").add(p, correction);
-                            } else if measurement_errors.len() == 2 {  // connection
-                                let (t1, i1, j1) = measurement_errors[0];
-                                let (t2, i2, j2) = measurement_errors[1];
-                                add_edge_case(&mut self.snapshot[t1][i1][j1].as_mut().expect("exist").edges, t2, i2, j2, p, correction.clone());
-                                add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").edges, t1, i1, j1, p, correction);
+                                assert!(measurement_errors.len() <= 2, "single qubit error should not cause more than 2 measurement errors");
+                                // compute correction pattern, so that applying this error pattern will exactly recover data qubit errors
+                                let correction = Arc::new(self.get_data_qubit_error_pattern());
+                                // add this to edges and update probability
+                                if measurement_errors.len() == 1 {  // boundary
+                                    let (t1, i1, j1) = measurement_errors[0];
+                                    let node = self.snapshot[t1][i1][j1].as_mut().expect("exist");
+                                    if node.boundary.is_none() {
+                                        node.boundary = Some(Boundary {
+                                            p: 0.,
+                                            cases: Vec::new(),
+                                        });
+                                    }
+                                    node.boundary.as_mut().expect("exist").add(p, correction);
+                                } else if measurement_errors.len() == 2 {  // connection
+                                    let (t1, i1, j1) = measurement_errors[0];
+                                    let (t2, i2, j2) = measurement_errors[1];
+                                    if t1 <= 6 || t2 <= 6 {
+                                        println!("error at {:?}", (t, i, j, error));
+                                        println!("t1: {:?}, t2: {:?}", (t1, i1, j1), (t2, i2, j2));
+                                        assert!(t1 > 6 || t2 > 6, "they shouldn't be both below 6");
+                                        let node = if t1 > 6 {
+                                            self.snapshot[t1][i1][j1].as_mut().expect("exist")
+                                        } else {
+                                            self.snapshot[t2][i2][j2].as_mut().expect("exist")
+                                        };
+                                        if node.boundary.is_none() {
+                                            node.boundary = Some(Boundary {
+                                                p: 0.,
+                                                cases: Vec::new(),
+                                            });
+                                        }
+                                        node.boundary.as_mut().expect("exist").add(p, correction);
+                                    } else {
+                                        add_edge_case(&mut self.snapshot[t1][i1][j1].as_mut().expect("exist").edges, t2, i2, j2, p, correction.clone());
+                                        add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").edges, t1, i1, j1, p, correction);
+                                    }
+                                }
                             }
                         }
                     }
@@ -635,7 +687,7 @@ impl PlanarCodeModel {
             }
         });
         // use the result of dijkstra to build `next`, so that the shortest path is found is O(1) time
-        for t in (6..self.snapshot.len()).step_by(6) {
+        for t in (12..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
                     if self.snapshot[t][i][j].is_some() {
@@ -678,7 +730,7 @@ impl PlanarCodeModel {
             }
         }
         // generate `next_correction` so that decoder works more efficiently
-        for t in (6..self.snapshot.len()).step_by(6) {
+        for t in (12..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
                     if self.snapshot[t][i][j].is_some() {
@@ -709,7 +761,7 @@ impl PlanarCodeModel {
             }
         }
         // generate `boundary.correction` so that every node has a path to boundary
-        for t in (6..self.snapshot.len()).step_by(6) {
+        for t in (12..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
                     if self.snapshot[t][i][j].is_some() {
@@ -802,7 +854,7 @@ impl PlanarCodeModel {
     }
     pub fn generate_measurement(&self) -> Measurement {
         let width = 2 * self.L - 1;
-        let mut measurement = Measurement(ndarray::Array::from_elem((self.T, width, width), false));
+        let mut measurement = Measurement(ndarray::Array::from_elem((self.MeasurementRounds + 1, width, width), false));
         let mut measurement_mut = measurement.view_mut();
         self.iterate_measurement_errors(|t, i, j, _node| {
             let (mt, mi, mj) = Index::new(t, i, j).to_measurement_idx();
@@ -815,12 +867,12 @@ impl PlanarCodeModel {
         // sanity check
         let shape = measurement.shape();
         let width = 2 * self.L - 1;
-        assert_eq!(shape[0], self.T);
+        assert_eq!(shape[0], self.MeasurementRounds + 1);
         assert_eq!(shape[1], width);
         assert_eq!(shape[2], width);
         // generate all the error measurements to be matched
         let mut to_be_matched = Vec::new();
-        for mt in 0..self.T {
+        for mt in 0..self.MeasurementRounds + 1 {
             for mi in 0..width {
                 for mj in 0..width {
                     if measurement[[mt, mi, mj]] {  // has a measurement error there
@@ -992,7 +1044,7 @@ impl PlanarCodeModel {
 
     /// validate correction on the bottom layer strictly, see if there is logical error or uncorrected stabilizers.
     /// return Err(reason) if correction is not successful. reason is a readable string.
-    pub fn validate_corrected_on_layer(&self, corrected: &Correction, layer: usize) -> Result<(), String> {
+    pub fn validate_corrected_on_layer(&self, corrected: &Correction, layer: usize) -> Result<(), ValidationFailedReason> {
         assert!(layer < self.T, "layer ranges from 0 to T-1");
         assert!(self.z_homology_lines.len() > 0 && self.x_homology_lines.len() > 0, "single boundary required");
         let mut z_homology_results = Vec::new();
@@ -1017,36 +1069,84 @@ impl PlanarCodeModel {
         if !z_has_logical && !x_has_logical {
             Ok(())
         } else if z_has_logical && x_has_logical {
-            Err(format!("X logical error and Z logical error are both detected on measurement layer {}", layer))
+            Err(ValidationFailedReason::BothXandZLogicalError(layer, x_homology_counts, x_homology_results.len(), z_homology_counts, z_homology_results.len()))
         } else if z_has_logical {
-            Err(format!("Z logical error is detected on measurement layer {}, homology count / len = {} / {}", layer, z_homology_counts, z_homology_results.len()))
+            Err(ValidationFailedReason::ZLogicalError(layer, z_homology_counts, z_homology_results.len()))
         } else {
-            Err(format!("X logical error is detected on measurement layer {}, homology count / len = {} / {}", layer, x_homology_counts, x_homology_results.len()))
+            Err(ValidationFailedReason::ZLogicalError(layer, x_homology_counts, x_homology_results.len()))
         }
     }
-    pub fn validate_correction_on_t_layer(&self, correction: &Correction, layer: usize) -> Result<(), String> {
+    pub fn validate_correction_on_t_layer(&self, correction: &Correction, layer: usize) -> Result<(), ValidationFailedReason> {
         let mut corrected = self.get_data_qubit_error_pattern();
         // println!{"Corrected{:?}", corrected};
         corrected.combine(&correction);  // apply correction to error pattern
         self.validate_corrected_on_layer(&corrected, layer)
     }
-    pub fn validate_correction_on_top_layer(&self, correction: &Correction) -> Result<(), String> {
+    pub fn validate_correction_on_top_layer(&self, correction: &Correction) -> Result<(), ValidationFailedReason> {
         let mut corrected = self.get_data_qubit_error_pattern();
         corrected.combine(&correction);  // apply correction to error pattern
-        self.validate_corrected_on_layer(&corrected, self.T - 1)
+        self.validate_corrected_on_layer(&corrected, self.MeasurementRounds)
     }
-    pub fn validate_correction_on_bottom_layer(&self, correction: &Correction) -> Result<(), String> {
+    pub fn validate_correction_on_bottom_layer(&self, correction: &Correction) -> Result<(), ValidationFailedReason> {
         let mut corrected = self.get_data_qubit_error_pattern();
         corrected.combine(&correction);  // apply correction to error pattern
         self.validate_corrected_on_layer(&corrected, 0)
     }
-    pub fn validate_correction_on_all_layers(&self, correction: &Correction) -> Result<(), String> {
+    pub fn validate_correction_on_all_layers(&self, correction: &Correction) -> Result<(), ValidationFailedReason> {
         let mut corrected = self.get_data_qubit_error_pattern();
-        // println!{"Corrected{:?}", corrected};
+        // println!{"Before{:?}", corrected};
         corrected.combine(&correction);  // apply correction to error pattern
-        for mt in 0..self.T {
+        // println!{"Corrected{:?}", corrected};
+        for mt in 0..=self.MeasurementRounds {
             self.validate_corrected_on_layer(&corrected, mt)?;
         }
+        Ok(())
+    }
+
+    pub fn validate_correction_on_boundary(&self, correction: &Correction) -> Result<(), ValidationFailedReason> {
+        let mut corrected = self.get_data_qubit_error_pattern();
+        // let mut corrected = self.get_data_qubit_error_pattern().clone();
+
+        // println!{"Before{:?}", corrected};
+        corrected.combine(&correction);  // apply correction to error pattern
+        // println!{"Corrected{:?}", corrected};
+        
+        // Z stabilizer homology lines, j = 0
+        let mut x_error_count = 0;
+        let mut current_status;
+        for i in 0..self.L {
+            current_status = false;
+            for layer in 0..=self.MeasurementRounds {
+                if corrected.x[[layer, (i*2), 0]] != current_status{
+                    x_error_count += 1;
+                    current_status = corrected.x[[layer, (i*2), 0]];
+                }
+            }
+        }
+        if x_error_count %2 != 0 {
+            // println!("Error X {}", x_error_count);
+            return Err(ValidationFailedReason::XLogicalError(0, x_error_count, x_error_count))
+        }
+        
+        // X stabilizer homology lines, i = 0
+        let mut z_error_count = 0;
+        for j in 0..self.L {
+            current_status = false;
+            for layer in 0..=self.MeasurementRounds {
+                if corrected.z[[layer, 0, (j*2)]] != current_status {
+                    z_error_count += 1;
+                    current_status = corrected.z[[layer, 0, (j*2)]];
+                }
+            }
+        }
+
+        if z_error_count %2 != 0 {
+            // println!("Error Z {}", z_error_count);
+            return Err(ValidationFailedReason::ZLogicalError(0, z_error_count, z_error_count))
+        }
+
+        // println!("X {} Y {}", x_error_count, z_error_count);
+
         Ok(())
     }
 }
@@ -1250,4 +1350,28 @@ pub struct ExhaustedElement {
     pub correction: Option< Arc<Correction> >,
     /// `next_correction` is generated by default
     pub next_correction: Option< Arc<Correction> >,
+}
+
+#[derive(Debug, Clone)]
+pub enum ValidationFailedReason {
+    /// layer, homology_counts, homology_results.len()
+    XLogicalError(usize, usize, usize),
+    /// layer, homology_counts, homology_results.len()
+    ZLogicalError(usize, usize, usize),
+    /// layer, x_homology_counts, x_homology_results.len(), z_homology_counts, z_homology_results.len()
+    BothXandZLogicalError(usize, usize, usize, usize, usize),
+}
+
+impl From<&ValidationFailedReason> for String {
+    fn from(edge: &ValidationFailedReason) -> Self {
+        match edge {
+            ValidationFailedReason::XLogicalError(layer, homology_counts, homology_results_len) => 
+                format!("X logical error is detected on measurement layer {}, homology count / len = {} / {}", layer, homology_counts, homology_results_len),
+            ValidationFailedReason::ZLogicalError(layer, homology_counts, homology_results_len) => 
+                format!("Z logical error is detected on measurement layer {}, homology count / len = {} / {}", layer, homology_counts, homology_results_len),
+            ValidationFailedReason::BothXandZLogicalError(layer, x_homology_counts, x_homology_results_len, z_homology_counts, z_homology_results_len) =>
+                format!("X logical error and Z logical error are both detected on measurement layer {}, {}/{}, {}/{}", layer
+                    , x_homology_counts, x_homology_results_len, z_homology_counts, z_homology_results_len),
+        }
+    }
 }
