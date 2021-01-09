@@ -949,12 +949,12 @@ impl PlanarCodeModel {
         // sanity check
         let shape = measurement.shape();
         let width = 2 * self.L - 1;
-        assert_eq!(shape[0], self.T);
+        assert_eq!(shape[0], self.MeasurementRounds + 1);
         assert_eq!(shape[1], width);
         assert_eq!(shape[2], width);
         // generate all the error measurements to be matched
         let mut to_be_matched = Vec::new();
-        for mt in 0..self.T {
+        for mt in 0..self.MeasurementRounds + 1 {
             for mi in 0..width {
                 for mj in 0..width {
                     if measurement[[mt, mi, mj]] {  // has a measurement error there
@@ -993,10 +993,6 @@ impl PlanarCodeModel {
                 let cost = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_boundary.as_ref().expect("exist").cost;
                 weighted_edges.push((i, i + m_len, cost));
             }
-
-            // if to_be_matched.len() > 2 {
-            //     println!{"node num {:?}, weighted edges {:?}", node_num, weighted_edges};
-            // }
 
             let matching = match use_modified {
                 true => mwpm_approx::minimum_weight_perfect_matching_approx_modified(node_num, weighted_edges, substreams),
