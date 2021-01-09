@@ -69,7 +69,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
             let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
             let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("bottom".to_string());
+            let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("boundary".to_string());
             let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
             let autotune = ! matches.is_present("no_autotune");  // default autotune is enabled
             let rotated_planar_code = matches.is_present("rotated_planar_code");  // default use standard planar code
@@ -398,6 +398,8 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
         parallel = num_cpus::get() - 1;
     }
     println!("format: <p> <L> <T> <total_rounds> <qec_failed> <error_rate>");
+    // println!("Perfect {} Rotated {} " ,perfect_initialization, rotated_planar_code);
+
     for (L_idx, L) in Ls.iter().enumerate() {
         let MeasurementRounds = Ts[L_idx];
         for p in ps {
@@ -468,6 +470,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                 let mut model_error = model_error.clone();  // only for generating error and validating correction
                 let model_decoder = Arc::clone(&model_decoder);  // only for decode, so that you're confident I'm not cheating by using information of original errors
                 let validate_layer: isize = match validate_layer.as_str() {
+                    "boundary" => -2,
                     "all" => -1,
                     "bottom" => 0,
                     "top" => MeasurementRounds as isize,
@@ -498,7 +501,12 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                             } else {
                                 model_decoder.generate_default_correction()
                             };
-                            if validate_layer < 0 {
+                            if validate_layer == -2 {
+                                if model_error.validate_correction_on_boundary(&correction).is_err() {
+                                    mini_qec_failed += 1;
+                                }
+                            } else if validate_layer == -1 {
+                                // model_error.validate_correction_on_boundary(&correction);
                                 if model_error.validate_correction_on_all_layers(&correction).is_err() {
                                     mini_qec_failed += 1;
                                 }

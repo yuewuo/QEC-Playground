@@ -343,12 +343,15 @@ impl PlanarCodeModel {
             if random_number < node.error_rate_x {
                 node.error = ErrorType::X;
                 error_count += 1;
+                // println!("X error at {} {} {}",node.i, node.j, node.t);
             } else if random_number < node.error_rate_x + node.error_rate_z {
                 node.error = ErrorType::Z;
                 error_count += 1;
+                // println!("Z error at {} {} {}",node.i, node.j, node.t);
             } else if random_number < node.error_rate_x + node.error_rate_z + node.error_rate_y {
                 node.error = ErrorType::Y;
                 error_count += 1;
+                // println!("Y error at {} {} {}",node.i, node.j, node.t);
             } else {
                 node.error = ErrorType::I;
             }
@@ -1076,11 +1079,59 @@ impl PlanarCodeModel {
     }
     pub fn validate_correction_on_all_layers(&self, correction: &Correction) -> Result<(), ValidationFailedReason> {
         let mut corrected = self.get_data_qubit_error_pattern();
-        // println!{"Corrected{:?}", corrected};
+        // println!{"Before{:?}", corrected};
         corrected.combine(&correction);  // apply correction to error pattern
+        // println!{"Corrected{:?}", corrected};
         for mt in 0..=self.MeasurementRounds {
             self.validate_corrected_on_layer(&corrected, mt)?;
         }
+        Ok(())
+    }
+
+    pub fn validate_correction_on_boundary(&self, correction: &Correction) -> Result<(), ValidationFailedReason> {
+        let mut corrected = self.get_data_qubit_error_pattern();
+        // let mut corrected = self.get_data_qubit_error_pattern().clone();
+
+        // println!{"Before{:?}", corrected};
+        corrected.combine(&correction);  // apply correction to error pattern
+        // println!{"Corrected{:?}", corrected};
+        
+        // Z stabilizer homology lines, j = 0
+        let mut x_error_count = 0;
+        let mut current_status;
+        for i in 0..self.L {
+            current_status = false;
+            for layer in 0..=self.MeasurementRounds {
+                if corrected.x[[layer, (i*2), 0]] != current_status{
+                    x_error_count += 1;
+                    current_status = corrected.x[[layer, (i*2), 0]];
+                }
+            }
+        }
+        if x_error_count %2 != 0 {
+            // println!("Error X {}", x_error_count);
+            return Err(ValidationFailedReason::XLogicalError(0, x_error_count, x_error_count))
+        }
+        
+        // X stabilizer homology lines, i = 0
+        let mut z_error_count = 0;
+        for j in 0..self.L {
+            current_status = false;
+            for layer in 0..=self.MeasurementRounds {
+                if corrected.z[[layer, 0, (j*2)]] != current_status {
+                    z_error_count += 1;
+                    current_status = corrected.z[[layer, 0, (j*2)]];
+                }
+            }
+        }
+
+        if z_error_count %2 != 0 {
+            // println!("Error Z {}", z_error_count);
+            return Err(ValidationFailedReason::ZLogicalError(0, z_error_count, z_error_count))
+        }
+
+        // println!("X {} Y {}", x_error_count, z_error_count);
+
         Ok(())
     }
 }
