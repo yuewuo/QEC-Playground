@@ -71,9 +71,9 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
             let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("bottom".to_string());
             let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
-            let autotune = value_t!(matches, "autotune", bool).unwrap_or(true);  // default use autotune
-            let rotated_planar_code = value_t!(matches, "rotated_planar_code", bool).unwrap_or(false);  // default use standard planar code
-            let ignore_6_neighbors = value_t!(matches, "ignore_6_neighbors", bool).unwrap_or(false);  // default use 12 neighbors version
+            let autotune = ! matches.is_present("no_autotune");  // default autotune is enabled
+            let rotated_planar_code = matches.is_present("rotated_planar_code");  // default use standard planar code
+            let ignore_6_neighbors = matches.is_present("ignore_6_neighbors");  // default use 12 neighbors version
             let extra_measurement_error = value_t!(matches, "extra_measurement_error", f64).unwrap_or(1.);  // default to 1.
             let bypass_correction = matches.is_present("bypass_correction");
             let independent_px_pz = matches.is_present("independent_px_pz");
