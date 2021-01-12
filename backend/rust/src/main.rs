@@ -80,7 +80,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg max_N: -m --max_N +takes_value "maximum total count, default to 100000000")
                 (@arg min_error_cases: -e --min_error_cases +takes_value "minimum error cases, default to 10000")
                 (@arg parallel: -p --parallel +takes_value "how many parallel threads to use. 0 will use number of CPUs - 1")
-                (@arg validate_layer: -v --validate_layer +takes_value "validate correction on which layer (all/top/bottom/<layer>), default to `bottom`")
+                (@arg validate_layer: -v --validate_layer +takes_value "validate correction on which layer (all/top/bottom/boundary/<layer>), default to `bottom`")
                 (@arg mini_batch: -b --mini_batch +takes_value "mini batch, default to 1000")
                 (@arg no_autotune: -n --no_autotune "disable autotune, so that all edges are equally weighted")
                 (@arg rotated_planar_code: -r --rotated_planar_code "use rotated planar code instead of standard planar code")

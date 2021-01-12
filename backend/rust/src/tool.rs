@@ -506,8 +506,14 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                                 model_decoder.generate_default_correction()
                             };
                             if validate_layer == -2 {
-                                if model_error.validate_correction_on_boundary(&correction).is_err() {
-                                    mini_qec_failed += 1;
+                                let validation_ret = model_error.validate_correction_on_boundary(&correction);
+                                if validation_ret.is_err() {
+                                    if only_count_logical_x {
+                                        match validation_ret {
+                                            Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed += 1; },
+                                            _ => {},
+                                        }
+                                    }
                                 }
                             } else if validate_layer == -1 {
                                 // model_error.validate_correction_on_boundary(&correction);
