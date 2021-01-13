@@ -102,7 +102,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let bypass_correction = matches.is_present("bypass_correction");
             let independent_px_pz = matches.is_present("independent_px_pz");
             let only_count_logical_x = matches.is_present("only_count_logical_x");
-            let perfect_initialization = matches.is_present("perfect_initialization"); // default to 1.
+            let perfect_initialization = matches.is_present("perfect_initialization");
             let substreams = value_t!(matches, "substreams", usize).unwrap_or(32);  // default to 32.
             decoder_comparison_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, perfect_initialization, substreams);
