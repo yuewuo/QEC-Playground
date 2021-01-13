@@ -574,7 +574,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
 
 
 fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
-    , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64 , bypass_correction: bool, independent_px_pz: bool, _only_count_logical_x: bool, perfect_initialization: bool, substreams: usize) {
+    , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64 , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool, substreams: usize) {
 
     let mut parallel = parallel;
     if parallel == 0 {
@@ -699,13 +699,23 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
                             // We need a new model to test approx corrections
                             let model_error_approx = model_error.clone();
                             if validate_layer == -2 {
-                                if model_error.validate_correction_on_boundary(&correction_MWPM).is_err() {
-                                    // println!("MWPM failed");
-                                    mini_qec_failed.0 += 1;
+                                let validation_ret = model_error.validate_correction_on_boundary(&correction_MWPM);
+                                if validation_ret.is_err() {
+                                    if only_count_logical_x {
+                                        match validation_ret {
+                                            Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed.0 += 1; },
+                                            _ => {},
+                                        }
+                                    }
                                 }
-                                if model_error_approx.validate_correction_on_boundary(&correction_approx).is_err() {
-                                    // println!("MWPM approx failed");
-                                    mini_qec_failed.1 += 1;
+                                let validation_ret = model_error_approx.validate_correction_on_boundary(&correction_approx);
+                                if validation_ret.is_err() {
+                                    if only_count_logical_x {
+                                        match validation_ret {
+                                            Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed.1 += 1; },
+                                            _ => {},
+                                        }
+                                    }
                                 }
                             } else if validate_layer == -1 {
                                 if model_error.validate_correction_on_all_layers(&correction_MWPM).is_err() {
