@@ -5,13 +5,12 @@ set grid ytics
 set size 1,1
 
 # data generating commands:
-# cargo run --release -- tool fault_tolerant_benchmark [3] [0] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0 -b1000 -m100000000 --shallow_error_on_bottom
-# cargo run --release -- tool fault_tolerant_benchmark [5] [5] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5] -b1000 -p0 -m100000000 --shallow_error_on_bottom
-# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -p0 -m100000000 -b10 -e1000 --shallow_error_on_bottom
-# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-4] -p0 -m100000000 -b10 -e200 --shallow_error_on_bottom
-# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000 -b1 -e1000 --shallow_error_on_bottom
-# cargo run --release -- tool fault_tolerant_benchmark [11] [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000 -b1 -e200 --shallow_error_on_bottom
-# cargo run --release -- tool fault_tolerant_benchmark [13] [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000 -b1 -e200 --shallow_error_on_bottom
+# cargo run --release -- tool fault_tolerant_benchmark [3] [0] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0 -b1000 -m100000000 --shallow_error_on_bottom --only_count_logical_x
+# cargo run --release -- tool fault_tolerant_benchmark [5] [0] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -b1000 -p0 -m100000000 --shallow_error_on_bottom --only_count_logical_x
+# cargo run --release -- tool fault_tolerant_benchmark [7] [0] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3] -p0 -m100000000 -b1000 -e1000 --shallow_error_on_bottom --only_count_logical_x
+# cargo run --release -- tool fault_tolerant_benchmark [9] [0] [1e-1,5e-2,2e-2,1e-2,5e-3] -p0 -m100000000 -b1000 -e1000 --shallow_error_on_bottom --only_count_logical_x
+# cargo run --release -- tool fault_tolerant_benchmark [11] [0] [1e-1,5e-2,2e-2,1e-2,5e-3] -p0 -m100000000 -b1000 -e200 --shallow_error_on_bottom --only_count_logical_x
+# cargo run --release -- tool fault_tolerant_benchmark [13] [0] [1e-1,5e-2,2e-2,1e-2,5e-3] -p0 -m100000000 -b1000 -e200 --shallow_error_on_bottom --only_count_logical_x
 
 set logscale x
 set xrange [0.00001:0.1]
@@ -25,12 +24,12 @@ set style fill transparent solid 0.2 noborder
 
 set output "MWPM_baseline.eps"
 
-plot "d_3_3.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 3",\
-    "d_5_5.txt" using 1:6 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 5",\
-    "d_7_7.txt" using 1:6 with linespoints lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 title "d = 7",\
-    "d_9_9.txt" using 1:6 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "d = 9",\
-    "d_11_11.txt" using 1:6 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
-    "d_13_13.txt" using 1:6 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
+plot "d_3.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 3",\
+    "d_5.txt" using 1:6 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 5",\
+    "d_7.txt" using 1:6 with linespoints lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 title "d = 7",\
+    "d_9.txt" using 1:6 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "d = 9",\
+    "d_11.txt" using 1:6 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
+    "d_13.txt" using 1:6 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
 
 set output '|ps2pdf -dEPSCrop MWPM_baseline.eps MWPM_baseline.pdf'
 replot
