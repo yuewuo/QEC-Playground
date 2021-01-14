@@ -436,9 +436,6 @@ fn archived_debug_tests() {
                 probability, case_count, propagated_to, name);
         }
     }
-}
-
-fn debug_tests() {
     {  // test functionality after adding the perfect measurement layer on top
         let MeasurementRounds = 2;
         let L = 4;
@@ -454,5 +451,63 @@ fn debug_tests() {
         let measurement = model.generate_measurement();
         println!("measurement.shape(): {:?}", measurement.shape());
         // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
+    }
+    {  // test sparse correction functionality
+        let mut correction = ftqec::Correction::new_all_false(3, 3, 3);
+        let mut x_mut = correction.x.view_mut();
+        let mut z_mut = correction.z.view_mut();
+        x_mut[[0, 1, 1]] = true;
+        x_mut[[2, 0, 2]] = true;
+        z_mut[[0, 0, 1]] = true;
+        z_mut[[1, 0, 1]] = true;
+        z_mut[[2, 0, 1]] = true;
+        println!("correction: {:?}", correction);
+        let sparse_correction = ftqec::SparseCorrection::from(&correction);
+        println!("sparse_correction: {:?}", sparse_correction);
+        let back_correction = ftqec::Correction::from(&sparse_correction);
+        assert_eq!(back_correction, correction, "they should be the same");
+    }
+}
+
+fn debug_tests() {
+    {  // test only perfect measurement
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(0, 3);
+        let p = 0.1;
+        model.set_depolarizing_error_with_perfect_initialization(p);
+        model.iterate_snapshot_mut(|t, _i, _j, node| {
+            if t == 6 && node.qubit_type == ftqec::QubitType::Data {
+                println!("set error rate at {} {} {}", t, _i, _j);
+                node.error_rate_x = p;
+                node.error_rate_z = p;
+                node.error_rate_y = p;
+            }
+        });
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path_autotune();
+        {  // add errors
+            // {  // no logical error
+            //     model.snapshot[6][0][0].as_mut().unwrap().error = ftqec::ErrorType::X;
+            // }
+            // {  // has logical error
+            //     model.snapshot[6][0][0].as_mut().unwrap().error = ftqec::ErrorType::X;
+            //     model.snapshot[6][0][2].as_mut().unwrap().error = ftqec::ErrorType::X;
+            // }
+            {  // random error
+                let mut rng = thread_rng();
+                model.generate_random_errors(|| rng.gen::<f64>());
+            }
+        }
+        model.propagate_error();
+        let measurement = model.generate_measurement();
+        println!("{:?}", measurement);
+        let correction = model.decode_MWPM(&measurement);
+        println!("correction: {:?}", correction);
+        let mut corrected = model.get_data_qubit_error_pattern();
+        println!("error pattern: {:?}", corrected);
+        corrected.combine(&correction);  // apply correction to error pattern
+        println!("corrected: {:?}", corrected);
+        let validation_ret = model.validate_correction_on_boundary(&correction);
+        println!("{:?}", validation_ret);
     }
 }

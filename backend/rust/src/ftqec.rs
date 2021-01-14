@@ -87,7 +87,7 @@ pub struct PlanarCodeModel {
 
 impl PlanarCodeModel {
     pub fn new_standard_planar_code(MeasurementRounds: usize, L: usize) -> Self {
-        // MeasurementRounds = 0 is means only one perfect measurement round
+        // MeasurementRounds = 0 means only one perfect measurement round
         assert!(L >= 2, "at lease one stabilizer is required");
         let mut model = Self::new_planar_code(MeasurementRounds, L, |_i, _j| true);
         // create Z stabilizer homology lines, detecting X errors
@@ -367,6 +367,16 @@ impl PlanarCodeModel {
         });
         count
     }
+
+    pub fn print_errors(&self) {
+        self.iterate_snapshot(|t, i, j, node| {
+            if node.error != ErrorType::I {
+                println!("{:?} at {} {} {}",node.error,t,i,j);
+            }
+        });
+    }
+
+
     pub fn add_error_at(&mut self, t: usize, i: usize, j: usize, error: &ErrorType) -> Option<ErrorType> {
         if let Some(array) = self.snapshot.get_mut(t) {
             if let Some(array) = array.get_mut(i) {
@@ -495,12 +505,11 @@ impl PlanarCodeModel {
     /// generate default correction
     pub fn generate_default_correction(&self) -> Correction {
         let width = 2 * self.L - 1;
-        let x = ndarray::Array::from_elem((self.MeasurementRounds + 1, width, width), false);
-        let z = ndarray::Array::from_elem((self.MeasurementRounds + 1, width, width), false);
-        Correction {
-            x: x,
-            z: z,
-        }
+        Correction::new_all_false(self.MeasurementRounds + 1, width, width)
+    }
+    pub fn generate_default_sparse_correction(&self) -> SparseCorrection {
+        let width = 2 * self.L - 1;
+        SparseCorrection::new_all_false(self.MeasurementRounds + 1, width, width)
     }
     /// get data qubit error pattern based on current `propagated` error on t=6,12,18,...
     pub fn get_data_qubit_error_pattern(&self) -> Correction {
@@ -553,7 +562,7 @@ impl PlanarCodeModel {
                                 }
                                 assert!(measurement_errors.len() <= 2, "single qubit error should not cause more than 2 measurement errors");
                                 // compute correction pattern, so that applying this error pattern will exactly recover data qubit errors
-                                let correction = Arc::new(self.get_data_qubit_error_pattern());
+                                let correction = Arc::new(SparseCorrection::from(&self.get_data_qubit_error_pattern()));
                                 // add this to edges and update probability
                                 if measurement_errors.len() == 1 {  // boundary
                                     let (t1, i1, j1) = measurement_errors[0];
@@ -599,8 +608,8 @@ impl PlanarCodeModel {
         self.clear_error();
         self.propagate_error();
     }
-    fn optimize_correction_cases(original_cases: &Vec::<(Arc<Correction>, f64)>) -> Vec::<(Arc<Correction>, f64)> {
-        let mut cases = HashMap::<Correction, f64>::new();
+    fn optimize_correction_cases(original_cases: &Vec::<(Arc<SparseCorrection>, f64)>) -> Vec::<(Arc<SparseCorrection>, f64)> {
+        let mut cases = HashMap::<SparseCorrection, f64>::new();
         for (correction, p) in original_cases.iter() {
             if cases.contains_key(&*correction) {
                 let case_p = cases.get_mut(correction).expect("exist");
@@ -791,7 +800,7 @@ impl PlanarCodeModel {
                             let min_index = min_index.expect("exist");
                             // println!("[{}][{}][{}] {} {:?}", t, i, j, min_cost, min_index);
                             let node_b = self.snapshot[min_index.t][min_index.i][min_index.j].as_ref().expect("exist");
-                            let mut correction: Correction = (*node_b.boundary.as_ref().expect("exist").cases[0].0).clone();
+                            let mut correction: SparseCorrection = (*node_b.boundary.as_ref().expect("exist").cases[0].0).clone();
                             if index != min_index {
                                 correction.combine(node_b.exhausted_map[&index].next_correction.as_ref().expect("exist"));
                             }
@@ -819,19 +828,19 @@ impl PlanarCodeModel {
     }
     /// get correction from two matched nodes
     /// use `correction` (or `next_correction` if former not provided) in `exhausted_map`
-    pub fn get_correction_two_nodes(&self, a: &Index, b: &Index) -> Correction {
+    pub fn get_correction_two_nodes(&self, a: &Index, b: &Index) -> SparseCorrection {
         let node_a = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist");
         let node_b = self.snapshot[b.t][b.i][b.j].as_ref().expect("exist");
         assert_eq!(node_a.gate_type, GateType::Measurement);
         assert_eq!(node_b.gate_type, GateType::Measurement);
         assert_eq!(node_a.qubit_type, node_b.qubit_type);  // so that it has a path
         if a == b {
-            return self.generate_default_correction()
+            return self.generate_default_sparse_correction()
         }
         match &node_a.exhausted_map[&b].correction {
             Some(correction) => { (**correction).clone() }
             None => {
-                let mut correction: Correction = (**node_a.exhausted_map[&b].next_correction.as_ref().expect("must call `build_exhausted_path`")).clone();
+                let mut correction: SparseCorrection = (**node_a.exhausted_map[&b].next_correction.as_ref().expect("must call `build_exhausted_path`")).clone();
                 let mut next_index = node_a.exhausted_map[&b].next.as_ref().expect("exist");
                 while next_index != b {
                     let this_node = self.snapshot[next_index.t][next_index.i][next_index.j].as_ref().expect("exist");
@@ -854,6 +863,9 @@ impl PlanarCodeModel {
     }
     /// decode based on MWPM
     pub fn decode_MWPM(&self, measurement: &Measurement) -> Correction {
+        Correction::from(&self.decode_MWPM_sparse_correction(measurement))
+    }
+    pub fn decode_MWPM_sparse_correction(&self, measurement: &Measurement) -> SparseCorrection {
         // sanity check
         let shape = measurement.shape();
         let width = 2 * self.L - 1;
@@ -911,7 +923,7 @@ impl PlanarCodeModel {
             // if to_be_matched.len() > 2 {
             //     println!("matching: {:?}", matching);
             // }
-            let mut correction = self.generate_default_correction();
+            let mut correction = self.generate_default_sparse_correction();
             for i in 0..m_len {
                 let j = matching[i];
                 let a = &to_be_matched[i];
@@ -930,21 +942,24 @@ impl PlanarCodeModel {
             correction
         } else {
             // no measurement errors found
-            self.generate_default_correction()
+            self.generate_default_sparse_correction()
         }
     }
 
     /// decode based on MWPM
-    pub fn decode_MWPM_approx(&self, measurement: &Measurement, substreams: usize) -> Correction {
+    pub fn decode_MWPM_approx(&self, measurement: &Measurement, substreams: usize, use_modified: bool) -> Correction {
+        Correction::from(&self.decode_MWPM_approx_sparse_correction(measurement, substreams, use_modified))
+    }
+    pub fn decode_MWPM_approx_sparse_correction(&self, measurement: &Measurement, substreams: usize, use_modified: bool) -> SparseCorrection {
         // sanity check
         let shape = measurement.shape();
         let width = 2 * self.L - 1;
-        assert_eq!(shape[0], self.T);
+        assert_eq!(shape[0], self.MeasurementRounds + 1);
         assert_eq!(shape[1], width);
         assert_eq!(shape[2], width);
         // generate all the error measurements to be matched
         let mut to_be_matched = Vec::new();
-        for mt in 0..self.T {
+        for mt in 0..self.MeasurementRounds + 1 {
             for mi in 0..width {
                 for mj in 0..width {
                     if measurement[[mt, mi, mj]] {  // has a measurement error there
@@ -984,17 +999,18 @@ impl PlanarCodeModel {
                 weighted_edges.push((i, i + m_len, cost));
             }
 
-            // if to_be_matched.len() > 2 {
-            //     println!{"node num {:?}, weighted edges {:?}", node_num, weighted_edges};
-            // }
-            let matching = mwpm_approx::minimum_weight_perfect_matching_approx(node_num, weighted_edges, substreams);
+            let matching = match use_modified {
+                true => mwpm_approx::minimum_weight_perfect_matching_approx_modified(node_num, weighted_edges, substreams),
+                false =>  mwpm_approx::minimum_weight_perfect_matching_approx(node_num, weighted_edges, substreams),
+            };
+
             // println!("{:?}", to_be_matched);
             // println!("matching: {:?}", matching);
             // if to_be_matched.len() > 2 {
             //     println!("matching: {:?}", matching);
             // }
-            let mut correction = self.generate_default_correction();
-            for (i,j) in matching.iter() {
+            let mut correction = self.generate_default_sparse_correction();
+            for (i,j,_w) in matching.iter() {
                 if *i < m_len && *j < m_len{
                     correction.combine(&self.get_correction_two_nodes(&to_be_matched[*i], &to_be_matched[*j]));
                 }
@@ -1018,7 +1034,7 @@ impl PlanarCodeModel {
             correction
         } else {
             // no measurement errors found
-            self.generate_default_correction()
+            self.generate_default_sparse_correction()
         }
     }
 
@@ -1088,51 +1104,30 @@ impl PlanarCodeModel {
         Ok(())
     }
 
+    /// validate correction on the boundaries of top layer with perfect measurement. should be equivalent to `validate_correction_on_top_layer`
     pub fn validate_correction_on_boundary(&self, correction: &Correction) -> Result<(), ValidationFailedReason> {
         let mut corrected = self.get_data_qubit_error_pattern();
-        // let mut corrected = self.get_data_qubit_error_pattern().clone();
-
-        // println!{"Before{:?}", corrected};
         corrected.combine(&correction);  // apply correction to error pattern
-        // println!{"Corrected{:?}", corrected};
-        
-        // Z stabilizer homology lines, j = 0
+        // Z stabilizer boundary, j = 0
         let mut x_error_count = 0;
-        let mut current_status;
         for i in 0..self.L {
-            current_status = false;
-            for layer in 0..=self.MeasurementRounds {
-                if corrected.x[[layer, (i*2), 0]] != current_status{
-                    x_error_count += 1;
-                    current_status = corrected.x[[layer, (i*2), 0]];
-                }
+            if corrected.x[[self.MeasurementRounds, (i*2), 0]] {
+                x_error_count += 1;
             }
         }
-        if x_error_count %2 != 0 {
-            // println!("Error X {}", x_error_count);
-            return Err(ValidationFailedReason::XLogicalError(0, x_error_count, x_error_count))
-        }
-        
-        // X stabilizer homology lines, i = 0
+        // X stabilizer boundary, i = 0
         let mut z_error_count = 0;
         for j in 0..self.L {
-            current_status = false;
-            for layer in 0..=self.MeasurementRounds {
-                if corrected.z[[layer, 0, (j*2)]] != current_status {
-                    z_error_count += 1;
-                    current_status = corrected.z[[layer, 0, (j*2)]];
-                }
+            if corrected.z[[self.MeasurementRounds, 0, (j*2)]] {
+                z_error_count += 1;
             }
         }
-
-        if z_error_count %2 != 0 {
-            // println!("Error Z {}", z_error_count);
-            return Err(ValidationFailedReason::ZLogicalError(0, z_error_count, z_error_count))
+        match (x_error_count % 2 != 0, z_error_count % 2 != 0) {
+            (true, true) => Err(ValidationFailedReason::BothXandZLogicalError(0, x_error_count, self.L, z_error_count, self.L)),
+            (true, false) => Err(ValidationFailedReason::XLogicalError(0, x_error_count, self.L)),
+            (false, true) => Err(ValidationFailedReason::ZLogicalError(0, z_error_count, self.L)),
+            _ => Ok(())
         }
-
-        // println!("X {} Y {}", x_error_count, z_error_count);
-
-        Ok(())
     }
 }
 
@@ -1194,7 +1189,7 @@ pub struct Edge {
     pub i: usize,
     pub j: usize,
     pub p: f64,
-    pub cases: Vec::<(Arc<Correction>, f64)>,
+    pub cases: Vec::<(Arc<SparseCorrection>, f64)>,
 }
 
 impl From<&Edge> for Index {
@@ -1207,7 +1202,7 @@ impl From<&Edge> for Index {
     }
 }
 
-pub fn add_edge_case(edges: &mut Vec::<Edge>, t: usize, i: usize, j: usize, p: f64, correction: Arc<Correction>) {
+pub fn add_edge_case(edges: &mut Vec::<Edge>, t: usize, i: usize, j: usize, p: f64, correction: Arc<SparseCorrection>) {
     for edge in edges.iter_mut() {
         if edge.t == t && edge.i == i && edge.j == j {
             edge.add(p, correction);
@@ -1223,7 +1218,7 @@ pub fn add_edge_case(edges: &mut Vec::<Edge>, t: usize, i: usize, j: usize, p: f
 }
 
 impl Edge {
-    pub fn add(&mut self, p: f64, correction: Arc<Correction>) {
+    pub fn add(&mut self, p: f64, correction: Arc<SparseCorrection>) {
         self.p = self.p * (1. - p) + p * (1. - self.p);  // XOR
         self.cases.push((correction, p));
     }
@@ -1233,11 +1228,11 @@ impl Edge {
 #[derive(Debug, Clone)]
 pub struct Boundary {
     pub p: f64,
-    pub cases: Vec::<(Arc<Correction>, f64)>,
+    pub cases: Vec::<(Arc<SparseCorrection>, f64)>,
 }
 
 impl Boundary {
-    pub fn add(&mut self, p: f64, correction: Arc<Correction>) {
+    pub fn add(&mut self, p: f64, correction: Arc<SparseCorrection>) {
         self.p = self.p * (1. - p) + p * (1. - self.p);  // XOR
         self.cases.push((correction, p));
     }
@@ -1249,6 +1244,93 @@ impl Boundary {
 pub struct Correction {
     pub x: ndarray::Array3<bool>,
     pub z: ndarray::Array3<bool>,
+}
+
+impl Correction {
+    pub fn new_all_false(t_max: usize, i_max: usize, j_max: usize) -> Self {
+        Self {
+            x: ndarray::Array::from_elem((t_max, i_max, j_max), false),
+            z: ndarray::Array::from_elem((t_max, i_max, j_max), false),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct SparseCorrection {
+    // for each element (t, i, j), errors happen at (t, i, j), (t+1, i, j), (t+2, i, j) ...
+    pub shape: (usize, usize, usize),
+    pub xs: Vec<(usize, usize, usize)>,
+    pub zs: Vec<(usize, usize, usize)>,
+}
+
+impl From<&Correction> for SparseCorrection {
+    fn from(correction: &Correction) -> Self {
+        let shape = correction.x.shape();
+        assert_eq!(shape, correction.z.shape());
+        let mut xs = Vec::new();
+        let mut zs = Vec::new();
+        for k in 0..2 {
+            let changes = if k == 0 { &mut xs } else { &mut zs };
+            let pattern = if k == 0 { &correction.x } else { &correction.z };
+            for i in 0..shape[1] {
+                for j in 0..shape[2] {
+                    if pattern[[0, i, j]] {
+                        changes.push((0, i, j));
+                    }
+                }
+            }
+            for t in 1..shape[0] {
+                for i in 0..shape[1] {
+                    for j in 0..shape[2] {
+                        if pattern[[t, i, j]] != pattern[[t-1, i, j]] {
+                            changes.push((t, i, j));
+                        }
+                    }
+                }
+            }
+        }
+        SparseCorrection {
+            xs: xs,
+            zs: zs,
+            shape: (shape[0], shape[1], shape[2]),
+        }
+    }
+}
+
+impl SparseCorrection {
+    pub fn new_all_false(t_max: usize, i_max: usize, j_max: usize) -> Self {
+        Self {
+            shape: (t_max, i_max, j_max),
+            xs: Vec::new(),
+            zs: Vec::new(),
+        }
+    }
+    pub fn combine(&mut self, next: &Self) {
+        self.xs.extend(next.xs.clone());
+        self.zs.extend(next.zs.clone());
+    }
+}
+
+impl From<&SparseCorrection> for Correction {
+    fn from(correction: &SparseCorrection) -> Self {
+        let (t_max, i_max, j_max) = correction.shape;
+        let mut x = ndarray::Array::from_elem((t_max, i_max, j_max), false);
+        let mut z = ndarray::Array::from_elem((t_max, i_max, j_max), false);
+        for k in 0..2 {
+            let changes = if k == 0 { &correction.xs } else { &correction.zs };
+            let pattern_ro = if k == 0 { &mut x } else { &mut z };
+            let mut pattern = pattern_ro.view_mut();
+            for (ts, i, j) in changes.iter() {
+                for t in *ts..t_max {
+                    pattern[[t, *i, *j]] = !pattern[[t, *i, *j]];
+                }
+            }
+        }
+        Correction {
+            x: x,
+            z: z,
+        }
+    }
 }
 
 /// Measurement Result, including all the stabilizer at measurement stage t=6,12,18,...
@@ -1332,9 +1414,9 @@ pub struct ExhaustedElement {
     pub next: Option<Index>,
     /// either `correction` or `next_correction` is needed for decoder to work
     /// `correction` will be used first if exists, which occupies too much memory and too many initialization time
-    pub correction: Option< Arc<Correction> >,
+    pub correction: Option< Arc<SparseCorrection> >,
     /// `next_correction` is generated by default
-    pub next_correction: Option< Arc<Correction> >,
+    pub next_correction: Option< Arc<SparseCorrection> >,
 }
 
 #[derive(Debug, Clone)]
