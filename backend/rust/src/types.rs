@@ -71,9 +71,11 @@ impl ZxError {
     pub fn validate_z_correction(&self, z_correction: &ZxCorrection) -> Result<(), String> {
         validate_z_correction(&self, z_correction)
     }
+    #[allow(dead_code)]  // feature=noserver, avoid warning messages
     pub fn if_all_z_stabilizers_plus1(&self) -> bool {
         if_all_z_stabilizers_plus1(&self).is_ok()
     }
+    #[allow(dead_code)]  // feature=noserver, avoid warning messages
     pub fn if_all_x_stabilizers_plus1(&self) -> bool {
         if_all_x_stabilizers_plus1(&self).is_ok()
     }

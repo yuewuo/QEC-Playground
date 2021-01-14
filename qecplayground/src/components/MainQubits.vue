@@ -189,7 +189,7 @@ export default {
         })
 
 		// add camera and renderer
-		const windowWidth = window.innerWidth-this.panelWidth
+		const windowWidth = window.innerWidth - this.panelWidth
 		const windowHeight = window.innerHeight
 		const camera = this.usePerspectiveCamera ? 
 			new THREE.PerspectiveCamera( 75, windowWidth / window.innerHeight, 0.1, 10000 ) :

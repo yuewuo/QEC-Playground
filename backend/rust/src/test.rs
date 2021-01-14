@@ -7,9 +7,10 @@ use super::serde_json;
 use super::serde_json::{Value, Map};
 use super::types::*;
 use super::qec;
-use super::blossom;
 use super::pyo3::prelude::*;
 use super::pyo3::types::{IntoPyDict};
+use super::blossom_v;
+use super::ftqec;
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -25,21 +26,23 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
         ("naive_correction", Some(_)) => {
             naive_correction()
         }
-        ("try_blossom_correction", Some(_)) => {
-            try_blossom_correction()
-        }
         ("maximum_max_weight_matching_correction", Some(_)) => {
             maximum_max_weight_matching_correction()
         }
         ("debug_tests", Some(_)) => {
             debug_tests()
         }
+        ("archived_debug_tests", Some(_)) => {
+            archived_debug_tests()
+        }
         ("all", Some(_)) => {  // remember to add new test functions here
             save_load();
             perfect_measurement();
             validate_correction();
             naive_correction();
+            maximum_max_weight_matching_correction();
             debug_tests();
+            archived_debug_tests();
         }
         _ => unreachable!()
     }
@@ -173,30 +176,13 @@ fn naive_correction() {
     assert_eq!(x_error_ro.validate_z_correction(&z_correction), Ok(()));
 }
 
-fn try_blossom_correction() {
-    let L = 5;
-    let mut x_error_ro = ZxError::new_L(L);
-    let mut x_error = x_error_ro.view_mut();
-    x_error[[1, 0]] = true;
-    x_error[[3, 2]] = true;
-    x_error[[3, 3]] = true;
-    println!("z_error_ro:");
-    x_error_ro.print();
-    let measurement = util::generate_perfect_measurements(&x_error_ro, &x_error_ro);
-    println!("measurement:");
-    measurement.print();
-    let (x_correction, z_correction) = qec::try_blossom_correction(&measurement);
-    assert_eq!(x_error_ro.validate_x_correction(&x_correction), Ok(()));
-    assert_eq!(x_error_ro.validate_z_correction(&z_correction), Ok(()));
-}
-
 fn maximum_max_weight_matching_correction() {
     Python::with_gil(|py| {
         (|py: Python| -> PyResult<()> {
             // prepare python library
             let networkx = py.import("networkx")?;
             let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
-            let maximum_max_weight_matching = |weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
+            let maximum_max_weight_matching = |_node_num: usize, weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
                 let G = networkx.call_method0("Graph").unwrap();
                 let weighted_edges = weighted_edges.to_object(py);
                 G.call_method1("add_weighted_edges_from", (weighted_edges,)).unwrap();
@@ -226,21 +212,7 @@ fn maximum_max_weight_matching_correction() {
     }).expect("python run failed");
 }
 
-fn debug_tests() {
-    let graph = blossom::weighted::WeightedGraph::new([
-        (0, (vec![1, 2, 3], vec![-3., -3., -1.])),
-        (1, (vec![0, 2, 4], vec![-3., -2., -2.])),
-        (2, (vec![0, 1, 5], vec![-3., -2., -1.])),
-        (3, (vec![0, 4, 5], vec![-1., 0., 0.])),
-        (4, (vec![1, 3, 5], vec![-2., 0., 0.])),
-        (5, (vec![2, 3, 4], vec![-1., 0., 0.]))
-    ].iter().cloned().collect());
-    {  // use blossom library, however `maximin_matching` is not optimal at all. see `qec.rs/try_blossom_correction` for more information
-        let matching = graph.maximin_matching().unwrap();
-        // let matching = graph.maximum_matching();
-        let matching_edges = matching.edges();
-        println!("{:?}", matching_edges);
-    }
+fn archived_debug_tests() {
     {  // call python networkx.algorithms.matching.max_weight_matching
         Python::with_gil(|py| {
             (|py: Python| -> PyResult<()> {
@@ -267,5 +239,220 @@ fn debug_tests() {
                 e.print_and_set_sys_last_vars(py);
             })
         }).expect("python run failed");
+    }
+    {  // test call c function
+        println!("{}", blossom_v::safe_square(5));
+        let input = vec![1., 2., 3., 4.];
+        let output = blossom_v::safe_square_all(input);
+        println!("{:?}", output);
+    }
+    {  // call blossom V matching
+        let weighted_edges = vec![
+            (0, 1, -3.),
+            (1, 2, -2.),
+            (2, 0, -3.),
+            (0, 3, -1.),
+            (1, 4, -2.),
+            (2, 5, -1.),
+            (3, 4, 0.),
+            (3, 5, 0.),
+            (4, 5, 0.),
+        ];
+        let matched = blossom_v::maximum_weight_perfect_matching_compatible(6, weighted_edges);
+        println!("{:?}", matched);
+    }
+    {
+        let T = 4;
+        let L = 4;
+        let error_rate = 0.01;  // (1-3p)I + pX + pZ + pY
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(T, L);
+        model.set_depolarizing_error(error_rate);
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path_equally_weighted();
+        // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
+    }
+    {
+        let MeasurementRounds = 4;
+        let L = 4;
+        let error_rate = 0.01;  // (1-3p)I + pX + pZ + pY
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, L);
+        let nodes_count = model.count_nodes();
+        let T = model.T;
+        assert_eq!(nodes_count, (6 * T + 1) * (2 * L - 1) * (2 * L - 1));
+        // println!("{:?}", model);
+        model.set_depolarizing_error(error_rate);
+        let mut rng = thread_rng();
+        let error_count = model.generate_random_errors(|| rng.gen::<f64>());
+        println!("randomly generated error_count: {}/{}", error_count, nodes_count);
+        {  // verify that any single error will only have at most error syndromes
+            for t in 0..model.snapshot.len() {
+                for i in 0..model.snapshot[t].len() {
+                    for j in 0..model.snapshot[t][i].len() {
+                        if model.snapshot[t][i][j].is_some() {
+                            for error in [ftqec::ErrorType::X, ftqec::ErrorType::Z].iter() {
+                                model.clear_error();
+                                model.add_error_at(t, i, j, error);
+                                assert_eq!(model.count_error(), 1);
+                                model.propagate_error();
+                                let mut measurement_error_count = 0;
+                                model.iterate_measurement_errors(|_t, _i, _j, _node| {
+                                    measurement_error_count += 1;
+                                });
+                                assert!(measurement_error_count <= 2, "single qubit error should not cause more than 2 measurement errors");
+                            }
+                        }
+                    }
+                }
+            }
+            model.clear_error();
+            println!("verified: any single qubit error only causes at most two measurement errors");
+        }
+        {  // build auxiliary information to assist decoding
+            model.build_graph();
+            model.optimize_correction_pattern();
+            let mut max_edge_count = 0;
+            model.iterate_measurement_stabilizers(|_t, _i, _j, node| {
+                max_edge_count = std::cmp::max(max_edge_count, node.edges.len());
+            });
+            println!("maximum neighbor amount on a single stabilizer is {}", max_edge_count);
+            assert!(max_edge_count <= 12, "verified: at most 12 neighbors in graph");
+            // build exhausted path helps to speed up decoder
+            model.build_exhausted_path_autotune();
+            // println!("exhausted of Z stabilizer at [12][0][1]: {:?}", model.snapshot[12][0][1].as_ref().expect("exist").exhausted_map);
+            // println!("{:?}", model.get_correction_two_nodes(ftqec::Index::new(12, 0, 1), ftqec::Index::new(24, 4, 1)));
+            let _correction = model.get_correction_two_nodes(&ftqec::Index::new(12, 0, 1), &ftqec::Index::new(12, 4, 1));
+            // println!("{:?}", _correction);
+        }
+        {  // decode the generated error
+            /*
+             * add error at Index { t: 4, i: 2, j: 6 } Y
+             * add error at Index { t: 20, i: 1, j: 5 } X
+             * add error at Index { t: 23, i: 6, j: 4 } Y
+             */
+            model.clear_error();
+            model.add_error_at(4, 2, 6, &ftqec::ErrorType::Y);
+            model.add_error_at(20, 1, 5, &ftqec::ErrorType::X);
+            model.add_error_at(23, 6, 4, &ftqec::ErrorType::Y);
+            // {  // generate random error and hard-code it just like above
+            //     model.generate_random_errors(|| rng.gen::<f64>());
+            //     model.iterate_snapshot(|t, i, j, node| {
+            //         if node.error != ftqec::ErrorType::I {
+            //             println!("add error at {:?} {:?}", ftqec::Index::new(t, i, j), node.error);
+            //         }
+            //     });
+            // }
+            model.propagate_error();
+            let measurement = model.generate_measurement();
+            // println!("{:?}", measurement);
+            // actually one can use another model to decode, if you're not comfortable with passing all internal error information into decoder
+            let correction = model.decode_MWPM(&measurement);
+            // println!("{:?}", correction);
+            let mut corrected = model.get_data_qubit_error_pattern();
+            // println!("error pattern: {:?}", corrected);
+            corrected.combine(&correction);  // apply correction to error pattern
+            // println!("corrected: {:?}", corrected);
+            println!("validate bottom layer: {:?}", model.validate_correction_on_bottom_layer(&correction));
+            println!("validate top layer: {:?}", model.validate_correction_on_top_layer(&correction));
+            println!("validate all layers: {:?}", model.validate_correction_on_all_layers(&correction));
+        }
+    }
+    {  // find one example for each 12 boundaries
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(3, 4);
+        let very_small_error_rate = 0.0001;
+        model.set_depolarizing_error(very_small_error_rate);
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path_autotune();
+        let error_source = ftqec::Index::new(18, 2, 3);
+        let error_target = vec![
+            (ftqec::Index::new(18, 2, 1), "left"),
+            (ftqec::Index::new(18, 2, 5), "right"),
+            (ftqec::Index::new(18, 0, 3), "front"),
+            (ftqec::Index::new(18, 4, 3), "back"),
+            (ftqec::Index::new(12, 2, 3), "bottom"),
+            (ftqec::Index::new(24, 2, 3), "top"),
+            (ftqec::Index::new(12, 0, 3), "bottom front"),
+            (ftqec::Index::new(12, 2, 1), "bottom left"),
+            (ftqec::Index::new(12, 0, 5), "bottom front right"),
+            (ftqec::Index::new(24, 4, 3), "top back"),
+            (ftqec::Index::new(24, 2, 5), "top right"),
+            (ftqec::Index::new(24, 4, 1), "top back left"),
+        ];
+        for (target, name) in error_target.iter() {
+            let mut found_error = None;
+            let mut propagated_to = Vec::new();
+            for t in 0..model.snapshot.len() {
+                for i in 0..model.snapshot[t].len() {
+                    for j in 0..model.snapshot[t][i].len() {
+                        if model.snapshot[t][i][j].is_some() {
+                            for error in [ftqec::ErrorType::X, ftqec::ErrorType::Z].iter() {
+                                model.clear_error();
+                                model.add_error_at(t, i, j, error);
+                                model.propagate_error();
+                                let mut measurement_errors = Vec::new();
+                                model.iterate_measurement_errors(|t, i, j, _node| {
+                                    measurement_errors.push(ftqec::Index::new(t, i, j));
+                                });
+                                assert!(measurement_errors.len() <= 2, "single qubit error should not cause more than 2 measurement errors");
+                                if measurement_errors.len() == 2 {
+                                    let matched = (error_source == measurement_errors[0] && *target == measurement_errors[1]) ||
+                                        (error_source == measurement_errors[1] && *target == measurement_errors[0]);
+                                    if matched {
+                                        let mut this_propagated_to = Vec::new();
+                                        let width = 2 * model.L - 1;
+                                        let mut has_error = ndarray::Array::from_elem((width, width), false);
+                                        let mut has_error_mut = has_error.view_mut();
+                                        model.iterate_snapshot(|_t, i, j, node| {
+                                            if node.propagated != ftqec::ErrorType::I {
+                                                has_error_mut[[i, j]] = true;
+                                            }
+                                        });
+                                        for i in 0..width {
+                                            for j in 0..width {
+                                                if has_error[[i, j]] {
+                                                    this_propagated_to.push(vec![i, j]);
+                                                }
+                                            }
+                                        }
+                                        // optimize for propagating to less qubits (for the ease of drawing figure)
+                                        if found_error.is_none() || this_propagated_to.len() < propagated_to.len() {
+                                            found_error = Some(ftqec::Index::new(t, i, j));
+                                            propagated_to = this_propagated_to;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // println!("target {:?}: single error at {:?}", *target, found_error);
+            let found_error = found_error.unwrap();
+            let cost = model.snapshot[error_source.t][error_source.i][error_source.j].as_ref().unwrap().exhausted_map[target].cost;
+            let probability = (-cost).exp();
+            let case_count = (probability / very_small_error_rate).round() as usize;
+            println!("[[{}, {}, {}], [{}, {}, {}], {}, {}, {:?}],  // {}", target.t, target.i, target.j, found_error.t, found_error.i, found_error.j,
+                probability, case_count, propagated_to, name);
+        }
+    }
+}
+
+fn debug_tests() {
+    {  // test functionality after adding the perfect measurement layer on top
+        let MeasurementRounds = 2;
+        let L = 4;
+        let error_rate = 0.01;  // (1-3p)I + pX + pZ + pY
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, L);
+        model.set_depolarizing_error(error_rate);
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path_equally_weighted();
+        println!("model.snapshot.len(): {}", model.snapshot.len());
+        let default_correction = model.generate_default_correction();
+        println!("default_correction.x.shape(): {:?}", default_correction.x.shape());
+        let measurement = model.generate_measurement();
+        println!("measurement.shape(): {:?}", measurement.shape());
+        // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
     }
 }
