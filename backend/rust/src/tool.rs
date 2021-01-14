@@ -511,6 +511,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                                     if only_count_logical_x {
                                         match validation_ret {
                                             Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed += 1; },
+                                            Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed += 1; },
                                             _ => {},
                                         }
                                     }
@@ -704,6 +705,7 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
                                     if only_count_logical_x {
                                         match validation_ret {
                                             Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed.0 += 1; },
+                                            Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed.0 += 1; },
                                             _ => {},
                                         }
                                     }
@@ -713,6 +715,7 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
                                     if only_count_logical_x {
                                         match validation_ret {
                                             Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed.1 += 1; },
+                                            Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed.1 += 1; },
                                             _ => {},
                                         }
                                     }

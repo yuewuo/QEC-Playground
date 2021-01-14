@@ -1099,51 +1099,30 @@ impl PlanarCodeModel {
         Ok(())
     }
 
+    /// validate correction on the boundaries of top layer with perfect measurement. should be equivalent to `validate_correction_on_top_layer`
     pub fn validate_correction_on_boundary(&self, correction: &Correction) -> Result<(), ValidationFailedReason> {
         let mut corrected = self.get_data_qubit_error_pattern();
-        // let mut corrected = self.get_data_qubit_error_pattern().clone();
-
-        // println!{"Before{:?}", corrected};
         corrected.combine(&correction);  // apply correction to error pattern
-        // println!{"Corrected{:?}", corrected};
-        
-        // Z stabilizer homology lines, j = 0
+        // Z stabilizer boundary, j = 0
         let mut x_error_count = 0;
-        let mut current_status;
         for i in 0..self.L {
-            current_status = false;
-            for layer in 0..=self.MeasurementRounds {
-                if corrected.x[[layer, (i*2), 0]] != current_status{
-                    x_error_count += 1;
-                    current_status = corrected.x[[layer, (i*2), 0]];
-                }
+            if corrected.x[[self.MeasurementRounds, (i*2), 0]] {
+                x_error_count += 1;
             }
         }
-        if x_error_count %2 != 0 {
-            // println!("Error X {}", x_error_count);
-            return Err(ValidationFailedReason::XLogicalError(0, x_error_count, x_error_count))
-        }
-        
-        // X stabilizer homology lines, i = 0
+        // X stabilizer boundary, i = 0
         let mut z_error_count = 0;
         for j in 0..self.L {
-            current_status = false;
-            for layer in 0..=self.MeasurementRounds {
-                if corrected.z[[layer, 0, (j*2)]] != current_status {
-                    z_error_count += 1;
-                    current_status = corrected.z[[layer, 0, (j*2)]];
-                }
+            if corrected.z[[self.MeasurementRounds, 0, (j*2)]] {
+                z_error_count += 1;
             }
         }
-
-        if z_error_count %2 != 0 {
-            // println!("Error Z {}", z_error_count);
-            return Err(ValidationFailedReason::ZLogicalError(0, z_error_count, z_error_count))
+        match (x_error_count % 2 != 0, z_error_count % 2 != 0) {
+            (true, true) => Err(ValidationFailedReason::BothXandZLogicalError(0, x_error_count, self.L, z_error_count, self.L)),
+            (true, false) => Err(ValidationFailedReason::XLogicalError(0, x_error_count, self.L)),
+            (false, true) => Err(ValidationFailedReason::ZLogicalError(0, z_error_count, self.L)),
+            _ => Ok(())
         }
-
-        // println!("X {} Y {}", x_error_count, z_error_count);
-
-        Ok(())
     }
 }
 
