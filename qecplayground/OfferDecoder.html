@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
+    <title>Offer Decoder</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+<script src="https://unpkg.com/dayjs"></script>
+
+<div id="app">
+    <v-app>
+        <div class="square-qubits" :style="{ 'height': square_height + 'px', 'width': square_height + 'px', 'left': square_left + 'px', 'top': square_top + 'px' }"
+                @click="focus_on_qubit(null)">
+            <div v-for="(row, row_index) of qubits" v-bind:key="row_index" class="qubits-row" :style="{ 'top': (qubit_bias + row_index * qubit_interval) + 'px' }">
+                <div v-for="(qubit, index) of row" v-bind:key="index" class="qubits-container"
+                        :style="{ 'left': (qubit_bias + index * qubit_interval) + 'px', 'transform': `scale(${qubit_scale})` }">
+                    <data-qubit v-if="qubit.qubit_type == CONST.QubitType.Data" v-model="row[index]" @focus-on-qubit="focus_on_qubit"
+                        @error-changed="error_changed"></data-qubit>
+                    <stabilizer-qubit v-if="(qubit.qubit_type == CONST.QubitType.StabZ && show_Z_stabilizer) || (qubit.qubit_type == CONST.QubitType.StabX && show_X_stabilizer)" v-model="row[index]" @focus-on-qubit="focus_on_qubit"></stabilizer-qubit>
+                </div>
+            </div>
+            <div v-for="(row, row_index) of qubits" v-bind:key="'m'+row_index" class="qubits-row" style="pointer-events: none;"
+                    :style="{ 'top': (qubit_bias + (row_index + 0.15) * qubit_interval) + 'px' }">
+                <div v-for="(qubit, index) of row" v-bind:key="'m'+index"
+                        style="position: absolute; width: 200px; height: 200px; transform-origin: center center; pointer-events: none;"
+                        :style="{ 'left': (qubit_bias + (index + 0.5) * qubit_interval) + 'px', 'transform': `scale(${interval_scale})` }">
+                    <div style="width: 200px; height: 20px; background: black; pointer-events: none; opacity:0.3; transform-origin: center left;"
+                        :style="{ 'transform': `rotate(${compute_matching_rotate(qubit)}rad) scale(${compute_matching_scale(qubit)}, 1)` }"
+                        v-if="((qubit.qubit_type == CONST.QubitType.StabZ && show_Z_stabilizer) || (qubit.qubit_type == CONST.QubitType.StabX && show_X_stabilizer)) && qubit.match_with != null"></div>
+                </div>
+            </div>
+        </div>
+        <div class="control-panel no-scrollbar">
+            <h1>Offer Decoder Testbed</h1>
+            <p>Offer Decoder is a fully distributed topological code decoder. Every stabilizer as a decoder unit runs in parallel. In bounded time, the whole system converges to a stable state which is the error matching with the highest probability. The key idea is that matched pairs can work as "broker" and associate with unmatched stabilizers to optimize overall probability.</p>
+            <p style="color: lightblue;">This page aims at helping us understand how it works and try out different strategies.</p>
+            <div style="display: flex;">
+                <div style="width: 240px;">
+                    <v-text-field outlined label="Code Distance" type="number" v-model="L_input" :rules="L_input_rules" hide-details="auto"></v-text-field>
+                </div>
+                <div style="width: 80px;">
+                    <v-btn color="deep-orange lighten-1" elevation="7" @click="refresh_qubits" style="height: 56px; width: 70px; margin-left: 10px;">Reset</v-btn>
+                </div>
+                <div style="width: 120px; padding-left: 10px;">
+                    <v-switch v-model="show_Z_stabilizer" label="Show Z" color="#00BFFF" hide-details style="margin-top: 0; padding: 0;"></v-switch>
+                    <v-switch v-model="show_X_stabilizer" label="Show X" color="#00CC00" hide-details style="margin-top: 0;"></v-switch>
+                </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <h2>Actions</h2>
+                <v-btn color="green lighten-4" block @click="default_single_round" class="has-margin">default single round</v-btn>
+                <div style="text-justify: space-around; text-align: center;">
+                    <v-btn color="pink lighten-4" elevation="3" small @click="all_node_execute()" class="has-margin">node execute</v-btn>
+                    <v-btn color="blue lighten-4" elevation="3" small @click="all_resend_offer()" class="has-margin">resend offer</v-btn>
+                    <v-btn color="lime lighten-4" elevation="3" small @click="all_outqueue_send()" class="has-margin">outqueue send</v-btn>
+                </div>
+            </div>
+            <div style="margin-top: 10px;" class="child-p-no-margin">
+                <h2>Statistics</h2>
+                <p>total message count: {{ message_count }}</p>
+                <p>message count in single round: {{ message_count_single_round }}</p>
+            </div>
+            <div style="margin-top: 10px;">
+                <h2>Conditional Select</h2>
+                    <v-btn color="blue-grey lighten-4" block @click="select_none" class="has-margin">clear selection</v-btn>
+                    <v-chip-group v-model="conditional_select_func_names" column multiple active-class="primary--text">
+                        <v-chip v-for="ele of available_filters" :key="ele.func" filter outlined>{{ ele.display }}</v-chip>
+                    </v-chip-group>
+            </div>
+            <div v-if="focus != null" style="margin-top: 10px;">
+                <h2>Focus: {{ `(${focus[0]}, ${focus[1]})`}} ({{ focus[0] + focus[1] % 2 == 0 ? "data qubit" : "stabilizer" }})</h2>
+                <v-card elevation="5" width="440" class="mx-auto">
+                    <v-virtual-scroll :items="log_items" :item-height="50" height="500">
+                        <template v-slot:default="{ item }">
+                            <v-list-item>
+                                <v-list-item-avatar>
+                                    <v-avatar :color="item.color" size="56" class="white--text">{{ item.initials }}</v-avatar>
+                                </v-list-item-avatar>
+                                <v-list-item-content>
+                                    <v-list-item-title>{{ item.full_message }}</v-list-item-title>
+                                </v-list-item-content>
+                                <v-list-item-action>
+                                    <v-btn depressed small @click="view_log(item)">View<v-icon color="orange darken-4" right>mdi-open-in-new</v-icon></v-btn>
+                                </v-list-item-action>
+                            </v-list-item>
+                        </template>
+                    </v-virtual-scroll>
+                </v-card>
+            </div>
+        </div>
+    </v-app>
+</div>
+
+<template id="data-qubit">
+    <div class="qubit-div" :style="{ 'transform': `scale(${qubit.sub_scale})` }">
+        <div class="data-qubit-div" :class="{ 'qubit-focused': qubit.focused }" @click="focus_on_self">
+            <h1 class="noselect">data</h1>
+            <v-btn fab :width="120" :height="120" style="font-size: 100px;" :color="error_color" @click="change_error">{{ error_text }}</v-btn>
+            <!-- progress circular can help visualize which is newly added, because they'll not be synchronized if not added at the same time -->
+            <v-progress-circular v-if="qubit.selecting" :size="200" :width="20" color="purple" indeterminate
+                style="position: absolute; top: 0; left: 0;"></v-progress-circular>
+        </div>
+    </div>
+</template>
+
+<template id="stabilizer-qubit">
+    <div class="qubit-div" :style="{ 'transform': `scale(${qubit.sub_scale})` }">
+        <div :class="{ 'stabilizer-qubit-div-Z': qubit.qubit_type == CONST.QubitType.StabZ, 'stabilizer-qubit-div-X': qubit.qubit_type == CONST.QubitType.StabX, 'qubit-focused': qubit.focused, 'stabilizer-qubit-div-X-no-error': qubit.qubit_type == CONST.QubitType.StabX && !qubit.measurement, 'stabilizer-qubit-div-X-with-error': qubit.qubit_type == CONST.QubitType.StabX && qubit.measurement, 'stabilizer-qubit-div-Z-no-error': qubit.qubit_type == CONST.QubitType.StabZ && !qubit.measurement, 'stabilizer-qubit-div-Z-with-error': qubit.qubit_type == CONST.QubitType.StabZ && qubit.measurement }"
+                @click="focus_on_self">
+            <h1 class="noselect">{{ qubit.qubit_type == CONST.QubitType.StabZ ? "Z" : "X" }}</h1>
+            <h2 style="color: #FFCA28;" class="noselect">{{ qubit.state }}</h2>
+            <h1 :style="{ 'color': qubit.match_with == null ? '#FFCCBC' : '#B2FF59' }" class="noselect">
+                {{ qubit.measurement ? ((qubit.match_with != null ? "M " : "B ") + qubit.cost) : "" }}</h1>
+            <!-- progress circular can help visualize which is newly added, because they'll not be synchronized if not added at the same time -->
+            <v-progress-circular v-if="qubit.selecting" :size="200" :width="20" color="amber" indeterminate
+                style="position: absolute; top: 0; left: 0;"></v-progress-circular>
+        </div>
+    </div>
+</template>
+
+<!-- Vue.js -->
+<script>
+
+// use this function to restriction modification to constants
+function readonly(target, keys) {
+    var _cloned = {}
+    function makeReadOnlyProperty(cloned, obj, prop) {
+        Object.defineProperty(cloned, prop, {
+            set: function() {
+                throw {
+                    name: 'UnableRewriteException',
+                    message: 'original cannot be rewrite'
+                }
+            },
+            get: function() {
+                return obj[prop]
+            },
+            enumerable: true
+        })
+    }
+    for (var prop in target) {
+        makeReadOnlyProperty(_cloned, target, prop)
+    }
+    return _cloned
+}
+
+// allow user to override options, and alert those unrecognized options
+function apply_override_options(default_options, override_options) {
+    for (let key in override_options) {
+        if (!(key in default_options)) {
+            console.error(`unknown option "${key}", please check available options for this function`)
+        }
+    }
+    Object.assign(default_options, override_options)
+    return default_options
+}
+
+// find [i, j] as a key and back
+function i_j_as_key(i, j) { return JSON.stringify([i, j]) }
+function key_as_i_j(key) { return JSON.parse([i, j]) }
+function cost_of_matching(i1, j1, i2, j2) {
+    const di = Math.abs(i1 - i2)
+    const dj = Math.abs(j1 - j2)
+    console.assert(di % 2 == 0 && dj % 2 == 0, "cannot compute cost between different types of stabilizers")
+    return (di + dj) / 2
+}
+
+const CONST = readonly({
+    QubitType: readonly({
+        Data: "Data",
+        StabZ: "StabZ",
+        StabX: "StabX",
+    }),
+    ErrorType: readonly({
+        I: "I",
+        X: "X",
+        Z: "Z",
+        Y: "Y",
+    }),
+    // display related
+    QubitDivWidth: 200,  // px
+    QubitWidthRatio: 0.9,
+    Colors: readonly({
+        I: "#FFFFFF",
+        X: "#00CC00",
+        Z: "#00BFFF",
+        Y: "#FF0000",
+    }),
+    // log information
+    LogType: readonly({
+        // https://vuetifyjs.com/en/styles/colors/#material-colors
+        Initialization: readonly({ name: "Initialization", initials: "IN", color: "#00897B" }),  // teal darken-1
+        SetQubitError: readonly({ name: "SetQubitError", initials: "SE", color: "#E53935" }),  // red darken-1
+        UpdateMeasurement: readonly({ name: "UpdateMeasurement", initials: "UM", color: "#6D4C41" }),  // brown darken-1
+        SendMessage: readonly({ name: "SendMessage", initials: "SM", color: "#039BE5" }),  // light-blue darken-1
+    }),
+    // node states
+    NodeState: readonly({
+        NoError: "NoError",  // no error syndrome at this node. only work as offer repeator
+        SentOffer: "OfferSent",  // offer sent and waiting for responses
+        WaitingContract: "WaitingContract",  // take offer and reply, then waiting for contract. this is also a locked state
+        Matched: "Matched",  // can work as broker, also is responsible of finding augmenting loops and path that connects 2 boundaries
+    }),
+    // message type
+    MessageType: readonly({
+        MatchOffer: "MatchOffer",  // only sent out by unmatched pairs
+        AugmentOffer: "AugmentOffer",  // only sent out by matched pairs to find augmenting loop
+        AcceptOffer: "AcceptOffer",  // target (and all brokers in the middle) set itself to `WaitingContract` state and send this message
+        RefuseAcceptance: "RefuseAcceptance",  // refuse the message `AcceptOffer`. should revert all brokers along the path
+        Contract: "Contract",
+        BrokeredOffer: "BrokeredOffer",  // send to the matched peer so that it propagates offer in the name of itself and also record it
+        AcceptBrokeredOffer: "AcceptBrokeredOffer",  // send to the matched peer so that it can check the cache to find the last broker
+        BrokeredContract: "BrokeredContract",  // when matched node receives a Contract, it will send a BrokeredContract to its original peer
+    }),
+})
+
+function make_log_element(log_type, obj) {
+    let full_message = `unhandled log type: ${log_type.name}, please update "make_log_element" function`
+    let initials = log_type.initials
+    let color = log_type.color
+    if (log_type === CONST.LogType.Initialization) {
+        full_message = `initialize data qubit (${obj.i}, ${obj.j})`
+    } else if (log_type === CONST.LogType.SetQubitError) {
+        full_message = `set qubit error "${obj.error}"`
+        initials = obj.error
+    } else if (log_type === CONST.LogType.UpdateMeasurement) {
+        full_message = `update measurement as "${obj.measurement}"`
+    } else if (log_type === CONST.LogType.SendMessage) {
+        full_message = `send message to (${obj.i}, ${obj.j})`
+    } else {
+        console.error(full_message)
+        console.error(obj)
+        initials = "??"
+        color = "#D50000"  // red accent-4
+    }
+    return {
+        log_type: log_type,
+        color,
+        full_message,
+        initials,
+        obj_str: JSON.stringify(obj),
+        create_time: new Date(),
+    }
+}
+
+Vue.component('data-qubit', {
+    template: '#data-qubit',
+    model: {
+        prop: 'qubit',
+        event: 'qubit_changed'
+    },
+    props: {
+        qubit: {
+            type: Object,
+        },
+    },
+    data() {
+        return {
+            CONST: CONST,
+        }
+    },
+    computed: {
+        error_color() {
+            if (this.qubit.error == CONST.ErrorType.I) return CONST.Colors.I
+            if (this.qubit.error == CONST.ErrorType.X) return CONST.Colors.X
+            if (this.qubit.error == CONST.ErrorType.Z) return CONST.Colors.Z
+            if (this.qubit.error == CONST.ErrorType.Y) return CONST.Colors.Y
+        },
+        error_text() {
+            if (this.qubit.error == CONST.ErrorType.I) return "I"
+            if (this.qubit.error == CONST.ErrorType.X) return "X"
+            if (this.qubit.error == CONST.ErrorType.Z) return "Z"
+            if (this.qubit.error == CONST.ErrorType.Y) return "Y"
+        },
+    },
+    methods: {
+        focus_on_self(event) {
+            this.$emit('focus-on-qubit', [this.qubit.i, this.qubit.j])
+            event.stopPropagation()
+        },
+        change_error(event) {
+            if (this.qubit.error == CONST.ErrorType.I) this.qubit.error = CONST.ErrorType.X
+            else if (this.qubit.error == CONST.ErrorType.X) this.qubit.error = CONST.ErrorType.Z
+            else if (this.qubit.error == CONST.ErrorType.Z) this.qubit.error = CONST.ErrorType.Y
+            else if (this.qubit.error == CONST.ErrorType.Y) this.qubit.error = CONST.ErrorType.I
+            this.qubit.log.push(make_log_element(CONST.LogType.SetQubitError, { i: this.qubit.i, j: this.qubit.j, error: this.qubit.error }))
+            this.$emit('error-changed')
+            event.stopPropagation()
+        },
+    },
+})
+
+Vue.component('stabilizer-qubit', {
+    template: '#stabilizer-qubit',
+    model: {
+        prop: 'qubit',
+        event: 'qubit_changed'
+    },
+    props: {
+        qubit: {
+            type: Object,
+        },
+    },
+    data() {
+        return {
+            CONST: CONST,
+        }
+    },
+    methods: {
+        focus_on_self(event) {
+            this.$emit('focus-on-qubit', [this.qubit.i, this.qubit.j])
+            event.stopPropagation()
+        },
+    },
+})
+
+var $app = new Vue({
+    el : "#app",
+    vuetify: new Vuetify(),
+    data() {
+        return {
+            // standard planar code
+            L: 5,  // code distance
+            L_input: 5,  // user input L
+            L_max: 10,  // maximum value of L
+            L_input_rules: [v => {
+                const L = parseInt(v)
+                if (!(L >= 2)) { return "code distance must be in range [2, +∞)" }
+                if (L > this.L_max) return "large code distance may have GUI render performance problem. to increase the maximum code distance, run `$app.L_max = 20` in console"
+                this.L = L
+                return true
+            }],
+            qubits: [],  // generated by `refresh_qubits`
+
+            // display related
+            window_width: window.innerWidth,
+            window_height: window.innerHeight,
+            CONST: CONST,
+            focus: null,  // or [i, j]
+            conditional_select_func_names: [],
+            available_filters: [
+                { func: "select_has_offer_from_focused", display: "has offer from focused", }
+            ],
+            selecting_func: null,  // if not null, then will select qubits with `true` returns
+            need_to_update_conditional_selecting: false,
+            show_Z_stabilizer: true,
+            show_X_stabilizer: true,
+
+            // statistics
+            message_count: 0,
+            message_count_single_round: 0,
+        }
+    },
+    computed: {
+        log_items () {
+            if (this.focus == null) return []
+            const [i, j] = this.focus
+            return this.qubits[i][j].log
+        },
+        square_max_width() {
+            return this.window_width - 480
+        },
+        square_height() {
+            if (this.square_max_width < this.window_height) return this.square_max_width
+            return this.window_height
+        },
+        square_left() {
+            if (this.square_max_width < this.window_height) return 0
+            return (this.square_max_width - this.window_height) / 2
+        },
+        square_top() {
+            if (this.square_max_width < this.window_height) return (this.window_height - this.square_max_width) / 2
+            return 0
+        },
+        qubit_interval() {
+            return this.square_height / (2 * this.L - 1)
+        },
+        qubit_bias() {
+            return this.qubit_interval / 2 - CONST.QubitDivWidth / 2
+        },
+        interval_scale() {
+            return this.qubit_interval / 200
+        },
+        qubit_scale() {
+            return CONST.QubitWidthRatio * this.qubit_interval / 200
+        },
+    },
+    mounted() {
+        this.refresh_qubits()
+        // do not update element size on touch screen devices, so that they can scroll well
+        const update_resize = !('ontouchstart' in document.documentElement)
+        if (update_resize) {
+            window.addEventListener('resize', (() => {
+                this.window_width = window.innerWidth
+                this.window_height = window.innerHeight
+            }).bind(this))
+        }
+        // debug initialization
+        this.debug_initial()
+    },
+    methods: {
+        async debug_initial() {
+            // {  // test matching visualization
+            //     this.L = 7
+            //     this.L_input = this.L
+            //     this.show_X_stabilizer = false
+            //     await this.vue_next_tick()
+            //     this.qubits[6][6].error = CONST.ErrorType.X
+            //     this.qubits[5][5].error = CONST.ErrorType.X
+            //     this.qubits[4][4].error = CONST.ErrorType.X
+            //     this.error_changed()
+            //     // for (let i=0; i < 6; ++i) this.default_single_round()
+            // }
+            // {  // test cost, do not match if boundary is better
+            //     this.L = 5
+            //     this.L_input = this.L
+            //     this.show_X_stabilizer = false
+            //     await this.vue_next_tick()
+            //     this.qubits[4][0].error = CONST.ErrorType.X
+            //     this.qubits[4][8].error = CONST.ErrorType.X
+            //     this.error_changed()
+            //     console.log("please click 'default single round' multiple times so to make sure [4][1] and [4][7] is never matched")
+            // }
+            {  // test augmenting path, in this case, qubits[4][3] should establish a augmenting path to [8][11] so that cost is minimized
+                this.L = 7
+                this.L_input = this.L
+                this.show_X_stabilizer = false
+                await this.vue_next_tick()
+                this.qubits[6][4].error = CONST.ErrorType.X
+                this.qubits[8][8].error = CONST.ErrorType.X
+                this.qubits[8][12].error = CONST.ErrorType.X
+                this.force_match_qubits(6, 5, 8, 7)
+                this.force_match_qubits(8, 9, 8, 11)
+                this.error_changed()
+            }
+            // {  // test augmenting path, with possible augmenting loop
+            //     this.L = 7
+            //     this.L_input = this.L
+            //     this.show_X_stabilizer = false
+            //     await this.vue_next_tick()
+            //     this.qubits[5][3].error = CONST.ErrorType.X
+            //     this.qubits[8][6].error = CONST.ErrorType.X
+            //     this.qubits[8][12].error = CONST.ErrorType.X
+            //     this.force_match_qubits(6, 3, 8, 5)
+            //     this.force_match_qubits(8, 7, 8, 11)
+            //     this.error_changed()
+            // }
+        },
+        force_match_qubits(i1, j1, i2, j2) {
+            if (i1 == i2 && j1 == j2) return  // why match the same qubit?
+            // break them first
+            const qubit1 = this.qubits[i1][j1]
+            const qubit2 = this.qubits[i2][j2]
+            this.force_break_matched(qubit1)
+            this.force_break_matched(qubit2)
+            // connect them
+            qubit1.state = CONST.NodeState.Matched
+            qubit2.state = CONST.NodeState.Matched
+            qubit1.match_with = [i2, j2]
+            qubit2.match_with = [i1, j1]
+        },
+        force_break_matched(qubit) {
+            if (qubit.state != CONST.NodeState.Matched) return   // no need to break
+            const [mi, mj] = qubit.match_with
+            this.qubits[mi][mj].state = CONST.NodeState.NoError
+            this.qubits[mi][mj].offer_cache = {}  // clear cache
+            this.qubits[mi][mj].match_with = null
+            qubit.state = CONST.NodeState.NoError
+            qubit.offer_cache = {}  // clear cache
+            qubit.match_with = null
+        },
+        async vue_next_tick() {
+			await new Promise(((resolve, reject) => {
+				this.$nextTick(() => { resolve() })
+			}).bind(this))
+        },
+        refresh_qubits() {
+            let qubits = []
+            for (let i=0; i < 2 * this.L - 1; ++i) {
+                let row = []
+                for (let j=0; j < 2 * this.L - 1; ++j) {
+                    const is_data_qubit = (i + j) % 2 == 0
+                    const qubit_type = is_data_qubit ? CONST.QubitType.Data : (i % 2 == 0 ? CONST.QubitType.StabZ : CONST.QubitType.StabX)
+                    let log = []
+                    if (is_data_qubit) {
+                        log.push(make_log_element(CONST.LogType.Initialization, { i, j, }))
+                    } else {
+                        log.push(make_log_element(CONST.LogType.UpdateMeasurement, { i, j, measurement: false }))
+                    }
+                    let qubit = {
+                        i, j,  // DO NOT CHANGE THIS!
+                        qubit_type,
+                        sub_scale: is_data_qubit ? 0.8 : 1,  // used to control relative size
+                        focused: false,  // only one qubit can be focused at any time
+                        error: CONST.ErrorType.I,  // no error when initialized
+                        measurement: false,  // measurement result of XXXX or ZZZZ
+                        log,  // debug logs
+                        selecting: false,  // display as seltting
+                    }
+                    if (!is_data_qubit) {
+                        // attributes for nodes only
+                        let boundary_cost = 0
+                        if (qubit_type == CONST.QubitType.StabZ) {  // Z stabilizer, boundary is on the left and right
+                            boundary_cost = Math.min((j + 1) / 2, this.L - (j + 1) / 2)
+                        } else {  // X stabilizer, boundary is on the top and bottom
+                            boundary_cost = Math.min((i + 1) / 2, this.L - (i + 1) / 2)
+                        }
+                        Object.assign(qubit, {
+                            mailbox: [],  // naive implementation of mailbox (because query is not efficient)
+                            outqueue: [],  // { receiver: [i, j], message } where message is then pushed into the receiver's mailbox
+                            active_timestamp: 0,
+                            offer_cache: {},  // JSON.stringify([i, j]): { source, last, timestamp }
+                            state: CONST.NodeState.NoError,
+                            match_with: null,  // by default match to bounary, which is null
+                            boundary_cost,  // the cost matching with boundary
+                            cost: 0,  // by default the qubit has no error and thus has 0 cost
+                            broker_next_hop: null,  // record next hop when broker is set to WaitingContract state
+                        })
+                        // methods for nodes only
+                        qubit.node_execute = ((override_options = {}) => {
+                            this.update_conditional_selecting()
+                            // override default options
+                            const options = apply_override_options({
+                                only_accept_offer_from_smaller_node: true,  // to avoid conflicting execution of 2 nodes, in which case they'll never be matched
+                                only_handle_one_message: false,  // only handle one message to debug
+                            }, override_options)
+                            // sanity check, we don't handle the logic if some measurement error disappears (have to break the matched pairs)
+                            if (qubit.measurement == false && qubit.state != CONST.NodeState.NoError) {
+                                // this case is not happening in real system, so here we can simply use global information to process
+                                if (qubit.state == CONST.NodeState.Matched) {
+                                    this.force_break_matched(qubit)
+                                } else {
+                                    console.error(`qubit (${i},${j}) measurement changed from "true" to "false", which is not supported yet. this may cause deadlock.`)
+                                }
+                            }
+                            // read message
+                            while (qubit.mailbox.length > 0) {
+                                const message = qubit.mailbox.shift()  // take the first message in mailbox
+                                if (message.type == CONST.MessageType.MatchOffer) {
+                                    const [si, sj] = message.source
+                                    // cache and propagate this offer only if the cost is better than cached or timestamp is newer
+                                    const cached_offer = qubit.offer_cache[i_j_as_key(si, sj)]
+                                    const not_caching_this_offer = !cached_offer || cached_offer.timestamp < message.timestamp || message.cost < cached_offer.cost
+                                    if (not_caching_this_offer) {
+                                        qubit.offer_cache[i_j_as_key(si, sj)] = {
+                                            timestamp: message.timestamp,
+                                            cost: message.cost,
+                                            broker: message.broker,
+                                            // as_broker_source: false,  // I am not broker of this offer
+                                            // as_broker_sink: false,  // I am not broker of this offer
+                                        }
+                                    }
+                                    // may broker this offer
+                                    if (qubit.state == CONST.NodeState.Matched) {
+                                        // when cost < cached_offer.cost, the farther node will not broker this offer backward
+                                        // and also, this makes an infinite ping-pong between the matched pairs impossible, which is harmful to the system
+                                        if (not_caching_this_offer) {
+                                            // qubit.offer_cache[i_j_as_key(si, sj)].as_broker_source = true  // broker this offer as source
+                                            // then inform the matched one as broker sink.  (source) --> (broker source) --- (broker sink) --> (target)
+                                            qubit.outqueue.push({
+                                                receiver: [...qubit.match_with],  // send to matched one
+                                                message: {
+                                                    type: CONST.MessageType.BrokeredOffer,
+                                                    timestamp: message.timestamp,
+                                                    source: [...message.source],
+                                                    broker: [...message.broker],
+                                                    cost: message.cost - qubit.cost  // minus the cost of matching pair
+                                                },
+                                            })
+                                        }
+                                    }
+                                    if (not_caching_this_offer) {
+                                        let propagate_to = [[i+2, j], [i-2, j], [i, j+2], [i, j-2]]
+                                        for (let [ri, rj] of propagate_to) {
+                                            if (this.is_valid_i_j(ri, rj)) {
+                                                qubit.outqueue.push({
+                                                    receiver: [ri, rj],
+                                                    message: {
+                                                        type: CONST.MessageType.MatchOffer,
+                                                        timestamp: message.timestamp,
+                                                        source: [...message.source],
+                                                        broker: [...message.broker],  // if broker == source then there is no broker
+                                                        cost: message.cost + 1,
+                                                    },
+                                                })
+                                            }
+                                        }
+                                    }
+                                    if (qubit.measurement == true) {
+                                        if (qubit.state == CONST.NodeState.NoError || qubit.state == CONST.NodeState.SentOffer) {
+                                            // take this offer only if target is smaller than source and cost is better than current
+                                            if (this.compare_i_j(i, j, si, sj) < 0 && message.cost - qubit.cost < 0) {  // the overall cost < 0 is an augmenting path
+                                                qubit.state = CONST.NodeState.WaitingContract
+                                                qubit.outqueue.push({
+                                                    receiver: [...message.broker],  // send back to the last broker
+                                                    message: {
+                                                        type: CONST.MessageType.AcceptOffer,
+                                                        target: [i, j],  // take this offer as target
+                                                        source: [...message.source],
+                                                        broker: [i, j],  // target is also the broker of this message
+                                                    },
+                                                })
+                                            }
+                                        }
+                                    }
+                                } else if (message.type == CONST.MessageType.AcceptOffer) {
+                                    const [si, sj] = message.source
+                                    if (si == i && sj == j) {
+                                        if (qubit.state == CONST.NodeState.SentOffer) {
+                                            qubit.state = CONST.NodeState.Matched
+                                            qubit.match_with = [...message.broker]  // always match with the first-hop broker
+                                            const [bi, bj] = message.broker
+                                            qubit.cost = cost_of_matching(i, j, bi, bj)
+                                            qubit.outqueue.push({
+                                                receiver: [...message.broker],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.Contract,
+                                                    target: [...message.target],
+                                                    source: [i, j],
+                                                    broker: [i, j],
+                                                },
+                                            })
+                                        } else {
+                                            qubit.outqueue.push({
+                                                receiver: [...message.broker],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.RefuseAcceptance,
+                                                    target: [...message.target],
+                                                    source: [i, j],
+                                                    broker: [i, j],
+                                                },
+                                            })
+                                        }
+                                    } else {
+                                        if (qubit.state == CONST.NodeState.Matched) {
+                                            qubit.state = CONST.NodeState.WaitingContract
+                                            qubit.broker_next_hop = message.broker
+                                            qubit.outqueue.push({
+                                                receiver: [...qubit.match_with],
+                                                message: {
+                                                    type: CONST.MessageType.AcceptBrokeredOffer,
+                                                    timestamp: message.timestamp,
+                                                    target: [...message.target],
+                                                    source: [...message.source],
+                                                },
+                                            })
+                                        } else {
+                                            qubit.outqueue.push({
+                                                receiver: [...message.broker],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.RefuseAcceptance,
+                                                    target: [...message.target],
+                                                    source: [i, j],
+                                                    broker: [i, j],
+                                                },
+                                            })
+                                        }
+                                    }
+                                } else if (message.type == CONST.MessageType.Contract) {
+                                    const [ti, tj] = message.target
+                                    if (qubit.state == CONST.NodeState.WaitingContract) {
+                                        qubit.state = CONST.NodeState.Matched
+                                        const last_match_with = qubit.match_with
+                                        qubit.match_with = [...message.broker]
+                                        qubit.cost = cost_of_matching(i, j, ...message.broker)
+                                        if (!(ti == i && tj == j)) {  // this is broker
+                                            qubit.outqueue.push({
+                                                receiver: [...last_match_with],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.BrokeredContract,
+                                                    target: [...message.target],
+                                                    source: [...message.source],
+                                                    broker: [i, j],  // I'm the broker
+                                                },
+                                            })
+                                        }
+                                    } else {
+                                        console.error("This shoudn't happen! Contract is never sent to a node in state other than WaitingContract")
+                                        console.error(message)
+                                    }
+                                } else if (message.type == CONST.MessageType.RefuseAcceptance) {
+                                    const [ti, tj] = message.target
+                                    if (ti == i && tj == j) {
+                                        qubit.state = CONST.NodeState.SentOffer
+                                    } else {
+                                        qubit.state = CONST.NodeState.Matched
+                                        if (qubit.broker_next_hop == null) {  // send refuse to peer
+                                            qubit.outqueue.push({
+                                                receiver: [...qubit.match_with],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.RefuseAcceptance,
+                                                    target: [...message.target],
+                                                    source: [...message.source],
+                                                    broker: [i, j],
+                                                },
+                                            })
+                                        } else {  // send to next hop
+                                            qubit.outqueue.push({
+                                                receiver: [...qubit.broker_next_hop],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.RefuseAcceptance,
+                                                    target: [...message.target],
+                                                    source: [...message.source],
+                                                    broker: [i, j],
+                                                },
+                                            })
+                                        }
+                                    }
+                                } else if (message.type == CONST.MessageType.BrokeredOffer) {
+                                    if (qubit.state == CONST.NodeState.Matched) {
+                                        const [si, sj] = message.source
+                                        const cached_offer = qubit.offer_cache[i_j_as_key(si, sj)]
+                                        const not_caching_this_offer = !cached_offer || cached_offer.timestamp < message.timestamp || message.cost < cached_offer.cost
+                                        if (not_caching_this_offer) {  // ignore if already brokered a similar offer
+                                            if (message.cost + qubit.boundary_cost < 0) {  // break this matched pair is an augmenting path
+                                                // TODO: this may also find augmenting loop!!! may cause deadlock, handle this later
+                                                // take this offer
+                                                qubit.state = CONST.NodeState.WaitingContract
+                                                qubit.outqueue.push({
+                                                    receiver: [...qubit.match_with],
+                                                    message: {
+                                                        type: CONST.MessageType.AcceptBrokeredOffer,
+                                                        timestamp: message.timestamp,
+                                                        target: [i, j],
+                                                        source: [...message.source],
+                                                    },
+                                                })
+                                            } else {  // propate this offer to neighbors
+                                                let propagate_to = [[i+2, j], [i-2, j], [i, j+2], [i, j-2]]
+                                                for (let [ri, rj] of propagate_to) {
+                                                    if (this.is_valid_i_j(ri, rj)) {
+                                                        qubit.outqueue.push({
+                                                            receiver: [ri, rj],
+                                                            message: {
+                                                                type: CONST.MessageType.MatchOffer,
+                                                                timestamp: message.timestamp,
+                                                                source: [...message.source],
+                                                                broker: [i, j],  // I'm the broker (sink) of this offer
+                                                                cost: message.cost + 1,
+                                                            },
+                                                        })
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        // TODO: console.error("why should an unmatched qubit receive a BrokeredOffer message?")
+                                    }
+                                } else if (message.type == CONST.MessageType.AcceptBrokeredOffer) {
+                                    if (qubit.state == CONST.NodeState.Matched) {
+                                        const [si, sj] = message.source
+                                        const cached_offer = qubit.offer_cache[i_j_as_key(si, sj)]
+                                        if (cached_offer) {
+                                            qubit.state = CONST.NodeState.WaitingContract
+                                            qubit.outqueue.push({
+                                                receiver: [...cached_offer.broker],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.AcceptOffer,
+                                                    target: [...message.target],  // take this offer as target
+                                                    source: [...message.source],
+                                                    broker: [i, j],  // I'm the broker of this offer
+                                                },
+                                            })
+                                        } else {
+                                            qubit.outqueue.push({
+                                                receiver: [...qubit.match_with],  // send back to the last broker
+                                                message: {
+                                                    type: CONST.MessageType.RefuseAcceptance,
+                                                    target: [...message.target],
+                                                    source: [...message.source],
+                                                },
+                                            })
+                                        }
+                                    } else {
+                                        qubit.outqueue.push({
+                                            receiver: [...qubit.match_with],  // send back to the last broker
+                                            message: {
+                                                type: CONST.MessageType.RefuseAcceptance,
+                                                target: [...message.target],
+                                                source: [...message.source],
+                                            },
+                                        })
+                                    }
+                                } else if (message.type == CONST.MessageType.BrokeredContract) {
+                                    if (qubit.broker_next_hop) {
+                                        const [ni, nj] = qubit.broker_next_hop
+                                        qubit.outqueue.push({
+                                            receiver: [ni, nj],  // send contract to the next hop
+                                            message: {
+                                                type: CONST.MessageType.Contract,
+                                                target: [...message.target],
+                                                source: [...message.source],
+                                                broker: [i, j],  // I'm the broker
+                                            },
+                                        })
+                                        qubit.state = CONST.NodeState.Matched
+                                        qubit.match_with = [ni, nj]
+                                        qubit.cost = cost_of_matching(i, j, ni, nj)
+                                        qubit.broker_next_hop = null
+                                    } else {  // if no broker_next_hop, then it is the last node which should connect to boundary
+                                        qubit.state = CONST.NodeState.SentOffer  // unlock and connect to boundary
+                                        qubit.cost = qubit.boundary_cost
+                                        qubit.match_with = null
+                                    }
+                                } else {
+                                    console.error(`drop unknown message with type: "${message.type}"`)
+                                    console.error(message)
+                                }
+                                if (options.only_handle_one_message) break  // only handle one message
+                            }
+                        }).bind(this)
+                        qubit.resend_offer = ((override_options = {}) => {
+                            this.update_conditional_selecting()
+                            // override default options
+                            const options = apply_override_options({
+
+                            }, override_options)
+                            // normal node never sends offer
+                            if (qubit.measurement == false) return
+                            // if the state of this qubit is matched, then the offer targets only self
+                            if (qubit.state == CONST.NodeState.Matched) {
+                                // TODO: smaller node is responsible for finding augmenting loop
+                            } else if (qubit.state == CONST.NodeState.NoError || qubit.state == CONST.NodeState.SentOffer) {
+                                qubit.active_timestamp += 1  // any timestamp smaller than this is an outdated offer and will be directly rejected
+                                for (let [ri, rj] of [[i-2, j], [i+2, j], [i, j-2], [i, j+2]]) if (this.is_valid_i_j(ri, rj)) {
+                                    qubit.outqueue.push({
+                                        receiver: [ri, rj],
+                                        message: {
+                                            type: CONST.MessageType.MatchOffer,
+                                            timestamp: qubit.active_timestamp,
+                                            source: [i, j],
+                                            broker: [i, j],  // if broker == source then there is no broker
+                                            cost: 1 - qubit.boundary_cost  // if match, then the cost of boundary is reduced
+                                        },
+                                    })
+                                }
+                                qubit.state = CONST.NodeState.SentOffer  // offer sent and waiting for replies
+                            } else {
+                                // TODO: what if in other states? during contract making? simply do nothing at this moment
+                            }
+                        }).bind(this)
+                        qubit.outqueue_send = ((override_options = {}) => {
+                            this.update_conditional_selecting()
+                            // override default options
+                            const options = apply_override_options({
+
+                            }, override_options)
+                            // send messages from outqueue
+                            while (qubit.outqueue.length > 0) {
+                                const out = qubit.outqueue.shift()
+                                this.message_count_single_round += 1
+                                this.message_count += 1
+                                const [ri, rj] = out.receiver
+                                if (this.is_valid_i_j(ri, rj)) {
+                                    const message = out.message
+                                    this.qubits[ri][rj].mailbox.push(message)
+                                    qubit.log.push(make_log_element(CONST.LogType.SendMessage, { i: ri, j: rj, message }))
+                                } else {
+                                    console.error(`(${i},${j})'s outqueue message has invalid target address: (${ri},${rj})`)
+                                    console.log(out)
+                                }
+                            }
+                        }).bind(this)
+                    }
+                    row.push(qubit)
+                }
+                qubits.push(row)
+            }
+            this.qubits = qubits
+            this.focus = null
+            this.message_count = 0
+            this.message_count_single_round = 0
+        },
+        is_valid_i_j(i, j) {
+            if (i < 0 || i >= this.L * 2 - 1) return false
+            if (j < 0 || j >= this.L * 2 - 1) return false
+            return true
+        },
+        compare_i_j(i1, j1, i2, j2) {
+            if (i1 == i2) {
+                if (j1 == j2) return 0
+                if (j1 < j2) return -1
+                else return 1
+            }
+            if (i1 < i2) return -1
+            else return 1
+        },
+        view_log(item) {
+            console.log(`[${dayjs(item.create_time).format("HH:mm:ss.SSS")}] ${item.log_type.name}: ${item.full_message}`)
+            console.log(JSON.parse(item.obj_str))  // create a copy object each time
+        },
+        focus_on_qubit(info) {
+            this.update_conditional_selecting()
+            if (this.focus != null) {
+                const [i, j] = this.focus
+                this.qubits[i][j].focused = false
+            }
+            if (info == null) {  // deselect
+                this.focus = null
+                return
+            }
+            const [i, j] = info
+            this.qubits[i][j].focused = true
+            this.focus = [i, j]
+        },
+        error_changed() {  // recompute the stabilizer errors
+            for (let i=0; i < this.qubits.length; ++i) {
+                for (let j=0; j < this.qubits[i].length; ++j) {
+                    let qubit = this.qubits[i][j]
+                    if (qubit.qubit_type == CONST.QubitType.StabZ || qubit.qubit_type == CONST.QubitType.StabX) {
+                        let error_count = 0
+                        for (let [di, dj] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+                            const ti = i + di
+                            if (ti < 0 || ti >= this.qubits.length) continue
+                            const tj = j + dj
+                            if (tj < 0 || tj >= this.qubits[ti].length) continue
+                            const target_qubit = this.qubits[ti][tj]
+                            if (qubit.qubit_type == CONST.QubitType.StabZ) {  // Z stabilizer detects X errors
+                                if (target_qubit.error == CONST.ErrorType.X || target_qubit.error == CONST.ErrorType.Y) {
+                                    error_count += 1
+                                }
+                            }
+                            if (qubit.qubit_type == CONST.QubitType.StabX) {  // X stabilizer detects Z errors
+                                if (target_qubit.error == CONST.ErrorType.Z || target_qubit.error == CONST.ErrorType.Y) {
+                                    error_count += 1
+                                }
+                            }
+                        }
+                        const measurement = error_count % 2 == 1
+                        if (qubit.measurement != measurement) {
+                            qubit.log.push(make_log_element(CONST.LogType.UpdateMeasurement, { i, j, measurement }))
+                        }
+                        if (measurement) {
+                            if (qubit.match_with == null) {
+                                qubit.cost = qubit.boundary_cost
+                            } else {
+                                const [mi, mj] = qubit.match_with
+                                qubit.cost = cost_of_matching(i, j, mi, mj)
+                            }
+                        } else {
+                            qubit.cost = 0  // no error syndrome here, so the cost is 0
+                        }
+                        qubit.measurement = measurement
+                    }
+                }
+            }
+            this.update_conditional_selecting()
+        },
+        for_each_qubit(func) {
+            for (let i=0; i < this.qubits.length; ++i) {
+                for (let j=0; j < this.qubits[i].length; ++j) {
+                    let qubit = this.qubits[i][j]
+                    func(i, j, qubit)
+                }
+            }
+        },
+        all_node_execute(override_options = {}) {
+            this.for_each_qubit((i, j, qubit) => {
+                if (qubit.node_execute) qubit.node_execute(override_options)
+            })
+        },
+        all_resend_offer(override_options = {}) {
+            this.for_each_qubit((i, j, qubit) => {
+                if (qubit.resend_offer) qubit.resend_offer(override_options)
+            })
+        },
+        all_outqueue_send(override_options = {}) {
+            this.for_each_qubit((i, j, qubit) => {
+                if (qubit.outqueue_send) qubit.outqueue_send(override_options)
+            })
+        },
+        default_single_round() {
+            this.message_count_single_round = 0
+            this.for_each_qubit((i, j, qubit) => {
+                // only resend offer if it has not sent any offer yet
+                if (qubit.measurement == true && qubit.state == CONST.NodeState.NoError) {
+                    if (qubit.resend_offer) qubit.resend_offer()
+                }
+            })
+            this.all_node_execute()
+            this.all_outqueue_send()
+        },
+        update_conditional_selecting() {
+            // to make sure that no matter how many times this function is called in a single execution, the update function will only execute once
+            this.need_to_update_conditional_selecting = true
+        },
+        update_conditional_selecting_immediate() {
+            const selecting_func = this.selecting_func || (() => false)
+            this.for_each_qubit((i, j, qubit) => {
+                const select = selecting_func(i, j, qubit)
+                if (typeof(select) != "boolean") {
+                    console.error(`selecting_func(${i}, ${j}, qubit) doesn't return boolean value, please check`)
+                }
+                if (select) {
+                    qubit.selecting = true
+                } else {
+                    qubit.selecting = false
+                }
+            })
+        },
+        select_none() {
+            this.conditional_select_func_names = []
+        },
+        select_has_offer_from_focused(i, j, qubit) {
+            if (this.focus == null) return false
+            if (!qubit.offer_cache) return false
+            const [fi, fj] = this.focus
+            if (!this.is_valid_i_j(fi, fj)) return false
+            if (!this.qubits[fi][fj].active_timestamp) return false
+            const active_timstamp = this.qubits[fi][fj].active_timestamp
+            const cached_offer = qubit.offer_cache[i_j_as_key(fi, fj)]
+            if (cached_offer && cached_offer.timestamp == active_timstamp) return true
+            return false
+        },
+        compute_matching_rotate(qubit) {
+            if (qubit.match_with == null) return 0  // don't care, shouldn't display
+            const [mi, mj] = qubit.match_with
+            return Math.atan2(mi - qubit.i, mj - qubit.j)
+            // return 30
+        },
+        compute_matching_scale(qubit) {
+            if (qubit.match_with == null) return 0  // don't care, shouldn't display
+            const [mi, mj] = qubit.match_with
+            return Math.sqrt(Math.pow(mi - qubit.i, 2) + Math.pow(mj - qubit.j, 2)) / 2
+        },
+    },
+    watch: {
+        L() {
+            this.refresh_qubits()
+        },
+        need_to_update_conditional_selecting() {
+            if (this.need_to_update_conditional_selecting) {
+                this.update_conditional_selecting_immediate()
+                this.need_to_update_conditional_selecting = false
+            }
+        },
+        conditional_select_func_names() {
+            let funcs = []
+            for (let i=0; i<this.conditional_select_func_names.length; ++i) {
+                const ele = this.available_filters[i]
+                const func = this[ele.func]
+                if (func == undefined) console.error(`cannot find function this.${ele.func}, which is filter displayed as "${ele.display}"`)
+                else funcs.push([ele.func, func])  // function name, function handler
+            }
+            this.selecting_func = funcs.length > 0 ? (i, j, qubit) => {
+                for (let [name, func] of funcs) {
+                    const select = func(i, j, qubit)
+                    if (typeof(select) != "boolean") {
+                        console.error(`${name}(${i}, ${j}, qubit) doesn't return boolean value, please check`)
+                    }
+                    if (!select) {
+                        return false
+                    }
+                }
+                return true
+            } : () => false
+            this.update_conditional_selecting()
+        },
+    },
+})
+
+</script>
+
+<style>
+
+body {
+    /* background: blue; */
+    margin: 0;
+}
+
+.square-qubits {
+    position: fixed;
+    /* background: blue; */
+}
+
+.control-panel {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: 460px;
+	overflow: auto;
+    padding: 10px;
+    /* background: yellow; */
+}
+
+.qubit-div {
+    width: 200px;  /* QubitDivWidth */
+    height: 200px;  /* QubitDivWidth */
+    transform-origin: center center;
+    text-align: center;
+}
+
+.stabilizer-qubit-div-Z {
+    width: 200px;
+    height: 200px;
+    border-radius: 100px;
+    transform-origin: center center;
+    transform: scale(1);
+    transition: transform .3s, box-shadow .3s;
+}
+
+.stabilizer-qubit-div-Z-no-error {
+    /* THREE.Color( 0, 0.75, 1 ) */
+    background: radial-gradient(circle at 100px 30px, #00BFFF, #005F7F);
+    /* background: #00BFFF; */
+}
+
+.stabilizer-qubit-div-Z-with-error {
+    background: radial-gradient(circle at 100px 30px, #00BFFF, red);
+    /* background: red; */
+}
+
+.stabilizer-qubit-div-Z:hover {
+    box-shadow: 0px 0px 50px #00BFFF;
+    transform: scale(1.1);
+}
+
+.stabilizer-qubit-div-X {
+    width: 200px;
+    height: 200px;
+    border-radius: 100px;
+    transform-origin: center center;
+    transform: scale(1);
+    transition: transform .3s, box-shadow .3s;
+}
+
+.stabilizer-qubit-div-X-no-error {
+    /* THREE.Color( 0, 0.8, 0 ) */
+    background: radial-gradient(circle at 100px 30px, #00CC00, #006600);
+    /* background: #00CC00; */
+}
+
+.stabilizer-qubit-div-X-with-error {
+    background: radial-gradient(circle at 100px 30px, #00CC00, red);
+    /* background: red; */
+}
+
+.stabilizer-qubit-div-X:hover {
+    box-shadow: 0px 0px 50px #00CC00;
+    transform: scale(1.1);
+}
+
+.data-qubit-div {
+    width: 200px;
+    height: 200px;
+    border-radius: 100px;
+    /* THREE.Color( 1, 0.65, 0 ) */
+    background: radial-gradient(circle at 100px 30px, #FFA500, #7F5200);
+    /* background: #FFA500; */
+    transform-origin: center center;
+    transform: scale(1);
+    transition: transform .3s, box-shadow .3s;
+}
+
+.data-qubit-div:hover {
+    box-shadow: 0px 0px 50px #FFA500;
+    transform: scale(1.1);
+}
+
+.qubit-focused {
+    transform: scale(1.1);
+    box-shadow: 0px 0px 50px 20px yellow;
+}
+
+.qubit-div h1 {
+    font-size: 50px;
+    margin: 0;
+}
+
+.qubits-row {
+    position: absolute;
+}
+
+.qubits-container {
+    position: absolute;
+    width: 200px;  /* QubitDivWidth */
+    height: 200px;  /* QubitDivWidth */
+    transform-origin: center center;
+}
+
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+	width: 0;
+}
+
+.has-margin {
+    margin-top: 10px;
+    margin-left: 5px;
+}
+
+.child-p-no-margin p {
+    margin: 0;
+}
+
+</style>
+
+</body>
+</html>
