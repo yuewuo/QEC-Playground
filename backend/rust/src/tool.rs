@@ -79,8 +79,10 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let independent_px_pz = matches.is_present("independent_px_pz");
             let only_count_logical_x = matches.is_present("only_count_logical_x");
             let imperfect_initialization = matches.is_present("imperfect_initialization");
+            let shallow_error_on_bottom = matches.is_present("shallow_error_on_bottom");
             fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
-                , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, !imperfect_initialization);
+                , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, !imperfect_initialization
+                , shallow_error_on_bottom);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -320,6 +322,8 @@ fn error_rate_MWPM_with_weight(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min
             let total_rounds = Arc::new(Mutex::new(0));
             let qec_failed = Arc::new(Mutex::new(0));
             let mut handlers = Vec::new();
+            let mut pb = ProgressBar::on(std::io::stderr(), max_N as u64);
+            pb.set(0);
             for _i in 0..parallel {
                 let p = *p;
                 let L = *L;
@@ -378,6 +382,18 @@ fn error_rate_MWPM_with_weight(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min
                     }
                 }));
             }
+            loop {
+                let total_rounds = *total_rounds.lock().unwrap();
+                if total_rounds >= max_N { break }
+                let qec_failed = *qec_failed.lock().unwrap();
+                if qec_failed >= min_error_cases { break }
+                let error_rate = qec_failed as f64 / total_rounds as f64;
+                pb.message(format!("{} {} {} {} {} ", p, L, total_rounds, qec_failed, error_rate).as_str());
+                let progress = total_rounds / max_N;
+                pb.set(progress as u64);
+                std::thread::sleep(std::time::Duration::from_millis(200));
+            }
+            pb.finish();
             for handler in handlers {
                 handler.join().unwrap();
             }
@@ -396,7 +412,7 @@ it supports progress bar (in stderr), so you can run this in backend by redirect
 **/
 fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
         , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
-        , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool) {
+        , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool, shallow_error_on_bottom: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -429,6 +445,15 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                 // in order to verify that the modification is good, here we mimic the behavior of old model
                 // that is, we do not generate error on the added bottom layer, so that there is no bottom boundary
                 model.set_depolarizing_error_with_perfect_initialization(p);
+            }
+            if shallow_error_on_bottom {
+                model.iterate_snapshot_mut(|t, _i, _j, node| {
+                    if t == 6 && node.qubit_type == ftqec::QubitType::Data {
+                        node.error_rate_x = p;
+                        node.error_rate_z = p;
+                        node.error_rate_y = p;
+                    }
+                })
             }
             model.iterate_snapshot_mut(|t, _i, _j, node| {
                 if t % 6 == 5 && node.qubit_type != ftqec::QubitType::Data {  // just add error before the measurement stage
@@ -514,6 +539,8 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                                             Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed += 1; },
                                             _ => {},
                                         }
+                                    } else {
+                                        mini_qec_failed += 1;
                                     }
                                 }
                             } else if validate_layer == -1 {
@@ -708,6 +735,8 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
                                             Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed.0 += 1; },
                                             _ => {},
                                         }
+                                    } else {
+                                        mini_qec_failed.0 += 1;
                                     }
                                 }
                                 let validation_ret = model_error_approx.validate_correction_on_boundary(&correction_approx);
@@ -718,6 +747,8 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
                                             Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed.1 += 1; },
                                             _ => {},
                                         }
+                                    } else {
+                                        mini_qec_failed.1 += 1;
                                     }
                                 }
                             } else if validate_layer == -1 {

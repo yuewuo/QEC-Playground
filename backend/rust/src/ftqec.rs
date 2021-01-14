@@ -87,7 +87,7 @@ pub struct PlanarCodeModel {
 
 impl PlanarCodeModel {
     pub fn new_standard_planar_code(MeasurementRounds: usize, L: usize) -> Self {
-        // MeasurementRounds = 0 is means only one perfect measurement round
+        // MeasurementRounds = 0 means only one perfect measurement round
         assert!(L >= 2, "at lease one stabilizer is required");
         let mut model = Self::new_planar_code(MeasurementRounds, L, |_i, _j| true);
         // create Z stabilizer homology lines, detecting X errors
