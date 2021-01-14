@@ -436,9 +436,6 @@ fn archived_debug_tests() {
                 probability, case_count, propagated_to, name);
         }
     }
-}
-
-fn debug_tests() {
     {  // test functionality after adding the perfect measurement layer on top
         let MeasurementRounds = 2;
         let L = 4;
@@ -454,5 +451,23 @@ fn debug_tests() {
         let measurement = model.generate_measurement();
         println!("measurement.shape(): {:?}", measurement.shape());
         // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
+    }
+}
+
+fn debug_tests() {
+    {  // test sparse correction functionality
+        let mut correction = ftqec::Correction::new_all_false(3, 3, 3);
+        let mut x_mut = correction.x.view_mut();
+        let mut z_mut = correction.z.view_mut();
+        x_mut[[0, 1, 1]] = true;
+        x_mut[[2, 0, 2]] = true;
+        z_mut[[0, 0, 1]] = true;
+        z_mut[[1, 0, 1]] = true;
+        z_mut[[2, 0, 1]] = true;
+        println!("correction: {:?}", correction);
+        let sparse_correction = ftqec::SparseCorrection::from(&correction);
+        println!("sparse_correction: {:?}", sparse_correction);
+        let back_correction = ftqec::Correction::from(&sparse_correction);
+        assert_eq!(back_correction, correction, "they should be the same");
     }
 }
