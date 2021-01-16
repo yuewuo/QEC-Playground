@@ -620,6 +620,28 @@ impl OfferDecoder {
         }
         false
     }
+    pub fn generate_depolarizing_random_errors<F>(&mut self, error_rate: f64, mut rng: F) -> usize where F: FnMut() -> f64 {
+        let length = 2 * self.d - 1;
+        let mut error_count = 0;
+        for i in 0..length {
+            for j in 0..length {
+                let random_number = rng();
+                if random_number < error_rate {
+                    self.qubits[i][j].error = ErrorType::X;
+                    error_count += 1;
+                } else if random_number < 2. * error_rate {
+                    self.qubits[i][j].error = ErrorType::Z;
+                    error_count += 1;
+                } else if random_number < 3. * error_rate {
+                    self.qubits[i][j].error = ErrorType::Y;
+                    error_count += 1;
+                } else {
+                    self.qubits[i][j].error = ErrorType::I;
+                }
+            }
+        }
+        error_count
+    }
 }
 
 /// create decoder for standard planar code
