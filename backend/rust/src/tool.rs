@@ -16,6 +16,7 @@ use super::num_cpus;
 use std::sync::{Arc, Mutex};
 use super::ftqec;
 use super::pbr::ProgressBar;
+use super::types::QubitType;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -448,7 +449,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             }
             if shallow_error_on_bottom {
                 model.iterate_snapshot_mut(|t, _i, _j, node| {
-                    if t == 6 && node.qubit_type == ftqec::QubitType::Data {
+                    if t == 6 && node.qubit_type == QubitType::Data {
                         node.error_rate_x = p;
                         node.error_rate_z = p;
                         node.error_rate_y = p;
@@ -456,7 +457,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                 })
             }
             model.iterate_snapshot_mut(|t, _i, _j, node| {
-                if t % 6 == 5 && node.qubit_type != ftqec::QubitType::Data {  // just add error before the measurement stage
+                if t % 6 == 5 && node.qubit_type != QubitType::Data {  // just add error before the measurement stage
                     node.error_rate_x *= extra_measurement_error;
                     node.error_rate_z *= extra_measurement_error;
                     node.error_rate_y *= extra_measurement_error;
@@ -638,7 +639,7 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
                 model.set_depolarizing_error_with_perfect_initialization(p);
             }
             model.iterate_snapshot_mut(|t, _i, _j, node| {
-                if t % 6 == 5 && node.qubit_type != ftqec::QubitType::Data {  // just add error before the measurement stage
+                if t % 6 == 5 && node.qubit_type != QubitType::Data {  // just add error before the measurement stage
                     node.error_rate_x *= extra_measurement_error;
                     node.error_rate_z *= extra_measurement_error;
                     node.error_rate_y *= extra_measurement_error;

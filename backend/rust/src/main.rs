@@ -7,6 +7,7 @@ mod web;
 mod blossom_v;
 mod mwpm_approx;
 mod ftqec;
+mod offer_decoder;
 
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;

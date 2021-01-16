@@ -24,6 +24,8 @@ use std::ops::{Deref, DerefMut};
 use super::blossom_v;
 use super::mwpm_approx;
 use std::sync::{Arc};
+use super::types::QubitType;
+use super::types::ErrorType;
 
 /// uniquely index a node
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -1156,14 +1158,6 @@ impl From<usize> for Stage {
     }
 }
 
-/// Qubit type, corresponds to `QTYPE` in `FaultTolerantView.vue`
-#[derive(Debug, PartialEq, Clone)]
-pub enum QubitType {
-    Data,
-    StabX,
-    StabZ,
-}
-
 /// Gate type, corresponds to `NTYPE` in `FaultTolerantView.vue`
 #[derive(Debug, PartialEq, Clone)]
 pub enum GateType {
@@ -1366,38 +1360,6 @@ impl Correction {
     pub fn combine(&mut self, next: &Self) {
         Correction::xor_ndarray3(&mut self.x, &next.x);
         Correction::xor_ndarray3(&mut self.z, &next.z);
-    }
-}
-
-/// Error type, corresponds to `ETYPE` in `FaultTolerantView.vue`
-#[derive(Debug, PartialEq, Clone)]
-pub enum ErrorType {
-    I,
-    X,
-    Z,
-    Y,
-}
-
-impl ErrorType {
-    pub fn multiply(&self, err: &Self) -> Self {
-        match (self, err) {
-            (Self::I, Self::I) => Self::I,
-            (Self::I, Self::X) => Self::X,
-            (Self::I, Self::Z) => Self::Z,
-            (Self::I, Self::Y) => Self::Y,
-            (Self::X, Self::I) => Self::X,
-            (Self::X, Self::X) => Self::I,
-            (Self::X, Self::Z) => Self::Y,
-            (Self::X, Self::Y) => Self::Z,
-            (Self::Z, Self::I) => Self::Z,
-            (Self::Z, Self::X) => Self::Y,
-            (Self::Z, Self::Z) => Self::I,
-            (Self::Z, Self::Y) => Self::X,
-            (Self::Y, Self::I) => Self::Y,
-            (Self::Y, Self::X) => Self::Z,
-            (Self::Y, Self::Z) => Self::X,
-            (Self::Y, Self::Y) => Self::I,
-        }
     }
 }
 

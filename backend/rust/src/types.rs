@@ -268,3 +268,43 @@ pub fn validate_z_correction(z_error: &ZxError, z_correction: &ZxCorrection) -> 
     }
     Ok(())
 }
+
+/// Qubit type, corresponds to `QTYPE` in `FaultTolerantView.vue`
+#[derive(Debug, PartialEq, Clone)]
+pub enum QubitType {
+    Data,
+    StabX,
+    StabZ,
+}
+
+/// Error type, corresponds to `ETYPE` in `FaultTolerantView.vue`
+#[derive(Debug, PartialEq, Clone)]
+pub enum ErrorType {
+    I,
+    X,
+    Z,
+    Y,
+}
+
+impl ErrorType {
+    pub fn multiply(&self, err: &Self) -> Self {
+        match (self, err) {
+            (Self::I, Self::I) => Self::I,
+            (Self::I, Self::X) => Self::X,
+            (Self::I, Self::Z) => Self::Z,
+            (Self::I, Self::Y) => Self::Y,
+            (Self::X, Self::I) => Self::X,
+            (Self::X, Self::X) => Self::I,
+            (Self::X, Self::Z) => Self::Y,
+            (Self::X, Self::Y) => Self::Z,
+            (Self::Z, Self::I) => Self::Z,
+            (Self::Z, Self::X) => Self::Y,
+            (Self::Z, Self::Z) => Self::I,
+            (Self::Z, Self::Y) => Self::X,
+            (Self::Y, Self::I) => Self::Y,
+            (Self::Y, Self::X) => Self::Z,
+            (Self::Y, Self::Z) => Self::X,
+            (Self::Y, Self::Y) => Self::I,
+        }
+    }
+}

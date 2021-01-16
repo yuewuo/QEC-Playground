@@ -11,6 +11,9 @@ use super::pyo3::prelude::*;
 use super::pyo3::types::{IntoPyDict};
 use super::blossom_v;
 use super::ftqec;
+use super::types::QubitType;
+use super::types::ErrorType;
+use super::offer_decoder;
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -290,7 +293,7 @@ fn archived_debug_tests() {
                 for i in 0..model.snapshot[t].len() {
                     for j in 0..model.snapshot[t][i].len() {
                         if model.snapshot[t][i][j].is_some() {
-                            for error in [ftqec::ErrorType::X, ftqec::ErrorType::Z].iter() {
+                            for error in [ErrorType::X, ErrorType::Z].iter() {
                                 model.clear_error();
                                 model.add_error_at(t, i, j, error);
                                 assert_eq!(model.count_error(), 1);
@@ -331,13 +334,13 @@ fn archived_debug_tests() {
              * add error at Index { t: 23, i: 6, j: 4 } Y
              */
             model.clear_error();
-            model.add_error_at(4, 2, 6, &ftqec::ErrorType::Y);
-            model.add_error_at(20, 1, 5, &ftqec::ErrorType::X);
-            model.add_error_at(23, 6, 4, &ftqec::ErrorType::Y);
+            model.add_error_at(4, 2, 6, &ErrorType::Y);
+            model.add_error_at(20, 1, 5, &ErrorType::X);
+            model.add_error_at(23, 6, 4, &ErrorType::Y);
             // {  // generate random error and hard-code it just like above
             //     model.generate_random_errors(|| rng.gen::<f64>());
             //     model.iterate_snapshot(|t, i, j, node| {
-            //         if node.error != ftqec::ErrorType::I {
+            //         if node.error != ErrorType::I {
             //             println!("add error at {:?} {:?}", ftqec::Index::new(t, i, j), node.error);
             //         }
             //     });
@@ -386,7 +389,7 @@ fn archived_debug_tests() {
                 for i in 0..model.snapshot[t].len() {
                     for j in 0..model.snapshot[t][i].len() {
                         if model.snapshot[t][i][j].is_some() {
-                            for error in [ftqec::ErrorType::X, ftqec::ErrorType::Z].iter() {
+                            for error in [ErrorType::X, ErrorType::Z].iter() {
                                 model.clear_error();
                                 model.add_error_at(t, i, j, error);
                                 model.propagate_error();
@@ -404,7 +407,7 @@ fn archived_debug_tests() {
                                         let mut has_error = ndarray::Array::from_elem((width, width), false);
                                         let mut has_error_mut = has_error.view_mut();
                                         model.iterate_snapshot(|_t, i, j, node| {
-                                            if node.propagated != ftqec::ErrorType::I {
+                                            if node.propagated != ErrorType::I {
                                                 has_error_mut[[i, j]] = true;
                                             }
                                         });
@@ -467,15 +470,12 @@ fn archived_debug_tests() {
         let back_correction = ftqec::Correction::from(&sparse_correction);
         assert_eq!(back_correction, correction, "they should be the same");
     }
-}
-
-fn debug_tests() {
     {  // test only perfect measurement
         let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(0, 3);
         let p = 0.1;
         model.set_depolarizing_error_with_perfect_initialization(p);
         model.iterate_snapshot_mut(|t, _i, _j, node| {
-            if t == 6 && node.qubit_type == ftqec::QubitType::Data {
+            if t == 6 && node.qubit_type == QubitType::Data {
                 println!("set error rate at {} {} {}", t, _i, _j);
                 node.error_rate_x = p;
                 node.error_rate_z = p;
@@ -487,11 +487,11 @@ fn debug_tests() {
         model.build_exhausted_path_autotune();
         {  // add errors
             // {  // no logical error
-            //     model.snapshot[6][0][0].as_mut().unwrap().error = ftqec::ErrorType::X;
+            //     model.snapshot[6][0][0].as_mut().unwrap().error = ErrorType::X;
             // }
             // {  // has logical error
-            //     model.snapshot[6][0][0].as_mut().unwrap().error = ftqec::ErrorType::X;
-            //     model.snapshot[6][0][2].as_mut().unwrap().error = ftqec::ErrorType::X;
+            //     model.snapshot[6][0][0].as_mut().unwrap().error = ErrorType::X;
+            //     model.snapshot[6][0][2].as_mut().unwrap().error = ErrorType::X;
             // }
             {  // random error
                 let mut rng = thread_rng();
@@ -509,5 +509,39 @@ fn debug_tests() {
         println!("corrected: {:?}", corrected);
         let validation_ret = model.validate_correction_on_boundary(&correction);
         println!("{:?}", validation_ret);
+    }
+}
+
+fn debug_tests() {
+    {  // test offer decoder
+        let mut decoder = offer_decoder::create_standard_planar_code_offer_decoder(7);
+        decoder.reinitialize();
+        {  // test augmenting path, in this case, qubits[4][3] should establish a augmenting path to [8][11] so that cost is minimized
+            decoder.qubits[6][4].error = ErrorType::X;
+            decoder.qubits[8][8].error = ErrorType::X;
+            decoder.qubits[8][12].error = ErrorType::X;
+            decoder.force_match_qubits(6, 5, 8, 7);
+            decoder.force_match_qubits(8, 9, 8, 11);
+        }
+        decoder.error_changed();
+        let cycles = decoder.pseudo_parallel_execute_to_stable();
+        let match_pattern = decoder.match_pattern();
+        println!("match_pattern: {:?}", match_pattern);
+        println!("cycles: {}", cycles);
+        assert_eq!(false, decoder.has_logical_error(ErrorType::X));
+        decoder.reinitialize();
+        {  // has x logical error
+            decoder.qubits[0][2].error = ErrorType::X;
+            decoder.qubits[0][4].error = ErrorType::X;
+            decoder.qubits[0][6].error = ErrorType::X;
+            decoder.qubits[0][8].error = ErrorType::X;
+            decoder.qubits[0][10].error = ErrorType::X;
+        }
+        decoder.error_changed();
+        let cycles = decoder.pseudo_parallel_execute_to_stable();
+        let match_pattern = decoder.match_pattern();
+        println!("match_pattern: {:?}", match_pattern);
+        println!("cycles: {}", cycles);
+        assert_eq!(true, decoder.has_logical_error(ErrorType::X));
     }
 }
