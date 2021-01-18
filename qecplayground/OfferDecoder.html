@@ -61,6 +61,7 @@
                     <v-btn color="blue lighten-4" elevation="3" small @click="all_resend_offer()" class="has-margin">resend offer</v-btn>
                     <v-btn color="lime lighten-4" elevation="3" small @click="all_outqueue_send()" class="has-margin">out_queue send</v-btn>
                 </div>
+                <v-btn color="purple lighten-4" block @click="default_execute_to_stable" class="has-margin">default execute to stable</v-btn>
             </div>
             <div style="margin-top: 10px;" class="child-p-no-margin">
                 <h2>Statistics</h2>
@@ -763,9 +764,10 @@ var $app = new Vue({
                                             }
                                         }
                                     } else {
-                                        console.error("why should an unmatched qubit receive a BrokeredOffer message?")
-                                        console.log(`qubit[${i}][${j}]`)
-                                        console.log(qubit)
+                                        // just ignore this. this is almost always because of WaitingContract mode of matched pairs, but it's no harm
+                                        // console.error("why should an unmatched qubit receive a BrokeredOffer message?")
+                                        // console.log(`qubit[${i}][${j}]`)
+                                        // console.log(qubit)
                                     }
                                 } else if (message.type == CONST.MessageType.AcceptBrokeredOffer) {
                                     if (qubit.state == CONST.NodeState.Matched) {
@@ -1003,6 +1005,11 @@ var $app = new Vue({
                 only_handle_one_message: true,
             })
             this.all_outqueue_send()
+        },
+        default_execute_to_stable() {
+            do {
+                this.default_single_round()
+            } while (this.message_processed_single_round > 0)
         },
         update_conditional_selecting() {
             // to make sure that no matter how many times this function is called in a single execution, the update function will only execute once
