@@ -227,24 +227,31 @@ impl OfferDecoder {
                     }
                 },
                 Message::Contract{ target: (ti, tj), source: (si, sj), broker: (bi, bj) } => {
-                    assert_eq!(qubit.state, NodeState::WaitingContract, "This shoudn't happen! Contract is never sent to a node in state other than WaitingContract");
-                    qubit.state = NodeState::Matched;
-                    if ti != i || tj != j {  // this is broker
-                        qubit.out_queue.push(OutMessage {
-                            receiver: qubit.match_with.expect("exist"),
-                            message: Message::BrokeredContract {
-                                target: (ti, tj),
-                                source: (si, sj),
-                                broker: (i, j),  // I'm the broker
-                            },
-                        });
+                    if qubit.state == NodeState::WaitingContract {
+                        qubit.state = NodeState::Matched;
+                        if ti != i || tj != j {  // this is broker
+                            qubit.out_queue.push(OutMessage {
+                                receiver: qubit.match_with.expect("exist"),
+                                message: Message::BrokeredContract {
+                                    target: (ti, tj),
+                                    source: (si, sj),
+                                    broker: (i, j),  // I'm the broker
+                                },
+                            });
+                        }
+                        qubit.match_with = Some((bi, bj));
+                        qubit.cost = Self::cost_of_matching(i, j, bi, bj);
+                    } else {
+                        println!("This shoudn't happen! Contract is never sent to a node in state other than WaitingContract");
+                        println!("message: {:?}", message);
                     }
-                    qubit.match_with = Some((bi, bj));
-                    qubit.cost = Self::cost_of_matching(i, j, bi, bj);
                 },
                 Message::RefuseAcceptance{ target: (ti, tj), source: (si, sj) } => {
                     if ti == i && tj == j {
-                        qubit.state = NodeState::SentOffer;
+                        qubit.state = match qubit.match_with {
+                            None => NodeState::SentOffer,
+                            Some(_) => NodeState::Matched,
+                        };
                     } else {
                         qubit.state = NodeState::Matched;
                         match qubit.broker_next_hop {
@@ -280,6 +287,7 @@ impl OfferDecoder {
                         };
                         if not_caching_this_offer {  // ignore if already brokered a similar offer
                             if cost + qubit.boundary_cost < 0. {  // break this matched pair is an augmenting path
+                                // TODO: this may also find augmenting loop!!! may cause deadlock, handle this later
                                 // take this offer
                                 qubit.state = NodeState::WaitingContract;
                                 qubit.out_queue.push(OutMessage {
@@ -540,40 +548,59 @@ impl OfferDecoder {
         }
         false
     }
-    // return the cycles
-    pub fn pseudo_parallel_execute_to_stable(&mut self) -> usize {
+    pub fn pseudo_parallel_resend_offer_run_to_stable(&mut self) -> usize {
         let length = 2 * self.d - 1;
+        let mut cycles = 0;
+        // resend offer
+        for i in 0..length {
+            for j in 0..length {
+                self.qubit_resend_offer(i, j);
+                self.qubit_out_queue_send(i, j);
+            }
+        }
+        let mut message_processed = 1;
+        // loop until no message flying
+        while message_processed > 0 {
+            message_processed = 0;
+            for i in 0..length {
+                for j in 0..length {
+                    message_processed += self.qubit_node_execute(i, j, true);
+                }
+            }
+            for i in 0..length {
+                for j in 0..length {
+                    self.qubit_out_queue_send(i, j);
+                }
+            }
+            cycles += 1;
+            // println!("message_processed: {}", message_processed);
+        }
+        // println!("cycles: {}", cycles);
+        cycles
+    }
+    pub fn pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(&mut self, max_resend: usize, max_cycles: usize) -> Result<usize, usize> {
         let mut match_pattern_changed = true;
         let mut cycles = 0;
         // loop until match pattern doesn't change
-        while match_pattern_changed {
+        let mut resend_rounds = 0;
+        while match_pattern_changed && resend_rounds < max_resend && cycles < max_cycles {
             let last_match_pattern = self.match_pattern();
             match_pattern_changed = false;
-            // resend offer
-            for i in 0..length {
-                for j in 0..length {
-                    self.qubit_resend_offer(i, j);
-                }
-            }
-            let mut message_processed = true;
-            // loop until no message flying
-            while message_processed {
-                message_processed = false;
-                for i in 0..length {
-                    for j in 0..length {
-                        if self.qubit_node_execute(i, j, false) > 0 {
-                            message_processed = true
-                        }
-                        self.qubit_out_queue_send(i, j);
-                    }
-                }
-                cycles += 1;
-            }
+            cycles += self.pseudo_parallel_resend_offer_run_to_stable();
             if self.match_pattern_changed(&last_match_pattern) {
                 match_pattern_changed = true;
             }
+            resend_rounds += 1;
         }
-        cycles
+        if resend_rounds < max_resend {
+            Ok(cycles)
+        } else {
+            Err(cycles)
+        }
+    }
+    // return the cycles
+    pub fn pseudo_parallel_execute_to_stable(&mut self) -> usize {
+        self.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(usize::MAX, usize::MAX).unwrap()
     }
     pub fn has_logical_error(&self, error_type: ErrorType) -> bool {
         let length = 2 * self.d - 1;
@@ -641,6 +668,57 @@ impl OfferDecoder {
             }
         }
         error_count
+    }
+    pub fn generate_only_x_random_errors<F>(&mut self, error_rate: f64, mut rng: F) -> usize where F: FnMut() -> f64 {
+        let length = 2 * self.d - 1;
+        let mut error_count = 0;
+        for i in 0..length {
+            for j in 0..length {
+                let random_number = rng();
+                if random_number < error_rate {
+                    self.qubits[i][j].error = ErrorType::X;
+                    error_count += 1;
+                } else {
+                    self.qubits[i][j].error = ErrorType::I;
+                }
+            }
+        }
+        error_count
+    }
+    pub fn error_pattern(&self) -> Vec<String> {
+        let length = 2 * self.d - 1;
+        (0..length).map(|i| {
+            (0..length).map(|j| {
+                match self.qubits[i][j].error {
+                    ErrorType::X => 'X',
+                    ErrorType::Y => 'Y',
+                    ErrorType::Z => 'Z',
+                    _ => 'I',
+                }
+            }).collect()
+        }).collect()
+    }
+    pub fn load_error_pattern(&mut self, error_pattern: &Vec<String>) {
+        self.reinitialize();
+        for (i, row) in error_pattern.iter().enumerate() {
+            for (j, error) in row.chars().enumerate() {
+                self.qubits[i][j].error = match error {
+                    'I' => ErrorType::I,
+                    'X' => ErrorType::X,
+                    'Y' => ErrorType::Y,
+                    'Z' => ErrorType::Z,
+                    _ => { panic!("unknown error: {}", error) },
+                };
+            }
+        }
+        self.error_changed();
+    }
+    pub fn create_with_error_pattern(error_pattern: &Vec<String>) -> Self {
+        let length = error_pattern.len();
+        let d = (length + 1) / 2;
+        let mut decoder = create_standard_planar_code_offer_decoder(d);
+        decoder.load_error_pattern(error_pattern);
+        decoder
     }
 }
 

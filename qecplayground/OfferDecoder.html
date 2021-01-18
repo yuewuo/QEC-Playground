@@ -65,7 +65,7 @@
             <div style="margin-top: 10px;" class="child-p-no-margin">
                 <h2>Statistics</h2>
                 <p>total message count: {{ message_count }}</p>
-                <p>message count in single round: {{ message_count_single_round }}</p>
+                <p>message processed in single round: {{ message_processed_single_round }}</p>
             </div>
             <div style="margin-top: 10px;">
                 <h2>Conditional Select</h2>
@@ -355,7 +355,7 @@ var $app = new Vue({
 
             // statistics
             message_count: 0,
-            message_count_single_round: 0,
+            message_processed_single_round: 0,
         }
     },
     computed: {
@@ -555,6 +555,7 @@ var $app = new Vue({
                             // read message
                             while (qubit.mailbox.length > 0) {
                                 const message = qubit.mailbox.shift()  // take the first message in mailbox
+                                this.message_processed_single_round += 1
                                 if (message.type == CONST.MessageType.MatchOffer) {
                                     const [si, sj] = message.source
                                     // cache and propagate this offer only if the cost is better than cached or timestamp is newer
@@ -700,7 +701,8 @@ var $app = new Vue({
                                 } else if (message.type == CONST.MessageType.RefuseAcceptance) {
                                     const [ti, tj] = message.target
                                     if (ti == i && tj == j) {
-                                        qubit.state = CONST.NodeState.SentOffer
+                                        if (qubit.match_with == null) qubit.state = CONST.NodeState.SentOffer
+                                        else qubit.state = CONST.NodeState.Matched
                                     } else {
                                         qubit.state = CONST.NodeState.Matched
                                         if (qubit.broker_next_hop == null) {  // send refuse to peer
@@ -761,6 +763,8 @@ var $app = new Vue({
                                         }
                                     } else {
                                         console.error("why should an unmatched qubit receive a BrokeredOffer message?")
+                                        console.log(`qubit[${i}][${j}]`)
+                                        console.log(qubit)
                                     }
                                 } else if (message.type == CONST.MessageType.AcceptBrokeredOffer) {
                                     if (qubit.state == CONST.NodeState.Matched) {
@@ -865,7 +869,6 @@ var $app = new Vue({
                             // send messages from out_queue
                             while (qubit.out_queue.length > 0) {
                                 const out = qubit.out_queue.shift()
-                                this.message_count_single_round += 1
                                 this.message_count += 1
                                 const [ri, rj] = out.receiver
                                 if (this.is_valid_i_j(ri, rj)) {
@@ -886,7 +889,7 @@ var $app = new Vue({
             this.qubits = qubits
             this.focus = null
             this.message_count = 0
-            this.message_count_single_round = 0
+            this.message_processed_single_round = 0
         },
         is_valid_i_j(i, j) {
             if (i < 0 || i >= this.L * 2 - 1) return false
@@ -987,14 +990,17 @@ var $app = new Vue({
             })
         },
         default_single_round() {
-            this.message_count_single_round = 0
+            this.message_processed_single_round = 0
             this.for_each_qubit((i, j, qubit) => {
                 // only resend offer if it has not sent any offer yet
                 if (qubit.measurement == true && qubit.state == CONST.NodeState.NoError) {
                     if (qubit.resend_offer) qubit.resend_offer()
                 }
             })
-            this.all_node_execute()
+            this.all_outqueue_send()
+            this.all_node_execute({
+                only_handle_one_message: true,
+            })
             this.all_outqueue_send()
         },
         update_conditional_selecting() {
@@ -1040,6 +1046,23 @@ var $app = new Vue({
             const [mi, mj] = qubit.match_with
             return Math.sqrt(Math.pow(mi - qubit.i, 2) + Math.pow(mj - qubit.j, 2)) / 2
         },
+        async load_error_pattern(error_pattern) {  // should be like ["XIX", "IYI", "ZIZ"]
+            const length = error_pattern.length
+            this.L_input = (length + 1) / 2
+            await this.vue_next_tick()
+            this.refresh_qubits()
+            for (let i=0; i < length; ++i) {
+                for (let j=0; j < length; ++j) {
+                    let error = error_pattern[i][j]
+                    if (error == "X") this.qubits[i][j].error = CONST.ErrorType.X
+                    else if (error == "Y") this.qubits[i][j].error = CONST.ErrorType.Y
+                    else if (error == "Z") this.qubits[i][j].error = CONST.ErrorType.Z
+                    else if (error == "I") this.qubits[i][j].error = CONST.ErrorType.I
+                    else console.error(`error pattern invalid character: ${error}`)
+                }
+            }
+            this.error_changed()
+        }
     },
     watch: {
         L() {

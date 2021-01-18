@@ -4,7 +4,7 @@ use super::clap;
 use super::util;
 use super::rand::prelude::*;
 use super::serde_json;
-use super::serde_json::{Value, Map};
+use super::serde_json::{Value, Map, json};
 use super::types::*;
 use super::qec;
 use super::pyo3::prelude::*;
@@ -37,6 +37,14 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
         }
         ("archived_debug_tests", Some(_)) => {
             archived_debug_tests()
+        }
+        ("offer_decoder_study", Some(matches)) => {
+            let d = value_t!(matches, "d", usize).expect("required");
+            let p = value_t!(matches, "p", f64).expect("required");
+            let count = value_t!(matches, "count", usize).unwrap_or(1);
+            let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(100);
+            let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(1000);
+            offer_decoder_study(d, p, count, max_resend, max_cycles);
         }
         ("all", Some(_)) => {  // remember to add new test functions here
             save_load();
@@ -213,6 +221,72 @@ fn maximum_max_weight_matching_correction() {
             e.print_and_set_sys_last_vars(py);
         })
     }).expect("python run failed");
+}
+
+fn offer_decoder_study(d: usize, p: f64, count: usize, max_resend: usize, max_cycles: usize) {
+    let mut cases = 0;
+    let mut rng = thread_rng();
+    // create offer decoder instance
+    let mut decoder = offer_decoder::create_standard_planar_code_offer_decoder(d);
+    // create MWPM decoder instance
+    let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(0, d);  // single layer planar code
+    model.set_depolarizing_error_with_perfect_initialization(p);
+    model.iterate_snapshot_mut(|t, _i, _j, node| {  // the same error model as in `decoder`
+        if t == 6 && node.qubit_type == QubitType::Data {
+            node.error_rate_x = p;
+            node.error_rate_z = p;
+            node.error_rate_y = p;
+        }
+    });
+    model.build_graph();
+    model.optimize_correction_pattern();
+    model.build_exhausted_path_autotune();
+    while cases < count {
+        decoder.reinitialize();
+        let error_count = decoder.generate_only_x_random_errors(p, || rng.gen::<f64>());
+        if error_count == 0 {
+            continue
+        }
+        decoder.error_changed();
+        println!("{:?}", decoder.error_pattern());  // to find infinite looping case
+        let cycles = decoder.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(max_resend, max_cycles);
+        match cycles {
+            Ok(cycles) => {
+                if decoder.has_logical_error(ErrorType::X) == true {
+                    // judge if MWPM generates no logical error, if so, output the case
+                    let mwpm_has_logical_error = {
+                        // copy the error pattern into MWPM decoder
+                        model.iterate_snapshot_mut(|t, i, j, node| {
+                            if t == 6 && node.qubit_type == QubitType::Data {
+                                node.error = decoder.qubits[i][j].error.clone();
+                            }
+                        });
+                        model.propagate_error();
+                        let measurement = model.generate_measurement();
+                        let correction = model.decode_MWPM(&measurement);
+                        let validation_ret = model.validate_correction_on_boundary(&correction);
+                        validation_ret.is_err()
+                    };
+                    if !mwpm_has_logical_error {  // output the case
+                        println!("[offer decoder fails but MWPM decoder succeeds]");
+                        println!("{}", json!({
+                            "cycles": cycles,
+                            "error": decoder.error_pattern(),
+                        }).to_string());
+                        cases += 1;
+                    }
+                }
+            },
+            Err(cycles) => {
+                println!("[exceed max resend]");
+                println!("{}", json!({
+                    "cycles": cycles,
+                    "error": decoder.error_pattern(),
+                }).to_string());
+                cases += 1;
+            }
+        }
+    }
 }
 
 fn archived_debug_tests() {
@@ -510,9 +584,6 @@ fn archived_debug_tests() {
         let validation_ret = model.validate_correction_on_boundary(&correction);
         println!("{:?}", validation_ret);
     }
-}
-
-fn debug_tests() {
     {  // test offer decoder
         let mut decoder = offer_decoder::create_standard_planar_code_offer_decoder(7);
         decoder.reinitialize();
@@ -543,5 +614,31 @@ fn debug_tests() {
         println!("match_pattern: {:?}", match_pattern);
         println!("cycles: {}", cycles);
         assert_eq!(true, decoder.has_logical_error(ErrorType::X));
+    }
+    {  // test offer decoder error case
+        let d = 5;
+        let mut decoder = offer_decoder::create_standard_planar_code_offer_decoder(d);
+        decoder.reinitialize();
+        decoder.qubits[1][3].error = ErrorType::X;
+        decoder.qubits[3][1].error = ErrorType::X;
+        decoder.error_changed();
+        let cycles = decoder.pseudo_parallel_execute_to_stable();
+        let match_pattern = decoder.match_pattern();
+        println!("match_pattern: {:?}", match_pattern);
+        println!("cycles: {}", cycles);
+        assert_eq!(false, decoder.has_logical_error(ErrorType::X));
+    }
+}
+
+fn debug_tests() {
+    {  // test offer decoder error case
+        let error_pattern_origin = ["IIIIIIIII","IIIIIIIXI","IIIIIIIII","IIIIIXIII","XIIIIIIII","IIIIIIIII","IIIIIIIII","IIIIIIIII","IIIIIIIII"];
+        let error_pattern: Vec<String> = error_pattern_origin.iter().map(|e| e.to_string()).collect();
+        let mut decoder = offer_decoder::OfferDecoder::create_with_error_pattern(&error_pattern);
+        let cycles = decoder.pseudo_parallel_execute_to_stable();
+        let match_pattern = decoder.match_pattern();
+        println!("match_pattern: {:?}", match_pattern);
+        println!("cycles: {}", cycles);
+        assert_eq!(false, decoder.has_logical_error(ErrorType::X));
     }
 }
