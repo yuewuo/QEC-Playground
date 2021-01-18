@@ -42,8 +42,8 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
             let d = value_t!(matches, "d", usize).expect("required");
             let p = value_t!(matches, "p", f64).expect("required");
             let count = value_t!(matches, "count", usize).unwrap_or(1);
-            let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(100);
-            let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(1000);
+            let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(usize::MAX);
+            let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(usize::MAX);
             offer_decoder_study(d, p, count, max_resend, max_cycles);
         }
         ("all", Some(_)) => {  // remember to add new test functions here
@@ -248,7 +248,7 @@ fn offer_decoder_study(d: usize, p: f64, count: usize, max_resend: usize, max_cy
             continue
         }
         decoder.error_changed();
-        println!("{:?}", decoder.error_pattern());  // to find infinite looping case
+        // println!("{:?}", decoder.error_pattern());  // to find infinite looping case
         let cycles = decoder.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(max_resend, max_cycles);
         match cycles {
             Ok(cycles) => {

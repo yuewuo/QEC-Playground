@@ -723,6 +723,7 @@ var $app = new Vue({
                                                     source: [...message.source],
                                                 },
                                             })
+                                            qubit.broker_next_hop = null
                                         }
                                     }
                                 } else if (message.type == CONST.MessageType.BrokeredOffer) {

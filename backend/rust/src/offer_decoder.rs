@@ -272,6 +272,7 @@ impl OfferDecoder {
                                         source: (si, sj),
                                     },
                                 });
+                                qubit.broker_next_hop = None;
                             },
                         }
                     }

@@ -121,8 +121,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
             let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
             let only_count_logical_x = matches.is_present("only_count_logical_x");
-            let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(100);
-            let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(1000);
+            let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(usize::MAX);
+            let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(usize::MAX);
             offer_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, max_resend, max_cycles);
         }
         _ => unreachable!()
@@ -856,6 +856,7 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
             let total_rounds = Arc::new(Mutex::new(0));
             let qec_failed = Arc::new(Mutex::new(0));
             let total_cycles = Arc::new(Mutex::new(0));
+            let max_cycles_used = Arc::new(Mutex::new(0));
             let mut handlers = Vec::new();
             let mini_batch_count = 1 + max_N / mini_batch;
             let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
@@ -864,6 +865,7 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
                 let total_rounds = Arc::clone(&total_rounds);
                 let qec_failed = Arc::clone(&qec_failed);
                 let total_cycles = Arc::clone(&total_cycles);
+                let max_cycles_used = Arc::clone(&max_cycles_used);
                 let mini_batch = mini_batch;
                 let L = L;
                 let p = p;
@@ -876,6 +878,7 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
                     let mut current_qec_failed = {
                         *qec_failed.lock().unwrap()
                     };
+                    let mut current_max_cycles_used = 0;
                     while current_total_rounds < max_N && current_qec_failed < min_error_cases {
                         let mut mini_qec_failed = 0;
                         let mut mini_total_cycles = 0;
@@ -891,6 +894,9 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
                                 Err(cycles) => cycles,
                             };
                             mini_total_cycles += cycles;
+                            if cycles > current_max_cycles_used {
+                                current_max_cycles_used = cycles;
+                            }
                             if only_count_logical_x {
                                 if decoder.has_logical_error(ErrorType::X) {
                                     mini_qec_failed += 1;
@@ -916,18 +922,25 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
                             let mut total_cycles = total_cycles.lock().unwrap();
                             *total_cycles += mini_total_cycles;
                         };
+                        {
+                            let mut max_cycles_used = max_cycles_used.lock().unwrap();
+                            if current_max_cycles_used > *max_cycles_used {
+                                *max_cycles_used = current_max_cycles_used;
+                            }
+                        }
                     }
                 }));
             }
             loop {
-                let total_rounds = { *total_rounds.lock().unwrap() };
+                let total_rounds = *total_rounds.lock().unwrap();
                 if total_rounds >= max_N { break }
-                let qec_failed = { *qec_failed.lock().unwrap() };
+                let qec_failed = *qec_failed.lock().unwrap();
                 if qec_failed >= min_error_cases { break }
                 let error_rate = qec_failed as f64 / total_rounds as f64;
-                let total_cycles = { *total_cycles.lock().unwrap() };
+                let total_cycles = *total_cycles.lock().unwrap();
                 let average_cycles = total_cycles as f64 / total_rounds as f64;
-                pb.message(format!("{} {} {} {} {} {} ", p, L, total_rounds, qec_failed, error_rate, average_cycles).as_str());
+                let max_cycles_used = *max_cycles_used.lock().unwrap();
+                pb.message(format!("{} {} {} {} {} {} {} ", p, L, total_rounds, qec_failed, error_rate, average_cycles, max_cycles_used).as_str());
                 let progress = total_rounds / mini_batch;
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
@@ -941,7 +954,8 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
             let error_rate = qec_failed as f64 / total_rounds as f64;
             let total_cycles = *total_cycles.lock().unwrap();
             let average_cycles = total_cycles as f64 / total_rounds as f64;
-            println!("{} {} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate, average_cycles);
+            let max_cycles_used = *max_cycles_used.lock().unwrap();
+            println!("{} {} {} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate, average_cycles, max_cycles_used);
         }
     }
 }
