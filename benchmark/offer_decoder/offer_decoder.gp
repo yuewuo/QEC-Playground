@@ -22,26 +22,26 @@ set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder
 
-set output "MWPM_baseline.eps"
+set output "offer_decoder.eps"
 
-plot "d_3.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 3",\
-    "d_5.txt" using 1:6 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 5",\
-    "d_7.txt" using 1:6 with linespoints lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 title "d = 7",\
-    "d_9.txt" using 1:6 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "d = 9",\
-    "d_11.txt" using 1:6 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
-    "d_13.txt" using 1:6 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
+plot "d_3.txt" using 1:5 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 3",\
+    "d_5.txt" using 1:5 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 5",\
+    "d_7.txt" using 1:5 with linespoints lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 title "d = 7",\
+    "d_9.txt" using 1:5 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "d = 9",\
+    "d_11.txt" using 1:5 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
+    "d_13.txt" using 1:5 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
 
-set output '|ps2pdf -dEPSCrop MWPM_baseline.eps MWPM_baseline.pdf'
+set output '|ps2pdf -dEPSCrop offer_decoder.eps offer_decoder.pdf'
 replot
 
 set size 1,0.75
-set output "MWPM_baseline_w.eps"
+set output "offer_decoder_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop MWPM_baseline_w.eps MWPM_baseline_w.pdf'
+set output '|ps2pdf -dEPSCrop offer_decoder_w.eps offer_decoder_w.pdf'
 replot
 
 set size 1,0.6
-set output "MWPM_baseline_w_w.eps"
+set output "offer_decoder_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop MWPM_baseline_w_w.eps MWPM_baseline_w_w.pdf'
+set output '|ps2pdf -dEPSCrop offer_decoder_w_w.eps offer_decoder_w_w.pdf'
 replot
