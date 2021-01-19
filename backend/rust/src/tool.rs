@@ -123,7 +123,9 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let only_count_logical_x = matches.is_present("only_count_logical_x");
             let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(usize::MAX);
             let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(usize::MAX);
-            offer_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, max_resend, max_cycles);
+            let disable_probabilistic_accept = matches.is_present("disable_probabilistic_accept");
+            offer_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, max_resend, max_cycles
+                , disable_probabilistic_accept);
         }
         _ => unreachable!()
     }
@@ -842,7 +844,7 @@ default example:
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
 fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
-        , only_count_logical_x: bool, max_resend: usize, max_cycles: usize) {
+        , only_count_logical_x: bool, max_resend: usize, max_cycles: usize, disable_probabilistic_accept: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -867,10 +869,12 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
                 let total_cycles = Arc::clone(&total_cycles);
                 let max_cycles_used = Arc::clone(&max_cycles_used);
                 let mini_batch = mini_batch;
+                let disable_probabilistic_accept = disable_probabilistic_accept;
                 let L = L;
                 let p = p;
                 handlers.push(std::thread::spawn(move || {
                     let mut decoder = offer_decoder::create_standard_planar_code_offer_decoder(L);
+                    decoder.disable_probabilistic_accept = disable_probabilistic_accept;
                     let mut rng = thread_rng();
                     let mut current_total_rounds = {
                         *total_rounds.lock().unwrap()

@@ -1,6 +1,7 @@
 use super::types::QubitType;
 use super::types::ErrorType;
 use std::collections::HashMap;
+use super::rand::prelude::*;
 
 /// only for standard planar code
 #[derive(Debug, Clone)]
@@ -10,6 +11,10 @@ pub struct OfferDecoder {
     // statistics
     pub message_count_single_round: usize,
     pub message_count: usize,
+    pub has_potential_acceptance: bool,
+    // random generator
+    pub disable_probabilistic_accept: bool,
+    pub rng: ThreadRng,
 }
 
 #[derive(Debug, Clone)]
@@ -29,6 +34,7 @@ pub struct Qubit {
     pub cost: f64,
     pub broker_next_hop: Option<(usize, usize)>,
     pub match_with: Option<(usize, usize)>,
+    pub accept_probability: f64,
     // helper variables
     pub neighbors: Vec::<(usize, usize, f64)>,  // i, j, cost
     pub xor_data_qubits: Vec::<(usize, usize)>,  // i, j
@@ -168,15 +174,20 @@ impl OfferDecoder {
                             // take this offer only if target is smaller than source and cost is better than current
                             // the overall cost < 0 is an augmenting path
                             if Self::compare_i_j(i, j, si, sj) < 0 && cost - qubit.cost < 0. {
-                                qubit.state = NodeState::WaitingContract;
-                                qubit.out_queue.push(OutMessage {
-                                    receiver: (bi, bj),  // send back to the last broker
-                                    message: Message::AcceptOffer {
-                                        target: (i, j),  // take this offer as target
-                                        source: (si, sj),
-                                        broker: (i, j),  // target is also the broker of this message
-                                    },
-                                });
+                                self.has_potential_acceptance = true;  // mark potential take
+                                let accept_this_offer = self.rng.gen::<f64>() < qubit.accept_probability;
+                                // println!("has_potential_acceptance from [{}][{}], with probability {}, take it: {}", i, j, qubit.accept_probability, accept_this_offer);
+                                if accept_this_offer {
+                                    qubit.state = NodeState::WaitingContract;
+                                    qubit.out_queue.push(OutMessage {
+                                        receiver: (bi, bj),  // send back to the last broker
+                                        message: Message::AcceptOffer {
+                                            target: (i, j),  // take this offer as target
+                                            source: (si, sj),
+                                            broker: (i, j),  // target is also the broker of this message
+                                        },
+                                    });
+                                }
                             }
                         }
                     }
@@ -238,6 +249,8 @@ impl OfferDecoder {
                                     broker: (i, j),  // I'm the broker
                                 },
                             });
+                        } else {  // this is the target
+                            qubit.accept_probability = 1.;
                         }
                         qubit.match_with = Some((bi, bj));
                         qubit.cost = Self::cost_of_matching(i, j, bi, bj);
@@ -248,6 +261,8 @@ impl OfferDecoder {
                 },
                 Message::RefuseAcceptance{ target: (ti, tj), source: (si, sj) } => {
                     if ti == i && tj == j {
+                        // reduce the probability to take this offer
+                        qubit.accept_probability = Self::accept_probability_next(self.disable_probabilistic_accept, qubit.accept_probability);
                         qubit.state = match qubit.match_with {
                             None => NodeState::SentOffer,
                             Some(_) => NodeState::Matched,
@@ -290,14 +305,19 @@ impl OfferDecoder {
                             if cost + qubit.boundary_cost < 0. {  // break this matched pair is an augmenting path
                                 // TODO: this may also find augmenting loop!!! may cause deadlock, handle this later
                                 // take this offer
-                                qubit.state = NodeState::WaitingContract;
-                                qubit.out_queue.push(OutMessage {
-                                    receiver: qubit.match_with.expect("exist"),
-                                    message: Message::AcceptBrokeredOffer {
-                                        target: (i, j),
-                                        source: (si, sj),
-                                    },
-                                });
+                                self.has_potential_acceptance = true;  // mark potential take
+                                let accept_this_offer = self.rng.gen::<f64>() < qubit.accept_probability;
+                                // println!("has_potential_acceptance from [{}][{}], with probability {}, take it: {}", i, j, qubit.accept_probability, accept_this_offer);
+                                if accept_this_offer {
+                                    qubit.state = NodeState::WaitingContract;
+                                    qubit.out_queue.push(OutMessage {
+                                        receiver: qubit.match_with.expect("exist"),
+                                        message: Message::AcceptBrokeredOffer {
+                                            target: (i, j),
+                                            source: (si, sj),
+                                        },
+                                    });
+                                }
                             } else {  // propagate this offer to neighbors
                                 for (ni, nj, neighbor_cost) in qubit.neighbors.iter() {
                                     qubit.out_queue.push(OutMessage {
@@ -371,6 +391,7 @@ impl OfferDecoder {
                             qubit.broker_next_hop = None;
                         },
                         None => {  // if no broker_next_hop, then it is the last node which should connect to boundary
+                            qubit.accept_probability = 1.;
                             qubit.state = NodeState::SentOffer;  // unlock and connect to boundary
                             qubit.cost = qubit.boundary_cost;
                             qubit.match_with = None;
@@ -587,9 +608,16 @@ impl OfferDecoder {
         while match_pattern_changed && resend_rounds < max_resend && cycles < max_cycles {
             let last_match_pattern = self.match_pattern();
             match_pattern_changed = false;
+            self.has_potential_acceptance = false;
             cycles += self.pseudo_parallel_resend_offer_run_to_stable();
-            if self.match_pattern_changed(&last_match_pattern) {
-                match_pattern_changed = true;
+            if self.disable_probabilistic_accept {  // use match pattern changed to judge stop point
+                if self.match_pattern_changed(&last_match_pattern) {
+                    match_pattern_changed = true;
+                }
+            } else {  // use `has_potential_acceptance` to judge stop point, because match pattern may not change in a single round
+                if self.has_potential_acceptance {
+                    match_pattern_changed = true;
+                }
             }
             resend_rounds += 1;
         }
@@ -653,6 +681,7 @@ impl OfferDecoder {
         let mut error_count = 0;
         for i in 0..length {
             for j in 0..length {
+                if self.qubits[i][j].qubit_type != QubitType::Data { continue }
                 let random_number = rng();
                 if random_number < error_rate {
                     self.qubits[i][j].error = ErrorType::X;
@@ -675,6 +704,7 @@ impl OfferDecoder {
         let mut error_count = 0;
         for i in 0..length {
             for j in 0..length {
+                if self.qubits[i][j].qubit_type != QubitType::Data { continue }
                 let random_number = rng();
                 if random_number < error_rate {
                     self.qubits[i][j].error = ErrorType::X;
@@ -720,6 +750,16 @@ impl OfferDecoder {
         let mut decoder = create_standard_planar_code_offer_decoder(d);
         decoder.load_error_pattern(error_pattern);
         decoder
+    }
+    /// potential improvement: train this function to get a better result
+    fn accept_probability_next(disable_probabilistic_accept: bool, accept_probability: f64) -> f64 {
+        if disable_probabilistic_accept { 
+            1.  // always 100% accept
+        } else if accept_probability > 0.5 {
+            0.5
+        } else {
+            accept_probability * 0.8  // slowly degrade
+        }
     }
 }
 
@@ -768,6 +808,7 @@ pub fn create_standard_planar_code_offer_decoder(d: usize) -> OfferDecoder {
                     cost: 0.,
                     broker_next_hop: None,
                     match_with: None,
+                    accept_probability: 1.,
                     // helper variables
                     neighbors: neighbors,
                     xor_data_qubits: xor_data_qubits,
@@ -777,5 +818,9 @@ pub fn create_standard_planar_code_offer_decoder(d: usize) -> OfferDecoder {
         // statistics
         message_count_single_round: 0,
         message_count: 0,
+        has_potential_acceptance: false,
+        // random generator
+        disable_probabilistic_accept: false,
+        rng: thread_rng(),
     }
 }
