@@ -59,7 +59,7 @@
                 <div style="text-justify: space-around; text-align: center;">
                     <v-btn color="pink lighten-4" elevation="3" small @click="all_node_execute()" class="has-margin">node execute</v-btn>
                     <v-btn color="blue lighten-4" elevation="3" small @click="all_resend_offer()" class="has-margin">resend offer</v-btn>
-                    <v-btn color="lime lighten-4" elevation="3" small @click="all_outqueue_send()" class="has-margin">out_queue send</v-btn>
+                    <v-btn color="lime lighten-4" elevation="3" small @click="all_out_queue_send()" class="has-margin">out_queue send</v-btn>
                 </div>
                 <v-btn color="purple lighten-4" block @click="default_execute_to_stable" class="has-margin">default execute to stable</v-btn>
             </div>
@@ -67,7 +67,8 @@
                 <h2>Statistics</h2>
                 <p>total message count: {{ message_count }}</p>
                 <p>message processed in single round: {{ message_processed_single_round }}</p>
-                <p>has_potential_acceptance: {{ has_potential_acceptance }}</p>
+                <p>has potential acceptance: {{ has_potential_acceptance }}</p>
+                <p>clock cycles: {{ clock_cycles }}</p>
             </div>
             <div style="margin-top: 10px;">
                 <h2>Conditional Select</h2>
@@ -235,7 +236,7 @@ function make_log_element(log_type, obj) {
     } else if (log_type === CONST.LogType.UpdateMeasurement) {
         full_message = `update measurement as "${obj.measurement}"`
     } else if (log_type === CONST.LogType.SendMessage) {
-        full_message = `send message to (${obj.i}, ${obj.j})`
+        full_message = `send ${obj.message.type} to (${obj.i}, ${obj.j})`
     } else {
         console.error(full_message)
         console.error(obj)
@@ -359,6 +360,7 @@ var $app = new Vue({
             message_count: 0,
             message_processed_single_round: 0,
             has_potential_acceptance: false,
+            clock_cycles: 0,
         }
     },
     computed: {
@@ -501,6 +503,7 @@ var $app = new Vue({
 			}).bind(this))
         },
         refresh_qubits() {
+            this.clock_cycles = 0
             let qubits = []
             for (let i=0; i < 2 * this.L - 1; ++i) {
                 let row = []
@@ -1007,7 +1010,7 @@ var $app = new Vue({
                 if (qubit.resend_offer) qubit.resend_offer(override_options)
             })
         },
-        all_outqueue_send(override_options = {}) {
+        all_out_queue_send(override_options = {}) {
             this.for_each_qubit((i, j, qubit) => {
                 if (qubit.out_queue_send) qubit.out_queue_send(override_options)
             })
@@ -1020,11 +1023,12 @@ var $app = new Vue({
                     if (qubit.resend_offer) qubit.resend_offer()
                 }
             })
-            this.all_outqueue_send()
+            this.all_out_queue_send()
             this.all_node_execute({
                 only_handle_one_message: true,
             })
-            this.all_outqueue_send()
+            this.clock_cycles += 1  // all node execute one message, one clock cycle passed
+            this.all_out_queue_send()
         },
         default_execute_to_stable() {
             this.has_potential_acceptance = false
