@@ -44,7 +44,8 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
             let count = value_t!(matches, "count", usize).unwrap_or(1);
             let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(usize::MAX);
             let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(usize::MAX);
-            offer_decoder_study(d, p, count, max_resend, max_cycles);
+            let print_error_pattern_to_find_infinite_loop = matches.is_present("print_error_pattern_to_find_infinite_loop");
+            offer_decoder_study(d, p, count, max_resend, max_cycles, print_error_pattern_to_find_infinite_loop);
         }
         ("all", Some(_)) => {  // remember to add new test functions here
             save_load();
@@ -223,7 +224,7 @@ fn maximum_max_weight_matching_correction() {
     }).expect("python run failed");
 }
 
-fn offer_decoder_study(d: usize, p: f64, count: usize, max_resend: usize, max_cycles: usize) {
+fn offer_decoder_study(d: usize, p: f64, count: usize, max_resend: usize, max_cycles: usize, print_error_pattern_to_find_infinite_loop: bool) {
     let mut cases = 0;
     let mut rng = thread_rng();
     // create offer decoder instance
@@ -248,7 +249,9 @@ fn offer_decoder_study(d: usize, p: f64, count: usize, max_resend: usize, max_cy
             continue
         }
         decoder.error_changed();
-        // println!("{:?}", decoder.error_pattern());  // to find infinite looping case
+        if print_error_pattern_to_find_infinite_loop {
+            println!("{:?}", decoder.error_pattern());  // to find infinite looping case
+        }
         let cycles = decoder.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(max_resend, max_cycles);
         match cycles {
             Ok(cycles) => {
@@ -671,8 +674,21 @@ fn archived_debug_tests() {
 }
 
 fn debug_tests() {
-    {  // augmenting loop will degrade performance
-        let error_pattern_origin = ["IXIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","XIXIIIIIIIIIXIIIX","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIXIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIXIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"];
+    // {  // augmenting loop will degrade performance
+    //     let error_pattern_origin = ["IXIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","XIXIIIIIIIIIXIIIX","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIXIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIXIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"];
+    //     let error_pattern: Vec<String> = error_pattern_origin.iter().map(|e| e.to_string()).collect();
+    //     let mut decoder = offer_decoder::OfferDecoder::create_with_error_pattern(&error_pattern);
+    //     let cycles = decoder.pseudo_parallel_execute_to_stable();
+    //     let match_pattern = decoder.match_pattern();
+    //     println!("match_pattern: {:?}", match_pattern);
+    //     println!("cycles: {}", cycles);
+    //     println!("has logical error: {}", decoder.has_logical_error(ErrorType::X));
+    //     // similar cases:
+    //     // ["IIXIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIXIII","IIIIIIIIIXIIIIIII","XIIIIIXIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIXIIIXII","IIIIIIIIXIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"]
+    //     // ["IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IXIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIIX","IIIIIIIIIXIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIXIIIIIIII","XIIIIIIIIIXIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIXIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"]
+    // }
+    { // debug infinite loop
+        let error_pattern_origin = ["IIIIIIIII", "IIIXIIIII", "IIIIIIXII", "IIIIIIIII", "IIIIIIIII", "IIIIIXIII", "IIIIIIIII", "IIIXIIIII", "IIIIIIIII"];
         let error_pattern: Vec<String> = error_pattern_origin.iter().map(|e| e.to_string()).collect();
         let mut decoder = offer_decoder::OfferDecoder::create_with_error_pattern(&error_pattern);
         let cycles = decoder.pseudo_parallel_execute_to_stable();
@@ -680,8 +696,5 @@ fn debug_tests() {
         println!("match_pattern: {:?}", match_pattern);
         println!("cycles: {}", cycles);
         println!("has logical error: {}", decoder.has_logical_error(ErrorType::X));
-        // similar cases:
-        // ["IIXIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIXIII","IIIIIIIIIXIIIIIII","XIIIIIXIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIXIIIXII","IIIIIIIIXIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"]
-        // ["IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IXIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIIX","IIIIIIIIIXIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIXIIIIIIII","XIIIIIIIIIXIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIXIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"]
     }
 }
