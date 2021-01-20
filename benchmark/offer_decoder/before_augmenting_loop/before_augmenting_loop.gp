@@ -5,12 +5,12 @@ set grid ytics
 set size 1,1
 
 # data generating commands:
-# cargo run --release -- tool offer_decoder_standard_planar_benchmark [3] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0 -b1000 -m100000000 --only_count_logical_x --max_cycles 3000
+# cargo run --release -- tool offer_decoder_standard_planar_benchmark [3] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0 -b1000 -m100000000 --only_count_logical_x --max_cycles 200
 # cargo run --release -- tool offer_decoder_standard_planar_benchmark [5] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -b1000 -p0 -m100000000 --only_count_logical_x  --max_cycles 500
 # cargo run --release -- tool offer_decoder_standard_planar_benchmark [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3] -p0 -m100000000 -b1000 -e1000 --only_count_logical_x --max_cycles 1000
 # cargo run --release -- tool offer_decoder_standard_planar_benchmark [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b1000 -e1000 --only_count_logical_x --max_cycles 3000
 # cargo run --release -- tool offer_decoder_standard_planar_benchmark [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b10 -e200 --only_count_logical_x --max_cycles 4000
-# cargo run --release -- tool offer_decoder_standard_planar_benchmark [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b10 -e200 --only_count_logical_x --max_cycles 13000
+# cargo run --release -- tool offer_decoder_standard_planar_benchmark [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b10 -e200 --only_count_logical_x --max_cycles 5000
 
 set logscale x
 set xrange [0.00001:0.1]
@@ -22,7 +22,7 @@ set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder
 
-set output "offer_decoder.eps"
+set output "before_augmenting_loop.eps"
 
 plot "d_3.txt" using 1:5 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 3",\
     "d_5.txt" using 1:5 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 5",\
@@ -31,17 +31,17 @@ plot "d_3.txt" using 1:5 with linespoints lt rgb "red" linewidth 5 pointtype 6 p
     "d_11.txt" using 1:5 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
     "d_13.txt" using 1:5 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
 
-set output '|ps2pdf -dEPSCrop offer_decoder.eps offer_decoder.pdf'
+set output '|ps2pdf -dEPSCrop before_augmenting_loop.eps before_augmenting_loop.pdf'
 replot
 
 set size 1,0.75
-set output "offer_decoder_w.eps"
+set output "before_augmenting_loop_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop offer_decoder_w.eps offer_decoder_w.pdf'
+set output '|ps2pdf -dEPSCrop before_augmenting_loop_w.eps before_augmenting_loop_w.pdf'
 replot
 
 set size 1,0.6
-set output "offer_decoder_w_w.eps"
+set output "before_augmenting_loop_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop offer_decoder_w_w.eps offer_decoder_w_w.pdf'
+set output '|ps2pdf -dEPSCrop before_augmenting_loop_w_w.eps before_augmenting_loop_w_w.pdf'
 replot

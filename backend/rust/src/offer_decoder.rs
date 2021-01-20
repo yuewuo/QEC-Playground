@@ -29,6 +29,7 @@ pub struct Qubit {
     pub out_queue: Vec<OutMessage>,
     pub active_timestamp: usize,
     pub offer_cache: HashMap::<(usize, usize), CachedOffer>,
+    pub loop_cache: HashMap::<(usize, usize), CachedOffer>,
     pub state: NodeState,
     pub boundary_cost: f64,
     pub cost: f64,
@@ -91,6 +92,18 @@ pub enum Message {
         broker: (usize, usize),
         cost: f64,
     },
+    LoopOffer {
+        timestamp: usize,
+        source: (usize, usize),
+        broker: (usize, usize),
+        cost: f64,
+    },
+    BrokeredLoopOffer {
+        timestamp: usize,
+        source: (usize, usize),
+        broker: (usize, usize),
+        cost: f64,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -134,7 +147,7 @@ impl OfferDecoder {
             let qubit = &mut self.qubits[i][j];  // have to re-borrow it as mutable
             let message = qubit.mailbox.remove(0);  // take the first message in mailbox
             message_processed += 1;
-            println!("qubit[{}][{}]: {:?}", i, j, message);
+            // println!("qubit[{}][{}]: {:?}", i, j, message);
             match message {
                 Message::MatchOffer{ timestamp, source: (si, sj), broker: (bi, bj), cost } => {
                     let cached_offer = qubit.offer_cache.get(&(si, sj));
@@ -498,6 +511,91 @@ impl OfferDecoder {
                         }
                     }
                 },
+                Message::LoopOffer{ timestamp, broker: (bi, bj), source: (si, sj), cost } => {
+                    // cache and propagate this offer only if the cost is better than cached or timestamp is newer
+                    let cached_offer = qubit.loop_cache.get(&(si, sj));
+                    let not_caching_this_offer = match cached_offer {
+                        Some(cached_offer) => {
+                            cached_offer.timestamp < timestamp || cost < cached_offer.cost
+                        },
+                        None => true,
+                    };
+                    // cache this offer if not cached
+                    if not_caching_this_offer {
+                        qubit.loop_cache.insert((si, sj), CachedOffer {
+                            timestamp: timestamp,
+                            cost: cost,
+                            broker: (bi, bj),
+                        });
+                    }
+                    // propagate this offer if cache is updated
+                    if not_caching_this_offer && (si != i || sj != j) {
+                        for (ni, nj, neighbor_cost) in qubit.neighbors.iter() {
+                            qubit.out_queue.push(OutMessage {
+                                receiver: (*ni, *nj),
+                                message: Message::LoopOffer {
+                                    timestamp: timestamp,
+                                    source: (si, sj),
+                                    broker: (bi, bj),
+                                    cost: cost + *neighbor_cost,
+                                },
+                            });
+                        }
+                    }
+                    if not_caching_this_offer && qubit.state == NodeState::Matched {
+                        let (mi, mj) = qubit.match_with.expect("exist");
+                        if mi == si && mj == sj {
+                            if cost < 0. {  // the overall cost < 0 is an augmenting loop
+                                self.has_potential_acceptance = true;  // mark potential take
+                                let accept_this_offer = self.rng.gen::<f64>() < qubit.accept_probability;
+                                // println!("has_potential_acceptance from [{}][{}], with probability {}, take it: {}", i, j, qubit.accept_probability, accept_this_offer);
+                                if accept_this_offer {
+                                    qubit.state = NodeState::WaitingContract;
+                                    qubit.out_queue.push(OutMessage {
+                                        receiver: (bi, bj),  // send back to the last broker
+                                        message: Message::AcceptOffer {
+                                            target: (i, j),  // take this offer as target
+                                            source: (si, sj),
+                                            broker: (i, j),  // target is also the broker of this message
+                                        },
+                                    });
+                                }
+                            }
+                        } else if Self::compare_i_j(si, sj, i, j) < 0 && Self::compare_i_j(si, sj, mi, mj) < 0 {
+                            // broker it only if source is smaller than any peer
+                            if not_caching_this_offer {
+                                qubit.out_queue.push(OutMessage {
+                                    receiver: qubit.match_with.expect("exist"),
+                                    message: Message::BrokeredLoopOffer {
+                                        timestamp: timestamp,
+                                        source: (si, sj),
+                                        broker: (i, j),
+                                        cost: cost - qubit.cost,  // minus the cost of matching pair
+                                    },
+                                });
+                            }
+                        }
+                    }
+                },
+                Message::BrokeredLoopOffer{ timestamp, broker: (bi, bj), source: (si, sj), cost } => {
+                    // broadcast this offer to others
+                    if qubit.state == NodeState::Matched {
+                        let (mi, mj) = qubit.match_with.expect("exist");
+                        if mi == bi && mj == bj {
+                            for (ni, nj, neighbor_cost) in qubit.neighbors.iter() {
+                                qubit.out_queue.push(OutMessage {
+                                    receiver: (*ni, *nj),
+                                    message: Message::LoopOffer {
+                                        timestamp: timestamp,
+                                        source: (si, sj),
+                                        broker: (i, j),  // I'm the broker of this offer
+                                        cost: cost + *neighbor_cost,
+                                    },
+                                });
+                            }
+                        }
+                    }
+                }
                 // _ => {
                 //     panic!("drop unknown message: {:?}", message);
                 // },
@@ -567,9 +665,11 @@ impl OfferDecoder {
         let qubit1 = &mut self.qubits[i1][j1];
         qubit1.state = NodeState::Matched;
         qubit1.match_with = Some((i2, j2));
+        qubit1.cost = Self::cost_of_matching(i1, j1, i2, j2);
         let qubit2 = &mut self.qubits[i2][j2];
         qubit2.state = NodeState::Matched;
         qubit2.match_with = Some((i1, j1));
+        qubit2.cost = Self::cost_of_matching(i1, j1, i2, j2);
     }
     pub fn force_break_matched(&mut self, i: usize, j: usize) {
         let qubit = &mut self.qubits[i][j];
@@ -577,11 +677,13 @@ impl OfferDecoder {
         qubit.state = NodeState::NoError;
         qubit.offer_cache = HashMap::new();
         qubit.match_with = None;
+        qubit.cost = qubit.boundary_cost;
         let (mi, mj) = qubit.match_with.expect("matched qubit must have `match_with`");
         let matched_qubit = &mut self.qubits[mi][mj];
         matched_qubit.state = NodeState::NoError;
         matched_qubit.offer_cache = HashMap::new();
         matched_qubit.match_with = None;
+        matched_qubit.cost = matched_qubit.boundary_cost;
     }
     pub fn is_valid_i_j(&self, i: usize, j: usize) -> bool {
         if i >= self.d * 2 - 1 { return false }
@@ -613,6 +715,7 @@ impl OfferDecoder {
                 qubit.out_queue.clear();
                 qubit.active_timestamp = 0;
                 qubit.offer_cache.clear();
+                qubit.loop_cache.clear();
                 qubit.state = NodeState::NoError;
                 qubit.cost = 0.;
                 qubit.broker_next_hop = None;
@@ -621,6 +724,7 @@ impl OfferDecoder {
         }
         self.message_count_single_round = 0;
         self.message_count = 0;
+        self.has_potential_acceptance = false;
     }
     pub fn error_changed(&mut self) {
         let length = 2 * self.d - 1;
@@ -913,6 +1017,7 @@ pub fn create_standard_planar_code_offer_decoder(d: usize) -> OfferDecoder {
                     out_queue: Vec::new(),
                     active_timestamp: 0,
                     offer_cache: HashMap::new(),
+                    loop_cache: HashMap::new(),
                     state: NodeState::NoError,
                     boundary_cost: boundary_cost,
                     cost: 0.,
