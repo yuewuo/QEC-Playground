@@ -6,10 +6,10 @@ set size 1,1
 
 # data generating commands:
 # cargo run --release -- tool offer_decoder_standard_planar_benchmark [3] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0 -b1000 -m100000000 --only_count_logical_x --max_cycles 3000
-# cargo run --release -- tool offer_decoder_standard_planar_benchmark [5] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -b1000 -p0 -m100000000 --only_count_logical_x  --max_cycles 500
-# cargo run --release -- tool offer_decoder_standard_planar_benchmark [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3] -p0 -m100000000 -b1000 -e1000 --only_count_logical_x --max_cycles 1000
-# cargo run --release -- tool offer_decoder_standard_planar_benchmark [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b1000 -e1000 --only_count_logical_x --max_cycles 3000
-# cargo run --release -- tool offer_decoder_standard_planar_benchmark [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b10 -e200 --only_count_logical_x --max_cycles 4000
+# cargo run --release -- tool offer_decoder_standard_planar_benchmark [5] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -b1000 -p0 -m100000000 --only_count_logical_x  --max_cycles 5000
+# cargo run --release -- tool offer_decoder_standard_planar_benchmark [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3] -p0 -m100000000 -b1000 -e1000 --only_count_logical_x --max_cycles 7000
+# cargo run --release -- tool offer_decoder_standard_planar_benchmark [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b10 -e200 --only_count_logical_x --max_cycles 9000
+# cargo run --release -- tool offer_decoder_standard_planar_benchmark [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b10 -e200 --only_count_logical_x --max_cycles 11000
 # cargo run --release -- tool offer_decoder_standard_planar_benchmark [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b10 -e200 --only_count_logical_x --max_cycles 13000
 
 set logscale x
