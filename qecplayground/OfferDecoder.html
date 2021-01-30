@@ -270,8 +270,8 @@ function make_log_element(log_type, obj) {
     } else if (log_type === CONST.LogType.SendMessage) {
         full_message = `send ${obj.message.type} to (${obj.i}, ${obj.j})`
     } else if (log_type === CONST.LogType.TakeOffer) {
-        const [si, sj] = obj.source
-        full_message = `take offer from (${si}, ${sj}) with cost ${obj.cost}`
+        const [si, sj] = obj.message.source
+        full_message = `${obj.message.type} from (${si}, ${sj}) overall cost ${obj.overall_cost}`
     } else {
         console.error(full_message)
         console.error(obj)
@@ -514,28 +514,28 @@ var $app = new Vue({
             //     this.load_error_pattern(["IXIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","XIXIIIIIIIIIXIIIX","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIXIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIXIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"])
             //     this.show_X_stabilizer = false
             // }
-            // {  // test simple augmenting loop
-            //     this.L = 5
-            //     this.L_input = this.L
-            //     this.show_X_stabilizer = false
-            //     await this.vue_next_tick()
-            //     this.qubits[3][3].error = CONST.ErrorType.X
-            //     this.qubits[3][5].error = CONST.ErrorType.X
-            //     this.qubits[5][3].error = CONST.ErrorType.X
-            //     this.qubits[5][5].error = CONST.ErrorType.X
-            //     this.force_match_qubits(2, 3, 6, 3)
-            //     this.force_match_qubits(2, 5, 6, 5)
-            //     this.error_changed()
-            // }
-            {  // test augmenting loop
-                this.load_error_pattern(["IIIIIIIII", "IIIXIIIII", "IIIIIIXII", "IIIIIIIII", "IIIIIIIII", "IIIIIXIII", "IIIIIIIII", "IIIXIIIII", "IIIIIIIII"])
-                await this.vue_next_tick()
-                this.force_match_qubits(0, 3, 2, 3)
-                this.force_match_qubits(2, 5, 2, 7)
-                this.force_match_qubits(4, 5, 8, 3)
-                this.force_match_qubits(6, 3, 6, 5)
+            {  // test simple augmenting loop
+                this.L = 5
+                this.L_input = this.L
                 this.show_X_stabilizer = false
+                await this.vue_next_tick()
+                this.qubits[3][3].error = CONST.ErrorType.X
+                this.qubits[3][5].error = CONST.ErrorType.X
+                this.qubits[5][3].error = CONST.ErrorType.X
+                this.qubits[5][5].error = CONST.ErrorType.X
+                this.force_match_qubits(2, 3, 6, 3)
+                this.force_match_qubits(2, 5, 6, 5)
+                this.error_changed()
             }
+            // {  // test augmenting loop
+            //     this.load_error_pattern(["IIIIIIIII", "IIIXIIIII", "IIIIIIXII", "IIIIIIIII", "IIIIIIIII", "IIIIIXIII", "IIIIIIIII", "IIIXIIIII", "IIIIIIIII"])
+            //     await this.vue_next_tick()
+            //     this.force_match_qubits(0, 3, 2, 3)
+            //     this.force_match_qubits(2, 5, 2, 7)
+            //     this.force_match_qubits(4, 5, 8, 3)
+            //     this.force_match_qubits(6, 3, 6, 5)
+            //     this.show_X_stabilizer = false
+            // }
         },
         force_match_qubits(i1, j1, i2, j2) {
             if (i1 == i2 && j1 == j2) return  // why match the same qubit?
@@ -615,8 +615,7 @@ var $app = new Vue({
                             boundary_cost,  // the cost matching with boundary
                             cost: 0,  // by default the qubit has no error and thus has 0 cost
                             broker_next_hop: null,  // record next hop when broker is set to WaitingContract state
-                            accept_probability: 1.,  // by default it will always accept offer, but when it receive a refuse, it will multiply by `accept_probability_degrade`, and when it receives contract, it reset the probability to 1.
-                            accept_probability_degrade: 0.5,
+                            accept_probability: 1.,  // by default it will always accept offer, but when it receive a refuse, it will reduce the probability, and when it receives contract, it reset the probability to 1.
                         })
                         // methods for nodes only
                         qubit.node_execute = ((override_options = {}) => {
@@ -668,7 +667,8 @@ var $app = new Vue({
                                                     timestamp: message.timestamp,
                                                     source: [...message.source],
                                                     broker: [i, j],
-                                                    cost: message.cost - qubit.cost  // minus the cost of matching pair
+                                                    cost: message.cost - qubit.cost,  // minus the cost of matching pair
+                                                    max_hop: message.max_hop - 1,  // broker once, so the max hop - 1
                                                 },
                                             })
                                         }
@@ -686,6 +686,7 @@ var $app = new Vue({
                                                         source: [...message.source],
                                                         broker: [...message.broker],  // if broker == source then there is no broker
                                                         cost: message.cost + 1,
+                                                        max_hop: message.max_hop,  // do not change max_hop
                                                     },
                                                 })
                                             }
@@ -696,7 +697,7 @@ var $app = new Vue({
                                             // take this offer only if target is smaller than source and cost is better than current
                                             if (this.compare_i_j(i, j, si, sj) < 0 && message.cost - qubit.cost < 0) {  // the overall cost < 0 is an augmenting path
                                                 this.has_potential_acceptance = true
-                                                qubit.log.push(make_log_element(CONST.LogType.TakeOffer, message))
+                                                qubit.log.push(make_log_element(CONST.LogType.TakeOffer, { message, overall_cost: message.cost - qubit.cost }))
                                                 let accept_this_offer = Math.random() < qubit.accept_probability
                                                 if (accept_this_offer) {
                                                     qubit.state = CONST.NodeState.WaitingContract
@@ -707,6 +708,7 @@ var $app = new Vue({
                                                             target: [i, j],  // take this offer as target
                                                             source: [...message.source],
                                                             broker: [i, j],  // target is also the broker of this message
+                                                            is_loop_offer: false,
                                                         },
                                                     })
                                                 }
@@ -759,6 +761,7 @@ var $app = new Vue({
                                                     target: [...message.target],
                                                     source: [...message.source],
                                                     broker: [i, j],
+                                                    is_loop_offer: message.is_loop_offer,
                                                 },
                                             })
                                         } else {
@@ -800,7 +803,7 @@ var $app = new Vue({
                                 } else if (message.type == CONST.MessageType.RefuseAcceptance) {
                                     const [ti, tj] = message.target
                                     if (ti == i && tj == j) {
-                                        qubit.accept_probability *= qubit.accept_probability_degrade  // reduce the probability to take this offer
+                                        qubit.accept_probability = this.accept_probability_next(qubit.accept_probability) // reduce the probability to take this offer
                                         if (qubit.match_with == null) qubit.state = CONST.NodeState.SentOffer
                                         else qubit.state = CONST.NodeState.Matched
                                     } else {
@@ -833,7 +836,7 @@ var $app = new Vue({
                                             // TODO: this may also find augmenting loop!!! may cause deadlock, handle this later
                                             // take this offer
                                             this.has_potential_acceptance = true
-                                            qubit.log.push(make_log_element(CONST.LogType.TakeOffer, message))
+                                            qubit.log.push(make_log_element(CONST.LogType.TakeOffer, { message, overall_cost: message.cost + qubit.boundary_cost }))
                                             let accept_this_offer = Math.random() < qubit.accept_probability
                                             if (accept_this_offer) {
                                                 qubit.state = CONST.NodeState.WaitingContract
@@ -844,6 +847,7 @@ var $app = new Vue({
                                                         target: [i, j],
                                                         source: [...message.source],
                                                         broker: [i, j],
+                                                        is_loop_offer: false,
                                                     },
                                                 })
                                             }
@@ -859,6 +863,7 @@ var $app = new Vue({
                                                             source: [...message.source],
                                                             broker: [i, j],  // I'm the broker (sink) of this offer
                                                             cost: message.cost + 1,
+                                                            max_hop: message.max_hop,  // when brokering the max_hop - 1
                                                         },
                                                     })
                                                 }
@@ -888,7 +893,8 @@ var $app = new Vue({
                                             qubit.match_with = null  // connect to boundary
                                             qubit.cost = qubit.boundary_cost
                                         } else {
-                                            const cached_offer = qubit.offer_cache[i_j_as_key(si, sj)]
+                                            const cached_offer = message.is_loop_offer ? 
+                                                qubit.loop_cache[i_j_as_key(si, sj)] : qubit.offer_cache[i_j_as_key(si, sj)]
                                             if (cached_offer) {
                                                 qubit.state = CONST.NodeState.WaitingContract
                                                 qubit.out_queue.push({
@@ -898,6 +904,7 @@ var $app = new Vue({
                                                         target: [...message.target],  // take this offer as target
                                                         source: [...message.source],
                                                         broker: [i, j],  // I'm the broker of this offer
+                                                        is_loop_offer: message.is_loop_offer,
                                                     },
                                                 })
                                             } else {
@@ -952,7 +959,7 @@ var $app = new Vue({
                                         // whether take this offer
                                         if (this.compare_i_j(i, j, si, sj) < 0 && message.cost + qubit.boundary_cost < 0) {  // the overall cost < 0 is an augmenting path
                                             this.has_potential_acceptance = true
-                                            qubit.log.push(make_log_element(CONST.LogType.TakeOffer, message))
+                                            qubit.log.push(make_log_element(CONST.LogType.TakeOffer, { message, overall_cost: message.cost + qubit.boundary_cost }))
                                             let accept_this_offer = Math.random() < qubit.accept_probability
                                             if (accept_this_offer) {
                                                 qubit.state = CONST.NodeState.WaitingContract
@@ -963,6 +970,7 @@ var $app = new Vue({
                                                         target: [i, j],  // take this offer as target
                                                         source: [si, sj],
                                                         broker: [i, j],  // target is also the broker of this message
+                                                        is_loop_offer: false,
                                                     },
                                                 })
                                                 qubit.broker_next_hop = null
@@ -980,6 +988,7 @@ var $app = new Vue({
                                                             source: [...message.source],
                                                             broker: [i, j],  // I'm the broker of this offer
                                                             cost: message.cost + 1,
+                                                            max_hop: message.max_hop,
                                                         },
                                                     })
                                                 }
@@ -1012,13 +1021,15 @@ var $app = new Vue({
                                                         source: [...message.source],
                                                         broker: [...message.broker],  // if broker == source then there is no broker
                                                         cost: message.cost + 1,
+                                                        max_hop: message.max_hop,
                                                     },
                                                 })
                                             }
                                         }
                                     }
                                     if (qubit.state == CONST.NodeState.Matched) {
-                                        if (not_caching_this_offer) {
+                                        const [mi, mj] = qubit.match_with
+                                        if (not_caching_this_offer && !(mi == si && mj == sj) && !(si == i && sj == j)) {
                                             qubit.out_queue.push({
                                                 receiver: [...qubit.match_with],  // send to matched one
                                                 message: {
@@ -1026,7 +1037,8 @@ var $app = new Vue({
                                                     timestamp: message.timestamp,
                                                     source: [...message.source],
                                                     broker: [i, j],
-                                                    cost: message.cost - qubit.cost  // minus the cost of matching pair
+                                                    cost: message.cost - qubit.cost,  // minus the cost of matching pair
+                                                    max_hop: message.max_hop - 1,
                                                 },
                                             })
                                         }
@@ -1068,7 +1080,7 @@ var $app = new Vue({
                                         if (mi == si && mj == sj) {
                                             if (message.cost < 0) {  // the overall cost < 0 is an augmenting loop
                                                 this.has_potential_acceptance = true
-                                                qubit.log.push(make_log_element(CONST.LogType.TakeOffer, message))
+                                                qubit.log.push(make_log_element(CONST.LogType.TakeOffer, { message, overall_cost: message.cost }))
                                                 let accept_this_offer = Math.random() < qubit.accept_probability
                                                 if (accept_this_offer) {
                                                     qubit.state = CONST.NodeState.WaitingContract
@@ -1079,6 +1091,7 @@ var $app = new Vue({
                                                             target: [i, j],  // take this offer as target
                                                             source: [...message.source],
                                                             broker: [i, j],  // target is also the broker of this message
+                                                            is_loop_offer: true,
                                                         },
                                                     })
                                                 }
@@ -1144,7 +1157,8 @@ var $app = new Vue({
                                             timestamp: qubit.active_timestamp,
                                             source: [i, j],
                                             broker: [i, j],  // if broker == source then there is no broker
-                                            cost: 1 - qubit.boundary_cost  // if match, then the cost of boundary is reduced
+                                            cost: 1 - qubit.boundary_cost,  // if match, then the cost of boundary is reduced
+                                            max_hop: this.L,
                                         },
                                     })
                                 }
@@ -1160,6 +1174,7 @@ var $app = new Vue({
                                         source: [i, j],
                                         broker: [i, j],  // I'm the broker
                                         cost: qubit.boundary_cost - qubit.cost,  // if break, then the cost of boundary is introduced but the cost of matching is reduced
+                                        max_hop: this.L,
                                     },
                                 })
                                 // send augmenting loop offer, which is only broadcasted if the broker is bigger than source (to avoid conflicts)
@@ -1173,7 +1188,7 @@ var $app = new Vue({
                                                 timestamp: qubit.active_timestamp,
                                                 source: [i, j],
                                                 broker: [i, j],  // if broker == source then there is no broker
-                                                cost: 1 - qubit.cost  // if match, then the cost of boundary is reduced
+                                                cost: 1 - qubit.cost  // if match, then the cost of matching is reduced
                                             },
                                         })
                                     }
@@ -1195,6 +1210,17 @@ var $app = new Vue({
                                 const [ri, rj] = out.receiver
                                 if (this.is_valid_i_j(ri, rj)) {
                                     const message = out.message
+                                    if (message.type == CONST.MessageType.MatchOffer || message.type == CONST.MessageType.BrokeredOffer
+                                            || message.type == CONST.MessageType.BreakOffer || message.type == CONST.MessageType.BrokeredBreakOffer) {
+                                        if (message.max_hop == undefined) {
+                                            console.error("MatchOffer must have max_hop")
+                                        }
+                                        if (message.max_hop <= 0) {
+                                            console.log("MatchOffer reach max_hop, possibly due to augmenting loop")
+                                            console.log(message)
+                                            continue  // do not propagate
+                                        }
+                                    }
                                     this.qubits[ri][rj].mailbox.push(message)
                                     qubit.log.push(make_log_element(CONST.LogType.SendMessage, { i: ri, j: rj, message }))
                                 } else {
@@ -1294,6 +1320,13 @@ var $app = new Vue({
                     let qubit = this.qubits[i][j]
                     func(i, j, qubit)
                 }
+            }
+        },
+        accept_probability_next(accept_probability) {
+            if (accept_probability > 0.5) {
+                return 0.5
+            } else {
+                return accept_probability * 0.8  // slowly degrade
             }
         },
         all_node_execute(override_options = {}) {

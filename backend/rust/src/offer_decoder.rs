@@ -8,6 +8,7 @@ use super::rand::prelude::*;
 pub struct OfferDecoder {
     pub d: usize,
     pub qubits: Vec< Vec<Qubit> >,
+    pub default_max_hop: usize,
     // statistics
     pub message_count_single_round: usize,
     pub message_count: usize,
@@ -48,12 +49,14 @@ pub enum Message {
         source: (usize, usize),
         broker: (usize, usize),
         cost: f64,
+        max_hop: usize,
     },
     // AugmentOffer,  // TODO: implement later
     AcceptOffer {
         target: (usize, usize),
         source: (usize, usize),
         broker: (usize, usize),
+        is_loop_offer: bool,
     },
     RefuseAcceptance{
         target: (usize, usize),
@@ -69,11 +72,13 @@ pub enum Message {
         source: (usize, usize),
         broker: (usize, usize),
         cost: f64,
+        max_hop: usize,
     },
     AcceptBrokeredOffer {
         target: (usize, usize),
         source: (usize, usize),
         broker: (usize, usize),
+        is_loop_offer: bool,
     },
     BrokeredContract {
         target: (usize, usize),
@@ -85,12 +90,14 @@ pub enum Message {
         source: (usize, usize),
         broker: (usize, usize),
         cost: f64,
+        max_hop: usize,
     },
     BreakOffer {
         timestamp: usize,
         source: (usize, usize),
         broker: (usize, usize),
         cost: f64,
+        max_hop: usize,
     },
     LoopOffer {
         timestamp: usize,
@@ -149,7 +156,7 @@ impl OfferDecoder {
             message_processed += 1;
             // println!("qubit[{}][{}]: {:?}", i, j, message);
             match message {
-                Message::MatchOffer{ timestamp, source: (si, sj), broker: (bi, bj), cost } => {
+                Message::MatchOffer{ timestamp, source: (si, sj), broker: (bi, bj), cost, max_hop } => {
                     let cached_offer = qubit.offer_cache.get(&(si, sj));
                     let not_caching_this_offer = match cached_offer {
                         Some(cached_offer) => {
@@ -177,6 +184,7 @@ impl OfferDecoder {
                                     source: (si, sj),
                                     broker: (i, j),
                                     cost: cost - qubit.cost,  // minus the cost of matching pair
+                                    max_hop: max_hop - 1,  // when brokering the max_hop - 1
                                 },
                             });
                         }
@@ -191,6 +199,7 @@ impl OfferDecoder {
                                     source: (si, sj),
                                     broker: (bi, bj),
                                     cost: cost + *neighbor_cost,
+                                    max_hop: max_hop,
                                 },
                             });
                         }
@@ -212,6 +221,7 @@ impl OfferDecoder {
                                             target: (i, j),  // take this offer as target
                                             source: (si, sj),
                                             broker: (i, j),  // target is also the broker of this message
+                                            is_loop_offer: false,
                                         },
                                     });
                                 }
@@ -219,7 +229,7 @@ impl OfferDecoder {
                         }
                     }
                 },
-                Message::AcceptOffer{ target: (ti, tj), source: (si, sj), broker: (bi, bj) } => {
+                Message::AcceptOffer{ target: (ti, tj), source: (si, sj), broker: (bi, bj), is_loop_offer } => {
                     if si == i && sj == j {
                         if qubit.state == NodeState::SentOffer {
                             qubit.state = NodeState::Matched;
@@ -252,6 +262,7 @@ impl OfferDecoder {
                                     target: (ti, tj),
                                     source: (si, sj),
                                     broker: (i, j),
+                                    is_loop_offer: is_loop_offer,
                                 },
                             });
                         } else {
@@ -320,7 +331,7 @@ impl OfferDecoder {
                         }
                     }
                 },
-                Message::BrokeredOffer{ timestamp, broker: (bi, bj), source: (si, sj), cost } => {
+                Message::BrokeredOffer{ timestamp, broker: (bi, bj), source: (si, sj), cost, max_hop } => {
                     if qubit.state == NodeState::Matched && qubit.match_with.unwrap() == (bi, bj) {
                         if cost + qubit.boundary_cost < 0. {  // break this matched pair is an augmenting path
                             // TODO: this may also find augmenting loop!!! may cause deadlock, handle this later
@@ -336,6 +347,7 @@ impl OfferDecoder {
                                         target: (i, j),
                                         source: (si, sj),
                                         broker: (i, j),
+                                        is_loop_offer: false,
                                     },
                                 });
                             }
@@ -348,6 +360,7 @@ impl OfferDecoder {
                                         source: (si, sj),
                                         broker: (i, j),  // I'm the broker (sink) of this offer
                                         cost: cost + *neighbor_cost,
+                                        max_hop: max_hop,
                                     },
                                 });
                             }
@@ -357,7 +370,7 @@ impl OfferDecoder {
                         // assert_eq!(qubit.state, NodeState::Matched, "why should an unmatched qubit receive a BrokeredOffer message?");
                     }
                 },
-                Message::AcceptBrokeredOffer{ source: (si, sj), target: (ti, tj), broker: (bi, bj) } => {
+                Message::AcceptBrokeredOffer{ source: (si, sj), target: (ti, tj), broker: (bi, bj), is_loop_offer } => {
                     if qubit.state == NodeState::Matched && qubit.match_with.unwrap() == (bi, bj) {
                         if i == si && j == sj {  // this should be an acceptance of break offer
                             qubit.out_queue.push(OutMessage {
@@ -372,7 +385,11 @@ impl OfferDecoder {
                             qubit.match_with = None;  // connect to boundary
                             qubit.cost = qubit.boundary_cost;
                         } else {
-                            let cached_offer = qubit.offer_cache.get(&(si, sj));
+                            let cached_offer = if is_loop_offer {
+                                qubit.loop_cache.get(&(si, sj))
+                            } else {
+                                qubit.offer_cache.get(&(si, sj))
+                            };
                             match cached_offer {
                                 Some(cached_offer) => {
                                     qubit.state = NodeState::WaitingContract;
@@ -382,6 +399,7 @@ impl OfferDecoder {
                                             target: (ti, tj),
                                             source: (si, sj),
                                             broker: (i, j),  // I'm the broker of this offer
+                                            is_loop_offer: is_loop_offer,
                                         },
                                     });
                                 },
@@ -432,7 +450,7 @@ impl OfferDecoder {
                         },
                     }
                 },
-                Message::BrokeredBreakOffer{ timestamp, broker: (bi, bj), source: (si, sj), cost } => {
+                Message::BrokeredBreakOffer{ timestamp, broker: (bi, bj), source: (si, sj), cost, max_hop } => {
                     if qubit.state == NodeState::Matched && qubit.match_with.expect("exist") == (bi, bj) {
                         // whether take this offer
                         if Self::compare_i_j(i, j, si, sj) < 0 && cost + qubit.boundary_cost < 0. {  // the overall cost < 0 is an augmenting path
@@ -447,6 +465,7 @@ impl OfferDecoder {
                                         target: (i, j),  // take this offer as target
                                         source: (si, sj),
                                         broker: (i, j),  // target is also the broker of this message
+                                        is_loop_offer: false,
                                     },
                                 });
                                 qubit.broker_next_hop = None;
@@ -461,13 +480,14 @@ impl OfferDecoder {
                                         source: (si, sj),
                                         broker: (i, j),  // I'm the broker of this offer
                                         cost: cost + *neighbor_cost,
+                                        max_hop: max_hop,
                                     },
                                 });
                             }
                         }
                     }  // else just ignore this
                 },
-                Message::BreakOffer{ timestamp, broker: (bi, bj), source: (si, sj), cost } => {
+                Message::BreakOffer{ timestamp, broker: (bi, bj), source: (si, sj), cost, max_hop } => {
                     let cached_offer = qubit.offer_cache.get(&(si, sj));
                     let not_caching_this_offer = match cached_offer {
                         Some(cached_offer) => {
@@ -493,12 +513,14 @@ impl OfferDecoder {
                                     source: (si, sj),
                                     broker: (bi, bj),
                                     cost: cost + *neighbor_cost,
+                                    max_hop: max_hop,
                                 },
                             });
                         }
                     }
                     if qubit.state == NodeState::Matched {
-                        if not_caching_this_offer {
+                        let (mi, mj) = qubit.match_with.expect("exist");
+                        if not_caching_this_offer && !(si == mi && sj == mj) && !(si == i && sj == j) {
                             qubit.out_queue.push(OutMessage {
                                 receiver: qubit.match_with.expect("exist"),
                                 message: Message::BrokeredBreakOffer {
@@ -506,6 +528,7 @@ impl OfferDecoder {
                                     source: (si, sj),
                                     broker: (i, j),
                                     cost: cost - qubit.cost,  // minus the cost of matching pair
+                                    max_hop: max_hop - 1,
                                 },
                             });
                         }
@@ -547,9 +570,10 @@ impl OfferDecoder {
                         if mi == si && mj == sj {
                             if cost < 0. {  // the overall cost < 0 is an augmenting loop
                                 self.has_potential_acceptance = true;  // mark potential take
-                                let accept_this_offer = self.rng.gen::<f64>() < qubit.accept_probability;
+                                // let accept_this_offer = self.rng.gen::<f64>() < qubit.accept_probability;
                                 // println!("has_potential_acceptance from [{}][{}], with probability {}, take it: {}", i, j, qubit.accept_probability, accept_this_offer);
-                                if accept_this_offer {
+                                // if accept_this_offer {
+                                    // always accept loop offer
                                     qubit.state = NodeState::WaitingContract;
                                     qubit.out_queue.push(OutMessage {
                                         receiver: (bi, bj),  // send back to the last broker
@@ -557,9 +581,10 @@ impl OfferDecoder {
                                             target: (i, j),  // take this offer as target
                                             source: (si, sj),
                                             broker: (i, j),  // target is also the broker of this message
+                                            is_loop_offer: true,
                                         },
                                     });
-                                }
+                                // }
                             }
                         } else if Self::compare_i_j(si, sj, i, j) < 0 && Self::compare_i_j(si, sj, mi, mj) < 0 {
                             // broker it only if source is smaller than any peer
@@ -623,24 +648,40 @@ impl OfferDecoder {
                             source: (i, j),
                             broker: (i, j),  // if broker == source then there is no broker
                             cost: *neighbor_cost - qubit.boundary_cost,  // if match, then the cost of boundary is reduced
+                            max_hop: self.default_max_hop,
                         },
                     });
                 }
                 qubit.state = NodeState::SentOffer;  // offer sent and waiting for replies
             },
             NodeState::Matched => {
+                let (mi, mj) = qubit.match_with.expect("exist");
                 qubit.active_timestamp += 1;
                 // send break offer which is never accepted by unmatched node
                 qubit.out_queue.push(OutMessage {
-                    receiver: qubit.match_with.expect("exist"),
+                    receiver: (mi, mj),
                     message: Message::BrokeredBreakOffer {
                         timestamp: qubit.active_timestamp,
                         source: (i, j),
                         broker: (i, j),  // I'm the broker
                         cost: qubit.boundary_cost - qubit.cost,  // if break, then the cost of boundary is introduced but the cost of matching is reduced
+                        max_hop: self.default_max_hop,
                     },
-                })
-                // TODO: send augmenting loop offer, which is only broadcasted if the broker is bigger than source (to avoid conflicts)
+                });
+                // send augmenting loop offer, which is only broadcasted if the broker is bigger than source (to avoid conflicts)
+                if Self::compare_i_j(i, j, mi, mj) < 0 {  // smaller one is responsible for initiating the loop finding protocol
+                    for (ni, nj, neighbor_cost) in qubit.neighbors.iter() {
+                        qubit.out_queue.push(OutMessage {
+                            receiver: (*ni, *nj),
+                            message: Message::LoopOffer {
+                                timestamp: qubit.active_timestamp,
+                                source: (i, j),
+                                broker: (i, j),  // if broker == source then there is no broker
+                                cost: *neighbor_cost - qubit.cost,  // if match, then the cost of matching is reduced
+                            },
+                        });
+                    }
+                }
             },
             _ => { },  // do nothing if in other states
         }
@@ -653,7 +694,20 @@ impl OfferDecoder {
             self.message_count += 1;
             let (ri, rj) = out_message.receiver;
             assert!(self.is_valid_i_j(ri, rj), "receiver must have valid address");
-            self.qubits[ri][rj].mailbox.push(out_message.message);
+            let message = out_message.message;
+            match message {
+                Message::MatchOffer { timestamp: _, source: _, broker: _, cost: _, max_hop }
+                | Message::BrokeredOffer { timestamp: _, source: _, broker: _, cost: _, max_hop }
+                | Message::BreakOffer { timestamp: _, source: _, broker: _, cost: _, max_hop }
+                | Message::BrokeredBreakOffer { timestamp: _, source: _, broker: _, cost: _, max_hop } => {
+                    if max_hop == 0 {
+                        // println!("max_hop reach 0");
+                        continue  // do not send it if max_hop == 0
+                    }
+                }
+                _ => { }
+            }
+            self.qubits[ri][rj].mailbox.push(message);
         }
     }
     pub fn force_match_qubits(&mut self, i1: usize, j1: usize, i2: usize, j2: usize) {
@@ -981,6 +1035,7 @@ impl OfferDecoder {
 pub fn create_standard_planar_code_offer_decoder(d: usize) -> OfferDecoder {
     OfferDecoder {
         d: d,
+        default_max_hop: d,
         qubits: (0 .. 2 * d - 1).map(|i| {
             (0 .. 2 * d - 1).map(|j| {
                 let qubit_type = if (i + j) % 2 == 0 { QubitType::Data } else {
