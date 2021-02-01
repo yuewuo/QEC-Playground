@@ -8,6 +8,7 @@ mod blossom_v;
 mod mwpm_approx;
 mod ftqec;
 mod offer_decoder;
+mod reproducible_rand;
 
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;
@@ -23,6 +24,7 @@ extern crate libc;
 extern crate num_cpus;
 extern crate petgraph;
 extern crate pbr;
+extern crate rand_core;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

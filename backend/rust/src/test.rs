@@ -14,6 +14,9 @@ use super::ftqec;
 use super::types::QubitType;
 use super::types::ErrorType;
 use super::offer_decoder;
+use super::rand_core::SeedableRng;
+use super::rand_core::RngCore;
+use super::reproducible_rand::{Xoroshiro128StarStar, SplitMix64};
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -244,6 +247,9 @@ fn offer_decoder_study(d: usize, p: f64, count: usize, max_resend: usize, max_cy
     model.build_exhausted_path_autotune();
     while cases < count {
         decoder.reinitialize();
+        decoder.use_reproducible_error_generator = true;
+        let reproducible_error_generator_seed = rng.gen::<u64>();
+        decoder.reproducible_error_generator_set_seed(reproducible_error_generator_seed);
         let error_count = decoder.generate_only_x_random_errors(p, || rng.gen::<f64>());
         if error_count == 0 {
             continue
@@ -275,6 +281,7 @@ fn offer_decoder_study(d: usize, p: f64, count: usize, max_resend: usize, max_cy
                         println!("{}", json!({
                             "cycles": cycles,
                             "error": decoder.error_pattern(),
+                            "seed": reproducible_error_generator_seed,
                         }).to_string());
                         cases += 1;
                     }
@@ -671,22 +678,19 @@ fn archived_debug_tests() {
         println!("cycles: {}", cycles);
         println!("has logical error: {}", decoder.has_logical_error(ErrorType::X));
     }
-}
-
-fn debug_tests() {
-    // {  // augmenting loop will degrade performance
-    //     let error_pattern_origin = ["IXIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","XIXIIIIIIIIIXIIIX","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIXIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIXIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"];
-    //     let error_pattern: Vec<String> = error_pattern_origin.iter().map(|e| e.to_string()).collect();
-    //     let mut decoder = offer_decoder::OfferDecoder::create_with_error_pattern(&error_pattern);
-    //     let cycles = decoder.pseudo_parallel_execute_to_stable();
-    //     let match_pattern = decoder.match_pattern();
-    //     println!("match_pattern: {:?}", match_pattern);
-    //     println!("cycles: {}", cycles);
-    //     println!("has logical error: {}", decoder.has_logical_error(ErrorType::X));
-    //     // similar cases:
-    //     // ["IIXIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIXIII","IIIIIIIIIXIIIIIII","XIIIIIXIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIXIIIXII","IIIIIIIIXIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"]
-    //     // ["IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IXIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIIX","IIIIIIIIIXIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIXIIIIIIII","XIIIIIIIIIXIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIXIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"]
-    // }
+    {  // augmenting loop will degrade performance
+        let error_pattern_origin = ["IXIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","XIXIIIIIIIIIXIIIX","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIXIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIXIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"];
+        let error_pattern: Vec<String> = error_pattern_origin.iter().map(|e| e.to_string()).collect();
+        let mut decoder = offer_decoder::OfferDecoder::create_with_error_pattern(&error_pattern);
+        let cycles = decoder.pseudo_parallel_execute_to_stable();
+        let match_pattern = decoder.match_pattern();
+        println!("match_pattern: {:?}", match_pattern);
+        println!("cycles: {}", cycles);
+        println!("has logical error: {}", decoder.has_logical_error(ErrorType::X));
+        // similar cases:
+        // ["IIXIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIXIII","IIIIIIIIIXIIIIIII","XIIIIIXIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIXIIIXII","IIIIIIIIXIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"]
+        // ["IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IXIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIIX","IIIIIIIIIXIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIXIIIIIIII","XIIIIIIIIIXIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIXIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"]
+    }
     { // debug infinite loop
         let error_pattern_origin = ["IIIIIIIII", "IIIXIIIII", "IIIIIIXII", "IIIIIIIII", "IIIIIIIII", "IIIIIXIII", "IIIIIIIII", "IIIXIIIII", "IIIIIIIII"];
         let error_pattern: Vec<String> = error_pattern_origin.iter().map(|e| e.to_string()).collect();
@@ -697,4 +701,35 @@ fn debug_tests() {
         println!("cycles: {}", cycles);
         println!("has logical error: {}", decoder.has_logical_error(ErrorType::X));
     }
+    {  // test SplitMix64
+        let mut rng = SplitMix64::seed_from_u64(0);
+        println!("initial: rng.get_x_i64()");
+        for _ in 0..10 {
+            let num = rng.next_u64();
+            println!("{} = {}, seed = {}", num, i64::from_le_bytes(num.to_le_bytes()), rng.get_x_i64());
+        }
+    }
+    {  // test Xoroshiro128StarStar
+        // test case from https://docs.rs/crate/rand_xoshiro/0.6.0/source/src/xoroshiro128starstar.rs
+        let mut rng = Xoroshiro128StarStar::from_seed(
+            [1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0]);
+        // These values were produced with the reference implementation:
+        // http://xoshiro.di.unimi.it/xoshiro128starstar.c
+        let expected = [
+            5760, 97769243520, 9706862127477703552, 9223447511460779954,
+            8358291023205304566, 15695619998649302768, 8517900938696309774,
+            16586480348202605369, 6959129367028440372, 16822147227405758281,
+        ];
+        for &e in &expected {
+            assert_eq!(rng.next_u64(), e);
+        }
+        let mut rng = Xoroshiro128StarStar::seed_from_u64(0);
+        println!("initial seed: {} {}", rng.get_s0_i64(), rng.get_s1_i64());
+        for _ in 0..10 {
+            println!("{} {} {}", rng.next_f64(), rng.get_s0_i64(), rng.get_s1_i64());
+        }
+    }
+}
+
+fn debug_tests() {
 }

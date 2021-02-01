@@ -2,6 +2,8 @@ use super::types::QubitType;
 use super::types::ErrorType;
 use std::collections::HashMap;
 use super::rand::prelude::*;
+use super::rand_core::SeedableRng;
+use super::reproducible_rand::{Xoroshiro128StarStar};
 
 /// only for standard planar code
 #[derive(Debug, Clone)]
@@ -16,6 +18,8 @@ pub struct OfferDecoder {
     // random generator
     pub disable_probabilistic_accept: bool,
     pub rng: ThreadRng,
+    pub use_reproducible_error_generator: bool,
+    pub reproducible_error_generator: Xoroshiro128StarStar,
 }
 
 #[derive(Debug, Clone)]
@@ -150,6 +154,16 @@ impl OfferDecoder {
         }
         // read message
         let mut message_processed = 0;
+        let use_reproducible_error_generator = &self.use_reproducible_error_generator;
+        let reproducible_error_generator = &mut self.reproducible_error_generator;
+        let rng = &mut self.rng;
+        let mut random_generate = || {
+            if *use_reproducible_error_generator {
+                reproducible_error_generator.next_f64()
+            } else {
+                rng.gen::<f64>()
+            }
+        };
         while self.qubits[i][j].mailbox.len() > 0 {
             let qubit = &mut self.qubits[i][j];  // have to re-borrow it as mutable
             let message = qubit.mailbox.remove(0);  // take the first message in mailbox
@@ -211,7 +225,7 @@ impl OfferDecoder {
                             // the overall cost < 0 is an augmenting path
                             if Self::compare_i_j(i, j, si, sj) < 0 && cost - qubit.cost < 0. {
                                 self.has_potential_acceptance = true;  // mark potential take
-                                let accept_this_offer = self.rng.gen::<f64>() < qubit.accept_probability;
+                                let accept_this_offer = random_generate() < qubit.accept_probability;
                                 // println!("has_potential_acceptance from [{}][{}], with probability {}, take it: {}", i, j, qubit.accept_probability, accept_this_offer);
                                 if accept_this_offer {
                                     qubit.state = NodeState::WaitingContract;
@@ -337,7 +351,7 @@ impl OfferDecoder {
                             // TODO: this may also find augmenting loop!!! may cause deadlock, handle this later
                             // take this offer
                             self.has_potential_acceptance = true;  // mark potential take
-                            let accept_this_offer = self.rng.gen::<f64>() < qubit.accept_probability;
+                            let accept_this_offer = random_generate() < qubit.accept_probability;
                             // println!("has_potential_acceptance from [{}][{}], with probability {}, take it: {}", i, j, qubit.accept_probability, accept_this_offer);
                             if accept_this_offer {
                                 qubit.state = NodeState::WaitingContract;
@@ -455,7 +469,7 @@ impl OfferDecoder {
                         // whether take this offer
                         if Self::compare_i_j(i, j, si, sj) < 0 && cost + qubit.boundary_cost < 0. {  // the overall cost < 0 is an augmenting path
                             self.has_potential_acceptance = true;  // mark potential take
-                            let accept_this_offer = self.rng.gen::<f64>() < qubit.accept_probability;
+                            let accept_this_offer = random_generate() < qubit.accept_probability;
                             // println!("has_potential_acceptance from [{}][{}], with probability {}, take it: {}", i, j, qubit.accept_probability, accept_this_offer);
                             if accept_this_offer {
                                 qubit.state = NodeState::WaitingContract;
@@ -570,9 +584,9 @@ impl OfferDecoder {
                         if mi == si && mj == sj {
                             if cost < 0. {  // the overall cost < 0 is an augmenting loop
                                 self.has_potential_acceptance = true;  // mark potential take
-                                // let accept_this_offer = self.rng.gen::<f64>() < qubit.accept_probability;
+                                let accept_this_offer = random_generate() < qubit.accept_probability;
                                 // println!("has_potential_acceptance from [{}][{}], with probability {}, take it: {}", i, j, qubit.accept_probability, accept_this_offer);
-                                // if accept_this_offer {
+                                if accept_this_offer {
                                     // always accept loop offer
                                     qubit.state = NodeState::WaitingContract;
                                     qubit.out_queue.push(OutMessage {
@@ -584,7 +598,7 @@ impl OfferDecoder {
                                             is_loop_offer: true,
                                         },
                                     });
-                                // }
+                                }
                             }
                         } else if Self::compare_i_j(si, sj, i, j) < 0 && Self::compare_i_j(si, sj, mi, mj) < 0 {
                             // broker it only if source is smaller than any peer
@@ -1029,6 +1043,9 @@ impl OfferDecoder {
             accept_probability * 0.8  // slowly degrade
         }
     }
+    pub fn reproducible_error_generator_set_seed(&mut self, seed: u64) {
+        self.reproducible_error_generator = Xoroshiro128StarStar::seed_from_u64(seed);
+    }
 }
 
 /// create decoder for standard planar code
@@ -1092,5 +1109,7 @@ pub fn create_standard_planar_code_offer_decoder(d: usize) -> OfferDecoder {
         // random generator
         disable_probabilistic_accept: false,
         rng: thread_rng(),
+        use_reproducible_error_generator: false,  // by default use thread_rng
+        reproducible_error_generator: Xoroshiro128StarStar::seed_from_u64(0),  // change to other random seed when using reproducible error generator
     }
 }
