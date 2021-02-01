@@ -133,6 +133,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg max_resend: -r --max_resend +takes_value "maximum rounds to resend offer, default to usize::MAX")
                 (@arg max_cycles: -c --max_cycles +takes_value "maximum cycles to run, corresponding to clock cycle in real hardware, default to usize::MAX")
                 (@arg disable_probabilistic_accept: --disable_probabilistic_accept "disable probabilistic accept, this will cause dead lock and degrade performance of d>5")
+                (@arg repeat_experiment_each_error: --repeat_experiment_each_error +takes_value "repeat experiment for each error pattern, default to 1")
             )
         )
         (@subcommand server => (about: "HTTP server for decoding information")

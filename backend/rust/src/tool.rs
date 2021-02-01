@@ -124,8 +124,9 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(usize::MAX);
             let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(usize::MAX);
             let disable_probabilistic_accept = matches.is_present("disable_probabilistic_accept");
+            let repeat_experiment_each_error = value_t!(matches, "repeat_experiment_each_error", usize).unwrap_or(1);
             offer_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, max_resend, max_cycles
-                , disable_probabilistic_accept);
+                , disable_probabilistic_accept, repeat_experiment_each_error);
         }
         _ => unreachable!()
     }
@@ -844,7 +845,7 @@ default example:
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
 fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
-        , only_count_logical_x: bool, max_resend: usize, max_cycles: usize, disable_probabilistic_accept: bool) {
+        , only_count_logical_x: bool, max_resend: usize, max_cycles: usize, disable_probabilistic_accept: bool, repeat_experiment_each_error: usize) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -892,23 +893,42 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
                             if error_count == 0 {
                                 continue
                             }
-                            decoder.error_changed();
-                            let cycles = match decoder.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(max_resend, max_cycles) {
-                                Ok(cycles) => cycles,
-                                Err(cycles) => cycles,
-                            };
-                            mini_total_cycles += cycles;
-                            if cycles > current_max_cycles_used {
-                                current_max_cycles_used = cycles;
+                            // repeat experiment multiple times for each error pattern
+                            let error_pattern = decoder.error_pattern();
+                            let mut succeed_count = 0;
+                            let mut min_cycles_repeated = usize::MAX;
+                            for k in 0..repeat_experiment_each_error {
+                                decoder.load_error_pattern(&error_pattern);
+                                decoder.error_changed();
+                                let mut within_cycles = false;
+                                let cycles = match decoder.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(max_resend, max_cycles) {
+                                    Ok(cycles) => {
+                                        within_cycles = true;
+                                        cycles
+                                    },
+                                    Err(cycles) => cycles,
+                                };
+                                if k == 0 || within_cycles {
+                                    if cycles < min_cycles_repeated {
+                                        min_cycles_repeated = cycles;
+                                    }
+                                    if only_count_logical_x {
+                                        if !decoder.has_logical_error(ErrorType::X) {
+                                            succeed_count += 1;
+                                        }
+                                    } else {  // check for both logical X and logical Z error
+                                        if !decoder.has_logical_error(ErrorType::Y) {
+                                            succeed_count += 1;
+                                        }
+                                    }
+                                }
                             }
-                            if only_count_logical_x {
-                                if decoder.has_logical_error(ErrorType::X) {
-                                    mini_qec_failed += 1;
-                                }
-                            } else {  // check for both logical X and logical Z error
-                                if decoder.has_logical_error(ErrorType::Y) {
-                                    mini_qec_failed += 1;
-                                }
+                            mini_total_cycles += min_cycles_repeated;
+                            if min_cycles_repeated > current_max_cycles_used {
+                                current_max_cycles_used = min_cycles_repeated;
+                            }
+                            if succeed_count * 2 <= repeat_experiment_each_error {  // max vote
+                                mini_qec_failed += 1;
                             }
                         }
                         // sync data from outside

@@ -302,6 +302,16 @@ async function xoroshiro128starstar(seed) {
     return (await xoroshiro128starstar_full(seed)).next
 }
 
+function findGetParameter(parameterName) {
+    let result = null, tmp = []
+    let items = location.search.substr(1).split("&")
+    for (let index = 0; index < items.length; index++) {
+        tmp = items[index].split("=")
+        if (tmp[0] === parameterName) result = decodeURIComponent(tmp[1])
+    }
+    return result
+}
+
 Vue.component('data-qubit', {
     template: '#data-qubit',
     model: {
@@ -454,7 +464,7 @@ var $app = new Vue({
             }
         },
     },
-    mounted() {
+    async mounted() {
         this.refresh_qubits()
         // do not update element size on touch screen devices, so that they can scroll well
         const update_resize = !('ontouchstart' in document.documentElement)
@@ -464,22 +474,70 @@ var $app = new Vue({
                 this.window_height = window.innerHeight
             }).bind(this))
         }
+        // case study
+        const case_study_name = findGetParameter("case")
+        if (case_study_name != null) {
+            await this.case_study(case_study_name)
+        }
         // debug initialization
-        this.debug_initial()
+        await this.debug_initial()
     },
     methods: {
+        async case_study(name) {
+            if (name == "matching_visualization") {
+                this.L = 7
+                this.L_input = this.L
+                this.show_X_stabilizer = false
+                await this.vue_next_tick()
+                this.qubits[6][6].error = CONST.ErrorType.X
+                this.qubits[5][5].error = CONST.ErrorType.X
+                this.qubits[4][4].error = CONST.ErrorType.X
+                this.error_changed()
+            } else if (name == "simple_matching") {
+                this.L = 5
+                this.L_input = this.L
+                this.show_X_stabilizer = false
+                await this.vue_next_tick()
+                this.qubits[4][4].error = CONST.ErrorType.X
+                this.error_changed()
+            } else if (name == "brokered_offer") {
+                // test augmenting path, in this case, qubits[4][3] should establish a augmenting path to [8][11] so that cost is minimized
+                this.L = 7
+                this.L_input = this.L
+                this.show_X_stabilizer = false
+                await this.vue_next_tick()
+                this.qubits[6][4].error = CONST.ErrorType.X
+                this.qubits[8][8].error = CONST.ErrorType.X
+                this.qubits[8][12].error = CONST.ErrorType.X
+                this.force_match_qubits(6, 5, 8, 7)
+                this.force_match_qubits(8, 9, 8, 11)
+                this.error_changed()
+            } else if (name == "break_offer") {
+                this.L = 5
+                this.L_input = this.L
+                this.show_X_stabilizer = false
+                await this.vue_next_tick()
+                this.qubits[4][0].error = CONST.ErrorType.X
+                this.qubits[4][8].error = CONST.ErrorType.X
+                this.force_match_qubits(4, 1, 4, 7)
+                this.error_changed()
+            } else if (name == "loop_offer") {
+                this.L = 5
+                this.L_input = this.L
+                this.show_X_stabilizer = false
+                await this.vue_next_tick()
+                this.qubits[3][3].error = CONST.ErrorType.X
+                this.qubits[3][5].error = CONST.ErrorType.X
+                this.qubits[5][3].error = CONST.ErrorType.X
+                this.qubits[5][5].error = CONST.ErrorType.X
+                this.force_match_qubits(2, 3, 6, 3)
+                this.force_match_qubits(2, 5, 6, 5)
+                this.error_changed()
+            } else {
+                console.error("unknown case: " + name);
+            }
+        },
         async debug_initial() {
-            // {  // test matching visualization
-            //     this.L = 7
-            //     this.L_input = this.L
-            //     this.show_X_stabilizer = false
-            //     await this.vue_next_tick()
-            //     this.qubits[6][6].error = CONST.ErrorType.X
-            //     this.qubits[5][5].error = CONST.ErrorType.X
-            //     this.qubits[4][4].error = CONST.ErrorType.X
-            //     this.error_changed()
-            //     // for (let i=0; i < 6; ++i) this.default_single_round()
-            // }
             // {  // test cost, do not match if boundary is better
             //     this.L = 5
             //     this.L_input = this.L
@@ -489,18 +547,6 @@ var $app = new Vue({
             //     this.qubits[4][8].error = CONST.ErrorType.X
             //     this.error_changed()
             //     console.log("please click 'default single round' multiple times so to make sure [4][1] and [4][7] is never matched")
-            // }
-            // {  // test augmenting path, in this case, qubits[4][3] should establish a augmenting path to [8][11] so that cost is minimized
-            //     this.L = 7
-            //     this.L_input = this.L
-            //     this.show_X_stabilizer = false
-            //     await this.vue_next_tick()
-            //     this.qubits[6][4].error = CONST.ErrorType.X
-            //     this.qubits[8][8].error = CONST.ErrorType.X
-            //     this.qubits[8][12].error = CONST.ErrorType.X
-            //     this.force_match_qubits(6, 5, 8, 7)
-            //     this.force_match_qubits(8, 9, 8, 11)
-            //     this.error_changed()
             // }
             // {  // test augmenting path, with possible augmenting loop
             //     this.L = 7
@@ -514,33 +560,10 @@ var $app = new Vue({
             //     this.force_match_qubits(8, 7, 8, 11)
             //     this.error_changed()
             // }
-            // {  // test simple break offer
-            //     this.L = 5
-            //     this.L_input = this.L
-            //     this.show_X_stabilizer = false
-            //     await this.vue_next_tick()
-            //     this.qubits[4][0].error = CONST.ErrorType.X
-            //     this.qubits[4][8].error = CONST.ErrorType.X
-            //     this.force_match_qubits(4, 1, 4, 7)
-            //     this.error_changed()
-            // }
             // {  // test break offer
             //     this.load_error_pattern(["IXIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","XIXIIIIIIIIIXIIIX","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIXIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIXIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"])
             //     this.show_X_stabilizer = false
             // }
-            {  // test simple augmenting loop
-                this.L = 5
-                this.L_input = this.L
-                this.show_X_stabilizer = false
-                await this.vue_next_tick()
-                this.qubits[3][3].error = CONST.ErrorType.X
-                this.qubits[3][5].error = CONST.ErrorType.X
-                this.qubits[5][3].error = CONST.ErrorType.X
-                this.qubits[5][5].error = CONST.ErrorType.X
-                this.force_match_qubits(2, 3, 6, 3)
-                this.force_match_qubits(2, 5, 6, 5)
-                this.error_changed()
-            }
             // {  // test augmenting loop
             //     this.load_error_pattern(["IIIIIIIII", "IIIXIIIII", "IIIIIIXII", "IIIIIIIII", "IIIIIIIII", "IIIIIXIII", "IIIIIIIII", "IIIXIIIII", "IIIIIIIII"])
             //     await this.vue_next_tick()
