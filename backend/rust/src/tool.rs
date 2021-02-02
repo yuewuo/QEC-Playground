@@ -896,6 +896,7 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
                             // repeat experiment multiple times for each error pattern
                             let error_pattern = decoder.error_pattern();
                             let mut succeed_count = 0;
+                            let mut valid_count = 0;
                             let mut min_cycles_repeated = usize::MAX;
                             for k in 0..repeat_experiment_each_error {
                                 decoder.load_error_pattern(&error_pattern);
@@ -909,6 +910,7 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
                                     Err(cycles) => cycles,
                                 };
                                 if k == 0 || within_cycles {
+                                    valid_count += 1;
                                     if cycles < min_cycles_repeated {
                                         min_cycles_repeated = cycles;
                                     }
@@ -927,7 +929,7 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
                             if min_cycles_repeated > current_max_cycles_used {
                                 current_max_cycles_used = min_cycles_repeated;
                             }
-                            if succeed_count * 2 <= repeat_experiment_each_error {  // max vote
+                            if succeed_count * 2 <= valid_count {  // max vote
                                 mini_qec_failed += 1;
                             }
                         }

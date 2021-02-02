@@ -249,6 +249,7 @@ impl OfferDecoder {
                             qubit.state = NodeState::Matched;
                             qubit.match_with = Some((bi, bj));  // always match with the first-hop broker
                             qubit.cost = Self::cost_of_matching(i, j, bi, bj);
+                            qubit.accept_probability = 1.;
                             qubit.out_queue.push(OutMessage {
                                 receiver: (bi, bj),  // send back to the last broker
                                 message: Message::Contract {
@@ -302,6 +303,7 @@ impl OfferDecoder {
                                     broker: (i, j),  // I'm the broker
                                 },
                             });
+                            qubit.accept_probability = 1.;
                         } else {  // this is the target
                             qubit.accept_probability = 1.;
                         }

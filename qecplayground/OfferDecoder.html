@@ -533,6 +533,9 @@ var $app = new Vue({
                 this.force_match_qubits(2, 3, 6, 3)
                 this.force_match_qubits(2, 5, 6, 5)
                 this.error_changed()
+            } else if (name == "real_break_offer") {
+                this.load_error_pattern(["IXIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","XIXIIIIIIIIIXIIIX","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIXIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIXIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"])
+                this.show_X_stabilizer = false
             } else {
                 console.error("unknown case: " + name);
             }
@@ -559,10 +562,6 @@ var $app = new Vue({
             //     this.force_match_qubits(6, 3, 8, 5)
             //     this.force_match_qubits(8, 7, 8, 11)
             //     this.error_changed()
-            // }
-            // {  // test break offer
-            //     this.load_error_pattern(["IXIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","XIXIIIIIIIIIXIIIX","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIXIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIXIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII","IIIIIIIIIIIIIIIII"])
-            //     this.show_X_stabilizer = false
             // }
             // {  // test augmenting loop
             //     this.load_error_pattern(["IIIIIIIII", "IIIXIIIII", "IIIIIIXII", "IIIIIIIII", "IIIIIIIII", "IIIIIXIII", "IIIIIIIII", "IIIXIIIII", "IIIIIIIII"])
@@ -768,6 +767,7 @@ var $app = new Vue({
                                             qubit.match_with = [...message.broker]  // always match with the first-hop broker
                                             const [bi, bj] = message.broker
                                             qubit.cost = cost_of_matching(i, j, bi, bj)
+                                            qubit.accept_probability = 1.
                                             qubit.out_queue.push({
                                                 receiver: [...message.broker],  // send back to the last broker
                                                 message: {
@@ -830,6 +830,7 @@ var $app = new Vue({
                                                     broker: [i, j],  // I'm the broker
                                                 },
                                             })
+                                            qubit.accept_probability = 1.
                                         } else {  // this is the target
                                             qubit.accept_probability = 1.
                                         }
