@@ -5,7 +5,7 @@ use std::ops::{Deref, DerefMut};
 
 #[derive(Debug, Clone)]
 #[derive(PartialEq)]
-/// Z or X error of L*L qubits => array[L][L]
+/// Z or X error of L*L qubits => array\[L\]\[L\]
 pub struct ZxError(ndarray::Array2<bool>);
 pub type ZxCorrection = ZxError;
 
@@ -16,7 +16,7 @@ pub struct BatchZxError(ndarray::Array3<bool>);
 
 #[derive(Debug, Clone)]
 #[derive(PartialEq)]
-/// Z or X measurement of L*L qubits => array[L+1][L-1] (half of it has no information, only array[i][j] where i+j is odd has measurement result)
+/// Z or X measurement of L*L qubits => array\[L+1\]\[L-1\] (half of it has no information, only array\[i\]\[j\] where i+j is odd has measurement result)
 pub struct ZxMeasurement(ndarray::Array2<bool>);
 
 impl Deref for ZxError {

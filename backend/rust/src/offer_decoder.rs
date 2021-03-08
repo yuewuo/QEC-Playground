@@ -746,9 +746,9 @@ impl OfferDecoder {
         if qubit.state != NodeState::Matched { return }   // no need to break
         qubit.state = NodeState::NoError;
         qubit.offer_cache = HashMap::new();
+        let (mi, mj) = qubit.match_with.expect("matched qubit must have `match_with`");
         qubit.match_with = None;
         qubit.cost = qubit.boundary_cost;
-        let (mi, mj) = qubit.match_with.expect("matched qubit must have `match_with`");
         let matched_qubit = &mut self.qubits[mi][mj];
         matched_qubit.state = NodeState::NoError;
         matched_qubit.offer_cache = HashMap::new();

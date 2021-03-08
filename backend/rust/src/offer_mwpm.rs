@@ -32,7 +32,7 @@
 //!     - boundary_cost: f64, the cost of matching node to boundary
 //!   - direct_neighbors: Vec\<(usize, usize)\>, connection of direct neighbors (order doesn't matter)
 //!   - max_path_length: usize, the maximum length to search augmenting path (can be set to code distance for surface code)
-//!   - cost: fn(a: \<U\>, b: \<U\>) -> f64, the cost of matching two nodes
+//!   - cost_of_matching: fn(a: \<U\>, b: \<U\>) -> f64, the cost of matching two nodes
 //!   - seed: u64, the seed to Xoroshiro128StarStar random number generator, to remain reproducible result
 //!
 //! After initialization, the algorithm will instantiate multiple processing unit (PU), each corresponds to a node.
@@ -55,7 +55,7 @@ pub struct OfferAlgorithm<U> {
     #[serde(default = "default_cost_func")]
     #[serde(skip_deserializing)]
     /// cost function given two nodes' user data
-    pub cost: Box<dyn Fn(&U, &U) -> f64>,
+    pub cost_of_matching: Box<dyn Fn(&U, &U) -> f64>,
     /// statistics: message flying in a single round
     pub message_count_single_round: usize,
     /// statistics: message flying in total
@@ -92,11 +92,11 @@ pub struct ProcessingUnit<U> {
     /// cache to avoid redundant message passing (could be simply BRAM in FPGA)
     pub cache: HashMap::<usize, CachedOffer>,
     /// this is set when set flag `is_waiting_contract`, as the next hop of `Contract` or `RefuseAcceptance` message
-    pub broker_next_hop: Option<(usize, usize)>,
+    pub broker_next_hop: Option<usize>,
     /// the node is "locked" when waiting for contract, only for nodes to be matched
     pub is_waiting_contract: bool,
     /// `None` for matching with boundary 
-    pub match_with: Option<(usize, usize)>,
+    pub match_with: Option<usize>,
     /// the probability of taking one offer when it's an augmenting one, known as probabilistic accept
     pub accept_probability: f64,
 }
@@ -172,7 +172,8 @@ impl<U> OfferNode<U> {
 }
 
 impl<U> OfferAlgorithm<U> {
-    pub fn new(mut nodes: Vec<OfferNode<U>>, direct_neighbors: Vec<(usize, usize)>, max_path_length: usize, cost: impl Fn(&U, &U) -> f64 + 'static, seed: u64) -> Self {
+    pub fn new(mut nodes: Vec<OfferNode<U>>, direct_neighbors: Vec<(usize, usize)>, max_path_length: usize
+            , cost_of_matching: impl Fn(&U, &U) -> f64 + 'static, seed: u64) -> Self {
         let mut processing_units: Vec<_> = nodes.drain(..).map(|node| {
             ProcessingUnit {
                 node: node,
@@ -199,7 +200,7 @@ impl<U> OfferAlgorithm<U> {
         Self {
             processing_units: processing_units,
             max_path_length: max_path_length,
-            cost: Box::new(cost),
+            cost_of_matching: Box::new(cost_of_matching),
             message_count_single_round: 0,
             message_count: 0,
             has_potential_acceptance: false,
@@ -207,5 +208,117 @@ impl<U> OfferAlgorithm<U> {
             reproducible_error_generator_seed: seed,
             reproducible_error_generator: Xoroshiro128StarStar::seed_from_u64(seed),
         }
+    }
+
+    /// execute a single processing unit, return the message processed in this round
+    pub fn single_pu_execute(&mut self, pu_idx: usize, only_process_one_message: bool) -> usize {
+        let pu = &mut self.processing_units[pu_idx];
+        if pu.node.going_to_be_matched == false {
+            return 0;
+        }
+        // read message
+        let mut message_processed = 0;
+        let reproducible_error_generator = &mut self.reproducible_error_generator;
+        let mut random_generate = || { reproducible_error_generator.next_f64() };
+        while self.processing_units[pu_idx].mailbox.len() > 0 {
+            let pu = &mut self.processing_units[pu_idx];  // have to re-borrow it as mutable
+            let message = pu.mailbox.remove(0);  // take the first message in mailbox
+            message_processed += 1;
+            // TODO: handle message
+            // process only one message
+            if only_process_one_message {
+                break
+            }
+        }
+        message_processed
+    }
+
+    /// let single processing unit resend offer and increase the timestamp value 
+    pub fn single_pu_resend_offer(&mut self, pu_idx: usize) {
+        let pu = &mut self.processing_units[pu_idx];
+        if pu.node.going_to_be_matched == false {
+            return
+        }
+        // TODO: send offer
+    }
+
+    /// clear single processing unit's out queue by pushing them into the receiver's mailbox
+    pub fn single_pu_out_queue_send(&mut self, pu_idx: usize) {
+        // send messages from out_queue
+        let mut mut_messages = self.processing_units[pu_idx].out_queue.split_off(0);
+        for out_message in mut_messages.drain(..) {
+            self.message_count_single_round += 1;
+            self.message_count += 1;
+            let receiver = out_message.receiver;
+            let message = out_message.message;
+            self.processing_units[receiver].mailbox.push(message);
+        }
+    }
+
+    /// force breaking the matched node (debugging the algorithm by manually control the initial state)
+    pub fn force_break_matched(&mut self, pu_idx1: usize) {
+        let pu = &mut self.processing_units[pu_idx1];
+        if pu.is_waiting_contract {
+            return  // do not break pairs when waiting for contract, otherwise may cause unrecoverable states
+        }
+        let match_with = match pu.match_with {
+            Some(match_with) => match_with,
+            None => {
+                return
+            }
+        };
+        pu.match_with = None;
+        pu.cache = HashMap::new();
+        let matched_pu = &mut self.processing_units[match_with];
+        matched_pu.match_with = None;
+        matched_pu.cache = HashMap::new();
+    }
+
+    /// force matching the nodes (debugging the algorithm by manually control the initial state)
+    pub fn force_match_nodes(&mut self, pu_idx1: usize, pu_idx2: usize) {
+        if pu_idx1 == pu_idx2 { return }  // why match the same node?
+        if self.processing_units[pu_idx1].is_waiting_contract || self.processing_units[pu_idx2].is_waiting_contract {
+            return  // do not break pairs when waiting for contract, otherwise may cause unrecoverable states
+        }
+        // break them first
+        self.force_break_matched(pu_idx1);
+        self.force_break_matched(pu_idx2);
+        // connect them
+        let pu1 = &mut self.processing_units[pu_idx1];
+        pu1.match_with = Some(pu_idx2);
+        pu1.cache = HashMap::new();
+        let pu2 = &mut self.processing_units[pu_idx2];
+        pu2.match_with = Some(pu_idx1);
+        pu2.cache = HashMap::new();
+    }
+
+    /// get the matching results with the overall cost
+    pub fn matching_result(&self) -> (f64, Vec<Option<usize>>) {
+        let mut cost = 0.;
+        let cost_of_matching = |obj: &Self, idx1: usize, idx2: usize| {
+            (obj.cost_of_matching)(&obj.processing_units[idx1].node.user_data, &obj.processing_units[idx2].node.user_data)
+        };
+        let matchings = (0..self.processing_units.len()).map(|pu_idx| {
+            let pu = &self.processing_units[pu_idx];
+            if !pu.node.going_to_be_matched {
+                return None
+            }
+            if pu.is_waiting_contract || pu.match_with == None {  // view as not matched
+                cost += pu.node.boundary_cost;
+                return None
+            }
+            let match_with = pu.match_with.unwrap();
+            let matched_pu = &self.processing_units[match_with];
+            if matched_pu.node.going_to_be_matched && !matched_pu.is_waiting_contract && matched_pu.match_with == Some(pu_idx) {
+                if pu_idx < match_with {
+                    cost += cost_of_matching(self, pu_idx, match_with);
+                }
+                Some(match_with)
+            } else {  // view as not matched
+                cost += pu.node.boundary_cost;
+                None
+            }
+        }).collect();
+        (cost, matchings)
     }
 }

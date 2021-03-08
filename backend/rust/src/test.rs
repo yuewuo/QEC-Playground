@@ -761,6 +761,7 @@ fn debug_tests() {
         };
         let offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 3, cost, 0);
         // println!("{:?}", offer_algorithm);
-        println!("{}", serde_json::to_string_pretty(&offer_algorithm).unwrap());
+        // println!("{}", serde_json::to_string_pretty(&offer_algorithm).unwrap());
+        println!("{:?}", offer_algorithm.matching_result());
     }
 }
