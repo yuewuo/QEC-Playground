@@ -9,6 +9,7 @@ mod mwpm_approx;
 mod ftqec;
 mod offer_decoder;
 mod reproducible_rand;
+mod offer_mwpm;
 
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;
@@ -25,6 +26,7 @@ extern crate num_cpus;
 extern crate petgraph;
 extern crate pbr;
 extern crate rand_core;
+#[macro_use] extern crate derivative;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

@@ -17,6 +17,7 @@ use super::offer_decoder;
 use super::rand_core::SeedableRng;
 use super::rand_core::RngCore;
 use super::reproducible_rand::{Xoroshiro128StarStar, SplitMix64};
+use super::offer_mwpm::{OfferAlgorithm, OfferNode};
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -732,4 +733,34 @@ fn archived_debug_tests() {
 }
 
 fn debug_tests() {
+    {  // test offer algorithm
+        let nodes = vec![
+            OfferNode::new((0, 1), false, 1.),  // 0
+            OfferNode::new((0, 3), false, 1.),  // 1
+            OfferNode::new((2, 1), true, 1.),  // 2
+            OfferNode::new((2, 3), true, 1.),  // 3
+            OfferNode::new((4, 1), false, 1.),  // 4
+            OfferNode::new((4, 3), false, 1.),  // 5
+        ];
+        let direct_neighbors = vec![
+            (0, 1),
+            (0, 2),
+            (1, 3),
+            (2, 3),
+            (2, 4),
+            (3, 5),
+            (4, 5),
+        ];
+        let cost = |a: &(usize, usize), b: &(usize, usize)| {
+            let (i1, j1) = *a;
+            let (i2, j2) = *b;
+            let di = (i1 as isize - i2 as isize).abs();
+            let dj = (j1 as isize - j2 as isize).abs();
+            assert!(di % 2 == 0 && dj % 2 == 0, "cannot compute cost between different types of stabilizers");
+            (di + dj) as f64 / 2.
+        };
+        let offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 3, cost, 0);
+        // println!("{:?}", offer_algorithm);
+        println!("{}", serde_json::to_string_pretty(&offer_algorithm).unwrap());
+    }
 }
