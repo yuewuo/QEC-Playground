@@ -364,6 +364,7 @@ impl<U> OfferAlgorithm<U> {
                         };
                         if should_approve {
                             pu.active_timestamp += 1;  // to prevent duplicate augmenting path in the same round
+                            pu.accept_probability = 1.;
                             match pu.match_with {
                                 Some(_match_with) => {
                                     pu.match_with = None;
@@ -426,28 +427,11 @@ impl<U> OfferAlgorithm<U> {
                         }
                     }
                 },
-                Message::RefuseAcceptance{ target } => {
-                    let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
-                    assert!(pu.is_waiting_contract, "why should one receive RefuseAcceptance when it's not waiting for contract?");
-                    pu.is_waiting_contract = false;
-                    if target == pu_idx {
-                        assert!(pu.broker_next_hop == None, "why should target has next hop?");
-                    } else {
-                        assert!(pu.broker_next_hop != None, "must have next hop because this is not the target");
-                        let broker_next_hop = pu.broker_next_hop.unwrap();
-                        pu.broker_next_hop = None;
-                        pu.out_queue.push(OutMessage {
-                            receiver: broker_next_hop,  // send to next hop
-                            message: Message::RefuseAcceptance {
-                                target: target,
-                            },
-                        });
-                    }
-                },
                 Message::Contract{ previous, target } => {
                     let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
                     assert!(pu.is_waiting_contract, "why should one receive Contract when it's not waiting for contract?");
                     pu.is_waiting_contract = false;
+                    pu.accept_probability = 1.;
                     if target == pu_idx {
                         assert!(pu.broker_next_hop == None, "why should target has next hop?");
                         match pu.match_with {
@@ -476,6 +460,31 @@ impl<U> OfferAlgorithm<U> {
                             assert!(broker_next_hop == match_with, "when receiving contract, node should either match to `previous` or match to `broker_next_hop`");
                             pu.match_with = Some(previous);
                         }
+                    }
+                },
+                Message::RefuseAcceptance{ target } => {
+                    let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
+                    assert!(pu.is_waiting_contract, "why should one receive RefuseAcceptance when it's not waiting for contract?");
+                    pu.is_waiting_contract = false;
+                    if target == pu_idx {
+                        assert!(pu.broker_next_hop == None, "why should target has next hop?");
+                        if self.disable_probabilistic_accept {
+                            pu.accept_probability = 1.;  // keep always accept
+                        } else {
+                            // suppose 2 path conflicts, maximize the probability of next success
+                            // next time success = p(1-p) * 2, maximum is 0.5
+                            pu.accept_probability *= 0.5;
+                        }
+                    } else {
+                        assert!(pu.broker_next_hop != None, "must have next hop because this is not the target");
+                        let broker_next_hop = pu.broker_next_hop.unwrap();
+                        pu.broker_next_hop = None;
+                        pu.out_queue.push(OutMessage {
+                            receiver: broker_next_hop,  // send to next hop
+                            message: Message::RefuseAcceptance {
+                                target: target,
+                            },
+                        });
                     }
                 },
                 // _ => {
