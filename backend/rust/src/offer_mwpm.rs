@@ -95,6 +95,8 @@ pub struct ProcessingUnit<U> {
     pub broker_next_hop: Option<usize>,
     /// the node is "locked" when waiting for contract, only for nodes to be matched
     pub is_waiting_contract: bool,
+    /// the node may initiating augmenting loop, this is set to `true` only when `is_waiting_contract` is `true`
+    pub is_initiating_augmenting_loop: bool,
     /// `None` for matching with boundary 
     pub match_with: Option<usize>,
     /// the probability of taking one offer when it's an augmenting one, known as probabilistic accept
@@ -184,6 +186,7 @@ impl<U> OfferAlgorithm<U> {
                 cache: HashMap::new(),
                 broker_next_hop: None,
                 is_waiting_contract: false,
+                is_initiating_augmenting_loop: false,
                 match_with: None,
                 accept_probability: 1.,
             }
@@ -240,7 +243,47 @@ impl<U> OfferAlgorithm<U> {
                         // why should a brokering message sent from node other than the current matching?
                         // this is inconsistent matching state, should just ignore
                     } else if let Some(loop_index) = loop_index {
-                        // TODO: test if this is augmenting loop
+                        // only matched node can be the starting point of an augmenting loop
+                        // augmenting loop must originate from matched node and must have the current active timestamp
+                        if loop_index == 0 && path.len() >= 4 && timestamp == pu.active_timestamp && !pu.is_waiting_contract && pu.match_with.is_some() {
+                            assert_eq!(path.len() % 2, 0, "why should a loop having odd number of elements if the starting node is matched?");
+                            assert_eq!(pu.is_initiating_augmenting_loop, false);
+                            let mut is_the_smallest_node = true;
+                            // augmenting loop must be established by the smallest node, to avoid conflicts
+                            for i in 1..path.len() {
+                                if path[i] < pu_idx {
+                                    is_the_smallest_node = false;
+                                    break
+                                }
+                            }
+                            if is_the_smallest_node {
+                                let previous = *path.last().unwrap();
+                                let augmenting_cost = cost_to_last_broker - pu.node.boundary_cost + self.cost_of_matching_idx(pu_idx, previous);
+                                if augmenting_cost < 0. {
+                                    // println!("found augmenting loop path: {:?}, augmenting_cost = {}", path, augmenting_cost);
+                                    self.has_potential_acceptance = true;
+                                    let accept_this_offer = self.reproducible_error_generator.next_f64() < pu.accept_probability;
+                                    // println!("has_potential_acceptance from {}, path: {:?}, with probability {}, take it: {}"
+                                    //     , pu_idx, path, pu.accept_probability, accept_this_offer);
+                                    if accept_this_offer {
+                                        let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
+                                        pu.is_waiting_contract = true;
+                                        pu.is_initiating_augmenting_loop = true;
+                                        let mut path = path.clone();
+                                        path.push(pu_idx);  // push myself at the end, as the final target
+                                        pu.out_queue.push(OutMessage {
+                                            receiver: previous,  // send back to the last broker
+                                            message: Message::AcceptOffer {
+                                                timestamp: timestamp,
+                                                path: path,
+                                                brokering: false,
+                                                target: pu_idx,
+                                            },
+                                        });
+                                    }
+                                }
+                            }
+                        }
                     } else {
                         // the total cost should minus the matching cost if brokering, or should add the matching cost if not brokering
                         let cost = cost_to_last_broker + ( if brokering { -1.0 } else { 1.0 } ) * self.cost_of_matching_idx(pu_idx, broker);
@@ -354,25 +397,9 @@ impl<U> OfferAlgorithm<U> {
                     assert!(should_be_myself == pu_idx, "why should I even receive this message?");
                     let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
                     if source == pu_idx {  // I'm the source
-                        let should_approve = timestamp == pu.active_timestamp && !pu.is_waiting_contract && match pu.match_with {
-                            Some(match_with) => {
-                                brokering && next == match_with
-                            },
-                            None => {
-                                !brokering
-                            },
-                        };
-                        if should_approve {
+                        if pu.is_waiting_contract && pu.is_initiating_augmenting_loop && target == pu_idx {  // always approve augmenting loop
                             pu.active_timestamp += 1;  // to prevent duplicate augmenting path in the same round
-                            pu.accept_probability = 1.;
-                            match pu.match_with {
-                                Some(_match_with) => {
-                                    pu.match_with = None;
-                                },
-                                None => {
-                                    pu.match_with = Some(next);
-                                },
-                            }
+                            // do not change others attributes because the message will eventually reach this node again, as Contract
                             pu.out_queue.push(OutMessage {
                                 receiver: next,  // send back to the last broker
                                 message: Message::Contract {
@@ -380,13 +407,41 @@ impl<U> OfferAlgorithm<U> {
                                     target: target,
                                 },
                             });
-                        } else {
-                            pu.out_queue.push(OutMessage {
-                                receiver: next,  // send back to the last broker
-                                message: Message::RefuseAcceptance {
-                                    target: target,
+                        } else {  // possible augmenting path
+                            let should_approve = timestamp == pu.active_timestamp && match pu.match_with {
+                                Some(match_with) => {
+                                    brokering && next == match_with
                                 },
-                            });
+                                None => {
+                                    !brokering
+                                },
+                            };
+                            if should_approve {
+                                pu.active_timestamp += 1;  // to prevent duplicate augmenting path in the same round
+                                pu.accept_probability = 1.;
+                                match pu.match_with {
+                                    Some(_match_with) => {
+                                        pu.match_with = None;
+                                    },
+                                    None => {
+                                        pu.match_with = Some(next);
+                                    },
+                                }
+                                pu.out_queue.push(OutMessage {
+                                    receiver: next,  // send back to the last broker
+                                    message: Message::Contract {
+                                        previous: pu_idx,
+                                        target: target,
+                                    },
+                                });
+                            } else {
+                                pu.out_queue.push(OutMessage {
+                                    receiver: next,  // send back to the last broker
+                                    message: Message::RefuseAcceptance {
+                                        target: target,
+                                    },
+                                });
+                            }
                         }
                     } else {
                         assert!(path.len() >= 3, "path should at least contain the source, myself and next");
@@ -436,14 +491,19 @@ impl<U> OfferAlgorithm<U> {
                         assert!(pu.broker_next_hop == None, "why should target has next hop?");
                         match pu.match_with {
                             Some(_match_with) => {
-                                pu.match_with = None;
+                                if pu.is_initiating_augmenting_loop {
+                                    pu.is_initiating_augmenting_loop = false;
+                                    pu.match_with = Some(previous);
+                                } else {
+                                    pu.match_with = None;
+                                }
                             },
                             None => {
                                 pu.match_with = Some(previous);
                             },
                         }
                     } else {
-                        assert!(pu.broker_next_hop != None, "must have next hop because this is not the target");
+                        assert!(pu.broker_next_hop.is_some(), "must have next hop because this is not the target");
                         let broker_next_hop = pu.broker_next_hop.unwrap();
                         pu.broker_next_hop = None;
                         pu.out_queue.push(OutMessage {
@@ -467,7 +527,7 @@ impl<U> OfferAlgorithm<U> {
                     assert!(pu.is_waiting_contract, "why should one receive RefuseAcceptance when it's not waiting for contract?");
                     pu.is_waiting_contract = false;
                     if target == pu_idx {
-                        assert!(pu.broker_next_hop == None, "why should target has next hop?");
+                        assert!(pu.broker_next_hop.is_none(), "why should target has next hop?");
                         if self.disable_probabilistic_accept {
                             pu.accept_probability = 1.;  // keep always accept
                         } else {
@@ -476,7 +536,7 @@ impl<U> OfferAlgorithm<U> {
                             pu.accept_probability *= 0.5;
                         }
                     } else {
-                        assert!(pu.broker_next_hop != None, "must have next hop because this is not the target");
+                        assert!(pu.broker_next_hop.is_some(), "must have next hop because this is not the target");
                         let broker_next_hop = pu.broker_next_hop.unwrap();
                         pu.broker_next_hop = None;
                         pu.out_queue.push(OutMessage {
@@ -817,6 +877,24 @@ mod tests {
         let matching_result_edges = offer_algorithm.matching_result_edges();
         println!("matching_result_edges: {:?}", matching_result_edges);
         assert_eq!(matching_result_edges, (3.0, vec![((6, &(2, 5)), (10, &(4, 5)))]));
+    }
+
+    #[test]
+    fn offer_algorithm_test_case_5() {
+        let d = 5;
+        let (mut nodes, position_to_index, direct_neighbors) = make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
+        nodes[position_to_index[&(2, 3)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 5)]].going_to_be_matched = true;
+        nodes[position_to_index[&(6, 3)]].going_to_be_matched = true;
+        nodes[position_to_index[&(6, 5)]].going_to_be_matched = true;
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        offer_algorithm.force_match_nodes(position_to_index[&(2, 3)], position_to_index[&(6, 3)]);
+        offer_algorithm.force_match_nodes(position_to_index[&(2, 5)], position_to_index[&(6, 5)]);
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(5, 100);
+        println!("cycles: {:?}", cycles);
+        let matching_result_edges = offer_algorithm.matching_result_edges();
+        println!("matching_result_edges: {:?}", matching_result_edges);
+        assert_eq!(matching_result_edges, (2.0, vec![((5, &(2, 3)), (6, &(2, 5))), ((13, &(6, 3)), (14, &(6, 5)))]));
     }
 
 }
