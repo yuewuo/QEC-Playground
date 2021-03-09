@@ -90,7 +90,7 @@ pub struct ProcessingUnit<U> {
     /// only for nodes to be matched
     pub active_timestamp: usize,
     /// cache to avoid redundant message passing (could be simply BRAM in FPGA)
-    pub cache: HashMap::<usize, CachedOffer>,
+    pub cache: HashMap<usize, CachedOffer>,
     /// this is set when set flag `is_waiting_contract`, as the next hop of `Contract` or `RefuseAcceptance` message
     pub broker_next_hop: Option<usize>,
     /// the node is "locked" when waiting for contract, only for nodes to be matched
@@ -116,30 +116,30 @@ pub enum Message {
     MatchOffer {
         /// newer timestamp will overwrite older one in cache, also node will never accept offer with older timestamp than the active timestamp
         timestamp: usize,
-        /// the source of offer, only those going-to-be-matched nodes will be the source
-        source: usize,
-        /// all the nodes in the path except for source
-        brokers: Vec::<usize>,
+        /// all the nodes in the path, source is at index 0
+        path: Vec::<usize>,
         /// sending between matched pairs, `true` corresponds to `BrokeredOffer` in older code
         brokering: bool,
+        /// cost until last broker
+        cost_to_last_broker: f64,
     },
     AcceptOffer {
         /// copy the timestamp of `MatchOffer`
         timestamp: usize,
-        /// copy the source of offer, and `AcceptOffer` will end at the source
-        source: usize,
-        /// all the nodes in the path except for source and target
-        brokers: Vec::<usize>,
-        /// the one who take the offer
-        target: usize,
+        /// all the nodes in the path, source is at index 0
+        path: Vec::<usize>,
         /// sending between matched pairs, `true` corresponds to `BrokeredAcceptOffer` in older code
         brokering: bool,
+        /// target
+        target: usize,
     },
     RefuseAcceptance {
         /// the one who take the offer
         target: usize,
     },
     Contract {
+        /// sender of this message
+        previous: usize,
         /// the one who take the offer
         target: usize,
     },
@@ -210,21 +210,267 @@ impl<U> OfferAlgorithm<U> {
         }
     }
 
+    /// compute cost of matching given indices
+    pub fn cost_of_matching_idx(&self, idx1: usize, idx2: usize) -> f64 {
+        (self.cost_of_matching)(&self.processing_units[idx1].node.user_data, &self.processing_units[idx2].node.user_data)
+    }
+
     /// execute a single processing unit, return the message processed in this round
     pub fn single_pu_execute(&mut self, pu_idx: usize, only_process_one_message: bool) -> usize {
-        let pu = &mut self.processing_units[pu_idx];
-        if pu.node.going_to_be_matched == false {
-            return 0;
-        }
         // read message
         let mut message_processed = 0;
-        let reproducible_error_generator = &mut self.reproducible_error_generator;
-        let mut random_generate = || { reproducible_error_generator.next_f64() };
         while self.processing_units[pu_idx].mailbox.len() > 0 {
-            let pu = &mut self.processing_units[pu_idx];  // have to re-borrow it as mutable
-            let message = pu.mailbox.remove(0);  // take the first message in mailbox
+            let message = self.processing_units[pu_idx].mailbox.remove(0);  // take the first message in mailbox
+            let pu = &self.processing_units[pu_idx];  // re-borrow it as immutable, so that `self.cost_of_matching_idx` can be called
             message_processed += 1;
-            // TODO: handle message
+            match message {
+                Message::MatchOffer{ timestamp, path, brokering, cost_to_last_broker } => {
+                    assert!(path.len() > 0, "path should at least contain the source");
+                    let source = *path.first().unwrap();
+                    let broker = *path.last().unwrap();
+                    if brokering && pu.match_with != Some(broker) {
+                        // why should a brokering message sent from node other than the current matching?
+                        // this is inconsistent matching state, should just ignore
+                    } else {
+                        // the total cost should minus the matching cost if brokering, or should add the matching cost if not brokering
+                        let cost = cost_to_last_broker + ( if brokering { -1.0 } else { 1.0 } ) * self.cost_of_matching_idx(pu_idx, broker);
+                        let cached_offer = pu.cache.get(&source);
+                        let not_cached_this_offer = match cached_offer {
+                            Some(cached_offer) => {
+                                cached_offer.timestamp < timestamp || cost < cached_offer.cost
+                            },
+                            None => true,
+                        };
+                        let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
+                        // cache this offer if not cached
+                        if not_cached_this_offer {
+                            pu.cache.insert(source, CachedOffer {
+                                timestamp: timestamp,
+                                cost: cost,
+                            });
+                        }
+                        // TODO: check for loops in the path
+                        let pu = &self.processing_units[pu_idx];  // re-borrow it as immutable, so that `self.cost_of_matching_idx` can be called
+                        // may broker this offer
+                        if let Some(match_with) = pu.match_with {
+                            // when cost < cached_offer.cost, the farther node will not broker this offer backward
+                            // and also, this makes an infinite ping-pong between the matched pairs impossible, which is harmful to the system
+                            if !brokering && not_cached_this_offer && path.len() < self.max_path_length && pu.node.going_to_be_matched {
+                                let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
+                                let mut path = path.clone();
+                                path.push(pu_idx);  // add myself to the path
+                                pu.out_queue.push(OutMessage {
+                                    receiver: match_with,
+                                    message: Message::MatchOffer {
+                                        timestamp: timestamp,
+                                        path: vec![pu_idx],
+                                        brokering: true,
+                                        cost_to_last_broker: cost,
+                                    },
+                                });
+                            }
+                        }
+                        // propagate this offer if cache is updated
+                        let pu = &self.processing_units[pu_idx];  // re-borrow it as immutable, so that `self.cost_of_matching_idx` can be called
+                        if not_cached_this_offer {
+                            let mut new_path = path.clone();
+                            let mut new_cost_to_last_broker = cost_to_last_broker;
+                            let mut new_broker = broker;
+                            if brokering {
+                                new_path.push(pu_idx);
+                                new_cost_to_last_broker -= self.cost_of_matching_idx(pu_idx, broker);
+                                new_broker = pu_idx;
+                            }
+                            let direct_neighbors = pu.direct_neighbors.clone();
+                            for receiver in direct_neighbors.iter() {
+                                if self.cost_of_matching_idx(pu_idx, new_broker) < self.cost_of_matching_idx(*receiver, new_broker)
+                                        && new_path.len() <= self.max_path_length {
+                                    let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
+                                    pu.out_queue.push(OutMessage {
+                                        receiver: *receiver,
+                                        message: Message::MatchOffer {
+                                            timestamp: timestamp,
+                                            path: new_path.clone(),
+                                            brokering: false,
+                                            cost_to_last_broker: new_cost_to_last_broker,
+                                        },
+                                    });
+                                }
+                            }
+                        }
+                        // take this offer if it is an augmenting path
+                        let pu = &self.processing_units[pu_idx];  // re-borrow it as immutable, so that `self.cost_of_matching_idx` can be called
+                        if pu.node.going_to_be_matched && !pu.is_waiting_contract && source < pu_idx {
+                            let augmenting_cost = match pu.match_with {
+                                Some(_match_with) => {
+                                    if brokering {  // only accept offer if this is the last node
+                                        cost + pu.node.boundary_cost
+                                    } else {
+                                        f64::MAX  // never accept offer if matched peer is not in the path
+                                    }
+                                },
+                                None => {
+                                    cost - pu.node.boundary_cost
+                                },
+                            };
+                            if augmenting_cost < 0. {  // this is an augmenting path
+                                self.has_potential_acceptance = true;
+                                let accept_this_offer = self.reproducible_error_generator.next_f64() < pu.accept_probability;
+                                if accept_this_offer {
+                                    let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
+                                    pu.is_waiting_contract = true;
+                                    let mut path = path.clone();
+                                    path.push(pu_idx);  // push myself at the end, as the final target
+                                    pu.out_queue.push(OutMessage {
+                                        receiver: broker,  // send back to the last broker
+                                        message: Message::AcceptOffer {
+                                            timestamp: timestamp,
+                                            path: path,
+                                            brokering: brokering,
+                                            target: pu_idx,
+                                        },
+                                    });
+                                }
+                            }
+                        }
+                    }
+                },
+                Message::AcceptOffer{ timestamp, path, brokering, target } => {
+                    assert!(path.len() >= 2, "path should at least contain the source and the next node along the path");
+                    let source = *path.first().unwrap();
+                    let next = *path.last().unwrap();
+                    let should_be_myself = path[path.len() - 2];
+                    assert!(should_be_myself == pu_idx, "why should I even receive this message?");
+                    let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
+                    if source == pu_idx {  // I'm the source
+                        let should_approve = timestamp == pu.active_timestamp && !pu.is_waiting_contract && match pu.match_with {
+                            Some(match_with) => {
+                                brokering && next == match_with
+                            },
+                            None => {
+                                !brokering
+                            },
+                        };
+                        if should_approve {
+                            pu.active_timestamp += 1;  // to prevent duplicate augmenting path in the same round
+                            match pu.match_with {
+                                Some(_match_with) => {
+                                    pu.match_with = None;
+                                },
+                                None => {
+                                    pu.match_with = Some(next);
+                                },
+                            }
+                            pu.out_queue.push(OutMessage {
+                                receiver: next,  // send back to the last broker
+                                message: Message::Contract {
+                                    previous: pu_idx,
+                                    target: target,
+                                },
+                            });
+                        } else {
+                            pu.out_queue.push(OutMessage {
+                                receiver: next,  // send back to the last broker
+                                message: Message::RefuseAcceptance {
+                                    target: target,
+                                },
+                            });
+                        }
+                    } else {
+                        assert!(path.len() >= 3, "path should at least contain the source, myself and next");
+                        let previous = path[path.len() - 3];
+                        let should_approve = !pu.is_waiting_contract && match pu.match_with {
+                            Some(match_with) => {
+                                if brokering {
+                                    next == match_with
+                                } else {
+                                    previous == match_with
+                                }
+                            },
+                            None => {
+                                false
+                            },
+                        };
+                        if should_approve {
+                            pu.is_waiting_contract = true;
+                            pu.broker_next_hop = Some(next);
+                            let mut new_path = path.clone();
+                            new_path.pop();
+                            pu.out_queue.push(OutMessage {
+                                receiver: previous,  // send back to the last broker
+                                message: Message::AcceptOffer {
+                                    timestamp: timestamp,
+                                    path: new_path,
+                                    brokering: !brokering,
+                                    target: target,
+                                },
+                            });
+                        } else {
+                            pu.out_queue.push(OutMessage {
+                                receiver: next,  // send back to the last broker
+                                message: Message::RefuseAcceptance {
+                                    target: target,
+                                },
+                            });
+                        }
+                    }
+                },
+                Message::RefuseAcceptance{ target } => {
+                    let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
+                    assert!(pu.is_waiting_contract, "why should one receive RefuseAcceptance when it's not waiting for contract?");
+                    pu.is_waiting_contract = false;
+                    if target == pu_idx {
+                        assert!(pu.broker_next_hop == None, "why should target has next hop?");
+                    } else {
+                        assert!(pu.broker_next_hop != None, "must have next hop because this is not the target");
+                        let broker_next_hop = pu.broker_next_hop.unwrap();
+                        pu.broker_next_hop = None;
+                        pu.out_queue.push(OutMessage {
+                            receiver: broker_next_hop,  // send to next hop
+                            message: Message::RefuseAcceptance {
+                                target: target,
+                            },
+                        });
+                    }
+                },
+                Message::Contract{ previous, target } => {
+                    let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
+                    assert!(pu.is_waiting_contract, "why should one receive Contract when it's not waiting for contract?");
+                    pu.is_waiting_contract = false;
+                    if target == pu_idx {
+                        assert!(pu.broker_next_hop == None, "why should target has next hop?");
+                        match pu.match_with {
+                            Some(_match_with) => {
+                                pu.match_with = None;
+                            },
+                            None => {
+                                pu.match_with = Some(previous);
+                            },
+                        }
+                    } else {
+                        assert!(pu.broker_next_hop != None, "must have next hop because this is not the target");
+                        let broker_next_hop = pu.broker_next_hop.unwrap();
+                        pu.broker_next_hop = None;
+                        pu.out_queue.push(OutMessage {
+                            receiver: broker_next_hop,  // send to next hop
+                            message: Message::Contract {
+                                previous: pu_idx,
+                                target: target,
+                            },
+                        });
+                        let match_with = pu.match_with.expect("all nodes in the path should be matched pairs");
+                        if previous == match_with {
+                            pu.match_with = Some(broker_next_hop);
+                        } else {
+                            assert!(broker_next_hop == match_with, "when receiving contract, node should either match to `previous` or match to `broker_next_hop`");
+                            pu.match_with = Some(previous);
+                        }
+                    }
+                },
+                // _ => {
+                //     panic!("drop unknown message: {:?}", message);
+                // },
+            }
             // process only one message
             if only_process_one_message {
                 break
@@ -233,13 +479,42 @@ impl<U> OfferAlgorithm<U> {
         message_processed
     }
 
-    /// let single processing unit resend offer and increase the timestamp value 
+    /// let single processing unit resend offer and increase the timestamp value
     pub fn single_pu_resend_offer(&mut self, pu_idx: usize) {
         let pu = &mut self.processing_units[pu_idx];
         if pu.node.going_to_be_matched == false {
             return
         }
-        // TODO: send offer
+        if pu.is_waiting_contract {
+            return
+        }
+        pu.active_timestamp += 1;  // invalidate previous offer
+        match pu.match_with {
+            Some(match_with) => {
+                pu.out_queue.push(OutMessage {
+                    receiver: match_with,
+                    message: Message::MatchOffer {
+                        timestamp: pu.active_timestamp,
+                        path: vec![pu_idx],
+                        brokering: true,
+                        cost_to_last_broker: pu.node.boundary_cost,  // if break the match, then the cost of boundary is introduced
+                    },
+                });
+            },
+            None => {
+                for receiver in pu.direct_neighbors.iter() {
+                    pu.out_queue.push(OutMessage {
+                        receiver: *receiver,
+                        message: Message::MatchOffer {
+                            timestamp: pu.active_timestamp,
+                            path: vec![pu_idx],
+                            brokering: false,
+                            cost_to_last_broker: -pu.node.boundary_cost,  // if match, then the cost of boundary is reduced
+                        },
+                    });
+                }
+            },
+        }
     }
 
     /// clear single processing unit's out queue by pushing them into the receiver's mailbox
@@ -256,6 +531,7 @@ impl<U> OfferAlgorithm<U> {
     }
 
     /// force breaking the matched node (debugging the algorithm by manually control the initial state)
+    #[allow(dead_code)]  // not used in normal cases where error pattern never changes
     pub fn force_break_matched(&mut self, pu_idx1: usize) {
         let pu = &mut self.processing_units[pu_idx1];
         if pu.is_waiting_contract {
@@ -275,6 +551,7 @@ impl<U> OfferAlgorithm<U> {
     }
 
     /// force matching the nodes (debugging the algorithm by manually control the initial state)
+    #[allow(dead_code)]  // not used in normal cases where error pattern never changes
     pub fn force_match_nodes(&mut self, pu_idx1: usize, pu_idx2: usize) {
         if pu_idx1 == pu_idx2 { return }  // why match the same node?
         if self.processing_units[pu_idx1].is_waiting_contract || self.processing_units[pu_idx2].is_waiting_contract {
@@ -295,9 +572,6 @@ impl<U> OfferAlgorithm<U> {
     /// get the matching results with the overall cost
     pub fn matching_result(&self) -> (f64, Vec<Option<usize>>) {
         let mut cost = 0.;
-        let cost_of_matching = |obj: &Self, idx1: usize, idx2: usize| {
-            (obj.cost_of_matching)(&obj.processing_units[idx1].node.user_data, &obj.processing_units[idx2].node.user_data)
-        };
         let matchings = (0..self.processing_units.len()).map(|pu_idx| {
             let pu = &self.processing_units[pu_idx];
             if !pu.node.going_to_be_matched {
@@ -311,7 +585,7 @@ impl<U> OfferAlgorithm<U> {
             let matched_pu = &self.processing_units[match_with];
             if matched_pu.node.going_to_be_matched && !matched_pu.is_waiting_contract && matched_pu.match_with == Some(pu_idx) {
                 if pu_idx < match_with {
-                    cost += cost_of_matching(self, pu_idx, match_with);
+                    cost += self.cost_of_matching_idx(pu_idx, match_with);
                 }
                 Some(match_with)
             } else {  // view as not matched
@@ -321,4 +595,115 @@ impl<U> OfferAlgorithm<U> {
         }).collect();
         (cost, matchings)
     }
+
+    /// get readable matching results
+    pub fn matching_result_edges(&self) -> (f64, Vec<((usize, &U), (usize, &U))>) {
+        let mut cost = 0.;
+        let mut matchings = Vec::new();
+        for pu_idx in 0..self.processing_units.len() {
+            let pu = &self.processing_units[pu_idx];
+            if !pu.node.going_to_be_matched {
+                continue
+            }
+            if pu.is_waiting_contract || pu.match_with == None {  // view as not matched
+                cost += pu.node.boundary_cost;
+                continue
+            }
+            let match_with = pu.match_with.unwrap();
+            let matched_pu = &self.processing_units[match_with];
+            if matched_pu.node.going_to_be_matched && !matched_pu.is_waiting_contract && matched_pu.match_with == Some(pu_idx) {
+                if pu_idx < match_with {
+                    cost += self.cost_of_matching_idx(pu_idx, match_with);
+                    matchings.push(((pu_idx, &pu.node.user_data), (match_with, &matched_pu.node.user_data)))
+                }
+            } else {  // view as not matched
+                cost += pu.node.boundary_cost;
+            }
+        }
+        (cost, matchings)
+    }
+
+    /// resend offer once and then run to stable, with maximum cycles as bound
+    pub fn pseudo_parallel_resend_offer_run_to_stable(&mut self, max_cycles: usize) -> usize {
+        let length = self.processing_units.len();
+        let mut cycles = 0;
+        // resend offer
+        for i in 0..length {
+            self.single_pu_resend_offer(i);
+            self.single_pu_out_queue_send(i);
+        }
+        let mut message_processed = 1;
+        // loop until no message flying
+        while message_processed > 0 && cycles < max_cycles {
+            message_processed = 0;
+            for i in 0..length {
+                message_processed += self.single_pu_execute(i, true);
+            }
+            for i in 0..length {
+                self.single_pu_out_queue_send(i);
+            }
+            cycles += 1;
+            // println!("message_processed: {}", message_processed);
+        }
+        // println!("cycles: {}", cycles);
+        cycles
+    }
+
+}
+
+pub fn make_standard_planar_code_2d_nodes_only_x_stabilizers(d: usize) -> (Vec<OfferNode<(usize, usize)>>, HashMap<(usize, usize), usize>, Vec<(usize, usize)>) {
+    let mut nodes = Vec::new();
+    let mut position_to_index = HashMap::new();
+    for i in (0..=2*d-2).step_by(2) {
+        for j in (1..=2*d-3).step_by(2) {
+            position_to_index.insert((i, j), nodes.len());
+            nodes.push(OfferNode::new((i, j), false, std::cmp::min((j + 1) / 2, d - (j + 1) / 2) as f64));
+        }
+    }
+    let mut direct_neighbors = Vec::new();
+    for i in (0..=2*d-2).step_by(2) {
+        for j in (1..=2*d-3).step_by(2) {
+            for (di, dj) in [(2, 0), (0, 2)].iter() {
+                let ni = i + di;
+                let nj = j + dj;
+                if ni <= 2*d-2 && nj <= 2*d-3 {
+                    direct_neighbors.push((position_to_index[&(i, j)], position_to_index[&(ni, nj)]));
+                }
+            }
+        }
+    }
+    (nodes, position_to_index, direct_neighbors)
+}
+
+pub fn simple_cost_standard_planar_code_2d_nodes(a: &(usize, usize), b: &(usize, usize)) -> f64 {
+    let (i1, j1) = *a;
+    let (i2, j2) = *b;
+    let di = (i1 as isize - i2 as isize).abs();
+    let dj = (j1 as isize - j2 as isize).abs();
+    assert!(di % 2 == 0 && dj % 2 == 0, "cannot compute cost between different types of stabilizers");
+    (di + dj) as f64 / 2.
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn offer_algorithm_test_case_1() {
+        let d = 3;
+        let (mut nodes, position_to_index, direct_neighbors) = make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
+        assert_eq!(nodes.len(), 6, "d=3 should have 6 nodes");
+        assert_eq!(direct_neighbors.len(), 7, "d=3 should have 7 direct neighbor connections");
+        nodes[position_to_index[&(2, 1)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 3)]].going_to_be_matched = true;
+        println!("nodes: {:?}", nodes);  // run `cargo test -- --nocapture` to view these outputs
+        println!("direct_neighbors: {:?}", direct_neighbors);
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let cycles = offer_algorithm.pseudo_parallel_resend_offer_run_to_stable(usize::MAX);
+        println!("cycles: {:?}", cycles);
+        let matching_result_edges = offer_algorithm.matching_result_edges();
+        println!("matching_result_edges: {:?}", matching_result_edges);
+        assert_eq!(matching_result_edges, (1.0, vec![((2, &(2, 1)), (3, &(2, 3)))]));
+    }
+
 }

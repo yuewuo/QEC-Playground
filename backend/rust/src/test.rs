@@ -730,10 +730,7 @@ fn archived_debug_tests() {
             println!("{} {} {}", rng.next_f64(), rng.get_s0_i64(), rng.get_s1_i64());
         }
     }
-}
-
-fn debug_tests() {
-    {  // test offer algorithm
+    {  // offer algorithm test case #1
         let nodes = vec![
             OfferNode::new((0, 1), false, 1.),  // 0
             OfferNode::new((0, 3), false, 1.),  // 1
@@ -759,9 +756,16 @@ fn debug_tests() {
             assert!(di % 2 == 0 && dj % 2 == 0, "cannot compute cost between different types of stabilizers");
             (di + dj) as f64 / 2.
         };
-        let offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 3, cost, 0);
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 3, cost, 0);
         // println!("{:?}", offer_algorithm);
         // println!("{}", serde_json::to_string_pretty(&offer_algorithm).unwrap());
         println!("{:?}", offer_algorithm.matching_result());
+        println!("{:?}", offer_algorithm.matching_result_edges());
+        let cycles = offer_algorithm.pseudo_parallel_resend_offer_run_to_stable(usize::MAX);
+        println!("cycles: {}", cycles);
+        println!("{:?}", offer_algorithm.matching_result_edges());
     }
+}
+
+fn debug_tests() {
 }
