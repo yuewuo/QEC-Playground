@@ -228,9 +228,19 @@ impl<U> OfferAlgorithm<U> {
                     assert!(path.len() > 0, "path should at least contain the source");
                     let source = *path.first().unwrap();
                     let broker = *path.last().unwrap();
+                    // check for loops in the path
+                    let mut loop_index = None;
+                    for i in 0..path.len() {
+                        if pu_idx == path[i] {
+                            loop_index = Some(i);
+                            break
+                        }
+                    }
                     if brokering && pu.match_with != Some(broker) {
                         // why should a brokering message sent from node other than the current matching?
                         // this is inconsistent matching state, should just ignore
+                    } else if let Some(loop_index) = loop_index {
+                        // TODO: test if this is augmenting loop
                     } else {
                         // the total cost should minus the matching cost if brokering, or should add the matching cost if not brokering
                         let cost = cost_to_last_broker + ( if brokering { -1.0 } else { 1.0 } ) * self.cost_of_matching_idx(pu_idx, broker);
@@ -249,7 +259,6 @@ impl<U> OfferAlgorithm<U> {
                                 cost: cost,
                             });
                         }
-                        // TODO: check for loops in the path
                         let pu = &self.processing_units[pu_idx];  // re-borrow it as immutable, so that `self.cost_of_matching_idx` can be called
                         // may broker this offer
                         if let Some(match_with) = pu.match_with {
@@ -263,7 +272,7 @@ impl<U> OfferAlgorithm<U> {
                                     receiver: match_with,
                                     message: Message::MatchOffer {
                                         timestamp: timestamp,
-                                        path: vec![pu_idx],
+                                        path: path,
                                         brokering: true,
                                         cost_to_last_broker: cost,
                                     },
@@ -316,6 +325,8 @@ impl<U> OfferAlgorithm<U> {
                             if augmenting_cost < 0. {  // this is an augmenting path
                                 self.has_potential_acceptance = true;
                                 let accept_this_offer = self.reproducible_error_generator.next_f64() < pu.accept_probability;
+                                // println!("has_potential_acceptance from {}, path: {:?}, with probability {}, take it: {}"
+                                //     , pu_idx, path, pu.accept_probability, accept_this_offer);
                                 if accept_this_offer {
                                     let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
                                     pu.is_waiting_contract = true;
@@ -526,6 +537,11 @@ impl<U> OfferAlgorithm<U> {
             self.message_count += 1;
             let receiver = out_message.receiver;
             let message = out_message.message;
+            // {  // debug printing
+            //     if receiver == 10 || pu_idx == 10 {
+            //         println!("{} -> {}: {:?}", pu_idx, receiver, message);
+            //     }
+            // }
             self.processing_units[receiver].mailbox.push(message);
         }
     }
@@ -645,8 +661,42 @@ impl<U> OfferAlgorithm<U> {
             cycles += 1;
             // println!("message_processed: {}", message_processed);
         }
-        // println!("cycles: {}", cycles);
+        println!("resend round end with cycles: {}", cycles);
         cycles
+    }
+
+    /// resend offer multiple times and then run to stable, with maximum cycles as bound
+    pub fn pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(&mut self, max_resend: usize, max_cycles: usize) -> Result<usize, usize> {
+        let mut match_result_changed = true;
+        let mut cycles = 0;
+        // loop until match pattern doesn't change
+        let mut resend_rounds = 0;
+        while match_result_changed && resend_rounds < max_resend && cycles < max_cycles {
+            let last_match_result = self.matching_result();
+            match_result_changed = false;
+            self.has_potential_acceptance = false;
+            cycles += self.pseudo_parallel_resend_offer_run_to_stable(max_cycles - cycles);
+            if self.disable_probabilistic_accept {  // use match pattern changed to judge stop point
+                if self.matching_result() != last_match_result {
+                    match_result_changed = true;
+                }
+            } else {  // use `has_potential_acceptance` to judge stop point, because match pattern may not change in a single round
+                if self.has_potential_acceptance {
+                    match_result_changed = true;
+                }
+            }
+            resend_rounds += 1;
+        }
+        if resend_rounds < max_resend {
+            Ok(cycles)
+        } else {
+            Err(cycles)
+        }
+    }
+
+    /// run with infinite time and cycles
+    pub fn pseudo_parallel_execute_to_stable(&mut self) -> usize {
+        self.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(usize::MAX, usize::MAX).unwrap()
     }
 
 }
@@ -688,6 +738,8 @@ pub fn simple_cost_standard_planar_code_2d_nodes(a: &(usize, usize), b: &(usize,
 mod tests {
     use super::*;
 
+    // use `cargo test offer_algorithm_test_case_1 -- --nocapture` to run specific test
+
     #[test]
     fn offer_algorithm_test_case_1() {
         let d = 3;
@@ -699,11 +751,63 @@ mod tests {
         println!("nodes: {:?}", nodes);  // run `cargo test -- --nocapture` to view these outputs
         println!("direct_neighbors: {:?}", direct_neighbors);
         let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
-        let cycles = offer_algorithm.pseudo_parallel_resend_offer_run_to_stable(usize::MAX);
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
         println!("cycles: {:?}", cycles);
         let matching_result_edges = offer_algorithm.matching_result_edges();
         println!("matching_result_edges: {:?}", matching_result_edges);
         assert_eq!(matching_result_edges, (1.0, vec![((2, &(2, 1)), (3, &(2, 3)))]));
+    }
+    
+    #[test]
+    fn offer_algorithm_test_case_2() {
+        let d = 5;
+        let (mut nodes, position_to_index, direct_neighbors) = make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
+        nodes[position_to_index[&(2, 3)]].going_to_be_matched = true;
+        nodes[position_to_index[&(4, 3)]].going_to_be_matched = true;
+        nodes[position_to_index[&(4, 7)]].going_to_be_matched = true;
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        offer_algorithm.force_match_nodes(position_to_index[&(4, 3)], position_to_index[&(4, 7)]);
+        println!("error matching_result_edges: {:?}", offer_algorithm.matching_result_edges());
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
+        println!("cycles: {:?}", cycles);
+        let matching_result_edges = offer_algorithm.matching_result_edges();
+        println!("matching_result_edges: {:?}", matching_result_edges);
+        assert_eq!(matching_result_edges, (2.0, vec![((5, &(2, 3)), (9, &(4, 3)))]));
+    }
+
+    #[test]
+    fn offer_algorithm_test_case_3() {
+        let d = 5;
+        let (mut nodes, position_to_index, direct_neighbors) = make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
+        nodes[position_to_index[&(2, 1)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 3)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 5)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 7)]].going_to_be_matched = true;
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        offer_algorithm.force_match_nodes(position_to_index[&(2, 3)], position_to_index[&(2, 5)]);
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
+        println!("cycles: {:?}", cycles);
+        let matching_result_edges = offer_algorithm.matching_result_edges();
+        println!("matching_result_edges: {:?}", matching_result_edges);
+        assert_eq!(matching_result_edges, (2.0, vec![((4, &(2, 1)), (5, &(2, 3))), ((6, &(2, 5)), (7, &(2, 7)))]));
+    }
+
+    #[test]
+    fn offer_algorithm_test_case_4() {
+        let d = 5;
+        let (mut nodes, position_to_index, direct_neighbors) = make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
+        nodes[position_to_index[&(2, 1)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 5)]].going_to_be_matched = true;
+        nodes[position_to_index[&(4, 5)]].going_to_be_matched = true;
+        nodes[position_to_index[&(6, 7)]].going_to_be_matched = true;
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        offer_algorithm.force_match_nodes(position_to_index[&(2, 1)], position_to_index[&(2, 5)]);
+        offer_algorithm.force_match_nodes(position_to_index[&(4, 5)], position_to_index[&(6, 7)]);
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(5, 100);
+        println!("cycles: {:?}", cycles);
+        let matching_result_edges = offer_algorithm.matching_result_edges();
+        println!("matching_result_edges: {:?}", matching_result_edges);
+        assert_eq!(matching_result_edges, (3.0, vec![((6, &(2, 5)), (10, &(4, 5)))]));
     }
 
 }
