@@ -18,6 +18,7 @@ use super::ftqec;
 use super::pbr::ProgressBar;
 use super::types::QubitType;
 use super::offer_decoder;
+use super::offer_mwpm;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -126,6 +127,23 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let disable_probabilistic_accept = matches.is_present("disable_probabilistic_accept");
             let repeat_experiment_each_error = value_t!(matches, "repeat_experiment_each_error", usize).unwrap_or(1);
             offer_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, max_resend, max_cycles
+                , disable_probabilistic_accept, repeat_experiment_each_error);
+        }
+        ("offer_algorithm_standard_planar_benchmark", Some(matches)) => {
+            let Ls = value_t!(matches, "Ls", String).expect("required");
+            let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
+            let ps = value_t!(matches, "ps", String).expect("required");
+            let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
+            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
+            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
+            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
+            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
+            let only_count_logical_x = matches.is_present("only_count_logical_x");
+            let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(usize::MAX);
+            let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(usize::MAX);
+            let disable_probabilistic_accept = matches.is_present("disable_probabilistic_accept");
+            let repeat_experiment_each_error = value_t!(matches, "repeat_experiment_each_error", usize).unwrap_or(1);
+            offer_algorithm_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, max_resend, max_cycles
                 , disable_probabilistic_accept, repeat_experiment_each_error);
         }
         _ => unreachable!()
@@ -850,7 +868,7 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
     }
-    println!("format: <p> <T> <total_rounds> <qec_failed> <error_rate> <average_cycles>");
+    println!("format: <p> <T> <total_rounds> <qec_failed> <error_rate> <average_cycles> <max_cycles>");
     for L in Ls.iter() {
         for p in ps {
             let p = *p;
@@ -986,3 +1004,153 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
     }
 }
 
+
+/**
+default example:
+`cargo run --release -- tool offer_algorithm_standard_planar_benchmark [5] [1e-3]`
+it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
+**/
+fn offer_algorithm_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
+    , only_count_logical_x: bool, max_resend: usize, max_cycles: usize, disable_probabilistic_accept: bool, repeat_experiment_each_error: usize) {
+    let mut parallel = parallel;
+    if parallel == 0 {
+        parallel = num_cpus::get() - 1;
+    }
+    println!("format: <p> <T> <total_rounds> <qec_failed> <error_rate> <average_cycles> <max_cycles>");
+    for L in Ls.iter() {
+        for p in ps {
+            let p = *p;
+            assert!(3. * p < 0.5, "why should errors (X, Z, Y) happening more than half of a time?");
+            let L = *L;
+            let total_rounds = Arc::new(Mutex::new(0));
+            let qec_failed = Arc::new(Mutex::new(0));
+            let total_cycles = Arc::new(Mutex::new(0));
+            let max_cycles_used = Arc::new(Mutex::new(0));
+            let mut handlers = Vec::new();
+            let mini_batch_count = 1 + max_N / mini_batch;
+            let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
+            pb.set(0);
+            for _i in 0..parallel {
+                let total_rounds = Arc::clone(&total_rounds);
+                let qec_failed = Arc::clone(&qec_failed);
+                let total_cycles = Arc::clone(&total_cycles);
+                let max_cycles_used = Arc::clone(&max_cycles_used);
+                let mini_batch = mini_batch;
+                let disable_probabilistic_accept = disable_probabilistic_accept;
+                let L = L;
+                let p = p;
+                handlers.push(std::thread::spawn(move || {
+                    let mut decoder = offer_decoder::create_standard_planar_code_offer_decoder(L);
+                    decoder.disable_probabilistic_accept = disable_probabilistic_accept;
+                    let mut rng = thread_rng();
+                    let mut current_total_rounds = {
+                        *total_rounds.lock().unwrap()
+                    };
+                    let mut current_qec_failed = {
+                        *qec_failed.lock().unwrap()
+                    };
+                    let mut current_max_cycles_used = 0;
+                    while current_total_rounds < max_N && current_qec_failed < min_error_cases {
+                        let mut mini_qec_failed = 0;
+                        let mut mini_total_cycles = 0;
+                        for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
+                            decoder.reinitialize();
+                            let error_count = decoder.generate_depolarizing_random_errors(p, || rng.gen::<f64>());
+                            if error_count == 0 {
+                                continue
+                            }
+                            // repeat experiment multiple times for each error pattern
+                            let error_pattern = decoder.error_pattern();
+                            let mut succeed_count = 0;
+                            let mut valid_count = 0;
+                            let mut min_cycles_repeated = usize::MAX;
+                            for k in 0..repeat_experiment_each_error {
+                                decoder.load_error_pattern(&error_pattern);
+                                decoder.error_changed();
+                                let mut within_cycles = false;
+                                let ((_cost_x, cycles_x), (_cost_z, cycles_z)) = offer_mwpm::run_given_offer_decoder_instance(&mut decoder, max_resend, max_cycles);
+                                let cycles = match (cycles_x, cycles_z) {
+                                    (Ok(cycles_x), Ok(cycles_z)) => {
+                                        within_cycles = true;
+                                        std::cmp::max(cycles_x, cycles_z)
+                                    }
+                                    (Ok(cycles_x), Err(cycles_z)) => std::cmp::max(cycles_x, cycles_z),
+                                    (Err(cycles_x), Ok(cycles_z)) => std::cmp::max(cycles_x, cycles_z),
+                                    (Err(cycles_x), Err(cycles_z)) => std::cmp::max(cycles_x, cycles_z),
+                                };
+                                if k == 0 || within_cycles {
+                                    valid_count += 1;
+                                    if cycles < min_cycles_repeated {
+                                        min_cycles_repeated = cycles;
+                                    }
+                                    if only_count_logical_x {
+                                        if !decoder.has_logical_error(ErrorType::X) {
+                                            succeed_count += 1;
+                                        }
+                                    } else {  // check for both logical X and logical Z error
+                                        if !decoder.has_logical_error(ErrorType::Y) {
+                                            succeed_count += 1;
+                                        }
+                                    }
+                                }
+                            }
+                            mini_total_cycles += min_cycles_repeated;
+                            if min_cycles_repeated > current_max_cycles_used {
+                                current_max_cycles_used = min_cycles_repeated;
+                            }
+                            if succeed_count * 2 <= valid_count {  // max vote
+                                mini_qec_failed += 1;
+                            }
+                        }
+                        // sync data from outside
+                        current_total_rounds = {
+                            let mut total_rounds = total_rounds.lock().unwrap();
+                            *total_rounds += mini_batch;
+                            *total_rounds
+                        };
+                        current_qec_failed = {
+                            let mut qec_failed = qec_failed.lock().unwrap();
+                            *qec_failed += mini_qec_failed;
+                            *qec_failed
+                        };
+                        {
+                            let mut total_cycles = total_cycles.lock().unwrap();
+                            *total_cycles += mini_total_cycles;
+                        };
+                        {
+                            let mut max_cycles_used = max_cycles_used.lock().unwrap();
+                            if current_max_cycles_used > *max_cycles_used {
+                                *max_cycles_used = current_max_cycles_used;
+                            }
+                        }
+                    }
+                }));
+            }
+            loop {
+                let total_rounds = *total_rounds.lock().unwrap();
+                if total_rounds >= max_N { break }
+                let qec_failed = *qec_failed.lock().unwrap();
+                if qec_failed >= min_error_cases { break }
+                let error_rate = qec_failed as f64 / total_rounds as f64;
+                let total_cycles = *total_cycles.lock().unwrap();
+                let average_cycles = total_cycles as f64 / total_rounds as f64;
+                let max_cycles_used = *max_cycles_used.lock().unwrap();
+                pb.message(format!("{} {} {} {} {} {} {} ", p, L, total_rounds, qec_failed, error_rate, average_cycles, max_cycles_used).as_str());
+                let progress = total_rounds / mini_batch;
+                pb.set(progress as u64);
+                std::thread::sleep(std::time::Duration::from_millis(200));
+            }
+            pb.finish();
+            for handler in handlers {
+                handler.join().unwrap();
+            }
+            let total_rounds = *total_rounds.lock().unwrap();
+            let qec_failed = *qec_failed.lock().unwrap();
+            let error_rate = qec_failed as f64 / total_rounds as f64;
+            let total_cycles = *total_cycles.lock().unwrap();
+            let average_cycles = total_cycles as f64 / total_rounds as f64;
+            let max_cycles_used = *max_cycles_used.lock().unwrap();
+            println!("{} {} {} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate, average_cycles, max_cycles_used);
+        }
+    }
+}

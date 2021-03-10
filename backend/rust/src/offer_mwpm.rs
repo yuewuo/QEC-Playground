@@ -44,6 +44,7 @@ use std::collections::HashMap;
 use super::rand_core::SeedableRng;
 use super::reproducible_rand::{Xoroshiro128StarStar};
 use super::serde::{Serialize, Deserialize};
+use super::offer_decoder;
 
 #[derive(Derivative, Serialize, Deserialize)]
 #[derivative(Debug)]
@@ -787,18 +788,59 @@ impl<U: std::fmt::Debug> OfferAlgorithm<U> {
 
 }
 
-pub fn make_standard_planar_code_2d_nodes_only_x_stabilizers(d: usize) -> (Vec<OfferNode<(usize, usize)>>, HashMap<(usize, usize), usize>, Vec<(usize, usize)>) {
-    let mut nodes = Vec::new();
-    let mut position_to_index = HashMap::new();
+/// the same as `pseudo_parallel_execute_to_stable_with_max_resend_max_cycles`, return cost of X, cycles of X, cost of Z, cycles of Z
+pub fn run_given_offer_decoder_instance(decoder: &mut offer_decoder::OfferDecoder, max_resend: usize, max_cycles: usize) ->
+        ((f64, Result<usize, usize>), (f64, Result<usize, usize>)) {
+    let d = decoder.d;
+    decoder.error_changed();
+    // decode X errors
+    let (mut nodes, position_to_index, direct_neighbors) = make_standard_planar_code_2d_nodes(d, true);
     for i in (0..=2*d-2).step_by(2) {
         for j in (1..=2*d-3).step_by(2) {
+            if decoder.qubits[i][j].measurement {
+                nodes[position_to_index[&(i, j)]].going_to_be_matched = true;
+            }
+        }
+    }
+    let mut offer_algorithm_x = OfferAlgorithm::new(nodes, direct_neighbors, 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
+    let cycles_x = offer_algorithm_x.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(max_resend, max_cycles);
+    let (cost_x, edges_x) = offer_algorithm_x.matching_result_edges();
+    for ((_, &(i1, j1)), (_, &(i2, j2))) in edges_x.iter() {
+        decoder.qubits[i1][j1].match_with = Some((i2, j2));
+        decoder.qubits[i2][j2].match_with = Some((i1, j1));
+    }
+    // decode Z errors
+    let (mut nodes, position_to_index, direct_neighbors) = make_standard_planar_code_2d_nodes(d, false);
+    for i in (1..=2*d-3).step_by(2) {
+        for j in (0..=2*d-2).step_by(2) {
+            if decoder.qubits[i][j].measurement {
+                nodes[position_to_index[&(i, j)]].going_to_be_matched = true;
+            }
+        }
+    }
+    let mut offer_algorithm_z = OfferAlgorithm::new(nodes, direct_neighbors, 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
+    let cycles_z = offer_algorithm_z.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(max_resend, max_cycles);
+    let (cost_z, edges_z) = offer_algorithm_z.matching_result_edges();
+    for ((_, &(i1, j1)), (_, &(i2, j2))) in edges_z.iter() {
+        decoder.qubits[i1][j1].match_with = Some((i2, j2));
+        decoder.qubits[i2][j2].match_with = Some((i1, j1));
+    }
+    ((cost_x, cycles_x), (cost_z, cycles_z))
+}
+
+/// create nodes for standard planar code (2d, perfect measurement condition). return only X stabilizers or only Z stabilizers
+pub fn make_standard_planar_code_2d_nodes(d: usize, is_x_stabilizers: bool) -> (Vec<OfferNode<(usize, usize)>>, HashMap<(usize, usize), usize>, Vec<(usize, usize)>) {
+    let mut nodes = Vec::new();
+    let mut position_to_index = HashMap::new();
+    for i in (if is_x_stabilizers { 0..=2*d-2 } else { 1..=2*d-3 }).step_by(2) {
+        for j in (if is_x_stabilizers { 1..=2*d-3 } else { 0..=2*d-2 }).step_by(2) {
             position_to_index.insert((i, j), nodes.len());
             nodes.push(OfferNode::new((i, j), false, std::cmp::min((j + 1) / 2, d - (j + 1) / 2) as f64));
         }
     }
     let mut direct_neighbors = Vec::new();
-    for i in (0..=2*d-2).step_by(2) {
-        for j in (1..=2*d-3).step_by(2) {
+    for i in (if is_x_stabilizers { 0..=2*d-2 } else { 1..=2*d-3 }).step_by(2) {
+        for j in (if is_x_stabilizers { 1..=2*d-3 } else { 0..=2*d-2 }).step_by(2) {
             for (di, dj) in [(2, 0), (0, 2)].iter() {
                 let ni = i + di;
                 let nj = j + dj;
@@ -826,6 +868,10 @@ mod tests {
 
     // use `cargo test offer_algorithm_test_case_1 -- --nocapture` to run specific test
 
+    fn make_standard_planar_code_2d_nodes_only_x_stabilizers(d: usize) -> (Vec<OfferNode<(usize, usize)>>, HashMap<(usize, usize), usize>, Vec<(usize, usize)>) {
+        make_standard_planar_code_2d_nodes(d, true)
+    }
+
     #[test]
     fn offer_algorithm_test_case_1() {
         let d = 3;
@@ -836,7 +882,7 @@ mod tests {
         nodes[position_to_index[&(2, 3)]].going_to_be_matched = true;
         println!("nodes: {:?}", nodes);  // run `cargo test -- --nocapture` to view these outputs
         println!("direct_neighbors: {:?}", direct_neighbors);
-        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
         let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
         println!("cycles: {:?}", cycles);
         let matching_result_edges = offer_algorithm.matching_result_edges();
@@ -851,7 +897,7 @@ mod tests {
         nodes[position_to_index[&(2, 3)]].going_to_be_matched = true;
         nodes[position_to_index[&(4, 3)]].going_to_be_matched = true;
         nodes[position_to_index[&(4, 7)]].going_to_be_matched = true;
-        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
         offer_algorithm.force_match_nodes(position_to_index[&(4, 3)], position_to_index[&(4, 7)]);
         println!("error matching_result_edges: {:?}", offer_algorithm.matching_result_edges());
         let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
@@ -869,7 +915,7 @@ mod tests {
         nodes[position_to_index[&(2, 3)]].going_to_be_matched = true;
         nodes[position_to_index[&(2, 5)]].going_to_be_matched = true;
         nodes[position_to_index[&(2, 7)]].going_to_be_matched = true;
-        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
         offer_algorithm.force_match_nodes(position_to_index[&(2, 3)], position_to_index[&(2, 5)]);
         let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
         println!("cycles: {:?}", cycles);
@@ -886,7 +932,7 @@ mod tests {
         nodes[position_to_index[&(2, 5)]].going_to_be_matched = true;
         nodes[position_to_index[&(4, 5)]].going_to_be_matched = true;
         nodes[position_to_index[&(6, 7)]].going_to_be_matched = true;
-        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
         offer_algorithm.force_match_nodes(position_to_index[&(2, 1)], position_to_index[&(2, 5)]);
         offer_algorithm.force_match_nodes(position_to_index[&(4, 5)], position_to_index[&(6, 7)]);
         let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
@@ -904,7 +950,7 @@ mod tests {
         nodes[position_to_index[&(2, 5)]].going_to_be_matched = true;
         nodes[position_to_index[&(6, 3)]].going_to_be_matched = true;
         nodes[position_to_index[&(6, 5)]].going_to_be_matched = true;
-        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
         offer_algorithm.force_match_nodes(position_to_index[&(2, 3)], position_to_index[&(6, 3)]);
         offer_algorithm.force_match_nodes(position_to_index[&(2, 5)], position_to_index[&(6, 5)]);
         let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
@@ -922,7 +968,7 @@ mod tests {
         nodes[position_to_index[&(0, 5)]].going_to_be_matched = true;
         nodes[position_to_index[&(0, 7)]].going_to_be_matched = true;
         nodes[position_to_index[&(2, 3)]].going_to_be_matched = true;
-        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
         let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
         println!("cycles: {:?}", cycles);
         let matching_result_edges = offer_algorithm.matching_result_edges();
@@ -939,7 +985,7 @@ mod tests {
         nodes[position_to_index[&(2, 7)]].going_to_be_matched = true;
         nodes[position_to_index[&(4, 3)]].going_to_be_matched = true;
         nodes[position_to_index[&(4, 7)]].going_to_be_matched = true;
-        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
         offer_algorithm.force_match_nodes(position_to_index[&(2, 3)], position_to_index[&(2, 5)]);
         offer_algorithm.force_match_nodes(position_to_index[&(2, 7)], position_to_index[&(4, 7)]);
         let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
@@ -958,7 +1004,7 @@ mod tests {
         nodes[position_to_index[&(0, 5)]].going_to_be_matched = true;
         nodes[position_to_index[&(2, 3)]].going_to_be_matched = true;
         nodes[position_to_index[&(2, 5)]].going_to_be_matched = true;
-        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
         let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
         println!("cycles: {:?}", cycles);
         let matching_result_edges = offer_algorithm.matching_result_edges();
@@ -977,12 +1023,31 @@ mod tests {
         nodes[position_to_index[&(4, 5)]].going_to_be_matched = true;
         nodes[position_to_index[&(4, 7)]].going_to_be_matched = true;
         nodes[position_to_index[&(6, 5)]].going_to_be_matched = true;
-        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
         let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
         println!("cycles: {:?}", cycles);
         let matching_result_edges = offer_algorithm.matching_result_edges();
         println!("matching_result_edges: {:?}", matching_result_edges);
         assert_eq!(matching_result_edges, (4.0, vec![((0, &(0, 1)), (4, &(2, 1))), ((1, &(0, 3)), (2, &(0, 5))), ((10, &(4, 5)), (14, &(6, 5)))]));
+    }
+
+    #[test]
+    fn offer_algorithm_test_case_10() {
+        let d = 5;
+        let (mut nodes, position_to_index, direct_neighbors) = make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
+        nodes[position_to_index[&(2, 1)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 3)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 5)]].going_to_be_matched = true;
+        nodes[position_to_index[&(4, 1)]].going_to_be_matched = true;
+        nodes[position_to_index[&(4, 5)]].going_to_be_matched = true;
+        nodes[position_to_index[&(4, 7)]].going_to_be_matched = true;
+        nodes[position_to_index[&(6, 5)]].going_to_be_matched = true;
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
+        println!("cycles: {:?}", cycles);
+        let matching_result_edges = offer_algorithm.matching_result_edges();
+        println!("matching_result_edges: {:?}", matching_result_edges);
+        assert_eq!(matching_result_edges, (4.0, vec![((4, &(2, 1)), (8, &(4, 1))), ((5, &(2, 3)), (6, &(2, 5))), ((10, &(4, 5)), (14, &(6, 5)))]));
     }
 
 }

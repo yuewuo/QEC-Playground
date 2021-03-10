@@ -341,23 +341,8 @@ fn offer_algorithm_study(d: usize, p: f64, count: usize, max_resend: usize, max_
         if print_error_pattern_to_find_infinite_loop {
             println!("{:?}", decoder.error_pattern());  // to find infinite looping case
         }
-        // create offer algorithm instance to run
-        let (mut nodes, position_to_index, direct_neighbors) = offer_mwpm::make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
-        for i in (0..=2*d-2).step_by(2) {
-            for j in (1..=2*d-3).step_by(2) {
-                if decoder.qubits[i][j].measurement {
-                    nodes[position_to_index[&(i, j)]].going_to_be_matched = true;
-                }
-            }
-        }
-        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, offer_mwpm::simple_cost_standard_planar_code_2d_nodes, 0);
-        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(max_resend, max_cycles);
-        // copy the state back to offer decoder
-        let (cost, edges) = offer_algorithm.matching_result_edges();
-        for ((_, &(i1, j1)), (_, &(i2, j2))) in edges.iter() {
-            decoder.qubits[i1][j1].match_with = Some((i2, j2));
-            decoder.qubits[i2][j2].match_with = Some((i1, j1));
-        }
+        // run using offer algorithm instead of old offer decoder
+        let ((cost, cycles), (_cost_z, _cycles_z)) = offer_mwpm::run_given_offer_decoder_instance(&mut decoder, max_resend, max_cycles);
         match cycles {
             Ok(cycles) => {
                 if decoder.has_logical_error(ErrorType::X) == true {
