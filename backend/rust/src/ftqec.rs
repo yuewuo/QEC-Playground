@@ -868,6 +868,10 @@ impl PlanarCodeModel {
         Correction::from(&self.decode_MWPM_sparse_correction(measurement))
     }
     pub fn decode_MWPM_sparse_correction(&self, measurement: &Measurement) -> SparseCorrection {
+        self.decode_MWPM_sparse_correction_with_edge_matchings(measurement).0
+    }
+    pub fn decode_MWPM_sparse_correction_with_edge_matchings(&self, measurement: &Measurement) ->
+            (SparseCorrection, Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
         // sanity check
         let shape = measurement.shape();
         let width = 2 * self.L - 1;
@@ -926,25 +930,30 @@ impl PlanarCodeModel {
             //     println!("matching: {:?}", matching);
             // }
             let mut correction = self.generate_default_sparse_correction();
+            let mut edge_matchings = Vec::new();
+            let mut boundary_matchings = Vec::new();
             for i in 0..m_len {
                 let j = matching[i];
                 let a = &to_be_matched[i];
                 if j < i {  // only add correction if j < i, so that the same correction is not applied twice
                     // println!("match peer {:?} {:?}", to_be_matched[i], to_be_matched[j]);
-                    correction.combine(&self.get_correction_two_nodes(a, &to_be_matched[j]));
+                    let b = &to_be_matched[j];
+                    correction.combine(&self.get_correction_two_nodes(a, b));
+                    edge_matchings.push(((a.t, a.i, a.j), (b.t, b.i, b.j)));
                 } else if j >= m_len {  // matched with boundary
                     // println!("match boundary {:?}", to_be_matched[i]);
                     let node = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist");
                     correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
+                    boundary_matchings.push((a.t, a.i, a.j));
                 }
             }
             // if to_be_matched.len() > 2 {
             //     println!("correction: {:?}", correction);
             // }
-            correction
+            (correction, edge_matchings, boundary_matchings)
         } else {
             // no measurement errors found
-            self.generate_default_sparse_correction()
+            (self.generate_default_sparse_correction(), Vec::new(), Vec::new())
         }
     }
 

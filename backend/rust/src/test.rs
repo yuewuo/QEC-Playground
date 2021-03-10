@@ -18,6 +18,7 @@ use super::rand_core::SeedableRng;
 use super::rand_core::RngCore;
 use super::reproducible_rand::{Xoroshiro128StarStar, SplitMix64};
 use super::offer_mwpm::{OfferAlgorithm, OfferNode};
+use super::offer_mwpm;
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -50,6 +51,15 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
             let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(usize::MAX);
             let print_error_pattern_to_find_infinite_loop = matches.is_present("print_error_pattern_to_find_infinite_loop");
             offer_decoder_study(d, p, count, max_resend, max_cycles, print_error_pattern_to_find_infinite_loop);
+        }
+        ("offer_algorithm_study", Some(matches)) => {
+            let d = value_t!(matches, "d", usize).expect("required");
+            let p = value_t!(matches, "p", f64).expect("required");
+            let count = value_t!(matches, "count", usize).unwrap_or(1);
+            let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(usize::MAX);
+            let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(usize::MAX);
+            let print_error_pattern_to_find_infinite_loop = matches.is_present("print_error_pattern_to_find_infinite_loop");
+            offer_algorithm_study(d, p, count, max_resend, max_cycles, print_error_pattern_to_find_infinite_loop);
         }
         ("all", Some(_)) => {  // remember to add new test functions here
             save_load();
@@ -279,6 +289,106 @@ fn offer_decoder_study(d: usize, p: f64, count: usize, max_resend: usize, max_cy
                     };
                     if !mwpm_has_logical_error {  // output the case
                         println!("[offer decoder fails but MWPM decoder succeeds]");
+                        println!("{}", json!({
+                            "cycles": cycles,
+                            "error": decoder.error_pattern(),
+                            "seed": reproducible_error_generator_seed,
+                        }).to_string());
+                        cases += 1;
+                    }
+                }
+            },
+            Err(cycles) => {
+                println!("[exceed max resend]");
+                println!("{}", json!({
+                    "cycles": cycles,
+                    "error": decoder.error_pattern(),
+                }).to_string());
+                cases += 1;
+            }
+        }
+    }
+}
+
+fn offer_algorithm_study(d: usize, p: f64, count: usize, max_resend: usize, max_cycles: usize, print_error_pattern_to_find_infinite_loop: bool) {
+    let mut cases = 0;
+    let mut rng = thread_rng();
+    // create offer decoder instance
+    let mut decoder = offer_decoder::create_standard_planar_code_offer_decoder(d);
+    // create MWPM decoder instance
+    let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(0, d);  // single layer planar code
+    model.set_depolarizing_error_with_perfect_initialization(p);
+    model.iterate_snapshot_mut(|t, _i, _j, node| {  // the same error model as in `decoder`
+        if t == 6 && node.qubit_type == QubitType::Data {
+            node.error_rate_x = p;
+            node.error_rate_z = p;
+            node.error_rate_y = 0.;
+        }
+    });
+    model.build_graph();
+    model.optimize_correction_pattern();
+    model.build_exhausted_path_autotune();
+    while cases < count {
+        decoder.reinitialize();
+        decoder.use_reproducible_error_generator = true;
+        let reproducible_error_generator_seed = rng.gen::<u64>();
+        decoder.reproducible_error_generator_set_seed(reproducible_error_generator_seed);
+        let error_count = decoder.generate_only_x_random_errors(p, || rng.gen::<f64>());
+        if error_count == 0 {
+            continue
+        }
+        decoder.error_changed();
+        if print_error_pattern_to_find_infinite_loop {
+            println!("{:?}", decoder.error_pattern());  // to find infinite looping case
+        }
+        // create offer algorithm instance to run
+        let (mut nodes, position_to_index, direct_neighbors) = offer_mwpm::make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
+        for i in (0..=2*d-2).step_by(2) {
+            for j in (1..=2*d-3).step_by(2) {
+                if decoder.qubits[i][j].measurement {
+                    nodes[position_to_index[&(i, j)]].going_to_be_matched = true;
+                }
+            }
+        }
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, offer_mwpm::simple_cost_standard_planar_code_2d_nodes, 0);
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(max_resend, max_cycles);
+        // copy the state back to offer decoder
+        let (cost, edges) = offer_algorithm.matching_result_edges();
+        for ((_, &(i1, j1)), (_, &(i2, j2))) in edges.iter() {
+            decoder.qubits[i1][j1].match_with = Some((i2, j2));
+            decoder.qubits[i2][j2].match_with = Some((i1, j1));
+        }
+        match cycles {
+            Ok(cycles) => {
+                if decoder.has_logical_error(ErrorType::X) == true {
+                    // judge if MWPM generates no logical error, if so, output the case
+                    let (mwpm_has_logical_error, mwpm_cost) = {
+                        // copy the error pattern into MWPM decoder
+                        model.iterate_snapshot_mut(|t, i, j, node| {
+                            if t == 6 && node.qubit_type == QubitType::Data {
+                                node.error = decoder.qubits[i][j].error.clone();
+                            }
+                        });
+                        model.propagate_error();
+                        let measurement = model.generate_measurement();
+                        let (sparse_correction, edge_matchings, boundary_matchings) = model.decode_MWPM_sparse_correction_with_edge_matchings(&measurement);
+                        let mwpm_cost = {
+                            let mut mwpm_cost = 0.;
+                            for ((_t1, i1, j1), (_t2, i2, j2)) in edge_matchings.iter() {
+                                mwpm_cost += offer_mwpm::simple_cost_standard_planar_code_2d_nodes(&(*i1, *j1), &(*i2, *j2));
+                            }
+                            for (_t, _i, j) in boundary_matchings.iter() {
+                                mwpm_cost += std::cmp::min((j + 1) / 2, d - (j + 1) / 2) as f64;
+                            }
+                            // for other error nodes
+                            mwpm_cost
+                        };
+                        let correction = ftqec::Correction::from(&sparse_correction);
+                        let validation_ret = model.validate_correction_on_boundary(&correction);
+                        (validation_ret.is_err(), mwpm_cost)
+                    };
+                    if !mwpm_has_logical_error {  // output the case
+                        println!("[offer algorithm (cost = {}) fails but MWPM decoder (cost = {}) succeeds]", cost, mwpm_cost);
                         println!("{}", json!({
                             "cycles": cycles,
                             "error": decoder.error_pattern(),
@@ -761,7 +871,7 @@ fn archived_debug_tests() {
         // println!("{}", serde_json::to_string_pretty(&offer_algorithm).unwrap());
         println!("{:?}", offer_algorithm.matching_result());
         println!("{:?}", offer_algorithm.matching_result_edges());
-        let cycles = offer_algorithm.pseudo_parallel_resend_offer_run_to_stable(usize::MAX);
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
         println!("cycles: {}", cycles);
         println!("{:?}", offer_algorithm.matching_result_edges());
     }

@@ -113,7 +113,7 @@ pub struct OfferNode<U> {
     pub boundary_cost: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Message {
     MatchOffer {
         /// newer timestamp will overwrite older one in cache, also node will never accept offer with older timestamp than the active timestamp
@@ -173,7 +173,7 @@ impl<U> OfferNode<U> {
     }
 }
 
-impl<U> OfferAlgorithm<U> {
+impl<U: std::fmt::Debug> OfferAlgorithm<U> {
     pub fn new(mut nodes: Vec<OfferNode<U>>, direct_neighbors: Vec<(usize, usize)>, max_path_length: usize
             , cost_of_matching: impl Fn(&U, &U) -> f64 + 'static, seed: u64) -> Self {
         let mut processing_units: Vec<_> = nodes.drain(..).map(|node| {
@@ -226,8 +226,13 @@ impl<U> OfferAlgorithm<U> {
             let message = self.processing_units[pu_idx].mailbox.remove(0);  // take the first message in mailbox
             let pu = &self.processing_units[pu_idx];  // re-borrow it as immutable, so that `self.cost_of_matching_idx` can be called
             message_processed += 1;
+            // for debugging
+            // let debug_execute_detail = pu_idx == 7 && message == Message::MatchOffer { timestamp: 1, path: vec![9, 5, 6], brokering: false, cost_to_last_broker: -2.0 };
+            // if debug_execute_detail { // debug print
+            //     println!("debug_execute_detail enabled for message: {:?}", message);
+            // }
             match message {
-                Message::MatchOffer{ timestamp, path, brokering, cost_to_last_broker } => {
+                Message::MatchOffer{ timestamp, ref path, brokering, cost_to_last_broker } => {
                     assert!(path.len() > 0, "path should at least contain the source");
                     let source = *path.first().unwrap();
                     let broker = *path.last().unwrap();
@@ -245,8 +250,8 @@ impl<U> OfferAlgorithm<U> {
                     } else if let Some(loop_index) = loop_index {
                         // only matched node can be the starting point of an augmenting loop
                         // augmenting loop must originate from matched node and must have the current active timestamp
-                        if loop_index == 0 && path.len() >= 4 && timestamp == pu.active_timestamp && !pu.is_waiting_contract && pu.match_with.is_some() {
-                            assert_eq!(path.len() % 2, 0, "why should a loop having odd number of elements if the starting node is matched?");
+                        if loop_index == 0 && path.len() >= 4 && timestamp == pu.active_timestamp && !pu.is_waiting_contract && pu.match_with.is_some()
+                                && path.len() % 2 == 0 {  // odd cardinality loop can occur because of inconsistent states in the middle nodes, just ignore it
                             assert_eq!(pu.is_initiating_augmenting_loop, false);
                             let mut is_the_smallest_node = true;
                             // augmenting loop must be established by the smallest node, to avoid conflicts
@@ -294,9 +299,18 @@ impl<U> OfferAlgorithm<U> {
                             },
                             None => true,
                         };
+                        let should_cache_this_offer = !brokering && not_cached_this_offer;  // only cache offer if it's not brokering
+                        let should_broadcast_this_offer = brokering || not_cached_this_offer;  // broadcast offer when not cached or it's brokering
+                        // if debug_execute_detail { // debug print
+                        //     println!("should_cache_this_offer: {}", should_cache_this_offer);
+                        //     println!("cached_offer: {:?}", cached_offer);
+                        // }
                         let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
                         // cache this offer if not cached
-                        if not_cached_this_offer {
+                        if should_cache_this_offer {
+                            // if pu_idx == 7 && cost == -1.0 && timestamp == 1 { // debug print
+                            //     println!("cache inserted by {:?}", message);
+                            // }
                             pu.cache.insert(source, CachedOffer {
                                 timestamp: timestamp,
                                 cost: cost,
@@ -307,7 +321,7 @@ impl<U> OfferAlgorithm<U> {
                         if let Some(match_with) = pu.match_with {
                             // when cost < cached_offer.cost, the farther node will not broker this offer backward
                             // and also, this makes an infinite ping-pong between the matched pairs impossible, which is harmful to the system
-                            if !brokering && not_cached_this_offer && path.len() < self.max_path_length && pu.node.going_to_be_matched {
+                            if !brokering && should_cache_this_offer && path.len() < self.max_path_length && pu.node.going_to_be_matched {
                                 let pu = &mut self.processing_units[pu_idx];  // re-borrow it as mutable to change the internal state
                                 let mut path = path.clone();
                                 path.push(pu_idx);  // add myself to the path
@@ -324,7 +338,7 @@ impl<U> OfferAlgorithm<U> {
                         }
                         // propagate this offer if cache is updated
                         let pu = &self.processing_units[pu_idx];  // re-borrow it as immutable, so that `self.cost_of_matching_idx` can be called
-                        if not_cached_this_offer {
+                        if should_broadcast_this_offer {
                             let mut new_path = path.clone();
                             let mut new_cost_to_last_broker = cost_to_last_broker;
                             let mut new_broker = broker;
@@ -389,7 +403,7 @@ impl<U> OfferAlgorithm<U> {
                         }
                     }
                 },
-                Message::AcceptOffer{ timestamp, path, brokering, target } => {
+                Message::AcceptOffer{ timestamp, ref path, brokering, target } => {
                     assert!(path.len() >= 2, "path should at least contain the source and the next node along the path");
                     let source = *path.first().unwrap();
                     let next = *path.last().unwrap();
@@ -408,7 +422,7 @@ impl<U> OfferAlgorithm<U> {
                                 },
                             });
                         } else {  // possible augmenting path
-                            let should_approve = timestamp == pu.active_timestamp && match pu.match_with {
+                            let should_approve = !pu.is_waiting_contract && timestamp == pu.active_timestamp && match pu.match_with {
                                 Some(match_with) => {
                                     brokering && next == match_with
                                 },
@@ -528,6 +542,7 @@ impl<U> OfferAlgorithm<U> {
                     pu.is_waiting_contract = false;
                     if target == pu_idx {
                         assert!(pu.broker_next_hop.is_none(), "why should target has next hop?");
+                        pu.is_initiating_augmenting_loop = false;
                         if self.disable_probabilistic_accept {
                             pu.accept_probability = 1.;  // keep always accept
                         } else {
@@ -607,7 +622,7 @@ impl<U> OfferAlgorithm<U> {
             let receiver = out_message.receiver;
             let message = out_message.message;
             // {  // debug printing
-            //     if receiver == 10 || pu_idx == 10 {
+            //     if receiver == 7 || pu_idx == 7 {
             //         println!("{} -> {}: {:?}", pu_idx, receiver, message);
             //     }
             // }
@@ -730,7 +745,7 @@ impl<U> OfferAlgorithm<U> {
             cycles += 1;
             // println!("message_processed: {}", message_processed);
         }
-        println!("resend round end with cycles: {}", cycles);
+        // println!("resend round end with cycles: {}", cycles);
         cycles
     }
 
@@ -755,6 +770,8 @@ impl<U> OfferAlgorithm<U> {
                 }
             }
             resend_rounds += 1;
+            // println!("matching_result_edges after one round: {:?}", self.matching_result_edges());
+            // println!("self: {:?}", self);
         }
         if resend_rounds < max_resend {
             Ok(cycles)
@@ -872,7 +889,7 @@ mod tests {
         let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
         offer_algorithm.force_match_nodes(position_to_index[&(2, 1)], position_to_index[&(2, 5)]);
         offer_algorithm.force_match_nodes(position_to_index[&(4, 5)], position_to_index[&(6, 7)]);
-        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(5, 100);
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
         println!("cycles: {:?}", cycles);
         let matching_result_edges = offer_algorithm.matching_result_edges();
         println!("matching_result_edges: {:?}", matching_result_edges);
@@ -890,11 +907,82 @@ mod tests {
         let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
         offer_algorithm.force_match_nodes(position_to_index[&(2, 3)], position_to_index[&(6, 3)]);
         offer_algorithm.force_match_nodes(position_to_index[&(2, 5)], position_to_index[&(6, 5)]);
-        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(5, 100);
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
         println!("cycles: {:?}", cycles);
         let matching_result_edges = offer_algorithm.matching_result_edges();
         println!("matching_result_edges: {:?}", matching_result_edges);
         assert_eq!(matching_result_edges, (2.0, vec![((5, &(2, 3)), (6, &(2, 5))), ((13, &(6, 3)), (14, &(6, 5)))]));
+    }
+
+    #[test]
+    fn offer_algorithm_test_case_6() {
+        let d = 5;
+        let (mut nodes, position_to_index, direct_neighbors) = make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
+        nodes[position_to_index[&(0, 3)]].going_to_be_matched = true;
+        nodes[position_to_index[&(0, 5)]].going_to_be_matched = true;
+        nodes[position_to_index[&(0, 7)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 3)]].going_to_be_matched = true;
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
+        println!("cycles: {:?}", cycles);
+        let matching_result_edges = offer_algorithm.matching_result_edges();
+        println!("matching_result_edges: {:?}", matching_result_edges);
+        assert_eq!(matching_result_edges, (2.0, vec![((1, &(0, 3)), (5, &(2, 3))), ((2, &(0, 5)), (3, &(0, 7)))]));
+    }
+
+    #[test]
+    fn offer_algorithm_test_case_7() {
+        let d = 5;
+        let (mut nodes, position_to_index, direct_neighbors) = make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
+        nodes[position_to_index[&(2, 3)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 5)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 7)]].going_to_be_matched = true;
+        nodes[position_to_index[&(4, 3)]].going_to_be_matched = true;
+        nodes[position_to_index[&(4, 7)]].going_to_be_matched = true;
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        offer_algorithm.force_match_nodes(position_to_index[&(2, 3)], position_to_index[&(2, 5)]);
+        offer_algorithm.force_match_nodes(position_to_index[&(2, 7)], position_to_index[&(4, 7)]);
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
+        println!("cycles: {:?}", cycles);
+        let matching_result_edges = offer_algorithm.matching_result_edges();
+        println!("matching_result_edges: {:?}", matching_result_edges);
+        assert_eq!(matching_result_edges, (3.0, vec![((5, &(2, 3)), (9, &(4, 3))), ((6, &(2, 5)), (7, &(2, 7)))]));
+    }
+
+    #[test]
+    fn offer_algorithm_test_case_8() {
+        let d = 5;
+        let (mut nodes, position_to_index, direct_neighbors) = make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
+        nodes[position_to_index[&(0, 1)]].going_to_be_matched = true;
+        nodes[position_to_index[&(0, 3)]].going_to_be_matched = true;
+        nodes[position_to_index[&(0, 5)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 3)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 5)]].going_to_be_matched = true;
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
+        println!("cycles: {:?}", cycles);
+        let matching_result_edges = offer_algorithm.matching_result_edges();
+        println!("matching_result_edges: {:?}", matching_result_edges);
+        assert_eq!(matching_result_edges, (3.0, vec![((1, &(0, 3)), (5, &(2, 3))), ((2, &(0, 5)), (6, &(2, 5)))]));
+    }
+
+    #[test]
+    fn offer_algorithm_test_case_9() {
+        let d = 5;
+        let (mut nodes, position_to_index, direct_neighbors) = make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
+        nodes[position_to_index[&(0, 1)]].going_to_be_matched = true;
+        nodes[position_to_index[&(0, 3)]].going_to_be_matched = true;
+        nodes[position_to_index[&(0, 5)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 1)]].going_to_be_matched = true;
+        nodes[position_to_index[&(4, 5)]].going_to_be_matched = true;
+        nodes[position_to_index[&(4, 7)]].going_to_be_matched = true;
+        nodes[position_to_index[&(6, 5)]].going_to_be_matched = true;
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
+        println!("cycles: {:?}", cycles);
+        let matching_result_edges = offer_algorithm.matching_result_edges();
+        println!("matching_result_edges: {:?}", matching_result_edges);
+        assert_eq!(matching_result_edges, (4.0, vec![((0, &(0, 1)), (4, &(2, 1))), ((1, &(0, 3)), (2, &(0, 5))), ((10, &(4, 5)), (14, &(6, 5)))]));
     }
 
 }
