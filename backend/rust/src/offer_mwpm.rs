@@ -1023,7 +1023,7 @@ mod tests {
         nodes[position_to_index[&(4, 5)]].going_to_be_matched = true;
         nodes[position_to_index[&(4, 7)]].going_to_be_matched = true;
         nodes[position_to_index[&(6, 5)]].going_to_be_matched = true;
-        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
         let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
         println!("cycles: {:?}", cycles);
         let matching_result_edges = offer_algorithm.matching_result_edges();
@@ -1042,12 +1042,47 @@ mod tests {
         nodes[position_to_index[&(4, 5)]].going_to_be_matched = true;
         nodes[position_to_index[&(4, 7)]].going_to_be_matched = true;
         nodes[position_to_index[&(6, 5)]].going_to_be_matched = true;
-        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
         let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
         println!("cycles: {:?}", cycles);
         let matching_result_edges = offer_algorithm.matching_result_edges();
         println!("matching_result_edges: {:?}", matching_result_edges);
         assert_eq!(matching_result_edges, (4.0, vec![((4, &(2, 1)), (8, &(4, 1))), ((5, &(2, 3)), (6, &(2, 5))), ((10, &(4, 5)), (14, &(6, 5)))]));
+    }
+
+    #[test]
+    fn offer_algorithm_test_case_11() {
+        let d = 13;
+        let (mut nodes, position_to_index, direct_neighbors) = make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
+        nodes[position_to_index[&(0, 7)]].going_to_be_matched = true;
+        nodes[position_to_index[&(0, 9)]].going_to_be_matched = true;
+        nodes[position_to_index[&(0, 19)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 5)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 7)]].going_to_be_matched = true;
+        nodes[position_to_index[&(2, 19)]].going_to_be_matched = true;
+        nodes[position_to_index[&(4, 23)]].going_to_be_matched = true;
+        nodes[position_to_index[&(6, 9)]].going_to_be_matched = true;
+        nodes[position_to_index[&(6, 11)]].going_to_be_matched = true;
+        nodes[position_to_index[&(6, 13)]].going_to_be_matched = true;
+        nodes[position_to_index[&(6, 15)]].going_to_be_matched = true;
+        nodes[position_to_index[&(6, 23)]].going_to_be_matched = true;
+        nodes[position_to_index[&(10, 21)]].going_to_be_matched = true;
+        nodes[position_to_index[&(12, 5)]].going_to_be_matched = true;
+        nodes[position_to_index[&(12, 21)]].going_to_be_matched = true;
+        nodes[position_to_index[&(14, 5)]].going_to_be_matched = true;
+        nodes[position_to_index[&(14, 7)]].going_to_be_matched = true;
+        nodes[position_to_index[&(14, 9)]].going_to_be_matched = true;
+        nodes[position_to_index[&(14, 11)]].going_to_be_matched = true;
+        nodes[position_to_index[&(14, 13)]].going_to_be_matched = true;
+        nodes[position_to_index[&(20, 17)]].going_to_be_matched = true;
+        nodes[position_to_index[&(22, 17)]].going_to_be_matched = true;
+        let mut offer_algorithm = OfferAlgorithm::new(nodes, direct_neighbors, 2 * d, simple_cost_standard_planar_code_2d_nodes, 0);
+        // let cycles = offer_algorithm.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(usize::MAX, 13000);
+        let cycles = offer_algorithm.pseudo_parallel_execute_to_stable();
+        println!("cycles: {:?}", cycles);
+        let matching_result_edges = offer_algorithm.matching_result_edges();
+        println!("matching_result_edges: {:?}", matching_result_edges);
+        assert_eq!(matching_result_edges, (11.0, vec![((3, &(0, 7)), (4, &(0, 9))), ((9, &(0, 19)), (21, &(2, 19))), ((14, &(2, 5)), (15, &(2, 7))), ((35, &(4, 23)), (47, &(6, 23))), ((40, &(6, 9)), (41, &(6, 11))), ((42, &(6, 13)), (43, &(6, 15))), ((70, &(10, 21)), (82, &(12, 21))), ((74, &(12, 5)), (86, &(14, 5))), ((87, &(14, 7)), (88, &(14, 9))), ((89, &(14, 11)), (90, &(14, 13))), ((128, &(20, 17)), (140, &(22, 17)))]));
     }
 
 }
