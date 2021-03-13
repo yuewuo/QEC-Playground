@@ -1524,6 +1524,7 @@ dependencies = [
  "rand_core 0.6.1",
  "serde",
  "serde_json",
+ "union-find",
 ]
 
 [[package]]
@@ -2000,6 +2001,12 @@ name = "unindent"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f14ee04d9415b52b3aeab06258a3f07093182b88ba0f9b8d203f211a7a7d41c7"
+
+[[package]]
+name = "union-find"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ded8a2ba8917ff7a977a446770a8c3bfec18e147b5617b41fd8aae703d8c6720"
 
 [[package]]
 name = "url"

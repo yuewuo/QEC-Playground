@@ -48,7 +48,7 @@ use super::offer_decoder;
 
 #[derive(Derivative, Serialize, Deserialize)]
 #[derivative(Debug)]
-pub struct OfferAlgorithm<U> {
+pub struct OfferAlgorithm<U: std::fmt::Debug> {
     /// maximum length of augmenting path searching
     pub max_path_length: usize,
     #[derivative(Debug="ignore")]
@@ -79,7 +79,7 @@ fn default_cost_func<U>() -> Box<dyn Fn(&U, &U) -> f64> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ProcessingUnit<U> {
+pub struct ProcessingUnit<U: std::fmt::Debug> {
     /// the corresponding node in the input graph
     pub node: OfferNode<U>,
     /// directly connected neighbors
@@ -105,7 +105,7 @@ pub struct ProcessingUnit<U> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct OfferNode<U> {
+pub struct OfferNode<U: std::fmt::Debug> {
     /// user defined data structure which is used in cost computation
     pub user_data: U,
     /// is the node going to be matched? in QEC, it corresponds to error syndrome
@@ -164,7 +164,7 @@ pub struct OutMessage {
     pub message: Message,
 }
 
-impl<U> OfferNode<U> {
+impl<U: std::fmt::Debug> OfferNode<U> {
     pub fn new(user_data: U, going_to_be_matched: bool, boundary_cost: f64) -> Self {
         Self {
             user_data: user_data,
@@ -835,7 +835,12 @@ pub fn make_standard_planar_code_2d_nodes(d: usize, is_x_stabilizers: bool) -> (
     for i in (if is_x_stabilizers { 0..=2*d-2 } else { 1..=2*d-3 }).step_by(2) {
         for j in (if is_x_stabilizers { 1..=2*d-3 } else { 0..=2*d-2 }).step_by(2) {
             position_to_index.insert((i, j), nodes.len());
-            nodes.push(OfferNode::new((i, j), false, std::cmp::min((j + 1) / 2, d - (j + 1) / 2) as f64));
+            nodes.push(OfferNode::new((i, j), false, 
+                if is_x_stabilizers {
+                    std::cmp::min((j + 1) / 2, d - (j + 1) / 2) as f64
+                } else {
+                    std::cmp::min((i + 1) / 2, d - (i + 1) / 2) as f64
+                } ));
         }
     }
     let mut direct_neighbors = Vec::new();
