@@ -19,8 +19,13 @@ use super::serde::{Serialize, Deserialize};
 pub struct UnionFindDecoder<U: std::fmt::Debug> {
     /// each node corresponds to a stabilizer
     pub nodes: Vec<DecoderNode<U>>,
-    /// all odd clusters that need to update in each turn
+    /// union find solver
+    pub union_find: UnionFind,
+    /// all odd clusters that need to update in each turn, clusters are named under the root
     pub odd_clusters: HashSet<usize>,
+    /// record the boundary nodes as an optimization, see https://arxiv.org/pdf/1709.06218.pdf Section "Boundary representation".
+    /// only odd clusters should be the key in HashMap, and only real boundary should be in the `HashSet` value
+    pub cluster_boundaries: HashMap<usize, HashSet<usize>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -29,6 +34,8 @@ pub struct DecoderNode<U: std::fmt::Debug> {
     pub node: InputNode<U>,
     /// directly connected neighbors, (address, already increased length = 0, length = 0)
     pub neighbors: Vec<NeighborPartialEdge>,
+    /// the mapping from node index to NeighborPartialEdge index
+    pub neighbor_index: HashMap<usize, usize>,
     /// increased region towards boundary, only valid when `node.boundary_cost` is `Some(_)`
     pub boundary_increased: usize,
 }
@@ -125,6 +132,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             DecoderNode {
                 node: node,
                 neighbors: Vec::new(),
+                neighbor_index: HashMap::new(),
                 boundary_increased: 0,
             }
         }).collect();
@@ -133,6 +141,17 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
         }).map(|(idx, _node)| {
             idx
         }).collect();
+        let cluster_boundaries: HashMap<_, _> = odd_clusters.iter().map(|&idx| {
+            (idx, vec![idx].into_iter().collect::<HashSet<usize>>())
+        }).collect();  // only roots of these odd clusters are boundaries in the initial state
+        // union find solver
+        let union_find = UnionFind::from_iter(nodes.iter().map(|node| {
+            UnionNode {
+                set_size: 1,
+                cardinality: if node.node.is_error_syndrome { 1 } else { 0 },
+                is_touching_boundary: false,  // the set is never touching the boundary at the beginning
+            }
+        }));
         // filter duplicated neighbor edges
         let nodes_length = nodes.len();
         let neighbors_length = neighbors.len();
@@ -144,11 +163,15 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
         neighbors.dedup();
         assert_eq!(neighbors_length, neighbors.len(), "`neighbors` contains duplicate elements (including the same ends)");
         for NeighborEdge {a, b, increased, length} in neighbors.iter() {
+            let a_idx = nodes[*a].neighbors.len();
+            nodes[*a].neighbor_index.insert(*b, a_idx);
             nodes[*a].neighbors.push(NeighborPartialEdge {
                 address: *b,
                 increased: *increased,
                 length: *length,
             });
+            let b_idx = nodes[*b].neighbors.len();
+            nodes[*b].neighbor_index.insert(*a, b_idx);
             nodes[*b].neighbors.push(NeighborPartialEdge {
                 address: *a,
                 increased: *increased,
@@ -157,16 +180,116 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
         }
         Self {
             nodes: nodes,
+            union_find: union_find,
             odd_clusters: odd_clusters,
+            cluster_boundaries: cluster_boundaries,
         }
     }
 
+    /// run a single turn
     pub fn run_single_iteration(&mut self) {
-        // TODO: implement
+        // grow and update cluster boundaries
+        let mut fusion_list = Vec::new();
+        for &odd_cluster in self.odd_clusters.iter() {
+            let boundaries = self.cluster_boundaries.get(&odd_cluster).unwrap();
+            for &boundary in boundaries.iter() {
+                // grow this boundary and check for grown edge at the same time
+                let neighbor_len = self.nodes[boundary].neighbors.len();
+                for i in 0..neighbor_len {
+                    let partial_edge = &mut self.nodes[boundary].neighbors[i];
+                    partial_edge.increased += 1;
+                    let increased = partial_edge.increased;
+                    let neighbor_addr = partial_edge.address;
+                    let neighbor = &self.nodes[neighbor_addr];
+                    let reverse_index = neighbor.neighbor_index[&boundary];
+                    let neighbor_partial_edge = &neighbor.neighbors[reverse_index];
+                    if neighbor_partial_edge.increased + increased >= neighbor_partial_edge.length {  // found grown edge
+                        fusion_list.push((boundary, neighbor_addr))
+                    }
+                }
+                // grow to the code boundary if it has
+                match self.nodes[boundary].node.boundary_cost {
+                    Some(boundary_cost) => {
+                        let boundary_increased = &mut self.nodes[boundary].boundary_increased;
+                        *boundary_increased += 1;
+                        if *boundary_increased >= boundary_cost {
+                            self.union_find.get_mut(boundary).is_touching_boundary = true;  // this set is touching the boundary
+                        }
+                    },
+                    None => { }  // do nothing
+                }
+            }
+        }
+        // merge the clusters given `fusion_list` and also update the boundary list
+        for &(a, b) in fusion_list.iter() {
+            let real_merging = self.union_find.union(a, b);
+            if real_merging {  // update the boundary list only when this is a real merging
+                let to_be_appended = self.union_find.find(a);  // u should be either `a` or `b`
+                let appending = if to_be_appended == a { b } else { a };  // the other one
+                let appending_vec = self.cluster_boundaries.remove(&appending).unwrap();
+                self.cluster_boundaries.get_mut(&to_be_appended).unwrap().extend(&appending_vec);  // append the boundary
+            }
+        }
+        // replace `odd_clusters` by the root, so that querying `cluster_boundaries` will be valid
+        let union_find = &mut self.union_find;
+        self.odd_clusters = self.odd_clusters.iter().map(|&odd_cluster| {
+            union_find.find(odd_cluster)
+        }).collect();
+        // update the boundary vertices
+        for (&cluster, boundaries) in self.cluster_boundaries.iter_mut() {
+            // `cluster_boundaries` should only contain root ones now
+            assert_eq!(cluster, self.union_find.find(cluster), "non-root boundaries should already been removed");
+            // first grow the boundary
+            let mut grown_boundaries = HashSet::new();
+            for &boundary in boundaries.iter() {
+                let neighbor_len = self.nodes[boundary].neighbors.len();
+                for i in 0..neighbor_len {
+                    let partial_edge = &mut self.nodes[boundary].neighbors[i];
+                    let increased = partial_edge.increased;
+                    let neighbor_addr = partial_edge.address;
+                    let neighbor = &self.nodes[neighbor_addr];
+                    let reverse_index = neighbor.neighbor_index[&boundary];
+                    let neighbor_partial_edge = &neighbor.neighbors[reverse_index];
+                    if neighbor_partial_edge.increased + increased >= neighbor_partial_edge.length {  // this is grown edge
+                        grown_boundaries.insert(neighbor_addr);
+                    }
+                }
+            }
+            // then shrink the boundary by checking if this is real boundary (neighbor are not all in the same set)
+            let mut shrunk_boundaries = HashSet::new();
+            for &boundary in grown_boundaries.iter() {
+                let mut has_foreign = false;
+                let neighbor_len = self.nodes[boundary].neighbors.len();
+                for i in 0..neighbor_len {
+                    let partial_edge = &mut self.nodes[boundary].neighbors[i];
+                    let neighbor_addr = partial_edge.address;
+                    if cluster != self.union_find.find(neighbor_addr) {
+                        has_foreign = true;
+                        break
+                    }
+                }
+                if has_foreign {
+                    shrunk_boundaries.insert(boundary);
+                }
+            }
+            // replace the boundary list
+            *boundaries = shrunk_boundaries;
+        }
+        // remove the even clusters (includes those already touched the code boundary) from `odd_clusters`
+        let mut odd_clusters = HashSet::new();
+        for &odd_cluster in self.odd_clusters.iter() {
+            let union_node = self.union_find.get(odd_cluster);
+            if union_node.cardinality % 2 == 1 && !union_node.is_touching_boundary {
+                odd_clusters.insert(odd_cluster);
+            }
+        }
+        self.odd_clusters = odd_clusters;
     }
 
     pub fn run_to_stable(&mut self) {
-        // TODO: implement
+        while !self.odd_clusters.is_empty() {
+            self.run_single_iteration()
+        }
     }
 }
 
@@ -197,7 +320,7 @@ pub fn make_standard_planar_code_2d_nodes(d: usize, is_x_stabilizers: bool) -> (
     (nodes, position_to_index, neighbors)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UnionFind {
     /// tree structure, each node has a parent
     link_parent: Vec<usize>,
@@ -205,14 +328,14 @@ pub struct UnionFind {
     payload: Vec<Option<UnionNode>>,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Debug, Serialize, Deserialize, Clone)]
 pub struct UnionNode {
     set_size: usize,
     cardinality: usize,
-    touching_boundary: bool,
+    is_touching_boundary: bool,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Debug, Serialize, Deserialize, Clone)]
 pub enum UnionResult {
     Left(UnionNode),
     Right(UnionNode),
@@ -226,7 +349,7 @@ impl UnionNode {
         let result = UnionNode {
             set_size: lsize + rsize,
             cardinality: left.cardinality + right.cardinality,
-            touching_boundary: left.touching_boundary || right.touching_boundary,
+            is_touching_boundary: left.is_touching_boundary || right.is_touching_boundary,
         };
         if lsize >= rsize {
             UnionResult::Left(result)
@@ -248,7 +371,7 @@ impl Default for UnionNode {
         UnionNode {
             set_size: 1,
             cardinality: 0,  // by default the cardinality is 0, set to 1 if needed
-            touching_boundary: false,  // is already touching the boundary
+            is_touching_boundary: false,  // is already touching the boundary
         }
     }
 }
@@ -337,11 +460,11 @@ impl UnionFind {
         self.payload[root_key].as_ref().unwrap()
     }
 
-    // #[inline]
-    // pub fn get_mut(&mut self, key: usize) -> &mut UnionNode {
-    //     let root_key = self.find(key);
-    //     self.payload[root_key].as_mut().unwrap()
-    // }
+    #[inline]
+    pub fn get_mut(&mut self, key: usize) -> &mut UnionNode {
+        let root_key = self.find(key);
+        self.payload[root_key].as_mut().unwrap()
+    }
 
 }
 
@@ -406,6 +529,17 @@ mod tests {
         let decoder = UnionFindDecoder::new(nodes, neighbors);
         println!("decoder.odd_clusters: {:?}", decoder.odd_clusters);
     }
+    
+    #[test]
+    fn union_find_decoder_sanity_check_3() {
+        let mut a = HashSet::<usize>::new();
+        a.insert(1);
+        a.insert(2);
+        println!("a: {:?}", a);
+        let a_ref = &mut a;
+        *a_ref = HashSet::<usize>::new();
+        println!("a: {:?}", a);
+    }
 
     #[test]
     fn union_find_decoder_test_case_1() {
@@ -417,6 +551,7 @@ mod tests {
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
         let mut decoder = UnionFindDecoder::new(nodes, neighbors);
         decoder.run_to_stable();
+        println!("decoder.nodes: {:#?}", decoder.nodes);
     }
 
 }
