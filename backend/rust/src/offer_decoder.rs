@@ -915,19 +915,37 @@ impl OfferDecoder {
     pub fn pseudo_parallel_execute_to_stable(&mut self) -> usize {
         self.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(usize::MAX, usize::MAX).unwrap()
     }
+    pub fn origin_error_left_boundary_cardinality(&self) -> usize {
+        let length = 2 * self.d - 1;
+        let mut boundary_error_cnt = 0;
+        for i in (0..length).step_by(2) {
+            match self.qubits[i][0].error {
+                ErrorType::X | ErrorType::Y => {
+                    boundary_error_cnt += 1;
+                },
+                _ => { },
+            }
+        }
+        boundary_error_cnt
+    }
+    pub fn origin_error_top_boundary_cardinality(&self) -> usize {
+        let length = 2 * self.d - 1;
+        let mut boundary_error_cnt = 0;
+        for j in (0..length).step_by(2) {
+            match self.qubits[0][j].error {
+                ErrorType::X | ErrorType::Y => {
+                    boundary_error_cnt += 1;
+                },
+                _ => { },
+            }
+        }
+        boundary_error_cnt
+    }
     pub fn has_logical_error(&self, error_type: ErrorType) -> bool {
         let length = 2 * self.d - 1;
         let half_length = self.d - 1;
         if error_type == ErrorType::X || error_type == ErrorType::Y {  // j = 0
-            let mut boundary_error_cnt = 0;
-            for i in (0..length).step_by(2) {
-                match self.qubits[i][0].error {
-                    ErrorType::X | ErrorType::Y => {
-                        boundary_error_cnt += 1;
-                    },
-                    _ => { },
-                }
-            }
+            let mut boundary_error_cnt = self.origin_error_left_boundary_cardinality();
             for i in 0..length {
                 for j in 0..half_length {
                     let qubit = &self.qubits[i][j];
@@ -939,15 +957,7 @@ impl OfferDecoder {
             if boundary_error_cnt % 2 == 1 { return true }
         }
         if error_type == ErrorType::Z || error_type == ErrorType::Y {  // i = 0
-            let mut boundary_error_cnt = 0;
-            for j in (0..length).step_by(2) {
-                match self.qubits[0][j].error {
-                    ErrorType::X | ErrorType::Y => {
-                        boundary_error_cnt += 1;
-                    },
-                    _ => { },
-                }
-            }
+            let mut boundary_error_cnt = self.origin_error_top_boundary_cardinality();
             for i in 0..half_length {
                 for j in 0..length {
                     let qubit = &self.qubits[i][j];

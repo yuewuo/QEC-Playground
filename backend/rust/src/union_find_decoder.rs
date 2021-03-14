@@ -14,6 +14,7 @@ use std::mem;
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use super::serde::{Serialize, Deserialize};
+use super::offer_decoder;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UnionFindDecoder<U: std::fmt::Debug> {
@@ -348,11 +349,12 @@ pub fn make_standard_planar_code_2d_nodes(d: usize, is_x_stabilizers: bool) -> (
 }
 
 pub fn get_standard_planar_code_2d_left_boundary_cardinality(d: usize, position_to_index: &HashMap<(usize, usize), usize>
-        , decoder: &UnionFindDecoder<(usize, usize)>) -> usize {
+        , decoder: &UnionFindDecoder<(usize, usize)>, get_top_boundary_instead: bool) -> usize {
     let mut boundary_cardinality = 0;
     let mut counted_sets = HashSet::new();
-    for i in (0..=2*d-2).step_by(2) {
-        let j = 1;  // left boundary of X stabilizer
+    for index in (0..=2*d-2).step_by(2) {
+        let i = if get_top_boundary_instead { 1 } else { index };
+        let j = if get_top_boundary_instead { index } else { 1 };
         let index = position_to_index[&(i, j)];
         let root = decoder.union_find.immutable_find(index);
         if counted_sets.get(&root).is_none() {  // every set should only be counted once
@@ -367,6 +369,41 @@ pub fn get_standard_planar_code_2d_left_boundary_cardinality(d: usize, position_
         }
     }
     boundary_cardinality
+}
+
+/// return `(has_x_logical_error, has_z_logical_error)`
+pub fn run_given_offer_decoder_instance(decoder: &mut offer_decoder::OfferDecoder) -> (bool, bool) {
+    let d = decoder.d;
+    decoder.error_changed();
+    // decode X errors
+    let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes(d, true);
+    for i in (0..=2*d-2).step_by(2) {
+        for j in (1..=2*d-3).step_by(2) {
+            if decoder.qubits[i][j].measurement {
+                nodes[position_to_index[&(i, j)]].is_error_syndrome = true;
+            }
+        }
+    }
+    let mut uf_decoder = UnionFindDecoder::new(nodes, neighbors);
+    uf_decoder.run_to_stable();
+    let left_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, false)
+        + decoder.origin_error_left_boundary_cardinality();
+    let has_x_logical_error = left_boundary_cardinality % 2 == 1;
+    // decode Z errors
+    let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes(d, false);
+    for i in (1..=2*d-3).step_by(2) {
+        for j in (0..=2*d-2).step_by(2) {
+            if decoder.qubits[i][j].measurement {
+                nodes[position_to_index[&(i, j)]].is_error_syndrome = true;
+            }
+        }
+    }
+    let mut uf_decoder = UnionFindDecoder::new(nodes, neighbors);
+    uf_decoder.run_to_stable();
+    let top_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, true)
+        + decoder.origin_error_top_boundary_cardinality();
+    let has_z_logical_error = top_boundary_cardinality % 2 == 1;
+    (has_x_logical_error, has_z_logical_error)
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -665,7 +702,7 @@ mod tests {
         detailed_print_run_to_stable(&mut decoder);
         // decoder.run_to_stable();
         // pretty_print_standard_planar_code(&decoder);
-        assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder)
+        assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
             , "cardinality of one side of boundary determines if there is logical error");
     }
 
@@ -681,7 +718,7 @@ mod tests {
         detailed_print_run_to_stable(&mut decoder);
         // decoder.run_to_stable();
         // pretty_print_standard_planar_code(&decoder);
-        assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder)
+        assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
             , "cardinality of one side of boundary determines if there is logical error");
     }
 
@@ -698,7 +735,7 @@ mod tests {
         detailed_print_run_to_stable(&mut decoder);
         // decoder.run_to_stable();
         // pretty_print_standard_planar_code(&decoder);
-        assert_eq!(1, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder)
+        assert_eq!(1, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
             , "cardinality of one side of boundary determines if there is logical error");
     }
 
