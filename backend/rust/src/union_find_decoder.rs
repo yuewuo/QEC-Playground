@@ -24,7 +24,8 @@ pub struct UnionFindDecoder<U: std::fmt::Debug> {
     /// all odd clusters that need to update in each turn, clusters are named under the root
     pub odd_clusters: HashSet<usize>,
     /// record the boundary nodes as an optimization, see https://arxiv.org/pdf/1709.06218.pdf Section "Boundary representation".
-    /// only odd clusters should be the key in HashMap, and only real boundary should be in the `HashSet` value
+    /// even clusters should not be key in HashMap, and only real boundary should be in the `HashSet` value
+    /// those nodes without error syndrome also have entries in this HashMap, with the value of { itself }
     pub cluster_boundaries: HashMap<usize, HashSet<usize>>,
 }
 
@@ -141,7 +142,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
         }).map(|(idx, _node)| {
             idx
         }).collect();
-        let cluster_boundaries: HashMap<_, _> = odd_clusters.iter().map(|&idx| {
+        let cluster_boundaries: HashMap<_, _> = nodes.iter().enumerate().map(|(idx, _node)| {
             (idx, vec![idx].into_iter().collect::<HashSet<usize>>())
         }).collect();  // only roots of these odd clusters are boundaries in the initial state
         // union find solver
@@ -222,9 +223,12 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
         }
         // merge the clusters given `fusion_list` and also update the boundary list
         for &(a, b) in fusion_list.iter() {
+            let a = self.union_find.find(a);  // update to its root
+            let b = self.union_find.find(b);  // update to its root
             let real_merging = self.union_find.union(a, b);
             if real_merging {  // update the boundary list only when this is a real merging
-                let to_be_appended = self.union_find.find(a);  // u should be either `a` or `b`
+                let to_be_appended = self.union_find.find(a);  // or self.union_find.find(r_b) equivalently
+                assert!(to_be_appended == a || to_be_appended == b, "`to_be_appended` should be either `a` or `b`");
                 let appending = if to_be_appended == a { b } else { a };  // the other one
                 let appending_vec = self.cluster_boundaries.remove(&appending).unwrap();
                 self.cluster_boundaries.get_mut(&to_be_appended).unwrap().extend(&appending_vec);  // append the boundary
@@ -240,24 +244,24 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             // `cluster_boundaries` should only contain root ones now
             assert_eq!(cluster, self.union_find.find(cluster), "non-root boundaries should already been removed");
             // first grow the boundary
-            let mut grown_boundaries = HashSet::new();
-            for &boundary in boundaries.iter() {
-                let neighbor_len = self.nodes[boundary].neighbors.len();
-                for i in 0..neighbor_len {
-                    let partial_edge = &mut self.nodes[boundary].neighbors[i];
-                    let increased = partial_edge.increased;
-                    let neighbor_addr = partial_edge.address;
-                    let neighbor = &self.nodes[neighbor_addr];
-                    let reverse_index = neighbor.neighbor_index[&boundary];
-                    let neighbor_partial_edge = &neighbor.neighbors[reverse_index];
-                    if neighbor_partial_edge.increased + increased >= neighbor_partial_edge.length {  // this is grown edge
-                        grown_boundaries.insert(neighbor_addr);
-                    }
-                }
-            }
+            // let mut grown_boundaries = HashSet::new();
+            // for &boundary in boundaries.iter() {
+            //     let neighbor_len = self.nodes[boundary].neighbors.len();
+            //     for i in 0..neighbor_len {
+            //         let partial_edge = &mut self.nodes[boundary].neighbors[i];
+            //         let increased = partial_edge.increased;
+            //         let neighbor_addr = partial_edge.address;
+            //         let neighbor = &self.nodes[neighbor_addr];
+            //         let reverse_index = neighbor.neighbor_index[&boundary];
+            //         let neighbor_partial_edge = &neighbor.neighbors[reverse_index];
+            //         if neighbor_partial_edge.increased + increased >= neighbor_partial_edge.length {  // this is grown edge
+            //             grown_boundaries.insert(neighbor_addr);
+            //         }
+            //     }
+            // }
             // then shrink the boundary by checking if this is real boundary (neighbor are not all in the same set)
             let mut shrunk_boundaries = HashSet::new();
-            for &boundary in grown_boundaries.iter() {
+            for &boundary in boundaries.iter() {
                 let mut has_foreign = false;
                 let neighbor_len = self.nodes[boundary].neighbors.len();
                 for i in 0..neighbor_len {
@@ -267,6 +271,15 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
                         has_foreign = true;
                         break
                     }
+                }
+                let boundary_node = &self.nodes[boundary];
+                match boundary_node.node.boundary_cost {
+                    Some(boundary_cost) => {
+                        if boundary_node.boundary_increased < boundary_cost {
+                            has_foreign = true;
+                        }
+                    },
+                    None => { },  // do nothing
                 }
                 if has_foreign {
                     shrunk_boundaries.insert(boundary);
@@ -291,6 +304,20 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             self.run_single_iteration()
         }
     }
+
+    /// only print those `cluster_boundaries` != vec![itself]
+    pub fn pretty_print_cluster_boundaries(&self) {
+        for (&key, val) in self.cluster_boundaries.iter() {
+            if val.len() == 1 && self.odd_clusters.get(&key).is_none() {
+                continue  // ignore printing this one
+            }
+            let mut user_data = Vec::new();
+            for &idx in val.iter() {
+                user_data.push(format!("{:?}", self.nodes[idx].node.user_data));
+            }
+            println!("{:?}: {}", self.nodes[key].node.user_data, user_data.join(" "));
+        }
+    }
 }
 
 /// create nodes for standard planar code (2d, perfect measurement condition). return only X stabilizers or only Z stabilizers.
@@ -302,7 +329,7 @@ pub fn make_standard_planar_code_2d_nodes(d: usize, is_x_stabilizers: bool) -> (
         for j in (if is_x_stabilizers { 1..=2*d-3 } else { 0..=2*d-2 }).step_by(2) {
             position_to_index.insert((i, j), nodes.len());
             let is_boundary = if is_x_stabilizers { j == 1 || j == 2*d-3 } else { i == 1 || i == 2*d-3 };
-            nodes.push(InputNode::new((i, j), false, if is_boundary { Some(1) } else { None }));
+            nodes.push(InputNode::new((i, j), false, if is_boundary { Some(2) } else { None }));
         }
     }
     let mut neighbors = Vec::new();
@@ -318,6 +345,28 @@ pub fn make_standard_planar_code_2d_nodes(d: usize, is_x_stabilizers: bool) -> (
         }
     }
     (nodes, position_to_index, neighbors)
+}
+
+pub fn get_standard_planar_code_2d_left_boundary_cardinality(d: usize, position_to_index: &HashMap<(usize, usize), usize>
+        , decoder: &UnionFindDecoder<(usize, usize)>) -> usize {
+    let mut boundary_cardinality = 0;
+    let mut counted_sets = HashSet::new();
+    for i in (0..=2*d-2).step_by(2) {
+        let j = 1;  // left boundary of X stabilizer
+        let index = position_to_index[&(i, j)];
+        let root = decoder.union_find.immutable_find(index);
+        if counted_sets.get(&root).is_none() {  // every set should only be counted once
+            let node = &decoder.nodes[index];
+            if node.boundary_increased >= node.node.boundary_cost.unwrap() {  // only when this node is bleeding into the boundary
+                let root_uf_node = &decoder.union_find.immutable_get(root);
+                if root_uf_node.cardinality % 2 == 1 {  // connect to boundary only if the cardinality is odd
+                    counted_sets.insert(root);
+                    boundary_cardinality += 1;
+                }
+            }
+        }
+    }
+    boundary_cardinality
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -455,8 +504,25 @@ impl UnionFind {
     }
 
     #[inline]
+    pub fn immutable_find(&self, key: usize) -> usize {
+        let mut k = key;
+        let mut p = self.link_parent[k];
+        while p != k {
+            k = p;
+            p = self.link_parent[p];
+        }
+        k
+    }
+
+    #[inline]
     pub fn get(&mut self, key: usize) -> &UnionNode {
         let root_key = self.find(key);
+        self.payload[root_key].as_ref().unwrap()
+    }
+
+    #[inline]
+    pub fn immutable_get(&self, key: usize) -> &UnionNode {
+        let root_key = self.immutable_find(key);
         self.payload[root_key].as_ref().unwrap()
     }
 
@@ -478,6 +544,47 @@ mod tests {
         make_standard_planar_code_2d_nodes(d, true)
     }
 
+    fn pretty_print_standard_planar_code(decoder: &UnionFindDecoder<(usize, usize)>) {
+        let nodes_len = decoder.nodes.len();
+        for i in 0..nodes_len {
+            let root_user_data = decoder.nodes[decoder.union_find.immutable_find(i)].node.user_data;
+            let node = &decoder.nodes[i];
+            let error_symbol = if node.node.is_error_syndrome { "x" } else { " " };
+            let boundary_string = match node.node.boundary_cost {
+                Some(boundary_cost) => {
+                    format!("b({}/{})", node.boundary_increased, boundary_cost)
+                },
+                None => format!("      "),
+            };
+            let neighbors_len = node.neighbors.len();
+            let mut neighbor_string = String::new();
+            for j in 0..neighbors_len {
+                let partial_edge = &decoder.nodes[i].neighbors[j];
+                let increased = partial_edge.increased;
+                let neighbor_addr = partial_edge.address;
+                let neighbor = &decoder.nodes[neighbor_addr];
+                let reverse_index = neighbor.neighbor_index[&i];
+                let neighbor_partial_edge = &neighbor.neighbors[reverse_index];
+                let neighbor_user_data = neighbor.node.user_data;
+                let string = format!("{:?}[{}/{}] ", neighbor_user_data, neighbor_partial_edge.increased + increased, neighbor_partial_edge.length);
+                neighbor_string.push_str(string.as_str());
+            }
+            println!("{:?} ∈ {:?} {} {} n: {}", node.node.user_data, root_user_data, error_symbol, boundary_string, neighbor_string);
+        }
+    }
+
+    fn detailed_print_run_to_stable(decoder: &mut UnionFindDecoder<(usize, usize)>) {
+        while !decoder.odd_clusters.is_empty() {
+            pretty_print_standard_planar_code(&decoder);
+            println!("cluster boundaries:");
+            decoder.pretty_print_cluster_boundaries();
+            decoder.run_single_iteration()
+        }
+        pretty_print_standard_planar_code(&decoder);
+        println!("cluster boundaries:");
+        decoder.pretty_print_cluster_boundaries();
+    }
+
     #[test]
     fn union_find_decoder_test_basic_algorithm() {
         let mut uf = UnionFind::new(100);
@@ -485,9 +592,12 @@ mod tests {
         assert_eq!(1, uf.get(0).size());
         assert_eq!(1, uf.get(1).size());
         assert!(uf.find(0) != uf.find(1));
+        assert!(uf.immutable_find(0) != uf.immutable_find(1));
         assert!(uf.find(1) != uf.find(2));
+        assert!(uf.immutable_find(1) != uf.immutable_find(2));
         assert!(uf.union(0, 1));
         assert!(uf.find(0) == uf.find(1));
+        assert!(uf.immutable_find(0) == uf.immutable_find(1));
         assert_eq!(2, uf.get(0).size());
         assert_eq!(2, uf.get(1).size());
         assert_eq!(1, uf.get(2).size());
@@ -499,7 +609,9 @@ mod tests {
         assert_eq!(3, uf.get(0).size());
         assert_eq!(3, uf.get(1).size());
         assert_eq!(3, uf.get(2).size());
+        assert!(uf.immutable_find(0) == uf.immutable_find(1));
         assert!(uf.find(0) == uf.find(1));
+        assert!(uf.immutable_find(2) == uf.immutable_find(1));
         assert!(uf.find(2) == uf.find(1));
         let k100 = uf.insert(UnionNode::default());
         assert_eq!(k100, 100);
@@ -550,8 +662,44 @@ mod tests {
         nodes[position_to_index[&(2, 1)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
         let mut decoder = UnionFindDecoder::new(nodes, neighbors);
-        decoder.run_to_stable();
-        println!("decoder.nodes: {:#?}", decoder.nodes);
+        detailed_print_run_to_stable(&mut decoder);
+        // decoder.run_to_stable();
+        // pretty_print_standard_planar_code(&decoder);
+        assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder)
+            , "cardinality of one side of boundary determines if there is logical error");
+    }
+
+    #[test]
+    fn union_find_decoder_test_case_2() {
+        let d = 5;
+        let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
+        nodes[position_to_index[&(2, 1)]].is_error_syndrome = true;
+        nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
+        nodes[position_to_index[&(2, 5)]].is_error_syndrome = true;
+        nodes[position_to_index[&(2, 7)]].is_error_syndrome = true;
+        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        detailed_print_run_to_stable(&mut decoder);
+        // decoder.run_to_stable();
+        // pretty_print_standard_planar_code(&decoder);
+        assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder)
+            , "cardinality of one side of boundary determines if there is logical error");
+    }
+
+    #[test]
+    fn union_find_decoder_test_case_3() {
+        let d = 5;
+        let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
+        nodes[position_to_index[&(0, 1)]].is_error_syndrome = true;
+        nodes[position_to_index[&(0, 3)]].is_error_syndrome = true;
+        nodes[position_to_index[&(0, 5)]].is_error_syndrome = true;
+        nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
+        nodes[position_to_index[&(2, 5)]].is_error_syndrome = true;
+        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        detailed_print_run_to_stable(&mut decoder);
+        // decoder.run_to_stable();
+        // pretty_print_standard_planar_code(&decoder);
+        assert_eq!(1, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder)
+            , "cardinality of one side of boundary determines if there is logical error");
     }
 
 }
