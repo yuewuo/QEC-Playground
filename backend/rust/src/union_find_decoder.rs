@@ -339,7 +339,7 @@ pub fn make_standard_planar_code_2d_nodes(d: usize, is_x_stabilizers: bool) -> (
             for (di, dj) in [(2, 0), (0, 2)].iter() {
                 let ni = i + di;
                 let nj = j + dj;
-                if ni <= 2*d-2 && nj <= 2*d-3 {
+                if ni <= 2*d-2 && nj <= 2*d-2 {
                     neighbors.push(NeighborEdge::new(position_to_index[&(i, j)], position_to_index[&(ni, nj)], 0, 2));
                 }
             }

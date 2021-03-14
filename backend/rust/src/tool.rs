@@ -19,6 +19,7 @@ use super::pbr::ProgressBar;
 use super::types::QubitType;
 use super::offer_decoder;
 use super::offer_mwpm;
+use super::union_find_decoder;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -145,6 +146,18 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let repeat_experiment_each_error = value_t!(matches, "repeat_experiment_each_error", usize).unwrap_or(1);
             offer_algorithm_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, max_resend, max_cycles
                 , disable_probabilistic_accept, repeat_experiment_each_error);
+        }
+        ("union_find_decoder_standard_planar_benchmark", Some(matches)) => {
+            let Ls = value_t!(matches, "Ls", String).expect("required");
+            let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
+            let ps = value_t!(matches, "ps", String).expect("required");
+            let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
+            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
+            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
+            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
+            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
+            let only_count_logical_x = matches.is_present("only_count_logical_x");
+            union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x);
         }
         _ => unreachable!()
     }
@@ -1004,7 +1017,6 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
     }
 }
 
-
 /**
 default example:
 `cargo run --release -- tool offer_algorithm_standard_planar_benchmark [5] [1e-3]`
@@ -1151,6 +1163,100 @@ fn offer_algorithm_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max
             let average_cycles = total_cycles as f64 / total_rounds as f64;
             let max_cycles_used = *max_cycles_used.lock().unwrap();
             println!("{} {} {} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate, average_cycles, max_cycles_used);
+        }
+    }
+}
+
+/**
+default example:
+`cargo run --release -- tool union_find_decoder_standard_planar_benchmark [5] [1e-3]`
+it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
+**/
+fn union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
+        , only_count_logical_x: bool) {
+    let mut parallel = parallel;
+    if parallel == 0 {
+        parallel = num_cpus::get() - 1;
+    }
+    println!("format: <p> <T> <total_rounds> <qec_failed> <error_rate>");
+    for L in Ls.iter() {
+        for p in ps {
+            let p = *p;
+            assert!(3. * p < 0.5, "why should errors (X, Z, Y) happening more than half of a time?");
+            let L = *L;
+            let total_rounds = Arc::new(Mutex::new(0));
+            let qec_failed = Arc::new(Mutex::new(0));
+            let mut handlers = Vec::new();
+            let mini_batch_count = 1 + max_N / mini_batch;
+            let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
+            pb.set(0);
+            for _i in 0..parallel {
+                let total_rounds = Arc::clone(&total_rounds);
+                let qec_failed = Arc::clone(&qec_failed);
+                let mini_batch = mini_batch;
+                let L = L;
+                let p = p;
+                handlers.push(std::thread::spawn(move || {
+                    let mut decoder = offer_decoder::create_standard_planar_code_offer_decoder(L);
+                    let mut rng = thread_rng();
+                    let mut current_total_rounds = {
+                        *total_rounds.lock().unwrap()
+                    };
+                    let mut current_qec_failed = {
+                        *qec_failed.lock().unwrap()
+                    };
+                    while current_total_rounds < max_N && current_qec_failed < min_error_cases {
+                        let mut mini_qec_failed = 0;
+                        for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
+                            decoder.reinitialize();
+                            let error_count = decoder.generate_depolarizing_random_errors(p, || rng.gen::<f64>());
+                            if error_count == 0 {
+                                continue
+                            }
+                            let (has_x_logical_error, has_z_logical_error) = union_find_decoder::run_given_offer_decoder_instance(&mut decoder);
+                            if only_count_logical_x {
+                                if has_x_logical_error {
+                                    mini_qec_failed += 1;
+                                }
+                            } else {
+                                if has_x_logical_error || has_z_logical_error {
+                                    mini_qec_failed += 1;
+                                }
+                            }
+                        }
+                        // sync data from outside
+                        current_total_rounds = {
+                            let mut total_rounds = total_rounds.lock().unwrap();
+                            *total_rounds += mini_batch;
+                            *total_rounds
+                        };
+                        current_qec_failed = {
+                            let mut qec_failed = qec_failed.lock().unwrap();
+                            *qec_failed += mini_qec_failed;
+                            *qec_failed
+                        };
+                    }
+                }));
+            }
+            loop {
+                let total_rounds = *total_rounds.lock().unwrap();
+                if total_rounds >= max_N { break }
+                let qec_failed = *qec_failed.lock().unwrap();
+                if qec_failed >= min_error_cases { break }
+                let error_rate = qec_failed as f64 / total_rounds as f64;
+                pb.message(format!("{} {} {} {} {} ", p, L, total_rounds, qec_failed, error_rate).as_str());
+                let progress = total_rounds / mini_batch;
+                pb.set(progress as u64);
+                std::thread::sleep(std::time::Duration::from_millis(200));
+            }
+            pb.finish();
+            for handler in handlers {
+                handler.join().unwrap();
+            }
+            let total_rounds = *total_rounds.lock().unwrap();
+            let qec_failed = *qec_failed.lock().unwrap();
+            let error_rate = qec_failed as f64 / total_rounds as f64;
+            println!("{} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate);
         }
     }
 }
