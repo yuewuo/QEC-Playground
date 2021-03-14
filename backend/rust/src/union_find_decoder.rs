@@ -307,6 +307,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
     }
 
     /// only print those `cluster_boundaries` != vec![itself]
+    #[allow(dead_code)]
     pub fn pretty_print_cluster_boundaries(&self) {
         for (&key, val) in self.cluster_boundaries.iter() {
             if val.len() == 1 && self.odd_clusters.get(&key).is_none() {
@@ -488,16 +489,19 @@ impl Extend<UnionNode> for UnionFind {
 
 impl UnionFind {
     #[inline]
+    #[allow(dead_code)]
     pub fn new(len: usize) -> Self {
         Self::from_iter((0..len).map(|_| Default::default()))
     }
 
     #[inline]
+    #[allow(dead_code)]
     pub fn size(&self) -> usize {
         self.payload.len()
     }
 
     #[inline]
+    #[allow(dead_code)]
     pub fn insert(&mut self, data: UnionNode) -> usize {
         let key = self.payload.len();
         self.link_parent.push(key);

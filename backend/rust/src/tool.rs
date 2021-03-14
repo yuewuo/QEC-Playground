@@ -443,6 +443,7 @@ fn error_rate_MWPM_with_weight(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
             }
+            pb.total = (*total_rounds.lock().unwrap() / max_N) as u64;
             pb.finish();
             for handler in handlers {
                 handler.join().unwrap();
@@ -636,6 +637,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
             }
+            pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
             pb.finish();
             for handler in handlers {
                 handler.join().unwrap();
@@ -858,6 +860,7 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
             }
+            pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
             pb.finish();
             for handler in handlers {
                 handler.join().unwrap();
@@ -1002,6 +1005,7 @@ fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
             }
+            pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
             pb.finish();
             for handler in handlers {
                 handler.join().unwrap();
@@ -1152,6 +1156,7 @@ fn offer_algorithm_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
             }
+            pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
             pb.finish();
             for handler in handlers {
                 handler.join().unwrap();
@@ -1249,6 +1254,7 @@ fn union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, 
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
             }
+            pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
             pb.finish();
             for handler in handlers {
                 handler.join().unwrap();
