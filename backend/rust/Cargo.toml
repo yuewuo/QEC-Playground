@@ -31,3 +31,7 @@ union-find = "0.3.2"
 
 [build-dependencies]
 cc = "1.0.66"
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--html-in-header", "katex-header.html" ]
+# to run locally: `RUSTDOCFLAGS="--html-in-header katex-header.html" cargo doc --no-deps`

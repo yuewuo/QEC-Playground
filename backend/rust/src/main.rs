@@ -11,6 +11,7 @@ mod offer_decoder;
 mod reproducible_rand;
 mod offer_mwpm;
 mod union_find_decoder;
+mod distributed_uf_decoder;
 
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;

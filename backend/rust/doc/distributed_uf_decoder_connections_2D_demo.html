@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body style="width: 100%; margin: 0;">
+
+<div style="width: 100%; display: flex; justify-content: center;"><svg id="distributed_uf_decoder_connections_2D_demo" style="width: 300px; height: 300px;" viewBox="0 0 100 100"></svg></div>
+
+<!-- Copy the above block directly into the rust doc, then use https://skalman.github.io/UglifyJS-online/ to compress the javascript block below -->
+
+<script>
+function draw_distributed_uf_decoder_connections_2D_demo() {
+    let svg = document.getElementById("distributed_uf_decoder_connections_2D_demo")
+    if (!svg) return  // cannot find element
+    const d = 21, width = 100
+    const middle = parseInt(d / 2)
+    const NS = "http://www.w3.org/2000/svg"
+    const interval = width / (d + 1), r = interval * 0.3
+    const black = "rgb(0, 0, 0)", red = "rgb(255, 0, 0)", blue = "rgb(0, 0, 255)"
+    function is_2_exp(num) {
+        while (num != 1) {
+            if (num % 2 == 0) num = num / 2
+            else return false
+        }
+        return true
+    }
+    for (let i = 0; i < d; ++i) {
+        for (let j = 0; j < d - 1; ++j) {
+            const cx = (j + 1.5) * interval, cy = (i + 1) * interval
+            let circle = document.createElementNS(NS, "circle")
+            circle.setAttribute("cx", cx)
+            circle.setAttribute("cy", cy)
+            circle.setAttribute("r", r)
+            circle.setAttribute("fill", black)
+            if (i == middle && j == middle) {
+                circle.setAttribute("fill", red)
+            } else if ((i == middle && is_2_exp(Math.abs(j - middle))) || (j == middle && is_2_exp(Math.abs(i - middle)))) {
+                circle.setAttribute("fill", blue)
+            }
+            svg.appendChild(circle)
+        }
+    }
+}
+document.addEventListener("DOMContentLoaded", draw_distributed_uf_decoder_connections_2D_demo)
+</script>
+</body>
+</html>

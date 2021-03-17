@@ -306,7 +306,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
         }
     }
 
-    /// only print those `cluster_boundaries` != vec![itself]
+    /// only print those `cluster_boundaries` != vec!\[itself\]
     #[allow(dead_code)]
     pub fn pretty_print_cluster_boundaries(&self) {
         for (&key, val) in self.cluster_boundaries.iter() {
