@@ -1505,12 +1505,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ringbuf"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "930c1d8c4c3341099e662d45a884aa8047ab659bfb579747a48598bb86aae062"
-
-[[package]]
 name = "rust_qecp"
 version = "0.1.0"
 dependencies = [
@@ -1529,7 +1523,6 @@ dependencies = [
  "pyo3",
  "rand",
  "rand_core 0.6.1",
- "ringbuf",
  "serde",
  "serde_json",
  "union-find",

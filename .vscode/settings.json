@@ -2,6 +2,7 @@
     "cSpell.words": [
         "autotune",
         "cpus",
+        "deque",
         "ftqec",
         "libc",
         "mwpm",
@@ -9,6 +10,7 @@
         "num",
         "petgraph",
         "qecp",
-        "ringbuf"
+        "ringbuf",
+        "vec"
     ]
 }

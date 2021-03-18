@@ -123,12 +123,11 @@
 //! After initialization, the algorithm will instantiate multiple processing unit (PU), each corresponds to a node.
 //!
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::rc::Rc;
 use super::serde::{Serialize, Deserialize};
-use super::ringbuf::{RingBuffer, Producer, Consumer};
 use super::derive_more::{Constructor};
 
 #[derive(Debug, Serialize, Deserialize, Constructor)]
@@ -186,17 +185,27 @@ pub struct ProcessingUnit {
     #[serde(skip_serializing)]
     pub neighbors: Vec<(usize, Rc<RefCell<NeighborLink>>)>,
     /// union message channels, including both neighbor channels and fast channels, where each neighbor channel has the same indices as in `neighbors`
-    pub union_out_channels: Vec<(usize, OutChannel<UnionMessage>)>,
-    pub union_in_channels: Vec<(usize, InChannel<UnionMessage>)>,
+    #[serde(skip_serializing)]
+    pub union_out_channels: Vec<(usize, Rc<RefCell<Channel<UnionMessage>>>)>,
+    #[serde(skip_serializing)]
+    pub union_in_channels: Vec<(usize, Rc<RefCell<Channel<UnionMessage>>>)>,
     /// direct message channels, including both neighbor channels and fast channels
-    pub direct_out_channels: Vec<(usize, OutChannel<DirectMessage>)>,
-    pub direct_in_channels: Vec<(usize, InChannel<DirectMessage>)>,
+    #[serde(skip_serializing)]
+    pub direct_out_channels: Vec<(usize, Rc<RefCell<Channel<DirectMessage>>>)>,
+    #[serde(skip_serializing)]
+    pub direct_in_channels: Vec<(usize, Rc<RefCell<Channel<DirectMessage>>>)>,
     /// increased value towards boundary, only valid when `node.boundary_cost` is `Some(_)`
     pub boundary_increased: usize,
     /// old root register
     pub old_root: usize,
     /// updated root register
     pub updated_root: usize,
+    /// is odd cluster
+    pub is_odd_cluster: bool,
+    /// is touching boundary
+    pub is_touching_boundary: bool,
+    /// is odd cardinality, counts the number of error syndromes in a region
+    pub is_odd_cardinality: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -211,24 +220,11 @@ pub struct NeighborLink {
 
 #[derive(Derivative, Serialize)]
 #[derivative(Debug)]
-pub struct OutChannel<Message> {
+pub struct Channel<Message> {
     /// latency of the message passing
     pub latency: usize,
-    /// a ring buffer with length `latency + 1`
-    #[derivative(Debug="ignore")]
-    #[serde(skip_serializing)]
-    pub producer: Producer<Option<Message>>,
-}
-
-#[derive(Derivative, Serialize)]
-#[derivative(Debug)]
-pub struct InChannel<Message> {
-    /// latency of the message passing
-    pub latency: usize,
-    /// a ring buffer with length `latency + 1`
-    #[derivative(Debug="ignore")]
-    #[serde(skip_serializing)]
-    pub consumer: Consumer<Option<Message>>,
+    /// a ring buffer having exactly `latency` objects in stable state
+    pub deque: VecDeque<Option<Message>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -237,8 +233,6 @@ pub struct UnionMessage {
     pub old_root: usize,
     /// the updated root of the sender
     pub updated_root: usize,
-    /// update as odd cluster, this happens at the end of iteration
-    pub update_as_odd_cluster: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -303,14 +297,27 @@ impl PartialEq for InputFastChannel {
 
 impl Eq for InputFastChannel {}
 
+impl<Message> Channel<Message> {
+    pub fn has_message_flying(&self) -> bool {
+        let mut found = false;
+        for message in self.deque.iter() {
+            if message.is_some() {
+                found = true;
+                break
+            }
+        }
+        found
+    }
+} 
+
 impl<U: std::fmt::Debug> DistributedUnionFind<U> {
     pub fn new(nodes: Vec<InputNode<U>>, mut neighbors: Vec<InputNeighbor>, mut fast_channels: Vec<InputFastChannel>, 
             distance: impl Fn(&U, &U) -> usize + 'static) -> Self {
         // filter invalid and duplicated neighbor edges
-        let nodes_length = nodes.len();
+        let nodes_len = nodes.len();
         let neighbors_length = neighbors.len();
         neighbors.retain(|edge| {
-            edge.a != edge.b && edge.a < nodes_length && edge.b < nodes_length
+            edge.a != edge.b && edge.a < nodes_len && edge.b < nodes_len
         });  // remove invalid neighbor edges
         assert_eq!(neighbors_length, neighbors.len(), "`neighbors` contains invalid edges (either invalid address or edge connecting the same node)");
         neighbors.sort_unstable();
@@ -319,14 +326,14 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
         // filter invalid and duplicated fast_channels edges
         let fast_channels_length = fast_channels.len();
         fast_channels.retain(|edge| {
-            edge.a != edge.b && edge.a < nodes_length && edge.b < nodes_length
+            edge.a != edge.b && edge.a < nodes_len && edge.b < nodes_len
         });  // remove invalid neighbor edges
         assert_eq!(fast_channels_length, fast_channels.len(), "`fast_channels` contains invalid edges (either invalid address or edge connecting the same node)");
         fast_channels.sort_unstable();
         fast_channels.dedup();
         assert_eq!(fast_channels_length, fast_channels.len(), "`fast_channels` contains duplicate elements (including the same ends)");
         // build processing units
-        let mut processing_units: Vec<_> = nodes.iter().enumerate().map(|(i, _node)| {
+        let mut processing_units: Vec<_> = nodes.iter().enumerate().map(|(i, node)| {
             ProcessingUnit {
                 neighbors: Vec::new(),
                 union_out_channels: Vec::new(),
@@ -336,6 +343,9 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                 boundary_increased: 0,
                 old_root: i,
                 updated_root: i,
+                is_odd_cluster: node.is_error_syndrome,
+                is_touching_boundary: false,
+                is_odd_cardinality: node.is_error_syndrome,
             }
         }).collect();
         // build neighbors and their channels
@@ -350,15 +360,19 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
             // build channels
             for (x, y) in [(*a, *b), (*b, *a)].iter() {
                 // union channels
-                let (mut producer, consumer) = RingBuffer::new(*latency + 1).split();
-                producer.push_iter(&mut (0..*latency).map(|_| None));
-                processing_units[*x].union_out_channels.push((*y, OutChannel{ latency: *latency, producer: producer }));
-                processing_units[*y].union_in_channels.push((*x, InChannel{ latency: *latency, consumer: consumer }));
+                let channel = Rc::new(RefCell::new(Channel {
+                    latency: *latency,
+                    deque: (0..*latency).map(|_| None).collect(),
+                }));
+                processing_units[*x].union_out_channels.push((*y, channel.clone()));
+                processing_units[*y].union_in_channels.push((*x, channel.clone()));
                 // direct message channels
-                let (mut producer, consumer) = RingBuffer::new(*latency + 1).split();
-                producer.push_iter(&mut (0..*latency).map(|_| None));
-                processing_units[*x].direct_out_channels.push((*y, OutChannel{ latency: *latency, producer: producer }));
-                processing_units[*y].direct_in_channels.push((*x, InChannel{ latency: *latency, consumer: consumer }));
+                let channel = Rc::new(RefCell::new(Channel {
+                    latency: *latency,
+                    deque: (0..*latency).map(|_| None).collect(),
+                }));
+                processing_units[*x].direct_out_channels.push((*y, channel.clone()));
+                processing_units[*y].direct_in_channels.push((*x, channel.clone()));
             }
         }
         for pu in processing_units.iter() {
@@ -372,15 +386,19 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
             // build channels
             for (x, y) in [(*a, *b), (*b, *a)].iter() {
                 // union channels
-                let (mut producer, consumer) = RingBuffer::new(*latency + 1).split();
-                producer.push_iter(&mut (0..*latency).map(|_| None));
-                processing_units[*x].union_out_channels.push((*y, OutChannel{ latency: *latency, producer: producer }));
-                processing_units[*y].union_in_channels.push((*x, InChannel{ latency: *latency, consumer: consumer }));
+                let channel = Rc::new(RefCell::new(Channel {
+                    latency: *latency,
+                    deque: (0..*latency).map(|_| None).collect(),
+                }));
+                processing_units[*x].union_out_channels.push((*y, channel.clone()));
+                processing_units[*y].union_in_channels.push((*x, channel.clone()));
                 // direct message channels
-                let (mut producer, consumer) = RingBuffer::new(*latency + 1).split();
-                producer.push_iter(&mut (0..*latency).map(|_| None));
-                processing_units[*x].direct_out_channels.push((*y, OutChannel{ latency: *latency, producer: producer }));
-                processing_units[*y].direct_in_channels.push((*x, InChannel{ latency: *latency, consumer: consumer }));
+                let channel = Rc::new(RefCell::new(Channel {
+                    latency: *latency,
+                    deque: (0..*latency).map(|_| None).collect(),
+                }));
+                processing_units[*x].direct_out_channels.push((*y, channel.clone()));
+                processing_units[*y].direct_in_channels.push((*x, channel.clone()));
             }
         }
         for pu in processing_units.iter() {
@@ -393,6 +411,110 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
             processing_units: processing_units,
             distance: Box::new(distance),
         }
+    }
+
+    /// sanity check only for simulation, to check that the latency simulation is actually working
+    pub fn channels_sanity_check(&self) {
+        let nodes_len = self.nodes.len();
+        for i in 0..nodes_len {
+            let pu = &self.processing_units[i];
+            for (_peer, out_channel) in pu.union_out_channels.iter() {
+                let out_channel = out_channel.borrow();
+                assert_eq!(out_channel.deque.len(), out_channel.latency, "there should be `latency` elements in deque in stable state");
+            }
+            for (_peer, out_channel) in pu.direct_out_channels.iter() {
+                let out_channel = out_channel.borrow();
+                assert_eq!(out_channel.deque.len(), out_channel.latency, "there should be `latency` elements in deque in stable state");
+            }
+        }
+    }
+
+    /// test if there is still message spreading, this can be done in O(1) on FPGA, however this is O(n) in CPU, very expensive
+    pub fn has_message_flying(&self) -> bool {
+        let nodes_len = self.nodes.len();
+        for i in 0..nodes_len {
+            let pu = &self.processing_units[i];
+            for (_peer, out_channel) in pu.union_out_channels.iter() {
+                if out_channel.borrow().has_message_flying() {
+                    return true
+                }
+            }
+            for (_peer, out_channel) in pu.direct_out_channels.iter() {
+                if out_channel.borrow().has_message_flying() {
+                    return true
+                }
+            }
+        }
+        false
+    }
+
+    /// suppose the root node has the correct cardinality, it should spread to all of his nodes
+    pub fn spread_is_odd_cluster(&mut self) -> usize {
+        let mut clock_cycles = 0;
+        let nodes_len = self.nodes.len();
+        // in FPGA, this is done by giving a trigger signal to all PUs, in O(1) time
+        for i in 0..nodes_len {
+            let pu = &mut self.processing_units[i];
+            assert_eq!(pu.updated_root, pu.old_root, "when spreading cardinality, old root must already been updated, otherwise it's inconsistent state");
+            pu.is_odd_cluster = false;  // first set them all to even cluster
+        }
+        // in FPGA, with fast channel architecture, this has worst case bound of O(log(d)) time
+        let mut spreading = true;
+        while spreading {
+            clock_cycles += 1;  // each clock cycle can process one message from every in channels and then push one message to every out channels
+            for i in 0..nodes_len {
+                let pu = &mut self.processing_units[i];
+                // first retrieve messages from all union in channel
+                let old_is_odd_cluster = pu.is_odd_cluster;
+                let in_messages: Vec<Option<UnionMessage>> = pu.union_in_channels.iter().map(|(_peer, in_channel)| {
+                    let mut in_channel = in_channel.borrow_mut();
+                    in_channel.deque.pop_front().unwrap()
+                }).collect();
+                // handle those messages to compute pu.is_odd_cluster, this can be done in O(1) on FPGA, 
+                //    with O(log(log(d))) higher gate level latency, which may reduce the clock cycle a little bit, but still pretty scalable
+                for message in in_messages.iter() {
+                    match message {
+                        Some(UnionMessage{ old_root, updated_root: _ }) => {
+                            if *old_root == pu.old_root {
+                                pu.is_odd_cluster = true;
+                            }
+                        },
+                        None => { },
+                    }
+                }
+                if i == pu.updated_root {
+                    // if touching boundary, then it's even cluster
+                    // if even cardinality, then it's even cluster
+                    pu.is_odd_cluster = !pu.is_touching_boundary && pu.is_odd_cardinality;
+                }
+                // then broadcast messages
+                let should_broadcast = pu.is_odd_cluster != old_is_odd_cluster;
+                if should_broadcast {
+                    assert_eq!(old_is_odd_cluster, false, "pu.is_odd_cluster never changes from `true` to `false` in this stage");
+                    assert_eq!(pu.is_odd_cluster, true, "pu.is_odd_cluster never changes from `true` to `false` in this stage");
+                }
+                for (_peer, out_channel) in pu.union_out_channels.iter() {
+                    let mut out_channel = out_channel.borrow_mut();
+                    out_channel.deque.push_back(if should_broadcast { 
+                        Some(UnionMessage {
+                            old_root: pu.old_root,
+                            updated_root: pu.updated_root,
+                        })
+                    } else {
+                        None
+                    });
+                }
+            }
+            spreading = self.has_message_flying();
+        }
+        clock_cycles
+    }
+
+    /// return (clock cycle used in this iteration, need to run another iteration)
+    pub fn run_single_iteration(&mut self) -> (usize, bool) {
+        let mut clock_cycles = 0;
+        clock_cycles += self.spread_is_odd_cluster();
+        (clock_cycles, false)
     }
 }
 
@@ -461,6 +583,9 @@ mod tests {
             let updated_root_user_data = &decoder.nodes[pu.updated_root].user_data;
             let old_root_user_data = &decoder.nodes[pu.old_root].user_data;
             let error_symbol = if node.is_error_syndrome { "x" } else { " " };
+            let odd_cluster_symbol = if pu.is_odd_cluster { "o" } else { " " };
+            let touching_boundary_symbol = if pu.updated_root == i && pu.is_touching_boundary { "t" } else { " " };
+            let odd_cardinality_symbol = if pu.updated_root == i && pu.is_odd_cardinality { "c" } else { " " };
             let boundary_string = match node.boundary_cost {
                 Some(boundary_cost) => {
                     format!("b({}/{})", pu.boundary_increased, boundary_cost)
@@ -476,7 +601,8 @@ mod tests {
                 let string = format!("{:?}[{}/{}] ", neighbor_user_data, edge.increased, edge.length);
                 neighbor_string.push_str(string.as_str());
             }
-            println!("{:?} ∈ updated {:?} old {:?} {} {} n: {}", node.user_data, updated_root_user_data, old_root_user_data, error_symbol, boundary_string, neighbor_string);
+            println!("{:?} ∈ updated {:?} old {:?} {} {} {} {} {} n: {}", node.user_data, updated_root_user_data, old_root_user_data, error_symbol, odd_cluster_symbol,
+                touching_boundary_symbol, odd_cardinality_symbol, boundary_string, neighbor_string);
         }
     }
 
@@ -497,6 +623,31 @@ mod tests {
     fn distributed_union_find_decoder_sanity_check_2() {
         let (nodes, _position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(3);
         let distributed_union_find = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes);
+        pretty_print_standard_planar_code(&distributed_union_find);
+    }
+
+    #[test]
+    fn distributed_union_find_decoder_sanity_check_3() {
+        // test `spread_is_odd_cluster` function
+        let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(3);
+        nodes[position_to_index[&(0, 1)]].is_error_syndrome = true;  // test touching boundary
+        nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;  // test single error syndrome
+        nodes[position_to_index[&(4, 1)]].is_error_syndrome = true;  // test 2 matching together
+        nodes[position_to_index[&(4, 3)]].is_error_syndrome = true;
+        let mut distributed_union_find = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes);
+        assert_eq!(distributed_union_find.processing_units[position_to_index[&(4, 1)]].is_odd_cluster, true);
+        assert_eq!(distributed_union_find.processing_units[position_to_index[&(4, 3)]].is_odd_cluster, true);
+        distributed_union_find.processing_units[position_to_index[&(0, 1)]].is_touching_boundary = true;
+        distributed_union_find.processing_units[position_to_index[&(4, 3)]].old_root = position_to_index[&(4, 1)];
+        distributed_union_find.processing_units[position_to_index[&(4, 3)]].updated_root = position_to_index[&(4, 1)];
+        distributed_union_find.processing_units[position_to_index[&(4, 1)]].is_odd_cardinality = false;  // because the set has (4, 1) and (4, 3)
+        distributed_union_find.channels_sanity_check();
+        distributed_union_find.spread_is_odd_cluster();
+        distributed_union_find.channels_sanity_check();
+        assert_eq!(distributed_union_find.processing_units[position_to_index[&(4, 1)]].is_odd_cluster, false);
+        assert_eq!(distributed_union_find.processing_units[position_to_index[&(4, 3)]].is_odd_cluster, false);
+        assert_eq!(distributed_union_find.processing_units[position_to_index[&(0, 1)]].is_odd_cluster, false);
+        assert_eq!(distributed_union_find.processing_units[position_to_index[&(2, 3)]].is_odd_cluster, true);
         pretty_print_standard_planar_code(&distributed_union_find);
     }
 
