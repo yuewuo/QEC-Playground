@@ -30,6 +30,8 @@ extern crate pbr;
 extern crate rand_core;
 #[macro_use] extern crate derivative;
 extern crate union_find;
+extern crate ringbuf;
+extern crate derive_more;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

@@ -4,11 +4,11 @@
 //!
 //! UnionFind decoder has good accuracy and computational complexity when running on CPU, which is in worst case $O(n α(n))$.
 //! In a running quantum computer, the number of errors $n$ that are actively concerned in every round is $O(d^3)$, given the code distance $d$.
-//! Suppose every fault tolerant operation requires O(d) rounds, that means we need to solve $n = O(d^3)$ errors in O(d) time.
+//! Suppose every fault tolerant operation requires $O(d)$ rounds, that means we need to solve $n = O(d^3)$ errors in $O(d)$ time.
 //! This latency requirement is much stricter than the currently sequential implementation of UnionFind decoder, which is about $O(d^3)$ over the requirement of $O(d)$.
 //!
 //! We need to design a distributed UnionFind decoder to fit into the timing constraint.
-//! This means we need to solve $O(d^3)$ errors in as much close to O(d) time as possible.
+//! This means we need to solve $O(d^3)$ errors in as much close to $O(d)$ time as possible.
 //! In this work, we propose a $O(d \log{d})$ average time distributed UnionFind decoder implemented on FPGA(s).
 //!
 //! ## Background
@@ -33,7 +33,7 @@
 //! A naive design would be spreading the root of the disjoint set in the graph.
 //! When a union operation should apply to two disjoint sets, the root is updated to the smallest root.
 //! This is not considered optimal in sequential union-find algorithms, actually they use rank-based or weight-based merging to improve performance.
-//! In our case, however, since the root must be spread to all nodes, which takes O(d) worst case bound, a fixed rule of root selection
+//! In our case, however, since the root must be spread to all nodes, which takes $O(d)$ worst case bound, a fixed rule of root selection
 //!      (so that node can choose the updated root without querying the root's internal state) is more important than reducing the number of updated nodes.
 //! This operation is totally distributed, as merging union will ultimately be updated to the smallest root, although some intermediate state has invalid root.
 //!
@@ -109,3 +109,395 @@
 //! The iteration stops once there are no messages pending, and till then the cardinality at the new root will increase by the increment counter.
 //! This ensures a consistent state at the end of the iteration.
 //!
+//! ## Interface
+//!
+//! - Initialization
+//!   - nodes: Vec\<InputNode\>, each node has the following field
+//!     - user_data: \<U\>, could be anything for user-defined functions to be used (dynamic update prohibited)
+//!     - is_error_syndrome: bool, if the stabilizer detects an error, set this to `true` (dynamic update prohibited)
+//!     - boundary_cost: Option<usize>, if connected to boundary, then `Some(cost)` (dynamic update allowed)
+//!   - neighbors: Vec\<InputNeighbor\>, connection of direct neighbors (order doesn't matter)
+//!   - fast_channels: Vec\<InputFastChannel\>, fast channels to reduce the average time complexity, see "fast channel architecture" in Design section
+//!   - distance: fn(a: \<U\>, b: \<U\>) -> usize, the Manhattan distance between two nodes, which is used to send direct messages in a fastest path
+//!
+//! After initialization, the algorithm will instantiate multiple processing unit (PU), each corresponds to a node.
+//!
+
+use std::collections::HashMap;
+use std::cell::RefCell;
+use std::cmp::Ordering;
+use std::rc::Rc;
+use super::serde::{Serialize, Deserialize};
+use super::ringbuf::{RingBuffer, Producer, Consumer};
+use super::derive_more::{Constructor};
+
+#[derive(Debug, Serialize, Deserialize, Constructor)]
+pub struct InputNode<U: std::fmt::Debug> {
+    /// user defined data corresponds to each node
+    pub user_data: U,
+    /// whether this stabilizer has detected a error
+    pub is_error_syndrome: bool,
+    /// if this node has a direct path to boundary, then set to `Some(cost)` given the integer cost of matching to boundary, otherwise `None`.
+    /// This attribute can be modified later, as what's happening in a continuously running quantum computer
+    pub boundary_cost: Option<usize>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Constructor)]
+pub struct InputNeighbor {
+    /// address of node `a`
+    pub a: usize,
+    /// address of node `b`
+    pub b: usize,
+    /// current increased value, should be 0 in general, and can be `length` if there exists an erasure error (Pauli error with known position)
+    pub increased: usize,
+    /// the total length of this edge
+    pub length: usize,
+    /// latency of the message passing, note that this latency also affect reading the `increased` value
+    /// , and thus will increase the clock cycle in spreading stage
+    pub latency: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, Constructor)]
+pub struct InputFastChannel {
+    /// address of node `a`
+    pub a: usize,
+    /// address of node `b`
+    pub b: usize,
+    /// latency of the message passing
+    pub latency: usize,
+}
+
+#[derive(Derivative, Serialize)]
+#[derivative(Debug)]
+pub struct DistributedUnionFind<U: std::fmt::Debug> {
+    /// the immutable input nodes, which maps to processing units in `processing_units`
+    pub nodes: Vec<InputNode<U>>,
+    /// processing units, each one corresponding to a node of the input graph
+    pub processing_units: Vec<ProcessingUnit>,
+    #[derivative(Debug="ignore")]
+    #[serde(skip_serializing)]
+    /// distance function given two nodes' user data
+    pub distance: Box<dyn Fn(&U, &U) -> usize>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ProcessingUnit {
+    /// directly connected neighbors, (address, neighbor_link)
+    #[serde(skip_serializing)]
+    pub neighbors: Vec<(usize, Rc<RefCell<NeighborLink>>)>,
+    /// union message channels, including both neighbor channels and fast channels, where each neighbor channel has the same indices as in `neighbors`
+    pub union_out_channels: Vec<(usize, OutChannel<UnionMessage>)>,
+    pub union_in_channels: Vec<(usize, InChannel<UnionMessage>)>,
+    /// direct message channels, including both neighbor channels and fast channels
+    pub direct_out_channels: Vec<(usize, OutChannel<DirectMessage>)>,
+    pub direct_in_channels: Vec<(usize, InChannel<DirectMessage>)>,
+    /// increased value towards boundary, only valid when `node.boundary_cost` is `Some(_)`
+    pub boundary_increased: usize,
+    /// old root register
+    pub old_root: usize,
+    /// updated root register
+    pub updated_root: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct NeighborLink {
+    /// current increased value, should be 0 in general, and can be `length` if there exists an erasure error (Pauli error with known position)
+    pub increased: usize,
+    /// the total length of this edge
+    pub length: usize,
+    /// latency of the `increased` value to be updated at the peer
+    pub latency: usize,
+}
+
+#[derive(Derivative, Serialize)]
+#[derivative(Debug)]
+pub struct OutChannel<Message> {
+    /// latency of the message passing
+    pub latency: usize,
+    /// a ring buffer with length `latency + 1`
+    #[derivative(Debug="ignore")]
+    #[serde(skip_serializing)]
+    pub producer: Producer<Option<Message>>,
+}
+
+#[derive(Derivative, Serialize)]
+#[derivative(Debug)]
+pub struct InChannel<Message> {
+    /// latency of the message passing
+    pub latency: usize,
+    /// a ring buffer with length `latency + 1`
+    #[derivative(Debug="ignore")]
+    #[serde(skip_serializing)]
+    pub consumer: Consumer<Option<Message>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct UnionMessage {
+    /// the old root of the sender
+    pub old_root: usize,
+    /// the updated root of the sender
+    pub updated_root: usize,
+    /// update as odd cluster, this happens at the end of iteration
+    pub update_as_odd_cluster: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct DirectMessage {
+    /// the receiver address
+    pub receiver: usize,
+    /// if this is the root of odd cardinality that will be merged into `receiver`'s cluster
+    pub is_odd_cardinality_root: bool,
+    /// if this is a boundary node, so that the receiver as it's new root will know it is odd cluster
+    pub is_touching_boundary: bool,
+}
+
+pub fn unordered_edge_compare(a1: usize, b1: usize, a2: usize, b2: usize) -> Ordering {
+    let x_s = std::cmp::min(a1, b1);
+    let x_l = std::cmp::max(a1, b1);
+    let y_s = std::cmp::min(a2, b2);
+    let y_l = std::cmp::max(a2, b2);
+    match x_s.cmp(&y_s) {
+        Ordering::Less => Ordering::Less,
+        Ordering::Greater => Ordering::Greater,
+        Ordering::Equal => x_l.cmp(&y_l),
+    }
+}
+
+impl Ord for InputNeighbor {
+    fn cmp(&self, other: &Self) -> Ordering {
+        unordered_edge_compare(self.a, self.b, other.a, other.b)
+    }
+}
+
+impl PartialOrd for InputNeighbor {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for InputNeighbor {
+    fn eq(&self, other: &Self) -> bool {
+        unordered_edge_compare(self.a, self.b, other.a, other.b) == Ordering::Equal
+    }
+}
+
+impl Eq for InputNeighbor {}
+
+impl Ord for InputFastChannel {
+    fn cmp(&self, other: &Self) -> Ordering {
+        unordered_edge_compare(self.a, self.b, other.a, other.b)
+    }
+}
+
+impl PartialOrd for InputFastChannel {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for InputFastChannel {
+    fn eq(&self, other: &Self) -> bool {
+        unordered_edge_compare(self.a, self.b, other.a, other.b) == Ordering::Equal
+    }
+}
+
+impl Eq for InputFastChannel {}
+
+impl<U: std::fmt::Debug> DistributedUnionFind<U> {
+    pub fn new(nodes: Vec<InputNode<U>>, mut neighbors: Vec<InputNeighbor>, mut fast_channels: Vec<InputFastChannel>, 
+            distance: impl Fn(&U, &U) -> usize + 'static) -> Self {
+        // filter invalid and duplicated neighbor edges
+        let nodes_length = nodes.len();
+        let neighbors_length = neighbors.len();
+        neighbors.retain(|edge| {
+            edge.a != edge.b && edge.a < nodes_length && edge.b < nodes_length
+        });  // remove invalid neighbor edges
+        assert_eq!(neighbors_length, neighbors.len(), "`neighbors` contains invalid edges (either invalid address or edge connecting the same node)");
+        neighbors.sort_unstable();
+        neighbors.dedup();
+        assert_eq!(neighbors_length, neighbors.len(), "`neighbors` contains duplicate elements (including the same ends)");
+        // filter invalid and duplicated fast_channels edges
+        let fast_channels_length = fast_channels.len();
+        fast_channels.retain(|edge| {
+            edge.a != edge.b && edge.a < nodes_length && edge.b < nodes_length
+        });  // remove invalid neighbor edges
+        assert_eq!(fast_channels_length, fast_channels.len(), "`fast_channels` contains invalid edges (either invalid address or edge connecting the same node)");
+        fast_channels.sort_unstable();
+        fast_channels.dedup();
+        assert_eq!(fast_channels_length, fast_channels.len(), "`fast_channels` contains duplicate elements (including the same ends)");
+        // build processing units
+        let mut processing_units: Vec<_> = nodes.iter().enumerate().map(|(i, _node)| {
+            ProcessingUnit {
+                neighbors: Vec::new(),
+                union_out_channels: Vec::new(),
+                union_in_channels: Vec::new(),
+                direct_out_channels: Vec::new(),
+                direct_in_channels: Vec::new(),
+                boundary_increased: 0,
+                old_root: i,
+                updated_root: i,
+            }
+        }).collect();
+        // build neighbors and their channels
+        for InputNeighbor { a, b, increased, length, latency } in neighbors.iter() {
+            let neighbor_link = Rc::new(RefCell::new(NeighborLink {
+                increased: *increased,
+                length: *length,
+                latency: *latency,
+            }));
+            processing_units[*a].neighbors.push((*b, neighbor_link.clone()));
+            processing_units[*b].neighbors.push((*a, neighbor_link.clone()));
+            // build channels
+            for (x, y) in [(*a, *b), (*b, *a)].iter() {
+                // union channels
+                let (mut producer, consumer) = RingBuffer::new(*latency + 1).split();
+                producer.push_iter(&mut (0..*latency).map(|_| None));
+                processing_units[*x].union_out_channels.push((*y, OutChannel{ latency: *latency, producer: producer }));
+                processing_units[*y].union_in_channels.push((*x, InChannel{ latency: *latency, consumer: consumer }));
+                // direct message channels
+                let (mut producer, consumer) = RingBuffer::new(*latency + 1).split();
+                producer.push_iter(&mut (0..*latency).map(|_| None));
+                processing_units[*x].direct_out_channels.push((*y, OutChannel{ latency: *latency, producer: producer }));
+                processing_units[*y].direct_in_channels.push((*x, InChannel{ latency: *latency, consumer: consumer }));
+            }
+        }
+        for pu in processing_units.iter() {
+            assert_eq!(pu.neighbors.len(), pu.union_out_channels.len(), "each neighbor should have exactly one channel");
+            assert_eq!(pu.neighbors.len(), pu.union_in_channels.len(), "each neighbor should have exactly one channel");
+            assert_eq!(pu.neighbors.len(), pu.direct_out_channels.len(), "each neighbor should have exactly one channel");
+            assert_eq!(pu.neighbors.len(), pu.direct_in_channels.len(), "each neighbor should have exactly one channel");
+        }
+        // build fast channels
+        for InputFastChannel { a, b, latency } in fast_channels.iter() {
+            // build channels
+            for (x, y) in [(*a, *b), (*b, *a)].iter() {
+                // union channels
+                let (mut producer, consumer) = RingBuffer::new(*latency + 1).split();
+                producer.push_iter(&mut (0..*latency).map(|_| None));
+                processing_units[*x].union_out_channels.push((*y, OutChannel{ latency: *latency, producer: producer }));
+                processing_units[*y].union_in_channels.push((*x, InChannel{ latency: *latency, consumer: consumer }));
+                // direct message channels
+                let (mut producer, consumer) = RingBuffer::new(*latency + 1).split();
+                producer.push_iter(&mut (0..*latency).map(|_| None));
+                processing_units[*x].direct_out_channels.push((*y, OutChannel{ latency: *latency, producer: producer }));
+                processing_units[*y].direct_in_channels.push((*x, InChannel{ latency: *latency, consumer: consumer }));
+            }
+        }
+        for pu in processing_units.iter() {
+            assert_eq!(pu.union_out_channels.len(), pu.union_in_channels.len(), "amount of channels should be the same");
+            assert_eq!(pu.union_out_channels.len(), pu.direct_out_channels.len(), "amount of channels should be the same");
+            assert_eq!(pu.union_out_channels.len(), pu.direct_in_channels.len(), "amount of channels should be the same");
+        }
+        Self {
+            nodes: nodes,
+            processing_units: processing_units,
+            distance: Box::new(distance),
+        }
+    }
+}
+
+/// create nodes for standard planar code (2d, perfect measurement condition). return only X stabilizers or only Z stabilizers.
+/// return (nodes, position_to_index, neighbors), the fast channel should be empty, which is Vec::new()
+pub fn make_standard_planar_code_2d_nodes_no_fast_channel(d: usize, is_x_stabilizers: bool) -> (Vec<InputNode<(usize, usize)>>, HashMap<(usize, usize), usize>,
+        Vec<InputNeighbor>) {
+    let mut nodes = Vec::new();
+    let mut position_to_index = HashMap::new();
+    for i in (if is_x_stabilizers { 0..=2*d-2 } else { 1..=2*d-3 }).step_by(2) {
+        for j in (if is_x_stabilizers { 1..=2*d-3 } else { 0..=2*d-2 }).step_by(2) {
+            position_to_index.insert((i, j), nodes.len());
+            let is_boundary = if is_x_stabilizers { j == 1 || j == 2*d-3 } else { i == 1 || i == 2*d-3 };
+            nodes.push(InputNode {
+                user_data: (i, j),
+                is_error_syndrome: false,
+                boundary_cost: if is_boundary { Some(2) } else { None },
+            });
+        }
+    }
+    let mut neighbors = Vec::new();
+    for i in (if is_x_stabilizers { 0..=2*d-2 } else { 1..=2*d-3 }).step_by(2) {
+        for j in (if is_x_stabilizers { 1..=2*d-3 } else { 0..=2*d-2 }).step_by(2) {
+            for (di, dj) in [(2, 0), (0, 2)].iter() {
+                let ni = i + di;
+                let nj = j + dj;
+                if ni <= 2*d-2 && nj <= 2*d-2 {
+                    neighbors.push(InputNeighbor{
+                        a: position_to_index[&(i, j)],
+                        b: position_to_index[&(ni, nj)],
+                        increased: 0,
+                        length: 2,
+                        latency: 1,
+                    });
+                }
+            }
+        }
+    }
+    (nodes, position_to_index, neighbors)
+}
+
+pub fn manhattan_distance_standard_planar_code_2d_nodes(a: &(usize, usize), b: &(usize, usize)) -> usize {
+    let (i1, j1) = *a;
+    let (i2, j2) = *b;
+    let di = (i1 as isize - i2 as isize).abs() as usize;
+    let dj = (j1 as isize - j2 as isize).abs() as usize;
+    assert!(di % 2 == 0 && dj % 2 == 0, "cannot compute cost between different types of stabilizers");
+    (di + dj) / 2
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // use `cargo test distributed_union_find_decoder_test_case_1 -- --nocapture` to run specific test
+    
+    fn make_standard_planar_code_2d_nodes_no_fast_channel_only_x(d: usize) -> (Vec<InputNode<(usize, usize)>>, HashMap<(usize, usize), usize>, Vec<InputNeighbor>) {
+        make_standard_planar_code_2d_nodes_no_fast_channel(d, true)
+    }
+
+    fn pretty_print_standard_planar_code(decoder: &DistributedUnionFind<(usize, usize)>) {
+        let nodes_len = decoder.nodes.len();
+        for i in 0..nodes_len {
+            let node = &decoder.nodes[i];
+            let pu = &decoder.processing_units[i];
+            let updated_root_user_data = &decoder.nodes[pu.updated_root].user_data;
+            let old_root_user_data = &decoder.nodes[pu.old_root].user_data;
+            let error_symbol = if node.is_error_syndrome { "x" } else { " " };
+            let boundary_string = match node.boundary_cost {
+                Some(boundary_cost) => {
+                    format!("b({}/{})", pu.boundary_increased, boundary_cost)
+                },
+                None => format!("      "),
+            };
+            let neighbors_len = pu.neighbors.len();
+            let mut neighbor_string = String::new();
+            for j in 0..neighbors_len {
+                let (neighbor_addr, edge) = &pu.neighbors[j];
+                let edge = edge.borrow();
+                let neighbor_user_data = &decoder.nodes[*neighbor_addr].user_data;
+                let string = format!("{:?}[{}/{}] ", neighbor_user_data, edge.increased, edge.length);
+                neighbor_string.push_str(string.as_str());
+            }
+            println!("{:?} ∈ updated {:?} old {:?} {} {} n: {}", node.user_data, updated_root_user_data, old_root_user_data, error_symbol, boundary_string, neighbor_string);
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn distributed_union_find_decoder_sanity_check_1() {
+        let (nodes, position_to_index, mut neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(3);
+        println!("nodes: {:#?}", nodes);
+        println!("position_to_index: {:?}", position_to_index);
+        println!("neighbors: {:?}", neighbors);
+        // add duplicate neighbor edge
+        neighbors.push(InputNeighbor::new(position_to_index[&(0, 3)], position_to_index[&(0, 1)], 1000, 1000, 1));
+        // should then panic
+        DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes);
+    }
+
+    #[test]
+    fn distributed_union_find_decoder_sanity_check_2() {
+        let (nodes, _position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(3);
+        let distributed_union_find = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes);
+        pretty_print_standard_planar_code(&distributed_union_find);
+    }
+
+}
