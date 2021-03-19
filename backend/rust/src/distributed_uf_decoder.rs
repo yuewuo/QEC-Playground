@@ -209,6 +209,11 @@ pub struct ProcessingUnit {
     pub is_touching_boundary: bool,
     /// is odd cardinality, counts the number of error syndromes in a region
     pub is_odd_cardinality: bool,
+    /// this is only used for debugging, to count the real cardinality of cluster. `is_odd_cardinality` should be enough for implementing on FPGA
+    pub debug_cardinality: usize,
+    /// whether need to tell the new root about the cardinality and the boundary
+    pub pending_tell_new_root_cardinality: bool,
+    pub pending_tell_new_root_touching_boundary: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -238,7 +243,7 @@ pub struct NeighborLink {
 
 #[derive(Derivative, Serialize)]
 #[derivative(Debug)]
-pub struct Channel<Message> {
+pub struct Channel<Message: std::fmt::Debug> {
     /// latency of the message passing
     pub latency: usize,
     /// a ring buffer having exactly `latency` objects in stable state
@@ -315,12 +320,13 @@ impl PartialEq for InputFastChannel {
 
 impl Eq for InputFastChannel {}
 
-impl<Message> Channel<Message> {
+impl<Message: std::fmt::Debug> Channel<Message> {
     pub fn has_message_flying(&self) -> bool {
         let mut found = false;
         for message in self.deque.iter() {
             if message.is_some() {
                 found = true;
+                // println!("[flying] {:?}", message);
                 break
             }
         }
@@ -364,6 +370,9 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                 is_odd_cluster: node.is_error_syndrome,
                 is_touching_boundary: false,
                 is_odd_cardinality: node.is_error_syndrome,
+                debug_cardinality: if node.is_error_syndrome { 1 } else { 0 },
+                pending_tell_new_root_cardinality: false,
+                pending_tell_new_root_touching_boundary: false,
             }
         }).collect();
         // build neighbors and their channels
@@ -474,6 +483,7 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
             }
             for (_peer, out_channel) in pu.direct_out_channels.iter() {
                 if out_channel.borrow().has_message_flying() {
+                    // println!("[flying] {:?} -> {:?}", self.nodes[i].user_data, self.nodes[*_peer].user_data);
                     return true
                 }
             }
@@ -545,39 +555,42 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
 
     pub fn grow_boundary(&mut self) -> usize {
         let nodes_len = self.nodes.len();
-        let mut maximum_latency = 1;
         // in FPGA, this is done by giving a trigger signal to all PUs, in O(1) time
         for i in 0..nodes_len {
             let pu = &self.processing_units[i];
             assert_eq!(pu.updated_root, pu.old_root, "when growing boundary, old root must already been updated, otherwise it's inconsistent state");
-            let neighbors_len = pu.neighbors.len();
-            for j in 0..neighbors_len {
-                let pu = &self.processing_units[i];
-                let neighbor = &pu.neighbors[j];
-                let mut neighbor_link = neighbor.link.borrow_mut();
-                if neighbor_link.increased < neighbor_link.length {
-                    neighbor_link.increased += 1;  // grow the edge if it's not fully grown
-                }
-                if neighbor_link.latency > maximum_latency {
-                    maximum_latency = neighbor_link.latency;
-                }
-            }
-            match self.nodes[i].boundary_cost {
-                Some(boundary_cost) => {
-                    let pu = &mut self.processing_units[i];
-                    if pu.boundary_increased < boundary_cost {
-                        pu.boundary_increased += 1;
+            if pu.is_odd_cluster {
+                let neighbors_len = pu.neighbors.len();
+                for j in 0..neighbors_len {
+                    let pu = &self.processing_units[i];
+                    let neighbor = &pu.neighbors[j];
+                    let mut neighbor_link = neighbor.link.borrow_mut();
+                    if neighbor_link.increased < neighbor_link.length {
+                        neighbor_link.increased += 1;  // grow the edge if it's not fully grown
                     }
-                },
-                None => { },
+                }
+                match self.nodes[i].boundary_cost {
+                    Some(boundary_cost) => {
+                        let pu = &mut self.processing_units[i];
+                        if pu.boundary_increased < boundary_cost {
+                            pu.boundary_increased += 1;
+                        }
+                    },
+                    None => { },
+                }
             }
         }
-        maximum_latency
+        1  // always done in 1 clock cycle, this doesn't need to be synchronized
     }
 
     /// compare nodes given their addresses
     pub fn get_node_smaller(&self, a: usize, b: usize) -> usize {
         if (self.compare)(&self.nodes[a].user_data, &self.nodes[b].user_data) == Ordering::Less { a } else { b }
+    }
+
+    /// compute distance given address
+    pub fn get_node_distance(&self, a: usize, b: usize) -> usize {
+        (self.distance)(&self.nodes[a].user_data, &self.nodes[b].user_data)
     }
 
     pub fn spread_clusters(&mut self) -> usize {
@@ -607,11 +620,12 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
             }
         }
         clock_cycles += maximum_latency;
-        self.debug_print();
         // then broadcast messages if need to, both to union channel and direct channel
         let mut spreading = true;
         // run until there is no messages flying
         while spreading {
+            clock_cycles += 1;
+            let mut intermediate_states = Vec::with_capacity(nodes_len);
             for i in 0..nodes_len {
                 let pu = &mut self.processing_units[i];
                 // check if this is the first time to touch the boundary, finished in O(1) time on FPGA
@@ -679,6 +693,120 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                 }
                 // finally update the state
                 pu.updated_root = new_updated_root;
+                // at the same time, try to find a direct message to route
+                // since the direct message should be very rare in the system, just a simple logic would suffice
+                if new_updated_root != old_updated_root {
+                    if self.nodes[i].is_error_syndrome {  // only nodes with error syndrome should tell the root about updated cardinality
+                        pu.pending_tell_new_root_cardinality = true;
+                    }
+                }
+                if pu.is_touching_boundary != old_is_touching_boundary {
+                    pu.pending_tell_new_root_touching_boundary = true;
+                }
+                if new_updated_root == i {  // don't need to send message to myself
+                    pu.pending_tell_new_root_cardinality = false;
+                    pu.pending_tell_new_root_touching_boundary = false;
+                }
+                let mut pending_direct_message = None;
+                if pu.pending_tell_new_root_cardinality || pu.pending_tell_new_root_touching_boundary {
+                    pending_direct_message = Some(DirectMessage {
+                        receiver: new_updated_root,
+                        is_odd_cardinality_root: pu.pending_tell_new_root_cardinality,
+                        is_touching_boundary: pu.pending_tell_new_root_touching_boundary,
+                    });
+                }
+                // read from all direct channels, finish in O(1) on FPGA
+                let mut need_to_pop_direct_in_channel_from_idx = None;
+                for (j, (_peer, in_channel)) in pu.direct_in_channels.iter().enumerate() {
+                    let mut in_channel = in_channel.borrow_mut();
+                    let in_message = in_channel.deque.get(0).unwrap();
+                    if in_message.is_none() {
+                        in_channel.deque.pop_front().unwrap();  // always get None message from the queue
+                    } else {
+                        let in_message = in_message.as_ref().unwrap();
+                        if in_message.receiver == i {  // I'm the receiver, so I'll process this information
+                            // if children has error syndrome and is its first time to join this cluster, then the cluster's cardinality +1
+                            pu.debug_cardinality += if in_message.is_odd_cardinality_root { 1 } else { 0 };
+                            pu.is_odd_cardinality ^= in_message.is_odd_cardinality_root;
+                            // if some of its children touch the boundary, then the cluster touches the boundary
+                            pu.is_touching_boundary |= in_message.is_touching_boundary;
+                            // always pop it because it's already been handled
+                            in_channel.deque.pop_front().unwrap();
+                        } else {
+                            // never pop valid in_message here, do it after making sure that the message can be handled or brokered
+                            if pending_direct_message.is_none() {  // retrieve Some message only if pending_direct_message is none
+                                // do not take it from deque, because it may not be able to send out, and need to try again next clock cycle
+                                pending_direct_message = Some(in_message.clone());
+                                need_to_pop_direct_in_channel_from_idx = Some(j);
+                            }
+                        }
+                    }
+                }
+                // find the most attractive channel for `pending_direct_message`, finish in O(1) on FPGA
+                let mut best_channel_for_pending_message_idx = None;
+                let pu = &self.processing_units[i];
+                match pending_direct_message {
+                    Some(DirectMessage{ receiver, is_odd_cardinality_root: _, is_touching_boundary: _ }) => {
+                        // find the best channel (peer with smallest distance)
+                        for (j, (peer, _out_channel)) in pu.direct_out_channels.iter().enumerate() {
+                            best_channel_for_pending_message_idx = Some(match best_channel_for_pending_message_idx {
+                                Some(idx) => {
+                                    let (last_address, _out_channel) = &pu.direct_out_channels[idx];
+                                    if self.get_node_distance(*peer, receiver) < self.get_node_distance(*last_address, receiver) {
+                                        j
+                                    } else {
+                                        idx
+                                    }
+                                },
+                                None => {
+                                    j
+                                },
+                            });
+                        }
+                    },
+                    None => { },
+                }
+                // save intermediate states, this is not necessary in FPGA, it's only used to mimic direct channels with latency and busy flag
+                intermediate_states.push((pending_direct_message, best_channel_for_pending_message_idx, need_to_pop_direct_in_channel_from_idx));
+            }
+            // first let all nodes retrieve message from direct channels, and then send messages to direct channels
+            // have to do this in two iterations, otherwise it's difficult and problematic to check if a deque is full (with length `latency`) or not
+            // this is not necessarily two clock cycle in FPGA, because it can always check if the queue is full and then respond to that
+            // all the logic here can map to a combinational logic in FPGA (whose longest path must fit into 1 clock cycle)
+            // in this way, the parallelism of FPGA is utilized
+            for i in 0..nodes_len {
+                // send to all direct channels
+                let pu = &mut self.processing_units[i];
+                let mut pending_message_sent_successfully = false;
+                let (mut pending_direct_message, best_channel_for_pending_message_idx, need_to_pop_direct_in_channel_from_idx) = intermediate_states.remove(0);
+                for (j, (_peer, out_channel)) in pu.direct_out_channels.iter().enumerate() {
+                    let mut out_channel = out_channel.borrow_mut();
+                    // push a message only if it's last message is taken by the peer
+                    if out_channel.deque.len() < out_channel.latency {
+                        out_channel.deque.push_back(if best_channel_for_pending_message_idx == Some(j) {
+                            pending_message_sent_successfully = true;  // mark as sent successfully
+                            pending_direct_message.take()  // leaving a None in pending_direct_message
+                        } else {
+                            None
+                        });
+                    }
+                }
+                // update internal state
+                if pending_message_sent_successfully {  // don't send again next time
+                    pu.pending_tell_new_root_cardinality = false;
+                    pu.pending_tell_new_root_touching_boundary = false;
+                    match need_to_pop_direct_in_channel_from_idx {
+                        Some(direct_in_channel_idx) => {
+                            let (_peer, in_channel) = &pu.direct_in_channels[direct_in_channel_idx];
+                            let mut in_channel = in_channel.borrow_mut();
+                            in_channel.deque.pop_front().unwrap();
+                        },
+                        None => { },
+                    }
+                }
+            }
+            if cfg!(test) {
+                self.channels_sanity_check();
             }
             spreading = self.has_message_flying();
         }
@@ -748,7 +876,9 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                 let string = format!("{:?}[{}/{}] ", neighbor_user_data, edge.increased, edge.length);
                 neighbor_string.push_str(string.as_str());
             }
-            println!("{:?} ∈ updated {:?} old {:?} {} {} {} {} {} n: {}", node.user_data, updated_root_user_data, old_root_user_data, error_symbol, odd_cluster_symbol,
+            let debug_cardinality_string = if pu.updated_root == i { format!("[{}]", pu.debug_cardinality) } else { format!("   ") };
+            println!("{:?} ∈ updated {:?} {} old {:?} {} {} {} {} {} n: {}", node.user_data, updated_root_user_data, debug_cardinality_string, 
+                old_root_user_data, error_symbol, odd_cluster_symbol,
                 touching_boundary_symbol, odd_cardinality_symbol, boundary_string, neighbor_string);
         }
         println!("[debug print end]");
@@ -824,37 +954,6 @@ mod tests {
         make_standard_planar_code_2d_nodes_no_fast_channel(d, true)
     }
 
-    fn pretty_print_standard_planar_code(decoder: &DistributedUnionFind<(usize, usize)>) {
-        let nodes_len = decoder.nodes.len();
-        for i in 0..nodes_len {
-            let node = &decoder.nodes[i];
-            let pu = &decoder.processing_units[i];
-            let updated_root_user_data = &decoder.nodes[pu.updated_root].user_data;
-            let old_root_user_data = &decoder.nodes[pu.old_root].user_data;
-            let error_symbol = if node.is_error_syndrome { "x" } else { " " };
-            let odd_cluster_symbol = if pu.is_odd_cluster { "o" } else { " " };
-            let touching_boundary_symbol = if pu.updated_root == i && pu.is_touching_boundary { "t" } else { " " };
-            let odd_cardinality_symbol = if pu.updated_root == i && pu.is_odd_cardinality { "c" } else { " " };
-            let boundary_string = match node.boundary_cost {
-                Some(boundary_cost) => {
-                    format!("b({}/{})", pu.boundary_increased, boundary_cost)
-                },
-                None => format!("      "),
-            };
-            let neighbors_len = pu.neighbors.len();
-            let mut neighbor_string = String::new();
-            for j in 0..neighbors_len {
-                let neighbor = &pu.neighbors[j];
-                let edge = neighbor.link.borrow();
-                let neighbor_user_data = &decoder.nodes[neighbor.address].user_data;
-                let string = format!("{:?}[{}/{}] ", neighbor_user_data, edge.increased, edge.length);
-                neighbor_string.push_str(string.as_str());
-            }
-            println!("{:?} ∈ updated {:?} old {:?} {} {} {} {} {} n: {}", node.user_data, updated_root_user_data, old_root_user_data, error_symbol, odd_cluster_symbol,
-                touching_boundary_symbol, odd_cardinality_symbol, boundary_string, neighbor_string);
-        }
-    }
-
     #[test]
     #[should_panic]
     fn distributed_union_find_decoder_sanity_check_1() {
@@ -873,7 +972,7 @@ mod tests {
         let (nodes, _position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(3);
         let distributed_union_find = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
             compare_standard_planar_code_2d_nodes);
-        pretty_print_standard_planar_code(&distributed_union_find);
+        distributed_union_find.debug_print();
     }
 
     #[test]
@@ -899,7 +998,7 @@ mod tests {
         assert_eq!(distributed_union_find.processing_units[position_to_index[&(4, 3)]].is_odd_cluster, false);
         assert_eq!(distributed_union_find.processing_units[position_to_index[&(0, 1)]].is_odd_cluster, false);
         assert_eq!(distributed_union_find.processing_units[position_to_index[&(2, 3)]].is_odd_cluster, true);
-        pretty_print_standard_planar_code(&distributed_union_find);
+        distributed_union_find.debug_print();
     }
 
     #[test]
@@ -909,16 +1008,15 @@ mod tests {
         nodes[position_to_index[&(2, 1)]].is_error_syndrome = true;  // test single error syndrome
         let mut distributed_union_find = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
             compare_standard_planar_code_2d_nodes);
-        println!("[pretty print]");
-        pretty_print_standard_planar_code(&distributed_union_find);
-        distributed_union_find.spread_clusters();
-        println!("[pretty print]");
-        pretty_print_standard_planar_code(&distributed_union_find);
-        distributed_union_find.spread_is_odd_cluster();
-        // distributed_union_find.run_single_iteration();
-        println!("[pretty print]");
-        pretty_print_standard_planar_code(&distributed_union_find);
+        distributed_union_find.debug_print();
+        distributed_union_find.reach_consistent_state();
+        distributed_union_find.debug_print();
+        let (_, need_to_run_another) = distributed_union_find.run_single_iteration();
+        assert_eq!(need_to_run_another, true, "1 iteration is not enough");
+        distributed_union_find.debug_print();
+        let (_, need_to_run_another) = distributed_union_find.run_single_iteration();
+        assert_eq!(need_to_run_another, false, "2 iterations should be enough");
+        distributed_union_find.debug_print();
     }
-
 
 }
