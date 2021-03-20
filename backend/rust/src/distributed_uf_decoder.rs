@@ -129,6 +129,7 @@ use std::cmp::Ordering;
 use std::rc::Rc;
 use super::serde::{Serialize, Deserialize};
 use super::derive_more::{Constructor};
+use super::offer_decoder;
 
 #[derive(Debug, Serialize, Deserialize, Constructor)]
 pub struct InputNode<U: std::fmt::Debug> {
@@ -699,6 +700,9 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                     if self.nodes[i].is_error_syndrome {  // only nodes with error syndrome should tell the root about updated cardinality
                         pu.pending_tell_new_root_cardinality = true;
                     }
+                    if pu.is_touching_boundary {
+                        pu.pending_tell_new_root_touching_boundary = true;
+                    }
                 }
                 if pu.is_touching_boundary != old_is_touching_boundary {
                     pu.pending_tell_new_root_touching_boundary = true;
@@ -799,7 +803,9 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                         Some(direct_in_channel_idx) => {
                             let (_peer, in_channel) = &pu.direct_in_channels[direct_in_channel_idx];
                             let mut in_channel = in_channel.borrow_mut();
+                            // mark the original message as taken, but not change the amount of elements in the channel
                             in_channel.deque.pop_front().unwrap();
+                            in_channel.deque.push_front(None);
                         },
                         None => { },
                     }
@@ -994,6 +1000,43 @@ pub fn get_standard_planar_code_2d_left_boundary_cardinality(d: usize, position_
     boundary_cardinality
 }
 
+/// return `(has_x_logical_error, has_z_logical_error)`
+pub fn run_given_offer_decoder_instance_no_fast_channel(decoder: &mut offer_decoder::OfferDecoder) -> (bool, bool) {
+    let d = decoder.d;
+    decoder.error_changed();
+    // decode X errors
+    let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel(d, true);
+    for i in (0..=2*d-2).step_by(2) {
+        for j in (1..=2*d-3).step_by(2) {
+            if decoder.qubits[i][j].measurement {
+                nodes[position_to_index[&(i, j)]].is_error_syndrome = true;
+            }
+        }
+    }
+    let mut uf_decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
+        compare_standard_planar_code_2d_nodes);
+    uf_decoder.run_to_stable();
+    let left_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, false)
+        + decoder.origin_error_left_boundary_cardinality();
+    let has_x_logical_error = left_boundary_cardinality % 2 == 1;
+    // decode Z errors
+    let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel(d, false);
+    for i in (1..=2*d-3).step_by(2) {
+        for j in (0..=2*d-2).step_by(2) {
+            if decoder.qubits[i][j].measurement {
+                nodes[position_to_index[&(i, j)]].is_error_syndrome = true;
+            }
+        }
+    }
+    let mut uf_decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
+        compare_standard_planar_code_2d_nodes);
+    uf_decoder.run_to_stable();
+    let top_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, true)
+        + decoder.origin_error_top_boundary_cardinality();
+    let has_z_logical_error = top_boundary_cardinality % 2 == 1;
+    (has_x_logical_error, has_z_logical_error)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1067,6 +1110,18 @@ mod tests {
         let (_, need_to_run_another) = distributed_union_find.run_single_iteration();
         assert_eq!(need_to_run_another, false, "2 iterations should be enough");
         distributed_union_find.debug_print();
+    }
+
+    #[test]
+    fn distributed_union_find_decoder_bug_find_1() {
+        let d = 5;
+        let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(d);
+        nodes[position_to_index[&(4, 5)]].is_error_syndrome = true;
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
+            compare_standard_planar_code_2d_nodes);
+        decoder.detailed_print_run_to_stable(true);
+        assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
+            , "cardinality of one side of boundary determines if there is logical error");
     }
 
     #[test]
