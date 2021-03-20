@@ -651,7 +651,7 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                     let pu = &self.processing_units[i];
                     let neighbor = &pu.neighbors[j];
                     if neighbor.is_fully_grown {
-                        new_updated_root = self.get_node_smaller(new_updated_root, neighbor.address);
+                        new_updated_root = self.get_node_smaller(new_updated_root, neighbor.supposed_updated_root);
                     }
                 }
                 // processing one message from all union channels
@@ -1117,6 +1117,19 @@ mod tests {
         let d = 5;
         let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(d);
         nodes[position_to_index[&(4, 5)]].is_error_syndrome = true;
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
+            compare_standard_planar_code_2d_nodes);
+        decoder.detailed_print_run_to_stable(true);
+        assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
+            , "cardinality of one side of boundary determines if there is logical error");
+    }
+
+    #[test]
+    fn distributed_union_find_decoder_bug_find_2() {
+        let d = 7;
+        let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(d);
+        nodes[position_to_index[&(0, 3)]].is_error_syndrome = true;
+        nodes[position_to_index[&(2, 7)]].is_error_syndrome = true;
         let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
             compare_standard_planar_code_2d_nodes);
         decoder.detailed_print_run_to_stable(true);
