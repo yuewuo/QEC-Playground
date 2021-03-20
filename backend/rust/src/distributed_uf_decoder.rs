@@ -221,8 +221,6 @@ pub struct ProcessingUnit {
 pub struct Neighbor {
     /// the index of this neighbor
     pub address: usize,
-    /// the supposed updated root of the neighbor, which may not be the real updated_root. only used to stop broadcast when unnecessary
-    pub supposed_updated_root: usize,
     /// this will sync with the peer at the start of the iteration, and keeps constant within the iteration
     pub old_root: usize,
     /// this will need `latency` time to sync with peer
@@ -386,14 +384,12 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
             }));
             processing_units[*a].neighbors.push(Neighbor {
                 address: *b,
-                supposed_updated_root: *b,
                 old_root: *b,
                 is_fully_grown: false,  // will update in `spread_cluster`
                 link: neighbor_link.clone(),
             });
             processing_units[*b].neighbors.push(Neighbor {
                 address: *a,
-                supposed_updated_root: *a,
                 old_root: *a,
                 is_fully_grown: false,  // will update in `spread_cluster`
                 link: neighbor_link.clone(),
@@ -616,7 +612,6 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                 drop(neighbor_link);
                 let neighbor_root = self.processing_units[neighbor_addr].updated_root;
                 let neighbor = &mut self.processing_units[i].neighbors[j];  // re-borrow as mutable
-                neighbor.supposed_updated_root = neighbor_root;
                 neighbor.old_root = neighbor_root;
             }
         }
@@ -651,7 +646,7 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                     let pu = &self.processing_units[i];
                     let neighbor = &pu.neighbors[j];
                     if neighbor.is_fully_grown {
-                        new_updated_root = self.get_node_smaller(new_updated_root, neighbor.supposed_updated_root);
+                        new_updated_root = self.get_node_smaller(new_updated_root, neighbor.old_root);
                     }
                 }
                 // processing one message from all union channels
