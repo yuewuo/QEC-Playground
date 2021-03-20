@@ -493,7 +493,7 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
     }
 
     /// suppose the root node has the correct cardinality, it should spread to all of his nodes
-    pub fn spread_is_odd_cluster(&mut self) -> usize {
+    pub fn sync_is_odd_cluster(&mut self) -> usize {
         let mut clock_cycles = 0;
         let nodes_len = self.nodes.len();
         // in FPGA, this is done by giving a trigger signal to all PUs, in O(1) time
@@ -832,7 +832,7 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
         // during iteration, this corresponds to Union operations in sequential UF decoder and takes average O(log(d)) time but worst O(d) time
         clock_cycles += self.spread_clusters();
         // update the odd cluster state, requires O(log(d)) time in 
-        clock_cycles += self.spread_is_odd_cluster();
+        clock_cycles += self.sync_is_odd_cluster();
         // check if there are still odd clusters, if so, then it needs to run further
         let mut has_odd_cluster = false;
         for pu in self.processing_units.iter() {
@@ -1070,7 +1070,7 @@ mod tests {
 
     #[test]
     fn distributed_union_find_decoder_sanity_check_3() {
-        // test `spread_is_odd_cluster` function
+        // test `sync_is_odd_cluster` function
         let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(3);
         nodes[position_to_index[&(0, 1)]].is_error_syndrome = true;  // test touching boundary
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;  // test single error syndrome
@@ -1085,7 +1085,7 @@ mod tests {
         distributed_union_find.processing_units[position_to_index[&(4, 3)]].updated_root = position_to_index[&(4, 1)];
         distributed_union_find.processing_units[position_to_index[&(4, 1)]].is_odd_cardinality = false;  // because the set has (4, 1) and (4, 3)
         distributed_union_find.channels_sanity_check();
-        distributed_union_find.spread_is_odd_cluster();
+        distributed_union_find.sync_is_odd_cluster();
         distributed_union_find.channels_sanity_check();
         assert_eq!(distributed_union_find.processing_units[position_to_index[&(4, 1)]].is_odd_cluster, false);
         assert_eq!(distributed_union_find.processing_units[position_to_index[&(4, 3)]].is_odd_cluster, false);
