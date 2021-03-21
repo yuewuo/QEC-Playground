@@ -642,13 +642,6 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                 //     which is done in O(log(log(d))) gate level latency on FPGA, so it's still 1 clock cycle with slightly lower clock rate in large code distances
                 let mut new_updated_root = pu.updated_root;
                 let neighbors_len = pu.neighbors.len();
-                for j in 0..neighbors_len {
-                    let pu = &self.processing_units[i];
-                    let neighbor = &pu.neighbors[j];
-                    if neighbor.is_fully_grown {
-                        new_updated_root = self.get_node_smaller(new_updated_root, neighbor.old_root);
-                    }
-                }
                 // processing one message from all union channels
                 let pu = &mut self.processing_units[i];
                 let in_messages: Vec<Option<UnionMessage>> = pu.union_in_channels.iter().map(|(_peer, in_channel)| {
@@ -657,14 +650,23 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                 }).collect();
                 // handle those messages to compute `new_updated_root`, this can be done in O(1) on FPGA, 
                 //    with O(log(log(d))) higher gate level latency, which may reduce the clock cycle a little bit, but still pretty scalable
-                for message in in_messages.iter() {
+                let pu = &self.processing_units[i];
+                for (j, message) in in_messages.iter().enumerate() {
                     match message {
                         Some(UnionMessage{ old_root, updated_root }) => {
                             if *old_root == pu_old_root {  // otherwise don't consider it at all!
                                 new_updated_root = self.get_node_smaller(new_updated_root, *updated_root);
                             }
                         },
-                        None => { },
+                        None => {
+                            // update: optimize FPGA resource usage and latency, based on the fact that `message.updated_root` is no worse than `neighbor.old_root`
+                            if j < neighbors_len {
+                                let neighbor = &pu.neighbors[j];
+                                if neighbor.is_fully_grown {
+                                    new_updated_root = self.get_node_smaller(new_updated_root, neighbor.old_root);
+                                }
+                            }
+                        },
                     }
                 }
                 // send messages to all union channels if the updated root changes in this cycle, this can be done in O(1) on FPGA
