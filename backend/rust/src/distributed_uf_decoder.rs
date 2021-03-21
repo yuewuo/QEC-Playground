@@ -693,20 +693,34 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                 pu.updated_root = new_updated_root;
                 // at the same time, try to find a direct message to route
                 // since the direct message should be very rare in the system, just a simple logic would suffice
-                if new_updated_root != old_updated_root {
-                    if self.nodes[i].is_error_syndrome {  // only nodes with error syndrome should tell the root about updated cardinality
-                        pu.pending_tell_new_root_cardinality = true;
+                if cfg!(not(feature="fpga_amenable")) {
+                    if new_updated_root != old_updated_root {
+                        if self.nodes[i].is_error_syndrome {  // only nodes with error syndrome should tell the root about updated cardinality
+                            pu.pending_tell_new_root_cardinality = true;
+                        }
+                        if pu.is_touching_boundary {
+                            pu.pending_tell_new_root_touching_boundary = true;
+                        }
                     }
-                    if pu.is_touching_boundary {
+                    if pu.is_touching_boundary != old_is_touching_boundary {
                         pu.pending_tell_new_root_touching_boundary = true;
                     }
-                }
-                if pu.is_touching_boundary != old_is_touching_boundary {
-                    pu.pending_tell_new_root_touching_boundary = true;
-                }
-                if new_updated_root == i {  // don't need to send message to myself
-                    pu.pending_tell_new_root_cardinality = false;
-                    pu.pending_tell_new_root_touching_boundary = false;
+                    if new_updated_root == i {  // don't need to send message to myself
+                        pu.pending_tell_new_root_cardinality = false;
+                        pu.pending_tell_new_root_touching_boundary = false;
+                    }
+                } else {
+                    // FPGA-amenable code block that should be equivalent to above
+                    pu.pending_tell_new_root_cardinality = if pu.pending_tell_new_root_cardinality {
+                        new_updated_root != i
+                    } else {
+                        new_updated_root != old_updated_root && self.nodes[i].is_error_syndrome
+                    };
+                    pu.pending_tell_new_root_touching_boundary = if pu.pending_tell_new_root_touching_boundary {
+                        new_updated_root != i
+                    } else {
+                        (new_updated_root != old_updated_root && pu.is_touching_boundary) || pu.is_touching_boundary != old_is_touching_boundary
+                    };
                 }
                 let mut pending_direct_message = None;
                 if pu.pending_tell_new_root_cardinality || pu.pending_tell_new_root_touching_boundary {

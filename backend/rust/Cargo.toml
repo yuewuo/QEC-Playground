@@ -10,6 +10,7 @@ edition = "2018"
 [features]
 default = []
 noserver = []  # ignore parts with actix-web to speed up compilation
+fpga_amenable = []  # use FPGA-amenable code block (not friendly to read, but to test the equivalency with existing code)
 
 [dependencies]
 rand = "0.7.3"
