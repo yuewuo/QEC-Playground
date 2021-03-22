@@ -1011,8 +1011,8 @@ pub fn get_standard_planar_code_2d_left_boundary_cardinality(d: usize, position_
     boundary_cardinality
 }
 
-/// return `(has_x_logical_error, has_z_logical_error)`
-pub fn run_given_offer_decoder_instance_no_fast_channel(decoder: &mut offer_decoder::OfferDecoder) -> (bool, bool) {
+/// return `(has_x_logical_error, has_z_logical_error, cycle)`
+pub fn run_given_offer_decoder_instance_no_fast_channel_with_cycle(decoder: &mut offer_decoder::OfferDecoder) -> (bool, bool, usize) {
     let d = decoder.d;
     decoder.error_changed();
     // decode X errors
@@ -1026,7 +1026,7 @@ pub fn run_given_offer_decoder_instance_no_fast_channel(decoder: &mut offer_deco
     }
     let mut uf_decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
         compare_standard_planar_code_2d_nodes);
-    uf_decoder.run_to_stable();
+    let cycle_x = uf_decoder.run_to_stable();
     let left_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, false)
         + decoder.origin_error_left_boundary_cardinality();
     let has_x_logical_error = left_boundary_cardinality % 2 == 1;
@@ -1041,10 +1041,16 @@ pub fn run_given_offer_decoder_instance_no_fast_channel(decoder: &mut offer_deco
     }
     let mut uf_decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
         compare_standard_planar_code_2d_nodes);
-    uf_decoder.run_to_stable();
+    let cycle_z = uf_decoder.run_to_stable();
     let top_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, true)
         + decoder.origin_error_top_boundary_cardinality();
     let has_z_logical_error = top_boundary_cardinality % 2 == 1;
+    (has_x_logical_error, has_z_logical_error, std::cmp::max(cycle_x, cycle_z))
+}
+
+/// return `(has_x_logical_error, has_z_logical_error)`
+pub fn run_given_offer_decoder_instance_no_fast_channel(decoder: &mut offer_decoder::OfferDecoder) -> (bool, bool) {
+    let (has_x_logical_error, has_z_logical_error, _cycle) = run_given_offer_decoder_instance_no_fast_channel_with_cycle(decoder);
     (has_x_logical_error, has_z_logical_error)
 }
 

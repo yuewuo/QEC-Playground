@@ -1291,7 +1291,7 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
     }
-    println!("format: <p> <T> <total_rounds> <qec_failed> <error_rate>");
+    println!("format: <p> <T> <total_rounds> <qec_failed> <error_rate> <average_cycles> <max_cycles>");
     for L in Ls.iter() {
         for p in ps {
             let p = *p;
@@ -1299,6 +1299,8 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
             let L = *L;
             let total_rounds = Arc::new(Mutex::new(0));
             let qec_failed = Arc::new(Mutex::new(0));
+            let total_cycles = Arc::new(Mutex::new(0));
+            let max_cycles_used = Arc::new(Mutex::new(0));
             let mut handlers = Vec::new();
             let mini_batch_count = 1 + max_N / mini_batch;
             let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
@@ -1306,6 +1308,8 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
             for _i in 0..parallel {
                 let total_rounds = Arc::clone(&total_rounds);
                 let qec_failed = Arc::clone(&qec_failed);
+                let total_cycles = Arc::clone(&total_cycles);
+                let max_cycles_used = Arc::clone(&max_cycles_used);
                 let mini_batch = mini_batch;
                 let L = L;
                 let p = p;
@@ -1318,15 +1322,18 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
                     let mut current_qec_failed = {
                         *qec_failed.lock().unwrap()
                     };
+                    let mut current_max_cycles_used = 0;
                     while current_total_rounds < max_N && current_qec_failed < min_error_cases {
                         let mut mini_qec_failed = 0;
+                        let mut mini_total_cycles = 0;
                         for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
                             decoder.reinitialize();
                             let error_count = decoder.generate_depolarizing_random_errors(p, || rng.gen::<f64>());
                             if error_count == 0 {
                                 continue
                             }
-                            let (has_x_logical_error, has_z_logical_error) = distributed_uf_decoder::run_given_offer_decoder_instance_no_fast_channel(&mut decoder);
+                            let (has_x_logical_error, has_z_logical_error, cycle) = 
+                                distributed_uf_decoder::run_given_offer_decoder_instance_no_fast_channel_with_cycle(&mut decoder);
                             if only_count_logical_x {
                                 if has_x_logical_error {
                                     mini_qec_failed += 1;
@@ -1335,6 +1342,10 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
                                 if has_x_logical_error || has_z_logical_error {
                                     mini_qec_failed += 1;
                                 }
+                            }
+                            mini_total_cycles += cycle;
+                            if cycle > current_max_cycles_used {
+                                current_max_cycles_used = cycle;
                             }
                         }
                         // sync data from outside
@@ -1348,6 +1359,16 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
                             *qec_failed += mini_qec_failed;
                             *qec_failed
                         };
+                        {
+                            let mut total_cycles = total_cycles.lock().unwrap();
+                            *total_cycles += mini_total_cycles;
+                        };
+                        {
+                            let mut max_cycles_used = max_cycles_used.lock().unwrap();
+                            if current_max_cycles_used > *max_cycles_used {
+                                *max_cycles_used = current_max_cycles_used;
+                            }
+                        }
                     }
                 }));
             }
@@ -1357,7 +1378,10 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
                 let qec_failed = *qec_failed.lock().unwrap();
                 if qec_failed >= min_error_cases { break }
                 let error_rate = qec_failed as f64 / total_rounds as f64;
-                pb.message(format!("{} {} {} {} {} ", p, L, total_rounds, qec_failed, error_rate).as_str());
+                let total_cycles = *total_cycles.lock().unwrap();
+                let average_cycles = total_cycles as f64 / total_rounds as f64;
+                let max_cycles_used = *max_cycles_used.lock().unwrap();
+                pb.message(format!("{} {} {} {} {} {} {} ", p, L, total_rounds, qec_failed, error_rate, average_cycles, max_cycles_used).as_str());
                 let progress = total_rounds / mini_batch;
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
@@ -1370,7 +1394,10 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
             let total_rounds = *total_rounds.lock().unwrap();
             let qec_failed = *qec_failed.lock().unwrap();
             let error_rate = qec_failed as f64 / total_rounds as f64;
-            println!("{} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate);
+            let total_cycles = *total_cycles.lock().unwrap();
+            let average_cycles = total_cycles as f64 / total_rounds as f64;
+            let max_cycles_used = *max_cycles_used.lock().unwrap();
+            println!("{} {} {} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate, average_cycles, max_cycles_used);
         }
     }
 }
