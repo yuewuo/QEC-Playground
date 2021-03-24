@@ -127,6 +127,8 @@ use std::collections::{HashMap, VecDeque, HashSet};
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::rc::Rc;
+use std::fs::OpenOptions;
+use std::io::prelude::*;
 use super::serde::{Serialize, Deserialize};
 use super::derive_more::{Constructor};
 use super::offer_decoder;
@@ -915,6 +917,47 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
         }
         println!("[debug print end]");
     }
+
+    pub fn dump_print_input(&self, id:usize) {
+        println!("[dump print start] {}", id);
+        let mut file = OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open("input.txt")
+            .unwrap();
+        if let Err(e) = writeln!(file, "{:08X}", id) {
+            eprintln!("Couldn't write to file: {}", e);
+        }
+        let nodes_len = self.nodes.len();
+        for i in 0..nodes_len {
+            let node = &self.nodes[i];
+            let error_val = if node.is_error_syndrome { 1 } else { 0 };
+            // println!("{}", error_val);
+            if let Err(e) = writeln!(file, "{:08X}", error_val) {
+                eprintln!("Couldn't write to file: {}", e);
+            }
+        }
+    }
+
+    pub fn dump_print_output(&self, id : usize) {
+        println!("[dump print output] {}", id);
+        let mut file = OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open("output.txt")
+            .unwrap();
+        if let Err(e) = writeln!(file, "{:08X}", id) {
+            eprintln!("Couldn't write to file: {}", e);
+        }
+        let nodes_len = self.processing_units.len();
+        for i in 0..nodes_len {
+            let node = &self.processing_units[i];
+            // println!("{} {}", (node.updated_root)/4, (node.updated_root)%4);
+            if let Err(e) = writeln!(file, "{:04X}{:04X}", (node.updated_root)/4, (node.updated_root)%4) {
+                eprintln!("Couldn't write to file: {}", e);
+            }
+        }
+    }
 }
 
 /// create nodes for standard planar code (2d, perfect measurement condition). return only X stabilizers or only Z stabilizers.
@@ -1001,15 +1044,17 @@ pub fn get_standard_planar_code_2d_left_boundary_cardinality(d: usize, position_
 }
 
 /// return `(has_x_logical_error, has_z_logical_error)`
-pub fn run_given_offer_decoder_instance_no_fast_channel(decoder: &mut offer_decoder::OfferDecoder) -> (bool, bool) {
+pub fn run_given_offer_decoder_instance_no_fast_channel(decoder: &mut offer_decoder::OfferDecoder, id:usize) -> (bool, bool) {
     let d = decoder.d;
     decoder.error_changed();
     // decode X errors
     let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel(d, true);
+    let mut has_syndromes = false;
     for i in (0..=2*d-2).step_by(2) {
         for j in (1..=2*d-3).step_by(2) {
             if decoder.qubits[i][j].measurement {
                 nodes[position_to_index[&(i, j)]].is_error_syndrome = true;
+                has_syndromes = true;
             }
         }
     }
@@ -1019,6 +1064,11 @@ pub fn run_given_offer_decoder_instance_no_fast_channel(decoder: &mut offer_deco
     let left_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, false)
         + decoder.origin_error_left_boundary_cardinality();
     let has_x_logical_error = left_boundary_cardinality % 2 == 1;
+
+    if !has_x_logical_error && has_syndromes {
+        uf_decoder.dump_print_input(id);
+        uf_decoder.dump_print_output(id);
+    }
     // decode Z errors
     let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel(d, false);
     for i in (1..=2*d-3).step_by(2) {

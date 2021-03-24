@@ -1292,6 +1292,7 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
         parallel = num_cpus::get() - 1;
     }
     println!("format: <p> <T> <total_rounds> <qec_failed> <error_rate>");
+    let mut id = 137;
     for L in Ls.iter() {
         for p in ps {
             let p = *p;
@@ -1326,10 +1327,12 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
                             if error_count == 0 {
                                 continue
                             }
-                            let (has_x_logical_error, has_z_logical_error) = distributed_uf_decoder::run_given_offer_decoder_instance_no_fast_channel(&mut decoder);
+                            let (has_x_logical_error, has_z_logical_error) = distributed_uf_decoder::run_given_offer_decoder_instance_no_fast_channel(&mut decoder, id.clone());
                             if only_count_logical_x {
                                 if has_x_logical_error {
                                     mini_qec_failed += 1;
+                                } else {
+                                    id = id+1;
                                 }
                             } else {
                                 if has_x_logical_error || has_z_logical_error {

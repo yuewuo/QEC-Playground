@@ -507,7 +507,7 @@ fn distributed_union_find_decoder_study(d: usize, p: f64, count: usize) {
         decoder.error_changed();
         // println!("{:?}", decoder.error_pattern());  // to find panic cases
         // run using union find decoder instead of old offer decoder
-        let (has_x_logical_error, _has_z_logical_error) = distributed_uf_decoder::run_given_offer_decoder_instance_no_fast_channel(&mut decoder);
+        let (has_x_logical_error, _has_z_logical_error) = distributed_uf_decoder::run_given_offer_decoder_instance_no_fast_channel(&mut decoder, 0);
         if has_x_logical_error {
             // judge if MWPM generates no logical error, if so, output the case
             let (mwpm_has_logical_error, mwpm_cost) = {
