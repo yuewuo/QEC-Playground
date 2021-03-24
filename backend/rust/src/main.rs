@@ -189,6 +189,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg parallel: -p --parallel +takes_value "how many parallel threads to use. 0 will use number of CPUs - 1")
                 (@arg mini_batch: -b --mini_batch +takes_value "mini batch, default to 1000")
                 (@arg only_count_logical_x: --only_count_logical_x "only count X logical errors but not all logical error.")
+                (@arg output_cycle_distribution: --output_cycle_distribution "output cycle distribution to a json file")
             )
         )
         (@subcommand server => (about: "HTTP server for decoding information")

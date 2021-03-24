@@ -21,6 +21,9 @@ use super::offer_decoder;
 use super::offer_mwpm;
 use super::union_find_decoder;
 use super::distributed_uf_decoder;
+use super::ndarray;
+use super::serde_json::{json};
+use std::fs::File;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -170,7 +173,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
             let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
             let only_count_logical_x = matches.is_present("only_count_logical_x");
-            distributed_union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x);
+            let output_cycle_distribution = matches.is_present("output_cycle_distribution");
+            distributed_union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, output_cycle_distribution);
         }
         _ => unreachable!()
     }
@@ -1286,7 +1290,7 @@ default example:
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
 fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
-    , only_count_logical_x: bool) {
+    , only_count_logical_x: bool, output_cycle_distribution: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -1301,6 +1305,7 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
             let qec_failed = Arc::new(Mutex::new(0));
             let total_cycles = Arc::new(Mutex::new(0));
             let max_cycles_used = Arc::new(Mutex::new(0));
+            let cycle_distribution = Arc::new(Mutex::new(Vec::<(usize, usize)>::new()));
             let mut handlers = Vec::new();
             let mini_batch_count = 1 + max_N / mini_batch;
             let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
@@ -1310,6 +1315,7 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
                 let qec_failed = Arc::clone(&qec_failed);
                 let total_cycles = Arc::clone(&total_cycles);
                 let max_cycles_used = Arc::clone(&max_cycles_used);
+                let cycle_distribution = Arc::clone(&cycle_distribution);
                 let mini_batch = mini_batch;
                 let L = L;
                 let p = p;
@@ -1326,6 +1332,7 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
                     while current_total_rounds < max_N && current_qec_failed < min_error_cases {
                         let mut mini_qec_failed = 0;
                         let mut mini_total_cycles = 0;
+                        let mut mini_cycle_distribution = Vec::<(usize, usize)>::new();
                         for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
                             decoder.reinitialize();
                             let error_count = decoder.generate_depolarizing_random_errors(p, || rng.gen::<f64>());
@@ -1338,9 +1345,17 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
                                 if has_x_logical_error {
                                     mini_qec_failed += 1;
                                 }
+                                if output_cycle_distribution {
+                                    mini_cycle_distribution.resize(std::cmp::max(mini_cycle_distribution.len(), cycle + 1), (0, 0));
+                                    if has_x_logical_error { mini_cycle_distribution[cycle].1 += 1; } else { mini_cycle_distribution[cycle].0 += 1; }
+                                }
                             } else {
                                 if has_x_logical_error || has_z_logical_error {
                                     mini_qec_failed += 1;
+                                }
+                                if output_cycle_distribution {
+                                    mini_cycle_distribution.resize(std::cmp::max(mini_cycle_distribution.len(), cycle + 1), (0, 0));
+                                    if has_x_logical_error || has_z_logical_error { mini_cycle_distribution[cycle].1 += 1; } else { mini_cycle_distribution[cycle].0 += 1; }
                                 }
                             }
                             mini_total_cycles += cycle;
@@ -1369,6 +1384,15 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
                                 *max_cycles_used = current_max_cycles_used;
                             }
                         }
+                        if output_cycle_distribution {
+                            let mut cycle_distribution = cycle_distribution.lock().unwrap();
+                            let extended_length = std::cmp::max(mini_cycle_distribution.len(), cycle_distribution.len());
+                            cycle_distribution.resize(extended_length, (0, 0));
+                            for di in 0..mini_cycle_distribution.len() {
+                                cycle_distribution[di].0 += mini_cycle_distribution[di].0;
+                                cycle_distribution[di].1 += mini_cycle_distribution[di].1;
+                            }
+                        }
                     }
                 }));
             }
@@ -1381,6 +1405,14 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
                 let total_cycles = *total_cycles.lock().unwrap();
                 let average_cycles = total_cycles as f64 / total_rounds as f64;
                 let max_cycles_used = *max_cycles_used.lock().unwrap();
+                if output_cycle_distribution {
+                    // save cycle distribution to file
+                    let cycle_distribution = cycle_distribution.lock().unwrap().clone();
+                    let f = File::create(format!("duf_{}_{}.json", L, p)).unwrap();
+                    serde_json::to_writer(&f, &json!(cycle_distribution)).unwrap();
+                    f.sync_all().unwrap();
+                }
+                // update progress bar
                 pb.message(format!("{} {} {} {} {} {} {} ", p, L, total_rounds, qec_failed, error_rate, average_cycles, max_cycles_used).as_str());
                 let progress = total_rounds / mini_batch;
                 pb.set(progress as u64);
