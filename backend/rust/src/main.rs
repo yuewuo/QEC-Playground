@@ -190,6 +190,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg mini_batch: -b --mini_batch +takes_value "mini batch, default to 1000")
                 (@arg only_count_logical_x: --only_count_logical_x "only count X logical errors but not all logical error.")
                 (@arg output_cycle_distribution: --output_cycle_distribution "output cycle distribution to a json file")
+                (@arg fast_channel_interval: --fast_channel_interval +takes_value "add fast channels at distance (fast_channel_interval ^ k), default to 0 (no fast channel)")
             )
         )
         (@subcommand server => (about: "HTTP server for decoding information")

@@ -174,7 +174,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
             let only_count_logical_x = matches.is_present("only_count_logical_x");
             let output_cycle_distribution = matches.is_present("output_cycle_distribution");
-            distributed_union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, output_cycle_distribution);
+            let fast_channel_interval = value_t!(matches, "fast_channel_interval", usize).unwrap_or(0);  // default to 0
+            distributed_union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, output_cycle_distribution, fast_channel_interval);
         }
         _ => unreachable!()
     }
@@ -1290,7 +1291,7 @@ default example:
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
 fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
-    , only_count_logical_x: bool, output_cycle_distribution: bool) {
+    , only_count_logical_x: bool, output_cycle_distribution: bool, fast_channel_interval: usize) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -1340,7 +1341,7 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
                                 continue
                             }
                             let (has_x_logical_error, has_z_logical_error, cycle) = 
-                                distributed_uf_decoder::run_given_offer_decoder_instance_no_fast_channel_with_cycle(&mut decoder);
+                                distributed_uf_decoder::run_given_offer_decoder_instance_with_cycle(&mut decoder, fast_channel_interval);
                             if only_count_logical_x {
                                 if has_x_logical_error {
                                     mini_qec_failed += 1;
