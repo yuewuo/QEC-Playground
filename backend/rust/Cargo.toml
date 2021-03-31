@@ -8,9 +8,11 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
+# to enable a feature, use `--features xxx`
 default = []
 noserver = []  # ignore parts with actix-web to speed up compilation
 fpga_amenable = []  # use FPGA-amenable code block (not friendly to read, but to test the equivalency with existing code)
+MWPM_reverse_order = []  # to verify the idea that even MWPM decoders could have different threshold depending on the order of nodes
 
 [dependencies]
 rand = "0.7.3"
