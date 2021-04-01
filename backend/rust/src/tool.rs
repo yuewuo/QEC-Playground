@@ -88,9 +88,10 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let only_count_logical_x = matches.is_present("only_count_logical_x");
             let imperfect_initialization = matches.is_present("imperfect_initialization");
             let shallow_error_on_bottom = matches.is_present("shallow_error_on_bottom");
+            let no_y_error = matches.is_present("no_y_error");
             fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, !imperfect_initialization
-                , shallow_error_on_bottom);
+                , shallow_error_on_bottom, no_y_error);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -481,7 +482,8 @@ it supports progress bar (in stderr), so you can run this in backend by redirect
 **/
 fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
         , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
-        , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool, shallow_error_on_bottom: bool) {
+        , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool, shallow_error_on_bottom: bool
+        , no_y_error: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -530,6 +532,9 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                 }
                 if independent_px_pz {
                     node.error_rate_y = node.error_rate_x * node.error_rate_z;
+                }
+                if no_y_error {
+                    node.error_rate_y = 0.;
                 }
             });
             model.build_graph();
