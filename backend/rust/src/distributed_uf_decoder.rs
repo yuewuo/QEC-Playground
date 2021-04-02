@@ -723,13 +723,6 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                     };
                 }
                 let mut pending_direct_message = None;
-                if pu.pending_tell_new_root_cardinality || pu.pending_tell_new_root_touching_boundary {
-                    pending_direct_message = Some(DirectMessage {
-                        receiver: new_updated_root,
-                        is_odd_cardinality_root: pu.pending_tell_new_root_cardinality,
-                        is_touching_boundary: pu.pending_tell_new_root_touching_boundary,
-                    });
-                }
                 // read from all direct channels, finish in O(1) on FPGA
                 let mut need_to_pop_direct_in_channel_from_idx = None;
                 for (j, (_peer, in_channel)) in pu.direct_in_channels.iter().enumerate() {
@@ -755,6 +748,15 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                                 need_to_pop_direct_in_channel_from_idx = Some(j);
                             }
                         }
+                    }
+                }
+                if need_to_pop_direct_in_channel_from_idx.is_none() {
+                    if pu.pending_tell_new_root_cardinality || pu.pending_tell_new_root_touching_boundary {
+                        pending_direct_message = Some(DirectMessage {
+                            receiver: new_updated_root,
+                            is_odd_cardinality_root: pu.pending_tell_new_root_cardinality,
+                            is_touching_boundary: pu.pending_tell_new_root_touching_boundary,
+                        });
                     }
                 }
                 // find the most attractive channel for `pending_direct_message`, finish in O(1) on FPGA
@@ -808,8 +810,6 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                 }
                 // update internal state
                 if pending_message_sent_successfully {  // don't send again next time
-                    pu.pending_tell_new_root_cardinality = false;
-                    pu.pending_tell_new_root_touching_boundary = false;
                     match need_to_pop_direct_in_channel_from_idx {
                         Some(direct_in_channel_idx) => {
                             let (_peer, in_channel) = &pu.direct_in_channels[direct_in_channel_idx];
@@ -818,7 +818,10 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                             in_channel.deque.pop_front().unwrap();
                             in_channel.deque.push_front(None);
                         },
-                        None => { },
+                        None => {
+                            pu.pending_tell_new_root_cardinality = false;
+                            pu.pending_tell_new_root_touching_boundary = false;
+                        },
                     }
                 }
             }
