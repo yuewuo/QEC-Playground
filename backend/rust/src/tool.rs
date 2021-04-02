@@ -162,7 +162,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
             let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
             let only_count_logical_x = matches.is_present("only_count_logical_x");
-            union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x);
+            let no_y_error = matches.is_present("no_y_error");
+            union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, no_y_error);
         }
         ("distributed_union_find_decoder_standard_planar_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -176,7 +177,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let only_count_logical_x = matches.is_present("only_count_logical_x");
             let output_cycle_distribution = matches.is_present("output_cycle_distribution");
             let fast_channel_interval = value_t!(matches, "fast_channel_interval", usize).unwrap_or(0);  // default to 0
-            distributed_union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, output_cycle_distribution, fast_channel_interval);
+            let no_y_error = matches.is_present("no_y_error");
+            distributed_union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, output_cycle_distribution, fast_channel_interval, no_y_error);
         }
         _ => unreachable!()
     }
@@ -1201,7 +1203,7 @@ default example:
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
 fn union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
-        , only_count_logical_x: bool) {
+        , only_count_logical_x: bool, no_y_error: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -1237,7 +1239,12 @@ fn union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, 
                         let mut mini_qec_failed = 0;
                         for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
                             decoder.reinitialize();
-                            let error_count = decoder.generate_depolarizing_random_errors(p, || rng.gen::<f64>());
+                            let error_count = if no_y_error {
+                                assert!(only_count_logical_x, "not implemented if z errors needed");
+                                decoder.generate_only_x_random_errors(p, || rng.gen::<f64>())
+                            } else {
+                                decoder.generate_depolarizing_random_errors(p, || rng.gen::<f64>())
+                            };
                             if error_count == 0 {
                                 continue
                             }
@@ -1296,7 +1303,7 @@ default example:
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
 fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
-    , only_count_logical_x: bool, output_cycle_distribution: bool, fast_channel_interval: usize) {
+    , only_count_logical_x: bool, output_cycle_distribution: bool, fast_channel_interval: usize, no_y_error: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -1341,7 +1348,12 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
                         let mut mini_cycle_distribution = Vec::<(usize, usize)>::new();
                         for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
                             decoder.reinitialize();
-                            let error_count = decoder.generate_depolarizing_random_errors(p, || rng.gen::<f64>());
+                            let error_count = if no_y_error {
+                                assert!(only_count_logical_x, "not implemented if z errors needed");
+                                decoder.generate_only_x_random_errors(p, || rng.gen::<f64>())
+                            } else {
+                                decoder.generate_depolarizing_random_errors(p, || rng.gen::<f64>())
+                            };
                             if error_count == 0 {
                                 continue
                             }
