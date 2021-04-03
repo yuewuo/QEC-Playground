@@ -5,7 +5,8 @@ set grid ytics
 set size 1,1
 
 # data generating commands:
-# cargo run --release -- tool union_find_decoder_standard_planar_benchmark [3,5,7,9,11] [8.5e-2,8.6e-2,8.7e-2,8.8e-2,8.9e-2,9e-2,9.1e-2,9.2e-2,9.3e-2,9.4e-2,9.5e-2] -p0 -b1000 -m100000000 -e100000000 --only_count_logical_x --no_y_error
+# cargo run --release -- tool union_find_decoder_standard_planar_benchmark [3,5,7,9,11] [9.5e-2,9.6e-2,9.7e-2,9.8e-2,9.9e-2,10e-2,10.1e-2,10.2e-2,10.3e-2,10.4e-2,10.5e-2] -p0 -b1000 -m100000000 -e100000000 --only_count_logical_x --no_y_error
+# cargo run --release -- tool union_find_decoder_standard_planar_benchmark [21,31] [9.5e-2,9.6e-2,9.7e-2,9.8e-2,9.9e-2,10e-2,10.1e-2,10.2e-2,10.3e-2,10.4e-2,10.5e-2] -p0 -b1000 -m10000000 -e10000000 --only_count_logical_x --no_y_error
 
 
 
@@ -32,7 +33,7 @@ plot "d_3.txt" using 1:5 with linespoints lt rgb "red" linewidth 5 pointtype 6 p
     "d_9.txt" using 1:5 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "d = 9",\
     "d_11.txt" using 1:5 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
     "d_21.txt" using 1:5 with linespoints lt rgb "black" linewidth 5 pointtype 2 pointsize 1.5 title "d = 21",\
-    # "d_31.txt" using 1:5 with linespoints lt rgb "dark-green" linewidth 5 pointtype 2 pointsize 1.5 title "d = 31",\
+    "d_31.txt" using 1:5 with linespoints lt rgb "dark-green" linewidth 5 pointtype 2 pointsize 1.5 title "d = 31",\
 
 set output '|ps2pdf -dEPSCrop union_find_threshold.eps union_find_threshold.pdf'
 replot

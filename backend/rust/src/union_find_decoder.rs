@@ -358,12 +358,12 @@ pub fn get_standard_planar_code_2d_left_boundary_cardinality(d: usize, position_
         let j = if get_top_boundary_instead { index } else { 1 };
         let index = position_to_index[&(i, j)];
         let root = decoder.union_find.immutable_find(index);
-        if counted_sets.get(&root).is_none() {  // every set should only be counted once
+        if !counted_sets.contains(&root) {  // every set should only be counted once
             let node = &decoder.nodes[index];
             if node.boundary_increased >= node.node.boundary_cost.unwrap() {  // only when this node is bleeding into the boundary
+                counted_sets.insert(root);
                 let root_uf_node = &decoder.union_find.immutable_get(root);
                 if root_uf_node.cardinality % 2 == 1 {  // connect to boundary only if the cardinality is odd
-                    counted_sets.insert(root);
                     boundary_cardinality += 1;
                 }
             }
