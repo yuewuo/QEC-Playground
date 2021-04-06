@@ -163,7 +163,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
             let only_count_logical_x = matches.is_present("only_count_logical_x");
             let no_y_error = matches.is_present("no_y_error");
-            union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, no_y_error);
+            let towards_mwpm = matches.is_present("towards_mwpm");
+            union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, no_y_error, towards_mwpm);
         }
         ("distributed_union_find_decoder_standard_planar_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -1203,7 +1204,7 @@ default example:
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
 fn union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
-        , only_count_logical_x: bool, no_y_error: bool) {
+        , only_count_logical_x: bool, no_y_error: bool, towards_mwpm: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;

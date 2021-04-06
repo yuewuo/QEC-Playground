@@ -67,7 +67,8 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
             let d = value_t!(matches, "d", usize).expect("required");
             let p = value_t!(matches, "p", f64).expect("required");
             let count = value_t!(matches, "count", usize).unwrap_or(1);
-            union_find_decoder_study(d, p, count);
+            let max_cost = value_t!(matches, "max_cost", f64).unwrap_or(f64::MAX);
+            union_find_decoder_study(d, p, count, max_cost);
         }
         ("distributed_union_find_decoder_study", Some(matches)) => {
             let d = value_t!(matches, "d", usize).expect("required");
@@ -409,7 +410,7 @@ fn offer_algorithm_study(d: usize, p: f64, count: usize, max_resend: usize, max_
     }
 }
 
-fn union_find_decoder_study(d: usize, p: f64, count: usize) {
+fn union_find_decoder_study(d: usize, p: f64, count: usize, max_cost: f64) {
     let mut cases = 0;
     let mut rng = thread_rng();
     // create offer decoder instance
@@ -426,7 +427,7 @@ fn union_find_decoder_study(d: usize, p: f64, count: usize) {
     });
     model.build_graph();
     model.optimize_correction_pattern();
-    model.build_exhausted_path_autotune();
+    model.build_exhausted_path_equally_weighted();
     while cases < count {
         decoder.reinitialize();
         decoder.use_reproducible_error_generator = true;
@@ -466,7 +467,7 @@ fn union_find_decoder_study(d: usize, p: f64, count: usize) {
                 let validation_ret = model.validate_correction_on_boundary(&correction);
                 (validation_ret.is_err(), mwpm_cost)
             };
-            if !mwpm_has_logical_error {  // output the case
+            if !mwpm_has_logical_error && mwpm_cost <= max_cost {  // output the case
                 println!("[union find decoder fails but MWPM decoder (cost = {}) succeeds]", mwpm_cost);
                 println!("{}", json!({
                     "error": decoder.error_pattern(),
