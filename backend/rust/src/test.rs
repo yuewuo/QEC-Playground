@@ -439,7 +439,7 @@ fn union_find_decoder_study(d: usize, p: f64, count: usize, max_cost: f64) {
         }
         decoder.error_changed();
         // run using union find decoder instead of old offer decoder
-        let (has_x_logical_error, _has_z_logical_error) = union_find_decoder::run_given_offer_decoder_instance(&mut decoder);
+        let (has_x_logical_error, _has_z_logical_error) = union_find_decoder::run_given_offer_decoder_instance(&mut decoder, false);
         if has_x_logical_error {
             // judge if MWPM generates no logical error, if so, output the case
             let (mwpm_has_logical_error, mwpm_cost) = {

@@ -15,6 +15,9 @@ use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use super::serde::{Serialize, Deserialize};
 use super::offer_decoder;
+use super::ftqec;
+use super::types::ErrorType;
+use super::types::QubitType;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UnionFindDecoder<U: std::fmt::Debug> {
@@ -429,6 +432,78 @@ pub fn run_given_offer_decoder_instance(decoder: &mut offer_decoder::OfferDecode
     (has_x_logical_error, has_z_logical_error)
 }
 
+/// return (nodes, position_to_index, neighbors)
+pub fn make_decoder_given_ftqec_model(model: &ftqec::PlanarCodeModel, stabilizer: QubitType) -> (Vec<InputNode<(usize, usize, usize)>>,
+        HashMap<(usize, usize, usize), usize>, Vec<NeighborEdge>) {
+    assert!(stabilizer == QubitType::StabZ || stabilizer == QubitType::StabX, "stabilizer must be either StabZ or StabX");
+    let mut nodes = Vec::new();
+    let mut position_to_index = HashMap::new();
+    model.iterate_measurement_stabilizers(|t, i, j, node| {
+        if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
+            position_to_index.insert((t, i, j), nodes.len());
+            nodes.push(InputNode::new((t, i, j), false, if node.boundary.is_some() { Some(2) } else { None }));
+        }
+    });
+    model.iterate_measurement_errors(|t, i, j, node| {
+        if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
+            nodes[position_to_index[&(t, i, j)]].is_error_syndrome = true;
+        }
+    });
+    let mut neighbors = Vec::new();
+    model.iterate_measurement_stabilizers(|t, i, j, node| {
+        if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
+            let idx = position_to_index[&(t, i, j)];
+            for edge in node.edges.iter() {
+                if edge.t > 12 {
+                    let peer_idx = position_to_index[&(edge.t, edge.i, edge.j)];
+                    if idx < peer_idx {  // remove duplicated neighbors
+                        neighbors.push(NeighborEdge::new(idx, peer_idx, 0, 2));
+                    }
+                } else {
+                    nodes[idx].boundary_cost = Some(2);  // viewing the bottom layer as boundary
+                }
+            }
+        }
+    });
+    assert!(neighbors.len() > 0, "ftqec model may not have `build_graph` called, so the neighbor connections have not built yet");
+    (nodes, position_to_index, neighbors)
+}
+
+// /// return `(has_x_logical_error, has_z_logical_error)`
+// pub fn run_given_mwpm_decoder_instance(model: &ftqec::PlanarCodeModel) -> (bool, bool) {
+//     let d = model.L;
+//     decoder.error_changed();
+//     // decode X errors
+//     let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes(d, true);
+//     for i in (0..=2*d-2).step_by(2) {
+//         for j in (1..=2*d-3).step_by(2) {
+//             if decoder.qubits[i][j].measurement {
+//                 nodes[position_to_index[&(i, j)]].is_error_syndrome = true;
+//             }
+//         }
+//     }
+//     let mut uf_decoder = UnionFindDecoder::new(nodes, neighbors);
+//     uf_decoder.run_to_stable();
+//     let left_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, false, towards_mwpm)
+//         + decoder.origin_error_left_boundary_cardinality();
+//     let has_x_logical_error = left_boundary_cardinality % 2 == 1;
+//     // decode Z errors
+//     let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes(d, false);
+//     for i in (1..=2*d-3).step_by(2) {
+//         for j in (0..=2*d-2).step_by(2) {
+//             if decoder.qubits[i][j].measurement {
+//                 nodes[position_to_index[&(i, j)]].is_error_syndrome = true;
+//             }
+//         }
+//     }
+//     let mut uf_decoder = UnionFindDecoder::new(nodes, neighbors);
+//     uf_decoder.run_to_stable();
+//     let top_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, true, towards_mwpm)
+//         + decoder.origin_error_top_boundary_cardinality();
+//     let has_z_logical_error = top_boundary_cardinality % 2 == 1;
+//     (has_x_logical_error, has_z_logical_error)
+// }
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UnionFind {
     /// tree structure, each node has a parent
@@ -607,10 +682,10 @@ mod tests {
         make_standard_planar_code_2d_nodes(d, true)
     }
 
-    fn pretty_print_standard_planar_code(decoder: &UnionFindDecoder<(usize, usize)>) {
+    fn pretty_print_standard_planar_code<U: std::fmt::Debug>(decoder: &UnionFindDecoder<U>) {
         let nodes_len = decoder.nodes.len();
         for i in 0..nodes_len {
-            let root_user_data = decoder.nodes[decoder.union_find.immutable_find(i)].node.user_data;
+            let root_user_data = &decoder.nodes[decoder.union_find.immutable_find(i)].node.user_data;
             let node = &decoder.nodes[i];
             let error_symbol = if node.node.is_error_syndrome { "x" } else { " " };
             let boundary_string = match node.node.boundary_cost {
@@ -628,7 +703,7 @@ mod tests {
                 let neighbor = &decoder.nodes[neighbor_addr];
                 let reverse_index = neighbor.neighbor_index[&i];
                 let neighbor_partial_edge = &neighbor.neighbors[reverse_index];
-                let neighbor_user_data = neighbor.node.user_data;
+                let neighbor_user_data = &neighbor.node.user_data;
                 let string = format!("{:?}[{}/{}] ", neighbor_user_data, neighbor_partial_edge.increased + increased, neighbor_partial_edge.length);
                 neighbor_string.push_str(string.as_str());
             }
@@ -636,7 +711,7 @@ mod tests {
         }
     }
 
-    fn detailed_print_run_to_stable(decoder: &mut UnionFindDecoder<(usize, usize)>) {
+    fn detailed_print_run_to_stable<U: std::fmt::Debug>(decoder: &mut UnionFindDecoder<U>) {
         while !decoder.odd_clusters.is_empty() {
             pretty_print_standard_planar_code(&decoder);
             println!("cluster boundaries:");
@@ -763,6 +838,25 @@ mod tests {
         // pretty_print_standard_planar_code(&decoder);
         assert_eq!(1, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false, false)
             , "cardinality of one side of boundary determines if there is logical error");
+    }
+
+    #[test]
+    fn union_find_decoder_test_build_given_ftqec_model() {
+        let measurement_rounds = 3;
+        let d = 3;
+        let p = 0.01;  // physical error rate
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
+        model.set_phenomenological_error_with_perfect_initialization(p);
+        model.build_graph();
+        let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
+        model.add_error_at(el2t(0), 0, 2, &ErrorType::X).expect("error rate = 0 here");  // data qubit error (detected by next layer)
+        model.add_error_at(el2t(1), 2, 3, &ErrorType::X).expect("error rate = 0 here");  // measurement error (detected by this and next layer)
+        model.propagate_error();
+        let (nodes, _position_to_index, neighbors) = make_decoder_given_ftqec_model(&model, QubitType::StabZ);
+        assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
+        assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
+        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        detailed_print_run_to_stable(&mut decoder);
     }
 
 }

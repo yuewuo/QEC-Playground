@@ -1249,7 +1249,7 @@ fn union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, 
                             if error_count == 0 {
                                 continue
                             }
-                            let (has_x_logical_error, has_z_logical_error) = union_find_decoder::run_given_offer_decoder_instance(&mut decoder);
+                            let (has_x_logical_error, has_z_logical_error) = union_find_decoder::run_given_offer_decoder_instance(&mut decoder, towards_mwpm);
                             if only_count_logical_x {
                                 if has_x_logical_error {
                                     mini_qec_failed += 1;

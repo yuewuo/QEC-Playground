@@ -307,7 +307,7 @@ impl PlanarCodeModel {
         })
     }
     // this will remove bottom boundary
-    pub fn set_depolarizing_error_with_perfect_initialization(&mut self, error_rate: f64) {  // (1-3p)I + pX + pZ + pY: X error rate = Z error rate = 2p(1-p)
+    pub fn set_depolarizing_error_with_perfect_initialization(&mut self, error_rate: f64) {  // (1-3p)I + pX + pZ + pY: X error rate = Z error rate = 2p
         let height = self.snapshot.len();
         self.iterate_snapshot_mut(|t, _i, _j, node| {
             if t >= height - 6 {  // no error on the top, as a perfect measurement round
@@ -322,6 +322,27 @@ impl PlanarCodeModel {
                 node.error_rate_x = error_rate;
                 node.error_rate_z = error_rate;
                 node.error_rate_y = error_rate;
+            }
+        })
+    }
+    // remove bottom boundary, (1-p)^2I + p(1-p)X + p(1-p)Z + p^2Y
+    pub fn set_phenomenological_error_with_perfect_initialization(&mut self, error_rate: f64) {
+        let height = self.snapshot.len();
+        self.iterate_snapshot_mut(|t, _i, _j, node| {
+            node.error_rate_x = 0.;
+            node.error_rate_z = 0.;
+            node.error_rate_y = 0.;
+            // no error on the top and bottom
+            if t < height - 6 && t > 6 {
+                let next_stage = Stage::from(t + 1);
+                match next_stage {
+                    Stage::Measurement => {
+                        node.error_rate_x = error_rate * (1. - error_rate);
+                        node.error_rate_z = error_rate * (1. - error_rate);
+                        node.error_rate_y = error_rate * error_rate;
+                    },
+                    _ => {},
+                }
             }
         })
     }
@@ -378,15 +399,25 @@ impl PlanarCodeModel {
         });
     }
 
-
     pub fn add_error_at(&mut self, t: usize, i: usize, j: usize, error: &ErrorType) -> Option<ErrorType> {
         if let Some(array) = self.snapshot.get_mut(t) {
             if let Some(array) = array.get_mut(i) {
                 if let Some(element) = array.get_mut(j) {
                     match element {
                         Some(ref mut node) => {
-                            node.error = node.error.multiply(error);
-                            Some(node.error.clone())
+                            let p = match error {
+                                ErrorType::X => node.error_rate_x + node.error_rate_y,
+                                ErrorType::Z => node.error_rate_z + node.error_rate_y,
+                                // Y error requires both x and z has corresponding edge
+                                ErrorType::Y => (node.error_rate_x + node.error_rate_y) * (node.error_rate_z + node.error_rate_y),
+                                ErrorType::I => (1. - node.error_rate_x - node.error_rate_y - node.error_rate_z),
+                            };
+                            if p > 0. {  // only add error if physical error rate is greater than 0.
+                                node.error = node.error.multiply(error);
+                                Some(node.error.clone())
+                            } else {
+                                None
+                            }
                         }
                         None => None
                     }
