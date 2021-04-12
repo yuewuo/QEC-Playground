@@ -331,7 +331,7 @@ impl<Message: std::fmt::Debug> Channel<Message> {
         }
         found
     }
-} 
+}
 
 impl<U: std::fmt::Debug> DistributedUnionFind<U> {
     pub fn new(nodes: Vec<InputNode<U>>, mut neighbors: Vec<InputNeighbor>, mut fast_channels: Vec<InputFastChannel>, 

@@ -31,6 +31,8 @@ pub struct UnionFindDecoder<U: std::fmt::Debug> {
     /// even clusters should not be key in HashMap, and only real boundary should be in the `HashSet` value
     /// those nodes without error syndrome also have entries in this HashMap, with the value of { itself }
     pub cluster_boundaries: HashMap<usize, HashSet<usize>>,
+    /// original inputs
+    pub input_neighbors: Vec<NeighborEdge>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -188,6 +190,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             union_find: union_find,
             odd_clusters: odd_clusters,
             cluster_boundaries: cluster_boundaries,
+            input_neighbors: neighbors,
         }
     }
 
@@ -350,6 +353,10 @@ pub fn make_standard_planar_code_2d_nodes(d: usize, is_x_stabilizers: bool) -> (
         }
     }
     (nodes, position_to_index, neighbors)
+}
+
+pub fn make_standard_planar_code_2d_nodes_only_x_stabilizers(d: usize) -> (Vec<InputNode<(usize, usize)>>, HashMap<(usize, usize), usize>, Vec<NeighborEdge>) {
+    make_standard_planar_code_2d_nodes(d, true)
 }
 
 pub fn get_standard_planar_code_2d_left_boundary_cardinality(d: usize, position_to_index: &HashMap<(usize, usize), usize>
@@ -677,10 +684,6 @@ mod tests {
     use super::*;
 
     // use `cargo test union_find_decoder_test_case_1 -- --nocapture` to run specific test
-    
-    fn make_standard_planar_code_2d_nodes_only_x_stabilizers(d: usize) -> (Vec<InputNode<(usize, usize)>>, HashMap<(usize, usize), usize>, Vec<NeighborEdge>) {
-        make_standard_planar_code_2d_nodes(d, true)
-    }
 
     fn pretty_print_standard_planar_code<U: std::fmt::Debug>(decoder: &UnionFindDecoder<U>) {
         let nodes_len = decoder.nodes.len();

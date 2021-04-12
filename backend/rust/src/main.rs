@@ -12,6 +12,7 @@ mod reproducible_rand;
 mod offer_mwpm;
 mod union_find_decoder;
 mod distributed_uf_decoder;
+mod fpga_generator;
 
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;
@@ -31,6 +32,7 @@ extern crate rand_core;
 #[macro_use] extern crate derivative;
 extern crate union_find;
 extern crate derive_more;
+#[macro_use] extern crate indoc;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -198,6 +200,18 @@ async fn main() -> std::io::Result<()> {
                 (@arg no_y_error: --no_y_error "set probability of y errors to 0")
             )
         )
+        (@subcommand fpga_generator => (about: "fpga_generator")
+            (setting: clap::AppSettings::SubcommandRequiredElseHelp)
+            (@subcommand perfect_measurement_distributed_union_find => (about: "DUF decoder under perfect measurement condition")
+                (@arg d: +required "code distance")
+            )
+            (@subcommand fault_tolerant_distributed_union_find => (about: "DUF decoder under imperfect measurement condition")
+                (@arg d: +required "code distance")
+                (@arg measurement_rounds: +required "measurement rounds")
+                (@arg p: "physical error rate")
+                (@arg autotune: -a --autotune "if set, enable topological code autotune structure")
+            )
+        )
         (@subcommand server => (about: "HTTP server for decoding information")
             (@arg port: -p --port +takes_value "listening on <addr>:<port>, default to 8066")
             (@arg addr: -a --addr +takes_value "listening on <addr>:<port>, default to \"127.0.0.1\"")
@@ -220,6 +234,9 @@ async fn main() -> std::io::Result<()> {
             println!("visit http://{}:{}{}<commands>", addr, port, root_url);
             println!("supported commands include `hello`, `naive_decoder`, etc. See `web.rs` for more commands");
             web::run_server(port, addr, root_url).await?;
+        }
+        ("fpga_generator", Some(matches)) => {
+            fpga_generator::run_matched_fpga_generator(&matches);
         }
         _ => unreachable!()
     }
