@@ -32,7 +32,6 @@ rand_core = "0.6.1"
 derivative = "2.2.0"
 union-find = "0.3.2"
 derive_more = "0.99.11"
-indoc = "1.0.3"
 
 [build-dependencies]
 cc = "1.0.66"

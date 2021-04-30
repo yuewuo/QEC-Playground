@@ -130,6 +130,9 @@ use std::rc::Rc;
 use super::serde::{Serialize, Deserialize};
 use super::derive_more::{Constructor};
 use super::offer_decoder;
+use super::ftqec;
+use super::types::ErrorType;
+use super::types::QubitType;
 
 #[derive(Debug, Serialize, Deserialize, Constructor)]
 pub struct InputNode<U: std::fmt::Debug> {
@@ -1096,6 +1099,86 @@ pub fn run_given_offer_decoder_instance_no_fast_channel(decoder: &mut offer_deco
     (has_x_logical_error, has_z_logical_error)
 }
 
+/// return (nodes, position_to_index, neighbors)
+pub fn make_decoder_given_ftqec_model(model: &ftqec::PlanarCodeModel, stabilizer: QubitType, fast_channel_interval: usize) ->
+        (Vec<InputNode<(usize, usize, usize)>>, HashMap<(usize, usize, usize), usize>, Vec<InputNeighbor>, Vec<InputFastChannel>) {
+    assert!(stabilizer == QubitType::StabZ || stabilizer == QubitType::StabX, "stabilizer must be either StabZ or StabX");
+    assert!(fast_channel_interval <= 1, "fast channel not supported yet");
+    let mut nodes = Vec::new();
+    let mut position_to_index = HashMap::new();
+    model.iterate_measurement_stabilizers(|t, i, j, node| {
+        if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
+            position_to_index.insert((t, i, j), nodes.len());
+            nodes.push(InputNode {
+                user_data: (t, i, j),
+                is_error_syndrome: false,
+                boundary_cost: if node.boundary.is_some() { Some(2) } else { None },
+            });
+        }
+    });
+    model.iterate_measurement_errors(|t, i, j, node| {
+        if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
+            nodes[position_to_index[&(t, i, j)]].is_error_syndrome = true;
+        }
+    });
+    let mut neighbors = Vec::new();
+    let fast_channels = Vec::new();
+    model.iterate_measurement_stabilizers(|t, i, j, node| {
+        if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
+            let idx = position_to_index[&(t, i, j)];
+            for edge in node.edges.iter() {
+                if edge.t > 12 {
+                    let peer_idx = position_to_index[&(edge.t, edge.i, edge.j)];
+                    if idx < peer_idx {  // remove duplicated neighbors
+                        neighbors.push(InputNeighbor {
+                            a: idx,
+                            b: peer_idx,
+                            increased: 0,
+                            length: 2,
+                            latency: 1,
+                        });
+                    }
+
+                } else {
+                    nodes[idx].boundary_cost = Some(2);  // viewing the bottom layer as boundary
+                }
+            }
+        }
+    });
+    assert!(neighbors.len() > 0, "ftqec model may not have `build_graph` called, so the neighbor connections have not built yet");
+    (nodes, position_to_index, neighbors, fast_channels)
+}
+
+pub fn manhattan_distance_standard_planar_code_3d_nodes(a: &(usize, usize, usize), b: &(usize, usize, usize)) -> usize {
+    let (t1, i1, j1) = *a;
+    let (t2, i2, j2) = *b;
+    let dt_origin = (t1 as isize - t2 as isize).abs() as usize;
+    assert!(dt_origin % 6 == 0, "dt should only be 6x");
+    let dt = dt_origin / 6;
+    let di = (i1 as isize - i2 as isize).abs() as usize;
+    let dj = (j1 as isize - j2 as isize).abs() as usize;
+    assert!(di % 2 == 0 && dj % 2 == 0, "cannot compute cost between different types of stabilizers");
+    (di + dj) / 2 + dt
+}
+
+pub fn compare_standard_planar_code_3d_nodes(a: &(usize, usize, usize), b: &(usize, usize, usize)) -> Ordering {
+    let (t1, i1, j1) = *a;
+    let (t2, i2, j2) = *b;
+    if t1 < t2 {
+        Ordering::Less
+    } else if t1 > t2 {
+        Ordering::Greater
+    } else {
+        if i1 < i2 {
+            Ordering::Less
+        } else if i1 > i2 {
+            Ordering::Greater
+        } else {
+            j1.cmp(&j2)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1311,6 +1394,26 @@ mod tests {
         decoder.detailed_print_run_to_stable(true);
         assert_eq!(1, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
             , "cardinality of one side of boundary determines if there is logical error");
+    }
+    
+    #[test]
+    fn distributed_union_find_decoder_test_build_given_ftqec_model() {
+        let measurement_rounds = 3;
+        let d = 3;
+        let p = 0.01;  // physical error rate
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
+        model.set_phenomenological_error_with_perfect_initialization(p);
+        model.build_graph();
+        let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
+        model.add_error_at(el2t(0), 0, 2, &ErrorType::X).expect("error rate = 0 here");  // data qubit error (detected by next layer)
+        model.add_error_at(el2t(1), 2, 3, &ErrorType::X).expect("error rate = 0 here");  // measurement error (detected by this and next layer)
+        model.propagate_error();
+        let (nodes, _position_to_index, neighbors, fast_channels) = make_decoder_given_ftqec_model(&model, QubitType::StabZ, 1);
+        assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
+        assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, fast_channels, manhattan_distance_standard_planar_code_3d_nodes,          
+            compare_standard_planar_code_3d_nodes);
+        decoder.detailed_print_run_to_stable(true);
     }
 
 }

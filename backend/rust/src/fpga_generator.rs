@@ -8,7 +8,6 @@ use super::union_find_decoder;
 use super::ftqec;
 use super::types::ErrorType;
 use super::types::QubitType;
-use super::indoc::formatdoc;
 use std::collections::{HashMap};
 
 pub fn run_matched_fpga_generator(matches: &clap::ArgMatches) {
@@ -30,6 +29,7 @@ pub fn run_matched_fpga_generator(matches: &clap::ArgMatches) {
 
 pub struct DistributedUnionFind<N: DufNode> {
     pub module_name: String,
+    pub distance_solver_name: String,
     /// 2 for perfect measurement or 3 for imperfect measurement
     pub dimensions: usize,
     pub nodes: Vec<N>,
@@ -40,11 +40,14 @@ pub struct DistributedUnionFind<N: DufNode> {
 pub trait DufNode {
     /// printable name, consist of only a-z0-9_
     fn name(&self) -> String;
+    fn get_address(&self, per_dimension_width: usize) -> String;
     fn maximum_coordinate(&self) -> usize;
     fn boundary_cost(&self) -> Option<usize>;
     fn is_error_syndrome(&self) -> bool;
-    fn get_neighbor_index(&self, neighbor: usize) -> usize;
-    fn channel_count(&self) -> usize;
+    fn get_neighbor_count(&self) -> usize;
+    fn get_channel_count(&self) -> usize;
+    fn index_2_channel(&self, index: usize) -> usize;
+    fn channel_2_index(&self, neighbor: usize) -> usize;
 }
 
 impl<N: DufNode> DistributedUnionFind<N> {
@@ -59,7 +62,7 @@ impl<N: DufNode> DistributedUnionFind<N> {
         let ADDRESS_WIDTH = self.dimensions * PER_DIMENSION_WIDTH;
         let DISTANCE_WIDTH = (((maximum_coordinate + 1) * self.dimensions) as f64).log2().ceil() as usize;
         // head
-        code.push_str(&formatdoc!(r###"
+        code.push_str(&format!(r###"
 `timescale 1ns / 1ps
 
 module {0} (
@@ -74,10 +77,10 @@ module {0} (
 );
 
 `include "parameters.sv"
-        "###, self.module_name));
-        // parameters and interface
-        code.push_str(&formatdoc!(r###"
 
+"###, self.module_name));
+        // parameters and interface
+        code.push_str(&format!(r###"
 localparam PU_COUNT = {0};
 localparam PER_DIMENSION_WIDTH = {1};
 localparam ADDRESS_WIDTH = {2};
@@ -88,6 +91,9 @@ localparam DISTANCE_WIDTH = {3};
 // localparam BOUNDARY_WIDTH = $clog2(BOUNDARY_COST + 1);
 localparam UNION_MESSAGE_WIDTH = 2 * ADDRESS_WIDTH;  // [old_root, updated_root]
 localparam DIRECT_MESSAGE_WIDTH = ADDRESS_WIDTH + 1 + 1;  // [receiver, is_odd_cardinality_root, is_touching_boundary]
+`define SLICE_ADDRESS_VEC(vec, idx) (vec[(((idx)+1)*ADDRESS_WIDTH)-1:(idx)*ADDRESS_WIDTH])
+`define SLICE_UNION_MESSAGE_VEC(vec, idx) (vec[(((idx)+1)*UNION_MESSAGE_WIDTH)-1:(idx)*UNION_MESSAGE_WIDTH])
+`define SLICE_DIRECT_MESSAGE_VEC(vec, idx) (vec[(((idx)+1)*DIRECT_MESSAGE_WIDTH)-1:(idx)*DIRECT_MESSAGE_WIDTH])
 
 input clk;
 input reset;
@@ -101,10 +107,10 @@ wire [PU_COUNT-1:0] has_message_flyings;
 reg [PU_COUNT-1:0] has_message_flyings_reg;
 wire initialize_neighbors;
 reg [STAGE_WIDTH-1:0] stage_internal;
-        "###, PU_COUNT, PER_DIMENSION_WIDTH, ADDRESS_WIDTH, DISTANCE_WIDTH));
-        // global logic
-        code.push_str(&formatdoc!(r###"
 
+"###, PU_COUNT, PER_DIMENSION_WIDTH, ADDRESS_WIDTH, DISTANCE_WIDTH));
+        // global logic
+        code.push_str(&format!(r###"
 assign has_message_flying = |has_message_flyings_reg;
 
 always@(posedge clk) begin
@@ -121,21 +127,162 @@ always @(posedge clk) begin
 end
 
 assign initialize_neighbors = (stage_internal == STAGE_MEASUREMENT_LOADING);
-        "###));
+
+"###));
         // instantiate PUs
         for node in self.nodes.iter() {
             let prefix = format!("{}", node.name());
-            // instant compare solver
-            let CHANNEL_COUNT = node.channel_count();
-            code.push_str(&formatdoc!(r###"
-
-// {0}
+            let NEIGHBOR_COUNT = node.get_neighbor_count();
+            let CHANNEL_COUNT = node.get_channel_count();
+            let NEIGHBOR_COUNT = node.get_neighbor_count();
+            code.push_str(&format!(r###"
+// {0}  address: {2}
+// instantiate compare solver
 localparam {0}_CHANNEL_COUNT = {1};
+localparam {0}_CHANNEL_WIDTH = $clog2({0}_CHANNEL_COUNT);
+localparam {0}_NEIGHBOR_COUNT = {3};
 wire [ADDRESS_WIDTH-1:0] {0}_compare_solver_default_addr;
 wire [(ADDRESS_WIDTH * {0}_CHANNEL_COUNT)-1:0] {0}_compare_solver_addrs;
 wire [{0}_CHANNEL_COUNT-1:0] {0}_compare_solver_addrs_valid;
 wire [ADDRESS_WIDTH-1:0] {0}_compare_solver_result;
-            "###, prefix, CHANNEL_COUNT));
+tree_compare_solver #(
+    .DATA_WIDTH(ADDRESS_WIDTH),
+    .CHANNEL_COUNT({0}_CHANNEL_COUNT)
+) u_tree_compare_solver (
+    .default_value({0}_compare_solver_default_addr),
+    .values({0}_compare_solver_addrs),
+    .valids({0}_compare_solver_addrs_valid),
+    .result({0}_compare_solver_result)
+);
+// instantiate distance solver
+wire [ADDRESS_WIDTH-1:0] {0}_distance_solver_target;
+wire [{0}_CHANNEL_WIDTH-1:0] {0}_distance_solver_result_idx;
+wire [(ADDRESS_WIDTH * {0}_CHANNEL_COUNT)-1:0] {0}_channel_addresses;
+"###, prefix, CHANNEL_COUNT, node.get_address(PER_DIMENSION_WIDTH), NEIGHBOR_COUNT));
+            // connect addresses of both neighbors and fast channels
+            for i in 0..CHANNEL_COUNT {
+                let neighbor = node.index_2_channel(i);
+                code.push_str(&format!("assign `SLICE_ADDRESS_VEC({0}_channel_addresses, {1}) = {2};\n"
+                    , prefix, i, self.nodes[neighbor].get_address(PER_DIMENSION_WIDTH)));
+            }
+            code.push_str(&format!(r###"
+{1} #(
+    .PER_DIMENSION_WIDTH(PER_DIMENSION_WIDTH),
+    .CHANNEL_COUNT({0}_CHANNEL_COUNT)
+) u_tree_distance_2d_solver (
+    .points({0}_channel_addresses),
+    .target({0}_distance_solver_target),
+    .result_idx({0}_distance_solver_result_idx)
+);
+"###, prefix, self.distance_solver_name));
+            let BOUNDARY_COST = match node.boundary_cost() {
+                Some(cost) => cost,
+                None => 0,
+            };
+            code.push_str(&format!(r###"
+// instantiate processing unit
+localparam {0}_BOUNDARY_COST = {2};
+wire [ADDRESS_WIDTH-1:0] {0}_init_address;
+assign {0}_init_address = {1};
+wire [{0}_NEIGHBOR_COUNT-1:0] {0}_neighbor_is_fully_grown;
+wire [(ADDRESS_WIDTH * {0}_NEIGHBOR_COUNT)-1:0] {0}_neighbor_old_roots;
+wire {0}_neighbor_increase;
+wire [(UNION_MESSAGE_WIDTH * {0}_CHANNEL_COUNT)-1:0] {0}_union_out_channels_data;
+wire {0}_union_out_channels_valid;
+wire [(UNION_MESSAGE_WIDTH * {0}_CHANNEL_COUNT)-1:0] {0}_union_in_channels_data;
+wire [{0}_CHANNEL_COUNT-1:0] {0}_union_in_channels_valid;
+wire [DIRECT_MESSAGE_WIDTH-1:0] {0}_direct_out_channels_data_single;
+wire [{0}_CHANNEL_COUNT-1:0] {0}_direct_out_channels_valid;
+wire [{0}_CHANNEL_COUNT-1:0] {0}_direct_out_channels_is_full;
+wire [(DIRECT_MESSAGE_WIDTH * {0}_CHANNEL_COUNT)-1:0] {0}_direct_in_channels_data;
+wire [{0}_CHANNEL_COUNT-1:0] {0}_direct_in_channels_valid;
+wire [{0}_CHANNEL_COUNT-1:0] {0}_direct_in_channels_is_taken;
+wire [ADDRESS_WIDTH-1:0] {0}_old_root;
+processing_unit #(
+    .ADDRESS_WIDTH(ADDRESS_WIDTH),
+    .DISTANCE_WIDTH(DISTANCE_WIDTH),
+    .BOUNDARY_WIDTH($clog2({0}_BOUNDARY_COST + 1)),
+    .NEIGHBOR_COUNT({0}_NEIGHBOR_COUNT),
+    .FAST_CHANNEL_COUNT(FAST_CHANNEL_COUNT)
+) u_processing_unit (
+    .clk(clk),
+    .reset(reset),
+    .init_address({0}_init_address),
+    .init_is_error_syndrome(`init_is_error_syndrome(i, j)),
+    .init_has_boundary(`init_has_boundary(i, j)),
+    .init_boundary_cost({0}_BOUNDARY_COST),
+    .stage_in(stage),
+    .compare_solver_default_addr({0}_compare_solver_default_addr),
+    .compare_solver_addrs({0}_compare_solver_addrs),
+    .compare_solver_addrs_valid({0}_compare_solver_addrs_valid),
+    .compare_solver_result({0}_compare_solver_result),
+    .distance_solver_target({0}_distance_solver_target),
+    .distance_solver_result_idx({0}_distance_solver_result_idx),
+    .neighbor_is_fully_grown({0}_neighbor_is_fully_grown),
+    .neighbor_old_roots({0}_neighbor_old_roots),
+    .neighbor_increase({0}_neighbor_increase),
+    .union_out_channels_data({0}_union_out_channels_data),
+    .union_out_channels_valid({0}_union_out_channels_valid),
+    .union_in_channels_data({0}_union_in_channels_data),
+    .union_in_channels_valid({0}_union_in_channels_valid),
+    .direct_out_channels_data_single({0}_direct_out_channels_data_single),
+    .direct_out_channels_valid({0}_direct_out_channels_valid),
+    .direct_out_channels_is_full({0}_direct_out_channels_is_full),
+    .direct_in_channels_data({0}_direct_in_channels_data),
+    .direct_in_channels_valid({0}_direct_in_channels_valid),
+    .direct_in_channels_is_taken({0}_direct_in_channels_is_taken),
+    .old_root({0}_old_root),
+    .updated_root(`roots(i, j)),
+    .is_odd_cluster(`is_odd_cluster(i, j)),
+    .is_odd_cardinality(`is_odd_cardinality(i, j))
+);
+
+"###, prefix, node.get_address(PER_DIMENSION_WIDTH), BOUNDARY_COST));
+        }
+        // create neighbor links
+        for DufNeighbor { a, b, length } in self.neighbors.iter() {
+            let a_node = &self.nodes[*a];
+            let a_prefix = format!("{}", a_node.name());
+            let a_index = a_node.channel_2_index(*b);
+            let b_node = &self.nodes[*b];
+            let b_prefix = format!("{}", b_node.name());
+            let b_index = b_node.channel_2_index(*a);
+            code.push_str(&format!(r###"
+neighbor_link #(.LENGTH({4}), .ADDRESS_WIDTH(ADDRESS_WIDTH)) {0}_and_{1}_neighbor_link (\
+    .clk(clk), .reset(reset), .initialize(initialize_neighbors), .is_fully_grown({0}_neighbor_is_fully_grown[{2}]),\
+    .a_old_root_in({0}_old_root), .a_increase({0}_neighbor_increase),\
+    .b_old_root_out(`SLICE_ADDRESS_VEC({0}_neighbor_old_roots, {2})),\
+    .b_old_root_in({1}_old_root), .b_increase({1}_neighbor_increase),\
+    .a_old_root_out(`SLICE_ADDRESS_VEC({1}_neighbor_old_roots, {3}))\
+);\
+assign `{1}_neighbor_is_fully_grown[{3}] = {0}_neighbor_is_fully_grown[{2}];
+"###, a_prefix, b_prefix, a_index, b_index, length));
+            for (source, target) in [(*a, *b), (*b, *a)].iter() {
+                let source_node = &self.nodes[*source];
+                let source_prefix = format!("{}", source_node.name());
+                let source_index = source_node.channel_2_index(*target);
+                let target_node = &self.nodes[*target];
+                let target_prefix = format!("{}", target_node.name());
+                let target_index = target_node.channel_2_index(*source);
+                code.push_str(&format!(r###"
+nonblocking_channel #(.WIDTH(UNION_MESSAGE_WIDTH)) {0}_to_{1}_nonblocking_channel (
+    .clk(clk), .reset(reset), .initialize(initialize_neighbors),
+    .in_data(`SLICE_UNION_MESSAGE_VEC({0}_union_out_channels_data, {2})),
+    .in_valid({0}_union_out_channels_valid),
+    .out_data(`SLICE_UNION_MESSAGE_VEC({1}_union_in_channels_data, {3})),
+    .out_valid({1}_union_in_channels_valid[{3}])
+);
+blocking_channel #(.WIDTH(DIRECT_MESSAGE_WIDTH)) {0}_to_{1}_blocking_channel (
+    .clk(clk), .reset(reset), .initialize(initialize_neighbors), 
+    .in_data(`{0}_direct_out_channels_data_single),
+    .in_valid(`{0}_direct_out_channels_valid[{2}]),
+    .in_is_full(`{0}_direct_out_channels_is_full[{2}]),
+    .out_data(`SLICE_DIRECT_MESSAGE_VEC(`{1}_direct_in_channels_data, {3})),
+    .out_valid(`{1}_direct_in_channels_valid[{3}]),
+    .out_is_taken(`{1}_direct_in_channels_is_taken[{3}])
+);
+"###, source_prefix, target_prefix, source_index, target_index));
+            }
         }
         code
     }
@@ -162,12 +309,17 @@ pub struct DufNode2d {
     pub origin: (usize, usize),  // original address
     pub init_boundary_cost: Option<usize>,
     pub init_is_error_syndrome: bool,
-    pub neighbor_index: HashMap<usize, usize>,
+    pub channel_index: HashMap<usize, usize>,
+    pub index_channel: Vec<usize>,
+    pub neighbor_count: usize,
 }
 
 impl DufNode for DufNode2d {
     fn name(&self) -> String {
-        format!("duf_2d_{}_{}", self.origin.0, self.origin.1)
+        format!("duf2d_{}_{}", self.origin.0, self.origin.1)
+    }
+    fn get_address(&self, per_dimension_width: usize) -> String {
+        format!("{{ {0}'{1}, {0}'{2} }}", per_dimension_width, self.address.0, self.address.1)
     }
     fn boundary_cost(&self) -> Option<usize> {
         self.init_boundary_cost
@@ -178,11 +330,17 @@ impl DufNode for DufNode2d {
     fn maximum_coordinate(&self) -> usize {
         std::cmp::max(self.address.0, self.address.1)
     }
-    fn get_neighbor_index(&self, neighbor: usize) -> usize {
-        self.neighbor_index[&neighbor]
+    fn get_neighbor_count(&self) -> usize {
+        self.neighbor_count
     }
-    fn channel_count(&self) -> usize {
-        self.neighbor_index.len()
+    fn get_channel_count(&self) -> usize {
+        self.channel_index.len()
+    }
+    fn index_2_channel(&self, index: usize) -> usize {
+        self.index_channel[index]
+    }
+    fn channel_2_index(&self, neighbor: usize) -> usize {
+        self.channel_index[&neighbor]
     }
 }
 
@@ -202,7 +360,9 @@ impl DistributedUnionFind<DufNode2d> {
                 origin: origin,
                 init_boundary_cost: node.node.boundary_cost,
                 init_is_error_syndrome: node.node.is_error_syndrome,
-                neighbor_index: HashMap::new(),
+                channel_index: HashMap::new(),
+                index_channel: Vec::new(),
+                neighbor_count: 0,
             }
         }).collect();
         let mut neighbors = Vec::new();
@@ -212,17 +372,26 @@ impl DistributedUnionFind<DufNode2d> {
                 b: *b,
                 length: *length,
             });
-            let a_idx = nodes[*a].neighbor_index.len();
-            nodes[*a].neighbor_index.insert(*b, a_idx);
-            let b_idx = nodes[*b].neighbor_index.len();
-            nodes[*b].neighbor_index.insert(*a, b_idx);
+            let a_idx = nodes[*a].index_channel.len();
+            nodes[*a].channel_index.insert(*b, a_idx);
+            nodes[*a].index_channel.push(*b);
+            let b_idx = nodes[*b].index_channel.len();
+            nodes[*b].channel_index.insert(*a, b_idx);
+            nodes[*b].index_channel.push(*a);
         }
+        // update neighbor_count
+        for node in nodes.iter_mut() {
+            node.neighbor_count = node.index_channel.len();
+        }
+        // since `union_find_decoder` don't consider fast channels, simply ignore here. otherwise just do similar thing as above
+        let fast_channels = Vec::new();
         Self {
             module_name: format!("module_name"),
+            distance_solver_name: format!("tree_distance_2d_solver"),
             dimensions: 2,
             nodes: nodes,
             neighbors: neighbors,
-            fast_channels: Vec::new(),  // no fast channels if built from union find decoder
+            fast_channels: fast_channels,
         }
     }
 }
