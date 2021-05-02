@@ -12,7 +12,7 @@ mod reproducible_rand;
 mod offer_mwpm;
 mod union_find_decoder;
 mod distributed_uf_decoder;
-// mod fpga_generator;
+mod fpga_generator;
 
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;
@@ -32,6 +32,7 @@ extern crate rand_core;
 #[macro_use] extern crate derivative;
 extern crate union_find;
 extern crate derive_more;
+#[macro_use] extern crate lazy_static;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

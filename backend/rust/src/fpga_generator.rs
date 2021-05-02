@@ -8,7 +8,19 @@ use super::union_find_decoder;
 use super::ftqec;
 use super::types::ErrorType;
 use super::types::QubitType;
+use super::pyo3::prelude::*;
+use super::pyo3::types::{IntoPyDict, PyDict};
 use std::collections::{HashMap};
+use lazy_static::lazy_static;
+use std::sync::RwLock;
+use super::util::getFileContentFromMultiplePlaces;
+
+lazy_static! {
+    static ref PY_SEARCH_DIRECTORIES: RwLock<Vec<String>> = RwLock::new(vec![
+        format!("./pylib/"),
+        format!("../../pylib/"),
+    ]);
+}
 
 pub fn run_matched_fpga_generator(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -423,4 +435,41 @@ fn fault_tolerant_distributed_union_find(d: usize, measurement_rounds: usize, p:
     // let decoder = union_find_decoder::UnionFindDecoder::new(nodes, neighbors);
     // let duf = DistributedUnionFind::<DufNode2d>::from_union_find_decoder(&decoder);
     // println!("{}", duf.generate_code());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // use `cargo test fpga_generator_test_basic_python_call -- --nocapture` to run specific test
+
+    #[test]
+    fn fpga_generator_test_basic_python_call() {
+        Python::with_gil(|py| {
+            (|py: Python| -> PyResult<()> {
+                // find source file first
+                let module_name = format!("test_call_python_from_rust");
+                let lib_filename = format!("{}.py", module_name);
+                let lib_source = getFileContentFromMultiplePlaces(&PY_SEARCH_DIRECTORIES.read().unwrap(), &lib_filename).unwrap();
+                let module = PyModule::from_code(py, lib_source.as_str(), lib_filename.as_str(), module_name.as_str())?;
+                // run it as module
+                let hello_world_ret: String = module.getattr("hello_world")?.call0()?.extract()?;
+                println!("hello_world_ret: {}", hello_world_ret);
+                let is_main: bool = module.getattr("is_main")?.extract()?;
+                println!("is_main: {}", is_main);
+                // or run it as main
+                let locals = PyDict::new(py);
+                py.run(&lib_source, None, Some(locals))?;
+                let hello_world = locals.get_item("hello_world").expect("exist");
+                let hello_world_ret: String = hello_world.call0()?.extract()?;
+                println!("hello_world_ret: {}", hello_world_ret);
+                let is_main: bool = locals.get_item("is_main").expect("exist").extract()?;
+                println!("is_main: {}", is_main);
+                Ok(())
+            })(py).map_err(|e| {
+                e.print_and_set_sys_last_vars(py);
+            })
+        }).expect("python run failed")
+    }
+
 }

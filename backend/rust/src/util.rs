@@ -7,6 +7,7 @@ use std::fs::File;
 use std::fs;
 use std::io::prelude::*;
 use super::types::*;
+use std::path::Path;
 
 /// load measurement or ground truth data from file
 pub fn load(filepath: &str) -> std::io::Result<(Value, BatchZxError)> {
@@ -114,4 +115,20 @@ pub fn generate_perfect_measurements(x_error: &ZxError, z_error: &ZxError) -> Zx
         }
     }
     measurement_ro
+}
+
+/// filename should contain .py, folders should end with slash
+pub fn getFileContentFromMultiplePlaces(folders: &Vec<String>, filename: &String) -> Result<String, String> {
+    for folder in folders {
+        let path = Path::new(folder).join(filename.as_str());
+        if path.exists() {
+            if let Some(path_str) = path.to_str() {
+                let contents = fs::read_to_string(path_str);
+                if let Ok(content) = contents {
+                    return Ok(content);
+                }
+            }
+        }
+    }
+    Err(format!("cannot find '{}' from folders {:?}", filename, folders))
 }
