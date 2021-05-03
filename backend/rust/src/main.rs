@@ -235,9 +235,9 @@ async fn main() -> std::io::Result<()> {
             println!("supported commands include `hello`, `naive_decoder`, etc. See `web.rs` for more commands");
             web::run_server(port, addr, root_url).await?;
         }
-        // ("fpga_generator", Some(matches)) => {
-        //     fpga_generator::run_matched_fpga_generator(&matches);
-        // }
+        ("fpga_generator", Some(matches)) => {
+            fpga_generator::run_matched_fpga_generator(&matches);
+        }
         _ => unreachable!()
     }
 
