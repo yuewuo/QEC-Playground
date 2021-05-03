@@ -131,7 +131,6 @@ use super::serde::{Serialize, Deserialize};
 use super::derive_more::{Constructor};
 use super::offer_decoder;
 use super::ftqec;
-use super::types::ErrorType;
 use super::types::QubitType;
 
 #[derive(Debug, Serialize, Deserialize, Constructor)]
@@ -185,6 +184,9 @@ pub struct DistributedUnionFind<U: std::fmt::Debug> {
     #[serde(skip_serializing)]
     /// compare function given two nodes' user data
     pub compare: Box<dyn Fn(&U, &U) -> Ordering>,
+    /// original inputs
+    pub input_neighbors: Vec<InputNeighbor>,
+    pub input_fast_channels: Vec<InputFastChannel>,
 }
 
 #[derive(Debug, Serialize)]
@@ -452,6 +454,8 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
             processing_units: processing_units,
             distance: Box::new(distance),
             compare: Box::new(compare),
+            input_neighbors: neighbors,
+            input_fast_channels: fast_channels,
         }
     }
 

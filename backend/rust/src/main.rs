@@ -32,7 +32,7 @@ extern crate rand_core;
 #[macro_use] extern crate derivative;
 extern crate union_find;
 extern crate derive_more;
-#[macro_use] extern crate lazy_static;
+extern crate lazy_static;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -208,8 +208,9 @@ async fn main() -> std::io::Result<()> {
             (@subcommand fault_tolerant_distributed_union_find => (about: "DUF decoder under imperfect measurement condition")
                 (@arg d: +required "code distance")
                 (@arg measurement_rounds: +required "measurement rounds")
-                (@arg p: "physical error rate")
+                (@arg p: +takes_value "physical error rate")
                 (@arg autotune: -a --autotune "if set, enable topological code autotune structure")
+                (@arg fast_channel_interval: -f --fast_channel_interval +takes_value "fast channel interval, default to 1")
             )
         )
         (@subcommand server => (about: "HTTP server for decoding information")

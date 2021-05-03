@@ -16,7 +16,6 @@ use std::collections::{HashMap, HashSet};
 use super::serde::{Serialize, Deserialize};
 use super::offer_decoder;
 use super::ftqec;
-use super::types::ErrorType;
 use super::types::QubitType;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -439,6 +438,7 @@ pub fn run_given_offer_decoder_instance(decoder: &mut offer_decoder::OfferDecode
     (has_x_logical_error, has_z_logical_error)
 }
 
+#[allow(dead_code)]
 /// return (nodes, position_to_index, neighbors)
 pub fn make_decoder_given_ftqec_model(model: &ftqec::PlanarCodeModel, stabilizer: QubitType) -> (Vec<InputNode<(usize, usize, usize)>>,
         HashMap<(usize, usize, usize), usize>, Vec<NeighborEdge>) {

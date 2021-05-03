@@ -5,11 +5,11 @@
 #![allow(non_snake_case)]  // allow non snake case for variables in Verilog code
 
 use super::union_find_decoder;
+use super::distributed_uf_decoder;
 use super::ftqec;
-use super::types::ErrorType;
 use super::types::QubitType;
 use super::pyo3::prelude::*;
-use super::pyo3::types::{IntoPyDict, PyDict, PyTuple};
+use super::pyo3::types::{IntoPyDict};
 use std::collections::{HashMap};
 use lazy_static::lazy_static;
 use std::sync::RwLock;
@@ -33,7 +33,8 @@ pub fn run_matched_fpga_generator(matches: &clap::ArgMatches) {
             let measurement_rounds = value_t!(matches, "measurement_rounds", usize).expect("required");
             let p = value_t!(matches, "p", f64).unwrap_or(0.001);  // not required if all weights are identical
             let autotune = matches.is_present("autotune");  // default autotune is disabled
-            fault_tolerant_distributed_union_find(d, measurement_rounds, p, autotune);
+            let fast_channel_interval = value_t!(matches, "fast_channel_interval", usize).unwrap_or(1);
+            fault_tolerant_distributed_union_find(d, measurement_rounds, p, autotune, fast_channel_interval);
         }
         _ => unreachable!()
     }
@@ -154,6 +155,30 @@ impl DufNode for DufNode2d {
     }
 }
 
+pub struct DufNode3d {
+    pub address: (usize, usize, usize),  // compressed address, can reduce 1 bit for each axis
+    pub origin: (usize, usize, usize),  // original address
+    pub boundary_cost: Option<usize>,
+    pub is_error_syndrome: bool,
+    pub channel_index: HashMap<usize, usize>,
+    pub index_channel: Vec<usize>,
+    pub neighbor_count: usize,
+}
+
+impl DufNode for DufNode3d {
+    fn build_py<'a>(&self, module: &'a PyModule, py: Python) -> PyResult<&'a PyAny> {
+        module.getattr("DufNode")?.call((), Some([
+            ("address", [self.address.0, self.address.1, self.address.2].into_py(py)),
+            ("origin", [self.origin.0, self.origin.1, self.origin.2].into_py(py)),
+            ("boundary_cost", self.boundary_cost.clone().into_py(py)),
+            ("is_error_syndrome", self.is_error_syndrome.into_py(py)),
+            ("channel_index", self.channel_index.clone().into_py(py)),
+            ("index_channel", self.index_channel.clone().into_py(py)),
+            ("neighbor_count", self.neighbor_count.into_py(py)),
+        ].into_py_dict(py)))
+    }
+}
+
 impl DistributedUnionFind<DufNode2d> {
     pub fn from_union_find_decoder(decoder: &union_find_decoder::UnionFindDecoder<(usize, usize)>) -> Self {
         let mut coordinates_parity = None;
@@ -206,6 +231,75 @@ impl DistributedUnionFind<DufNode2d> {
     }
 }
 
+impl DistributedUnionFind<DufNode3d> {
+    pub fn from_distributed_union_find_decoder(decoder: &distributed_uf_decoder::DistributedUnionFind<(usize, usize, usize)>) -> Self {
+        let mut coordinates_parity = None;
+        let mut minimum_t = usize::MAX;
+        assert!(decoder.nodes.len() > 0, "should at least contain 1 node");
+        for node in decoder.nodes.iter() {
+            let origin = node.user_data;
+            minimum_t = std::cmp::min(origin.0, minimum_t);
+        }
+        let mut nodes: Vec<_> = decoder.nodes.iter().map(|node| {
+            let origin = node.user_data;
+            let my_coordinates_parity = Some((origin.0 % 6, origin.1 % 2, origin.2 % 2));
+            if coordinates_parity.is_none() {
+                coordinates_parity = my_coordinates_parity;
+            }
+            assert_eq!(coordinates_parity, my_coordinates_parity, "coordinate parity must be same for the address compression technique to work");
+            let address = ((origin.0 - minimum_t) / 6, origin.1 >> 1, origin.2 >> 1);
+            DufNode3d {
+                address: address,
+                origin: origin,
+                boundary_cost: node.boundary_cost,
+                is_error_syndrome: node.is_error_syndrome,
+                channel_index: HashMap::new(),
+                index_channel: Vec::new(),
+                neighbor_count: 0,
+            }
+        }).collect();
+        let mut neighbors = Vec::new();
+        for distributed_uf_decoder::InputNeighbor {a, b, increased: _, length, latency: _} in decoder.input_neighbors.iter() {
+            neighbors.push(DufNeighbor {
+                a: *a,
+                b: *b,
+                length: *length,
+            });
+            let a_idx = nodes[*a].index_channel.len();
+            nodes[*a].channel_index.insert(*b, a_idx);
+            nodes[*a].index_channel.push(*b);
+            let b_idx = nodes[*b].index_channel.len();
+            nodes[*b].channel_index.insert(*a, b_idx);
+            nodes[*b].index_channel.push(*a);
+        }
+        let mut fast_channels = Vec::new();
+        for distributed_uf_decoder::InputFastChannel {a, b, latency: _} in decoder.input_fast_channels.iter() {
+            fast_channels.push(DufFastChannel {
+                a: *a,
+                b: *b,
+            });
+            let a_idx = nodes[*a].index_channel.len();
+            nodes[*a].channel_index.insert(*b, a_idx);
+            nodes[*a].index_channel.push(*b);
+            let b_idx = nodes[*b].index_channel.len();
+            nodes[*b].channel_index.insert(*a, b_idx);
+            nodes[*b].index_channel.push(*a);
+        }
+        // update neighbor_count
+        for node in nodes.iter_mut() {
+            node.neighbor_count = node.index_channel.len();
+        }
+        Self {
+            module_name: format!("module_name"),
+            distance_solver_name: format!("tree_distance_2d_solver"),
+            dimension: 3,
+            nodes: nodes,
+            neighbors: neighbors,
+            fast_channels: fast_channels,
+        }
+    }
+}
+
 /**
 default example:
 `cargo run -- fpga_generator perfect_measurement_distributed_union_find 3`
@@ -221,18 +315,19 @@ fn perfect_measurement_distributed_union_find(d: usize) {
 default example:
 `cargo run --release -- fpga_generator fault_tolerant_distributed_union_find 5`
 **/
-fn fault_tolerant_distributed_union_find(d: usize, measurement_rounds: usize, p: f64, autotune: bool) {
-    // let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
-    // if autotune {
-    //     model.set_depolarizing_error_with_perfect_initialization(p);
-    // } else {
-    //     model.set_phenomenological_error_with_perfect_initialization(p);
-    // }
-    // model.build_graph();
-    // let (nodes, _position_to_index, neighbors) = union_find_decoder::make_decoder_given_ftqec_model(&model, QubitType::StabZ);
-    // let decoder = union_find_decoder::UnionFindDecoder::new(nodes, neighbors);
-    // let duf = DistributedUnionFind::<DufNode2d>::from_union_find_decoder(&decoder);
-    // println!("{}", duf.generate_code());
+fn fault_tolerant_distributed_union_find(d: usize, measurement_rounds: usize, p: f64, autotune: bool, fast_channel_interval: usize) {
+    let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
+    if autotune {
+        model.set_depolarizing_error_with_perfect_initialization(p);
+    } else {
+        model.set_phenomenological_error_with_perfect_initialization(p);
+    }
+    model.build_graph();
+    let (nodes, _position_to_index, neighbors, fast_channels) = distributed_uf_decoder::make_decoder_given_ftqec_model(&model, QubitType::StabZ, fast_channel_interval);
+    let decoder = distributed_uf_decoder::DistributedUnionFind::new(nodes, neighbors, fast_channels,
+        distributed_uf_decoder::manhattan_distance_standard_planar_code_3d_nodes, distributed_uf_decoder::compare_standard_planar_code_3d_nodes);
+    let duf = DistributedUnionFind::<DufNode3d>::from_distributed_union_find_decoder(&decoder);
+    println!("{}", duf.generate_code());
 }
 
 #[cfg(test)]
