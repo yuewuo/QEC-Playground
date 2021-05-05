@@ -1206,9 +1206,11 @@ pub fn manhattan_distance_standard_planar_code_3d_nodes(a: &(usize, usize, usize
 pub fn compare_standard_planar_code_3d_nodes(a: &(usize, usize, usize), b: &(usize, usize, usize)) -> Ordering {
     let (t1, i1, j1) = *a;
     let (t2, i2, j2) = *b;
-    if t1 < t2 {
+    let sum1 = t1 / 6 + i1 / 2 + j1 / 2;
+    let sum2 = t2 / 6 + i2 / 2 + j2 / 2;
+    if sum1 < sum2 {
         Ordering::Less
-    } else if t1 > t2 {
+    } else if sum1 > sum2 {
         Ordering::Greater
     } else {
         if i1 < i2 {
@@ -1440,7 +1442,7 @@ mod tests {
     }
     
     #[test]
-    fn distributed_union_find_decoder_test_build_given_ftqec_model() {
+    fn distributed_union_find_decoder_test_build_given_ftqec_model_1() {
         let measurement_rounds = 3;
         let d = 3;
         let p = 0.01;  // physical error rate
