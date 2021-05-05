@@ -333,6 +333,7 @@ fn fault_tolerant_distributed_union_find(d: usize, measurement_rounds: usize, p:
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::pyo3::types::{PyDict};
 
     // use `cargo test fpga_generator_test_basic_python_call -- --nocapture` to run specific test
 

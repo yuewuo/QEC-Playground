@@ -1153,6 +1153,44 @@ pub fn make_decoder_given_ftqec_model(model: &ftqec::PlanarCodeModel, stabilizer
     (nodes, position_to_index, neighbors, fast_channels)
 }
 
+#[allow(dead_code)]
+pub fn get_standard_planar_code_3d_boundary_cardinality(stabilizer: QubitType, position_to_index: &HashMap<(usize, usize, usize), usize>
+        , decoder: &DistributedUnionFind<(usize, usize, usize)>) -> usize {
+    let mut boundary_cardinality = 0;
+    let mut counted_sets = HashSet::new();
+    let mut counting_indices = Vec::new();
+    for ((_t, i, j), index) in position_to_index.iter() {
+        match stabilizer {
+            QubitType::StabZ => {
+                if *j == 1 {
+                    counting_indices.push(*index);
+                }
+            },
+            QubitType::StabX => {
+                if *i == 1 {
+                    counting_indices.push(*index);
+                }
+            },
+            _ => panic!("unsupported stabilizer type")
+        }
+    }
+    for index in counting_indices.into_iter() {
+        let pu = &decoder.processing_units[index];
+        let root = pu.updated_root;
+        if counted_sets.get(&root).is_none() {  // every set should only be counted once
+            let node = &decoder.nodes[index];
+            if pu.boundary_increased >= node.boundary_cost.unwrap() {  // only when this node is bleeding into the boundary
+                let root_pu = &decoder.processing_units[root];
+                if root_pu.is_odd_cardinality {  // connect to boundary only if the cardinality is odd
+                    counted_sets.insert(root);
+                    boundary_cardinality += 1;
+                }
+            }
+        }
+    }
+    boundary_cardinality
+}
+
 pub fn manhattan_distance_standard_planar_code_3d_nodes(a: &(usize, usize, usize), b: &(usize, usize, usize)) -> usize {
     let (t1, i1, j1) = *a;
     let (t2, i2, j2) = *b;
@@ -1186,6 +1224,7 @@ pub fn compare_standard_planar_code_3d_nodes(a: &(usize, usize, usize), b: &(usi
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::types::ErrorType;
 
     // use `cargo test distributed_union_find_decoder_test_case_1 -- --nocapture` to run specific test
 
@@ -1412,12 +1451,35 @@ mod tests {
         model.add_error_at(el2t(0), 0, 2, &ErrorType::X).expect("error rate = 0 here");  // data qubit error (detected by next layer)
         model.add_error_at(el2t(1), 2, 3, &ErrorType::X).expect("error rate = 0 here");  // measurement error (detected by this and next layer)
         model.propagate_error();
-        let (nodes, _position_to_index, neighbors, fast_channels) = make_decoder_given_ftqec_model(&model, QubitType::StabZ, 1);
+        let (nodes, position_to_index, neighbors, fast_channels) = make_decoder_given_ftqec_model(&model, QubitType::StabZ, 1);
         assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
         assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
         let mut decoder = DistributedUnionFind::new(nodes, neighbors, fast_channels, manhattan_distance_standard_planar_code_3d_nodes,          
             compare_standard_planar_code_3d_nodes);
         decoder.detailed_print_run_to_stable(true);
+        assert_eq!(0, get_standard_planar_code_3d_boundary_cardinality(QubitType::StabZ, &position_to_index, &decoder)
+            , "cardinality of one side of boundary determines if there is logical error");        
+    }
+    
+    #[test]
+    fn distributed_union_find_decoder_test_build_given_ftqec_model_2() {
+        let measurement_rounds = 3;
+        let d = 3;
+        let p = 0.01;  // physical error rate
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
+        model.set_phenomenological_error_with_perfect_initialization(p);
+        model.build_graph();
+        let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
+        model.add_error_at(el2t(0), 0, 0, &ErrorType::X).expect("error rate = 0 here");  // data qubit error (detected by next layer)
+        model.propagate_error();
+        let (nodes, position_to_index, neighbors, fast_channels) = make_decoder_given_ftqec_model(&model, QubitType::StabZ, 1);
+        assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
+        assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, fast_channels, manhattan_distance_standard_planar_code_3d_nodes,          
+            compare_standard_planar_code_3d_nodes);
+        decoder.detailed_print_run_to_stable(true);
+        assert_eq!(1, get_standard_planar_code_3d_boundary_cardinality(QubitType::StabZ, &position_to_index, &decoder)
+            , "cardinality of one side of boundary determines if there is logical error");        
     }
 
 }

@@ -682,6 +682,7 @@ impl UnionFind {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::types::ErrorType;
 
     // use `cargo test union_find_decoder_test_case_1 -- --nocapture` to run specific test
 
