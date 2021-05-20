@@ -1270,7 +1270,7 @@ mod tests {
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;  // test single error syndrome
         nodes[position_to_index[&(4, 1)]].is_error_syndrome = true;  // test 2 matching together
         nodes[position_to_index[&(4, 3)]].is_error_syndrome = true;
-        let mut distributed_union_find = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
+        let mut distributed_union_find = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
             compare_standard_planar_code_2d_nodes);
         assert_eq!(distributed_union_find.processing_units[position_to_index[&(4, 1)]].is_odd_cluster, true);
         assert_eq!(distributed_union_find.processing_units[position_to_index[&(4, 3)]].is_odd_cluster, true);
@@ -1293,7 +1293,7 @@ mod tests {
         // test `spread_clusters` function
         let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(3);
         nodes[position_to_index[&(2, 1)]].is_error_syndrome = true;  // test single error syndrome
-        let mut distributed_union_find = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
+        let mut distributed_union_find = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
             compare_standard_planar_code_2d_nodes);
         distributed_union_find.debug_print();
         distributed_union_find.reach_consistent_state();
@@ -1311,7 +1311,7 @@ mod tests {
         let d = 5;
         let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(d);
         nodes[position_to_index[&(4, 5)]].is_error_syndrome = true;
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
             compare_standard_planar_code_2d_nodes);
         decoder.detailed_print_run_to_stable(true);
         assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
@@ -1324,7 +1324,7 @@ mod tests {
         let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(d);
         nodes[position_to_index[&(0, 3)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 7)]].is_error_syndrome = true;
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
             compare_standard_planar_code_2d_nodes);
         decoder.detailed_print_run_to_stable(true);
         assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
@@ -1339,7 +1339,7 @@ mod tests {
         assert_eq!(neighbors.len(), 7, "d=3 should have 7 direct neighbor connections");
         nodes[position_to_index[&(2, 1)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
             compare_standard_planar_code_2d_nodes);
         decoder.detailed_print_run_to_stable(true);
         assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
@@ -1354,7 +1354,7 @@ mod tests {
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 5)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 7)]].is_error_syndrome = true;
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
             compare_standard_planar_code_2d_nodes);
         decoder.detailed_print_run_to_stable(true);
         assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
@@ -1370,7 +1370,7 @@ mod tests {
         nodes[position_to_index[&(0, 5)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 5)]].is_error_syndrome = true;
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
             compare_standard_planar_code_2d_nodes);
         decoder.detailed_print_run_to_stable(true);
         assert_eq!(1, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
@@ -1384,7 +1384,7 @@ mod tests {
         nodes[position_to_index[&(4, 3)]].is_error_syndrome = true;
         nodes[position_to_index[&(6, 5)]].is_error_syndrome = true;
         nodes[position_to_index[&(6, 7)]].is_error_syndrome = true;
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
             compare_standard_planar_code_2d_nodes);
         decoder.detailed_print_run_to_stable(true);
         decoder.debug_print();
@@ -1416,7 +1416,7 @@ mod tests {
         nodes[position_to_index[&(8, 3)]].is_error_syndrome = true;
         nodes[position_to_index[&(8, 5)]].is_error_syndrome = true;
         nodes[position_to_index[&(8, 7)]].is_error_syndrome = true;
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
             compare_standard_planar_code_2d_nodes);
         decoder.detailed_print_run_to_stable(true);
         decoder.debug_print();
@@ -1434,7 +1434,7 @@ mod tests {
         nodes[position_to_index[&(0, 5)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 5)]].is_error_syndrome = true;
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, fast_channels, manhattan_distance_standard_planar_code_2d_nodes,          
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, fast_channels, manhattan_distance_standard_planar_code_2d_nodes,
             compare_standard_planar_code_2d_nodes);
         decoder.detailed_print_run_to_stable(true);
         assert_eq!(1, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
@@ -1456,11 +1456,11 @@ mod tests {
         let (nodes, position_to_index, neighbors, fast_channels) = make_decoder_given_ftqec_model(&model, QubitType::StabZ, 1);
         assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
         assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, fast_channels, manhattan_distance_standard_planar_code_3d_nodes,          
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, fast_channels, manhattan_distance_standard_planar_code_3d_nodes,
             compare_standard_planar_code_3d_nodes);
         decoder.detailed_print_run_to_stable(true);
         assert_eq!(0, get_standard_planar_code_3d_boundary_cardinality(QubitType::StabZ, &position_to_index, &decoder)
-            , "cardinality of one side of boundary determines if there is logical error");        
+            , "cardinality of one side of boundary determines if there is logical error");
     }
     
     #[test]
@@ -1477,11 +1477,11 @@ mod tests {
         let (nodes, position_to_index, neighbors, fast_channels) = make_decoder_given_ftqec_model(&model, QubitType::StabZ, 1);
         assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
         assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, fast_channels, manhattan_distance_standard_planar_code_3d_nodes,          
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, fast_channels, manhattan_distance_standard_planar_code_3d_nodes,
             compare_standard_planar_code_3d_nodes);
         decoder.detailed_print_run_to_stable(true);
         assert_eq!(1, get_standard_planar_code_3d_boundary_cardinality(QubitType::StabZ, &position_to_index, &decoder)
-            , "cardinality of one side of boundary determines if there is logical error");        
+            , "cardinality of one side of boundary determines if there is logical error");
     }
 
 }
