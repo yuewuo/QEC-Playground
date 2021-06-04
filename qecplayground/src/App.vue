@@ -27,7 +27,10 @@
 					<div style="height: 20px;"></div>
 					<el-switch v-model="IsPerfectInitialization" active-text="Perfect Initialization" inactive-text="Imperfect Initialization"></el-switch>
 					<div style="height: 20px;"></div>
-					<el-switch v-model="use_rotated" active-text="Rotated Planar Code" inactive-text="Standard Planar Code"></el-switch>
+					<el-switch v-model="use_XZZX_code" active-text="XZZX Code" inactive-text="Planar Code"></el-switch>
+					<div style="height: 20px;"></div>
+					<el-switch v-model="use_rotated" :active-text="`Rotated ${use_XZZX_code ? 'XZZX' : 'Planar'} Code`"
+						:inactive-text="`Standard ${use_XZZX_code ? 'XZZX' : 'Planar'} Code`"></el-switch>
 					<div style="height: 20px;"></div>
 					<el-switch v-model="use_perspective_camera" active-text="Perspective Camera" inactive-text="Orthogonal Camera"></el-switch>
 					<div style="height: 20px;"></div>
@@ -117,6 +120,7 @@ export default {
 			L: 4,
 			MeasurementRounds: 2,
 			IsPerfectInitialization: false,
+			use_XZZX_code: false,
 			use_rotated: false,
 
 			bufferedL: 4,  // to avoid invalid `L` pass into FaultTolerantView

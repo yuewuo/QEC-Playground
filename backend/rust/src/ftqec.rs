@@ -267,6 +267,144 @@ impl PlanarCodeModel {
             x_homology_lines: Vec::new(),
         }
     }
+    
+    pub fn new_standard_XZZX_code(MeasurementRounds: usize, L: usize) -> Self {
+        // MeasurementRounds = 0 means only one perfect measurement round
+        assert!(L >= 2, "at lease one stabilizer is required");
+        let mut model = Self::new_XZZX_code(MeasurementRounds, L, |_i, _j| true);
+        // create Z stabilizer homology lines, detecting X errors
+        for j in 0..L {
+            let mut z_homology_line = Vec::new();
+            for i in 0..L {
+                z_homology_line.push((2 * i, 2 * j));
+            }
+            model.z_homology_lines.push(z_homology_line);
+        }
+        // create X stabilizer homology lines, detecting Z errors
+        for i in 0..L {
+            let mut x_homology_line = Vec::new();
+            for j in 0..L {
+                x_homology_line.push((2 * i, 2 * j));
+            }
+            model.x_homology_lines.push(x_homology_line);
+        }
+        model
+    }
+
+    pub fn new_XZZX_code<F>(MeasurementRounds: usize, L: usize, filter: F) -> Self
+            where F: Fn(usize, usize) -> bool {
+        let width = 2 * L - 1;
+        let T = MeasurementRounds + 2;
+        let height = T * 6 + 1;
+        let mut snapshot = Vec::with_capacity(height);
+        for t in 0..height {
+            let mut snapshot_row_0 = Vec::with_capacity(width);
+            for i in 0..width {
+                let mut snapshot_row_1 = Vec::with_capacity(width);
+                for j in 0..width {
+                    if filter(i, j) {
+                        let stage = Stage::from(t);
+                        let qubit_type = if (i + j) % 2 == 0 { QubitType::Data } else { QubitType::StabXZZX };
+                        let mut gate_type = GateType::None;
+                        let mut connection = None;
+                        match stage {
+                            Stage::Initialization => {
+                                if qubit_type != QubitType::Data {
+                                    gate_type = GateType::Initialization;
+                                }
+                            },
+                            Stage::CXGate1 => {
+                                if qubit_type == QubitType::Data {
+                                    if i+1 < width && filter(i+1, j) {
+                                        gate_type = GateType::ControlledPhase;
+                                        connection = Some(Connection{ t: t, i: i+1, j: j });
+                                    }
+                                } else {
+                                    if i >= 1 && filter(i-1, j) {
+                                        gate_type = GateType::ControlledPhase;
+                                        connection = Some(Connection{ t: t, i: i-1, j: j });
+                                    }
+                                }
+                            },
+                            Stage::CXGate2 => {
+                                if qubit_type == QubitType::Data {
+                                    if j+1 < width && filter(i, j+1) {
+                                        gate_type = GateType::Target;
+                                        connection = Some(Connection{ t: t, i: i, j: j+1 });
+                                    }
+                                } else {
+                                    if j >= 1 && filter(i, j-1) {
+                                        gate_type = GateType::Control;
+                                        connection = Some(Connection{ t: t, i: i, j: j-1 });
+                                    }
+                                }
+                            },
+                            Stage::CXGate3 => {
+                                if qubit_type == QubitType::Data {
+                                    if j >= 1 && filter(i, j-1) {
+                                        gate_type = GateType::Target;
+                                        connection = Some(Connection{ t: t, i: i, j: j-1 });
+                                    }
+                                } else {
+                                    if j+1 < width && filter(i, j+1) {
+                                        gate_type = GateType::Control;
+                                        connection = Some(Connection{ t: t, i: i, j: j+1 });
+                                    }
+                                }
+                            },
+                            Stage::CXGate4 => {
+                                if qubit_type == QubitType::Data {
+                                    if i >= 1 && filter(i-1, j) {
+                                        gate_type = GateType::ControlledPhase;
+                                        connection = Some(Connection{ t: t, i: i-1, j: j });
+                                    }
+                                } else {
+                                    if i+1 < width && filter(i+1, j) {
+                                        gate_type = GateType::ControlledPhase;
+                                        connection = Some(Connection{ t: t, i: i+1, j: j });
+                                    }
+                                }
+                            },
+                            Stage::Measurement => {
+                                if qubit_type != QubitType::Data {
+                                    gate_type = GateType::Measurement;
+                                }
+                            },
+                        }
+                        snapshot_row_1.push(Some(Node{
+                            t: t, i: i, j: j,
+                            connection: connection,
+                            gate_type: gate_type,
+                            qubit_type: qubit_type,
+                            error: ErrorType::I,
+                            error_rate_x: 0.25,  // by default error rate is the highest
+                            error_rate_z: 0.25,
+                            error_rate_y: 0.25,
+                            propagated: ErrorType::I,
+                            edges: Vec::new(),
+                            boundary: None,
+                            exhausted_boundary: None,
+                            pet_node: None,
+                            exhausted_map: HashMap::new(),
+                        }))
+                    } else {
+                        snapshot_row_1.push(None);
+                    }
+                }
+                snapshot_row_0.push(snapshot_row_1);
+            }
+            snapshot.push(snapshot_row_0);
+        }
+        Self {
+            snapshot: snapshot,
+            L: L,
+            T: T,
+            MeasurementRounds: MeasurementRounds,
+            graph: None,
+            z_homology_lines: Vec::new(),
+            x_homology_lines: Vec::new(),
+        }
+    }
 
     pub fn iterate_snapshot_mut<F>(&mut self, mut func: F) where F: FnMut(usize, usize, usize, &mut Node) {
         for (t, array) in self.snapshot.iter_mut().enumerate() {
@@ -453,16 +591,24 @@ impl PlanarCodeModel {
                         if gate_type == GateType::Initialization {
                             next_node.propagated = ErrorType::I;  // no error after initialization
                         }
-                        // but sometimes it also propagated to other qubits through CX gate
+                        // propagated to other qubits through CX gate
                         if gate_type == GateType::Control {
-                            let connection = node_connection.expect("exist");
+                            let connection = node_connection.as_ref().expect("exist");
                             if node_propagated == ErrorType::X || node_propagated == ErrorType::Y {
                                 let peer_node = self.snapshot[t+1][connection.i][connection.j].as_mut().expect("exist");
                                 peer_node.propagated = peer_node.propagated.multiply(&ErrorType::X);
                             }
                         } else if gate_type == GateType::Target {
-                            let connection = node_connection.expect("exist");
+                            let connection = node_connection.as_ref().expect("exist");
                             if node_propagated == ErrorType::Z || node_propagated == ErrorType::Y {
+                                let peer_node = self.snapshot[t+1][connection.i][connection.j].as_mut().expect("exist");
+                                peer_node.propagated = peer_node.propagated.multiply(&ErrorType::Z);
+                            }
+                        }
+                        // also propagated to other qubits via CZ gate
+                        if gate_type == GateType::ControlledPhase {
+                            let connection = node_connection.as_ref().expect("exist");
+                            if node_propagated == ErrorType::X || node_propagated == ErrorType::Y {
                                 let peer_node = self.snapshot[t+1][connection.i][connection.j].as_mut().expect("exist");
                                 peer_node.propagated = peer_node.propagated.multiply(&ErrorType::Z);
                             }
@@ -472,7 +618,7 @@ impl PlanarCodeModel {
             }
         }
     }
-    /// iterate over every measurement errors
+    /// iterate over every measurement stabilizers w/wo errors
     pub fn iterate_measurement_stabilizers_mut<F>(&mut self, mut func: F) where F: FnMut(usize, usize, usize, &mut Node) {
         for t in (12..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
@@ -480,7 +626,7 @@ impl PlanarCodeModel {
                     if self.snapshot[t][i][j].is_some() {
                         let node = self.snapshot[t][i][j].as_ref().expect("exist");
                         let qubit_type = node.qubit_type.clone();
-                        if qubit_type == QubitType::StabZ || qubit_type == QubitType::StabX {
+                        if qubit_type != QubitType::Data {
                             assert_eq!(node.gate_type, GateType::Measurement);
                             func(t, i, j, self.snapshot[t][i][j].as_mut().expect("exist"));
                         }
@@ -489,7 +635,7 @@ impl PlanarCodeModel {
             }
         }
     }
-    /// iterate over every measurement errors
+    /// iterate over every measurement stabilizers w/wo errors
     pub fn iterate_measurement_stabilizers<F>(&self, mut func: F) where F: FnMut(usize, usize, usize, &Node) {
         for t in (12..self.snapshot.len()).step_by(6) {
             for i in 0..self.snapshot[t].len() {
@@ -497,7 +643,7 @@ impl PlanarCodeModel {
                     if self.snapshot[t][i][j].is_some() {
                         let node = self.snapshot[t][i][j].as_ref().expect("exist");
                         let qubit_type = node.qubit_type.clone();
-                        if qubit_type == QubitType::StabZ || qubit_type == QubitType::StabX {
+                        if qubit_type != QubitType::Data {
                             assert_eq!(node.gate_type, GateType::Measurement);
                             func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
                         }
@@ -521,7 +667,7 @@ impl PlanarCodeModel {
                             if this_result != last_result {
                                 func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
                             }
-                        } else if node.qubit_type == QubitType::StabX {
+                        } else if node.qubit_type == QubitType::StabX || node.qubit_type == QubitType::StabXZZX {
                             assert_eq!(node.gate_type, GateType::Measurement);
                             let this_result = node.propagated == ErrorType::I || node.propagated == ErrorType::X;
                             let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
@@ -1201,10 +1347,15 @@ impl From<usize> for Stage {
 /// Gate type, corresponds to `NTYPE` in `FaultTolerantView.vue`
 #[derive(Debug, PartialEq, Clone)]
 pub enum GateType {
+    // initialization
     Initialization,
+    // CX gate
     Control,
     Target,
+    // measurement
     Measurement,
+    // CZ gate or CPHASE gate
+    ControlledPhase,
     None,  // do nothing
 }
 
@@ -1443,4 +1594,66 @@ impl From<&ValidationFailedReason> for String {
                     , x_homology_counts, x_homology_results_len, z_homology_counts, z_homology_results_len),
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::types::ErrorType;
+
+    // use `cargo test xzzx_code_test_simulation_1 -- --nocapture` to run specific test
+
+    #[test]
+    fn xzzx_code_test_simulation_1() {
+        let measurement_rounds = 3;
+        let d = 3;
+        let p = 0.01;  // physical error rate
+        let mut model = PlanarCodeModel::new_standard_XZZX_code(measurement_rounds, d);
+        model.set_phenomenological_error_with_perfect_initialization(p);
+        model.build_graph();
+        let assert_error_is = |model: &mut PlanarCodeModel, errors| {
+            model.propagate_error();
+            let mut measurement_errors = Vec::new();
+            model.iterate_measurement_errors(|t, i, j, _node| {
+                measurement_errors.push((t, i, j));
+            });
+            // println!("{:?}", measurement_errors);
+            assert_eq!(measurement_errors, errors);
+        };
+        let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
+        // single X error on the top boundary
+        model.clear_error();
+        model.add_error_at(el2t(0), 0, 2, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2)]);
+        // single Z error on the top boundary
+        model.clear_error();
+        model.add_error_at(el2t(0), 0, 2, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 0, 1), (24, 0, 3)]);
+        // single X error in the middle
+        model.clear_error();
+        model.add_error_at(el2t(0), 2, 2, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2), (24, 3, 2)]);
+        // single Z error in the middle
+        model.clear_error();
+        model.add_error_at(el2t(0), 2, 2, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 2, 1), (24, 2, 3)]);
+        // 2 X errors
+        model.clear_error();
+        model.add_error_at(el2t(0), 0, 2, &ErrorType::X).expect("error rate = 0 here");
+        model.add_error_at(el2t(0), 2, 2, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 3, 2)]);
+        // Z logical errors
+        model.clear_error();
+        model.add_error_at(el2t(0), 0, 0, &ErrorType::Z).expect("error rate = 0 here");
+        model.add_error_at(el2t(0), 0, 2, &ErrorType::Z).expect("error rate = 0 here");
+        model.add_error_at(el2t(0), 0, 4, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![]);
+        // X logical errors
+        model.clear_error();
+        model.add_error_at(el2t(0), 0, 0, &ErrorType::X).expect("error rate = 0 here");
+        model.add_error_at(el2t(0), 2, 0, &ErrorType::X).expect("error rate = 0 here");
+        model.add_error_at(el2t(0), 4, 0, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![]);
+    }
+
 }
