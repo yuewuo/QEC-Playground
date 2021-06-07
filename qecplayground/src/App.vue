@@ -4,7 +4,7 @@
 			:showXAncilla="show_X_ancilla" :IsPerfectInitialization="IsPerfectInitialization"
 			:showZAncilla="show_Z_ancilla" :showVerticalLine="show_vertical_line" :showInitialization="show_initialization" :showCXGates="show_CX_gates"
 			:showXEdges="show_X_edges" :showZEdges="show_Z_edges" :useRotated="use_rotated" :depolarErrorRate="0.001" ref="ft_view"
-			:usePerspectiveCamera="use_perspective_camera" :enableStats="enableStats" :websiteRoot="websiteRoot"></FaultTolerantView>
+			:usePerspectiveCamera="use_perspective_camera" :enableStats="enableStats" :websiteRoot="websiteRoot" :useXZZXCode="use_XZZX_code"></FaultTolerantView>
 		<div class="control-panel no-scrollbar">
 			<div style="text-align: center;">
 				<h1 class="title"><img src="@/assets/logo.png" class="logo"/>QEC Playground</h1>
@@ -30,25 +30,29 @@
 					<el-switch v-model="use_XZZX_code" active-text="XZZX Code" inactive-text="Planar Code"></el-switch>
 					<div style="height: 20px;"></div>
 					<el-switch v-model="use_rotated" :active-text="`Rotated ${use_XZZX_code ? 'XZZX' : 'Planar'} Code`"
-						:inactive-text="`Standard ${use_XZZX_code ? 'XZZX' : 'Planar'} Code`"></el-switch>
+						:inactive-text="`Standard ${use_XZZX_code ? 'XZZX' : 'Planar'} Code`" :disabled="use_XZZX_code"></el-switch>
 					<div style="height: 20px;"></div>
 					<el-switch v-model="use_perspective_camera" active-text="Perspective Camera" inactive-text="Orthogonal Camera"></el-switch>
 					<div style="height: 20px;"></div>
 					<el-switch v-model="show_data_qubit" active-text="Show Data Qubits" inactive-text="Hide"></el-switch>
 					<div style="height: 20px;"></div>
-					<el-switch v-model="show_Z_ancilla" active-text="Show Z Stabilizers" inactive-text="Hide"></el-switch>
-					<div style="height: 20px;"></div>
-					<el-switch v-model="show_X_ancilla" active-text="Show X Stabilizers" inactive-text="Hide"></el-switch>
+					<div v-show="!use_XZZX_code">
+						<el-switch v-model="show_Z_ancilla" active-text="Show Z Stabilizers" inactive-text="Hide"></el-switch>
+						<div style="height: 20px;"></div>
+					</div>
+					<el-switch v-model="show_X_ancilla" :active-text="`Show ${use_XZZX_code ? 'XZZX' : 'X'} Stabilizers`" inactive-text="Hide"></el-switch>
 					<div style="height: 20px;"></div>
 					<el-switch v-model="show_vertical_line" active-text="Show Vertical Lines" inactive-text="Hide"></el-switch>
 					<div style="height: 20px;"></div>
 					<el-switch v-model="show_initialization" active-text="Show Initialization" inactive-text="Hide"></el-switch>
 					<div style="height: 20px;"></div>
-					<el-switch v-model="show_CX_gates" active-text="Show CX (CNOT) Gates" inactive-text="Hide"></el-switch>
+					<el-switch v-model="show_CX_gates" active-text="Show CX (CNOT) and CZ (CPHASE) Gates" inactive-text="Hide"></el-switch>
 					<div style="height: 20px;"></div>
-					<el-switch v-model="show_Z_edges" active-text="Show Z Graph Lattice" inactive-text="Hide"></el-switch>
-					<div style="height: 20px;"></div>
-					<el-switch v-model="show_X_edges" active-text="Show X Graph Lattice" inactive-text="Hide"></el-switch>
+					<div v-show="!use_XZZX_code">
+						<el-switch v-model="show_Z_edges" active-text="Show Z Graph Lattice" inactive-text="Hide"></el-switch>
+						<div style="height: 20px;"></div>
+					</div>
+					<el-switch v-model="show_X_edges" :active-text="`Show ${use_XZZX_code ? 'XZZX' : 'X'} Graph Lattice`" inactive-text="Hide"></el-switch>
 				</div>
 			</el-card>
 			<div style="height: 10px;"></div>
