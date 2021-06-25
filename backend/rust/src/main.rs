@@ -131,6 +131,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg shallow_error_on_bottom: --shallow_error_on_bottom "add error to data qubit at t=6, so that no measurement error happens at bottom layer")
                 (@arg no_y_error: --no_y_error "set probability of y errors to 0")
                 (@arg use_xzzx_code: --use_xzzx_code "use XZZX surface code")
+                (@arg bias_eta: --bias_eta +takes_value "bias_eta = pz / (px + py) and px = py, px + py + pz = p. default to 1/2, which is px = pz = py")
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")

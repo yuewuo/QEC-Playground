@@ -442,7 +442,7 @@ impl PlanarCodeModel {
             }
         }
     }
-    pub fn set_depolarizing_error(&mut self, error_rate: f64) {  // (1-3p)I + pX + pZ + pY: X error rate = Z error rate = 2p(1-p)
+    pub fn set_individual_error(&mut self, px: f64, py: f64, pz: f64) {  // (1-3p)I + pX + pZ + pY: X error rate = Z error rate = 2p(1-p)
         let height = self.snapshot.len();
         self.iterate_snapshot_mut(|t, _i, _j, node| {
             if t >= height - 6 {  // no error on the top, as a perfect measurement round
@@ -450,14 +450,18 @@ impl PlanarCodeModel {
                 node.error_rate_z = 0.;
                 node.error_rate_y = 0.;
             } else {
-                node.error_rate_x = error_rate;
-                node.error_rate_z = error_rate;
-                node.error_rate_y = error_rate;
+                node.error_rate_x = px;
+                node.error_rate_z = pz;
+                node.error_rate_y = py;
             }
         })
     }
+    pub fn set_depolarizing_error(&mut self, error_rate: f64) {  // (1-3p)I + pX + pZ + pY: X error rate = Z error rate = 2p(1-p)
+        self.set_individual_error(error_rate, error_rate, error_rate)
+    }
     // this will remove bottom boundary
-    pub fn set_depolarizing_error_with_perfect_initialization(&mut self, error_rate: f64) {  // (1-3p)I + pX + pZ + pY: X error rate = Z error rate = 2p
+    pub fn set_individual_error_with_perfect_initialization(&mut self, px: f64, py: f64, pz: f64) {
+        assert!(px + py + pz <= 1. && px >= 0. && py >= 0. && pz >= 0.);
         let height = self.snapshot.len();
         self.iterate_snapshot_mut(|t, _i, _j, node| {
             if t >= height - 6 {  // no error on the top, as a perfect measurement round
@@ -469,11 +473,14 @@ impl PlanarCodeModel {
                 node.error_rate_z = 0.;
                 node.error_rate_y = 0.;
             } else {
-                node.error_rate_x = error_rate;
-                node.error_rate_z = error_rate;
-                node.error_rate_y = error_rate;
+                node.error_rate_x = px;
+                node.error_rate_z = pz;
+                node.error_rate_y = py;
             }
         })
+    }
+    pub fn set_depolarizing_error_with_perfect_initialization(&mut self, error_rate: f64) {  // (1-3p)I + pX + pZ + pY: X error rate = Z error rate = 2p
+        self.set_individual_error_with_perfect_initialization(error_rate, error_rate, error_rate)
     }
     // remove bottom boundary, (1-p)^2I + p(1-p)X + p(1-p)Z + p^2Y
     pub fn set_phenomenological_error_with_perfect_initialization(&mut self, error_rate: f64) {

@@ -90,9 +90,10 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let shallow_error_on_bottom = matches.is_present("shallow_error_on_bottom");
             let no_y_error = matches.is_present("no_y_error");
             let use_xzzx_code = matches.is_present("use_xzzx_code");
+            let bias_eta = value_t!(matches, "bias_eta", f64).unwrap_or(0.5);  // default to 0.5
             fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, !imperfect_initialization
-                , shallow_error_on_bottom, no_y_error, use_xzzx_code);
+                , shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -487,7 +488,7 @@ it supports progress bar (in stderr), so you can run this in backend by redirect
 fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
         , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
         , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool, shallow_error_on_bottom: bool
-        , no_y_error: bool, use_xzzx_code: bool) {
+        , no_y_error: bool, use_xzzx_code: bool, bias_eta: f64) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -497,7 +498,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
         let MeasurementRounds = Ts[L_idx];
         for p in ps {
             let p = *p;
-            assert!(3. * p < 0.5, "why should errors (X, Z, Y) happening more than half of a time?");
+            assert!(p < 0.5, "why should errors (X, Z, Y) happening more than half of a time?");
             let L = *L;
             let total_rounds = Arc::new(Mutex::new(0));
             let qec_failed = Arc::new(Mutex::new(0));
@@ -519,20 +520,28 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                     ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, L)
                 }
             };
+            // compute pz, px, py individually given bias_eta
+            // bias_eta = pz / (px + py) and px = py, px + py + pz = p
+            // (px + py) * (1 + bias_eta) = p
+            let px = p / (1. + bias_eta) / 2.;
+            let py = px;
+            let pz = bias_eta * (px + py);
+            // println!("px = {}, py = {}, pz = {}", px, py, pz);
+            // initialize error rate
             if !perfect_initialization {
-                model.set_depolarizing_error(p);
+                model.set_individual_error(px, py, pz);
             } else {
                 // if we use the `set_depolarizing_error` model, then old judgement doesn't work
                 // in order to verify that the modification is good, here we mimic the behavior of old model
                 // that is, we do not generate error on the added bottom layer, so that there is no bottom boundary
-                model.set_depolarizing_error_with_perfect_initialization(p);
+                model.set_individual_error_with_perfect_initialization(px, py, pz);
             }
             if shallow_error_on_bottom {
                 model.iterate_snapshot_mut(|t, _i, _j, node| {
                     if t == 6 && node.qubit_type == QubitType::Data {
-                        node.error_rate_x = p;
-                        node.error_rate_z = p;
-                        node.error_rate_y = p;
+                        node.error_rate_x = px;
+                        node.error_rate_z = pz;
+                        node.error_rate_y = py;
                     }
                 })
             }
