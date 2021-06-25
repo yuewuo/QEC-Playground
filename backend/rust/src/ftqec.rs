@@ -70,9 +70,19 @@ pub struct Node {
     pub exhausted_map: HashMap<Index, ExhaustedElement>,
 }
 
+/// record the code type
+#[derive(Debug, Clone)]
+pub enum CodeType {
+    StandardPlanarCode,
+    RotatedPlanarCode,
+    StandardXZZXCode,
+    Unknown,
+}
+
 /// The structure of surface code, including how quantum gates are implemented
 #[derive(Debug, Clone)]
 pub struct PlanarCodeModel {
+    pub code_type: CodeType,
     /// Corresponds to `this.snapshot` in `FaultTolerantView.vue`
     pub snapshot: Vec::< Vec::< Vec::< Option<Node> > > >,
     pub L: usize,
@@ -91,7 +101,7 @@ impl PlanarCodeModel {
     pub fn new_standard_planar_code(MeasurementRounds: usize, L: usize) -> Self {
         // MeasurementRounds = 0 means only one perfect measurement round
         assert!(L >= 2, "at lease one stabilizer is required");
-        let mut model = Self::new_planar_code(MeasurementRounds, L, |_i, _j| true);
+        let mut model = Self::new_planar_code(CodeType::StandardPlanarCode, MeasurementRounds, L, |_i, _j| true);
         // create Z stabilizer homology lines, detecting X errors
         for j in 0..L {
             let mut z_homology_line = Vec::new();
@@ -134,7 +144,7 @@ impl PlanarCodeModel {
             }
             false
         };
-        let mut model = Self::new_planar_code(MeasurementRounds, L, filter);
+        let mut model = Self::new_planar_code(CodeType::RotatedPlanarCode, MeasurementRounds, L, filter);
         // create Z stabilizer homology lines, detecting X errors
         for j in 0..L {
             let mut z_homology_line = Vec::new();
@@ -153,7 +163,7 @@ impl PlanarCodeModel {
         }
         model
     }
-    pub fn new_planar_code<F>(MeasurementRounds: usize, L: usize, filter: F) -> Self
+    pub fn new_planar_code<F>(code_type: CodeType, MeasurementRounds: usize, L: usize, filter: F) -> Self
             where F: Fn(usize, usize) -> bool {
         let width = 2 * L - 1;
         let T = MeasurementRounds + 2;
@@ -258,6 +268,7 @@ impl PlanarCodeModel {
             snapshot.push(snapshot_row_0);
         }
         Self {
+            code_type: code_type,
             snapshot: snapshot,
             L: L,
             T: T,
@@ -271,19 +282,19 @@ impl PlanarCodeModel {
     pub fn new_standard_XZZX_code(MeasurementRounds: usize, L: usize) -> Self {
         // MeasurementRounds = 0 means only one perfect measurement round
         assert!(L >= 2, "at lease one stabilizer is required");
-        let mut model = Self::new_XZZX_code(MeasurementRounds, L, |_i, _j| true);
+        let mut model = Self::new_XZZX_code(CodeType::StandardXZZXCode, MeasurementRounds, L, |_i, _j| true);
         // create Z stabilizer homology lines, detecting X errors
-        for j in 0..L {
+        for i in 0..L {  // [alert] this is different from standard planar code!
             let mut z_homology_line = Vec::new();
-            for i in 0..L {
+            for j in 0..L {  // [alert] this is different from standard planar code!
                 z_homology_line.push((2 * i, 2 * j));
             }
             model.z_homology_lines.push(z_homology_line);
         }
         // create X stabilizer homology lines, detecting Z errors
-        for i in 0..L {
+        for j in 0..L {  // [alert] this is different from standard planar code!
             let mut x_homology_line = Vec::new();
-            for j in 0..L {
+            for i in 0..L {  // [alert] this is different from standard planar code!
                 x_homology_line.push((2 * i, 2 * j));
             }
             model.x_homology_lines.push(x_homology_line);
@@ -291,7 +302,7 @@ impl PlanarCodeModel {
         model
     }
 
-    pub fn new_XZZX_code<F>(MeasurementRounds: usize, L: usize, filter: F) -> Self
+    pub fn new_XZZX_code<F>(code_type: CodeType, MeasurementRounds: usize, L: usize, filter: F) -> Self
             where F: Fn(usize, usize) -> bool {
         let width = 2 * L - 1;
         let T = MeasurementRounds + 2;
@@ -396,6 +407,7 @@ impl PlanarCodeModel {
             snapshot.push(snapshot_row_0);
         }
         Self {
+            code_type: code_type,
             snapshot: snapshot,
             L: L,
             T: T,
@@ -952,7 +964,7 @@ impl PlanarCodeModel {
                                 match &node_b.boundary {
                                     Some(boundary) => {
                                         // only try if this node is directly connected to boundary
-                                        if node.qubit_type == node_b.qubit_type {
+                                        if node.qubit_type == node_b.qubit_type && node_b.exhausted_map.get(&index).is_some() {
                                             let (_, p) = &boundary.cases[0];
                                             let cost = weight_of(*p) + (if t == tb && i == ib && j == jb { 0. } else {
                                                 node_b.exhausted_map[&index].cost
@@ -1296,25 +1308,52 @@ impl PlanarCodeModel {
     pub fn validate_correction_on_boundary(&self, correction: &Correction) -> Result<(), ValidationFailedReason> {
         let mut corrected = self.get_data_qubit_error_pattern();
         corrected.combine(&correction);  // apply correction to error pattern
-        // Z stabilizer boundary, j = 0
-        let mut x_error_count = 0;
-        for i in 0..self.L {
-            if corrected.x[[self.MeasurementRounds, (i*2), 0]] {
-                x_error_count += 1;
-            }
-        }
-        // X stabilizer boundary, i = 0
-        let mut z_error_count = 0;
-        for j in 0..self.L {
-            if corrected.z[[self.MeasurementRounds, 0, (j*2)]] {
-                z_error_count += 1;
-            }
-        }
-        match (x_error_count % 2 != 0, z_error_count % 2 != 0) {
-            (true, true) => Err(ValidationFailedReason::BothXandZLogicalError(0, x_error_count, self.L, z_error_count, self.L)),
-            (true, false) => Err(ValidationFailedReason::XLogicalError(0, x_error_count, self.L)),
-            (false, true) => Err(ValidationFailedReason::ZLogicalError(0, z_error_count, self.L)),
-            _ => Ok(())
+        match self.code_type {
+            CodeType::StandardPlanarCode => {
+                // Z stabilizer boundary, j = 0
+                let mut x_error_count = 0;
+                for i in 0..self.L {
+                    if corrected.x[[self.MeasurementRounds, (i*2), 0]] {
+                        x_error_count += 1;
+                    }
+                }
+                // X stabilizer boundary, i = 0
+                let mut z_error_count = 0;
+                for j in 0..self.L {
+                    if corrected.z[[self.MeasurementRounds, 0, (j*2)]] {
+                        z_error_count += 1;
+                    }
+                }
+                match (x_error_count % 2 != 0, z_error_count % 2 != 0) {
+                    (true, true) => Err(ValidationFailedReason::BothXandZLogicalError(0, x_error_count, self.L, z_error_count, self.L)),
+                    (true, false) => Err(ValidationFailedReason::XLogicalError(0, x_error_count, self.L)),
+                    (false, true) => Err(ValidationFailedReason::ZLogicalError(0, z_error_count, self.L)),
+                    _ => Ok(())
+                }
+            },
+            CodeType::StandardXZZXCode => {
+                // logical Z boundary, j = 0
+                let mut z_error_count = 0;
+                for i in 0..self.L {
+                    if corrected.z[[self.MeasurementRounds, (i*2), 0]] {
+                        z_error_count += 1;
+                    }
+                }
+                // logical X boundary, i = 0
+                let mut x_error_count = 0;
+                for j in 0..self.L {
+                    if corrected.x[[self.MeasurementRounds, 0, (j*2)]] {
+                        x_error_count += 1;
+                    }
+                }
+                match (x_error_count % 2 != 0, z_error_count % 2 != 0) {
+                    (true, true) => Err(ValidationFailedReason::BothXandZLogicalError(0, x_error_count, self.L, z_error_count, self.L)),
+                    (true, false) => Err(ValidationFailedReason::XLogicalError(0, x_error_count, self.L)),
+                    (false, true) => Err(ValidationFailedReason::ZLogicalError(0, z_error_count, self.L)),
+                    _ => Ok(())
+                }
+            },
+            _ => unimplemented!("boundary validation not implemented for this code type")
         }
     }
 }

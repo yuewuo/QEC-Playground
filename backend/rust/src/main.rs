@@ -130,6 +130,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg imperfect_initialization: --imperfect_initialization "if imperfect initialization, then there is bottom boundary because errors happen on the bottom")
                 (@arg shallow_error_on_bottom: --shallow_error_on_bottom "add error to data qubit at t=6, so that no measurement error happens at bottom layer")
                 (@arg no_y_error: --no_y_error "set probability of y errors to 0")
+                (@arg use_xzzx_code: --use_xzzx_code "use XZZX surface code")
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")

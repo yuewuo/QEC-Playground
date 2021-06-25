@@ -89,9 +89,10 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let imperfect_initialization = matches.is_present("imperfect_initialization");
             let shallow_error_on_bottom = matches.is_present("shallow_error_on_bottom");
             let no_y_error = matches.is_present("no_y_error");
+            let use_xzzx_code = matches.is_present("use_xzzx_code");
             fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, !imperfect_initialization
-                , shallow_error_on_bottom, no_y_error);
+                , shallow_error_on_bottom, no_y_error, use_xzzx_code);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -486,7 +487,7 @@ it supports progress bar (in stderr), so you can run this in backend by redirect
 fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
         , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
         , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool, shallow_error_on_bottom: bool
-        , no_y_error: bool) {
+        , no_y_error: bool, use_xzzx_code: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -506,9 +507,17 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             pb.set(0);
             // build general models
             let mut model = if rotated_planar_code {
-                ftqec::PlanarCodeModel::new_rotated_planar_code(MeasurementRounds, L)
+                if use_xzzx_code {
+                    panic!("not implemented");
+                } else {
+                    ftqec::PlanarCodeModel::new_rotated_planar_code(MeasurementRounds, L)
+                }
             } else {
-                ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, L)
+                if use_xzzx_code {
+                    ftqec::PlanarCodeModel::new_standard_XZZX_code(MeasurementRounds, L)
+                } else {
+                    ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, L)
+                }
             };
             if !perfect_initialization {
                 model.set_depolarizing_error(p);
