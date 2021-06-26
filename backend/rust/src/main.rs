@@ -114,7 +114,7 @@ async fn main() -> std::io::Result<()> {
             (@subcommand fault_tolerant_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")
                 (@arg Ts: +required "[T1,T2,T3,...,Tn], must have exactly the same length as `Ls`")
-                (@arg ps: +required "[p1,p2,p3,...,pm]")
+                (@arg ps: +required "[p1,p2,p3,...,pm] p = px + py + pz")
                 (@arg max_N: -m --max_N +takes_value "maximum total count, default to 100000000")
                 (@arg min_error_cases: -e --min_error_cases +takes_value "minimum error cases, default to 10000")
                 (@arg parallel: -p --parallel +takes_value "how many parallel threads to use. 0 will use number of CPUs - 1")
