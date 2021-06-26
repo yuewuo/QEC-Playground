@@ -498,7 +498,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
         let MeasurementRounds = Ts[L_idx];
         for p in ps {
             let p = *p;
-            assert!(p <= 0.5, "why should errors (X, Z, Y) happening more than half of a time?");
+            assert!(p <= 1.0, "why should errors (X, Z, Y) happening more than 1.0 probability?");
             let L = *L;
             let total_rounds = Arc::new(Mutex::new(0));
             let qec_failed = Arc::new(Mutex::new(0));
