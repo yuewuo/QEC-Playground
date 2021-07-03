@@ -16,14 +16,14 @@ set size 1,1
 # RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13,17,21,25] [0,0,0,0] [0.27,0.28,0.29,0.30,0.31,0.32,0.33] -b1000 -p0 -m100000000 -e1000000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10
 
 set logscale x
-set xrange [0.13:0.19]
+set xrange [0.27:0.33]
 # labels
-# python -c "for i in range(7): print('\'%.2f\' %.2f' % tuple([0.16 + (i-3)*0.01 for j in range(2)]), end=', ')"
-set xtics ('0.13' 0.13, '0.14' 0.14, '0.15' 0.15, '0.16' 0.16, '0.17' 0.17, '0.18' 0.18, '0.19' 0.19)
+# python -c "for i in range(7): print('\'%.2f\' %.2f' % tuple([0.3 + (i-3)*0.01 for j in range(2)]), end=', ')"
+set xtics ('0.27' 0.27, '0.28' 0.28, '0.29' 0.29, '0.30' 0.30, '0.31' 0.31, '0.32' 0.32, '0.33' 0.33)
 # labels
-# python -c "for i in range(9): print('\'%.1f\' %.1f' % tuple([0.1 + i * 0.1 for j in range(2)]), end=', ')"
-set ytics ('0.1' 0.1, '0.2' 0.2, '0.3' 0.3, '0.4' 0.4, '0.5' 0.5, '0.6' 0.6, '0.7' 0.7, '0.8' 0.8, '0.9' 0.9)
-set yrange [0:1]
+# python -c "for i in range(6): print('\'%.1f\' %.1f' % tuple([0.1 + i * 0.1 for j in range(2)]), end=', ')"
+set ytics ('0.1' 0.1, '0.2' 0.2, '0.3' 0.3, '0.4' 0.4, '0.5' 0.5, '0.6' 0.6)
+set yrange [0.1:0.6]
 set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder

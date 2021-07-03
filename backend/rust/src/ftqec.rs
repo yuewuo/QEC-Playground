@@ -764,6 +764,7 @@ impl PlanarCodeModel {
                                 // add this to edges and update probability
                                 if measurement_errors.len() == 1 {  // boundary
                                     let (t1, i1, j1) = measurement_errors[0];
+                                    // println!("[{}][{}][{}]:[{}] causes boundary error on [{}][{}][{}]", t, i, j, if *error == ErrorType::X { "X" } else { "Z" }, t1, i1, j1);
                                     let node = self.snapshot[t1][i1][j1].as_mut().expect("exist");
                                     if node.boundary.is_none() {
                                         node.boundary = Some(Boundary {
@@ -775,6 +776,7 @@ impl PlanarCodeModel {
                                 } else if measurement_errors.len() == 2 {  // connection
                                     let (t1, i1, j1) = measurement_errors[0];
                                     let (t2, i2, j2) = measurement_errors[1];
+                                    // println!("[{}][{}][{}]:[{}] causes paired errors on [{}][{}][{}] and [{}][{}][{}]", t, i, j, if *error == ErrorType::X { "X" } else { "Z" }, t1, i1, j1, t2, i2, j2);
                                     if t1 <= 6 || t2 <= 6 {
                                         println!("error at {:?}", (t, i, j, error));
                                         println!("t1: {:?}, t2: {:?}", (t1, i1, j1), (t2, i2, j2));
@@ -792,6 +794,7 @@ impl PlanarCodeModel {
                                         }
                                         node.boundary.as_mut().expect("exist").add(p, correction);
                                     } else {
+                                        // println!("add_edge_case [{}][{}][{}] [{}][{}][{}] with p = {}", t1, i1, j1, t2, i2, j2, p);
                                         add_edge_case(&mut self.snapshot[t1][i1][j1].as_mut().expect("exist").edges, t2, i2, j2, p, correction.clone());
                                         add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").edges, t1, i1, j1, p, correction);
                                     }
@@ -1353,6 +1356,7 @@ impl PlanarCodeModel {
                         x_error_count += 1;
                     }
                 }
+                // println!("z_error_count: {}, x_error_count: {}", z_error_count, x_error_count);
                 match (x_error_count % 2 != 0, z_error_count % 2 != 0) {
                     (true, true) => Err(ValidationFailedReason::BothXandZLogicalError(0, x_error_count, self.L, z_error_count, self.L)),
                     (true, false) => Err(ValidationFailedReason::XLogicalError(0, x_error_count, self.L)),
@@ -1700,6 +1704,35 @@ mod tests {
         model.add_error_at(el2t(0), 2, 0, &ErrorType::X).expect("error rate = 0 here");
         model.add_error_at(el2t(0), 4, 0, &ErrorType::X).expect("error rate = 0 here");
         assert_error_is(&mut model, vec![]);
+    }
+
+    #[test]
+    fn xzzx_code_test_simulation_2() {
+        let p = 0.005;
+        let bias_eta = 299.;
+        let L = 3;
+        let MeasurementRounds = 0;
+        let mut model = PlanarCodeModel::new_standard_XZZX_code(MeasurementRounds, L);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = bias_eta * (px + py);
+        model.set_individual_error_with_perfect_initialization(px, py, pz);
+        // shallow_error_on_bottom
+        model.iterate_snapshot_mut(|t, _i, _j, node| {
+            if t == 6 && node.qubit_type == QubitType::Data {
+                node.error_rate_x = px;
+                node.error_rate_z = pz;
+                node.error_rate_y = py;
+            }
+        });
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path_autotune();
+        let validate_layer = -2;
+        model.propagate_error();
+        let measurement = model.generate_measurement();
+        let correction = model.decode_MWPM(&measurement);
+        let validation_ret = model.validate_correction_on_boundary(&correction);
     }
 
 }
