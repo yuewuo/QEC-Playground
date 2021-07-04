@@ -315,7 +315,8 @@ impl PlanarCodeModel {
                 for j in 0..width {
                     if filter(i, j) {
                         let stage = Stage::from(t);
-                        let qubit_type = if (i + j) % 2 == 0 { QubitType::Data } else { QubitType::StabXZZX };
+                        let qubit_type = if (i + j) % 2 == 0 { QubitType::Data } else
+                            { if i % 2 == 0 { QubitType::StabXZZXLogicalZ } else { QubitType::StabXZZXLogicalX } };
                         let mut gate_type = GateType::None;
                         let mut connection = None;
                         match stage {
@@ -678,22 +679,26 @@ impl PlanarCodeModel {
                 for j in 0..self.snapshot[t][i].len() {
                     if self.snapshot[t][i][j].is_some() {
                         let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                        if node.qubit_type == QubitType::StabZ {
-                            assert_eq!(node.gate_type, GateType::Measurement);
-                            let this_result = node.propagated == ErrorType::I || node.propagated == ErrorType::Z;
-                            let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
-                            let last_result = last_node.propagated == ErrorType::I || last_node.propagated == ErrorType::Z;
-                            if this_result != last_result {
-                                func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
-                            }
-                        } else if node.qubit_type == QubitType::StabX || node.qubit_type == QubitType::StabXZZX {
-                            assert_eq!(node.gate_type, GateType::Measurement);
-                            let this_result = node.propagated == ErrorType::I || node.propagated == ErrorType::X;
-                            let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
-                            let last_result = last_node.propagated == ErrorType::I || last_node.propagated == ErrorType::X;
-                            if this_result != last_result {
-                                func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
-                            }
+                        match node.qubit_type {
+                            QubitType::StabZ => {
+                                assert_eq!(node.gate_type, GateType::Measurement);
+                                let this_result = node.propagated == ErrorType::I || node.propagated == ErrorType::Z;
+                                let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
+                                let last_result = last_node.propagated == ErrorType::I || last_node.propagated == ErrorType::Z;
+                                if this_result != last_result {
+                                    func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
+                                }
+                            },
+                            QubitType::StabX | QubitType::StabXZZXLogicalX | QubitType::StabXZZXLogicalZ => {
+                                assert_eq!(node.gate_type, GateType::Measurement);
+                                let this_result = node.propagated == ErrorType::I || node.propagated == ErrorType::X;
+                                let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
+                                let last_result = last_node.propagated == ErrorType::I || last_node.propagated == ErrorType::X;
+                                if this_result != last_result {
+                                    func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
+                                }
+                            },
+                            _ => { },
                         }
                     }
                 }
@@ -883,6 +888,7 @@ impl PlanarCodeModel {
                         correction: None,
                         next_correction: None,
                     });
+                    // println!("[{}][{}][{}] insert [{}][{}][{}] with cost = {}", t, i, j, index.t, index.i, index.j, *cost);
                 }
             }
         });
@@ -997,6 +1003,9 @@ impl PlanarCodeModel {
                                     None => { }
                                 }
                             });
+                            if min_cost.is_none() {
+                                continue  // node not involved
+                            }
                             let min_cost = min_cost.expect("exist");
                             let min_index = min_index.expect("exist");
                             // println!("[{}][{}][{}] {} {:?}", t, i, j, min_cost, min_index);
@@ -1314,57 +1323,54 @@ impl PlanarCodeModel {
         Ok(())
     }
 
-    /// validate correction on the boundaries of top layer with perfect measurement. should be equivalent to `validate_correction_on_top_layer`
-    pub fn validate_correction_on_boundary(&self, correction: &Correction) -> Result<(), ValidationFailedReason> {
+    // return (x_error_count, z_error_count)
+    pub fn get_boundary_cardinality(&self, correction: &Correction) -> (usize, usize) {
         let mut corrected = self.get_data_qubit_error_pattern();
         corrected.combine(&correction);  // apply correction to error pattern
+        let mut x_error_count = 0;
+        let mut z_error_count = 0;
         match self.code_type {
             CodeType::StandardPlanarCode => {
                 // Z stabilizer boundary, j = 0
-                let mut x_error_count = 0;
                 for i in 0..self.L {
                     if corrected.x[[self.MeasurementRounds, (i*2), 0]] {
                         x_error_count += 1;
                     }
                 }
                 // X stabilizer boundary, i = 0
-                let mut z_error_count = 0;
                 for j in 0..self.L {
                     if corrected.z[[self.MeasurementRounds, 0, (j*2)]] {
                         z_error_count += 1;
                     }
                 }
-                match (x_error_count % 2 != 0, z_error_count % 2 != 0) {
-                    (true, true) => Err(ValidationFailedReason::BothXandZLogicalError(0, x_error_count, self.L, z_error_count, self.L)),
-                    (true, false) => Err(ValidationFailedReason::XLogicalError(0, x_error_count, self.L)),
-                    (false, true) => Err(ValidationFailedReason::ZLogicalError(0, z_error_count, self.L)),
-                    _ => Ok(())
-                }
             },
             CodeType::StandardXZZXCode => {
                 // logical Z boundary, j = 0
-                let mut z_error_count = 0;
                 for i in 0..self.L {
                     if corrected.z[[self.MeasurementRounds, (i*2), 0]] {
                         z_error_count += 1;
                     }
                 }
                 // logical X boundary, i = 0
-                let mut x_error_count = 0;
                 for j in 0..self.L {
                     if corrected.x[[self.MeasurementRounds, 0, (j*2)]] {
                         x_error_count += 1;
                     }
                 }
                 // println!("z_error_count: {}, x_error_count: {}", z_error_count, x_error_count);
-                match (x_error_count % 2 != 0, z_error_count % 2 != 0) {
-                    (true, true) => Err(ValidationFailedReason::BothXandZLogicalError(0, x_error_count, self.L, z_error_count, self.L)),
-                    (true, false) => Err(ValidationFailedReason::XLogicalError(0, x_error_count, self.L)),
-                    (false, true) => Err(ValidationFailedReason::ZLogicalError(0, z_error_count, self.L)),
-                    _ => Ok(())
-                }
             },
             _ => unimplemented!("boundary validation not implemented for this code type")
+        }
+        (x_error_count, z_error_count)
+    }
+    /// validate correction on the boundaries of top layer with perfect measurement. should be equivalent to `validate_correction_on_top_layer`
+    pub fn validate_correction_on_boundary(&self, correction: &Correction) -> Result<(), ValidationFailedReason> {
+        let (x_error_count, z_error_count) = self.get_boundary_cardinality(correction);
+        match (x_error_count % 2 != 0, z_error_count % 2 != 0) {
+            (true, true) => Err(ValidationFailedReason::BothXandZLogicalError(0, x_error_count, self.L, z_error_count, self.L)),
+            (true, false) => Err(ValidationFailedReason::XLogicalError(0, x_error_count, self.L)),
+            (false, true) => Err(ValidationFailedReason::ZLogicalError(0, z_error_count, self.L)),
+            _ => Ok(())
         }
     }
 }
@@ -1706,33 +1712,33 @@ mod tests {
         assert_error_is(&mut model, vec![]);
     }
 
-    #[test]
-    fn xzzx_code_test_simulation_2() {
-        let p = 0.005;
-        let bias_eta = 299.;
-        let L = 3;
-        let MeasurementRounds = 0;
-        let mut model = PlanarCodeModel::new_standard_XZZX_code(MeasurementRounds, L);
-        let px = p / (1. + bias_eta) / 2.;
-        let py = px;
-        let pz = bias_eta * (px + py);
-        model.set_individual_error_with_perfect_initialization(px, py, pz);
-        // shallow_error_on_bottom
-        model.iterate_snapshot_mut(|t, _i, _j, node| {
-            if t == 6 && node.qubit_type == QubitType::Data {
-                node.error_rate_x = px;
-                node.error_rate_z = pz;
-                node.error_rate_y = py;
-            }
-        });
-        model.build_graph();
-        model.optimize_correction_pattern();
-        model.build_exhausted_path_autotune();
-        let validate_layer = -2;
-        model.propagate_error();
-        let measurement = model.generate_measurement();
-        let correction = model.decode_MWPM(&measurement);
-        let validation_ret = model.validate_correction_on_boundary(&correction);
-    }
+    // #[test]
+    // fn xzzx_code_test_simulation_2() {
+    //     let p = 0.005;
+    //     let bias_eta = 299.;
+    //     let L = 3;
+    //     let MeasurementRounds = 0;
+    //     let mut model = PlanarCodeModel::new_standard_XZZX_code(MeasurementRounds, L);
+    //     let px = p / (1. + bias_eta) / 2.;
+    //     let py = px;
+    //     let pz = bias_eta * (px + py);
+    //     model.set_individual_error_with_perfect_initialization(px, py, pz);
+    //     // shallow_error_on_bottom
+    //     model.iterate_snapshot_mut(|t, _i, _j, node| {
+    //         if t == 6 && node.qubit_type == QubitType::Data {
+    //             node.error_rate_x = px;
+    //             node.error_rate_z = pz;
+    //             node.error_rate_y = py;
+    //         }
+    //     });
+    //     model.build_graph();
+    //     model.optimize_correction_pattern();
+    //     model.build_exhausted_path_autotune();
+    //     let validate_layer = -2;
+    //     model.propagate_error();
+    //     let measurement = model.generate_measurement();
+    //     let correction = model.decode_MWPM(&measurement);
+    //     let validation_ret = model.validate_correction_on_boundary(&correction);
+    // }
 
 }

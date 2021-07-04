@@ -403,6 +403,55 @@ pub fn get_standard_planar_code_2d_left_boundary_cardinality(d: usize, position_
     boundary_cardinality
 }
 
+pub fn get_standard_planar_code_3d_left_boundary_cardinality(d: usize, measurement_rounds: usize, position_to_index: &HashMap<(usize, usize, usize), usize>
+        , decoder: &UnionFindDecoder<(usize, usize, usize)>, get_top_boundary_instead: bool, enable_toward_mwpm: bool) -> usize {
+    let mut boundary_cardinality = 0;
+    let mut peer_boundary_has = HashSet::new();
+    if enable_toward_mwpm {
+        for t in (18..=12+6*measurement_rounds).step_by(6) {
+            for index in (0..=2*d-2).step_by(2) {
+                let i = if get_top_boundary_instead { 2*d-3 } else { index };
+                let j = if get_top_boundary_instead { index } else { 2*d-3 };
+                let index = position_to_index[&(t, i, j)];
+                let root = decoder.union_find.immutable_find(index);
+                let node = &decoder.nodes[index];
+                if node.boundary_increased >= node.node.boundary_cost.unwrap() {  // only when this node is bleeding into the boundary
+                    peer_boundary_has.insert(root);
+                }
+            }
+        }
+    }
+    let mut counted_sets = HashSet::new();
+    for t in (18..=12+6*measurement_rounds).step_by(6) {
+        for index in (0..=2*d-2).step_by(2) {
+            let i = if get_top_boundary_instead { 1 } else { index };
+            let j = if get_top_boundary_instead { index } else { 1 };
+            let index = position_to_index[&(t, i, j)];
+            let root = decoder.union_find.immutable_find(index);
+            if !counted_sets.contains(&root) {  // every set should only be counted once
+                let node = &decoder.nodes[index];
+                if node.boundary_increased >= node.node.boundary_cost.unwrap() {  // only when this node is bleeding into the boundary
+                    counted_sets.insert(root);
+                    let root_uf_node = &decoder.union_find.immutable_get(root);
+                    if root_uf_node.cardinality % 2 == 1 {  // connect to boundary only if the cardinality is odd
+                        if peer_boundary_has.contains(&root) {
+                            // if don't consider this case, either by counting into left boundary or not into left boundary,
+                            //    the results are almost the same (d=11, p=1e-1, x only, logical error rate = 16%)
+                            // The main difference between original UF decoder and MWPM decoder lies here
+                            if enable_toward_mwpm {
+
+                            }
+                        } else {
+                            boundary_cardinality += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    boundary_cardinality
+}
+
 /// return `(has_x_logical_error, has_z_logical_error)`
 pub fn run_given_offer_decoder_instance(decoder: &mut offer_decoder::OfferDecoder, towards_mwpm: bool) -> (bool, bool) {
     let d = decoder.d;
@@ -442,7 +491,7 @@ pub fn run_given_offer_decoder_instance(decoder: &mut offer_decoder::OfferDecode
 /// return (nodes, position_to_index, neighbors)
 pub fn make_decoder_given_ftqec_model(model: &ftqec::PlanarCodeModel, stabilizer: QubitType) -> (Vec<InputNode<(usize, usize, usize)>>,
         HashMap<(usize, usize, usize), usize>, Vec<NeighborEdge>) {
-    assert!(stabilizer == QubitType::StabZ || stabilizer == QubitType::StabX, "stabilizer must be either StabZ or StabX");
+    assert!(stabilizer != QubitType::Data, "cannot build decoder on data qubits");
     let mut nodes = Vec::new();
     let mut position_to_index = HashMap::new();
     model.iterate_measurement_stabilizers(|t, i, j, node| {
@@ -476,40 +525,97 @@ pub fn make_decoder_given_ftqec_model(model: &ftqec::PlanarCodeModel, stabilizer
     (nodes, position_to_index, neighbors)
 }
 
-// /// return `(has_x_logical_error, has_z_logical_error)`
-// pub fn run_given_mwpm_decoder_instance(model: &ftqec::PlanarCodeModel) -> (bool, bool) {
-//     let d = model.L;
-//     decoder.error_changed();
-//     // decode X errors
-//     let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes(d, true);
-//     for i in (0..=2*d-2).step_by(2) {
-//         for j in (1..=2*d-3).step_by(2) {
-//             if decoder.qubits[i][j].measurement {
-//                 nodes[position_to_index[&(i, j)]].is_error_syndrome = true;
-//             }
-//         }
-//     }
-//     let mut uf_decoder = UnionFindDecoder::new(nodes, neighbors);
-//     uf_decoder.run_to_stable();
-//     let left_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, false, towards_mwpm)
-//         + decoder.origin_error_left_boundary_cardinality();
-//     let has_x_logical_error = left_boundary_cardinality % 2 == 1;
-//     // decode Z errors
-//     let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes(d, false);
-//     for i in (1..=2*d-3).step_by(2) {
-//         for j in (0..=2*d-2).step_by(2) {
-//             if decoder.qubits[i][j].measurement {
-//                 nodes[position_to_index[&(i, j)]].is_error_syndrome = true;
-//             }
-//         }
-//     }
-//     let mut uf_decoder = UnionFindDecoder::new(nodes, neighbors);
-//     uf_decoder.run_to_stable();
-//     let top_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, true, towards_mwpm)
-//         + decoder.origin_error_top_boundary_cardinality();
-//     let has_z_logical_error = top_boundary_cardinality % 2 == 1;
-//     (has_x_logical_error, has_z_logical_error)
-// }
+#[allow(dead_code)]
+/// return (nodes, position_to_index, neighbors)
+pub fn make_decoder_given_ftqec_model_weighted(model: &ftqec::PlanarCodeModel, stabilizer: QubitType, max_half_weight: usize)
+        -> (Vec<InputNode<(usize, usize, usize)>>, HashMap<(usize, usize, usize), usize>, Vec<NeighborEdge>) {
+    assert!(stabilizer != QubitType::Data, "cannot build decoder on data qubits");
+    // first find the minimum probability
+    let mut minimum_probability = f64::MAX;
+    model.iterate_measurement_stabilizers(|t, _i, _j, node| {
+        if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
+            for edge in node.edges.iter() {
+                if edge.p < minimum_probability {
+                    minimum_probability = edge.p;
+                }
+            }
+        }
+    });
+    // the minimum probability has weight `max_half_weight`, all other probability will scale accordingly
+    let probability_to_weight = |probability: f64| -> usize {
+        let mut half_weight = ((max_half_weight as f64) * probability.ln() / minimum_probability.ln()).round() as usize;
+        if half_weight > max_half_weight {
+            half_weight = max_half_weight;
+        }
+        if half_weight < 1 {
+            half_weight = 1;
+        }
+        // println!("half_weight = {}, minimum_probability = {}, probability = {}", half_weight, minimum_probability, probability);
+        2 * half_weight
+    };
+    // build graph
+    let mut nodes = Vec::new();
+    let mut position_to_index = HashMap::new();
+    model.iterate_measurement_stabilizers(|t, i, j, node| {
+        if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
+            position_to_index.insert((t, i, j), nodes.len());
+            nodes.push(InputNode::new((t, i, j), false, match &node.boundary {
+                Some(boundary) => Some(probability_to_weight(boundary.p)),
+                None => None,
+            }));
+        }
+    });
+    model.iterate_measurement_errors(|t, i, j, node| {
+        if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
+            nodes[position_to_index[&(t, i, j)]].is_error_syndrome = true;
+        }
+    });
+    let mut neighbors = Vec::new();
+    model.iterate_measurement_stabilizers(|t, i, j, node| {
+        if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
+            let idx = position_to_index[&(t, i, j)];
+            for edge in node.edges.iter() {
+                if edge.t > 12 {
+                    let peer_idx = position_to_index[&(edge.t, edge.i, edge.j)];
+                    if idx < peer_idx {  // remove duplicated neighbors
+                        neighbors.push(NeighborEdge::new(idx, peer_idx, 0, probability_to_weight(edge.p)));
+                    }
+                } else {
+                    let new_boundary_cost = match nodes[idx].boundary_cost {
+                        Some(cost) => std::cmp::min(cost, probability_to_weight(edge.p)),
+                        None => probability_to_weight(edge.p),
+                    };
+                    nodes[idx].boundary_cost = Some(new_boundary_cost);  // viewing the bottom layer as boundary
+                }
+            }
+        }
+    });
+    assert!(neighbors.len() > 0, "ftqec model may not have `build_graph` called, so the neighbor connections have not built yet");
+    (nodes, position_to_index, neighbors)
+}
+
+/// return `(has_x_logical_error, has_z_logical_error)`
+pub fn run_given_mwpm_decoder_instance_weighted(model: &ftqec::PlanarCodeModel, towards_mwpm: bool, max_half_weight: usize) -> (bool, bool) {
+    let d = model.L;
+    let measurement_rounds = model.MeasurementRounds;
+    let default_correction = model.generate_default_correction();
+    let (x_error_count, z_error_count) = model.get_boundary_cardinality(&default_correction);
+    // decode X errors
+    let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, QubitType::StabXZZXLogicalX, max_half_weight);
+    let mut uf_decoder = UnionFindDecoder::new(nodes, neighbors);
+    uf_decoder.run_to_stable();
+    let left_boundary_cardinality = get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &uf_decoder, true, towards_mwpm)
+        + x_error_count;
+    let has_x_logical_error = left_boundary_cardinality % 2 == 1;
+    // decode Z errors
+    let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, QubitType::StabXZZXLogicalZ, max_half_weight);
+    let mut uf_decoder = UnionFindDecoder::new(nodes, neighbors);
+    uf_decoder.run_to_stable();
+    let top_boundary_cardinality = get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &uf_decoder, false, towards_mwpm)
+        + z_error_count;
+    let has_z_logical_error = top_boundary_cardinality % 2 == 1;
+    (has_x_logical_error, has_z_logical_error)
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UnionFind {
@@ -861,6 +967,125 @@ mod tests {
         assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
         let mut decoder = UnionFindDecoder::new(nodes, neighbors);
         detailed_print_run_to_stable(&mut decoder);
+    }
+
+    #[test]
+    fn union_find_decoder_test_build_given_ftqec_model_weighted_1() {
+        let p = 0.005;
+        let bias_eta = 299.;
+        let d = 3;
+        let measurement_rounds = 1;
+        let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(measurement_rounds, d);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = bias_eta * (px + py);
+        model.set_individual_error_with_perfect_initialization(0., 0., 0.);
+        // shallow_error_on_bottom
+        model.iterate_snapshot_mut(|t, _i, _j, node| {
+            if t == 12 && node.qubit_type == QubitType::Data {
+                node.error_rate_x = px;
+                node.error_rate_z = pz;
+                node.error_rate_y = py;
+            }
+        });
+        model.build_graph();
+        model.add_error_at(12, 0, 2, &ErrorType::Z).expect("error rate = 0 here");  // data qubit error (detected by next layer)
+        model.propagate_error();
+        let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, QubitType::StabXZZXLogicalZ, 4);
+        assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
+        assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
+        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        detailed_print_run_to_stable(&mut decoder);
+        assert_eq!(0, get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &decoder, false, false)
+            , "cardinality of one side of boundary determines if there is logical error");
+    }
+
+    #[test]
+    fn union_find_decoder_test_build_given_ftqec_model_weighted_2() {
+        let p = 0.005;
+        let bias_eta = 299.;
+        let d = 3;
+        let measurement_rounds = 1;
+        let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(measurement_rounds, d);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = bias_eta * (px + py);
+        model.set_individual_error_with_perfect_initialization(0., 0., 0.);
+        // shallow_error_on_bottom
+        model.iterate_snapshot_mut(|t, _i, _j, node| {
+            if t == 12 && node.qubit_type == QubitType::Data {
+                node.error_rate_x = px;
+                node.error_rate_z = pz;
+                node.error_rate_y = py;
+            }
+        });
+        model.build_graph();
+        model.add_error_at(12, 0, 2, &ErrorType::Z).expect("error rate = 0 here");  // data qubit error (detected by next layer)
+        model.add_error_at(12, 0, 4, &ErrorType::Z).expect("error rate = 0 here");  // data qubit error (detected by next layer)
+        model.propagate_error();
+        let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, QubitType::StabXZZXLogicalZ, 4);
+        assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
+        assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
+        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        detailed_print_run_to_stable(&mut decoder);
+        assert_eq!(1, get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &decoder, false, false)
+            , "cardinality of one side of boundary determines if there is logical error");
+    }
+
+    #[test]
+    fn union_find_decoder_test_build_given_ftqec_model_weighted_3() {
+        let p = 0.005;
+        let bias_eta = 299.;
+        let d = 5;
+        let measurement_rounds = 1;
+        let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(measurement_rounds, d);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = bias_eta * (px + py);
+        model.set_individual_error_with_perfect_initialization(0., 0., 0.);
+        // shallow_error_on_bottom
+        model.iterate_snapshot_mut(|t, _i, _j, node| {
+            if t == 12 && node.qubit_type == QubitType::Data {
+                node.error_rate_x = px;
+                node.error_rate_z = pz;
+                node.error_rate_y = py;
+            }
+        });
+        model.build_graph();
+        model.add_error_at(12, 2, 0, &ErrorType::Z).expect("error rate = 0 here");  // data qubit error (detected by next layer)
+        model.propagate_error();
+        let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, QubitType::StabXZZXLogicalZ, 4);
+        assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
+        assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
+        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        detailed_print_run_to_stable(&mut decoder);
+        assert_eq!(1, get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &decoder, false, false)
+            , "cardinality of one side of boundary determines if there is logical error");
+    }
+    
+    #[test]
+    fn union_find_decoder_test_build_given_ftqec_model_weighted_4() {
+        let p = 0.005;
+        let bias_eta = 299.;
+        let d = 5;
+        let measurement_rounds = 1;
+        let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(measurement_rounds, d);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = bias_eta * (px + py);
+        model.set_individual_error_with_perfect_initialization(0., 0., 0.);
+        // shallow_error_on_bottom
+        model.iterate_snapshot_mut(|t, _i, _j, node| {
+            if t == 12 && node.qubit_type == QubitType::Data {
+                node.error_rate_x = px;
+                node.error_rate_z = pz;
+                node.error_rate_y = py;
+            }
+        });
+        model.build_graph();
+        let (has_x_logical_error, has_z_logical_error) = run_given_mwpm_decoder_instance_weighted(&mut model
+            , false, 4);
+        println!("has_x_logical_error: {}, has_z_logical_error: {}", has_x_logical_error, has_z_logical_error);
     }
 
 }

@@ -22,7 +22,7 @@
 					<div style="height: 20px;"></div>
 					<div>
 						Measurement Round:
-						<el-input-number v-model="MeasurementRounds" :min="1"></el-input-number>
+						<el-input-number v-model="MeasurementRounds" :min="0"></el-input-number>
 					</div>
 					<div style="height: 20px;"></div>
 					<el-switch v-model="IsPerfectInitialization" active-text="Perfect Initialization" inactive-text="Imperfect Initialization"></el-switch>
@@ -36,11 +36,9 @@
 					<div style="height: 20px;"></div>
 					<el-switch v-model="show_data_qubit" active-text="Show Data Qubits" inactive-text="Hide"></el-switch>
 					<div style="height: 20px;"></div>
-					<div v-show="!use_XZZX_code">
-						<el-switch v-model="show_Z_ancilla" active-text="Show Z Stabilizers" inactive-text="Hide"></el-switch>
-						<div style="height: 20px;"></div>
-					</div>
-					<el-switch v-model="show_X_ancilla" :active-text="`Show ${use_XZZX_code ? 'XZZX' : 'X'} Stabilizers`" inactive-text="Hide"></el-switch>
+					<el-switch v-model="show_Z_ancilla" :active-text="`Show ${use_XZZX_code ? 'XZZX Logical Z' : 'Z'} Stabilizers`" inactive-text="Hide"></el-switch>
+					<div style="height: 20px;"></div>
+					<el-switch v-model="show_X_ancilla" :active-text="`Show ${use_XZZX_code ? 'XZZX Logical X' : 'X'} Stabilizers`" inactive-text="Hide"></el-switch>
 					<div style="height: 20px;"></div>
 					<el-switch v-model="show_vertical_line" active-text="Show Vertical Lines" inactive-text="Hide"></el-switch>
 					<div style="height: 20px;"></div>
@@ -48,11 +46,9 @@
 					<div style="height: 20px;"></div>
 					<el-switch v-model="show_CX_gates" active-text="Show CX (CNOT) and CZ (CPHASE) Gates" inactive-text="Hide"></el-switch>
 					<div style="height: 20px;"></div>
-					<div v-show="!use_XZZX_code">
-						<el-switch v-model="show_Z_edges" active-text="Show Z Graph Lattice" inactive-text="Hide"></el-switch>
-						<div style="height: 20px;"></div>
-					</div>
-					<el-switch v-model="show_X_edges" :active-text="`Show ${use_XZZX_code ? 'XZZX' : 'X'} Graph Lattice`" inactive-text="Hide"></el-switch>
+					<el-switch v-model="show_Z_edges" :active-text="`Show ${use_XZZX_code ? 'XZZXlZ' : 'Z'} Graph Lattice`" inactive-text="Hide"></el-switch>
+					<div style="height: 20px;"></div>
+					<el-switch v-model="show_X_edges" :active-text="`Show ${use_XZZX_code ? 'XZZXlX' : 'X'} Graph Lattice`" inactive-text="Hide"></el-switch>
 				</div>
 			</el-card>
 			<div style="height: 10px;"></div>

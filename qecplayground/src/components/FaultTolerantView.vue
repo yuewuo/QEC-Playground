@@ -399,7 +399,8 @@ export default {
                     DATA: 0,
                     X: 1,
                     Z: 2,
-                    XZZX: 3,
+                    XZZXLogicalX: 3,
+                    XZZXLogicalZ: 4,
                 }),
                 NTYPE: readonly({  // node type, correspond to the nodes in time sequence fiure with detailed gate operations
                     INITIALIZATION: 0,
@@ -688,7 +689,7 @@ export default {
                         if (filter(i,j) && t > 0) {  // if here exists a qubit (either data qubit or ancilla qubit)
                             const stage = (t+6-1) % 6  // 0: preparation, 1,2,3,4: CNOT gate, 5: measurement
                             const is_data_qubit = (i+j)%2 == 0 
-                            const q_type = is_data_qubit ? this.constants.QTYPE.DATA : this.constants.QTYPE.XZZX
+                            const q_type = is_data_qubit ? this.constants.QTYPE.DATA : (i % 2 == 0 ? this.constants.QTYPE.XZZXLogicalZ : this.constants.QTYPE.XZZXLogicalX)
                             let n_type = -1
                             let connection = null  // { t, i, j, }
                             switch (stage) {
@@ -907,7 +908,8 @@ export default {
                                     if (this_result != last_result) {
                                         node.mesh.material.color = this.three.measurement_node_color_error
                                     } else node.mesh.material.color = this.three.initialization_node_color_Z
-                                } else if (node.q_type == this.constants.QTYPE.X || node.q_type == this.constants.QTYPE.XZZX) {
+                                } else if (node.q_type == this.constants.QTYPE.X || node.q_type == this.constants.QTYPE.XZZXLogicalX
+                                        || node.q_type == this.constants.QTYPE.XZZXLogicalZ) {
                                     let this_result = node.propagated == this.constants.ETYPE.I || node.propagated == this.constants.ETYPE.X
                                     const last_node = this.snapshot[t-6][i][j]
                                     let last_result = last_node == null ? true :  // if last node doesn't exist, by default to `this.constants.ETYPE.I`
@@ -1015,7 +1017,8 @@ export default {
                                     envMap: this.three.texture_background,
                                     reflectivity: 0.5,
                                 }))
-                                node.mesh.visible = node.q_type == this.constants.QTYPE.Z ? this.show_Z_ancilla : this.show_X_ancilla
+                                node.mesh.visible = (node.q_type == this.constants.QTYPE.Z || node.q_type == this.constants.QTYPE.XZZXLogicalZ) ? 
+                                    this.show_Z_ancilla : this.show_X_ancilla
                                 node.mesh.position.set(x, y, z)
                                 this.three.scene.add(node.mesh)
                             }
@@ -1142,7 +1145,8 @@ export default {
                                     edge.mesh = generate_half_edge_mesh(t, i, j, edge.t, edge.i, edge.j, edge.p)
                                     if (node.q_type == this.constants.QTYPE.X && !this.show_X_edges) edge.mesh.visible = false
                                     if (node.q_type == this.constants.QTYPE.Z && !this.show_Z_edges) edge.mesh.visible = false
-                                    if (node.q_type == this.constants.QTYPE.XZZX && !this.show_X_edges) edge.mesh.visible = false
+                                    if (node.q_type == this.constants.QTYPE.XZZXLogicalX && !this.show_X_edges) edge.mesh.visible = false
+                                    if (node.q_type == this.constants.QTYPE.XZZXLogicalZ && !this.show_Z_edges) edge.mesh.visible = false
                                     this.three.scene.add(edge.mesh)
                                 }
                             }
@@ -1150,7 +1154,8 @@ export default {
                                 node.boundary.mesh = generate_half_edge_mesh(t, i, j, node.boundary.t, node.boundary.i, node.boundary.j, node.boundary.p)
                                 if (node.q_type == this.constants.QTYPE.X && !this.show_X_edges) node.boundary.mesh.visible = false
                                 if (node.q_type == this.constants.QTYPE.Z && !this.show_Z_edges) node.boundary.mesh.visible = false
-                                if (node.q_type == this.constants.QTYPE.XZZX && !this.show_X_edges) node.boundary.mesh.visible = false
+                                if (node.q_type == this.constants.QTYPE.XZZXLogicalX && !this.show_X_edges) node.boundary.mesh.visible = false
+                                if (node.q_type == this.constants.QTYPE.XZZXLogicalZ && !this.show_Z_edges) node.boundary.mesh.visible = false
                                 this.three.scene.add(node.boundary.mesh)
                             }
                         }
@@ -1239,7 +1244,8 @@ export default {
                                 if (this_result != last_result) {
                                     error_syndrome_propagated.push([t,i,j])
                                 }
-                            } else if (node.q_type == this.constants.QTYPE.X || node.q_type == this.constants.QTYPE.XZZX) {
+                            } else if (node.q_type == this.constants.QTYPE.X || node.q_type == this.constants.QTYPE.XZZXLogicalX
+                                    || node.q_type == this.constants.QTYPE.XZZXLogicalZ) {
                                 let this_result = node.propagated == this.constants.ETYPE.I || node.propagated == this.constants.ETYPE.X
                                 const last_node = this.snapshot[t-6][i][j]
                                 let last_result = last_node.propagated == this.constants.ETYPE.I || last_node.propagated == this.constants.ETYPE.X
@@ -1360,14 +1366,14 @@ export default {
         },
         show_X_ancilla(show) {
             this.iterate_snapshot((node, t, i, j) => {
-                if (node.n_type == this.constants.NTYPE.MEASUREMENT && (node.q_type == this.constants.QTYPE.X || node.q_type == this.constants.QTYPE.XZZX)) {
+                if (node.n_type == this.constants.NTYPE.MEASUREMENT && (node.q_type == this.constants.QTYPE.X || node.q_type == this.constants.QTYPE.XZZXLogicalX)) {
                     node.mesh.visible = show
                 }
             })
         },
         show_Z_ancilla(show) {
             this.iterate_snapshot((node, t, i, j) => {
-                if (node.n_type == this.constants.NTYPE.MEASUREMENT && node.q_type == this.constants.QTYPE.Z || node.q_type == this.constants.QTYPE.XZZX) {
+                if (node.n_type == this.constants.NTYPE.MEASUREMENT && (node.q_type == this.constants.QTYPE.Z || node.q_type == this.constants.QTYPE.XZZXLogicalZ)) {
                     node.mesh.visible = show
                 }
             })
@@ -1392,7 +1398,7 @@ export default {
         },
         show_X_edges(show) {
             this.iterate_snapshot((node, t, i, j) => {
-                if (node.q_type == this.constants.QTYPE.X || node.q_type == this.constants.QTYPE.XZZX) {
+                if (node.q_type == this.constants.QTYPE.X || node.q_type == this.constants.QTYPE.XZZXLogicalX) {
                     if (node.edges) for (let edge of node.edges) edge.mesh.visible = show
                     if (node.boundary && node.boundary.mesh) node.boundary.mesh.visible = show
                 }
@@ -1400,7 +1406,7 @@ export default {
         },
         show_Z_edges(show) {
             this.iterate_snapshot((node, t, i, j) => {
-                if (node.q_type == this.constants.QTYPE.Z) {
+                if (node.q_type == this.constants.QTYPE.Z || node.q_type == this.constants.QTYPE.XZZXLogicalZ) {
                     if (node.edges) for (let edge of node.edges) edge.mesh.visible = show
                     if (node.boundary && node.boundary.mesh) node.boundary.mesh.visible = show
                 }

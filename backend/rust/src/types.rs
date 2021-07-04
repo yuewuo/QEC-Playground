@@ -275,7 +275,8 @@ pub enum QubitType {
     Data,
     StabX,
     StabZ,
-    StabXZZX,
+    StabXZZXLogicalX,
+    StabXZZXLogicalZ,
 }
 
 /// Error type, corresponds to `ETYPE` in `FaultTolerantView.vue`
