@@ -870,7 +870,9 @@ impl PlanarCodeModel {
                     weight: weight_of(edge.p),  // so that w1 + w2 = - log(p1) - log(p2) = - log(p1*p2) = - log(p_line)
                     // we want p_line to be as large as possible, it meets the goal of minimizing -log(p) 
                 });
+                // println!("add edge [{}][{}][{}] and [{}][{}][{}] with weight {}", t, i, j, edge.t, edge.i, edge.j, weight_of(edge.p));
             }
+            // println!("[{}][{}][{}] boundary: {:?}", t, i, j, node.boundary);
         });
         // then run dijkstra for every node
         self.iterate_measurement_stabilizers_mut(|t, i, j, node| {
@@ -980,7 +982,7 @@ impl PlanarCodeModel {
                                 match &node_b.boundary {
                                     Some(boundary) => {
                                         // only try if this node is directly connected to boundary
-                                        if node.qubit_type == node_b.qubit_type && node_b.exhausted_map.get(&index).is_some() {
+                                        if node.qubit_type == node_b.qubit_type && (node_b.exhausted_map.get(&index).is_some() || (t == tb && i == ib && j == jb)) {
                                             let (_, p) = &boundary.cases[0];
                                             let cost = weight_of(*p) + (if t == tb && i == ib && j == jb { 0. } else {
                                                 node_b.exhausted_map[&index].cost
@@ -1008,7 +1010,7 @@ impl PlanarCodeModel {
                             }
                             let min_cost = min_cost.expect("exist");
                             let min_index = min_index.expect("exist");
-                            // println!("[{}][{}][{}] {} {:?}", t, i, j, min_cost, min_index);
+                            // println!("boundary of [{}][{}][{}] {} {:?}", t, i, j, min_cost, min_index);
                             let node_b = self.snapshot[min_index.t][min_index.i][min_index.j].as_ref().expect("exist");
                             let mut correction: SparseCorrection = (*node_b.boundary.as_ref().expect("exist").cases[0].0).clone();
                             if index != min_index {
@@ -1100,8 +1102,6 @@ impl PlanarCodeModel {
         // if to_be_matched.len() > 2 {
         //     println!{"TBM {:?}", to_be_matched};
         // }
-        
-
         if to_be_matched.len() != 0 {
             // then add the edges to the graph
             let m_len = to_be_matched.len();  // boundary connection to `i` is `i + m_len`
@@ -1127,7 +1127,6 @@ impl PlanarCodeModel {
                 let cost = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_boundary.as_ref().expect("exist").cost;
                 weighted_edges.push((i, i + m_len, cost));
             }
-
             // if to_be_matched.len() > 2 {
             //     println!{"node num {:?}, weighted edges {:?}", node_num, weighted_edges};
             // }
@@ -1712,33 +1711,47 @@ mod tests {
         assert_error_is(&mut model, vec![]);
     }
 
-    // #[test]
-    // fn xzzx_code_test_simulation_2() {
-    //     let p = 0.005;
-    //     let bias_eta = 299.;
-    //     let L = 3;
-    //     let MeasurementRounds = 0;
-    //     let mut model = PlanarCodeModel::new_standard_XZZX_code(MeasurementRounds, L);
-    //     let px = p / (1. + bias_eta) / 2.;
-    //     let py = px;
-    //     let pz = bias_eta * (px + py);
-    //     model.set_individual_error_with_perfect_initialization(px, py, pz);
-    //     // shallow_error_on_bottom
-    //     model.iterate_snapshot_mut(|t, _i, _j, node| {
-    //         if t == 6 && node.qubit_type == QubitType::Data {
-    //             node.error_rate_x = px;
-    //             node.error_rate_z = pz;
-    //             node.error_rate_y = py;
-    //         }
-    //     });
-    //     model.build_graph();
-    //     model.optimize_correction_pattern();
-    //     model.build_exhausted_path_autotune();
-    //     let validate_layer = -2;
-    //     model.propagate_error();
-    //     let measurement = model.generate_measurement();
-    //     let correction = model.decode_MWPM(&measurement);
-    //     let validation_ret = model.validate_correction_on_boundary(&correction);
-    // }
+    /*
+     * Note 2021.7.4
+     * MWPM decoder is even worse than union-find decoder... very strange
+     * use the command "cargo run --release -- test union_find_decoder_xzzx_code_study 7 0.05 -c10 --max_half_weight 4 --bias_eta 10",
+     *    I found that MWPM can fail even if there is only 3 errors under a d=7 XZZX code.
+     * There must be some bug here, so this test case helps me to find it
+     *
+     * The bug is simple.... when I build the exhaustive boundary cost, I didn't consider the direct boundary
+     * changing:
+     * origin:  if node.qubit_type == node_b.qubit_type && node_b.exhausted_map.get(&index).is_some() {
+     *    new:  if node.qubit_type == node_b.qubit_type && (node_b.exhausted_map.get(&index).is_some() || (t == tb && i == ib && j == jb)) {
+     */
+    #[test]
+    fn xzzx_code_test_decoder_1() {
+        let p = 0.05;
+        let bias_eta = 10.;
+        let L = 7;
+        let mut model = PlanarCodeModel::new_standard_XZZX_code(1, L);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = bias_eta * (px + py);
+        model.set_individual_error(0., 0., 0.);  // clear all errors
+        model.iterate_snapshot_mut(|t, _i, _j, node| {
+            if t == 12 && node.qubit_type == QubitType::Data {
+                node.error_rate_x = px;
+                node.error_rate_z = pz;
+                node.error_rate_y = py;
+            }
+        });
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path_autotune();
+        // add errors
+        model.add_error_at(12, 0, 0, &ErrorType::Z).expect("error rate = 0 here");
+        model.add_error_at(12, 0, 12, &ErrorType::Z).expect("error rate = 0 here");
+        model.add_error_at(12, 9, 7, &ErrorType::Z).expect("error rate = 0 here");
+        model.propagate_error();
+        let measurement = model.generate_measurement();
+        let correction = model.decode_MWPM(&measurement);
+        let validation_ret = model.validate_correction_on_boundary(&correction);
+        assert!(validation_ret.is_ok(), "only 3 errors should not break code distance = 7");
+    }
 
 }

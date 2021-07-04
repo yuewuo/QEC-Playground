@@ -70,6 +70,14 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
             let max_cost = value_t!(matches, "max_cost", f64).unwrap_or(f64::MAX);
             union_find_decoder_study(d, p, count, max_cost);
         }
+        ("union_find_decoder_xzzx_code_study", Some(matches)) => {
+            let d = value_t!(matches, "d", usize).expect("required");
+            let p = value_t!(matches, "p", f64).expect("required");
+            let count = value_t!(matches, "count", usize).unwrap_or(1);
+            let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);
+            let bias_eta = value_t!(matches, "bias_eta", f64).unwrap_or(0.5);
+            union_find_decoder_xzzx_code_study(d, p, count, max_half_weight, bias_eta);
+        }
         ("distributed_union_find_decoder_study", Some(matches)) => {
             let d = value_t!(matches, "d", usize).expect("required");
             let p = value_t!(matches, "p", f64).expect("required");
@@ -474,6 +482,67 @@ fn union_find_decoder_study(d: usize, p: f64, count: usize, max_cost: f64) {
                 }).to_string());
                 cases += 1;
             }
+        }
+    }
+}
+
+fn union_find_decoder_xzzx_code_study(d: usize, p: f64, count: usize, max_half_weight: usize, bias_eta: f64) {
+    let mut cases = 0;
+    let mut rng = thread_rng();
+    // create ftqec decoder instance
+    let px = p / (1. + bias_eta) / 2.;
+    let py = px;
+    let pz = bias_eta * (px + py);
+    let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(1, d);
+    model.set_individual_error(0., 0., 0.);  // clear all errors
+    model.iterate_snapshot_mut(|t, _i, _j, node| {
+        if t == 12 && node.qubit_type == QubitType::Data {
+            node.error_rate_x = px;
+            node.error_rate_z = pz;
+            node.error_rate_y = py;
+        }
+    });
+    model.build_graph();
+    model.optimize_correction_pattern();
+    model.build_exhausted_path_autotune();
+    // create union find decoder instance
+    while cases < count {
+        // generate random error
+        let error_count = model.generate_random_errors(|| rng.gen::<f64>());
+        if error_count == 0 {
+            continue
+        }
+        model.propagate_error();
+        // run mwpm decoder
+        let measurement = model.generate_measurement();
+        let correction = model.decode_MWPM(&measurement);
+        let validation_ret = model.validate_correction_on_boundary(&correction);
+        let mwpm_has_logical_error = validation_ret.is_err();
+        // run union find decoder
+        let (has_x_logical_error, has_z_logical_error) = union_find_decoder::run_given_mwpm_decoder_instance_weighted(&mut model, false, max_half_weight);
+        let uf_has_logical_error = has_x_logical_error || has_z_logical_error;
+        if mwpm_has_logical_error != uf_has_logical_error {
+            println!("mwpm_has_logical_error: {}, uf_has_logical_error: {}", mwpm_has_logical_error, uf_has_logical_error);
+            let mut x_error_count = 0;
+            let mut z_error_count = 0;
+            let error_pattern: Vec<String> = {
+                let length = 2 * d - 1;
+                (0..length).map(|i| {
+                    (0..length).map(|j| {
+                        match model.snapshot[12][i][j].as_ref().expect("exist").error {
+                            ErrorType::X => { x_error_count += 1; 'X' },
+                            ErrorType::Y => { x_error_count += 1; z_error_count += 1; 'Y' },
+                            ErrorType::Z => { z_error_count += 1; 'Z' },
+                            _ => 'I',
+                        }
+                    }).collect()
+                }).collect()
+            };
+            println!("x_error_count: {}, z_error_count: {}", x_error_count, z_error_count);
+            println!("{}", json!({
+                "error": error_pattern,
+            }).to_string());
+            cases += 1;
         }
     }
 }
