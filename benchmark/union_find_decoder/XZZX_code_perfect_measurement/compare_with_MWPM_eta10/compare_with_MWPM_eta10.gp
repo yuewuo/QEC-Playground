@@ -23,24 +23,24 @@ set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder
 
-set output "compare_with_MWPM.eps"
+set output "compare_with_MWPM_eta10.eps"
 
-plot "css_p0.2.txt" using 2:6 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "CSS Surface Code p = 0.2",\
-    "xzzx_p0.2.txt" using 2:6 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "XZZX Surface Code p = 0.2",\
-    "css_p0.1.txt" using 2:6 with linespoints lt rgb "green" linewidth 5 pointtype 6 pointsize 1.5 title "CSS Surface Code p = 0.1",\
-    "xzzx_p0.1.txt" using 2:6 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "XZZX Surface Code p = 0.1"
+plot "uf_p0.2.txt" using 2:5 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "UnionFind Decoder p = 0.2",\
+    "mwpm_p0.2.txt" using 2:6 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "MWPM Decoder p = 0.2",\
+    "uf_p0.1.txt" using 2:5 with linespoints lt rgb "green" linewidth 5 pointtype 6 pointsize 1.5 title "UnionFind Decoder p = 0.1",\
+    "mwpm_p0.1.txt" using 2:6 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "MWPM Decoder p = 0.1"
 
-set output '|ps2pdf -dEPSCrop compare_with_MWPM.eps compare_with_MWPM.pdf'
+set output '|ps2pdf -dEPSCrop compare_with_MWPM_eta10.eps compare_with_MWPM_eta10.pdf'
 replot
 
 set size 1,0.75
-set output "compare_with_MWPM_w.eps"
+set output "compare_with_MWPM_eta10_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop compare_with_MWPM_w.eps compare_with_MWPM_w.pdf'
+set output '|ps2pdf -dEPSCrop compare_with_MWPM_eta10_w.eps compare_with_MWPM_eta10_w.pdf'
 replot
 
 set size 1,0.6
-set output "compare_with_MWPM_w_w.eps"
+set output "compare_with_MWPM_eta10_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop compare_with_MWPM_w_w.eps compare_with_MWPM_w_w.pdf'
+set output '|ps2pdf -dEPSCrop compare_with_MWPM_eta10_w_w.eps compare_with_MWPM_eta10_w_w.pdf'
 replot
