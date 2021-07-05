@@ -5,23 +5,25 @@ set grid ytics
 set size 1,1
 
 # data range:
-# python -c "for i in range(7): print('%.2f' % (0.3 + (i-3)*0.01), end=',')"
+# python -c "for i in range(4): print('%.2f' % (0.27 + (i-1.5)*0.02), end=',')"
+# python -c "for i in range(7): print('%.2f' % (0.27 + (i-3)*0.01), end=',')"
 
 # data generating commands:
 
 # roughly test threshold
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13,17,21,25] [0,0,0,0] [0.27,0.28,0.29,0.30,0.31,0.32,0.33] -b1000 -p0 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13,17,21,25] [0,0,0,0] [0.24,0.26,0.28,0.30] -b1000 -p0 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10
 
 # or joint commands
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13,17,21,25] [0,0,0,0] [0.27,0.28,0.29,0.30,0.31,0.32,0.33] -b1000 -p0 -m100000000 -e1000000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13,17,21,25] [0,0,0,0] [0.24,0.25,0.26,0.27,0.28,0.29,0.30] -b1000 -p0 -m100000000 -e1000000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10
 
 set logscale x
-set xrange [0.27:0.33]
+set xrange [0.24:0.30]
 # labels
-# python -c "for i in range(7): print('\'%.2f\' %.2f' % tuple([0.3 + (i-3)*0.01 for j in range(2)]), end=', ')"
-set xtics ('0.27' 0.27, '0.28' 0.28, '0.29' 0.29, '0.30' 0.30, '0.31' 0.31, '0.32' 0.32, '0.33' 0.33)
+# python -c "for i in range(7): print('\'%.2f\' %.2f' % tuple([0.27 + (i-3)*0.01 for j in range(2)]), end=', ')"
+set xtics ('0.24' 0.24, '0.25' 0.25, '0.26' 0.26, '0.27' 0.27, '0.28' 0.28, '0.29' 0.29, '0.30' 0.30)
 # labels
 # python -c "for i in range(6): print('\'%.1f\' %.1f' % tuple([0.1 + i * 0.1 for j in range(2)]), end=', ')"
+set logscale y
 set ytics ('0.1' 0.1, '0.2' 0.2, '0.3' 0.3, '0.4' 0.4, '0.5' 0.5, '0.6' 0.6)
 set yrange [0.1:0.6]
 set key outside horizontal top center font "Arial, 24"

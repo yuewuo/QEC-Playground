@@ -5,12 +5,13 @@ set grid ytics
 set size 1,1
 
 # data range:
+# python -c "for i in range(4): print('%.2f' % (0.18 + (i-1.5)*0.02), end=',')"
 # python -c "for i in range(7): print('%.2f' % (0.18 + (i-3)*0.01), end=',')"
 
 # data generating commands:
 
 # roughly test threshold
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13,17,21,25] [0,0,0,0] [0.15,0.16,0.17,0.18,0.19,0.20,0.21] -b1000 -p0 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 1
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13,17,21,25] [0,0,0,0] [0.15,0.17,0.19,0.21] -b1000 -p0 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 1
 
 # or joint commands
 # RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13,17,21,25] [0,0,0,0] [0.15,0.16,0.17,0.18,0.19,0.20,0.21] -b1000 -p0 -m100000000 -e1000000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 1
@@ -22,6 +23,7 @@ set xrange [0.15:0.21]
 set xtics ('0.15' 0.15, '0.16' 0.16, '0.17' 0.17, '0.18' 0.18, '0.19' 0.19, '0.20' 0.20, '0.21' 0.21)
 # labels
 # python -c "for i in range(6): print('\'%.1f\' %.1f' % tuple([0.1 + i * 0.1 for j in range(2)]), end=', ')"
+set logscale y
 set ytics ('0.1' 0.1, '0.2' 0.2, '0.3' 0.3, '0.4' 0.4, '0.5' 0.5, '0.6' 0.6)
 set yrange [0.1:0.6]
 set key outside horizontal top center font "Arial, 24"

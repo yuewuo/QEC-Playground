@@ -5,12 +5,12 @@ set grid ytics
 set size 1,1
 
 # data generating commands:
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3] [0] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [5] [0] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -b1000 -p0 -m100000000 --use_xzzx_code --shallow_error_on_bottom
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [0] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b10 -e1000 --use_xzzx_code --shallow_error_on_bottom
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [9] [0] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b1 -e1000 --use_xzzx_code --shallow_error_on_bottom
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [11] [0] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b1 -e200 --use_xzzx_code --shallow_error_on_bottom
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [0] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b1 -e200 --use_xzzx_code --shallow_error_on_bottom
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3] [0] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [5] [0] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -b1000 -p0 -m100000000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [0] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b10 -e1000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [9] [0] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b1 -e1000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [11] [0] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b1 -e1000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [0] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b1 -e1000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10
 
 set logscale x
 set xrange [0.00001:0.5]
@@ -23,6 +23,8 @@ set key outside horizontal top center font "Arial, 24"
 set style fill transparent solid 0.2 noborder
 
 set output "XZZX_code_perfect_measurement.eps"
+
+set title "XZZX code {/Symbol h} = 10 (MWPM decoder)"
 
 plot "d_3.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 3",\
     "d_5.txt" using 1:6 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 5",\

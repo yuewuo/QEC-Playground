@@ -1,0 +1,121 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      3202,        113]
+NotebookOptionsPosition[      2772,         96]
+NotebookOutlinePosition[      3229,        114]
+CellTagsIndexPosition[      3186,        111]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[{
+ RowBox[{
+  SubscriptBox["w", "z"], "=", 
+  RowBox[{"-", 
+   RowBox[{"Log", "[", 
+    SubscriptBox["p", "z"], "]"}]}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  SubscriptBox["w", "x"], "=", 
+  RowBox[{"-", 
+   RowBox[{"Log", "[", 
+    SubscriptBox["p", "x"], "]"}]}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"\[Eta]", "=", 
+   FractionBox[
+    SubscriptBox["p", "z"], 
+    RowBox[{"2", 
+     SubscriptBox["p", "x"]}]]}], ",", 
+  RowBox[{
+   SubscriptBox["p", "x"], "=", 
+   SubscriptBox["p", "y"]}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"p", "=", 
+   RowBox[{
+    SubscriptBox["p", "z"], "+", 
+    SubscriptBox["p", "x"], "+", 
+    SubscriptBox["p", "y"]}]}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  SubscriptBox["p", "x"], "=", 
+  FractionBox["p", 
+   RowBox[{"2", 
+    RowBox[{"(", 
+     RowBox[{"1", "+", "\[Eta]"}], ")"}]}]]}], "\[IndentingNewLine]", 
+ RowBox[{
+  SubscriptBox["p", "z"], "=", 
+  FractionBox["\[Eta]p", 
+   RowBox[{"2", 
+    RowBox[{"(", 
+     RowBox[{"1", "+", "\[Eta]"}], ")"}]}]]}], "\[IndentingNewLine]", 
+ RowBox[{
+  FractionBox[
+   SubscriptBox["w", "x"], 
+   SubscriptBox["w", "z"]], "=", 
+  RowBox[{
+   FractionBox[
+    RowBox[{"Log", "[", 
+     SubscriptBox["p", "x"], "]"}], 
+    RowBox[{"Log", "[", 
+     SubscriptBox["p", "z"], "]"}]], "=", 
+   RowBox[{
+    FractionBox[
+     RowBox[{"Log", "[", 
+      FractionBox["p", 
+       RowBox[{"2", 
+        RowBox[{"(", 
+         RowBox[{"1", "+", "\[Eta]"}], ")"}]}]], "]"}], 
+     RowBox[{
+      RowBox[{"Log", "[", 
+       FractionBox["p", 
+        RowBox[{"2", 
+         RowBox[{"(", 
+          RowBox[{"1", "+", "\[Eta]"}], ")"}]}]], "]"}], "+", 
+      RowBox[{"Log", "[", "\[Eta]", "]"}]}]], "=", 
+    FractionBox["1", 
+     RowBox[{"1", "+", 
+      FractionBox[
+       RowBox[{"Log", "[", "\[Eta]", "]"}], 
+       RowBox[{"Log", "[", 
+        FractionBox["p", 
+         RowBox[{"2", 
+          RowBox[{"(", 
+           RowBox[{"1", "+", "\[Eta]"}], ")"}]}]], "]"}]]}]]}]}]}]}], "Input",
+ CellChangeTimes->{{3.834443076295517*^9, 3.8344432006610985`*^9}, {
+  3.834443262008766*^9, 3.834443499257557*^9}},
+ CellID->350946261,ExpressionUUID->"2dba10a9-4fd9-404e-8755-d8982a60e19a"]
+},
+WindowSize->{1920, 997},
+WindowMargins->{{-8, Automatic}, {Automatic, -8}},
+Magnification:>2.1 Inherited,
+FrontEndVersion->"12.0 for Microsoft Windows (64-bit) (2019\:5e744\:67088\
+\:65e5)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Demonstration.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 2210, 74, 522, "Input",ExpressionUUID->"2dba10a9-4fd9-404e-8755-d8982a60e19a",
+ CellID->350946261]
+}
+]
+*)
+
