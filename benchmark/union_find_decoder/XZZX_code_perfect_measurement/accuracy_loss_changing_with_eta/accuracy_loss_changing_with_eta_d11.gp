@@ -42,7 +42,7 @@ set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder
 
-set title "d = 11, p = 0.1"
+set title "XZZX Surface Code d = 11, p = 0.1"
 
 set output "accuracy_loss_changing_with_eta_d11.eps"
 
