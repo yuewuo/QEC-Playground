@@ -540,7 +540,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             // (px + py) * (1 + bias_eta) = p
             let px = p / (1. + bias_eta) / 2.;
             let py = px;
-            let pz = bias_eta * (px + py);
+            let pz = p - 2. * px;
             // println!("px = {}, py = {}, pz = {}", px, py, pz);
             // initialize error rate
             if !perfect_initialization {
@@ -1373,7 +1373,7 @@ fn union_find_decoder_standard_xzzx_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, ma
                     let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(1, L);
                     let px = p / (1. + bias_eta) / 2.;
                     let py = px;
-                    let pz = bias_eta * (px + py);
+                    let pz = p - 2. * px;
                     model.set_individual_error_with_perfect_initialization(0., 0., 0.);
                     // shallow_error_on_bottom
                     model.iterate_snapshot_mut(|t, _i, _j, node| {

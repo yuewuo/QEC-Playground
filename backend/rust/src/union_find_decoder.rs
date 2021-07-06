@@ -430,7 +430,8 @@ pub fn get_standard_planar_code_3d_left_boundary_cardinality(d: usize, measureme
             let root = decoder.union_find.immutable_find(index);
             if !counted_sets.contains(&root) {  // every set should only be counted once
                 let node = &decoder.nodes[index];
-                if node.boundary_increased >= node.node.boundary_cost.unwrap() {  // only when this node is bleeding into the boundary
+                // only when this node is bleeding into the boundary
+                if node.node.boundary_cost.is_some() && node.boundary_increased >= node.node.boundary_cost.unwrap() {
                     counted_sets.insert(root);
                     let root_uf_node = &decoder.union_find.immutable_get(root);
                     if root_uf_node.cardinality % 2 == 1 {  // connect to boundary only if the cardinality is odd
@@ -978,7 +979,7 @@ mod tests {
         let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(measurement_rounds, d);
         let px = p / (1. + bias_eta) / 2.;
         let py = px;
-        let pz = bias_eta * (px + py);
+        let pz = p - 2. * px;
         model.set_individual_error_with_perfect_initialization(0., 0., 0.);
         // shallow_error_on_bottom
         model.iterate_snapshot_mut(|t, _i, _j, node| {
@@ -1009,7 +1010,7 @@ mod tests {
         let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(measurement_rounds, d);
         let px = p / (1. + bias_eta) / 2.;
         let py = px;
-        let pz = bias_eta * (px + py);
+        let pz = p - 2. * px;
         model.set_individual_error_with_perfect_initialization(0., 0., 0.);
         // shallow_error_on_bottom
         model.iterate_snapshot_mut(|t, _i, _j, node| {
@@ -1041,7 +1042,7 @@ mod tests {
         let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(measurement_rounds, d);
         let px = p / (1. + bias_eta) / 2.;
         let py = px;
-        let pz = bias_eta * (px + py);
+        let pz = p - 2. * px;
         model.set_individual_error_with_perfect_initialization(0., 0., 0.);
         // shallow_error_on_bottom
         model.iterate_snapshot_mut(|t, _i, _j, node| {
@@ -1072,7 +1073,7 @@ mod tests {
         let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(measurement_rounds, d);
         let px = p / (1. + bias_eta) / 2.;
         let py = px;
-        let pz = bias_eta * (px + py);
+        let pz = p - 2. * px;
         model.set_individual_error_with_perfect_initialization(0., 0., 0.);
         // shallow_error_on_bottom
         model.iterate_snapshot_mut(|t, _i, _j, node| {

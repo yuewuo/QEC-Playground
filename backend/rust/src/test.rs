@@ -492,7 +492,7 @@ fn union_find_decoder_xzzx_code_study(d: usize, p: f64, count: usize, max_half_w
     // create ftqec decoder instance
     let px = p / (1. + bias_eta) / 2.;
     let py = px;
-    let pz = bias_eta * (px + py);
+    let pz = p - 2. * px;
     let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(1, d);
     model.set_individual_error(0., 0., 0.);  // clear all errors
     model.iterate_snapshot_mut(|t, _i, _j, node| {

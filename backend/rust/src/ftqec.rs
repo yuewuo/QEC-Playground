@@ -1124,8 +1124,13 @@ impl PlanarCodeModel {
                     }
                 }
                 let a = &to_be_matched[i];
-                let cost = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_boundary.as_ref().expect("exist").cost;
-                weighted_edges.push((i, i + m_len, cost));
+                match self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_boundary.as_ref() {
+                    Some(exhausted_boundary) => {
+                        let cost = exhausted_boundary.cost;
+                        weighted_edges.push((i, i + m_len, cost));
+                    },
+                    None => { }
+                }
             }
             // if to_be_matched.len() > 2 {
             //     println!{"node num {:?}, weighted edges {:?}", node_num, weighted_edges};
@@ -1731,7 +1736,7 @@ mod tests {
         let mut model = PlanarCodeModel::new_standard_XZZX_code(1, L);
         let px = p / (1. + bias_eta) / 2.;
         let py = px;
-        let pz = bias_eta * (px + py);
+        let pz = p - 2. * px;
         model.set_individual_error(0., 0., 0.);  // clear all errors
         model.iterate_snapshot_mut(|t, _i, _j, node| {
             if t == 12 && node.qubit_type == QubitType::Data {
