@@ -596,24 +596,26 @@ pub fn make_decoder_given_ftqec_model_weighted(model: &ftqec::PlanarCodeModel, s
 }
 
 /// return `(has_x_logical_error, has_z_logical_error)`
-pub fn run_given_mwpm_decoder_instance_weighted(model: &ftqec::PlanarCodeModel, towards_mwpm: bool, max_half_weight: usize) -> (bool, bool) {
+pub fn run_given_mwpm_decoder_instance_weighted(model: &ftqec::PlanarCodeModel, towards_mwpm: bool, max_half_weight: usize, use_xzzx_code: bool) -> (bool, bool) {
     let d = model.L;
     let measurement_rounds = model.MeasurementRounds;
     let default_correction = model.generate_default_correction();
     let (x_error_count, z_error_count) = model.get_boundary_cardinality(&default_correction);
+    let x_error_qubit_type = if use_xzzx_code { QubitType::StabXZZXLogicalX } else { QubitType::StabZ };
+    let z_error_qubit_type = if use_xzzx_code { QubitType::StabXZZXLogicalZ } else { QubitType::StabX };
     // decode X errors
-    let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, QubitType::StabXZZXLogicalX, max_half_weight);
+    let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, x_error_qubit_type, max_half_weight);
     let mut uf_decoder = UnionFindDecoder::new(nodes, neighbors);
     uf_decoder.run_to_stable();
-    let left_boundary_cardinality = get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &uf_decoder, true, towards_mwpm)
-        + x_error_count;
+    let left_boundary_cardinality = get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &uf_decoder
+        , use_xzzx_code, towards_mwpm) + x_error_count;
     let has_x_logical_error = left_boundary_cardinality % 2 == 1;
     // decode Z errors
-    let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, QubitType::StabXZZXLogicalZ, max_half_weight);
+    let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, z_error_qubit_type, max_half_weight);
     let mut uf_decoder = UnionFindDecoder::new(nodes, neighbors);
     uf_decoder.run_to_stable();
-    let top_boundary_cardinality = get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &uf_decoder, false, towards_mwpm)
-        + z_error_count;
+    let top_boundary_cardinality = get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &uf_decoder
+        , !use_xzzx_code, towards_mwpm) + z_error_count;
     let has_z_logical_error = top_boundary_cardinality % 2 == 1;
     (has_x_logical_error, has_z_logical_error)
 }
@@ -1085,7 +1087,7 @@ mod tests {
         });
         model.build_graph();
         let (has_x_logical_error, has_z_logical_error) = run_given_mwpm_decoder_instance_weighted(&mut model
-            , false, 4);
+            , false, 4, true);
         println!("has_x_logical_error: {}, has_z_logical_error: {}", has_x_logical_error, has_z_logical_error);
     }
 

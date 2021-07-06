@@ -519,7 +519,7 @@ fn union_find_decoder_xzzx_code_study(d: usize, p: f64, count: usize, max_half_w
         let validation_ret = model.validate_correction_on_boundary(&correction);
         let mwpm_has_logical_error = validation_ret.is_err();
         // run union find decoder
-        let (has_x_logical_error, has_z_logical_error) = union_find_decoder::run_given_mwpm_decoder_instance_weighted(&mut model, false, max_half_weight);
+        let (has_x_logical_error, has_z_logical_error) = union_find_decoder::run_given_mwpm_decoder_instance_weighted(&mut model, false, max_half_weight, true);
         let uf_has_logical_error = has_x_logical_error || has_z_logical_error;
         if mwpm_has_logical_error != uf_has_logical_error {
             println!("mwpm_has_logical_error: {}, uf_has_logical_error: {}", mwpm_has_logical_error, uf_has_logical_error);

@@ -167,7 +167,10 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let only_count_logical_x = matches.is_present("only_count_logical_x");
             let no_y_error = matches.is_present("no_y_error");
             let towards_mwpm = matches.is_present("towards_mwpm");
-            union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, no_y_error, towards_mwpm);
+            let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
+            let bias_eta = value_t!(matches, "bias_eta", f64).unwrap_or(0.5);  // default to 0.5
+            union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, no_y_error, towards_mwpm
+                , max_half_weight, bias_eta);
         }
         ("union_find_decoder_standard_xzzx_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -1246,7 +1249,7 @@ default example:
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
 fn union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
-        , only_count_logical_x: bool, no_y_error: bool, towards_mwpm: bool) {
+        , only_count_logical_x: bool, no_y_error: bool, towards_mwpm: bool, max_half_weight: usize, bias_eta: f64) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -1270,7 +1273,24 @@ fn union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, 
                 let L = L;
                 let p = p;
                 handlers.push(std::thread::spawn(move || {
-                    let mut decoder = offer_decoder::create_standard_planar_code_offer_decoder(L);
+                    let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(1, L);
+                    let px = p / (1. + bias_eta) / 2.;
+                    let py = px;
+                    let pz = p - 2. * px;
+                    model.set_individual_error_with_perfect_initialization(0., 0., 0.);
+                    // shallow_error_on_bottom
+                    model.iterate_snapshot_mut(|t, _i, _j, node| {
+                        if t == 12 && node.qubit_type == QubitType::Data {
+                            node.error_rate_x = px;
+                            node.error_rate_z = pz;
+                            if no_y_error {
+                                node.error_rate_y = 0.;
+                            } else {
+                                node.error_rate_y = py;
+                            }
+                        }
+                    });
+                    model.build_graph();
                     let mut rng = thread_rng();
                     let mut current_total_rounds = {
                         *total_rounds.lock().unwrap()
@@ -1281,17 +1301,13 @@ fn union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, 
                     while current_total_rounds < max_N && current_qec_failed < min_error_cases {
                         let mut mini_qec_failed = 0;
                         for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
-                            decoder.reinitialize();
-                            let error_count = if no_y_error {
-                                assert!(only_count_logical_x, "not implemented if z errors needed");
-                                decoder.generate_only_x_random_errors(p, || rng.gen::<f64>())
-                            } else {
-                                decoder.generate_depolarizing_random_errors(p, || rng.gen::<f64>())
-                            };
+                            let error_count = model.generate_random_errors(|| rng.gen::<f64>());
                             if error_count == 0 {
                                 continue
                             }
-                            let (has_x_logical_error, has_z_logical_error) = union_find_decoder::run_given_offer_decoder_instance(&mut decoder, towards_mwpm);
+                            model.propagate_error();
+                            let (has_x_logical_error, has_z_logical_error) = union_find_decoder::run_given_mwpm_decoder_instance_weighted(&mut model
+                                , towards_mwpm, max_half_weight, false);
                             if only_count_logical_x {
                                 if has_x_logical_error {
                                     mini_qec_failed += 1;
@@ -1400,7 +1416,7 @@ fn union_find_decoder_standard_xzzx_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, ma
                             }
                             model.propagate_error();
                             let (has_x_logical_error, has_z_logical_error) = union_find_decoder::run_given_mwpm_decoder_instance_weighted(&mut model
-                                , towards_mwpm, max_half_weight);
+                                , towards_mwpm, max_half_weight, true);
                             if has_x_logical_error || has_z_logical_error {
                                 mini_qec_failed += 1;
                             }

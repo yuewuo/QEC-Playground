@@ -196,6 +196,8 @@ async fn main() -> std::io::Result<()> {
                 (@arg only_count_logical_x: --only_count_logical_x "only count X logical errors but not all logical error.")
                 (@arg no_y_error: --no_y_error "set probability of y errors to 0")
                 (@arg towards_mwpm: --towards_mwpm "use advanced methods toward MWPM decoder")
+                (@arg max_half_weight: --max_half_weight +takes_value "maximum weight will be 2 * max_half_weight")
+                (@arg bias_eta: --bias_eta +takes_value "bias_eta = pz / (px + py) and px = py, px + py + pz = p. default to 1/2, which is px = pz = py")
             )
             (@subcommand union_find_decoder_standard_xzzx_benchmark => (about: "benchmark union find decoder with standard XZZX code")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")
