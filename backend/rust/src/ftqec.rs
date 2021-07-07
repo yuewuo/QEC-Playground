@@ -85,7 +85,8 @@ pub struct PlanarCodeModel {
     pub code_type: CodeType,
     /// Corresponds to `this.snapshot` in `FaultTolerantView.vue`
     pub snapshot: Vec::< Vec::< Vec::< Option<Node> > > >,
-    pub L: usize,
+    pub di: usize,  // code distance of i dimension
+    pub dj: usize,  // code distance of i dimension
     pub MeasurementRounds: usize,
     pub T: usize,
     pub graph: Option<petgraph::graph::Graph<Index, PetGraphEdge>>,
@@ -101,7 +102,7 @@ impl PlanarCodeModel {
     pub fn new_standard_planar_code(MeasurementRounds: usize, L: usize) -> Self {
         // MeasurementRounds = 0 means only one perfect measurement round
         assert!(L >= 2, "at lease one stabilizer is required");
-        let mut model = Self::new_planar_code(CodeType::StandardPlanarCode, MeasurementRounds, L, |_i, _j| true);
+        let mut model = Self::new_planar_code(CodeType::StandardPlanarCode, MeasurementRounds, L, L, |_i, _j| true);
         // create Z stabilizer homology lines, detecting X errors
         for j in 0..L {
             let mut z_homology_line = Vec::new();
@@ -144,7 +145,7 @@ impl PlanarCodeModel {
             }
             false
         };
-        let mut model = Self::new_planar_code(CodeType::RotatedPlanarCode, MeasurementRounds, L, filter);
+        let mut model = Self::new_planar_code(CodeType::RotatedPlanarCode, MeasurementRounds, L, L, filter);
         // create Z stabilizer homology lines, detecting X errors
         for j in 0..L {
             let mut z_homology_line = Vec::new();
@@ -163,17 +164,18 @@ impl PlanarCodeModel {
         }
         model
     }
-    pub fn new_planar_code<F>(code_type: CodeType, MeasurementRounds: usize, L: usize, filter: F) -> Self
+    pub fn new_planar_code<F>(code_type: CodeType, MeasurementRounds: usize, di: usize, dj: usize, filter: F) -> Self
             where F: Fn(usize, usize) -> bool {
-        let width = 2 * L - 1;
+        let width_i = 2 * di - 1;
+        let width_j = 2 * dj - 1;
         let T = MeasurementRounds + 2;
         let height = T * 6 + 1;
         let mut snapshot = Vec::with_capacity(height);
         for t in 0..height {
-            let mut snapshot_row_0 = Vec::with_capacity(width);
-            for i in 0..width {
-                let mut snapshot_row_1 = Vec::with_capacity(width);
-                for j in 0..width {
+            let mut snapshot_row_0 = Vec::with_capacity(width_i);
+            for i in 0..width_i {
+                let mut snapshot_row_1 = Vec::with_capacity(width_j);
+                for j in 0..width_j {
                     if filter(i, j) {
                         let stage = Stage::from(t);
                         let qubit_type = if (i + j) % 2 == 0 { QubitType::Data } else { if i % 2 == 0 { QubitType::StabZ } else { QubitType::StabX } };
@@ -187,7 +189,7 @@ impl PlanarCodeModel {
                             },
                             Stage::CXGate1 => {
                                 if qubit_type == QubitType::Data {
-                                    if i+1 < width && filter(i+1, j) {
+                                    if i+1 < width_i && filter(i+1, j) {
                                         gate_type = if j % 2 == 0 { GateType::Target } else { GateType::Control };
                                         connection = Some(Connection{ t: t, i: i+1, j: j });
                                     }
@@ -200,7 +202,7 @@ impl PlanarCodeModel {
                             },
                             Stage::CXGate2 => {
                                 if qubit_type == QubitType::Data {
-                                    if j+1 < width && filter(i, j+1) {
+                                    if j+1 < width_j && filter(i, j+1) {
                                         gate_type = if i % 2 == 0 { GateType::Control} else { GateType::Target};
                                         connection = Some(Connection{ t: t, i: i, j: j+1 });
                                     }
@@ -218,7 +220,7 @@ impl PlanarCodeModel {
                                         connection = Some(Connection{ t: t, i: i, j: j-1 });
                                     }
                                 } else {
-                                    if j+1 < width && filter(i, j+1) {
+                                    if j+1 < width_i && filter(i, j+1) {
                                         gate_type = if i % 2 == 0 { GateType::Target} else { GateType::Control};
                                         connection = Some(Connection{ t: t, i: i, j: j+1 });
                                     }
@@ -231,7 +233,7 @@ impl PlanarCodeModel {
                                         connection = Some(Connection{ t: t, i: i-1, j: j });
                                     }
                                 } else {
-                                    if i+1 < width && filter(i+1, j) {
+                                    if i+1 < width_j && filter(i+1, j) {
                                         gate_type = if j % 2 == 0 { GateType::Control} else { GateType::Target};
                                         connection = Some(Connection{ t: t, i: i+1, j: j });
                                     }
@@ -270,7 +272,8 @@ impl PlanarCodeModel {
         Self {
             code_type: code_type,
             snapshot: snapshot,
-            L: L,
+            di: di,
+            dj: dj,
             T: T,
             MeasurementRounds: MeasurementRounds,
             graph: None,
@@ -278,41 +281,35 @@ impl PlanarCodeModel {
             x_homology_lines: Vec::new(),
         }
     }
-    
-    pub fn new_standard_XZZX_code(MeasurementRounds: usize, L: usize) -> Self {
+
+    pub fn new_standard_XZZX_code_rectangle(MeasurementRounds: usize, di: usize, dj: usize) -> Self {
         // MeasurementRounds = 0 means only one perfect measurement round
-        assert!(L >= 2, "at lease one stabilizer is required");
-        let mut model = Self::new_XZZX_code(CodeType::StandardXZZXCode, MeasurementRounds, L, |_i, _j| true);
-        // create Z stabilizer homology lines, detecting X errors
-        for i in 0..L {  // [alert] this is different from standard planar code!
-            let mut z_homology_line = Vec::new();
-            for j in 0..L {  // [alert] this is different from standard planar code!
-                z_homology_line.push((2 * i, 2 * j));
-            }
-            model.z_homology_lines.push(z_homology_line);
-        }
-        // create X stabilizer homology lines, detecting Z errors
-        for j in 0..L {  // [alert] this is different from standard planar code!
-            let mut x_homology_line = Vec::new();
-            for i in 0..L {  // [alert] this is different from standard planar code!
-                x_homology_line.push((2 * i, 2 * j));
-            }
-            model.x_homology_lines.push(x_homology_line);
-        }
+        assert!(di >= 2 && dj >= 2, "at lease one stabilizer is required");
+        let model = Self::new_XZZX_code(CodeType::StandardXZZXCode, MeasurementRounds, di, dj, |_i, _j| true);
+        // don't build homology lines since it's deprecated
         model
     }
 
-    pub fn new_XZZX_code<F>(code_type: CodeType, MeasurementRounds: usize, L: usize, filter: F) -> Self
+    pub fn new_standard_XZZX_code(MeasurementRounds: usize, L: usize) -> Self {
+        // MeasurementRounds = 0 means only one perfect measurement round
+        assert!(L >= 2, "at lease one stabilizer is required");
+        let model = Self::new_XZZX_code(CodeType::StandardXZZXCode, MeasurementRounds, L, L, |_i, _j| true);
+        // don't build homology lines since it's deprecated
+        model
+    }
+
+    pub fn new_XZZX_code<F>(code_type: CodeType, MeasurementRounds: usize, di: usize, dj: usize, filter: F) -> Self
             where F: Fn(usize, usize) -> bool {
-        let width = 2 * L - 1;
+        let width_i = 2 * di - 1;
+        let width_j = 2 * dj - 1;
         let T = MeasurementRounds + 2;
         let height = T * 6 + 1;
         let mut snapshot = Vec::with_capacity(height);
         for t in 0..height {
-            let mut snapshot_row_0 = Vec::with_capacity(width);
-            for i in 0..width {
-                let mut snapshot_row_1 = Vec::with_capacity(width);
-                for j in 0..width {
+            let mut snapshot_row_0 = Vec::with_capacity(width_i);
+            for i in 0..width_i {
+                let mut snapshot_row_1 = Vec::with_capacity(width_j);
+                for j in 0..width_j {
                     if filter(i, j) {
                         let stage = Stage::from(t);
                         let qubit_type = if (i + j) % 2 == 0 { QubitType::Data } else
@@ -327,7 +324,7 @@ impl PlanarCodeModel {
                             },
                             Stage::CXGate1 => {
                                 if qubit_type == QubitType::Data {
-                                    if i+1 < width && filter(i+1, j) {
+                                    if i+1 < width_i && filter(i+1, j) {
                                         gate_type = GateType::ControlledPhase;
                                         connection = Some(Connection{ t: t, i: i+1, j: j });
                                     }
@@ -340,7 +337,7 @@ impl PlanarCodeModel {
                             },
                             Stage::CXGate2 => {
                                 if qubit_type == QubitType::Data {
-                                    if j+1 < width && filter(i, j+1) {
+                                    if j+1 < width_j && filter(i, j+1) {
                                         gate_type = GateType::Target;
                                         connection = Some(Connection{ t: t, i: i, j: j+1 });
                                     }
@@ -358,7 +355,7 @@ impl PlanarCodeModel {
                                         connection = Some(Connection{ t: t, i: i, j: j-1 });
                                     }
                                 } else {
-                                    if j+1 < width && filter(i, j+1) {
+                                    if j+1 < width_j && filter(i, j+1) {
                                         gate_type = GateType::Control;
                                         connection = Some(Connection{ t: t, i: i, j: j+1 });
                                     }
@@ -371,7 +368,7 @@ impl PlanarCodeModel {
                                         connection = Some(Connection{ t: t, i: i-1, j: j });
                                     }
                                 } else {
-                                    if i+1 < width && filter(i+1, j) {
+                                    if i+1 < width_i && filter(i+1, j) {
                                         gate_type = GateType::ControlledPhase;
                                         connection = Some(Connection{ t: t, i: i+1, j: j });
                                     }
@@ -410,7 +407,8 @@ impl PlanarCodeModel {
         Self {
             code_type: code_type,
             snapshot: snapshot,
-            L: L,
+            di: di,
+            dj: dj,
             T: T,
             MeasurementRounds: MeasurementRounds,
             graph: None,
@@ -707,12 +705,14 @@ impl PlanarCodeModel {
     }
     /// generate default correction
     pub fn generate_default_correction(&self) -> Correction {
-        let width = 2 * self.L - 1;
-        Correction::new_all_false(self.MeasurementRounds + 1, width, width)
+        let width_i = 2 * self.di - 1;
+        let width_j = 2 * self.dj - 1;
+        Correction::new_all_false(self.MeasurementRounds + 1, width_i, width_j)
     }
     pub fn generate_default_sparse_correction(&self) -> SparseCorrection {
-        let width = 2 * self.L - 1;
-        SparseCorrection::new_all_false(self.MeasurementRounds + 1, width, width)
+        let width_i = 2 * self.di - 1;
+        let width_j = 2 * self.dj - 1;
+        SparseCorrection::new_all_false(self.MeasurementRounds + 1, width_i, width_j)
     }
     /// get data qubit error pattern based on current `propagated` error on t=6,12,18,...
     pub fn get_data_qubit_error_pattern(&self) -> Correction {
@@ -1064,8 +1064,9 @@ impl PlanarCodeModel {
         }
     }
     pub fn generate_measurement(&self) -> Measurement {
-        let width = 2 * self.L - 1;
-        let mut measurement = Measurement(ndarray::Array::from_elem((self.MeasurementRounds + 1, width, width), false));
+        let width_i = 2 * self.di - 1;
+        let width_j = 2 * self.dj - 1;
+        let mut measurement = Measurement(ndarray::Array::from_elem((self.MeasurementRounds + 1, width_i, width_j), false));
         let mut measurement_mut = measurement.view_mut();
         self.iterate_measurement_errors(|t, i, j, _node| {
             let (mt, mi, mj) = Index::new(t, i, j).to_measurement_idx();
@@ -1084,15 +1085,16 @@ impl PlanarCodeModel {
             (SparseCorrection, Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
         // sanity check
         let shape = measurement.shape();
-        let width = 2 * self.L - 1;
+        let width_i = 2 * self.di - 1;
+        let width_j = 2 * self.dj - 1;
         assert_eq!(shape[0], self.MeasurementRounds + 1);
-        assert_eq!(shape[1], width);
-        assert_eq!(shape[2], width);
+        assert_eq!(shape[1], width_i);
+        assert_eq!(shape[2], width_j);
         // generate all the error measurements to be matched
         let mut to_be_matched = Vec::new();
         for mt in 0..self.MeasurementRounds + 1 {
-            for mi in 0..width {
-                for mj in 0..width {
+            for mi in 0..width_i {
+                for mj in 0..width_j {
                     if measurement[[mt, mi, mj]] {  // has a measurement error there
                         to_be_matched.push(Index::from_measurement_idx(mt, mi, mj));
                     }
@@ -1180,10 +1182,11 @@ impl PlanarCodeModel {
             (SparseCorrection, Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
         // sanity check
         let shape = measurement.shape();
-        let width = 2 * self.L - 1;
+        let width_i = 2 * self.di - 1;
+        let width_j = 2 * self.dj - 1;
         assert_eq!(shape[0], self.MeasurementRounds + 1);
-        assert_eq!(shape[1], width);
-        assert_eq!(shape[2], width);
+        assert_eq!(shape[1], width_i);
+        assert_eq!(shape[2], width_j);
         // run union find decoder
         let (edge_matchings, boundary_matchings) = union_find_decoder::suboptimal_matching_by_union_find_given_measurement(&self, measurement, max_half_weight);
         let mut correction = self.generate_default_sparse_correction();
@@ -1204,15 +1207,16 @@ impl PlanarCodeModel {
     pub fn decode_MWPM_approx_sparse_correction(&self, measurement: &Measurement, substreams: usize, use_modified: bool) -> SparseCorrection {
         // sanity check
         let shape = measurement.shape();
-        let width = 2 * self.L - 1;
+        let width_i = 2 * self.di - 1;
+        let width_j = 2 * self.dj - 1;
         assert_eq!(shape[0], self.MeasurementRounds + 1);
-        assert_eq!(shape[1], width);
-        assert_eq!(shape[2], width);
+        assert_eq!(shape[1], width_i);
+        assert_eq!(shape[2], width_j);
         // generate all the error measurements to be matched
         let mut to_be_matched = Vec::new();
         for mt in 0..self.MeasurementRounds + 1 {
-            for mi in 0..width {
-                for mj in 0..width {
+            for mi in 0..width_i {
+                for mj in 0..width_j {
                     if measurement[[mt, mi, mj]] {  // has a measurement error there
                         to_be_matched.push(Index::from_measurement_idx(mt, mi, mj));
                     }
@@ -1364,13 +1368,13 @@ impl PlanarCodeModel {
         match self.code_type {
             CodeType::StandardPlanarCode => {
                 // Z stabilizer boundary, j = 0
-                for i in 0..self.L {
+                for i in 0..self.di {
                     if corrected.x[[self.MeasurementRounds, (i*2), 0]] {
                         x_error_count += 1;
                     }
                 }
                 // X stabilizer boundary, i = 0
-                for j in 0..self.L {
+                for j in 0..self.dj {
                     if corrected.z[[self.MeasurementRounds, 0, (j*2)]] {
                         z_error_count += 1;
                     }
@@ -1378,13 +1382,13 @@ impl PlanarCodeModel {
             },
             CodeType::StandardXZZXCode => {
                 // logical Z boundary, j = 0
-                for i in 0..self.L {
+                for i in 0..self.di {
                     if corrected.z[[self.MeasurementRounds, (i*2), 0]] {
                         z_error_count += 1;
                     }
                 }
                 // logical X boundary, i = 0
-                for j in 0..self.L {
+                for j in 0..self.dj {
                     if corrected.x[[self.MeasurementRounds, 0, (j*2)]] {
                         x_error_count += 1;
                     }
@@ -1399,9 +1403,9 @@ impl PlanarCodeModel {
     pub fn validate_correction_on_boundary(&self, correction: &Correction) -> Result<(), ValidationFailedReason> {
         let (x_error_count, z_error_count) = self.get_boundary_cardinality(correction);
         match (x_error_count % 2 != 0, z_error_count % 2 != 0) {
-            (true, true) => Err(ValidationFailedReason::BothXandZLogicalError(0, x_error_count, self.L, z_error_count, self.L)),
-            (true, false) => Err(ValidationFailedReason::XLogicalError(0, x_error_count, self.L)),
-            (false, true) => Err(ValidationFailedReason::ZLogicalError(0, z_error_count, self.L)),
+            (true, true) => Err(ValidationFailedReason::BothXandZLogicalError(0, x_error_count, 0, z_error_count, 0)),
+            (true, false) => Err(ValidationFailedReason::XLogicalError(0, x_error_count, 0)),
+            (false, true) => Err(ValidationFailedReason::ZLogicalError(0, z_error_count, 0)),
             _ => Ok(())
         }
     }

@@ -804,16 +804,17 @@ fn archived_debug_tests() {
                                         (error_source == measurement_errors[1] && *target == measurement_errors[0]);
                                     if matched {
                                         let mut this_propagated_to = Vec::new();
-                                        let width = 2 * model.L - 1;
-                                        let mut has_error = ndarray::Array::from_elem((width, width), false);
+                                        let width_i = 2 * model.di - 1;
+                                        let width_j = 2 * model.dj - 1;
+                                        let mut has_error = ndarray::Array::from_elem((width_i, width_j), false);
                                         let mut has_error_mut = has_error.view_mut();
                                         model.iterate_snapshot(|_t, i, j, node| {
                                             if node.propagated != ErrorType::I {
                                                 has_error_mut[[i, j]] = true;
                                             }
                                         });
-                                        for i in 0..width {
-                                            for j in 0..width {
+                                        for i in 0..width_i {
+                                            for j in 0..width_j {
                                                 if has_error[[i, j]] {
                                                     this_propagated_to.push(vec![i, j]);
                                                 }

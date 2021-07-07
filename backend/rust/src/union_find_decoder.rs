@@ -606,7 +606,8 @@ pub fn make_decoder_given_ftqec_model_weighted(model: &ftqec::PlanarCodeModel, s
 
 /// return `(has_x_logical_error, has_z_logical_error)`
 pub fn run_given_mwpm_decoder_instance_weighted(model: &ftqec::PlanarCodeModel, towards_mwpm: bool, max_half_weight: usize, use_xzzx_code: bool) -> (bool, bool) {
-    let d = model.L;
+    assert_eq!(model.di, model.dj, "currently square code supported");
+    let d = model.di;
     let measurement_rounds = model.MeasurementRounds;
     let default_correction = model.generate_default_correction();
     let (x_error_count, z_error_count) = model.get_boundary_cardinality(&default_correction);

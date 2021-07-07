@@ -66,11 +66,14 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             error_rate_MWPM_with_weight(&Ls, &ps, max_N, min_error_cases, &weights, parallel);
         }
         ("fault_tolerant_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
-            let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
+            let dis = value_t!(matches, "Ls", String).expect("required");
+            let djs = value_t!(matches, "djs", String).unwrap_or(dis.clone());
+            let dis: Vec<usize> = serde_json::from_str(&dis).expect("Ls should be [L1,L2,L3,...,Ln]");
+            let djs: Vec<usize> = serde_json::from_str(&djs).expect("djs should be [dj1,dj2,dj3,...,djn]");
             let Ts = value_t!(matches, "Ts", String).expect("required");
             let Ts: Vec<usize> = serde_json::from_str(&Ts).expect("Ts should be [T1,T2,T3,...,Tn]");
-            assert!(Ts.len() == Ls.len(), "Ts and Ls should be paired");
+            assert!(Ts.len() == dis.len(), "Ts and dis should be paired");
+            assert!(dis.len() == djs.len(), "dis and djs should be paired");
             let ps = value_t!(matches, "ps", String).expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
             let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
@@ -93,7 +96,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let perfect_measurement = matches.is_present("perfect_measurement");
             let decoder_type = DecoderType::from(value_t!(matches, "decoder", String).unwrap_or("MWPM".to_string()));
             let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
-            fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
+            fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, !imperfect_initialization
                 , shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, perfect_measurement, decoder_type, max_half_weight);
         }
@@ -504,7 +507,7 @@ default example:
 `cargo run --release -- tool fault_tolerant_benchmark [5] [5] [1e-3]`
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
-fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
+fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
         , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
         , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool, shallow_error_on_bottom: bool
         , no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, perfect_measurement: bool, decoder_type: DecoderType, max_half_weight: usize) {
@@ -513,12 +516,13 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
         parallel = num_cpus::get() - 1;
     }
     println!("format: <p> <L> <T> <total_rounds> <qec_failed> <error_rate>");
-    for (L_idx, L) in Ls.iter().enumerate() {
-        let MeasurementRounds = Ts[L_idx];
+    for (di_idx, di) in dis.iter().enumerate() {
+        let MeasurementRounds = Ts[di_idx];
+        let dj = djs[di_idx];
         for p in ps {
             let p = *p;
             assert!(p <= 1.0, "why should errors (X, Z, Y) happening more than 1.0 probability?");
-            let L = *L;
+            let di = *di;
             let total_rounds = Arc::new(Mutex::new(0));
             let qec_failed = Arc::new(Mutex::new(0));
             let mut handlers = Vec::new();
@@ -530,13 +534,15 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                 if use_xzzx_code {
                     panic!("not implemented");
                 } else {
-                    ftqec::PlanarCodeModel::new_rotated_planar_code(MeasurementRounds, L)
+                    assert_eq!(di, dj, "rotated planar code doesn't support rectangle lattice yet");
+                    ftqec::PlanarCodeModel::new_rotated_planar_code(MeasurementRounds, di)
                 }
             } else {
                 if use_xzzx_code {
-                    ftqec::PlanarCodeModel::new_standard_XZZX_code(MeasurementRounds, L)
+                    ftqec::PlanarCodeModel::new_standard_XZZX_code_rectangle(MeasurementRounds, di, dj)
                 } else {
-                    ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, L)
+                    assert_eq!(di, dj, "standard planar code doesn't support rectangle lattice yet");
+                    ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, di)
                 }
             };
             // compute pz, px, py individually given bias_eta
@@ -710,7 +716,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                 let qec_failed = *qec_failed.lock().unwrap();
                 if qec_failed >= min_error_cases { break }
                 let error_rate = qec_failed as f64 / total_rounds as f64;
-                pb.message(format!("{} {} {} {} {} {} ", p, L, MeasurementRounds, total_rounds, qec_failed, error_rate).as_str());
+                pb.message(format!("{} {} {} {} {} {} {} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj).as_str());
                 let progress = total_rounds / mini_batch;
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
@@ -723,7 +729,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
             let total_rounds = *total_rounds.lock().unwrap();
             let qec_failed = *qec_failed.lock().unwrap();
             let error_rate = qec_failed as f64 / total_rounds as f64;
-            println!("{} {} {} {} {} {}", p, L, MeasurementRounds, total_rounds, qec_failed, error_rate);
+            println!("{} {} {} {} {} {} {}", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj);
         }
     }
 }
