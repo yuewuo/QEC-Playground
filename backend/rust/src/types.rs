@@ -310,3 +310,21 @@ impl ErrorType {
         }
     }
 }
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum DecoderType {
+    MinimumWeightPerfectMatching,
+    UnionFind,
+    DistributedUnionFind,
+}
+
+impl From<String> for DecoderType {
+    fn from(name: String) -> Self {
+        match name.as_str() {
+            "MWPM" | "MinimumWeightPerfectMatching" => Self::MinimumWeightPerfectMatching,
+            "UF" | "UnionFind" => Self::UnionFind,
+            "DUF" | "DistributedUnionFind" => Self::DistributedUnionFind,
+            _ => panic!("unrecognized decoder type"),
+        }
+    }
+}

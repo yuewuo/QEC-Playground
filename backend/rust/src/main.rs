@@ -140,6 +140,8 @@ async fn main() -> std::io::Result<()> {
                 (@arg use_xzzx_code: --use_xzzx_code "use XZZX surface code")
                 (@arg bias_eta: --bias_eta +takes_value "bias_eta = pz / (px + py) and px = py, px + py + pz = p. default to 1/2, which is px = pz = py")
                 (@arg perfect_measurement: --perfect_measurement "perfect measurement case with single layer, T must be 1")
+                (@arg decoder: --decoder +takes_value "supported decoders: MWPM=MinimumWeightPerfectMatching, UF=UnionFind")
+                (@arg max_half_weight: --max_half_weight +takes_value "[UnionFind decoder only] maximum weight will be 2 * max_half_weight")
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")

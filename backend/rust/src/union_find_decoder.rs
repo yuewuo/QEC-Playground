@@ -17,6 +17,7 @@ use super::serde::{Serialize, Deserialize};
 use super::offer_decoder;
 use super::ftqec;
 use super::types::QubitType;
+use super::petgraph;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UnionFindDecoder<U: std::fmt::Debug> {
@@ -540,6 +541,14 @@ pub fn make_decoder_given_ftqec_model_weighted(model: &ftqec::PlanarCodeModel, s
                     minimum_probability = edge.p;
                 }
             }
+            match &node.boundary {
+                Some(boundary) => {
+                    if boundary.p < minimum_probability {
+                        minimum_probability = boundary.p;
+                    }
+                },
+                None => { }
+            }
         }
     });
     // the minimum probability has weight `max_half_weight`, all other probability will scale accordingly
@@ -618,6 +627,186 @@ pub fn run_given_mwpm_decoder_instance_weighted(model: &ftqec::PlanarCodeModel, 
         , !use_xzzx_code, towards_mwpm) + z_error_count;
     let has_z_logical_error = top_boundary_cardinality % 2 == 1;
     (has_x_logical_error, has_z_logical_error)
+}
+
+#[allow(dead_code)]
+pub fn suboptimal_matching_by_union_find(model: &ftqec::PlanarCodeModel, max_half_weight: usize) ->
+        (Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
+    suboptimal_matching_by_union_find_given_measurement(model, &model.generate_measurement(), max_half_weight)
+}
+/// given an arbitrary ftqec::PlanarCodeModel, this function returns a suboptimal matching given by union find decoder
+pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::PlanarCodeModel, measurement: &ftqec::Measurement, max_half_weight: usize) ->
+        (Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
+    // first find individual connected regions (so that the decoder weight is optimal for every region)
+    let mut g = petgraph::graph::UnGraph::<(usize, usize, usize), ()>::default();
+    let mut tij_to_index = HashMap::new();
+    // add nodes
+    model.iterate_measurement_stabilizers(|t, i, j, _node| {
+        if t > 12 {  // ignore the bottom layer
+            let index = g.add_node((t, i, j));
+            tij_to_index.insert((t, i, j), index);
+        }
+    });
+    // add edges
+    model.iterate_measurement_stabilizers(|t, i, j, node| {
+        if t > 12 {  // ignore the bottom layer
+            for edge in node.edges.iter() {
+                if edge.t > 12 {
+                    let index1 = tij_to_index[&(t, i, j)];
+                    let index2 = tij_to_index[&(edge.t, edge.i, edge.j)];
+                    g.update_edge(index1, index2, ());  // use `update_edge` instead of `add_edge` is to avoid duplicate edges
+                }
+            }
+        }
+    });
+    // get connected regions, each connected region corresponds to an instance of union find decoder
+    let mut already_visited = HashSet::new();
+    let mut connected_regions = Vec::new();
+    for current_node_index in g.node_indices() {
+        let mut current_region = Vec::new();
+        if already_visited.contains(&current_node_index) {
+            continue;
+        }
+        let mut dfs = petgraph::visit::Dfs::new(&g, current_node_index);
+        while let Some(nx) = dfs.next(&g) {
+            current_region.push(nx);
+            already_visited.insert(nx);
+        }
+        current_region.sort_unstable();
+        current_region.dedup();  // remove duplicate ones
+        connected_regions.push(current_region);
+    }
+    // { // debug print connected regions
+    //     for region in connected_regions.iter() {
+    //         print!("region:");
+    //         for idx in region.iter() {
+    //             let (t, i, j) = g.node_weight(*idx).expect("exists");
+    //             print!(" ({}, {}, {})", t, i, j);
+    //         }
+    //         println!("");
+    //     }
+    // }
+    let mut edge_matchings = Vec::new();
+    let mut boundary_matchings = Vec::new();
+    for region in connected_regions.iter() {
+        let mut minimum_probability = f64::MAX;
+        for idx in region.iter() {
+            let &(t, i, j) = g.node_weight(*idx).expect("exists");
+            let node = model.snapshot[t][i][j].as_ref().expect("exist");
+            for edge in node.edges.iter() {
+                if edge.p < minimum_probability {
+                    minimum_probability = edge.p;
+                }
+            }
+            match &node.boundary {
+                Some(boundary) => {
+                    if boundary.p < minimum_probability {
+                        minimum_probability = boundary.p;
+                    }
+                },
+                None => { }
+            }
+        }
+        // the minimum probability has weight `max_half_weight`, all other probability will scale accordingly
+        let probability_to_weight = |probability: f64| -> usize {
+            let mut half_weight = ((max_half_weight as f64) * probability.ln() / minimum_probability.ln()).round() as usize;
+            if half_weight > max_half_weight {
+                half_weight = max_half_weight;
+            }
+            if half_weight < 1 {
+                half_weight = 1;
+            }
+            // println!("half_weight = {}, minimum_probability = {}, probability = {}", half_weight, minimum_probability, probability);
+            2 * half_weight
+        };
+        // build graph
+        let mut nodes = Vec::new();
+        let mut position_to_index = HashMap::new();
+        for idx in region.iter() {
+            let &(t, i, j) = g.node_weight(*idx).expect("exists");
+            let node = model.snapshot[t][i][j].as_ref().expect("exist");
+            position_to_index.insert((t, i, j), nodes.len());
+            nodes.push(InputNode::new((t, i, j), false, match &node.boundary {
+                Some(boundary) => Some(probability_to_weight(boundary.p)),
+                None => None,
+            }));
+        }
+        model.iterate_measurement_stabilizers(|t, i, j, _node| {
+            let (mt, mi, mj) = ftqec::Index::new(t, i, j).to_measurement_idx();
+            if position_to_index.contains_key(&(t, i, j)) && measurement[[mt, mi, mj]] {
+                nodes[position_to_index[&(t, i, j)]].is_error_syndrome = true;
+            }
+        });
+        let mut neighbors = Vec::new();
+        for g_idx in region.iter() {
+            let &(t, i, j) = g.node_weight(*g_idx).expect("exists");
+            let node = model.snapshot[t][i][j].as_ref().expect("exist");
+            let idx = position_to_index[&(t, i, j)];
+            for edge in node.edges.iter() {
+                if edge.t > 12 {
+                    let peer_idx = position_to_index[&(edge.t, edge.i, edge.j)];
+                    if idx < peer_idx {  // remove duplicated neighbors
+                        neighbors.push(NeighborEdge::new(idx, peer_idx, 0, probability_to_weight(edge.p)));
+                    }
+                } else {
+                    let new_boundary_cost = match nodes[idx].boundary_cost {
+                        Some(cost) => std::cmp::min(cost, probability_to_weight(edge.p)),
+                        None => probability_to_weight(edge.p),
+                    };
+                    nodes[idx].boundary_cost = Some(new_boundary_cost);  // viewing the bottom layer as boundary
+                }
+            }
+        }
+        // run union find decoder
+        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        decoder.run_to_stable();
+        // generate suboptimal matching
+        let mut counted_sets = HashSet::new();
+        for index in 0..decoder.nodes.len() {
+            let root = decoder.union_find.immutable_find(index);
+            if counted_sets.contains(&root) {  // every set should only be counted once
+                continue;
+            }
+            let root_node = &decoder.union_find.immutable_get(root);
+            if root_node.cardinality == 0 {  // ignore clusters without errors
+                continue;
+            }
+            counted_sets.insert(root);
+            // find all errors in this cluster
+            let mut error_syndromes = Vec::new();
+            let mut cluster_boundary = None;
+            for index2 in 0..decoder.nodes.len() {
+                let root2 = decoder.union_find.immutable_find(index2);
+                if root2 == root {
+                    let node2 = &decoder.nodes[index2];
+                    if node2.node.boundary_cost.is_some() && node2.boundary_increased >= node2.node.boundary_cost.unwrap() {
+                        cluster_boundary = Some(index2);
+                    }
+                    if node2.node.is_error_syndrome {
+                        error_syndromes.push(index2)
+                    }
+                }
+            }
+            assert_eq!(error_syndromes.len(), root_node.cardinality);
+            if root_node.cardinality % 2 == 1 {
+                // connect to a boundary and others internally
+                let cluster_boundary_index = cluster_boundary.expect("odd cluster should at least have 1 boundary");
+                error_syndromes.push(cluster_boundary_index);
+                let node = &decoder.nodes[cluster_boundary_index];
+                boundary_matchings.push(node.node.user_data);
+            }
+            assert_eq!(error_syndromes.len() % 2, 0);
+            let half_len = error_syndromes.len() / 2;
+            for i in 0..half_len{
+                let node1 = &decoder.nodes[error_syndromes[i]];
+                let node2 = &decoder.nodes[error_syndromes[i + half_len]];
+                if node1.node.user_data != node2.node.user_data {
+                    edge_matchings.push((node1.node.user_data, node2.node.user_data));
+                }
+            }
+        }
+    }
+    (edge_matchings, boundary_matchings)
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -1089,6 +1278,36 @@ mod tests {
         let (has_x_logical_error, has_z_logical_error) = run_given_mwpm_decoder_instance_weighted(&mut model
             , false, 4, true);
         println!("has_x_logical_error: {}, has_z_logical_error: {}", has_x_logical_error, has_z_logical_error);
+    }
+    
+    #[test]
+    fn union_find_decoder_test_suboptimal_matching_by_union_find_1() {
+        let p = 0.05;
+        let bias_eta = 10.;
+        let d = 7;
+        let measurement_rounds = 1;
+        let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(measurement_rounds, d);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = p - 2. * px;
+        model.set_individual_error_with_perfect_initialization(0., 0., 0.);
+        // shallow_error_on_bottom
+        model.iterate_snapshot_mut(|t, _i, _j, node| {
+            if t == 12 && node.qubit_type == QubitType::Data {
+                node.error_rate_x = px;
+                node.error_rate_z = pz;
+                node.error_rate_y = py;
+            }
+        });
+        model.build_graph();
+        // add errors
+        model.add_error_at(12, 0, 0, &ErrorType::Z).expect("error rate = 0 here");
+        model.add_error_at(12, 0, 12, &ErrorType::Z).expect("error rate = 0 here");
+        model.add_error_at(12, 9, 7, &ErrorType::Z).expect("error rate = 0 here");
+        model.propagate_error();
+        let (edge_matchings, boundary_matchings) = suboptimal_matching_by_union_find(&model, 4);
+        println!("edge_matchings: {:?}", edge_matchings);
+        println!("boundary_matchings: {:?}", boundary_matchings);
     }
 
 }

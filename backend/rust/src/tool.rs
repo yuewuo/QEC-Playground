@@ -16,7 +16,6 @@ use super::num_cpus;
 use std::sync::{Arc, Mutex};
 use super::ftqec;
 use super::pbr::ProgressBar;
-use super::types::QubitType;
 use super::offer_decoder;
 use super::offer_mwpm;
 use super::union_find_decoder;
@@ -92,9 +91,11 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let use_xzzx_code = matches.is_present("use_xzzx_code");
             let bias_eta = value_t!(matches, "bias_eta", f64).unwrap_or(0.5);  // default to 0.5
             let perfect_measurement = matches.is_present("perfect_measurement");
+            let decoder_type = DecoderType::from(value_t!(matches, "decoder", String).unwrap_or("MWPM".to_string()));
+            let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
             fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, !imperfect_initialization
-                , shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, perfect_measurement);
+                , shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, perfect_measurement, decoder_type, max_half_weight);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -506,7 +507,7 @@ it supports progress bar (in stderr), so you can run this in backend by redirect
 fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
         , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
         , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool, shallow_error_on_bottom: bool
-        , no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, perfect_measurement: bool) {
+        , no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, perfect_measurement: bool, decoder_type: DecoderType, max_half_weight: usize) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -627,6 +628,7 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                     _ => validate_layer.parse::<isize>().expect("integer"),
                 };
                 let mini_batch = mini_batch;
+                let decoder_type = decoder_type.clone();
                 handlers.push(std::thread::spawn(move || {
                     // println!("thread {}", _i);
                     let mut rng = thread_rng();
@@ -647,7 +649,11 @@ fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max
                             let measurement = model_error.generate_measurement();
                             // use `model_decoder` for decoding, so that it is blind to the real error information
                             let correction = if !bypass_correction {
-                                model_decoder.decode_MWPM(&measurement)
+                                match decoder_type {
+                                    DecoderType::MinimumWeightPerfectMatching => model_decoder.decode_MWPM(&measurement),
+                                    DecoderType::UnionFind => model_decoder.decode_UnionFind(&measurement, max_half_weight),
+                                    _ => panic!("unsupported decoder type"),
+                                }
                             } else {
                                 model_decoder.generate_default_correction()
                             };

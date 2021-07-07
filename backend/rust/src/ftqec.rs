@@ -24,8 +24,8 @@ use std::ops::{Deref, DerefMut};
 use super::blossom_v;
 use super::mwpm_approx;
 use std::sync::{Arc};
-use super::types::QubitType;
-use super::types::ErrorType;
+use super::types::{QubitType, ErrorType};
+use super::union_find_decoder;
 
 /// uniquely index a node
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -1168,8 +1168,36 @@ impl PlanarCodeModel {
             (self.generate_default_sparse_correction(), Vec::new(), Vec::new())
         }
     }
+    
+    /// decode based on UnionFind decoder
+    pub fn decode_UnionFind(&self, measurement: &Measurement, max_half_weight: usize) -> Correction {
+        Correction::from(&self.decode_UnionFind_sparse_correction(measurement, max_half_weight))
+    }
+    pub fn decode_UnionFind_sparse_correction(&self, measurement: &Measurement, max_half_weight: usize) -> SparseCorrection {
+        self.decode_UnionFind_sparse_correction_with_edge_matchings(measurement, max_half_weight).0
+    }
+    pub fn decode_UnionFind_sparse_correction_with_edge_matchings(&self, measurement: &Measurement, max_half_weight: usize) ->
+            (SparseCorrection, Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
+        // sanity check
+        let shape = measurement.shape();
+        let width = 2 * self.L - 1;
+        assert_eq!(shape[0], self.MeasurementRounds + 1);
+        assert_eq!(shape[1], width);
+        assert_eq!(shape[2], width);
+        // run union find decoder
+        let (edge_matchings, boundary_matchings) = union_find_decoder::suboptimal_matching_by_union_find_given_measurement(&self, measurement, max_half_weight);
+        let mut correction = self.generate_default_sparse_correction();
+        for &((t1, i1, j1), (t2, i2, j2)) in edge_matchings.iter() {
+            correction.combine(&self.get_correction_two_nodes(&Index::new(t1, i1, j1), &Index::new(t2, i2, j2)));
+        }
+        for &(t, i, j) in boundary_matchings.iter() {
+            let node = self.snapshot[t][i][j].as_ref().expect("exist");
+            correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
+        }
+        (correction, edge_matchings, boundary_matchings)
+    }
 
-    /// decode based on MWPM
+    /// decode based on approximate MWPM
     pub fn decode_MWPM_approx(&self, measurement: &Measurement, substreams: usize, use_modified: bool) -> Correction {
         Correction::from(&self.decode_MWPM_approx_sparse_correction(measurement, substreams, use_modified))
     }
