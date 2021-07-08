@@ -135,6 +135,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg bypass_correction: --bypass_correction "bypass correction procedure to test is logical error rate calculation behaving good")
                 (@arg independent_px_pz: --independent_px_pz "change the error model to (1-px-pz-pxpz)I + px X + pz Z + pxpz Y")
                 (@arg only_count_logical_x: --only_count_logical_x "only count X logical errors but not all logical error. Alert: only available when validate_layer != all")
+                (@arg only_count_logical_z: --only_count_logical_z "only count Z logical errors but not all logical error. Alert: only available when validate_layer != all")
                 (@arg imperfect_initialization: --imperfect_initialization "if imperfect initialization, then there is bottom boundary because errors happen on the bottom")
                 (@arg shallow_error_on_bottom: --shallow_error_on_bottom "add error to data qubit at t=6, so that no measurement error happens at bottom layer. this option can be used with T=0 for single perfect measurement round with only data qubit errors")
                 (@arg no_y_error: --no_y_error "set probability of y errors to 0")

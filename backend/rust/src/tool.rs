@@ -88,6 +88,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let bypass_correction = matches.is_present("bypass_correction");
             let independent_px_pz = matches.is_present("independent_px_pz");
             let only_count_logical_x = matches.is_present("only_count_logical_x");
+            let only_count_logical_z = matches.is_present("only_count_logical_z");
             let imperfect_initialization = matches.is_present("imperfect_initialization");
             let shallow_error_on_bottom = matches.is_present("shallow_error_on_bottom");
             let no_y_error = matches.is_present("no_y_error");
@@ -96,8 +97,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let decoder_type = DecoderType::from(value_t!(matches, "decoder", String).unwrap_or("MWPM".to_string()));
             let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
-                , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, !imperfect_initialization
-                , shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight);
+                , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
+                , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -494,8 +495,8 @@ it supports progress bar (in stderr), so you can run this in backend by redirect
 **/
 fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
         , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
-        , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool, shallow_error_on_bottom: bool
-        , no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType, max_half_weight: usize) {
+        , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, only_count_logical_z: bool, perfect_initialization: bool
+        , shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType, max_half_weight: usize) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -517,7 +518,8 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             // build general models
             let mut model = if rotated_planar_code {
                 if use_xzzx_code {
-                    panic!("not implemented");
+                    assert_eq!(di, dj, "rotated XZZX code doesn't support rectangle lattice yet");
+                    ftqec::PlanarCodeModel::new_rotated_XZZX_code(MeasurementRounds, di)
                 } else {
                     assert_eq!(di, dj, "rotated planar code doesn't support rectangle lattice yet");
                     ftqec::PlanarCodeModel::new_rotated_planar_code(MeasurementRounds, di)
@@ -640,16 +642,17 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                             };
                             if validate_layer == -2 {
                                 let validation_ret = model_error.validate_correction_on_boundary(&correction);
-                                if validation_ret.is_err() {
-                                    if only_count_logical_x {
-                                        match validation_ret {
-                                            Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed += 1; },
-                                            Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed += 1; },
-                                            _ => {},
-                                        }
-                                    } else {
+                                match validation_ret {
+                                    Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { if !only_count_logical_z {
                                         mini_qec_failed += 1;
-                                    }
+                                    } },
+                                    Err(ftqec::ValidationFailedReason::ZLogicalError(_, _, _)) => { if !only_count_logical_x {
+                                        mini_qec_failed += 1;
+                                    } },
+                                    Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => {
+                                        mini_qec_failed += 1;
+                                    },
+                                    _ => {},
                                 }
                             } else if validate_layer == -1 {
                                 // model_error.validate_correction_on_boundary(&correction);
@@ -658,16 +661,17 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                                 }
                             } else {
                                 let validation_ret = model_error.validate_correction_on_t_layer(&correction, validate_layer as usize);
-                                if validation_ret.is_err() {
-                                    if only_count_logical_x {  // only if contains logical X error will it count
-                                        match validation_ret {
-                                            Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed += 1; },
-                                            Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed += 1; },
-                                            _ => { },
-                                        }
-                                    } else {
+                                match validation_ret {
+                                    Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { if !only_count_logical_z {
                                         mini_qec_failed += 1;
-                                    }
+                                    } },
+                                    Err(ftqec::ValidationFailedReason::ZLogicalError(_, _, _)) => { if !only_count_logical_x {
+                                        mini_qec_failed += 1;
+                                    } },
+                                    Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => {
+                                        mini_qec_failed += 1;
+                                    },
+                                    _ => {},
                                 }
                             }
                         }

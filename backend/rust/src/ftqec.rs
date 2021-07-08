@@ -76,6 +76,7 @@ pub enum CodeType {
     StandardPlanarCode,
     RotatedPlanarCode,
     StandardXZZXCode,
+    RotatedXZZXCode,
     Unknown,
 }
 
@@ -280,6 +281,33 @@ impl PlanarCodeModel {
             z_homology_lines: Vec::new(),
             x_homology_lines: Vec::new(),
         }
+    }
+
+    pub fn new_rotated_XZZX_code(MeasurementRounds: usize, L: usize) -> Self {
+        assert!(L >= 3 && L % 2 == 1, "at lease one stabilizer is required, L should be odd");
+        let filter = |i, j| {
+            let middle = (L - 1) as isize;
+            let distance = (i as isize - middle).abs() + (j as isize - middle).abs();
+            if distance <= middle {
+                return true
+            }
+            if (i + j) % 2 == 0 {
+                return false  // data qubit doesn't exist outside the middle radius in Manhattan distance
+            }
+            // but stabilizers exist outside that radius
+            if i % 2 == 0 {  // Z stabilizers
+                if (i as isize - middle) * (j as isize - middle) > 0 {
+                    return distance <= middle + 1
+                }
+            } else {  // X stabilizers
+                if (i as isize - middle) * (j as isize - middle) < 0 {
+                    return distance <= middle + 1
+                }
+            }
+            false
+        };
+        let model = Self::new_XZZX_code(CodeType::RotatedXZZXCode, MeasurementRounds, L, L, filter);
+        model
     }
 
     pub fn new_standard_XZZX_code_rectangle(MeasurementRounds: usize, di: usize, dj: usize) -> Self {
@@ -1394,6 +1422,30 @@ impl PlanarCodeModel {
                     }
                 }
                 // println!("z_error_count: {}, x_error_count: {}", z_error_count, x_error_count);
+            },
+            CodeType::RotatedXZZXCode => {
+                assert_eq!(self.di, self.dj, "rotated XZZX code doesn't support rectangle lattice right now");
+                let middle_point = self.di - 1;
+                for delta in 0..self.di {
+                    let has_error = if delta % 2 == 0 {
+                        corrected.z[[self.MeasurementRounds, delta, middle_point + delta]]
+                    } else {
+                        corrected.x[[self.MeasurementRounds, delta, middle_point + delta]]
+                    };
+                    if has_error {
+                        z_error_count += 1;
+                    }
+                }
+                for delta in 0..self.di {
+                    let has_error = if delta % 2 == 0 {
+                        corrected.x[[self.MeasurementRounds, middle_point - delta, delta]]
+                    } else {
+                        corrected.z[[self.MeasurementRounds, middle_point - delta, delta]]
+                    };
+                    if has_error {
+                        x_error_count += 1;
+                    }
+                }
             },
             _ => unimplemented!("boundary validation not implemented for this code type")
         }
