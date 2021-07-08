@@ -96,9 +96,10 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let bias_eta = value_t!(matches, "bias_eta", f64).unwrap_or(0.5);  // default to 0.5
             let decoder_type = DecoderType::from(value_t!(matches, "decoder", String).unwrap_or("MWPM".to_string()));
             let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
+            let use_combined_probability = matches.is_present("use_combined_probability");
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
-                , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight);
+                , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight, use_combined_probability);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -496,7 +497,8 @@ it supports progress bar (in stderr), so you can run this in backend by redirect
 fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
         , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
         , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, only_count_logical_z: bool, perfect_initialization: bool
-        , shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType, max_half_weight: usize) {
+        , shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType, max_half_weight: usize
+        , use_combined_probability: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -532,6 +534,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                     ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, di)
                 }
             };
+            model.use_combined_probability = use_combined_probability;
             // compute pz, px, py individually given bias_eta
             // bias_eta = pz / (px + py) and px = py, px + py + pz = p
             // (px + py) * (1 + bias_eta) = p

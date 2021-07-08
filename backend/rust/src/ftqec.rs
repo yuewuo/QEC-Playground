@@ -91,6 +91,7 @@ pub struct PlanarCodeModel {
     pub MeasurementRounds: usize,
     pub T: usize,
     pub graph: Option<petgraph::graph::Graph<Index, PetGraphEdge>>,
+    pub use_combined_probability: bool,
     /// for each line, XOR the result. Only if no less than half of the result is 1.
     /// We do this because stabilizer operators will definitely have all 0 (because it generate 2 or 0 errors on every homology lines, XOR = 0)
     /// Only logical error will pose all 1 results, but sometimes single qubit errors will "hide" the logical error (because it
@@ -278,6 +279,7 @@ impl PlanarCodeModel {
             T: T,
             MeasurementRounds: MeasurementRounds,
             graph: None,
+            use_combined_probability: false,
             z_homology_lines: Vec::new(),
             x_homology_lines: Vec::new(),
         }
@@ -440,6 +442,7 @@ impl PlanarCodeModel {
             T: T,
             MeasurementRounds: MeasurementRounds,
             graph: None,
+            use_combined_probability: false,
             z_homology_lines: Vec::new(),
             x_homology_lines: Vec::new(),
         }
@@ -805,7 +808,7 @@ impl PlanarCodeModel {
                                             cases: Vec::new(),
                                         });
                                     }
-                                    node.boundary.as_mut().expect("exist").add(p, correction);
+                                    node.boundary.as_mut().expect("exist").add(p, correction, self.use_combined_probability);
                                 } else if measurement_errors.len() == 2 {  // connection
                                     let (t1, i1, j1) = measurement_errors[0];
                                     let (t2, i2, j2) = measurement_errors[1];
@@ -825,11 +828,13 @@ impl PlanarCodeModel {
                                                 cases: Vec::new(),
                                             });
                                         }
-                                        node.boundary.as_mut().expect("exist").add(p, correction);
+                                        node.boundary.as_mut().expect("exist").add(p, correction, self.use_combined_probability);
                                     } else {
                                         // println!("add_edge_case [{}][{}][{}] [{}][{}][{}] with p = {}", t1, i1, j1, t2, i2, j2, p);
-                                        add_edge_case(&mut self.snapshot[t1][i1][j1].as_mut().expect("exist").edges, t2, i2, j2, p, correction.clone());
-                                        add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").edges, t1, i1, j1, p, correction);
+                                        add_edge_case(&mut self.snapshot[t1][i1][j1].as_mut().expect("exist").edges, t2, i2, j2, p, correction.clone()
+                                            , self.use_combined_probability);
+                                        add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").edges, t1, i1, j1, p, correction
+                                            , self.use_combined_probability);
                                     }
                                 }
                             }
@@ -1531,10 +1536,10 @@ impl From<&Edge> for Index {
     }
 }
 
-pub fn add_edge_case(edges: &mut Vec::<Edge>, t: usize, i: usize, j: usize, p: f64, correction: Arc<SparseCorrection>) {
+pub fn add_edge_case(edges: &mut Vec::<Edge>, t: usize, i: usize, j: usize, p: f64, correction: Arc<SparseCorrection>, use_combined_probability: bool) {
     for edge in edges.iter_mut() {
         if edge.t == t && edge.i == i && edge.j == j {
-            edge.add(p, correction);
+            edge.add(p, correction, use_combined_probability);
             return  // already found
         }
     }
@@ -1542,13 +1547,17 @@ pub fn add_edge_case(edges: &mut Vec::<Edge>, t: usize, i: usize, j: usize, p: f
         t: t, i: i, j: j, p: 0.,
         cases: Vec::new(),
     };
-    edge.add(p, correction);
+    edge.add(p, correction, use_combined_probability);
     edges.push(edge);
 }
 
 impl Edge {
-    pub fn add(&mut self, p: f64, correction: Arc<SparseCorrection>) {
-        self.p = self.p * (1. - p) + p * (1. - self.p);  // XOR
+    pub fn add(&mut self, p: f64, correction: Arc<SparseCorrection>, use_combined_probability: bool) {
+        if use_combined_probability {
+            self.p = self.p * (1. - p) + p * (1. - self.p);  // XOR
+        } else {
+            self.p = self.p.max(p);  // max
+        }
         self.cases.push((correction, p));
     }
 }
@@ -1561,8 +1570,12 @@ pub struct Boundary {
 }
 
 impl Boundary {
-    pub fn add(&mut self, p: f64, correction: Arc<SparseCorrection>) {
-        self.p = self.p * (1. - p) + p * (1. - self.p);  // XOR
+    pub fn add(&mut self, p: f64, correction: Arc<SparseCorrection>, use_combined_probability: bool) {
+        if use_combined_probability {
+            self.p = self.p * (1. - p) + p * (1. - self.p);  // XOR
+        } else {
+            self.p = self.p.max(p);  // max
+        }
         self.cases.push((correction, p));
     }
 }
