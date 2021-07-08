@@ -500,7 +500,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
     }
-    println!("format: <p> <L> <T> <total_rounds> <qec_failed> <error_rate>");
+    println!("format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>");
     for (di_idx, di) in dis.iter().enumerate() {
         let MeasurementRounds = Ts[di_idx];
         let dj = djs[di_idx];
@@ -691,7 +691,8 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 let qec_failed = *qec_failed.lock().unwrap();
                 if qec_failed >= min_error_cases { break }
                 let error_rate = qec_failed as f64 / total_rounds as f64;
-                pb.message(format!("{} {} {} {} {} {} {} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj).as_str());
+                let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_rounds as f64)).sqrt() / error_rate;
+                pb.message(format!("{} {} {} {} {} {} {} {:.1e} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj, confidence_interval_95_percent).as_str());
                 let progress = total_rounds / mini_batch;
                 pb.set(progress as u64);
                 std::thread::sleep(std::time::Duration::from_millis(200));
@@ -704,7 +705,8 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             let total_rounds = *total_rounds.lock().unwrap();
             let qec_failed = *qec_failed.lock().unwrap();
             let error_rate = qec_failed as f64 / total_rounds as f64;
-            println!("{} {} {} {} {} {} {}", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj);
+            let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_rounds as f64)).sqrt() / error_rate;
+            println!("{} {} {} {} {} {} {} {:.1e}", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj, confidence_interval_95_percent);
         }
     }
 }
