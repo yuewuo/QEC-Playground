@@ -6,16 +6,16 @@ set size 1,1
 
 # data generating commands:
 
-# RUST_BACKTRACE=full cargo run --release -- tool union_find_decoder_standard_xzzx_benchmark [7] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e100000 --bias_eta 100000 --max_half_weight 1
-# RUST_BACKTRACE=full cargo run --release -- tool union_find_decoder_standard_xzzx_benchmark [7] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e100000 --bias_eta 100000 --max_half_weight 2
-# RUST_BACKTRACE=full cargo run --release -- tool union_find_decoder_standard_xzzx_benchmark [7] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e100000 --bias_eta 100000 --max_half_weight 3
-# RUST_BACKTRACE=full cargo run --release -- tool union_find_decoder_standard_xzzx_benchmark [7] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e100000 --bias_eta 100000 --max_half_weight 4
-# RUST_BACKTRACE=full cargo run --release -- tool union_find_decoder_standard_xzzx_benchmark [7] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e100000 --bias_eta 100000 --max_half_weight 5
-# RUST_BACKTRACE=full cargo run --release -- tool union_find_decoder_standard_xzzx_benchmark [7] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e100000 --bias_eta 100000 --max_half_weight 6
-# RUST_BACKTRACE=full cargo run --release -- tool union_find_decoder_standard_xzzx_benchmark [7] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e100000 --bias_eta 100000 --max_half_weight 7
-# RUST_BACKTRACE=full cargo run --release -- tool union_find_decoder_standard_xzzx_benchmark [7] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e100000 --bias_eta 100000 --max_half_weight 8
-# RUST_BACKTRACE=full cargo run --release -- tool union_find_decoder_standard_xzzx_benchmark [7] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e100000 --bias_eta 100000 --max_half_weight 9
-# RUST_BACKTRACE=full cargo run --release -- tool union_find_decoder_standard_xzzx_benchmark [7] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e100000 --bias_eta 100000 --max_half_weight 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [0] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 100000 --decoder UF --max_half_weight 1
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [0] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 100000 --decoder UF --max_half_weight 2
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [0] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 100000 --decoder UF --max_half_weight 3
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [0] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 100000 --decoder UF --max_half_weight 4
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [0] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 100000 --decoder UF --max_half_weight 5
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [0] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 100000 --decoder UF --max_half_weight 6
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [0] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 100000 --decoder UF --max_half_weight 7
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [0] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 100000 --decoder UF --max_half_weight 8
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [0] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 100000 --decoder UF --max_half_weight 9
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [0] [0.1,0.05,0.02] -p0 -b1000 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 100000 --decoder UF --max_half_weight 10
 
 # python -c "for i in range(1, 11): print('\'%d\' %d' % tuple([i for j in range(2)]), end=', ')"
 set xrange [1:10]

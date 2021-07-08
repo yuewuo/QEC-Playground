@@ -643,16 +643,16 @@ pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::Planar
     let mut tij_to_index = HashMap::new();
     // add nodes
     model.iterate_measurement_stabilizers(|t, i, j, _node| {
-        if t > 12 {  // ignore the bottom layer
+        if t > 6 {  // ignore the bottom layer
             let index = g.add_node((t, i, j));
             tij_to_index.insert((t, i, j), index);
         }
     });
     // add edges
     model.iterate_measurement_stabilizers(|t, i, j, node| {
-        if t > 12 {  // ignore the bottom layer
+        if t > 6 {  // ignore the bottom layer
             for edge in node.edges.iter() {
-                if edge.t > 12 {
+                if edge.t > 6 {
                     let index1 = tij_to_index[&(t, i, j)];
                     let index2 = tij_to_index[&(edge.t, edge.i, edge.j)];
                     g.update_edge(index1, index2, ());  // use `update_edge` instead of `add_edge` is to avoid duplicate edges
@@ -744,7 +744,7 @@ pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::Planar
             let node = model.snapshot[t][i][j].as_ref().expect("exist");
             let idx = position_to_index[&(t, i, j)];
             for edge in node.edges.iter() {
-                if edge.t > 12 {
+                if edge.t > 6 {
                     let peer_idx = position_to_index[&(edge.t, edge.i, edge.j)];
                     if idx < peer_idx {  // remove duplicated neighbors
                         neighbors.push(NeighborEdge::new(idx, peer_idx, 0, probability_to_weight(edge.p)));

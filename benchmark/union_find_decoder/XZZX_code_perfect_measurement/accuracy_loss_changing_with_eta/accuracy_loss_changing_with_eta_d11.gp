@@ -7,30 +7,30 @@ set size 1,1
 # data generating commands:
 
 # UF
-# nohup ./rust_qecp tool union_find_decoder_standard_xzzx_benchmark [11,17] [0.1] -p3 -b1000 -m100000000 -e1000000 --max_half_weight 10 --bias_eta 0.5 > uf_eta0.5.log 2>&1 &
-# nohup ./rust_qecp tool union_find_decoder_standard_xzzx_benchmark [11,17] [0.1] -p3 -b1000 -m100000000 -e1000000 --max_half_weight 10 --bias_eta 1 > uf_eta1.log 2>&1 &
-# nohup ./rust_qecp tool union_find_decoder_standard_xzzx_benchmark [11,17] [0.1] -p3 -b1000 -m100000000 -e1000000 --max_half_weight 10 --bias_eta 3 > uf_eta3.log 2>&1 &
-# nohup ./rust_qecp tool union_find_decoder_standard_xzzx_benchmark [11,17] [0.1] -p3 -b1000 -m100000000 -e1000000 --max_half_weight 10 --bias_eta 10 > uf_eta10.log 2>&1 &
-# nohup ./rust_qecp tool union_find_decoder_standard_xzzx_benchmark [11,17] [0.1] -p3 -b1000 -m100000000 -e1000000 --max_half_weight 10 --bias_eta 30 > uf_eta30.log 2>&1 &
-# nohup ./rust_qecp tool union_find_decoder_standard_xzzx_benchmark [11,17] [0.1] -p3 -b1000 -m100000000 -e1000000 --max_half_weight 10 --bias_eta 100 > uf_eta100.log 2>&1 &
-# nohup ./rust_qecp tool union_find_decoder_standard_xzzx_benchmark [11,17] [0.1] -p3 -b1000 -m100000000 -e1000000 --max_half_weight 10 --bias_eta 300 > uf_eta300.log 2>&1 &
-# nohup ./rust_qecp tool union_find_decoder_standard_xzzx_benchmark [11,17] [0.1] -p3 -b1000 -m100000000 -e1000000 --max_half_weight 10 --bias_eta 1000 > uf_eta1000.log 2>&1 &
-# nohup ./rust_qecp tool union_find_decoder_standard_xzzx_benchmark [11,17] [0.1] -p3 -b1000 -m100000000 -e1000000 --max_half_weight 10 --bias_eta 3000 > uf_eta3000.log 2>&1 &
-# nohup ./rust_qecp tool union_find_decoder_standard_xzzx_benchmark [11,17] [0.1] -p3 -b1000 -m100000000 -e1000000 --max_half_weight 10 --bias_eta 10000 > uf_eta10000.log 2>&1 &
-# nohup ./rust_qecp tool union_find_decoder_standard_xzzx_benchmark [11,17] [0.1] -p3 -b1000 -m100000000 -e1000000 --max_half_weight 20 --bias_eta +inf > uf_etainf.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 0.5 --decoder UF --max_half_weight 10 > uf_eta0.5.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 1 --decoder UF --max_half_weight 10 > uf_eta1.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 3 --decoder UF --max_half_weight 10 > uf_eta3.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 10 --decoder UF --max_half_weight 10 > uf_eta10.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 30 --decoder UF --max_half_weight 10 > uf_eta30.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 100 --decoder UF --max_half_weight 10 > uf_eta100.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 300 --decoder UF --max_half_weight 10 > uf_eta300.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 1000 --decoder UF --max_half_weight 10 > uf_eta1000.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 3000 --decoder UF --max_half_weight 10 > uf_eta3000.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 10000 --decoder UF --max_half_weight 10 > uf_eta10000.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta +inf --decoder UF --max_half_weight 10 > uf_etainf.log 2>&1 &
 
 # MWPM
-# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 0.5 > ft_eta0.5.log 2>&1 &
-# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 1 > ft_eta1.log 2>&1 &
-# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 3 > ft_eta3.log 2>&1 &
-# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 10 > ft_eta10.log 2>&1 &
-# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 30 > ft_eta30.log 2>&1 &
-# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 100 > ft_eta100.log 2>&1 &
-# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 300 > ft_eta300.log 2>&1 &
-# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 1000 > ft_eta1000.log 2>&1 &
-# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 3000 > ft_eta3000.log 2>&1 &
-# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 10000 > ft_eta10000.log 2>&1 &
-# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta +inf > ft_etainf.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 0.5 > mwpm_eta0.5.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 1 > mwpm_eta1.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 3 > mwpm_eta3.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 10 > mwpm_eta10.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 30 > mwpm_eta30.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 100 > mwpm_eta100.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 300 > mwpm_eta300.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 1000 > mwpm_eta1000.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 3000 > mwpm_eta3000.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 10000 > mwpm_eta10000.log 2>&1 &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11,17] [0,0] [0.1] -p3 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta +inf > mwpm_etainf.log 2>&1 &
 
 set logscale x
 set xrange [0.5:100000]

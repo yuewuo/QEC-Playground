@@ -93,12 +93,11 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let no_y_error = matches.is_present("no_y_error");
             let use_xzzx_code = matches.is_present("use_xzzx_code");
             let bias_eta = value_t!(matches, "bias_eta", f64).unwrap_or(0.5);  // default to 0.5
-            let perfect_measurement = matches.is_present("perfect_measurement");
             let decoder_type = DecoderType::from(value_t!(matches, "decoder", String).unwrap_or("MWPM".to_string()));
             let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, !imperfect_initialization
-                , shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, perfect_measurement, decoder_type, max_half_weight);
+                , shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -175,20 +174,6 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let bias_eta = value_t!(matches, "bias_eta", f64).unwrap_or(0.5);  // default to 0.5
             union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, no_y_error, towards_mwpm
                 , max_half_weight, bias_eta);
-        }
-        ("union_find_decoder_standard_xzzx_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
-            let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
-            let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
-            let towards_mwpm = matches.is_present("towards_mwpm");
-            let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
-            let bias_eta = value_t!(matches, "bias_eta", f64).unwrap_or(0.5);  // default to 0.5
-            union_find_decoder_standard_xzzx_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, towards_mwpm, max_half_weight, bias_eta);
         }
         ("distributed_union_find_decoder_standard_planar_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -510,7 +495,7 @@ it supports progress bar (in stderr), so you can run this in backend by redirect
 fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
         , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
         , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool, shallow_error_on_bottom: bool
-        , no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, perfect_measurement: bool, decoder_type: DecoderType, max_half_weight: usize) {
+        , no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType, max_half_weight: usize) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -564,16 +549,6 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             if shallow_error_on_bottom {
                 model.iterate_snapshot_mut(|t, _i, _j, node| {
                     if t == 6 && node.qubit_type == QubitType::Data {
-                        node.error_rate_x = px;
-                        node.error_rate_z = pz;
-                        node.error_rate_y = py;
-                    }
-                })
-            }
-            if perfect_measurement {
-                model.set_individual_error(0., 0., 0.);  // clear all errors
-                model.iterate_snapshot_mut(|t, _i, _j, node| {
-                    if t == 12 && node.qubit_type == QubitType::Data {
                         node.error_rate_x = px;
                         node.error_rate_z = pz;
                         node.error_rate_y = py;
@@ -1328,109 +1303,6 @@ fn union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, 
                                 if has_x_logical_error || has_z_logical_error {
                                     mini_qec_failed += 1;
                                 }
-                            }
-                        }
-                        // sync data from outside
-                        current_total_rounds = {
-                            let mut total_rounds = total_rounds.lock().unwrap();
-                            *total_rounds += mini_batch;
-                            *total_rounds
-                        };
-                        current_qec_failed = {
-                            let mut qec_failed = qec_failed.lock().unwrap();
-                            *qec_failed += mini_qec_failed;
-                            *qec_failed
-                        };
-                    }
-                }));
-            }
-            loop {
-                let total_rounds = *total_rounds.lock().unwrap();
-                if total_rounds >= max_N { break }
-                let qec_failed = *qec_failed.lock().unwrap();
-                if qec_failed >= min_error_cases { break }
-                let error_rate = qec_failed as f64 / total_rounds as f64;
-                pb.message(format!("{} {} {} {} {} ", p, L, total_rounds, qec_failed, error_rate).as_str());
-                let progress = total_rounds / mini_batch;
-                pb.set(progress as u64);
-                std::thread::sleep(std::time::Duration::from_millis(200));
-            }
-            pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
-            pb.finish();
-            for handler in handlers {
-                handler.join().unwrap();
-            }
-            let total_rounds = *total_rounds.lock().unwrap();
-            let qec_failed = *qec_failed.lock().unwrap();
-            let error_rate = qec_failed as f64 / total_rounds as f64;
-            println!("{} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate);
-        }
-    }
-}
-
-/**
-default example:
-`cargo run --release -- tool union_find_decoder_standard_xzzx_benchmark [5] [1e-3]`
-it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
-**/
-fn union_find_decoder_standard_xzzx_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
-        , towards_mwpm: bool, max_half_weight: usize, bias_eta: f64) {
-    let mut parallel = parallel;
-    if parallel == 0 {
-        parallel = num_cpus::get() - 1;
-    }
-    println!("format: <p> <T> <total_rounds> <qec_failed> <error_rate>");
-    for L in Ls.iter() {
-        for p in ps {
-            let p = *p;
-            assert!(p <= 1.0, "why should errors (X, Z, Y) happening more than 1.0 probability?");
-            let L = *L;
-            let total_rounds = Arc::new(Mutex::new(0));
-            let qec_failed = Arc::new(Mutex::new(0));
-            let mut handlers = Vec::new();
-            let mini_batch_count = 1 + max_N / mini_batch;
-            let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
-            pb.set(0);
-            for _i in 0..parallel {
-                let total_rounds = Arc::clone(&total_rounds);
-                let qec_failed = Arc::clone(&qec_failed);
-                let mini_batch = mini_batch;
-                let L = L;
-                let p = p;
-                handlers.push(std::thread::spawn(move || {
-                    let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(1, L);
-                    let px = p / (1. + bias_eta) / 2.;
-                    let py = px;
-                    let pz = p - 2. * px;
-                    model.set_individual_error_with_perfect_initialization(0., 0., 0.);
-                    // shallow_error_on_bottom
-                    model.iterate_snapshot_mut(|t, _i, _j, node| {
-                        if t == 12 && node.qubit_type == QubitType::Data {
-                            node.error_rate_x = px;
-                            node.error_rate_z = pz;
-                            node.error_rate_y = py;
-                        }
-                    });
-                    model.build_graph();
-                    let mut rng = thread_rng();
-                    let mut current_total_rounds = {
-                        *total_rounds.lock().unwrap()
-                    };
-                    let mut current_qec_failed = {
-                        *qec_failed.lock().unwrap()
-                    };
-                    while current_total_rounds < max_N && current_qec_failed < min_error_cases {
-                        let mut mini_qec_failed = 0;
-                        for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
-                            let error_count = model.generate_random_errors(|| rng.gen::<f64>());
-                            if error_count == 0 {
-                                continue
-                            }
-                            model.propagate_error();
-                            let (has_x_logical_error, has_z_logical_error) = union_find_decoder::run_given_mwpm_decoder_instance_weighted(&mut model
-                                , towards_mwpm, max_half_weight, true);
-                            if has_x_logical_error || has_z_logical_error {
-                                mini_qec_failed += 1;
                             }
                         }
                         // sync data from outside
