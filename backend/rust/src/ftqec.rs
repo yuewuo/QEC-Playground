@@ -1553,7 +1553,7 @@ impl PlanarCodeModel {
                     // do different things for each stage
                     let stage = Stage::from(t);
                     match stage {
-                        Stage::Initialization | Stage::Measurement => {
+                        Stage::Initialization => {
                             // note that error rate at measurement round will NOT cause measurement errors
                             //     to add measurement errors, need to be Stage::CXGate4
                             node.error_rate_x = p / bias_eta;
@@ -1598,6 +1598,7 @@ impl PlanarCodeModel {
                                 _ => { }
                             }
                         },
+                        Stage::Measurement => { }  // do nothing
                     }
                 });
             },
