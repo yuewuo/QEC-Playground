@@ -506,222 +506,254 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         parallel = num_cpus::get() - 1;
     }
     println!("format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>");
+    // first list all configurations
+    let mut configurations = Vec::new();
     for (di_idx, di) in dis.iter().enumerate() {
         let MeasurementRounds = Ts[di_idx];
         let dj = djs[di_idx];
         for p in ps {
             let p = *p;
             assert!(p <= 1.0, "why should errors (X, Z, Y) happening more than 1.0 probability?");
-            let di = *di;
-            let total_rounds = Arc::new(Mutex::new(0));
-            let qec_failed = Arc::new(Mutex::new(0));
-            let mut handlers = Vec::new();
-            let mini_batch_count = 1 + max_N / mini_batch;
-            let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
-            pb.set(0);
-            // build general models
-            let mut model = if rotated_planar_code {
-                if use_xzzx_code {
-                    assert_eq!(di, dj, "rotated XZZX code doesn't support rectangle lattice yet");
-                    ftqec::PlanarCodeModel::new_rotated_XZZX_code(MeasurementRounds, di)
-                } else {
-                    assert_eq!(di, dj, "rotated planar code doesn't support rectangle lattice yet");
-                    ftqec::PlanarCodeModel::new_rotated_planar_code(MeasurementRounds, di)
-                }
+            configurations.push((*di, dj, MeasurementRounds, p));
+        }
+    }
+    let compute_model = Arc::new(move |di: usize, dj: usize, MeasurementRounds: usize, p: f64| {
+        // build general models
+        let mut model = if rotated_planar_code {
+            if use_xzzx_code {
+                assert_eq!(di, dj, "rotated XZZX code doesn't support rectangle lattice yet");
+                ftqec::PlanarCodeModel::new_rotated_XZZX_code(MeasurementRounds, di)
             } else {
-                if use_xzzx_code {
-                    ftqec::PlanarCodeModel::new_standard_XZZX_code_rectangle(MeasurementRounds, di, dj)
-                } else {
-                    assert_eq!(di, dj, "standard planar code doesn't support rectangle lattice yet");
-                    ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, di)
-                }
-            };
-            model.use_combined_probability = use_combined_probability;
-            // compute pz, px, py individually given bias_eta
-            // bias_eta = pz / (px + py) and px = py, px + py + pz = p
-            // (px + py) * (1 + bias_eta) = p
-            let px = p / (1. + bias_eta) / 2.;
-            let py = px;
-            let pz = p - 2. * px;
-            // println!("px = {}, py = {}, pz = {}", px, py, pz);
-            // initialize error rate
-            if !perfect_initialization {
-                model.set_individual_error(px, py, pz);
+                assert_eq!(di, dj, "rotated planar code doesn't support rectangle lattice yet");
+                ftqec::PlanarCodeModel::new_rotated_planar_code(MeasurementRounds, di)
+            }
+        } else {
+            if use_xzzx_code {
+                ftqec::PlanarCodeModel::new_standard_XZZX_code_rectangle(MeasurementRounds, di, dj)
             } else {
-                // if we use the `set_depolarizing_error` model, then old judgement doesn't work
-                // in order to verify that the modification is good, here we mimic the behavior of old model
-                // that is, we do not generate error on the added bottom layer, so that there is no bottom boundary
-                model.set_individual_error_with_perfect_initialization(px, py, pz);
+                assert_eq!(di, dj, "standard planar code doesn't support rectangle lattice yet");
+                ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, di)
             }
-            if shallow_error_on_bottom {
-                model.iterate_snapshot_mut(|t, _i, _j, node| {
-                    if t == 6 && node.qubit_type == QubitType::Data {
-                        node.error_rate_x = px;
-                        node.error_rate_z = pz;
-                        node.error_rate_y = py;
-                    }
-                })
-            }
+        };
+        model.use_combined_probability = use_combined_probability;
+        // compute pz, px, py individually given bias_eta
+        // bias_eta = pz / (px + py) and px = py, px + py + pz = p
+        // (px + py) * (1 + bias_eta) = p
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = p - 2. * px;
+        // println!("px = {}, py = {}, pz = {}", px, py, pz);
+        // initialize error rate
+        if !perfect_initialization {
+            model.set_individual_error(px, py, pz);
+        } else {
+            // if we use the `set_depolarizing_error` model, then old judgement doesn't work
+            // in order to verify that the modification is good, here we mimic the behavior of old model
+            // that is, we do not generate error on the added bottom layer, so that there is no bottom boundary
+            model.set_individual_error_with_perfect_initialization(px, py, pz);
+        }
+        if shallow_error_on_bottom {
             model.iterate_snapshot_mut(|t, _i, _j, node| {
-                if t % 6 == 5 && node.qubit_type != QubitType::Data {  // just add error before the measurement stage
-                    node.error_rate_x *= extra_measurement_error;
-                    node.error_rate_z *= extra_measurement_error;
-                    node.error_rate_y *= extra_measurement_error;
+                if t == 6 && node.qubit_type == QubitType::Data {
+                    node.error_rate_x = px;
+                    node.error_rate_z = pz;
+                    node.error_rate_y = py;
                 }
-                if independent_px_pz {
-                    node.error_rate_y = node.error_rate_x * node.error_rate_z;
-                }
-                if no_y_error {
-                    node.error_rate_y = 0.;
+            })
+        }
+        model.iterate_snapshot_mut(|t, _i, _j, node| {
+            if t % 6 == 5 && node.qubit_type != QubitType::Data {  // just add error before the measurement stage
+                node.error_rate_x *= extra_measurement_error;
+                node.error_rate_z *= extra_measurement_error;
+                node.error_rate_y *= extra_measurement_error;
+            }
+            if independent_px_pz {
+                node.error_rate_y = node.error_rate_x * node.error_rate_z;
+            }
+            if no_y_error {
+                node.error_rate_y = 0.;
+            }
+        });
+        match &error_model {
+            Some(error_model) => {
+                model.apply_error_model(error_model, p, bias_eta);
+            },
+            None => { }
+        }
+        model.build_graph();
+        if ignore_6_neighbors {
+            model.iterate_snapshot_mut(|t, i, j, node| {
+                if node.edges.len() == 12 {
+                    let mut modified_edges = Vec::new();
+                    for edge in node.edges.drain(..) {
+                        let tc = t != edge.t;
+                        let ic = i != edge.i;
+                        let jc = j != edge.j;
+                        if (tc && !ic && !jc) || (!tc && ic && !jc) || (!tc && !ic && jc) {
+                            modified_edges.push(edge);
+                        }
+                    }
+                    assert!(modified_edges.len() <= 6, "we keep only 6 neighbors");
+                    node.edges = modified_edges;
                 }
             });
-            match &error_model {
-                Some(error_model) => {
-                    model.apply_error_model(error_model, p, bias_eta);
-                },
-                None => { }
+        }
+        let model_error = model.clone();  // avoid copying decoding structure a lot of times
+        model.optimize_correction_pattern();
+        if !bypass_correction {
+            if autotune {
+                model.build_exhausted_path_autotune();
+            } else {
+                model.build_exhausted_path_equally_weighted();
             }
-            model.build_graph();
-            if ignore_6_neighbors {
-                model.iterate_snapshot_mut(|t, i, j, node| {
-                    if node.edges.len() == 12 {
-                        let mut modified_edges = Vec::new();
-                        for edge in node.edges.drain(..) {
-                            let tc = t != edge.t;
-                            let ic = i != edge.i;
-                            let jc = j != edge.j;
-                            if (tc && !ic && !jc) || (!tc && ic && !jc) || (!tc && !ic && jc) {
-                                modified_edges.push(edge);
-                            }
-                        }
-                        assert!(modified_edges.len() <= 6, "we keep only 6 neighbors");
-                        node.edges = modified_edges;
-                    }
-                });
-            }
-            let model_error = model.clone();  // avoid copying decoding structure a lot of times
-            model.optimize_correction_pattern();
-            if !bypass_correction {
-                if autotune {
-                    model.build_exhausted_path_autotune();
-                } else {
-                    model.build_exhausted_path_equally_weighted();
-                }
-            }
-            let model_decoder = Arc::new(model);  // only for decode, so that you're confident I'm not cheating by using information of original errors
-            for _i in 0..parallel {
-                let total_rounds = Arc::clone(&total_rounds);
-                let qec_failed = Arc::clone(&qec_failed);
-                let mut model_error = model_error.clone();  // only for generating error and validating correction
-                let model_decoder = Arc::clone(&model_decoder);  // only for decode, so that you're confident I'm not cheating by using information of original errors
-                let validate_layer: isize = match validate_layer.as_str() {
-                    "boundary" => -2,
-                    "all" => -1,
-                    "bottom" => 0,
-                    "top" => MeasurementRounds as isize,
-                    _ => validate_layer.parse::<isize>().expect("integer"),
+        }
+        (model, model_error)
+    });
+    let precomputed_model = Arc::new(Mutex::new(None));
+    for i in 0..configurations.len() {
+        let (di, dj, MeasurementRounds, p) = configurations[i];
+        if i == 0 {  // only i == 0 need to compute model immediately
+            let mut precomputed_model = precomputed_model.lock().unwrap();
+            *precomputed_model = Some((*compute_model)(di, dj, MeasurementRounds, p));
+        }
+        let (model, model_error) = {  // must already prepared the model, and will take the value out of `precomputed_model`
+            precomputed_model.lock().unwrap().take().expect("already prepared the model")
+        };
+        // create threads to run experiment
+        let total_rounds = Arc::new(Mutex::new(0));
+        let qec_failed = Arc::new(Mutex::new(0));
+        let mut precomputing_model_thread = None;
+        if i + 1 < configurations.len() {
+            let (di_next, dj_next, measurement_rounds_next, p_next) = configurations[i + 1];
+            let precomputed_model = Arc::clone(&precomputed_model);
+            let compute_model = Arc::clone(&compute_model);
+            // create a single thread to prepare next model
+            precomputing_model_thread = Some(std::thread::spawn(move || {
+                let mut precomputed_model = precomputed_model.lock().unwrap();
+                *precomputed_model = Some((*compute_model)(di_next, dj_next, measurement_rounds_next, p_next));
+            }));
+        }
+        let mini_batch_count = 1 + max_N / mini_batch;
+        let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
+        pb.set(0);
+        let mut handlers = Vec::new();
+        let model_decoder = Arc::new(model);  // only for decode, so that you're confident I'm not cheating by using information of original errors
+        for _i in 0..parallel {
+            let total_rounds = Arc::clone(&total_rounds);
+            let qec_failed = Arc::clone(&qec_failed);
+            let mut model_error = model_error.clone();  // only for generating error and validating correction
+            let model_decoder = Arc::clone(&model_decoder);  // only for decode, so that you're confident I'm not cheating by using information of original errors
+            let validate_layer: isize = match validate_layer.as_str() {
+                "boundary" => -2,
+                "all" => -1,
+                "bottom" => 0,
+                "top" => MeasurementRounds as isize,
+                _ => validate_layer.parse::<isize>().expect("integer"),
+            };
+            let mini_batch = mini_batch;
+            let decoder_type = decoder_type.clone();
+            handlers.push(std::thread::spawn(move || {
+                // println!("thread {}", _i);
+                let mut rng = thread_rng();
+                let mut current_total_rounds = {
+                    *total_rounds.lock().unwrap()
                 };
-                let mini_batch = mini_batch;
-                let decoder_type = decoder_type.clone();
-                handlers.push(std::thread::spawn(move || {
-                    // println!("thread {}", _i);
-                    let mut rng = thread_rng();
-                    let mut current_total_rounds = {
-                        *total_rounds.lock().unwrap()
-                    };
-                    let mut current_qec_failed = {
-                        *qec_failed.lock().unwrap()
-                    };
-                    while current_total_rounds < max_N && current_qec_failed < min_error_cases {
-                        let mut mini_qec_failed = 0;
-                        for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
-                            let error_count = model_error.generate_random_errors(|| rng.gen::<f64>());
-                            if error_count == 0 {
-                                continue
+                let mut current_qec_failed = {
+                    *qec_failed.lock().unwrap()
+                };
+                while current_total_rounds < max_N && current_qec_failed < min_error_cases {
+                    let mut mini_qec_failed = 0;
+                    for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
+                        let error_count = model_error.generate_random_errors(|| rng.gen::<f64>());
+                        if error_count == 0 {
+                            continue
+                        }
+                        model_error.propagate_error();
+                        let measurement = model_error.generate_measurement();
+                        // use `model_decoder` for decoding, so that it is blind to the real error information
+                        let correction = if !bypass_correction {
+                            match decoder_type {
+                                DecoderType::MinimumWeightPerfectMatching => model_decoder.decode_MWPM(&measurement),
+                                DecoderType::UnionFind => model_decoder.decode_UnionFind(&measurement, max_half_weight),
+                                _ => panic!("unsupported decoder type"),
                             }
-                            model_error.propagate_error();
-                            let measurement = model_error.generate_measurement();
-                            // use `model_decoder` for decoding, so that it is blind to the real error information
-                            let correction = if !bypass_correction {
-                                match decoder_type {
-                                    DecoderType::MinimumWeightPerfectMatching => model_decoder.decode_MWPM(&measurement),
-                                    DecoderType::UnionFind => model_decoder.decode_UnionFind(&measurement, max_half_weight),
-                                    _ => panic!("unsupported decoder type"),
-                                }
-                            } else {
-                                model_decoder.generate_default_correction()
-                            };
-                            if validate_layer == -2 {
-                                let validation_ret = model_error.validate_correction_on_boundary(&correction);
-                                match validation_ret {
-                                    Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { if !only_count_logical_z {
-                                        mini_qec_failed += 1;
-                                    } },
-                                    Err(ftqec::ValidationFailedReason::ZLogicalError(_, _, _)) => { if !only_count_logical_x {
-                                        mini_qec_failed += 1;
-                                    } },
-                                    Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => {
-                                        mini_qec_failed += 1;
-                                    },
-                                    _ => {},
-                                }
-                            } else if validate_layer == -1 {
-                                // model_error.validate_correction_on_boundary(&correction);
-                                if model_error.validate_correction_on_all_layers(&correction).is_err() {
+                        } else {
+                            model_decoder.generate_default_correction()
+                        };
+                        if validate_layer == -2 {
+                            let validation_ret = model_error.validate_correction_on_boundary(&correction);
+                            match validation_ret {
+                                Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { if !only_count_logical_z {
                                     mini_qec_failed += 1;
-                                }
-                            } else {
-                                let validation_ret = model_error.validate_correction_on_t_layer(&correction, validate_layer as usize);
-                                match validation_ret {
-                                    Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { if !only_count_logical_z {
-                                        mini_qec_failed += 1;
-                                    } },
-                                    Err(ftqec::ValidationFailedReason::ZLogicalError(_, _, _)) => { if !only_count_logical_x {
-                                        mini_qec_failed += 1;
-                                    } },
-                                    Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => {
-                                        mini_qec_failed += 1;
-                                    },
-                                    _ => {},
-                                }
+                                } },
+                                Err(ftqec::ValidationFailedReason::ZLogicalError(_, _, _)) => { if !only_count_logical_x {
+                                    mini_qec_failed += 1;
+                                } },
+                                Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => {
+                                    mini_qec_failed += 1;
+                                },
+                                _ => {},
+                            }
+                        } else if validate_layer == -1 {
+                            // model_error.validate_correction_on_boundary(&correction);
+                            if model_error.validate_correction_on_all_layers(&correction).is_err() {
+                                mini_qec_failed += 1;
+                            }
+                        } else {
+                            let validation_ret = model_error.validate_correction_on_t_layer(&correction, validate_layer as usize);
+                            match validation_ret {
+                                Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { if !only_count_logical_z {
+                                    mini_qec_failed += 1;
+                                } },
+                                Err(ftqec::ValidationFailedReason::ZLogicalError(_, _, _)) => { if !only_count_logical_x {
+                                    mini_qec_failed += 1;
+                                } },
+                                Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => {
+                                    mini_qec_failed += 1;
+                                },
+                                _ => {},
                             }
                         }
-                        // sync data from outside
-                        current_total_rounds = {
-                            let mut total_rounds = total_rounds.lock().unwrap();
-                            *total_rounds += mini_batch;
-                            *total_rounds
-                        };
-                        current_qec_failed = {
-                            let mut qec_failed = qec_failed.lock().unwrap();
-                            *qec_failed += mini_qec_failed;
-                            *qec_failed
-                        };
                     }
-                }));
-            }
-            loop {
-                let total_rounds = *total_rounds.lock().unwrap();
-                if total_rounds >= max_N { break }
-                let qec_failed = *qec_failed.lock().unwrap();
-                if qec_failed >= min_error_cases { break }
-                let error_rate = qec_failed as f64 / total_rounds as f64;
-                let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_rounds as f64)).sqrt() / error_rate;
-                pb.message(format!("{} {} {} {} {} {} {} {:.1e} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj, confidence_interval_95_percent).as_str());
-                let progress = total_rounds / mini_batch;
-                pb.set(progress as u64);
-                std::thread::sleep(std::time::Duration::from_millis(200));
-            }
-            pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
-            pb.finish();
-            for handler in handlers {
-                handler.join().unwrap();
-            }
+                    // sync data from outside
+                    current_total_rounds = {
+                        let mut total_rounds = total_rounds.lock().unwrap();
+                        *total_rounds += mini_batch;
+                        *total_rounds
+                    };
+                    current_qec_failed = {
+                        let mut qec_failed = qec_failed.lock().unwrap();
+                        *qec_failed += mini_qec_failed;
+                        *qec_failed
+                    };
+                }
+            }));
+        }
+        loop {
             let total_rounds = *total_rounds.lock().unwrap();
+            if total_rounds >= max_N { break }
             let qec_failed = *qec_failed.lock().unwrap();
+            if qec_failed >= min_error_cases { break }
             let error_rate = qec_failed as f64 / total_rounds as f64;
             let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_rounds as f64)).sqrt() / error_rate;
-            println!("{} {} {} {} {} {} {} {:.1e}", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj, confidence_interval_95_percent);
+            pb.message(format!("{} {} {} {} {} {} {} {:.1e} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj, confidence_interval_95_percent).as_str());
+            let progress = total_rounds / mini_batch;
+            pb.set(progress as u64);
+            std::thread::sleep(std::time::Duration::from_millis(200));
+        }
+        pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
+        pb.finish();
+        for handler in handlers {
+            handler.join().unwrap();
+        }
+        let total_rounds = *total_rounds.lock().unwrap();
+        let qec_failed = *qec_failed.lock().unwrap();
+        let error_rate = qec_failed as f64 / total_rounds as f64;
+        let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_rounds as f64)).sqrt() / error_rate;
+        println!("{} {} {} {} {} {} {} {:.1e}", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj, confidence_interval_95_percent);
+        match precomputing_model_thread {
+            Some(precomputing_model_thread) => precomputing_model_thread.join().unwrap(),
+            None => { }
         }
     }
 }
