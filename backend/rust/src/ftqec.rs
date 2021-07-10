@@ -624,19 +624,8 @@ impl PlanarCodeModel {
                 if let Some(element) = array.get_mut(j) {
                     match element {
                         Some(ref mut node) => {
-                            let p = match error {
-                                ErrorType::X => node.error_rate_x + node.error_rate_y,
-                                ErrorType::Z => node.error_rate_z + node.error_rate_y,
-                                // Y error requires both x and z has corresponding edge
-                                ErrorType::Y => (node.error_rate_x + node.error_rate_y) * (node.error_rate_z + node.error_rate_y),
-                                ErrorType::I => (1. - node.error_rate_x - node.error_rate_y - node.error_rate_z),
-                            };
-                            if p > 0. {  // only add error if physical error rate is greater than 0.
-                                node.error = node.error.multiply(error);
-                                Some(node.error.clone())
-                            } else {
-                                None
-                            }
+                            node.error = node.error.multiply(error);
+                            Some(node.error.clone())
                         }
                         None => None
                     }
