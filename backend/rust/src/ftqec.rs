@@ -613,9 +613,14 @@ impl PlanarCodeModel {
     pub fn print_errors(&self) {
         self.iterate_snapshot(|t, i, j, node| {
             if node.error != ErrorType::I {
-                println!("{:?} at {} {} {}",node.error,t,i,j);
+                println!("{:?} at {} {} {}", node.error,t,i,j);
             }
         });
+    }
+
+    pub fn add_error_at_no_sanity_check(&mut self, t: usize, i: usize, j: usize, error: &ErrorType) {
+        let node = &mut self.snapshot[t][i][j].as_mut().expect("exist");
+        node.error = node.error.multiply(error);
     }
 
     pub fn add_error_at(&mut self, t: usize, i: usize, j: usize, error: &ErrorType) -> Option<ErrorType> {
@@ -624,8 +629,19 @@ impl PlanarCodeModel {
                 if let Some(element) = array.get_mut(j) {
                     match element {
                         Some(ref mut node) => {
-                            node.error = node.error.multiply(error);
-                            Some(node.error.clone())
+                            let p = match error {
+                                ErrorType::X => node.error_rate_x + node.error_rate_y,
+                                ErrorType::Z => node.error_rate_z + node.error_rate_y,
+                                // Y error requires both x and z has corresponding edge
+                                ErrorType::Y => (node.error_rate_x + node.error_rate_y) * (node.error_rate_z + node.error_rate_y),
+                                ErrorType::I => (1. - node.error_rate_x - node.error_rate_y - node.error_rate_z),
+                            };
+                            if p > 0. {  // only add error if physical error rate is greater than 0.
+                                node.error = node.error.multiply(error);
+                                Some(node.error.clone())
+                            } else {
+                                None
+                            }
                         }
                         None => None
                     }
@@ -828,14 +844,14 @@ impl PlanarCodeModel {
                                 // simulate the error and measure it
                                 match error {
                                     Either::Left(error_type) => {
-                                        self.add_error_at(t, i, j, error_type);
+                                        self.add_error_at_no_sanity_check(t, i, j, error_type);
                                     },
                                     Either::Right(error_type) => {
-                                        self.add_error_at(t, i, j, &error_type.my_error());
+                                        self.add_error_at_no_sanity_check(t, i, j, &error_type.my_error());
                                         let connection = self.snapshot[t][i][j].as_ref().expect("exist").connection
                                             .as_ref().expect("correlated error must corresponds to a two-qubit gate");
                                         let (ct, ci, cj) = (connection.t, connection.i, connection.j);
-                                        self.add_error_at(ct, ci, cj, &error_type.peer_error());
+                                        self.add_error_at_no_sanity_check(ct, ci, cj, &error_type.peer_error());
                                         // println!("correlated error at [{}][{}][{}]({:?}) and [{}][{}][{}]({:?})", t, i, j, error_type.my_error(), ct, ci, cj, error_type.peer_error());
                                     },
                                 }
