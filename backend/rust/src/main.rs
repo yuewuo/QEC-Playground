@@ -33,6 +33,7 @@ extern crate rand_core;
 extern crate union_find;
 extern crate derive_more;
 extern crate lazy_static;
+extern crate either;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -144,6 +145,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg decoder: --decoder +takes_value "supported decoders: MWPM=MinimumWeightPerfectMatching, UF=UnionFind")
                 (@arg max_half_weight: --max_half_weight +takes_value "[UnionFind decoder only] maximum weight will be 2 * max_half_weight")
                 (@arg use_combined_probability: --use_combined_probability "use combined probability of matching pairs instead of choosing the maximum probability")
+                (@arg error_model: --error_model +takes_value "possible error models see types::ErrorModel")
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")

@@ -24,8 +24,9 @@ use std::ops::{Deref, DerefMut};
 use super::blossom_v;
 use super::mwpm_approx;
 use std::sync::{Arc};
-use super::types::{QubitType, ErrorType};
+use super::types::{QubitType, ErrorType, CorrelatedErrorType, CorrelatedErrorModel, ErrorModel};
 use super::union_find_decoder;
+use super::either::Either;
 
 /// uniquely index a node
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -55,6 +56,8 @@ pub struct Node {
     pub i: usize,
     pub j: usize,
     pub connection: Option<Connection>,
+    /// note that correlated error is applied to next time step, without losing generality
+    pub correlated_error_model: Option<CorrelatedErrorModel>,
     pub gate_type: GateType,
     pub qubit_type: QubitType,
     pub error: ErrorType,
@@ -250,6 +253,7 @@ impl PlanarCodeModel {
                         snapshot_row_1.push(Some(Node{
                             t: t, i: i, j: j,
                             connection: connection,
+                            correlated_error_model: None,
                             gate_type: gate_type,
                             qubit_type: qubit_type,
                             error: ErrorType::I,
@@ -413,6 +417,7 @@ impl PlanarCodeModel {
                         snapshot_row_1.push(Some(Node{
                             t: t, i: i, j: j,
                             connection: connection,
+                            correlated_error_model: None,
                             gate_type: gate_type,
                             qubit_type: qubit_type,
                             error: ErrorType::I,
@@ -545,25 +550,52 @@ impl PlanarCodeModel {
         });
         count
     }
-    /// generate random error based on `error_rate` in each node.
+    /// generate random error based on `error_rate` in each node, return the number of errors
     pub fn generate_random_errors<F>(&mut self, mut rng: F) -> usize where F: FnMut() -> f64 {
-        let mut error_count = 0;
-        self.iterate_snapshot_mut(|_t, _i, _j, node| {
+        let mut pending_errors = Vec::new();
+        self.iterate_snapshot_mut(|t, i, j, node| {
             let random_number = rng();
             if random_number < node.error_rate_x {
                 node.error = ErrorType::X;
-                error_count += 1;
                 // println!("X error at {} {} {}",node.i, node.j, node.t);
             } else if random_number < node.error_rate_x + node.error_rate_z {
                 node.error = ErrorType::Z;
-                error_count += 1;
                 // println!("Z error at {} {} {}",node.i, node.j, node.t);
             } else if random_number < node.error_rate_x + node.error_rate_z + node.error_rate_y {
                 node.error = ErrorType::Y;
-                error_count += 1;
                 // println!("Y error at {} {} {}",node.i, node.j, node.t);
             } else {
                 node.error = ErrorType::I;
+            }
+            match &node.correlated_error_model {
+                Some(correlated_error_model) => {
+                    let random_number = rng();
+                    let correlated_error_type = correlated_error_model.generate_random_error(random_number);
+                    let my_error = correlated_error_type.my_error();
+                    if my_error != ErrorType::I {
+                        pending_errors.push(((t, i, j), my_error));
+                    }
+                    let peer_error = correlated_error_type.peer_error();
+                    if peer_error != ErrorType::I {
+                        let connection = node.connection.as_ref().expect("correlated error must corresponds to a two-qubit gate");
+                        let (ct, ci, cj) = (connection.t, connection.i, connection.j);
+                        pending_errors.push(((ct, ci, cj), peer_error));
+                    }
+                },
+                None => { },
+            }
+        });
+        // apply pending errors
+        for ((t, i, j), peer_error) in pending_errors.drain(..) {
+            let mut node = self.snapshot[t][i][j].as_mut().expect("exist");
+            node.error = node.error.multiply(&peer_error);
+        }
+        // count number of errors
+        let mut error_count = 0;
+        self.iterate_snapshot_mut(|_t, _i, _j, node| {
+            if node.error != ErrorType::I {
+                // println!("error [{}][{}][{}] : {:?}", _t, _i, _j, node.error);
+                error_count += 1;
             }
         });
         error_count
@@ -771,21 +803,53 @@ impl PlanarCodeModel {
     }
     /// corresponds to `build_graph_given_error_rate` in `FaultTolerantView.vue`
     pub fn build_graph(&mut self) {
+        let mut all_possible_errors: Vec<Either<ErrorType, CorrelatedErrorType>> = Vec::new();
+        for error_type in ErrorType::all_possible_errors().drain(..) {
+            all_possible_errors.push(Either::Left(error_type));
+        }
+        for correlated_error_type in CorrelatedErrorType::all_possible_errors().drain(..) {
+            all_possible_errors.push(Either::Right(correlated_error_type));
+        }
+        // println!("{:?}", all_possible_errors);
         for t in 1..self.snapshot.len() {  // 0 doesn't generate error
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
                     if self.snapshot[t][i][j].is_some() {
-                        for error in [ErrorType::X, ErrorType::Z].iter() {
+                        for error in all_possible_errors.iter() {
                             self.clear_error();
                             let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                            let p = if *error == ErrorType::X {
-                                node.error_rate_x + node.error_rate_y
-                            } else {
-                                node.error_rate_z + node.error_rate_y
-                            };  // probability of this error to occur
+                            let p = match error {
+                                Either::Left(error_type) => match error_type {
+                                    ErrorType::X => node.error_rate_x,
+                                    ErrorType::Z => node.error_rate_z,
+                                    ErrorType::Y => node.error_rate_y,
+                                    _ => unreachable!()
+                                },
+                                Either::Right(error_type) => {
+                                    match &node.correlated_error_model {
+                                        Some(correlated_error_model) => {
+                                            correlated_error_model.error_rate(error_type)
+                                        },
+                                        None => 0.,
+                                    }
+                                },
+                            }; // probability of this error to occur
                             if p > 0. {
+                                // println!("{:?}: {}", error, p);
                                 // simulate the error and measure it
-                                self.add_error_at(t, i, j, error);
+                                match error {
+                                    Either::Left(error_type) => {
+                                        self.add_error_at(t, i, j, error_type);
+                                    },
+                                    Either::Right(error_type) => {
+                                        self.add_error_at(t, i, j, &error_type.my_error());
+                                        let connection = self.snapshot[t][i][j].as_ref().expect("exist").connection
+                                            .as_ref().expect("correlated error must corresponds to a two-qubit gate");
+                                        let (ct, ci, cj) = (connection.t, connection.i, connection.j);
+                                        self.add_error_at(ct, ci, cj, &error_type.peer_error());
+                                        // println!("correlated error at [{}][{}][{}]({:?}) and [{}][{}][{}]({:?})", t, i, j, error_type.my_error(), ct, ci, cj, error_type.peer_error());
+                                    },
+                                }
                                 self.propagate_error();
                                 let mut measurement_errors = Vec::new();
                                 self.iterate_measurement_errors(|t, i, j, _node| {
@@ -794,7 +858,10 @@ impl PlanarCodeModel {
                                 if measurement_errors.len() == 0 {  // no way to detect it, ignore
                                     continue
                                 }
-                                assert!(measurement_errors.len() <= 2, "single qubit error should not cause more than 2 measurement errors");
+                                if measurement_errors.len() > 2 {  // MWPM cannot handle this kind of error... just ignore
+                                    // println!("[warning] single qubit error cause more than 2 measurement errors: {:?}", error);
+                                    continue
+                                }
                                 // compute correction pattern, so that applying this error pattern will exactly recover data qubit errors
                                 let correction = Arc::new(SparseCorrection::from(&self.get_data_qubit_error_pattern()));
                                 // add this to edges and update probability
@@ -812,29 +879,31 @@ impl PlanarCodeModel {
                                 } else if measurement_errors.len() == 2 {  // connection
                                     let (t1, i1, j1) = measurement_errors[0];
                                     let (t2, i2, j2) = measurement_errors[1];
-                                    // println!("[{}][{}][{}]:[{}] causes paired errors on [{}][{}][{}] and [{}][{}][{}]", t, i, j, if *error == ErrorType::X { "X" } else { "Z" }, t1, i1, j1, t2, i2, j2);
-                                    if t1 <= 6 || t2 <= 6 {
-                                        println!("error at {:?}", (t, i, j, error));
-                                        println!("t1: {:?}, t2: {:?}", (t1, i1, j1), (t2, i2, j2));
-                                        assert!(t1 > 6 || t2 > 6, "they shouldn't be both below 6");
-                                        let node = if t1 > 6 {
-                                            self.snapshot[t1][i1][j1].as_mut().expect("exist")
+                                    if self.snapshot[t1][i1][j1].as_ref().unwrap().qubit_type == self.snapshot[t2][i2][j2].as_ref().unwrap().qubit_type {
+                                        // println!("[{}][{}][{}]:[{}] causes paired errors on [{}][{}][{}] and [{}][{}][{}]", t, i, j, if *error == ErrorType::X { "X" } else { "Z" }, t1, i1, j1, t2, i2, j2);
+                                        if t1 <= 6 || t2 <= 6 {
+                                            println!("error at {:?}", (t, i, j, error));
+                                            println!("t1: {:?}, t2: {:?}", (t1, i1, j1), (t2, i2, j2));
+                                            assert!(t1 > 6 || t2 > 6, "they shouldn't be both below 6");
+                                            let node = if t1 > 6 {
+                                                self.snapshot[t1][i1][j1].as_mut().expect("exist")
+                                            } else {
+                                                self.snapshot[t2][i2][j2].as_mut().expect("exist")
+                                            };
+                                            if node.boundary.is_none() {
+                                                node.boundary = Some(Boundary {
+                                                    p: 0.,
+                                                    cases: Vec::new(),
+                                                });
+                                            }
+                                            node.boundary.as_mut().expect("exist").add(p, correction, self.use_combined_probability);
                                         } else {
-                                            self.snapshot[t2][i2][j2].as_mut().expect("exist")
-                                        };
-                                        if node.boundary.is_none() {
-                                            node.boundary = Some(Boundary {
-                                                p: 0.,
-                                                cases: Vec::new(),
-                                            });
+                                            // println!("add_edge_case [{}][{}][{}] [{}][{}][{}] with p = {}", t1, i1, j1, t2, i2, j2, p);
+                                            add_edge_case(&mut self.snapshot[t1][i1][j1].as_mut().expect("exist").edges, t2, i2, j2, p, correction.clone()
+                                                , self.use_combined_probability);
+                                            add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").edges, t1, i1, j1, p, correction
+                                                , self.use_combined_probability);
                                         }
-                                        node.boundary.as_mut().expect("exist").add(p, correction, self.use_combined_probability);
-                                    } else {
-                                        // println!("add_edge_case [{}][{}][{}] [{}][{}][{}] with p = {}", t1, i1, j1, t2, i2, j2, p);
-                                        add_edge_case(&mut self.snapshot[t1][i1][j1].as_mut().expect("exist").edges, t2, i2, j2, p, correction.clone()
-                                            , self.use_combined_probability);
-                                        add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").edges, t1, i1, j1, p, correction
-                                            , self.use_combined_probability);
                                     }
                                 }
                             }
@@ -1465,6 +1534,90 @@ impl PlanarCodeModel {
             (false, true) => Err(ValidationFailedReason::ZLogicalError(0, z_error_count, 0)),
             _ => Ok(())
         }
+    }
+
+    pub fn apply_error_model(&mut self, error_model: &ErrorModel, p: f64, bias_eta: f64) {
+        match error_model {
+            ErrorModel::GenericBiasedWithBiasedCX | ErrorModel::GenericBiasedWithStandardCX => {
+                let height = self.snapshot.len();
+                self.iterate_snapshot_mut(|t, _i, _j, node| {
+                    // first clear error rate
+                    node.error_rate_x = 0.;
+                    node.error_rate_z = 0.;
+                    node.error_rate_y = 0.;
+                    if t >= height - 6 {  // no error on the top, as a perfect measurement round
+                        return
+                    } else if t <= 6 {
+                        return  // perfect initialization
+                    }
+                    // do different things for each stage
+                    let stage = Stage::from(t);
+                    match stage {
+                        Stage::Initialization | Stage::Measurement => {
+                            // note that error rate at measurement round will NOT cause measurement errors
+                            //     to add measurement errors, need to be Stage::CXGate4
+                            node.error_rate_x = p / bias_eta;
+                            node.error_rate_z = p;
+                            node.error_rate_y = p / bias_eta;
+                        },
+                        Stage::CXGate1 | Stage::CXGate2 | Stage::CXGate3 | Stage::CXGate4 => {
+                            if stage == Stage::CXGate4 && node.qubit_type != QubitType::Data {  // add measurement errors (p + p/bias_eta)
+                                node.error_rate_x = p / bias_eta;
+                                node.error_rate_z = p;
+                                node.error_rate_y = p / bias_eta;
+                            }
+                            match node.gate_type {
+                                GateType::ControlledPhase => {
+                                    if node.qubit_type != QubitType::Data {  // this is ancilla
+                                        // better check whether peer is indeed data qubit, but it's hard here due to Rust's borrow check
+                                        let mut correlated_error_model = CorrelatedErrorModel::default_with_probability(p / bias_eta);
+                                        correlated_error_model.error_rate_ZI = p;
+                                        correlated_error_model.error_rate_IZ = p;
+                                        correlated_error_model.sanity_check();
+                                        node.correlated_error_model = Some(correlated_error_model);
+                                    }
+                                },
+                                GateType::Control => {  // this is ancilla in XZZX code, see arXiv:2104.09539v1
+                                    let mut correlated_error_model = CorrelatedErrorModel::default_with_probability(p / bias_eta);
+                                    correlated_error_model.error_rate_ZI = p;
+                                    match error_model {
+                                        ErrorModel::GenericBiasedWithStandardCX => {
+                                            correlated_error_model.error_rate_IZ = 0.375 * p;
+                                            correlated_error_model.error_rate_ZZ = 0.375 * p;
+                                            correlated_error_model.error_rate_IY = 0.125 * p;
+                                            correlated_error_model.error_rate_ZY = 0.125 * p;
+                                        },
+                                        ErrorModel::GenericBiasedWithBiasedCX => {
+                                            correlated_error_model.error_rate_IZ = 0.5 * p;
+                                            correlated_error_model.error_rate_ZZ = 0.5 * p;
+                                        },
+                                    }
+                                    correlated_error_model.sanity_check();
+                                    node.correlated_error_model = Some(correlated_error_model);
+                                },
+                                _ => { }
+                            }
+                        },
+                    }
+                });
+            },
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn print_direct_connections(&self) {
+        self.iterate_snapshot(|t, i, j, node| {
+            if Stage::from(t) == Stage::Measurement && node.qubit_type != QubitType::Data {
+                println!("[{}][{}][{}]: {:?}", t, i, j, node.qubit_type);
+                match &node.boundary {
+                    Some(boundary) => println!("boundary: p = {}", boundary.p),
+                    None => println!("boundary: none"),
+                }
+                for edge in node.edges.iter() {
+                    println!("edge [{}][{}][{}]: p = {}", edge.t, edge.i, edge.j, edge.p);
+                }
+            }
+        });
     }
 }
 

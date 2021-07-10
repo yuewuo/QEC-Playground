@@ -309,6 +309,161 @@ impl ErrorType {
             (Self::Y, Self::Y) => Self::I,
         }
     }
+    pub fn all_possible_errors() -> Vec::<Self> {
+        vec![Self::X, Self::Z, Self::Y]
+    }
+}
+
+/// Correlated error type for two qubit errors
+#[allow(dead_code)]
+#[derive(Debug, PartialEq, Clone)]
+pub enum CorrelatedErrorType {
+    II,
+    IX,
+    IZ,
+    IY,
+    XI,
+    XX,
+    XZ,
+    XY,
+    ZI,
+    ZX,
+    ZZ,
+    ZY,
+    YI,
+    YX,
+    YZ,
+    YY,
+}
+
+impl CorrelatedErrorType {
+    pub fn my_error(&self) -> ErrorType {
+        match self {
+            Self::II | Self::IX | Self::IZ | Self::IY => ErrorType::I,
+            Self::XI | Self::XX | Self::XZ | Self::XY => ErrorType::X,
+            Self::ZI | Self::ZX | Self::ZZ | Self::ZY => ErrorType::Z,
+            Self::YI | Self::YX | Self::YZ | Self::YY => ErrorType::Y,
+        }
+    }
+    pub fn peer_error(&self) -> ErrorType {
+        match self {
+            Self::II | Self::XI | Self::ZI | Self::YI => ErrorType::I,
+            Self::IX | Self::XX | Self::ZX | Self::YX => ErrorType::X,
+            Self::IZ | Self::XZ | Self::ZZ | Self::YZ => ErrorType::Z,
+            Self::IY | Self::XY | Self::ZY | Self::YY => ErrorType::Y,
+        }
+    }
+    pub fn all_possible_errors() -> Vec::<Self> {
+        vec![           Self::IX, Self::IZ, Self::IY, Self::XI, Self::XX, Self::XZ, Self::XY,
+             Self::ZI, Self::ZX, Self::ZZ, Self::ZY, Self::YI, Self::YX, Self::YZ, Self::YY,]
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct CorrelatedErrorModel {
+    pub error_rate_IX: f64,
+    pub error_rate_IZ: f64,
+    pub error_rate_IY: f64,
+    pub error_rate_XI: f64,
+    pub error_rate_XX: f64,
+    pub error_rate_XZ: f64,
+    pub error_rate_XY: f64,
+    pub error_rate_ZI: f64,
+    pub error_rate_ZX: f64,
+    pub error_rate_ZZ: f64,
+    pub error_rate_ZY: f64,
+    pub error_rate_YI: f64,
+    pub error_rate_YX: f64,
+    pub error_rate_YZ: f64,
+    pub error_rate_YY: f64,
+}
+
+impl CorrelatedErrorModel {
+    // pub fn default() -> Self {
+    //     Self::default_with_probability(0.)
+    // }
+    pub fn default_with_probability(p: f64) -> Self {
+        Self {
+            error_rate_IX: p,
+            error_rate_IZ: p,
+            error_rate_IY: p,
+            error_rate_XI: p,
+            error_rate_XX: p,
+            error_rate_XZ: p,
+            error_rate_XY: p,
+            error_rate_ZI: p,
+            error_rate_ZX: p,
+            error_rate_ZZ: p,
+            error_rate_ZY: p,
+            error_rate_YI: p,
+            error_rate_YX: p,
+            error_rate_YZ: p,
+            error_rate_YY: p,
+        }
+    }
+    pub fn no_error_probability(&self) -> f64 {
+        1.                       - self.error_rate_IX - self.error_rate_IZ - self.error_rate_IY
+            - self.error_rate_XI - self.error_rate_XX - self.error_rate_XZ - self.error_rate_XY
+            - self.error_rate_ZI - self.error_rate_ZX - self.error_rate_ZZ - self.error_rate_ZY
+            - self.error_rate_YI - self.error_rate_YX - self.error_rate_YZ - self.error_rate_YY
+    }
+    pub fn error_rate(&self, error_type: &CorrelatedErrorType) -> f64 {
+        match error_type {
+            CorrelatedErrorType::II => self.no_error_probability(),
+            CorrelatedErrorType::IX => self.error_rate_IX,
+            CorrelatedErrorType::IZ => self.error_rate_IZ,
+            CorrelatedErrorType::IY => self.error_rate_IY,
+            CorrelatedErrorType::XI => self.error_rate_XI,
+            CorrelatedErrorType::XX => self.error_rate_XX,
+            CorrelatedErrorType::XZ => self.error_rate_XZ,
+            CorrelatedErrorType::XY => self.error_rate_XY,
+            CorrelatedErrorType::ZI => self.error_rate_ZI,
+            CorrelatedErrorType::ZX => self.error_rate_ZX,
+            CorrelatedErrorType::ZZ => self.error_rate_ZZ,
+            CorrelatedErrorType::ZY => self.error_rate_ZY,
+            CorrelatedErrorType::YI => self.error_rate_YI,
+            CorrelatedErrorType::YX => self.error_rate_YX,
+            CorrelatedErrorType::YZ => self.error_rate_YZ,
+            CorrelatedErrorType::YY => self.error_rate_YY,
+        }
+    }
+    pub fn sanity_check(&self) {
+        assert!(self.no_error_probability() > 0., "sum of error rate should be no more than 1");
+        assert!(self.error_rate_IX > 0., "error rate should be greater than 0");
+        assert!(self.error_rate_IZ > 0., "error rate should be greater than 0");
+        assert!(self.error_rate_IY > 0., "error rate should be greater than 0");
+        assert!(self.error_rate_XI > 0., "error rate should be greater than 0");
+        assert!(self.error_rate_XX > 0., "error rate should be greater than 0");
+        assert!(self.error_rate_XZ > 0., "error rate should be greater than 0");
+        assert!(self.error_rate_XY > 0., "error rate should be greater than 0");
+        assert!(self.error_rate_ZI > 0., "error rate should be greater than 0");
+        assert!(self.error_rate_ZX > 0., "error rate should be greater than 0");
+        assert!(self.error_rate_ZZ > 0., "error rate should be greater than 0");
+        assert!(self.error_rate_ZY > 0., "error rate should be greater than 0");
+        assert!(self.error_rate_YI > 0., "error rate should be greater than 0");
+        assert!(self.error_rate_YX > 0., "error rate should be greater than 0");
+        assert!(self.error_rate_YZ > 0., "error rate should be greater than 0");
+        assert!(self.error_rate_YY > 0., "error rate should be greater than 0");
+    }
+    pub fn generate_random_error(&self, random_number: f64) -> CorrelatedErrorType {
+        let mut random_number = random_number;
+        if random_number < self.error_rate_IX { return CorrelatedErrorType::IX; } random_number -= self.error_rate_IX;
+        if random_number < self.error_rate_IZ { return CorrelatedErrorType::IZ; } random_number -= self.error_rate_IZ;
+        if random_number < self.error_rate_IY { return CorrelatedErrorType::IY; } random_number -= self.error_rate_IY;
+        if random_number < self.error_rate_XI { return CorrelatedErrorType::XI; } random_number -= self.error_rate_XI;
+        if random_number < self.error_rate_XX { return CorrelatedErrorType::XX; } random_number -= self.error_rate_XX;
+        if random_number < self.error_rate_XZ { return CorrelatedErrorType::XZ; } random_number -= self.error_rate_XZ;
+        if random_number < self.error_rate_XY { return CorrelatedErrorType::XY; } random_number -= self.error_rate_XY;
+        if random_number < self.error_rate_ZI { return CorrelatedErrorType::ZI; } random_number -= self.error_rate_ZI;
+        if random_number < self.error_rate_ZX { return CorrelatedErrorType::ZX; } random_number -= self.error_rate_ZX;
+        if random_number < self.error_rate_ZZ { return CorrelatedErrorType::ZZ; } random_number -= self.error_rate_ZZ;
+        if random_number < self.error_rate_ZY { return CorrelatedErrorType::ZY; } random_number -= self.error_rate_ZY;
+        if random_number < self.error_rate_YI { return CorrelatedErrorType::YI; } random_number -= self.error_rate_YI;
+        if random_number < self.error_rate_YX { return CorrelatedErrorType::YX; } random_number -= self.error_rate_YX;
+        if random_number < self.error_rate_YZ { return CorrelatedErrorType::YZ; } random_number -= self.error_rate_YZ;
+        if random_number < self.error_rate_YY { return CorrelatedErrorType::YY; }
+        CorrelatedErrorType::II
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -325,6 +480,21 @@ impl From<String> for DecoderType {
             "UF" | "UnionFind" => Self::UnionFind,
             "DUF" | "DistributedUnionFind" => Self::DistributedUnionFind,
             _ => panic!("unrecognized decoder type"),
+        }
+    }
+}
+
+pub enum ErrorModel {
+    GenericBiasedWithBiasedCX,  // arXiv:2104.09539v1 Sec.IV.A
+    GenericBiasedWithStandardCX,  // arXiv:2104.09539v1 Sec.IV.A
+}
+
+impl From<String> for ErrorModel {
+    fn from(name: String) -> Self {
+        match name.as_str() {
+            "GenericBiasedWithBiasedCX" => Self::GenericBiasedWithBiasedCX,
+            "GenericBiasedWithStandardCX" => Self::GenericBiasedWithStandardCX,
+            _ => panic!("unrecognized error model"),
         }
     }
 }
