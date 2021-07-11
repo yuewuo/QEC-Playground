@@ -146,6 +146,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg max_half_weight: --max_half_weight +takes_value "[UnionFind decoder only] maximum weight will be 2 * max_half_weight")
                 (@arg use_combined_probability: --use_combined_probability "use combined probability of matching pairs instead of choosing the maximum probability")
                 (@arg error_model: --error_model +takes_value "possible error models see types::ErrorModel")
+                (@arg no_stop_if_next_model_is_not_prepared: -s --no_stop_if_next_model_is_not_prepared)
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")

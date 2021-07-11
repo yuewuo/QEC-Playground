@@ -98,10 +98,11 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
             let use_combined_probability = matches.is_present("use_combined_probability");
             let error_model = value_t!(matches, "error_model", String).ok().map(|x| ErrorModel::from(x));
+            let no_stop_if_next_model_is_not_prepared = matches.is_present("no_stop_if_next_model_is_not_prepared");
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight, use_combined_probability
-                , error_model);
+                , error_model, no_stop_if_next_model_is_not_prepared);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -500,7 +501,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
         , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, only_count_logical_z: bool, perfect_initialization: bool
         , shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType, max_half_weight: usize
-        , use_combined_probability: bool, error_model: Option<ErrorModel>) {
+        , use_combined_probability: bool, error_model: Option<ErrorModel>, no_stop_if_next_model_is_not_prepared: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -517,6 +518,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             configurations.push((*di, dj, MeasurementRounds, p));
         }
     }
+    let configurations_len = configurations.len();
     let compute_model = Arc::new(move |di: usize, dj: usize, MeasurementRounds: usize, p: f64| {
         // build general models
         let mut model = if rotated_planar_code {
@@ -610,7 +612,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         (model, model_error)
     });
     let precomputed_model = Arc::new(Mutex::new(None));
-    for i in 0..configurations.len() {
+    for i in 0..configurations_len {
         let (di, dj, MeasurementRounds, p) = configurations[i];
         if i == 0 {  // only i == 0 need to compute model immediately
             let mut precomputed_model = precomputed_model.lock().unwrap();
@@ -623,14 +625,16 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         let total_rounds = Arc::new(Mutex::new(0));
         let qec_failed = Arc::new(Mutex::new(0));
         let mut precomputing_model_thread = None;
-        if i + 1 < configurations.len() {
+        if i + 1 < configurations_len {
             let (di_next, dj_next, measurement_rounds_next, p_next) = configurations[i + 1];
             let precomputed_model = Arc::clone(&precomputed_model);
             let compute_model = Arc::clone(&compute_model);
             // create a single thread to prepare next model
             precomputing_model_thread = Some(std::thread::spawn(move || {
+                let (model, model_error) = (*compute_model)(di_next, dj_next, measurement_rounds_next, p_next);
+                // lock only after model is built, otherwise it will block experimenting threads
                 let mut precomputed_model = precomputed_model.lock().unwrap();
-                *precomputed_model = Some((*compute_model)(di_next, dj_next, measurement_rounds_next, p_next));
+                *precomputed_model = Some((model, model_error));
             }));
         }
         let mini_batch_count = 1 + max_N / mini_batch;
@@ -641,6 +645,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         for _i in 0..parallel {
             let total_rounds = Arc::clone(&total_rounds);
             let qec_failed = Arc::clone(&qec_failed);
+            let precomputed_model = Arc::clone(&precomputed_model);
             let mut model_error = model_error.clone();  // only for generating error and validating correction
             let model_decoder = Arc::clone(&model_decoder);  // only for decode, so that you're confident I'm not cheating by using information of original errors
             let validate_layer: isize = match validate_layer.as_str() {
@@ -661,7 +666,12 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 let mut current_qec_failed = {
                     *qec_failed.lock().unwrap()
                 };
-                while current_total_rounds < max_N && current_qec_failed < min_error_cases {
+                let mut keep_running_next_model_not_prepared = if no_stop_if_next_model_is_not_prepared {
+                    i + 1 < configurations_len && precomputed_model.lock().unwrap().is_none()
+                } else {
+                    false
+                };
+                while keep_running_next_model_not_prepared || (current_total_rounds < max_N && current_qec_failed < min_error_cases) {
                     let mut mini_qec_failed = 0;
                     for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
                         let error_count = model_error.generate_random_errors(|| rng.gen::<f64>());
@@ -726,19 +736,35 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                         *qec_failed += mini_qec_failed;
                         *qec_failed
                     };
+                    keep_running_next_model_not_prepared = if no_stop_if_next_model_is_not_prepared {
+                        i + 1 < configurations_len && precomputed_model.lock().unwrap().is_none()
+                    } else {
+                        false
+                    };
                 }
             }));
         }
         loop {
             let total_rounds = *total_rounds.lock().unwrap();
-            if total_rounds >= max_N { break }
             let qec_failed = *qec_failed.lock().unwrap();
-            if qec_failed >= min_error_cases { break }
+            let keep_running_next_model_not_prepared = if no_stop_if_next_model_is_not_prepared {
+                i + 1 < configurations_len && precomputed_model.lock().unwrap().is_none()
+            } else {
+                false
+            };
+            if !(keep_running_next_model_not_prepared || (total_rounds < max_N && qec_failed < min_error_cases)) {
+                break
+            }
             let error_rate = qec_failed as f64 / total_rounds as f64;
             let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_rounds as f64)).sqrt() / error_rate;
-            pb.message(format!("{} {} {} {} {} {} {} {:.1e} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj, confidence_interval_95_percent).as_str());
-            let progress = total_rounds / mini_batch;
-            pb.set(progress as u64);
+            // println!("{} {} {} {} {} {} {} {:.1e} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj, confidence_interval_95_percent);
+            pb.message(format!("{} {} {} {} {} {} {} {:.1e} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj
+                , confidence_interval_95_percent).as_str());
+            let progress = (total_rounds / mini_batch) as u64;
+            if progress >= pb.total {
+                pb.total = progress;  // update the maximum value so that pb is updating properly
+            }
+            pb.set(progress);
             std::thread::sleep(std::time::Duration::from_millis(200));
         }
         pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
