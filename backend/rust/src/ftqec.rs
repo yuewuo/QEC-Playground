@@ -19,7 +19,7 @@
 
 use super::ndarray;
 use super::petgraph;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
 use super::blossom_v;
 use super::mwpm_approx;
@@ -655,6 +655,74 @@ impl PlanarCodeModel {
             None
         }
     }
+
+    /// a faster version of clear_error used only internally
+    pub fn _clear_error_interested_region(&mut self, interested_region: &mut HashSet<(usize, usize)>) {
+        for t in 0..self.snapshot.len() {
+            for &(i, j) in interested_region.iter() {
+                let node = self.snapshot[t][i][j].as_mut().expect("exist");
+                node.error = ErrorType::I;
+                node.propagated = ErrorType::I;
+            }
+        }
+    }
+    /// a faster version of propagate_error used only internally
+    pub fn _propagate_error_with_interested_region(&mut self, interested_region: &mut HashSet<(usize, usize)>) {
+        for t in 0..self.snapshot.len() - 1 {
+            let mut pending_interested_region = Vec::new();
+            for &(i, j) in interested_region.iter() {
+                let propagated_neighbor = self.propagate_error_at(t, i, j);
+                match propagated_neighbor {
+                    Some((pi, pj)) => pending_interested_region.push((pi, pj)),
+                    None => { },
+                }
+            }
+            for (i, j) in pending_interested_region.drain(..) {
+                interested_region.insert((i, j));
+            }
+        }
+    }
+    /// return the propagated neighbor (i, j) if exists
+    pub fn propagate_error_at(&mut self, t: usize, i: usize, j: usize) -> Option<(usize, usize)> {
+        let mut propagated_neighbor = None;
+        let node = self.snapshot[t][i][j].as_ref().expect("exist");
+        // error will definitely propagated to itself at t+1
+        let node_propagated = node.propagated.clone();
+        let node_connection = node.connection.clone();
+        let direct_error = node.error.multiply(&node_propagated);
+        let gate_type = node.gate_type.clone();
+        let next_node = self.snapshot[t+1][i][j].as_mut().expect("exist");
+        next_node.propagated = direct_error.multiply(&next_node.propagated);
+        if gate_type == GateType::Initialization {
+            next_node.propagated = ErrorType::I;  // no error after initialization
+        }
+        // propagated to other qubits through CX gate
+        if gate_type == GateType::Control {
+            let connection = node_connection.as_ref().expect("exist");
+            if node_propagated == ErrorType::X || node_propagated == ErrorType::Y {
+                let peer_node = self.snapshot[t+1][connection.i][connection.j].as_mut().expect("exist");
+                peer_node.propagated = peer_node.propagated.multiply(&ErrorType::X);
+                propagated_neighbor = Some((connection.i, connection.j));
+            }
+        } else if gate_type == GateType::Target {
+            let connection = node_connection.as_ref().expect("exist");
+            if node_propagated == ErrorType::Z || node_propagated == ErrorType::Y {
+                let peer_node = self.snapshot[t+1][connection.i][connection.j].as_mut().expect("exist");
+                peer_node.propagated = peer_node.propagated.multiply(&ErrorType::Z);
+                propagated_neighbor = Some((connection.i, connection.j));
+            }
+        }
+        // also propagated to other qubits via CZ gate
+        if gate_type == GateType::ControlledPhase {
+            let connection = node_connection.as_ref().expect("exist");
+            if node_propagated == ErrorType::X || node_propagated == ErrorType::Y {
+                let peer_node = self.snapshot[t+1][connection.i][connection.j].as_mut().expect("exist");
+                peer_node.propagated = peer_node.propagated.multiply(&ErrorType::Z);
+                propagated_neighbor = Some((connection.i, connection.j));
+            }
+        }
+        propagated_neighbor
+    }
     /// update `propagated` of each error node,
     pub fn propagate_error(&mut self) {
         self.iterate_snapshot_mut(|t, _i, _j, node| {
@@ -666,39 +734,7 @@ impl PlanarCodeModel {
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
                     if self.snapshot[t][i][j].is_some() {
-                        let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                        // error will definitely propagated to itself at t+1
-                        let node_propagated = node.propagated.clone();
-                        let node_connection = node.connection.clone();
-                        let direct_error = node.error.multiply(&node_propagated);
-                        let gate_type = node.gate_type.clone();
-                        let next_node = self.snapshot[t+1][i][j].as_mut().expect("exist");
-                        next_node.propagated = direct_error.multiply(&next_node.propagated);
-                        if gate_type == GateType::Initialization {
-                            next_node.propagated = ErrorType::I;  // no error after initialization
-                        }
-                        // propagated to other qubits through CX gate
-                        if gate_type == GateType::Control {
-                            let connection = node_connection.as_ref().expect("exist");
-                            if node_propagated == ErrorType::X || node_propagated == ErrorType::Y {
-                                let peer_node = self.snapshot[t+1][connection.i][connection.j].as_mut().expect("exist");
-                                peer_node.propagated = peer_node.propagated.multiply(&ErrorType::X);
-                            }
-                        } else if gate_type == GateType::Target {
-                            let connection = node_connection.as_ref().expect("exist");
-                            if node_propagated == ErrorType::Z || node_propagated == ErrorType::Y {
-                                let peer_node = self.snapshot[t+1][connection.i][connection.j].as_mut().expect("exist");
-                                peer_node.propagated = peer_node.propagated.multiply(&ErrorType::Z);
-                            }
-                        }
-                        // also propagated to other qubits via CZ gate
-                        if gate_type == GateType::ControlledPhase {
-                            let connection = node_connection.as_ref().expect("exist");
-                            if node_propagated == ErrorType::X || node_propagated == ErrorType::Y {
-                                let peer_node = self.snapshot[t+1][connection.i][connection.j].as_mut().expect("exist");
-                                peer_node.propagated = peer_node.propagated.multiply(&ErrorType::Z);
-                            }
-                        }
+                        self.propagate_error_at(t, i, j);
                     }
                 }
             }
@@ -738,6 +774,26 @@ impl PlanarCodeModel {
             }
         }
     }
+    pub fn is_measurement_error_at(&self, t: usize, i: usize, j: usize) -> bool {
+        let node = self.snapshot[t][i][j].as_ref().expect("exist");
+        match node.qubit_type {
+            QubitType::StabZ => {
+                assert_eq!(node.gate_type, GateType::Measurement);
+                let this_result = node.propagated == ErrorType::I || node.propagated == ErrorType::Z;
+                let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
+                let last_result = last_node.propagated == ErrorType::I || last_node.propagated == ErrorType::Z;
+                this_result != last_result
+            },
+            QubitType::StabX | QubitType::StabXZZXLogicalX | QubitType::StabXZZXLogicalZ => {
+                assert_eq!(node.gate_type, GateType::Measurement);
+                let this_result = node.propagated == ErrorType::I || node.propagated == ErrorType::X;
+                let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
+                let last_result = last_node.propagated == ErrorType::I || last_node.propagated == ErrorType::X;
+                this_result != last_result
+            },
+            _ => unreachable!(),
+        }
+    }
     /// iterate over every measurement errors
     pub fn iterate_measurement_errors<F>(&self, mut func: F) where F: FnMut(usize, usize, usize, &Node) {
         for t in (12..self.snapshot.len()).step_by(6) {
@@ -745,26 +801,10 @@ impl PlanarCodeModel {
                 for j in 0..self.snapshot[t][i].len() {
                     if self.snapshot[t][i][j].is_some() {
                         let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                        match node.qubit_type {
-                            QubitType::StabZ => {
-                                assert_eq!(node.gate_type, GateType::Measurement);
-                                let this_result = node.propagated == ErrorType::I || node.propagated == ErrorType::Z;
-                                let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
-                                let last_result = last_node.propagated == ErrorType::I || last_node.propagated == ErrorType::Z;
-                                if this_result != last_result {
-                                    func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
-                                }
-                            },
-                            QubitType::StabX | QubitType::StabXZZXLogicalX | QubitType::StabXZZXLogicalZ => {
-                                assert_eq!(node.gate_type, GateType::Measurement);
-                                let this_result = node.propagated == ErrorType::I || node.propagated == ErrorType::X;
-                                let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
-                                let last_result = last_node.propagated == ErrorType::I || last_node.propagated == ErrorType::X;
-                                if this_result != last_result {
-                                    func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
-                                }
-                            },
-                            _ => { },
+                        if node.qubit_type != QubitType::Data {
+                            if self.is_measurement_error_at(t, i, j) {
+                                func(t, i, j, self.snapshot[t][i][j].as_ref().expect("exist"));
+                            }
                         }
                     }
                 }
@@ -806,6 +846,57 @@ impl PlanarCodeModel {
         }
         correction
     }
+    /// this is to solve the very high complexity of the original `build_graph` function O(d^6) ~ O(d^7), by assuming few errors at each time
+    pub fn fast_measurement_given_few_errors(&mut self, errors: &Vec<(usize, usize, usize, ErrorType)>) -> (SparseCorrection, Vec<(usize, usize, usize)>) {
+        // observation: errors will mainly propagate vertically (t) but rarely propagate horizontally (i, j)
+        let mut interested_region: HashSet<(usize, usize)> = HashSet::new();
+        for (t, i, j, error) in errors.iter() {
+            self.add_error_at_no_sanity_check(*t, *i, *j, error);
+            interested_region.insert((*i, *j));
+        }
+        self._propagate_error_with_interested_region(&mut interested_region);
+        let mut sparse_correction = self.generate_default_sparse_correction();
+        for (idx, t) in (12..self.snapshot.len()).step_by(6).enumerate() {
+            for &(i, j) in interested_region.iter() {
+                let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                if node.qubit_type == QubitType::Data {
+                    let node_propagated = node.propagated.clone();
+                    if idx == 0 {
+                        match node_propagated {
+                            ErrorType::X => { sparse_correction.xs.push((idx, i, j)); }
+                            ErrorType::Z => { sparse_correction.zs.push((idx, i, j)); }
+                            ErrorType::Y => { sparse_correction.xs.push((idx, i, j)); sparse_correction.zs.push((idx, i, j)); }
+                            ErrorType::I => { }
+                        }
+                    } else {
+                        let last_node = self.snapshot[t-6][i][j].as_ref().expect("exist");
+                        if node_propagated != last_node.propagated {
+                            match node_propagated.multiply(&last_node.propagated) {
+                                ErrorType::X => { sparse_correction.xs.push((idx, i, j)); }
+                                ErrorType::Z => { sparse_correction.zs.push((idx, i, j)); }
+                                ErrorType::Y => { sparse_correction.xs.push((idx, i, j)); sparse_correction.zs.push((idx, i, j)); }
+                                ErrorType::I => { }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        let mut measurement_errors = Vec::new();
+        let t_max = self.snapshot.len();
+        for t in (12..t_max).step_by(6) {
+            for &(i, j) in interested_region.iter() {
+                let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                if node.qubit_type != QubitType::Data {
+                    if self.is_measurement_error_at(t, i, j) {
+                        measurement_errors.push((t, i, j));
+                    }
+                }
+            }
+        }
+        self._clear_error_interested_region(&mut interested_region);  // recovery the state
+        (sparse_correction, measurement_errors)
+    }
     /// corresponds to `build_graph_given_error_rate` in `FaultTolerantView.vue`
     pub fn build_graph(&mut self) {
         let mut all_possible_errors: Vec<Either<ErrorType, CorrelatedErrorType>> = Vec::new();
@@ -815,13 +906,15 @@ impl PlanarCodeModel {
         for correlated_error_type in CorrelatedErrorType::all_possible_errors().drain(..) {
             all_possible_errors.push(Either::Right(correlated_error_type));
         }
+        // necessary to clear all errors and propagated errors to run `fast_measurement_given_few_errors`
+        self.clear_error();
+        self.propagate_error();
         // println!("{:?}", all_possible_errors);
         for t in 1..self.snapshot.len() {  // 0 doesn't generate error
             for i in 0..self.snapshot[t].len() {
                 for j in 0..self.snapshot[t][i].len() {
                     if self.snapshot[t][i][j].is_some() {
                         for error in all_possible_errors.iter() {
-                            self.clear_error();
                             let node = self.snapshot[t][i][j].as_ref().expect("exist");
                             let p = match error {
                                 Either::Left(error_type) => match error_type {
@@ -840,26 +933,21 @@ impl PlanarCodeModel {
                                 },
                             }; // probability of this error to occur
                             if p > 0. {
-                                // println!("{:?}: {}", error, p);
                                 // simulate the error and measure it
+                                let mut errors = Vec::new();
                                 match error {
                                     Either::Left(error_type) => {
-                                        self.add_error_at_no_sanity_check(t, i, j, error_type);
+                                        errors.push((t, i, j, error_type.clone()));
                                     },
                                     Either::Right(error_type) => {
-                                        self.add_error_at_no_sanity_check(t, i, j, &error_type.my_error());
+                                        errors.push((t, i, j, error_type.my_error()));
                                         let connection = self.snapshot[t][i][j].as_ref().expect("exist").connection
                                             .as_ref().expect("correlated error must corresponds to a two-qubit gate");
                                         let (ct, ci, cj) = (connection.t, connection.i, connection.j);
-                                        self.add_error_at_no_sanity_check(ct, ci, cj, &error_type.peer_error());
-                                        // println!("correlated error at [{}][{}][{}]({:?}) and [{}][{}][{}]({:?})", t, i, j, error_type.my_error(), ct, ci, cj, error_type.peer_error());
+                                        errors.push((ct, ci, cj, error_type.peer_error()));
                                     },
                                 }
-                                self.propagate_error();
-                                let mut measurement_errors = Vec::new();
-                                self.iterate_measurement_errors(|t, i, j, _node| {
-                                    measurement_errors.push((t, i, j));
-                                });
+                                let (sparse_correction, measurement_errors) = self.fast_measurement_given_few_errors(&errors);
                                 if measurement_errors.len() == 0 {  // no way to detect it, ignore
                                     continue
                                 }
@@ -868,7 +956,7 @@ impl PlanarCodeModel {
                                     continue
                                 }
                                 // compute correction pattern, so that applying this error pattern will exactly recover data qubit errors
-                                let correction = Arc::new(SparseCorrection::from(&self.get_data_qubit_error_pattern()));
+                                let correction = Arc::new(sparse_correction);
                                 // add this to edges and update probability
                                 if measurement_errors.len() == 1 {  // boundary
                                     let (t1, i1, j1) = measurement_errors[0];

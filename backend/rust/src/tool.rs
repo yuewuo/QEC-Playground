@@ -757,7 +757,6 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             }
             let error_rate = qec_failed as f64 / total_rounds as f64;
             let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_rounds as f64)).sqrt() / error_rate;
-            // println!("{} {} {} {} {} {} {} {:.1e} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj, confidence_interval_95_percent);
             pb.message(format!("{} {} {} {} {} {} {} {:.1e} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj
                 , confidence_interval_95_percent).as_str());
             let progress = (total_rounds / mini_batch) as u64;
