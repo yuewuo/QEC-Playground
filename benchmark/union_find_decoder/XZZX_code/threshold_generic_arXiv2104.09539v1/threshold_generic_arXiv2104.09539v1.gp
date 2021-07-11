@@ -9,9 +9,9 @@ set size 1,1.1
 
 # data generating commands:
 # biased CX
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6,7,8] --djs [12,15,18,21,24] [12,15,18,21,24] [0.0050,0.0055,0.0060,0.0065,0.0070,0.0075,0.0080,0.0085,0.0090,0.0095,0.0100,0.0105,0.0110] -b10 -p0 -m100000 -e100000 --use_xzzx_code --bias_eta 100 --error_model GenericBiasedWithBiasedCX
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6,7,8] --djs [12,15,18,21,24] [12,15,18,21,24] [0.0050,0.0055,0.0060,0.0065,0.0070,0.0075,0.0080,0.0085,0.0090,0.0095,0.0100,0.0105,0.0110] -b10 -p0 -m100000 -e100000 --use_xzzx_code --bias_eta 100 --decoder UF --max_half_weight 10 --error_model GenericBiasedWithBiasedCX
 # standard CX
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6,7,8] --djs [12,15,18,21,24] [12,15,18,21,24] [0.0050,0.0055,0.0060,0.0065,0.0070,0.0075,0.0080,0.0085,0.0090,0.0095,0.0100,0.0105,0.0110] -b10 -p0 -m100000 -e100000 --use_xzzx_code --bias_eta 100 --error_model GenericBiasedWithStandardCX
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6,7,8] --djs [12,15,18,21,24] [12,15,18,21,24] [0.0050,0.0055,0.0060,0.0065,0.0070,0.0075,0.0080,0.0085,0.0090,0.0095,0.0100,0.0105,0.0110] -b10 -p0 -m100000 -e100000 --use_xzzx_code --bias_eta 100 --decoder UF --max_half_weight 10 --error_model GenericBiasedWithStandardCX
 
 
 set xrange [0.0045:0.0115]
@@ -25,7 +25,7 @@ set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder
 
-set title "Generaic Biased Noise Model (MWPM Decoder)"
+set title "Generaic Biased Noise Model (UnionFind Decoder)"
 
 set output "threshold_generic_arXiv2104.09539v1.eps"
 
