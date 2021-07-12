@@ -1,7 +1,7 @@
 set terminal postscript eps color "Arial, 28"
 set xlabel "p_z" font "Arial, 28"
 set ylabel "Logical error rate" font "Arial, 28"
-set grid ytics
+# set grid ytics
 set size 1,1.1
 
 # data range:
@@ -19,7 +19,15 @@ set xrange [0.0045:0.0115]
 # python -c "for i in range(7): print('\'%.3f\' %.3f' % tuple([0.008 + (i-3)*0.001 for j in range(2)]), end=', ')"
 set xtics ('0.005' 0.005, '0.006' 0.006, '0.007' 0.007, '0.008' 0.008, '0.009' 0.009, '0.010' 0.010, '0.011' 0.011)
 set logscale y
-set ytics ("10^{-4}" 0.0001, "10^{-3}" 0.001, "10^{-2}" 0.01, "10^{-1}" 0.1, "10^{0}" 1)
+# labels
+# python -c "for i in range(2, 10): print('\'\' %.4f' % (0.0001 * i), end=', ')"
+# python -c "for i in range(2, 10): print('\'\' %.3f' % (0.001 * i), end=', ')"
+# python -c "for i in range(2, 10): print('\'\' %.2f' % (0.01 * i), end=', ')"
+# python -c "for i in range(2, 10): print('\'\' %.1f' % (0.1 * i), end=', ')"
+set ytics ("10^{-4}" 0.0001, '' 0.0002, '' 0.0003, '' 0.0004, '' 0.0005, '' 0.0006, '' 0.0007, '' 0.0008, '' 0.0009, \
+"10^{-3}" 0.001, '' 0.002, '' 0.003, '' 0.004, '' 0.005, '' 0.006, '' 0.007, '' 0.008, '' 0.009, \
+"10^{-2}" 0.01, '' 0.02, '' 0.03, '' 0.04, '' 0.05, '' 0.06, '' 0.07, '' 0.08, '' 0.09, \
+"10^{-1}" 0.1, '' 0.2, '' 0.3, '' 0.4, '' 0.5, '' 0.6, '' 0.7, '' 0.8, '' 0.9, "10^{0}" 1)
 set yrange [0.0001:1]
 set key outside horizontal top center font "Arial, 24"
 
