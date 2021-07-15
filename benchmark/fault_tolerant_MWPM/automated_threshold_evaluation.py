@@ -46,7 +46,7 @@ QEC_PLAYGROUND_COMPILATION_DONE = False
 def qec_playground_fault_tolerant_MWPM_simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_runner=False):
     global QEC_PLAYGROUND_COMPILATION_DONE
     if QEC_PLAYGROUND_COMPILATION_DONE is False:
-        process = subprocess.Popen(["cargo", "build", "--release"], text=True, stdout=sys.stdout, stderr=sys.stderr)
+        process = subprocess.Popen(["cargo", "build", "--release"], universal_newlines=True, stdout=sys.stdout, stderr=sys.stderr)
         process.wait()
         assert process.returncode == 0, "compile has error"
         QEC_PLAYGROUND_COMPILATION_DONE = True
@@ -65,7 +65,7 @@ def qec_playground_fault_tolerant_MWPM_simulator_runner(p, pair_one, parameters,
         error_rate = random_non_negative(origin_error_rate, confidence_interval)
         full_result = f"full result not available for fake runner {pair_one}, {p}, {error_rate}({confidence_interval})"
     else:
-        process = subprocess.Popen(command, text=True, env=env, stdout=subprocess.PIPE, stderr=sys.stderr)
+        process = subprocess.Popen(command, universal_newlines=True, env=env, stdout=subprocess.PIPE, stderr=sys.stderr)
         process.wait()
         stdout, _ = process.communicate()
         if verbose:
