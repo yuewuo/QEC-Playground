@@ -180,7 +180,7 @@ class AutomatedThresholdEvaluator:
         threshold, confidence_interval = self.get_accurate_threshold(rough_estimation)
         # if error exceeds the target, then re-run the experiment
         if confidence_interval > self.target_threshold_accuracy:
-            threshold, confidence_interval = self.get_accurate_threshold(rough_estimation)
+            threshold, confidence_interval = self.get_accurate_threshold(threshold)
         return threshold, confidence_interval
 
 if __name__ == "__main__":
