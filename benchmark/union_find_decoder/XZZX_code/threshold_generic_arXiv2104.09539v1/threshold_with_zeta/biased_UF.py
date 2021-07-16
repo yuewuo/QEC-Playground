@@ -1,6 +1,6 @@
 import os, sys
-fault_toleran_MWPM_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-# print(fault_toleran_MWPM_dir)
+fault_toleran_MWPM_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))), "fault_tolerant_MWPM")
+print(fault_toleran_MWPM_dir)
 sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import AutomatedThresholdEvaluator
 
