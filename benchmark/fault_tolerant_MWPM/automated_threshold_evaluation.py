@@ -174,10 +174,14 @@ class AutomatedThresholdEvaluator:
     def evaluate_threshold(self):
         # first roughly search the threshold point
         rough_estimation = self.get_rough_estimation()
+        if self.verbose:
+            print("rough_estimation:", rough_estimation)
         # more accurate logical error rate around the threshold point
-        print(rough_estimation)
-        return self.get_accurate_threshold(rough_estimation)
-
+        threshold, confidence_interval = self.get_accurate_threshold(rough_estimation)
+        # if error exceeds the target, then re-run the experiment
+        if confidence_interval > self.target_threshold_accuracy:
+            threshold, confidence_interval = self.get_accurate_threshold(rough_estimation)
+        return threshold, confidence_interval
 
 if __name__ == "__main__":
     main()
