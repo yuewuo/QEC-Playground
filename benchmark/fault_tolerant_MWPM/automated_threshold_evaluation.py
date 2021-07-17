@@ -43,7 +43,7 @@ return:
     full_result: str
 """
 QEC_PLAYGROUND_COMPILATION_DONE = False
-def qec_playground_fault_tolerant_MWPM_simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_runner=False):
+def qec_playground_fault_tolerant_MWPM_simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_runner=False, max_N=100000, min_error_cases=3000):
     global QEC_PLAYGROUND_COMPILATION_DONE
     if QEC_PLAYGROUND_COMPILATION_DONE is False:
         process = subprocess.Popen(["cargo", "build", "--release"], universal_newlines=True, stdout=sys.stdout, stderr=sys.stderr)
@@ -51,8 +51,7 @@ def qec_playground_fault_tolerant_MWPM_simulator_runner(p, pair_one, parameters,
         assert process.returncode == 0, "compile has error"
         QEC_PLAYGROUND_COMPILATION_DONE = True
     di, dj, T = pair_one
-    max_N = 100000
-    min_error_cases = 3000 if is_rough_test else max_N
+    min_error_cases = min_error_cases if is_rough_test else max_N
     command = ["./target/release/rust_qecp", "tool", "fault_tolerant_benchmark", f"[{di}]", "--djs", f"[{dj}]", f"[{T}]", f"-m{max_N}", f"-e{min_error_cases}", f"[{p}]"] + parameters
     command_str = " ".join(command)
     env = os.environ.copy()

@@ -1,5 +1,7 @@
 import os, sys
-fault_toleran_MWPM_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+qec_playground_root_dir = os.popen("git rev-parse --show-toplevel").read().strip(" \r\n")
+rust_dir = os.path.join(qec_playground_root_dir, "backend", "rust")
+fault_toleran_MWPM_dir = os.path.join(qec_playground_root_dir, "benchmark", "fault_tolerant_MWPM")
 # print(fault_toleran_MWPM_dir)
 sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import AutomatedThresholdEvaluator
