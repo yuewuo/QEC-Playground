@@ -11,7 +11,7 @@ is_rough_test = False
 def get_result_with_bias_eta(bias_eta, is_MWPM=True):
     pCX = 0.006  # fix pCX instead of fix p=pz
     p = pCX / (2 + 12 / float(bias_eta))
-    pair_one = (3, 9, 9)
+    pair_one = (5, 15, 15)
     parameters = "-b10 -p0 --use_xzzx_code --error_model GenericBiasedWithBiasedCX".split(" ")
     parameters = parameters + f"--bias_eta {bias_eta}".split(" ")
     if not is_MWPM:

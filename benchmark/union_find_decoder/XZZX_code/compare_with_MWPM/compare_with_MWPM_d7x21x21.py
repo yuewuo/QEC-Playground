@@ -10,7 +10,7 @@ is_rough_test = False
 
 def get_result_with_bias_eta(bias_eta, is_MWPM=True):
     pCX = 0.006  # fix pCX instead of fix p=pz
-    p = pCX / (2 + 10 / float(bias_eta))
+    p = pCX / (2 + 12 / float(bias_eta))
     pair_one = (7, 21, 21)
     parameters = "-b10 -p0 --use_xzzx_code --error_model GenericBiasedWithBiasedCX".split(" ")
     parameters = parameters + f"--bias_eta {bias_eta}".split(" ")
@@ -33,17 +33,17 @@ UF_results = []
 for bias_eta in bias_eta_vec:
     # MWPM result
     error_rate, confidence_interval, full_result = get_result_with_bias_eta(bias_eta, is_MWPM=True)
-    MWPM_results.append((error_rate, confidence_interval, full_result))
+    MWPM_results.append((bias_eta, error_rate, confidence_interval, full_result))
     print("MWPM:", full_result)
     # UF result
     error_rate, confidence_interval, full_result = get_result_with_bias_eta(bias_eta, is_MWPM=False)
-    UF_results.append((error_rate, confidence_interval, full_result))
+    UF_results.append((bias_eta, error_rate, confidence_interval, full_result))
     print("UF:", full_result)
 
 assert len(MWPM_results) == len(UF_results)
 print("MWPM results:")
-for error_rate, confidence_interval, full_result in MWPM_results:
-    print(full_result)
+for bias_eta, error_rate, confidence_interval, full_result in MWPM_results:
+    print(bias_eta, full_result)
 print("UF results:")
-for error_rate, confidence_interval, full_result in UF_results:
-    print(full_result)
+for bias_eta, error_rate, confidence_interval, full_result in UF_results:
+    print(bias_eta, full_result)
