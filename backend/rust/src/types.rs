@@ -484,6 +484,18 @@ impl From<String> for DecoderType {
     }
 }
 
+impl std::fmt::Display for DecoderType {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        fmt.write_str(match self {
+            Self::MinimumWeightPerfectMatching => "MinimumWeightPerfectMatching",
+            Self::UnionFind => "UnionFind",
+            Self::DistributedUnionFind => "DistributedUnionFind",
+        })?;
+        Ok(())
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum ErrorModel {
     GenericBiasedWithBiasedCX,  // arXiv:2104.09539v1 Sec.IV.A
     GenericBiasedWithStandardCX,  // arXiv:2104.09539v1 Sec.IV.A
@@ -496,5 +508,15 @@ impl From<String> for ErrorModel {
             "GenericBiasedWithStandardCX" => Self::GenericBiasedWithStandardCX,
             _ => panic!("unrecognized error model"),
         }
+    }
+}
+
+impl std::fmt::Display for ErrorModel {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        fmt.write_str(match self {
+            Self::GenericBiasedWithBiasedCX => "GenericBiasedWithBiasedCX",
+            Self::GenericBiasedWithStandardCX => "GenericBiasedWithStandardCX",
+        })?;
+        Ok(())
     }
 }

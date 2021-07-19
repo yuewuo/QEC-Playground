@@ -306,7 +306,7 @@ fn offer_decoder_study(d: usize, p: f64, count: usize, max_resend: usize, max_cy
                         });
                         model.propagate_error();
                         let measurement = model.generate_measurement();
-                        let correction = model.decode_MWPM(&measurement);
+                        let (correction, _) = model.decode_MWPM(&measurement);
                         let validation_ret = model.validate_correction_on_boundary(&correction);
                         validation_ret.is_err()
                     };
@@ -379,7 +379,7 @@ fn offer_algorithm_study(d: usize, p: f64, count: usize, max_resend: usize, max_
                         });
                         model.propagate_error();
                         let measurement = model.generate_measurement();
-                        let (sparse_correction, edge_matchings, boundary_matchings) = model.decode_MWPM_sparse_correction_with_edge_matchings(&measurement);
+                        let (sparse_correction, _, edge_matchings, boundary_matchings) = model.decode_MWPM_sparse_correction_with_edge_matchings(&measurement);
                         let mwpm_cost = {
                             let mut mwpm_cost = 0.;
                             for ((_t1, i1, j1), (_t2, i2, j2)) in edge_matchings.iter() {
@@ -459,7 +459,7 @@ fn union_find_decoder_study(d: usize, p: f64, count: usize, max_cost: f64) {
                 });
                 model.propagate_error();
                 let measurement = model.generate_measurement();
-                let (sparse_correction, edge_matchings, boundary_matchings) = model.decode_MWPM_sparse_correction_with_edge_matchings(&measurement);
+                let (sparse_correction, _, edge_matchings, boundary_matchings) = model.decode_MWPM_sparse_correction_with_edge_matchings(&measurement);
                 let mwpm_cost = {
                     let mut mwpm_cost = 0.;
                     for ((_t1, i1, j1), (_t2, i2, j2)) in edge_matchings.iter() {
@@ -515,7 +515,7 @@ fn union_find_decoder_xzzx_code_study(d: usize, p: f64, count: usize, max_half_w
         model.propagate_error();
         // run mwpm decoder
         let measurement = model.generate_measurement();
-        let correction = model.decode_MWPM(&measurement);
+        let (correction, _) = model.decode_MWPM(&measurement);
         let validation_ret = model.validate_correction_on_boundary(&correction);
         let mwpm_has_logical_error = validation_ret.is_err();
         // run union find decoder
@@ -589,7 +589,7 @@ fn distributed_union_find_decoder_study(d: usize, p: f64, count: usize) {
                 });
                 model.propagate_error();
                 let measurement = model.generate_measurement();
-                let (sparse_correction, edge_matchings, boundary_matchings) = model.decode_MWPM_sparse_correction_with_edge_matchings(&measurement);
+                let (sparse_correction, _, edge_matchings, boundary_matchings) = model.decode_MWPM_sparse_correction_with_edge_matchings(&measurement);
                 let mwpm_cost = {
                     let mut mwpm_cost = 0.;
                     for ((_t1, i1, j1), (_t2, i2, j2)) in edge_matchings.iter() {
@@ -750,7 +750,7 @@ fn archived_debug_tests() {
             let measurement = model.generate_measurement();
             // println!("{:?}", measurement);
             // actually one can use another model to decode, if you're not comfortable with passing all internal error information into decoder
-            let correction = model.decode_MWPM(&measurement);
+            let (correction, _) = model.decode_MWPM(&measurement);
             // println!("{:?}", correction);
             let mut corrected = model.get_data_qubit_error_pattern();
             // println!("error pattern: {:?}", corrected);
@@ -903,7 +903,7 @@ fn archived_debug_tests() {
         model.propagate_error();
         let measurement = model.generate_measurement();
         println!("{:?}", measurement);
-        let correction = model.decode_MWPM(&measurement);
+        let (correction, _) = model.decode_MWPM(&measurement);
         println!("correction: {:?}", correction);
         let mut corrected = model.get_data_qubit_error_pattern();
         println!("error pattern: {:?}", corrected);

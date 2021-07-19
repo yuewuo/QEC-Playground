@@ -23,6 +23,7 @@ use super::distributed_uf_decoder;
 use super::ndarray;
 use super::serde_json::{json};
 use std::fs::File;
+use std::io::prelude::*;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -99,10 +100,11 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let use_combined_probability = matches.is_present("use_combined_probability");
             let error_model = value_t!(matches, "error_model", String).ok().map(|x| ErrorModel::from(x));
             let no_stop_if_next_model_is_not_prepared = matches.is_present("no_stop_if_next_model_is_not_prepared");
+            let log_runtime_statistics = value_t!(matches, "log_runtime_statistics", String).ok();
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight, use_combined_probability
-                , error_model, no_stop_if_next_model_is_not_prepared);
+                , error_model, no_stop_if_next_model_is_not_prepared, log_runtime_statistics);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -501,10 +503,46 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
         , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, only_count_logical_z: bool, perfect_initialization: bool
         , shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType, max_half_weight: usize
-        , use_combined_probability: bool, error_model: Option<ErrorModel>, no_stop_if_next_model_is_not_prepared: bool) {
+        , use_combined_probability: bool, error_model: Option<ErrorModel>, no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
+    }
+    let log_runtime_statistics_file = log_runtime_statistics.map(|filename| 
+        Arc::new(Mutex::new(File::create(filename.as_str()).expect("cannot create file"))));
+    let fixed_configuration = json!({
+        "max_N": max_N,
+        "min_error_cases": min_error_cases,
+        "parallel": parallel,
+        "validate_layer": validate_layer,
+        "mini_batch": mini_batch,
+        "autotune": autotune,
+        "rotated_planar_code": rotated_planar_code,
+        "ignore_6_neighbors": ignore_6_neighbors,
+        "extra_measurement_error": extra_measurement_error,
+        "bypass_correction": bypass_correction,
+        "independent_px_pz": independent_px_pz,
+        "only_count_logical_x": only_count_logical_x,
+        "only_count_logical_z": only_count_logical_z,
+        "perfect_initialization": perfect_initialization,
+        "shallow_error_on_bottom": shallow_error_on_bottom,
+        "no_y_error": no_y_error,
+        "use_xzzx_code": use_xzzx_code,
+        "bias_eta": bias_eta,
+        "decoder_type": format!("{:?}", decoder_type),
+        "max_half_weight": max_half_weight,
+        "use_combined_probability": use_combined_probability,
+        "error_model": format!("{:?}", error_model),
+        "no_stop_if_next_model_is_not_prepared": "no_stop_if_next_model_is_not_prepared",
+    });
+    match &log_runtime_statistics_file {  // append runtime statistics data
+        Some(log_runtime_statistics_file) => {
+            let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
+            log_runtime_statistics_file.write(b"#f ").unwrap();
+            log_runtime_statistics_file.write(fixed_configuration.to_string().as_bytes()).unwrap();
+            log_runtime_statistics_file.write(b"\n").unwrap();
+            log_runtime_statistics_file.sync_data().unwrap();
+        }, _ => { },
     }
     println!("format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>");
     // first list all configurations
@@ -614,6 +652,20 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
     let precomputed_model = Arc::new(Mutex::new(None));
     for i in 0..configurations_len {
         let (di, dj, MeasurementRounds, p) = configurations[i];
+        match &log_runtime_statistics_file {  // append runtime statistics data
+            Some(log_runtime_statistics_file) => {
+                let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
+                log_runtime_statistics_file.write(b"# ").unwrap();
+                log_runtime_statistics_file.write(json!({
+                    "di": di,
+                    "dj": dj,
+                    "MeasurementRounds": MeasurementRounds,
+                    "p": p,
+                }).to_string().as_bytes()).unwrap();
+                log_runtime_statistics_file.write(b"\n").unwrap();
+                log_runtime_statistics_file.sync_data().unwrap();
+            }, _ => { },
+        }
         if i == 0 {  // only i == 0 need to compute model immediately
             let mut precomputed_model = precomputed_model.lock().unwrap();
             *precomputed_model = Some((*compute_model)(di, dj, MeasurementRounds, p));
@@ -648,6 +700,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             let precomputed_model = Arc::clone(&precomputed_model);
             let mut model_error = model_error.clone();  // only for generating error and validating correction
             let model_decoder = Arc::clone(&model_decoder);  // only for decode, so that you're confident I'm not cheating by using information of original errors
+            let log_runtime_statistics_file = log_runtime_statistics_file.clone();
             let validate_layer: isize = match validate_layer.as_str() {
                 "boundary" => -2,
                 "all" => -1,
@@ -673,6 +726,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 };
                 while keep_running_next_model_not_prepared || (current_total_rounds < max_N && current_qec_failed < min_error_cases) {
                     let mut mini_qec_failed = 0;
+                    let mut log_runtime_statistics_buffer = String::new();
                     for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
                         let error_count = model_error.generate_random_errors(|| rng.gen::<f64>());
                         if error_count == 0 {
@@ -681,7 +735,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                         model_error.propagate_error();
                         let measurement = model_error.generate_measurement();
                         // use `model_decoder` for decoding, so that it is blind to the real error information
-                        let correction = if !bypass_correction {
+                        let (correction, runtime_statistics) = if !bypass_correction {
                             match decoder_type {
                                 DecoderType::MinimumWeightPerfectMatching => model_decoder.decode_MWPM(&measurement),
                                 DecoderType::UnionFind => model_decoder.decode_UnionFind(&measurement, max_half_weight, false),
@@ -689,8 +743,12 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                                 // _ => panic!("unsupported decoder type"),
                             }
                         } else {
-                            model_decoder.generate_default_correction()
+                            (model_decoder.generate_default_correction(), json!({}))
                         };
+                        if log_runtime_statistics_file.is_some() {
+                            log_runtime_statistics_buffer.push_str(&runtime_statistics.to_string());
+                            log_runtime_statistics_buffer.push_str(&"\n".to_string())
+                        }
                         if validate_layer == -2 {
                             let validation_ret = model_error.validate_correction_on_boundary(&correction);
                             match validation_ret {
@@ -726,7 +784,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                             }
                         }
                     }
-                    // sync data from outside
+                    // sync data with outside
                     current_total_rounds = {
                         let mut total_rounds = total_rounds.lock().unwrap();
                         *total_rounds += mini_batch;
@@ -742,6 +800,14 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                     } else {
                         false
                     };
+                    match &log_runtime_statistics_file {  // append runtime statistics data
+                        Some(log_runtime_statistics_file) => {
+                            let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
+                            log_runtime_statistics_file.write(log_runtime_statistics_buffer.as_bytes()).unwrap();
+                            // serde_json::to_writer(&f, &json!(cycle_distribution)).unwrap();
+                            log_runtime_statistics_file.sync_data().unwrap();
+                        }, _ => { },
+                    }
                 }
             }));
         }
@@ -902,7 +968,7 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
                             let measurement = model_error.generate_measurement();
                             // println!{"Measurement {:?}", measurement};
                             // use `model_decoder` for decoding, so that it is blind to the real error information
-                            let correction_MWPM = model_decoder_MWPM.decode_MWPM(&measurement);
+                            let (correction_MWPM, _) = model_decoder_MWPM.decode_MWPM(&measurement);
                             // let correction_MWPM = model_decoder_MWPM.decode_MWPM_approx(&measurement, substreams, false);
                             // println!("correction : {:?}", correction_MWPM);
                             let correction_approx = model_decoder_approx.decode_MWPM_approx(&measurement, substreams, false);

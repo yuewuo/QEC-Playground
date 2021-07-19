@@ -27,6 +27,7 @@ use std::sync::{Arc};
 use super::types::{QubitType, ErrorType, CorrelatedErrorType, CorrelatedErrorModel, ErrorModel};
 use super::union_find_decoder;
 use super::either::Either;
+use super::serde_json;
 
 /// uniquely index a node
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -1270,14 +1271,16 @@ impl PlanarCodeModel {
         measurement
     }
     /// decode based on MWPM
-    pub fn decode_MWPM(&self, measurement: &Measurement) -> Correction {
-        Correction::from(&self.decode_MWPM_sparse_correction(measurement))
+    pub fn decode_MWPM(&self, measurement: &Measurement) -> (Correction, serde_json::Value) {
+        let (sparse_correction, runtime_statistics) = self.decode_MWPM_sparse_correction(measurement);
+        (Correction::from(&sparse_correction), runtime_statistics)
     }
-    pub fn decode_MWPM_sparse_correction(&self, measurement: &Measurement) -> SparseCorrection {
-        self.decode_MWPM_sparse_correction_with_edge_matchings(measurement).0
+    pub fn decode_MWPM_sparse_correction(&self, measurement: &Measurement) -> (SparseCorrection, serde_json::Value) {
+        let (sparse_correction, runtime_statistics, _, _) = self.decode_MWPM_sparse_correction_with_edge_matchings(measurement);
+        (sparse_correction, runtime_statistics)
     }
     pub fn decode_MWPM_sparse_correction_with_edge_matchings(&self, measurement: &Measurement) ->
-            (SparseCorrection, Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
+            (SparseCorrection, serde_json::Value, Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
         // sanity check
         let shape = measurement.shape();
         let width_i = 2 * self.di - 1;
@@ -1359,22 +1362,24 @@ impl PlanarCodeModel {
             // if to_be_matched.len() > 2 {
             //     println!("correction: {:?}", correction);
             // }
-            (correction, edge_matchings, boundary_matchings)
+            (correction, json!({}), edge_matchings, boundary_matchings)
         } else {
             // no measurement errors found
-            (self.generate_default_sparse_correction(), Vec::new(), Vec::new())
+            (self.generate_default_sparse_correction(), json!({}), Vec::new(), Vec::new())
         }
     }
     
     /// decode based on UnionFind decoder
-    pub fn decode_UnionFind(&self, measurement: &Measurement, max_half_weight: usize, use_distributed: bool) -> Correction {
-        Correction::from(&self.decode_UnionFind_sparse_correction(measurement, max_half_weight, use_distributed))
+    pub fn decode_UnionFind(&self, measurement: &Measurement, max_half_weight: usize, use_distributed: bool) -> (Correction, serde_json::Value) {
+        let (sparse_correction, runtime_statistics) = self.decode_UnionFind_sparse_correction(measurement, max_half_weight, use_distributed);
+        (Correction::from(&sparse_correction), runtime_statistics)
     }
-    pub fn decode_UnionFind_sparse_correction(&self, measurement: &Measurement, max_half_weight: usize, use_distributed: bool) -> SparseCorrection {
-        self.decode_UnionFind_sparse_correction_with_edge_matchings(measurement, max_half_weight, use_distributed).0
+    pub fn decode_UnionFind_sparse_correction(&self, measurement: &Measurement, max_half_weight: usize, use_distributed: bool) -> (SparseCorrection, serde_json::Value) {
+        let (sparse_correction, runtime_statistics, _, _) = self.decode_UnionFind_sparse_correction_with_edge_matchings(measurement, max_half_weight, use_distributed);
+        (sparse_correction, runtime_statistics)
     }
     pub fn decode_UnionFind_sparse_correction_with_edge_matchings(&self, measurement: &Measurement, max_half_weight: usize, use_distributed: bool) ->
-            (SparseCorrection, Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
+            (SparseCorrection, serde_json::Value, Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
         // sanity check
         let shape = measurement.shape();
         let width_i = 2 * self.di - 1;
@@ -1393,7 +1398,7 @@ impl PlanarCodeModel {
             let node = self.snapshot[t][i][j].as_ref().expect("exist");
             correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
         }
-        (correction, edge_matchings, boundary_matchings)
+        (correction, json!({}), edge_matchings, boundary_matchings)
     }
 
     /// decode based on approximate MWPM
@@ -2099,7 +2104,7 @@ mod tests {
         model.add_error_at(12, 9, 7, &ErrorType::Z).expect("error rate = 0 here");
         model.propagate_error();
         let measurement = model.generate_measurement();
-        let correction = model.decode_MWPM(&measurement);
+        let (correction, _) = model.decode_MWPM(&measurement);
         let validation_ret = model.validate_correction_on_boundary(&correction);
         assert!(validation_ret.is_ok(), "only 3 errors should not break code distance = 7");
     }
