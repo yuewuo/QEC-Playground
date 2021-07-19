@@ -684,8 +684,9 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                         let correction = if !bypass_correction {
                             match decoder_type {
                                 DecoderType::MinimumWeightPerfectMatching => model_decoder.decode_MWPM(&measurement),
-                                DecoderType::UnionFind => model_decoder.decode_UnionFind(&measurement, max_half_weight),
-                                _ => panic!("unsupported decoder type"),
+                                DecoderType::UnionFind => model_decoder.decode_UnionFind(&measurement, max_half_weight, false),
+                                DecoderType::DistributedUnionFind => model_decoder.decode_UnionFind(&measurement, max_half_weight, true),
+                                // _ => panic!("unsupported decoder type"),
                             }
                         } else {
                             model_decoder.generate_default_correction()

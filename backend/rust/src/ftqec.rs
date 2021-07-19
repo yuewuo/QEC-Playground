@@ -1367,13 +1367,13 @@ impl PlanarCodeModel {
     }
     
     /// decode based on UnionFind decoder
-    pub fn decode_UnionFind(&self, measurement: &Measurement, max_half_weight: usize) -> Correction {
-        Correction::from(&self.decode_UnionFind_sparse_correction(measurement, max_half_weight))
+    pub fn decode_UnionFind(&self, measurement: &Measurement, max_half_weight: usize, use_distributed: bool) -> Correction {
+        Correction::from(&self.decode_UnionFind_sparse_correction(measurement, max_half_weight, use_distributed))
     }
-    pub fn decode_UnionFind_sparse_correction(&self, measurement: &Measurement, max_half_weight: usize) -> SparseCorrection {
-        self.decode_UnionFind_sparse_correction_with_edge_matchings(measurement, max_half_weight).0
+    pub fn decode_UnionFind_sparse_correction(&self, measurement: &Measurement, max_half_weight: usize, use_distributed: bool) -> SparseCorrection {
+        self.decode_UnionFind_sparse_correction_with_edge_matchings(measurement, max_half_weight, use_distributed).0
     }
-    pub fn decode_UnionFind_sparse_correction_with_edge_matchings(&self, measurement: &Measurement, max_half_weight: usize) ->
+    pub fn decode_UnionFind_sparse_correction_with_edge_matchings(&self, measurement: &Measurement, max_half_weight: usize, use_distributed: bool) ->
             (SparseCorrection, Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
         // sanity check
         let shape = measurement.shape();
@@ -1383,7 +1383,8 @@ impl PlanarCodeModel {
         assert_eq!(shape[1], width_i);
         assert_eq!(shape[2], width_j);
         // run union find decoder
-        let (edge_matchings, boundary_matchings) = union_find_decoder::suboptimal_matching_by_union_find_given_measurement(&self, measurement, max_half_weight);
+        let (edge_matchings, boundary_matchings) = union_find_decoder::suboptimal_matching_by_union_find_given_measurement(&self, measurement, max_half_weight
+            , use_distributed);
         let mut correction = self.generate_default_sparse_correction();
         for &((t1, i1, j1), (t2, i2, j2)) in edge_matchings.iter() {
             correction.combine(&self.get_correction_two_nodes(&Index::new(t1, i1, j1), &Index::new(t2, i2, j2)));

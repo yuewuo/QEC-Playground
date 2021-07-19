@@ -29,14 +29,21 @@ set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder
 
-set title "XZZX Code, p_{CX} = 0.006 = p_Z * (2 + 10/{/Symbol z})"
+set title "XZZX Code, p_{CX} = 0.006 = p_Z * (2 + 12/{/Symbol z})"
 
 set output "compare_with_MWPM.eps"
 
-plot "MWPM_d5.txt" using 1:7 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "MWPM 5x15x15",\
-    "UF_d5.txt" using 1:7 with linespoints lt rgb "blue" linewidth 5 pointtype 6 pointsize 1.5 title "UnionFind 5x15x15",\
-    "MWPM_d3.txt" using 1:7 with linespoints lt rgb "red" linewidth 5 pointtype 2 pointsize 1.5 title "MWPM 3x9x9",\
-    "UF_d3.txt" using 1:7 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "UnionFind 3x9x9"
+# to remove legend (because I don't know how to plot it just like Fig.7 in arXiv2104.09539v1)
+set nokey
+
+plot "MWPM_d3.txt" using 1:7 with linespoints lt rgb "#e41a1c" linewidth 3 pointtype 7 pointsize 1 title "MWPM 3x9x9",\
+    "" using 1:7:($7-$7*$9):($7+$7*$9) with errorbars lt rgb "#e41a1c" linewidth 3 pointtype 7 pointsize 1,\
+    "UF_d3.txt" using 1:7 with linespoints lt rgb "#4daf4a" linewidth 3 pointtype 6 pointsize 1 title "UnionFind 3x9x9",\
+    "" using 1:7:($7-$7*$9):($7+$7*$9) with errorbars lt rgb "#4daf4a" linewidth 3 pointtype 6 pointsize 1,\
+    "MWPM_d5.txt" using 1:7 with linespoints lt rgb "#e41a1c" linewidth 3 pointtype 11 pointsize 1 title "MWPM 5x15x15",\
+    "" using 1:7:($7-$7*$9):($7+$7*$9) with errorbars lt rgb "#e41a1c" linewidth 3 pointtype 11 pointsize 1,\
+    "UF_d5.txt" using 1:7 with linespoints lt rgb "#4daf4a" linewidth 3 pointtype 10 pointsize 1 title "UnionFind 5x15x15",\
+    "" using 1:7:($7-$7*$9):($7+$7*$9) with errorbars lt rgb "#4daf4a" linewidth 3 pointtype 10 pointsize 1,\
 
 set output '|ps2pdf -dEPSCrop compare_with_MWPM.eps compare_with_MWPM.pdf'
 replot

@@ -132,6 +132,7 @@ use super::derive_more::{Constructor};
 use super::offer_decoder;
 use super::ftqec;
 use super::types::QubitType;
+use super::union_find_decoder;
 
 #[derive(Debug, Serialize, Deserialize, Constructor)]
 pub struct InputNode<U: std::fmt::Debug> {
@@ -1223,10 +1224,78 @@ pub fn compare_standard_planar_code_3d_nodes(a: &(usize, usize, usize), b: &(usi
     }
 }
 
+pub fn build_distributed_union_find_given_uf_decoder_3d<>(decoder: &union_find_decoder::UnionFindDecoder<(usize, usize, usize)>) ->
+        (DistributedUnionFind<(usize, usize, usize)>, HashMap<(usize, usize, usize), usize>) {
+    let mut nodes = Vec::new();
+    let mut position_to_index = HashMap::new();
+    for node in decoder.nodes.iter() {
+        let position = node.node.user_data.clone();
+        position_to_index.insert(position.clone(), nodes.len());
+        nodes.push(InputNode {
+            user_data: position,
+            is_error_syndrome: node.node.is_error_syndrome,
+            boundary_cost: node.node.boundary_cost.clone(),
+        });
+    }
+    let mut neighbors = Vec::new();
+    for neighbor in decoder.input_neighbors.iter() {
+        neighbors.push(InputNeighbor {
+            a: neighbor.a,
+            b: neighbor.b,
+            increased: 0,
+            length: neighbor.length,
+            latency: 1,
+        });
+    }
+    let duf_decoder = DistributedUnionFind::new(nodes, neighbors, vec![], manhattan_distance_standard_planar_code_3d_nodes,
+        compare_standard_planar_code_3d_nodes);
+    (duf_decoder, position_to_index)
+}
+
+pub fn copy_state_back_to_union_find_decoder(decoder: &mut union_find_decoder::UnionFindDecoder<(usize, usize, usize)>, 
+        duf_decoder: &DistributedUnionFind<(usize, usize, usize)>) {
+    // copy root, but the root might be changed internally by UnionFind library
+    assert_eq!(decoder.nodes.len(), duf_decoder.nodes.len(), "they should have the same number of nodes");
+    for a in 0..decoder.nodes.len() {
+        let duf_processing_unit = &duf_decoder.processing_units[a];
+        let b = duf_processing_unit.updated_root;
+        decoder.union_find.union(a, b);
+    }
+    // copy cardinality and is_touching_boundary
+    for a in 0..decoder.nodes.len() {
+        let duf_processing_unit = &duf_decoder.processing_units[a];
+        let duf_updated_root = duf_processing_unit.updated_root;
+        let duf_root_processing_unit = &duf_decoder.processing_units[duf_updated_root];
+        let uf_union_node = decoder.union_find.get_mut(a);
+        uf_union_node.cardinality = duf_root_processing_unit.debug_cardinality;  // accurate cardinality
+        // uf_union_node.cardinality = if duf_root_processing_unit.is_odd_cardinality { 1 } else { 0 };  // or just use parity of cardinality
+        uf_union_node.is_touching_boundary = duf_root_processing_unit.is_touching_boundary;
+    }
+    // copy boundary increase and boundary state
+    for a in 0..decoder.nodes.len() {
+        let duf_processing_unit = &duf_decoder.processing_units[a];
+        let uf_decoder_node = &mut decoder.nodes[a];
+        uf_decoder_node.boundary_increased = duf_processing_unit.boundary_increased;
+    }
+    // copy neighbor increase and neighbor state
+    for a in 0..decoder.nodes.len() {
+        let duf_processing_unit = &duf_decoder.processing_units[a];
+        let uf_decoder_node = &mut decoder.nodes[a];
+        for duf_neighbor in duf_processing_unit.neighbors.iter() {
+            let uf_neighbor_index = uf_decoder_node.neighbor_index[&duf_neighbor.address];
+            let uf_neighbor_partial_edge = &mut uf_decoder_node.neighbors[uf_neighbor_index];
+            assert_eq!(uf_neighbor_partial_edge.address, duf_neighbor.address);
+            assert_eq!(uf_neighbor_partial_edge.length, duf_neighbor.link.borrow().length);
+            uf_neighbor_partial_edge.increased = duf_neighbor.link.borrow().increased;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::super::types::ErrorType;
+    use super::super::types::{ErrorType, ErrorModel};
+    use super::super::rand::prelude::*;
 
     // use `cargo test distributed_union_find_decoder_test_case_1 -- --nocapture` to run specific test
 
@@ -1482,6 +1551,36 @@ mod tests {
         decoder.detailed_print_run_to_stable(true);
         assert_eq!(1, get_standard_planar_code_3d_boundary_cardinality(QubitType::StabZ, &position_to_index, &decoder)
             , "cardinality of one side of boundary determines if there is logical error");
+    }
+
+    #[test]
+    fn distributed_union_find_decoder_test_xzzx_code_1() {
+        let di = 3;
+        let dj = 3;
+        let measurement_rounds = 3;
+        let bias_zeta = 100.;  // definition of zeta see arXiv:2104.09539v1
+        let p = 0.006;
+        let max_half_weight = 4;
+        let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code_rectangle(measurement_rounds, di, dj);
+        model.apply_error_model(&ErrorModel::GenericBiasedWithBiasedCX, p, bias_zeta);
+        model.build_graph();
+        // model.optimize_correction_pattern();  // no need if not building corrections
+        // model.build_exhausted_path_autotune();
+        let use_random_error = true;
+        if use_random_error {
+            let mut rng = thread_rng();
+            let error_count = model.generate_random_errors(|| rng.gen::<f64>());
+            println!("error_count: {}", error_count);
+        }
+        model.propagate_error();
+        let measurement = model.generate_measurement();
+        let decoders = union_find_decoder::suboptimal_matching_by_union_find_given_measurement_build_decoders(&model, &measurement, max_half_weight);
+        for mut decoder in decoders.into_iter() {
+            // build distributed union-find decoder from union-find decoder
+            let (mut duf_decoder, _position_to_index) = build_distributed_union_find_given_uf_decoder_3d(&decoder);
+            duf_decoder.detailed_print_run_to_stable(true);
+            copy_state_back_to_union_find_decoder(&mut decoder, &duf_decoder);
+        }
     }
 
 }

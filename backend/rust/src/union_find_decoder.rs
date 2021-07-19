@@ -18,6 +18,7 @@ use super::offer_decoder;
 use super::ftqec;
 use super::types::QubitType;
 use super::petgraph;
+use super::distributed_uf_decoder;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UnionFindDecoder<U: std::fmt::Debug> {
@@ -633,11 +634,10 @@ pub fn run_given_mwpm_decoder_instance_weighted(model: &ftqec::PlanarCodeModel, 
 #[allow(dead_code)]
 pub fn suboptimal_matching_by_union_find(model: &ftqec::PlanarCodeModel, max_half_weight: usize) ->
         (Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
-    suboptimal_matching_by_union_find_given_measurement(model, &model.generate_measurement(), max_half_weight)
+    suboptimal_matching_by_union_find_given_measurement(model, &model.generate_measurement(), max_half_weight, false)
 }
-/// given an arbitrary ftqec::PlanarCodeModel, this function returns a suboptimal matching given by union find decoder
-pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::PlanarCodeModel, measurement: &ftqec::Measurement, max_half_weight: usize) ->
-        (Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
+pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model: &ftqec::PlanarCodeModel, measurement: &ftqec::Measurement, max_half_weight: usize)
+        -> Vec<UnionFindDecoder<(usize, usize, usize)>> {
     // first find individual connected regions (so that the decoder weight is optimal for every region)
     let mut g = petgraph::graph::UnGraph::<(usize, usize, usize), ()>::default();
     let mut tij_to_index = HashMap::new();
@@ -687,8 +687,7 @@ pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::Planar
     //         println!("");
     //     }
     // }
-    let mut edge_matchings = Vec::new();
-    let mut boundary_matchings = Vec::new();
+    let mut decoders = Vec::new();
     for region in connected_regions.iter() {
         let mut minimum_probability = f64::MAX;
         for idx in region.iter() {
@@ -758,54 +757,81 @@ pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::Planar
                 }
             }
         }
-        // run union find decoder
-        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
-        decoder.run_to_stable();
-        // generate suboptimal matching
-        let mut counted_sets = HashSet::new();
-        for index in 0..decoder.nodes.len() {
-            let root = decoder.union_find.immutable_find(index);
-            if counted_sets.contains(&root) {  // every set should only be counted once
-                continue;
-            }
-            let root_node = &decoder.union_find.immutable_get(root);
-            if root_node.cardinality == 0 {  // ignore clusters without errors
-                continue;
-            }
-            counted_sets.insert(root);
-            // find all errors in this cluster
-            let mut error_syndromes = Vec::new();
-            let mut cluster_boundary = None;
-            for index2 in 0..decoder.nodes.len() {
-                let root2 = decoder.union_find.immutable_find(index2);
-                if root2 == root {
-                    let node2 = &decoder.nodes[index2];
-                    if node2.node.boundary_cost.is_some() && node2.boundary_increased >= node2.node.boundary_cost.unwrap() {
-                        cluster_boundary = Some(index2);
-                    }
-                    if node2.node.is_error_syndrome {
-                        error_syndromes.push(index2)
-                    }
+        // build union find decoder
+        let decoder = UnionFindDecoder::new(nodes, neighbors);
+        decoders.push(decoder);
+    }
+    decoders
+}
+pub fn suboptimal_matching_by_union_find_given_measurement_generate_suboptimal_matching(decoder: &UnionFindDecoder<(usize, usize, usize)>)
+        -> (Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
+    let mut edge_matchings = Vec::new();
+    let mut boundary_matchings = Vec::new();
+    let mut counted_sets = HashSet::new();
+    for index in 0..decoder.nodes.len() {
+        let root = decoder.union_find.immutable_find(index);
+        if counted_sets.contains(&root) {  // every set should only be counted once
+            continue;
+        }
+        let root_node = &decoder.union_find.immutable_get(root);
+        if root_node.cardinality == 0 {  // ignore clusters without errors
+            continue;
+        }
+        counted_sets.insert(root);
+        // find all errors in this cluster
+        let mut error_syndromes = Vec::new();
+        let mut cluster_boundary = None;
+        for index2 in 0..decoder.nodes.len() {
+            let root2 = decoder.union_find.immutable_find(index2);
+            if root2 == root {
+                let node2 = &decoder.nodes[index2];
+                if node2.node.boundary_cost.is_some() && node2.boundary_increased >= node2.node.boundary_cost.unwrap() {
+                    cluster_boundary = Some(index2);
                 }
-            }
-            assert_eq!(error_syndromes.len(), root_node.cardinality);
-            if root_node.cardinality % 2 == 1 {
-                // connect to a boundary and others internally
-                let cluster_boundary_index = cluster_boundary.expect("odd cluster should at least have 1 boundary");
-                error_syndromes.push(cluster_boundary_index);
-                let node = &decoder.nodes[cluster_boundary_index];
-                boundary_matchings.push(node.node.user_data);
-            }
-            assert_eq!(error_syndromes.len() % 2, 0);
-            let half_len = error_syndromes.len() / 2;
-            for i in 0..half_len{
-                let node1 = &decoder.nodes[error_syndromes[i]];
-                let node2 = &decoder.nodes[error_syndromes[i + half_len]];
-                if node1.node.user_data != node2.node.user_data {
-                    edge_matchings.push((node1.node.user_data, node2.node.user_data));
+                if node2.node.is_error_syndrome {
+                    error_syndromes.push(index2)
                 }
             }
         }
+        assert_eq!(error_syndromes.len(), root_node.cardinality);
+        if root_node.cardinality % 2 == 1 {
+            // connect to a boundary and others internally
+            let cluster_boundary_index = cluster_boundary.expect("odd cluster should at least have 1 boundary");
+            error_syndromes.push(cluster_boundary_index);
+            let node = &decoder.nodes[cluster_boundary_index];
+            boundary_matchings.push(node.node.user_data);
+        }
+        assert_eq!(error_syndromes.len() % 2, 0);
+        let half_len = error_syndromes.len() / 2;
+        for i in 0..half_len{
+            let node1 = &decoder.nodes[error_syndromes[i]];
+            let node2 = &decoder.nodes[error_syndromes[i + half_len]];
+            if node1.node.user_data != node2.node.user_data {
+                edge_matchings.push((node1.node.user_data, node2.node.user_data));
+            }
+        }
+    }
+    (edge_matchings, boundary_matchings)
+}
+/// given an arbitrary ftqec::PlanarCodeModel, this function returns a suboptimal matching given by union find decoder
+pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::PlanarCodeModel, measurement: &ftqec::Measurement, max_half_weight: usize
+        , use_distributed: bool) -> (Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
+    let mut edge_matchings = Vec::new();
+    let mut boundary_matchings = Vec::new();
+    let decoders = suboptimal_matching_by_union_find_given_measurement_build_decoders(model, measurement, max_half_weight);
+    for mut decoder in decoders.into_iter() {
+        // run union find decoder
+        if use_distributed {
+            let (mut duf_decoder, _position_to_index) = distributed_uf_decoder::build_distributed_union_find_given_uf_decoder_3d(&decoder);
+            duf_decoder.run_to_stable();
+            distributed_uf_decoder::copy_state_back_to_union_find_decoder(&mut decoder, &duf_decoder);
+        } else {
+            decoder.run_to_stable();
+        }
+        // generate suboptimal matching
+        let (mut local_edge_matchings, mut local_boundary_matchings) = suboptimal_matching_by_union_find_given_measurement_generate_suboptimal_matching(&decoder);
+        edge_matchings.append(&mut local_edge_matchings);
+        boundary_matchings.append(&mut local_boundary_matchings);
     }
     (edge_matchings, boundary_matchings)
 }
@@ -820,9 +846,9 @@ pub struct UnionFind {
 
 #[derive(Copy, Debug, Serialize, Deserialize, Clone)]
 pub struct UnionNode {
-    set_size: usize,
-    cardinality: usize,
-    is_touching_boundary: bool,
+    pub set_size: usize,
+    pub cardinality: usize,
+    pub is_touching_boundary: bool,
 }
 
 #[derive(Copy, Debug, Serialize, Deserialize, Clone)]
