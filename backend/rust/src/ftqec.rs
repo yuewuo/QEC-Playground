@@ -28,6 +28,7 @@ use super::types::{QubitType, ErrorType, CorrelatedErrorType, CorrelatedErrorMod
 use super::union_find_decoder;
 use super::either::Either;
 use super::serde_json;
+use std::time::Instant;
 
 /// uniquely index a node
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -1302,6 +1303,11 @@ impl PlanarCodeModel {
         // if to_be_matched.len() > 2 {
         //     println!{"TBM {:?}", to_be_matched};
         // }
+        let mut correction = self.generate_default_sparse_correction();
+        let mut edge_matchings = Vec::new();
+        let mut boundary_matchings = Vec::new();
+        let mut time_blossom_v = 0.;
+        let mut time_constructing_correction = 0.;
         if to_be_matched.len() != 0 {
             // then add the edges to the graph
             let m_len = to_be_matched.len();  // boundary connection to `i` is `i + m_len`
@@ -1335,15 +1341,15 @@ impl PlanarCodeModel {
             // if to_be_matched.len() > 2 {
             //     println!{"node num {:?}, weighted edges {:?}", node_num, weighted_edges};
             // }
+            let begin = Instant::now();
             let matching = blossom_v::safe_minimum_weight_perfect_matching(node_num, weighted_edges);
+            time_blossom_v = begin.elapsed().as_secs_f64();
             // println!("{:?}", to_be_matched);
             // println!("matching: {:?}", matching);
             // if to_be_matched.len() > 2 {
             //     println!("matching: {:?}", matching);
             // }
-            let mut correction = self.generate_default_sparse_correction();
-            let mut edge_matchings = Vec::new();
-            let mut boundary_matchings = Vec::new();
+            let begin = Instant::now();
             for i in 0..m_len {
                 let j = matching[i];
                 let a = &to_be_matched[i];
@@ -1359,14 +1365,16 @@ impl PlanarCodeModel {
                     boundary_matchings.push((a.t, a.i, a.j));
                 }
             }
+            time_constructing_correction = begin.elapsed().as_secs_f64();
             // if to_be_matched.len() > 2 {
             //     println!("correction: {:?}", correction);
             // }
-            (correction, json!({}), edge_matchings, boundary_matchings)
-        } else {
-            // no measurement errors found
-            (self.generate_default_sparse_correction(), json!({}), Vec::new(), Vec::new())
         }
+        (correction, json!({
+            "to_be_matched": to_be_matched.len(),
+            "time_blossom_v": time_blossom_v,
+            "time_constructing_correction": time_constructing_correction,
+        }), edge_matchings, boundary_matchings)
     }
     
     /// decode based on UnionFind decoder
@@ -1388,8 +1396,8 @@ impl PlanarCodeModel {
         assert_eq!(shape[1], width_i);
         assert_eq!(shape[2], width_j);
         // run union find decoder
-        let (edge_matchings, boundary_matchings) = union_find_decoder::suboptimal_matching_by_union_find_given_measurement(&self, measurement, max_half_weight
-            , use_distributed);
+        let (edge_matchings, boundary_matchings, runtime_statistics) = union_find_decoder::suboptimal_matching_by_union_find_given_measurement(&self
+            , measurement, max_half_weight , use_distributed);
         let mut correction = self.generate_default_sparse_correction();
         for &((t1, i1, j1), (t2, i2, j2)) in edge_matchings.iter() {
             correction.combine(&self.get_correction_two_nodes(&Index::new(t1, i1, j1), &Index::new(t2, i2, j2)));
@@ -1398,7 +1406,7 @@ impl PlanarCodeModel {
             let node = self.snapshot[t][i][j].as_ref().expect("exist");
             correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
         }
-        (correction, json!({}), edge_matchings, boundary_matchings)
+        (correction, runtime_statistics, edge_matchings, boundary_matchings)
     }
 
     /// decode based on approximate MWPM

@@ -735,7 +735,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                         model_error.propagate_error();
                         let measurement = model_error.generate_measurement();
                         // use `model_decoder` for decoding, so that it is blind to the real error information
-                        let (correction, runtime_statistics) = if !bypass_correction {
+                        let (correction, mut runtime_statistics) = if !bypass_correction {
                             match decoder_type {
                                 DecoderType::MinimumWeightPerfectMatching => model_decoder.decode_MWPM(&measurement),
                                 DecoderType::UnionFind => model_decoder.decode_UnionFind(&measurement, max_half_weight, false),
@@ -745,43 +745,48 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                         } else {
                             (model_decoder.generate_default_correction(), json!({}))
                         };
-                        if log_runtime_statistics_file.is_some() {
-                            log_runtime_statistics_buffer.push_str(&runtime_statistics.to_string());
-                            log_runtime_statistics_buffer.push_str(&"\n".to_string())
-                        }
+                        let mut count_as_error = false;
                         if validate_layer == -2 {
                             let validation_ret = model_error.validate_correction_on_boundary(&correction);
                             match validation_ret {
                                 Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { if !only_count_logical_z {
-                                    mini_qec_failed += 1;
+                                    count_as_error = true;
                                 } },
                                 Err(ftqec::ValidationFailedReason::ZLogicalError(_, _, _)) => { if !only_count_logical_x {
-                                    mini_qec_failed += 1;
+                                    count_as_error = true;
                                 } },
                                 Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => {
-                                    mini_qec_failed += 1;
+                                    count_as_error = true;
                                 },
                                 _ => {},
                             }
                         } else if validate_layer == -1 {
                             // model_error.validate_correction_on_boundary(&correction);
                             if model_error.validate_correction_on_all_layers(&correction).is_err() {
-                                mini_qec_failed += 1;
+                                count_as_error = true;
                             }
                         } else {
                             let validation_ret = model_error.validate_correction_on_t_layer(&correction, validate_layer as usize);
                             match validation_ret {
                                 Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { if !only_count_logical_z {
-                                    mini_qec_failed += 1;
+                                    count_as_error = true;
                                 } },
                                 Err(ftqec::ValidationFailedReason::ZLogicalError(_, _, _)) => { if !only_count_logical_x {
-                                    mini_qec_failed += 1;
+                                    count_as_error = true;
                                 } },
                                 Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => {
-                                    mini_qec_failed += 1;
+                                    count_as_error = true;
                                 },
                                 _ => {},
                             }
+                        }
+                        if count_as_error {
+                            mini_qec_failed += 1;
+                        }
+                        runtime_statistics["error"] = json!(count_as_error);  // add result into runtime statistics information
+                        if log_runtime_statistics_file.is_some() {
+                            log_runtime_statistics_buffer.push_str(&runtime_statistics.to_string());
+                            log_runtime_statistics_buffer.push_str(&"\n".to_string())
                         }
                     }
                     // sync data with outside

@@ -19,6 +19,8 @@ use super::ftqec;
 use super::types::QubitType;
 use super::petgraph;
 use super::distributed_uf_decoder;
+use super::serde_json;
+use std::time::Instant;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UnionFindDecoder<U: std::fmt::Debug> {
@@ -631,11 +633,6 @@ pub fn run_given_mwpm_decoder_instance_weighted(model: &ftqec::PlanarCodeModel, 
     (has_x_logical_error, has_z_logical_error)
 }
 
-#[allow(dead_code)]
-pub fn suboptimal_matching_by_union_find(model: &ftqec::PlanarCodeModel, max_half_weight: usize) ->
-        (Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
-    suboptimal_matching_by_union_find_given_measurement(model, &model.generate_measurement(), max_half_weight, false)
-}
 pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model: &ftqec::PlanarCodeModel, measurement: &ftqec::Measurement, max_half_weight: usize)
         -> Vec<UnionFindDecoder<(usize, usize, usize)>> {
     // first find individual connected regions (so that the decoder weight is optimal for every region)
@@ -815,25 +812,43 @@ pub fn suboptimal_matching_by_union_find_given_measurement_generate_suboptimal_m
 }
 /// given an arbitrary ftqec::PlanarCodeModel, this function returns a suboptimal matching given by union find decoder
 pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::PlanarCodeModel, measurement: &ftqec::Measurement, max_half_weight: usize
-        , use_distributed: bool) -> (Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
+        , use_distributed: bool) -> (Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>, serde_json::Value) {
     let mut edge_matchings = Vec::new();
     let mut boundary_matchings = Vec::new();
+    let mut time_run_to_stable = 0.;
+    let mut time_build_decoders = 0.;
+    let mut duf_clock_cycles = 0;
+    let begin = Instant::now();
     let decoders = suboptimal_matching_by_union_find_given_measurement_build_decoders(model, measurement, max_half_weight);
+    time_build_decoders += begin.elapsed().as_secs_f64();
     for mut decoder in decoders.into_iter() {
         // run union find decoder
         if use_distributed {
+            let begin = Instant::now();
             let (mut duf_decoder, _position_to_index) = distributed_uf_decoder::build_distributed_union_find_given_uf_decoder_3d(&decoder);
-            duf_decoder.run_to_stable();
+            time_build_decoders += begin.elapsed().as_secs_f64();
+            let begin = Instant::now();
+            duf_clock_cycles += duf_decoder.run_to_stable();
+            time_run_to_stable += begin.elapsed().as_secs_f64();
             distributed_uf_decoder::copy_state_back_to_union_find_decoder(&mut decoder, &duf_decoder);
         } else {
+            let begin = Instant::now();
             decoder.run_to_stable();
+            time_run_to_stable += begin.elapsed().as_secs_f64();
         }
         // generate suboptimal matching
         let (mut local_edge_matchings, mut local_boundary_matchings) = suboptimal_matching_by_union_find_given_measurement_generate_suboptimal_matching(&decoder);
         edge_matchings.append(&mut local_edge_matchings);
         boundary_matchings.append(&mut local_boundary_matchings);
     }
-    (edge_matchings, boundary_matchings)
+    let mut runtime_statistics = json!({
+        "time_run_to_stable": time_run_to_stable,
+        "time_build_decoders": time_build_decoders,
+    });
+    if use_distributed {
+        runtime_statistics["duf_clock_cycles"] = json!(duf_clock_cycles);
+    }
+    (edge_matchings, boundary_matchings, runtime_statistics)
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -1332,7 +1347,7 @@ mod tests {
         model.add_error_at(12, 0, 12, &ErrorType::Z).expect("error rate = 0 here");
         model.add_error_at(12, 9, 7, &ErrorType::Z).expect("error rate = 0 here");
         model.propagate_error();
-        let (edge_matchings, boundary_matchings) = suboptimal_matching_by_union_find(&model, 4);
+        let (edge_matchings, boundary_matchings, _runtime_statistics) = suboptimal_matching_by_union_find(&model, 4, false);
         println!("edge_matchings: {:?}", edge_matchings);
         println!("boundary_matchings: {:?}", boundary_matchings);
     }
