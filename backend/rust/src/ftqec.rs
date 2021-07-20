@@ -1306,9 +1306,11 @@ impl PlanarCodeModel {
         let mut correction = self.generate_default_sparse_correction();
         let mut edge_matchings = Vec::new();
         let mut boundary_matchings = Vec::new();
+        let mut time_prepare_graph = 0.;
         let mut time_blossom_v = 0.;
         let mut time_constructing_correction = 0.;
         if to_be_matched.len() != 0 {
+            let begin = Instant::now();
             // then add the edges to the graph
             let m_len = to_be_matched.len();  // boundary connection to `i` is `i + m_len`
             let node_num = m_len * 2;
@@ -1338,6 +1340,7 @@ impl PlanarCodeModel {
                     None => { }
                 }
             }
+            time_prepare_graph = begin.elapsed().as_secs_f64();
             // if to_be_matched.len() > 2 {
             //     println!{"node num {:?}, weighted edges {:?}", node_num, weighted_edges};
             // }
@@ -1372,6 +1375,7 @@ impl PlanarCodeModel {
         }
         (correction, json!({
             "to_be_matched": to_be_matched.len(),
+            "time_prepare_graph": time_prepare_graph,
             "time_blossom_v": time_blossom_v,
             "time_constructing_correction": time_constructing_correction,
         }), edge_matchings, boundary_matchings)
