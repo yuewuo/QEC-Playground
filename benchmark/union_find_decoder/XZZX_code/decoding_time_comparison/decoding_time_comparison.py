@@ -17,7 +17,7 @@ p_vec = [p]
 max_N = 100000000  # this is rarely achieved because p is large enough
 
 # min_error_cases = 100  # for debugging
-min_error_cases = 10000  # real experiment
+min_error_cases = 2000  # real experiment
 
 ENABLE_MULTITHREADING = True
 num_threads = os.cpu_count() - 3 if ENABLE_MULTITHREADING else 1
