@@ -6,8 +6,8 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command
 from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 
-pairs = [ (3, 9, 9), (4, 12, 12), (5, 15, 15), (6, 18, 18), (7, 21, 21), (8, 24, 24) ]  # (di, dj, T)
-p_vec = [0.01 * (10 ** (- i / 10)) for i in range(30)]
+pairs = [ (4, 12, 12), (5, 15, 15), (6, 18, 18), (7, 21, 21), (8, 24, 24) ]  # (di, dj, T)
+p_vec = [0.01 * (10 ** (- i / 2)) for i in range(6)]
 
 di_vec = [e[0] for e in pairs]
 dj_vec = [e[1] for e in pairs]
