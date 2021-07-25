@@ -10,7 +10,7 @@ di_vec = [int((dif+1)/2)*2-1 for dif in [5 * (1.2 ** i) for i in range(15)]]
 # di_vec = [5, 7, 9, 11, 13, 17, 21, 25, 29, 37, 43, 53, 63]
 dedup_di_vec = sorted(list(set(di_vec)))
 pairs = [ (di, di, 0) for di in dedup_di_vec ]  # (di, dj, T)
-p_vec = [0.01]
+p_vec = [0.01, 0.03, 0.1, 0.3]
 
 di_vec = [e[0] for e in pairs]
 dj_vec = [e[1] for e in pairs]
