@@ -288,7 +288,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             //     }
             // }
             // then shrink the boundary by checking if this is real boundary (neighbor are not all in the same set)
-            let mut shrunk_boundaries = HashSet::new();
+            let mut shrunk_boundaries = HashSet::with_capacity(boundaries.len() * 10);
             for &boundary in boundaries.iter() {
                 let mut has_foreign = false;
                 let neighbor_len = self.nodes[boundary].neighbors.len();

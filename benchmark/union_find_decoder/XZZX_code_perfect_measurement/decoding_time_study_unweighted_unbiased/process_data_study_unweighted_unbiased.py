@@ -5,7 +5,7 @@ version b330a31
     time_uf_replace: 1.8994782349478885 0.9837467957441839
     time_uf_update: 3.697717213362454 0.990606809917821
     time_uf_remove: 2.1921364060895505 0.9730189829334444
-conclusion: "time_uf_grow" and "time_uf_remove" step needs to be examined
+conclusion: "time_uf_grow" and "time_uf_update" step needs to be examined
 
 
 """
