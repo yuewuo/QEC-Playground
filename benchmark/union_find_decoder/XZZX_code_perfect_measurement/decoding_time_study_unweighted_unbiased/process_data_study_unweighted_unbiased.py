@@ -76,10 +76,12 @@ for i in range(0, len(configurations)):
     print(f"time_build_decoders: {average(time_build_decoders_vec)}, {sorted(time_build_decoders_vec)[upper_idx]}")
     print(f"time_run_to_stable: {average(time_run_to_stable_vec)}, {sorted(time_run_to_stable_vec)[upper_idx]}")
     print(f"time_build_decoders_run_to_stable: {average(time_build_decoders_run_to_stable_vec)}, {sorted(time_build_decoders_run_to_stable_vec)[upper_idx]}")
-    for si in range(len(step_vec)):
-        step_name = step_vec[si]
-        fitting_data_step = fitting_data[si]
-        fitting_data_step.append((config["di"], average(time_steps_vec[si])))
+    # di_vec = [5, 7, 9, 11, 13, 17, 21, 25, 29, 37, 43, 53, 63]
+    if config["di"] >= 13:
+        for si in range(len(step_vec)):
+            step_name = step_vec[si]
+            fitting_data_step = fitting_data[si]
+            fitting_data_step.append((config["di"], average(time_steps_vec[si])))
 
 for i in range(len(p_vec)):
     for si in range(len(step_vec)):
