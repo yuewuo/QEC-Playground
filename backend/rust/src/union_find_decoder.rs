@@ -12,7 +12,7 @@
 use std::iter::FromIterator;
 use std::mem;
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, BTreeMap, BTreeSet};
 use super::serde::{Serialize, Deserialize};
 use super::offer_decoder;
 use super::ftqec;
@@ -29,11 +29,11 @@ pub struct UnionFindDecoder<U: std::fmt::Debug> {
     /// union find solver
     pub union_find: UnionFind,
     /// all odd clusters that need to update in each turn, clusters are named under the root
-    pub odd_clusters: HashSet<usize>,
+    pub odd_clusters: BTreeSet<usize>,
     /// record the boundary nodes as an optimization, see https://arxiv.org/pdf/1709.06218.pdf Section "Boundary representation".
-    /// even clusters should not be key in HashMap, and only real boundary should be in the `HashSet` value
-    /// those nodes without error syndrome also have entries in this HashMap, with the value of { itself }
-    pub cluster_boundaries: HashMap<usize, HashSet<usize>>,
+    /// even clusters should not be key in BTreeMap, and only real boundary should be in the `BTreeSet` value
+    /// those nodes without error syndrome also have entries in this BTreeMap, with the value of { itself }
+    pub cluster_boundaries: BTreeMap<usize, BTreeSet<usize>>,
     /// original inputs
     pub input_neighbors: Vec<NeighborEdge>,
     // DEBUG: study the time consumption of each step
@@ -51,7 +51,7 @@ pub struct DecoderNode<U: std::fmt::Debug> {
     /// directly connected neighbors, (address, already increased length = 0, length = 0)
     pub neighbors: Vec<NeighborPartialEdge>,
     /// the mapping from node index to NeighborPartialEdge index
-    pub neighbor_index: HashMap<usize, usize>,
+    pub neighbor_index: BTreeMap<usize, usize>,
     /// increased region towards boundary, only valid when `node.boundary_cost` is `Some(_)`
     pub boundary_increased: usize,
 }
@@ -148,17 +148,17 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             DecoderNode {
                 node: node,
                 neighbors: Vec::new(),
-                neighbor_index: HashMap::new(),
+                neighbor_index: BTreeMap::new(),
                 boundary_increased: 0,
             }
         }).collect();
-        let odd_clusters: HashSet<_> = nodes.iter().enumerate().filter(|(_idx, node)| {
+        let odd_clusters: BTreeSet<_> = nodes.iter().enumerate().filter(|(_idx, node)| {
             node.node.is_error_syndrome
         }).map(|(idx, _node)| {
             idx
         }).collect();
-        let cluster_boundaries: HashMap<_, _> = nodes.iter().enumerate().map(|(idx, _node)| {
-            (idx, vec![idx].into_iter().collect::<HashSet<usize>>())
+        let cluster_boundaries: BTreeMap<_, _> = nodes.iter().enumerate().map(|(idx, _node)| {
+            (idx, vec![idx].into_iter().collect::<BTreeSet<usize>>())
         }).collect();  // only roots of these odd clusters are boundaries in the initial state
         // union find solver
         let union_find = UnionFind::from_iter(nodes.iter().map(|node| {
@@ -272,7 +272,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             // `cluster_boundaries` should only contain root ones now
             assert_eq!(cluster, self.union_find.find(cluster), "non-root boundaries should already been removed");
             // first grow the boundary
-            // let mut grown_boundaries = HashSet::new();
+            // let mut grown_boundaries = BTreeSet::new();
             // for &boundary in boundaries.iter() {
             //     let neighbor_len = self.nodes[boundary].neighbors.len();
             //     for i in 0..neighbor_len {
@@ -288,7 +288,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             //     }
             // }
             // then shrink the boundary by checking if this is real boundary (neighbor are not all in the same set)
-            let mut shrunk_boundaries = HashSet::new();
+            let mut shrunk_boundaries = BTreeSet::new();
             for &boundary in boundaries.iter() {
                 let mut has_foreign = false;
                 let neighbor_len = self.nodes[boundary].neighbors.len();
@@ -319,7 +319,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
         self.time_uf_update += begin.elapsed().as_secs_f64();
         // remove the even clusters (includes those already touched the code boundary) from `odd_clusters`
         let begin = Instant::now();
-        let mut odd_clusters = HashSet::new();
+        let mut odd_clusters = BTreeSet::new();
         for &odd_cluster in self.odd_clusters.iter() {
             let union_node = self.union_find.get(odd_cluster);
             if union_node.cardinality % 2 == 1 && !union_node.is_touching_boundary {
