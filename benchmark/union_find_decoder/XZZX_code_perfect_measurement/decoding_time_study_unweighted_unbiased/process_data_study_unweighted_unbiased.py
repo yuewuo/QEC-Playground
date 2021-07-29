@@ -1,11 +1,19 @@
 """
-version b330a31
+version b330a31 (initial setup)
     time_uf_grow: 3.3527354275627674 0.9686155775808986
     time_uf_merge: 2.468715605448675 0.987396938489815
     time_uf_replace: 1.8994782349478885 0.9837467957441839
     time_uf_update: 3.697717213362454 0.990606809917821
     time_uf_remove: 2.1921364060895505 0.9730189829334444
 conclusion: "time_uf_grow" and "time_uf_update" step needs to be examined
+
+
+version 0b7a778 (change all HashSet/Map to BTreeSet/Map because it has lower iteration complexity)
+    time_uf_grow: 3.0661304128080737 0.950191055849983
+    time_uf_merge: 2.48933105090094 0.9941893001537699
+    time_uf_replace: 2.091536174570542 0.9986348955117652
+    time_uf_update: 3.015519134017408 0.9766076585623577
+    time_uf_remove: 2.961061023900995 0.9917082865728023
 
 
 """
@@ -39,7 +47,7 @@ def average(lst):
 # p_vec = [0.01, 0.03, 0.1, 0.3]
 p_vec = [0.01]
 
-step_vec = ["time_uf_grow", "time_uf_merge", "time_uf_replace", "time_uf_update", "time_uf_remove"]
+step_vec = ["time_uf_grow", "time_uf_merge", "time_uf_replace", "time_uf_update", "time_uf_remove", "time_run_to_stable"]
 fitting_data_vec = [[[] for si in range(len(step_vec))] for pi in range(len(p_vec))]
 
 for i in range(0, len(configurations)):
@@ -77,7 +85,7 @@ for i in range(0, len(configurations)):
     print(f"time_run_to_stable: {average(time_run_to_stable_vec)}, {sorted(time_run_to_stable_vec)[upper_idx]}")
     print(f"time_build_decoders_run_to_stable: {average(time_build_decoders_run_to_stable_vec)}, {sorted(time_build_decoders_run_to_stable_vec)[upper_idx]}")
     # di_vec = [5, 7, 9, 11, 13, 17, 21, 25, 29, 37, 43, 53, 63]
-    if config["di"] >= 13:
+    if config["di"] >= 43:
         for si in range(len(step_vec)):
             step_name = step_vec[si]
             fitting_data_step = fitting_data[si]
