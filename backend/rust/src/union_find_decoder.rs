@@ -36,6 +36,12 @@ pub struct UnionFindDecoder<U: std::fmt::Debug> {
     pub cluster_boundaries: HashMap<usize, HashSet<usize>>,
     /// original inputs
     pub input_neighbors: Vec<NeighborEdge>,
+    // DEBUG: study the time consumption of each step
+    pub time_uf_grow: f64,
+    pub time_uf_merge: f64,
+    pub time_uf_replace: f64,
+    pub time_uf_update: f64,
+    pub time_uf_remove: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -194,12 +200,18 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             odd_clusters: odd_clusters,
             cluster_boundaries: cluster_boundaries,
             input_neighbors: neighbors,
+            time_uf_grow: 0.,
+            time_uf_merge: 0.,
+            time_uf_replace: 0.,
+            time_uf_update: 0.,
+            time_uf_remove: 0.,
         }
     }
 
     /// run a single turn
     pub fn run_single_iteration(&mut self) {
         // grow and update cluster boundaries
+        let begin = Instant::now();
         let mut fusion_list = Vec::new();
         for &odd_cluster in self.odd_clusters.iter() {
             let boundaries = self.cluster_boundaries.get(&odd_cluster).unwrap();
@@ -231,7 +243,9 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
                 }
             }
         }
+        self.time_uf_grow += begin.elapsed().as_secs_f64();
         // merge the clusters given `fusion_list` and also update the boundary list
+        let begin = Instant::now();
         for &(a, b) in fusion_list.iter() {
             let a = self.union_find.find(a);  // update to its root
             let b = self.union_find.find(b);  // update to its root
@@ -244,12 +258,16 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
                 self.cluster_boundaries.get_mut(&to_be_appended).unwrap().extend(&appending_vec);  // append the boundary
             }
         }
+        self.time_uf_merge += begin.elapsed().as_secs_f64();
         // replace `odd_clusters` by the root, so that querying `cluster_boundaries` will be valid
+        let begin = Instant::now();
         let union_find = &mut self.union_find;
         self.odd_clusters = self.odd_clusters.iter().map(|&odd_cluster| {
             union_find.find(odd_cluster)
         }).collect();
+        self.time_uf_replace += begin.elapsed().as_secs_f64();
         // update the boundary vertices
+        let begin = Instant::now();
         for (&cluster, boundaries) in self.cluster_boundaries.iter_mut() {
             // `cluster_boundaries` should only contain root ones now
             assert_eq!(cluster, self.union_find.find(cluster), "non-root boundaries should already been removed");
@@ -298,7 +316,9 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             // replace the boundary list
             *boundaries = shrunk_boundaries;
         }
+        self.time_uf_update += begin.elapsed().as_secs_f64();
         // remove the even clusters (includes those already touched the code boundary) from `odd_clusters`
+        let begin = Instant::now();
         let mut odd_clusters = HashSet::new();
         for &odd_cluster in self.odd_clusters.iter() {
             let union_node = self.union_find.get(odd_cluster);
@@ -307,6 +327,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             }
         }
         self.odd_clusters = odd_clusters;
+        self.time_uf_remove += begin.elapsed().as_secs_f64();
     }
 
     pub fn run_to_stable(&mut self) {
@@ -821,6 +842,11 @@ pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::Planar
     let begin = Instant::now();
     let decoders = suboptimal_matching_by_union_find_given_measurement_build_decoders(model, measurement, max_half_weight);
     time_build_decoders += begin.elapsed().as_secs_f64();
+    let mut time_uf_grow = 0.;
+    let mut time_uf_merge = 0.;
+    let mut time_uf_replace = 0.;
+    let mut time_uf_update = 0.;
+    let mut time_uf_remove = 0.;
     for mut decoder in decoders.into_iter() {
         // run union find decoder
         if use_distributed {
@@ -835,6 +861,11 @@ pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::Planar
             let begin = Instant::now();
             decoder.run_to_stable();
             time_run_to_stable += begin.elapsed().as_secs_f64();
+            time_uf_grow += decoder.time_uf_grow;
+            time_uf_merge += decoder.time_uf_merge;
+            time_uf_replace += decoder.time_uf_replace;
+            time_uf_update += decoder.time_uf_update;
+            time_uf_remove += decoder.time_uf_remove;
         }
         // generate suboptimal matching
         let (mut local_edge_matchings, mut local_boundary_matchings) = suboptimal_matching_by_union_find_given_measurement_generate_suboptimal_matching(&decoder);
@@ -847,6 +878,12 @@ pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::Planar
     });
     if use_distributed {
         runtime_statistics["duf_clock_cycles"] = json!(duf_clock_cycles);
+    } else {
+        runtime_statistics["time_uf_grow"] = json!(time_uf_grow);
+        runtime_statistics["time_uf_merge"] = json!(time_uf_merge);
+        runtime_statistics["time_uf_replace"] = json!(time_uf_replace);
+        runtime_statistics["time_uf_update"] = json!(time_uf_update);
+        runtime_statistics["time_uf_remove"] = json!(time_uf_remove);
     }
     (edge_matchings, boundary_matchings, runtime_statistics)
 }
