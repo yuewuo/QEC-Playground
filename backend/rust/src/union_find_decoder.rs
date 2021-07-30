@@ -151,7 +151,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             DecoderNode {
                 node: node,
                 neighbors: Vec::new(),
-                neighbor_index: HashMap::new(),
+                neighbor_index: HashMap::with_capacity(100),  // usually 4~12 neighbors, 10x larger capacity
                 boundary_increased: 0,
             }
         }).collect();
@@ -220,7 +220,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
     pub fn run_single_iteration(&mut self) {
         // grow and update cluster boundaries
         let begin = Instant::now();
-        let mut fusion_list = Vec::new();
+        let mut fusion_list = Vec::with_capacity(self.nodes.len());
         for &odd_cluster in self.odd_clusters.iter() {
             let (boundaries_vec, _boundaries) = self.cluster_boundaries.get(&odd_cluster).unwrap();
             for &boundary in boundaries_vec.iter() {
@@ -927,6 +927,8 @@ pub struct UnionFind {
     link_parent: Vec<usize>,
     /// the node information, has the same length as `link_parent`
     payload: Vec<Option<UnionNode>>,
+    /// internal cache of parent list when calling `find`
+    find_parent_list: Vec<usize>,
 }
 
 #[derive(Copy, Debug, Serialize, Deserialize, Clone)]
@@ -983,6 +985,7 @@ impl FromIterator<UnionNode> for UnionFind {
         let mut uf = UnionFind {
             link_parent: vec![],
             payload: vec![],
+            find_parent_list: Vec::new(),
         };
         uf.extend(iterator);
         uf
@@ -998,6 +1001,8 @@ impl Extend<UnionNode> for UnionFind {
 
         let new_len = self.payload.len();
         self.link_parent.extend(len..new_len);
+
+        self.find_parent_list.reserve(self.link_parent.len());
     }
 }
 
@@ -1050,12 +1055,16 @@ impl UnionFind {
         let mut k = key;
         let mut p = self.link_parent[k];
         while p != k {
-            let pp = self.link_parent[p];
-            self.link_parent[k] = pp;
+            self.find_parent_list.push(k);
             k = p;
-            p = pp;
+            p = self.link_parent[p];
         }
-        k
+        let root = k;
+        for k in self.find_parent_list.iter() {
+            self.link_parent[*k] = root;  // path compression
+        }
+        self.find_parent_list.clear();
+        root
     }
 
     #[inline]
