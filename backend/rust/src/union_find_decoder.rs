@@ -295,7 +295,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             //     }
             // }
             // then shrink the boundary by checking if this is real boundary (neighbor are not all in the same set)
-            let mut shrunk_boundaries = HashSet::with_capacity(boundaries_vec.len());
+            let mut shrunk_boundaries = HashSet::with_capacity(boundaries_vec.len() * 10);
             let mut shrunk_boundaries_vec = Vec::with_capacity(boundaries_vec.len());
             for &boundary in boundaries.iter() {
                 let mut has_foreign = false;
@@ -331,7 +331,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
         self.time_uf_update += begin.elapsed().as_secs_f64();
         // remove the even clusters (includes those already touched the code boundary) from `odd_clusters`
         let begin = Instant::now();
-        let mut odd_clusters_set = HashSet::with_capacity(self.odd_clusters.len());
+        let mut odd_clusters_set = HashSet::with_capacity(self.odd_clusters.len() * 10);
         let mut odd_clusters = Vec::with_capacity(self.odd_clusters.len());
         for &odd_cluster in self.odd_clusters.iter() {
             let union_node = self.union_find.get(odd_cluster);
