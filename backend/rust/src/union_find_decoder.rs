@@ -12,7 +12,7 @@
 use std::iter::FromIterator;
 use std::mem;
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet, BTreeMap, BTreeSet};
+use std::collections::{HashMap, HashSet};
 use super::serde::{Serialize, Deserialize};
 use super::offer_decoder;
 use super::ftqec;
@@ -29,11 +29,12 @@ pub struct UnionFindDecoder<U: std::fmt::Debug> {
     /// union find solver
     pub union_find: UnionFind,
     /// all odd clusters that need to update in each turn, clusters are named under the root
-    pub odd_clusters: BTreeSet<usize>,
+    pub odd_clusters: Vec<usize>,  // to reduce complexity of iterating over odd_clusters
+    pub odd_clusters_set: HashSet<usize>,  // for ease of query
     /// record the boundary nodes as an optimization, see https://arxiv.org/pdf/1709.06218.pdf Section "Boundary representation".
-    /// even clusters should not be key in BTreeMap, and only real boundary should be in the `BTreeSet` value
-    /// those nodes without error syndrome also have entries in this BTreeMap, with the value of { itself }
-    pub cluster_boundaries: BTreeMap<usize, BTreeSet<usize>>,
+    /// even clusters should not be key in HashMap, and only real boundary should be in the `HashSet` value
+    /// those nodes without error syndrome also have entries in this HashMap, with the value of { itself }
+    pub cluster_boundaries: HashMap<usize, (Vec<usize>, HashSet<usize>)>,
     /// original inputs
     pub input_neighbors: Vec<NeighborEdge>,
     // DEBUG: study the time consumption of each step
@@ -51,7 +52,7 @@ pub struct DecoderNode<U: std::fmt::Debug> {
     /// directly connected neighbors, (address, already increased length = 0, length = 0)
     pub neighbors: Vec<NeighborPartialEdge>,
     /// the mapping from node index to NeighborPartialEdge index
-    pub neighbor_index: BTreeMap<usize, usize>,
+    pub neighbor_index: HashMap<usize, usize>,
     /// increased region towards boundary, only valid when `node.boundary_cost` is `Some(_)`
     pub boundary_increased: usize,
 }
@@ -148,17 +149,18 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             DecoderNode {
                 node: node,
                 neighbors: Vec::new(),
-                neighbor_index: BTreeMap::new(),
+                neighbor_index: HashMap::new(),
                 boundary_increased: 0,
             }
         }).collect();
-        let odd_clusters: BTreeSet<_> = nodes.iter().enumerate().filter(|(_idx, node)| {
+        let odd_clusters: Vec<_> = nodes.iter().enumerate().filter(|(_idx, node)| {
             node.node.is_error_syndrome
         }).map(|(idx, _node)| {
             idx
         }).collect();
-        let cluster_boundaries: BTreeMap<_, _> = nodes.iter().enumerate().map(|(idx, _node)| {
-            (idx, vec![idx].into_iter().collect::<BTreeSet<usize>>())
+        let odd_clusters_set: HashSet<_> = odd_clusters.iter().map(|idx| *idx).collect();
+        let cluster_boundaries: HashMap<_, _> = nodes.iter().enumerate().map(|(idx, _node)| {
+            (idx, (vec![idx], vec![idx].into_iter().collect::<HashSet<usize>>()))
         }).collect();  // only roots of these odd clusters are boundaries in the initial state
         // union find solver
         let union_find = UnionFind::from_iter(nodes.iter().map(|node| {
@@ -198,6 +200,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             nodes: nodes,
             union_find: union_find,
             odd_clusters: odd_clusters,
+            odd_clusters_set: odd_clusters_set,
             cluster_boundaries: cluster_boundaries,
             input_neighbors: neighbors,
             time_uf_grow: 0.,
@@ -214,8 +217,8 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
         let begin = Instant::now();
         let mut fusion_list = Vec::new();
         for &odd_cluster in self.odd_clusters.iter() {
-            let boundaries = self.cluster_boundaries.get(&odd_cluster).unwrap();
-            for &boundary in boundaries.iter() {
+            let (boundaries_vec, _boundaries) = self.cluster_boundaries.get(&odd_cluster).unwrap();
+            for &boundary in boundaries_vec.iter() {
                 // grow this boundary and check for grown edge at the same time
                 let neighbor_len = self.nodes[boundary].neighbors.len();
                 for i in 0..neighbor_len {
@@ -254,8 +257,11 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
                 let to_be_appended = self.union_find.find(a);  // or self.union_find.find(r_b) equivalently
                 assert!(to_be_appended == a || to_be_appended == b, "`to_be_appended` should be either `a` or `b`");
                 let appending = if to_be_appended == a { b } else { a };  // the other one
-                let appending_vec = self.cluster_boundaries.remove(&appending).unwrap();
-                self.cluster_boundaries.get_mut(&to_be_appended).unwrap().extend(&appending_vec);  // append the boundary
+                let (appending_boundaries_vec, appending_boundaries) = self.cluster_boundaries.remove(&appending).unwrap();
+                let (to_be_appended_boundaries_vec, to_be_appended_boundaries) = self.cluster_boundaries.get_mut(&to_be_appended).unwrap();
+                // append the boundary
+                to_be_appended_boundaries_vec.extend(&appending_boundaries_vec);
+                to_be_appended_boundaries.extend(&appending_boundaries);
             }
         }
         self.time_uf_merge += begin.elapsed().as_secs_f64();
@@ -268,11 +274,12 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
         self.time_uf_replace += begin.elapsed().as_secs_f64();
         // update the boundary vertices
         let begin = Instant::now();
-        for (&cluster, boundaries) in self.cluster_boundaries.iter_mut() {
+        for &cluster in self.odd_clusters.iter() {
+            let (boundaries_vec, boundaries) = self.cluster_boundaries.get_mut(&cluster).unwrap();
             // `cluster_boundaries` should only contain root ones now
-            assert_eq!(cluster, self.union_find.find(cluster), "non-root boundaries should already been removed");
+            // assert_eq!(cluster, self.union_find.find(cluster), "non-root boundaries should already been removed");
             // first grow the boundary
-            // let mut grown_boundaries = BTreeSet::new();
+            // let mut grown_boundaries = HashSet::new();
             // for &boundary in boundaries.iter() {
             //     let neighbor_len = self.nodes[boundary].neighbors.len();
             //     for i in 0..neighbor_len {
@@ -288,7 +295,8 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
             //     }
             // }
             // then shrink the boundary by checking if this is real boundary (neighbor are not all in the same set)
-            let mut shrunk_boundaries = BTreeSet::new();
+            let mut shrunk_boundaries = HashSet::with_capacity(boundaries_vec.len());
+            let mut shrunk_boundaries_vec = Vec::with_capacity(boundaries_vec.len());
             for &boundary in boundaries.iter() {
                 let mut has_foreign = false;
                 let neighbor_len = self.nodes[boundary].neighbors.len();
@@ -310,23 +318,32 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
                     None => { },  // do nothing
                 }
                 if has_foreign {
-                    shrunk_boundaries.insert(boundary);
+                    let not_present = shrunk_boundaries.insert(boundary);
+                    if not_present {
+                        shrunk_boundaries_vec.push(boundary);
+                    }
                 }
             }
             // replace the boundary list
+            *boundaries_vec = shrunk_boundaries_vec;
             *boundaries = shrunk_boundaries;
         }
         self.time_uf_update += begin.elapsed().as_secs_f64();
         // remove the even clusters (includes those already touched the code boundary) from `odd_clusters`
         let begin = Instant::now();
-        let mut odd_clusters = BTreeSet::new();
+        let mut odd_clusters_set = HashSet::with_capacity(self.odd_clusters.len());
+        let mut odd_clusters = Vec::with_capacity(self.odd_clusters.len());
         for &odd_cluster in self.odd_clusters.iter() {
             let union_node = self.union_find.get(odd_cluster);
             if union_node.cardinality % 2 == 1 && !union_node.is_touching_boundary {
-                odd_clusters.insert(odd_cluster);
+                let not_present = odd_clusters_set.insert(odd_cluster);
+                if not_present {
+                    odd_clusters.push(odd_cluster);
+                }
             }
         }
         self.odd_clusters = odd_clusters;
+        self.odd_clusters_set = odd_clusters_set;
         self.time_uf_remove += begin.elapsed().as_secs_f64();
     }
 
@@ -339,15 +356,15 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
     /// only print those `cluster_boundaries` != vec!\[itself\]
     #[allow(dead_code)]
     pub fn pretty_print_cluster_boundaries(&self) {
-        for (&key, val) in self.cluster_boundaries.iter() {
-            if val.len() == 1 && self.odd_clusters.get(&key).is_none() {
+        for (&cluster, (boundaries_vec, _boundaries)) in self.cluster_boundaries.iter() {
+            if boundaries_vec.len() == 1 && self.odd_clusters_set.get(&cluster).is_none() {
                 continue  // ignore printing this one
             }
             let mut user_data = Vec::new();
-            for &idx in val.iter() {
+            for &idx in boundaries_vec.iter() {
                 user_data.push(format!("{:?}", self.nodes[idx].node.user_data));
             }
-            println!("{:?}: {}", self.nodes[key].node.user_data, user_data.join(" "));
+            println!("{:?}: {}", self.nodes[cluster].node.user_data, user_data.join(" "));
         }
     }
 }
