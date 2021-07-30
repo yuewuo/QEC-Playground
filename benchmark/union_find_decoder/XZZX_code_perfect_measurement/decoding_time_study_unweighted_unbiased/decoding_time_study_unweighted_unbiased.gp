@@ -5,12 +5,12 @@ set ylabel "Avergae Decoding Time (s)" font "Arial, 28"
 set size 1,1
 
 set logscale x
-set xrange [13:63]
+set xrange [5:63]
 # labels
 # python -c "for i in [5, 7, 9, 11, 13, 17, 21, 25, 29, 37, 43, 53, 63][::2]: print('\'%d\' %d' % (i, i), end=', ')"
-set xtics ('13' 13, '21' 21, '29' 29, '43' 43, '63' 63)
+set xtics ('5' 5, '7' 7, '9' 9, '11' 11, '13' 13, '21' 21, '29' 29, '43' 43, '63' 63)
 set logscale y
-set yrange [0.0000001:0.1]
+set yrange [0.0000001:0.01]
 # labels
 # python -c "for i in range(0, 5): print('\'%.0e\' %.0e' % tuple([0.00001 * (10**i) for j in range(2)]), end=', ')"
 set ytics ('1e-7' 1e-07, '1e-6' 1e-06, '1e-5' 1e-05, '1e-4' 1e-04, '1e-3' 1e-03, '1e-2' 1e-02)

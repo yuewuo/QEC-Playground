@@ -49,6 +49,7 @@ p_vec = [0.01]
 
 step_vec = ["time_uf_grow", "time_uf_merge", "time_uf_replace", "time_uf_update", "time_uf_remove", "time_run_to_stable"]
 fitting_data_vec = [[[] for si in range(len(step_vec))] for pi in range(len(p_vec))]
+plot_data_vec = [[[] for si in range(len(step_vec))] for pi in range(len(p_vec))]
 
 for i in range(0, len(configurations)):
     config = configurations[i]
@@ -61,6 +62,7 @@ for i in range(0, len(configurations)):
             idx = i
     assert idx >= 0, "must find similar p"
     fitting_data = fitting_data_vec[idx]
+    plot_data = plot_data_vec[idx]
     error_count = 0
     success_count = 0
     # these only accounts successful cases
@@ -90,6 +92,11 @@ for i in range(0, len(configurations)):
             step_name = step_vec[si]
             fitting_data_step = fitting_data[si]
             fitting_data_step.append((config["di"], average(time_steps_vec[si])))
+    # plot data printed to file
+    for si in range(len(step_vec)):
+        step_name = step_vec[si]
+        plot_data_step = plot_data[si]
+        plot_data_step.append((config["di"], average(time_steps_vec[si]), len(time_steps_vec[si])))
 
 for i in range(len(p_vec)):
     for si in range(len(step_vec)):
@@ -107,3 +114,11 @@ for i in range(len(p_vec)):
         print(f"r_square = {r**2}")
         for e in fitting_data:
             print(f"{e[0]} {e[1]}")
+
+for si in range(len(step_vec)):
+    p = p_vec[0]
+    step_name = step_vec[si]
+    plot_data = plot_data_vec[i][si]
+    with open(f"{step_name}.txt", "w", encoding="utf-8") as f:
+        for (di, avr, count) in plot_data:
+            f.write(f"{di} {avr} {count}\n")
