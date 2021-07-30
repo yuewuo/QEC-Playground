@@ -7,7 +7,6 @@ version b330a31 (initial setup)
     time_uf_remove: 2.1921364060895505 0.9730189829334444
 conclusion: "time_uf_grow" and "time_uf_update" step needs to be examined
 
-
 version 0b7a778 (change all HashSet/Map to BTreeSet/Map because it has lower iteration complexity)
     time_uf_grow: 3.0661304128080737 0.950191055849983
     time_uf_merge: 2.48933105090094 0.9941893001537699

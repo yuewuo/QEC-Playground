@@ -101,10 +101,11 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let error_model = value_t!(matches, "error_model", String).ok().map(|x| ErrorModel::from(x));
             let no_stop_if_next_model_is_not_prepared = matches.is_present("no_stop_if_next_model_is_not_prepared");
             let log_runtime_statistics = value_t!(matches, "log_runtime_statistics", String).ok();
+            let detailed_runtime_statistics = matches.is_present("detailed_runtime_statistics");
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight, use_combined_probability
-                , error_model, no_stop_if_next_model_is_not_prepared, log_runtime_statistics);
+                , error_model, no_stop_if_next_model_is_not_prepared, log_runtime_statistics, detailed_runtime_statistics);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -503,7 +504,8 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
         , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, only_count_logical_z: bool, perfect_initialization: bool
         , shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType, max_half_weight: usize
-        , use_combined_probability: bool, error_model: Option<ErrorModel>, no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>) {
+        , use_combined_probability: bool, error_model: Option<ErrorModel>, no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>
+        , detailed_runtime_statistics: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -533,7 +535,8 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         "max_half_weight": max_half_weight,
         "use_combined_probability": use_combined_probability,
         "error_model": format!("{:?}", error_model),
-        "no_stop_if_next_model_is_not_prepared": "no_stop_if_next_model_is_not_prepared",
+        "no_stop_if_next_model_is_not_prepared": no_stop_if_next_model_is_not_prepared,
+        "detailed_runtime_statistics": detailed_runtime_statistics,
     });
     match &log_runtime_statistics_file {  // append runtime statistics data
         Some(log_runtime_statistics_file) => {
@@ -738,8 +741,8 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                         let (correction, mut runtime_statistics) = if !bypass_correction {
                             match decoder_type {
                                 DecoderType::MinimumWeightPerfectMatching => model_decoder.decode_MWPM(&measurement),
-                                DecoderType::UnionFind => model_decoder.decode_UnionFind(&measurement, max_half_weight, false),
-                                DecoderType::DistributedUnionFind => model_decoder.decode_UnionFind(&measurement, max_half_weight, true),
+                                DecoderType::UnionFind => model_decoder.decode_UnionFind(&measurement, max_half_weight, false, detailed_runtime_statistics),
+                                DecoderType::DistributedUnionFind => model_decoder.decode_UnionFind(&measurement, max_half_weight, true, detailed_runtime_statistics),
                                 // _ => panic!("unsupported decoder type"),
                             }
                         } else {

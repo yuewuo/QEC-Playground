@@ -1382,15 +1382,15 @@ impl PlanarCodeModel {
     }
     
     /// decode based on UnionFind decoder
-    pub fn decode_UnionFind(&self, measurement: &Measurement, max_half_weight: usize, use_distributed: bool) -> (Correction, serde_json::Value) {
-        let (sparse_correction, runtime_statistics) = self.decode_UnionFind_sparse_correction(measurement, max_half_weight, use_distributed);
+    pub fn decode_UnionFind(&self, measurement: &Measurement, max_half_weight: usize, use_distributed: bool, detailed_runtime_statistics: bool) -> (Correction, serde_json::Value) {
+        let (sparse_correction, runtime_statistics) = self.decode_UnionFind_sparse_correction(measurement, max_half_weight, use_distributed, detailed_runtime_statistics);
         (Correction::from(&sparse_correction), runtime_statistics)
     }
-    pub fn decode_UnionFind_sparse_correction(&self, measurement: &Measurement, max_half_weight: usize, use_distributed: bool) -> (SparseCorrection, serde_json::Value) {
-        let (sparse_correction, runtime_statistics, _, _) = self.decode_UnionFind_sparse_correction_with_edge_matchings(measurement, max_half_weight, use_distributed);
+    pub fn decode_UnionFind_sparse_correction(&self, measurement: &Measurement, max_half_weight: usize, use_distributed: bool, detailed_runtime_statistics: bool) -> (SparseCorrection, serde_json::Value) {
+        let (sparse_correction, runtime_statistics, _, _) = self.decode_UnionFind_sparse_correction_with_edge_matchings(measurement, max_half_weight, use_distributed, detailed_runtime_statistics);
         (sparse_correction, runtime_statistics)
     }
-    pub fn decode_UnionFind_sparse_correction_with_edge_matchings(&self, measurement: &Measurement, max_half_weight: usize, use_distributed: bool) ->
+    pub fn decode_UnionFind_sparse_correction_with_edge_matchings(&self, measurement: &Measurement, max_half_weight: usize, use_distributed: bool, detailed_runtime_statistics: bool) ->
             (SparseCorrection, serde_json::Value, Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
         // sanity check
         let shape = measurement.shape();
@@ -1401,7 +1401,7 @@ impl PlanarCodeModel {
         assert_eq!(shape[2], width_j);
         // run union find decoder
         let (edge_matchings, boundary_matchings, runtime_statistics) = union_find_decoder::suboptimal_matching_by_union_find_given_measurement(&self
-            , measurement, max_half_weight , use_distributed);
+            , measurement, max_half_weight, use_distributed, detailed_runtime_statistics);
         let mut correction = self.generate_default_sparse_correction();
         for &((t1, i1, j1), (t2, i2, j2)) in edge_matchings.iter() {
             correction.combine(&self.get_correction_two_nodes(&Index::new(t1, i1, j1), &Index::new(t2, i2, j2)));

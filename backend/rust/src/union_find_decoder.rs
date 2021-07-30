@@ -863,7 +863,8 @@ pub fn suboptimal_matching_by_union_find_given_measurement_generate_suboptimal_m
 }
 /// given an arbitrary ftqec::PlanarCodeModel, this function returns a suboptimal matching given by union find decoder
 pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::PlanarCodeModel, measurement: &ftqec::Measurement, max_half_weight: usize
-        , use_distributed: bool) -> (Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>, serde_json::Value) {
+        , use_distributed: bool, detailed_runtime_statistics: bool)
+        -> (Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>, serde_json::Value) {
     let mut edge_matchings = Vec::new();
     let mut boundary_matchings = Vec::new();
     let mut time_run_to_stable = 0.;
@@ -909,11 +910,13 @@ pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::Planar
     if use_distributed {
         runtime_statistics["duf_clock_cycles"] = json!(duf_clock_cycles);
     } else {
-        runtime_statistics["time_uf_grow"] = json!(time_uf_grow);
-        runtime_statistics["time_uf_merge"] = json!(time_uf_merge);
-        runtime_statistics["time_uf_replace"] = json!(time_uf_replace);
-        runtime_statistics["time_uf_update"] = json!(time_uf_update);
-        runtime_statistics["time_uf_remove"] = json!(time_uf_remove);
+        if detailed_runtime_statistics {
+            runtime_statistics["time_uf_grow"] = json!(time_uf_grow);
+            runtime_statistics["time_uf_merge"] = json!(time_uf_merge);
+            runtime_statistics["time_uf_replace"] = json!(time_uf_replace);
+            runtime_statistics["time_uf_update"] = json!(time_uf_update);
+            runtime_statistics["time_uf_remove"] = json!(time_uf_remove);
+        }
     }
     (edge_matchings, boundary_matchings, runtime_statistics)
 }
