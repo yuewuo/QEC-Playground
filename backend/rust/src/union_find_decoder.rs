@@ -76,6 +76,8 @@ pub struct NeighborPartialEdge {
     pub increased: usize,
     /// the total length of this edge. if the sum of the `increased` of two partial edges is no less than `length`, then two vertices are merged
     pub length: usize,
+    /// performance optimization by caching whether it's already grown
+    pub grown: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -181,12 +183,14 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
         neighbors.dedup();
         assert_eq!(neighbors_length, neighbors.len(), "`neighbors` contains duplicate elements (including the same ends)");
         for NeighborEdge {a, b, increased, length} in neighbors.iter() {
+            let grown = 2 * increased >= *length;
             let a_idx = nodes[*a].neighbors.len();
             nodes[*a].neighbor_index.insert(*b, a_idx);
             nodes[*a].neighbors.push(NeighborPartialEdge {
                 address: *b,
                 increased: *increased,
                 length: *length,
+                grown: grown,
             });
             let b_idx = nodes[*b].neighbors.len();
             nodes[*b].neighbor_index.insert(*a, b_idx);
@@ -194,6 +198,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
                 address: *a,
                 increased: *increased,
                 length: *length,
+                grown: grown,
             });
         }
         Self {
@@ -223,23 +228,31 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
                 let neighbor_len = self.nodes[boundary].neighbors.len();
                 for i in 0..neighbor_len {
                     let partial_edge = &mut self.nodes[boundary].neighbors[i];
+                    if partial_edge.grown {
+                        continue  // already grown
+                    }
                     partial_edge.increased += 1;
                     let increased = partial_edge.increased;
                     let neighbor_addr = partial_edge.address;
-                    let neighbor = &self.nodes[neighbor_addr];
+                    let neighbor = &mut self.nodes[neighbor_addr];
                     let reverse_index = neighbor.neighbor_index[&boundary];
-                    let neighbor_partial_edge = &neighbor.neighbors[reverse_index];
+                    let neighbor_partial_edge = &mut neighbor.neighbors[reverse_index];
                     if neighbor_partial_edge.increased + increased >= neighbor_partial_edge.length {  // found grown edge
-                        fusion_list.push((boundary, neighbor_addr))
+                        fusion_list.push((boundary, neighbor_addr));
+                        neighbor_partial_edge.grown = true;
+                        let partial_edge = &mut self.nodes[boundary].neighbors[i];
+                        partial_edge.grown = true;
                     }
                 }
                 // grow to the code boundary if it has
                 match self.nodes[boundary].node.boundary_cost {
                     Some(boundary_cost) => {
                         let boundary_increased = &mut self.nodes[boundary].boundary_increased;
-                        *boundary_increased += 1;
-                        if *boundary_increased >= boundary_cost {
-                            self.union_find.get_mut(boundary).is_touching_boundary = true;  // this set is touching the boundary
+                        if *boundary_increased < boundary_cost {
+                            *boundary_increased += 1;
+                            if *boundary_increased >= boundary_cost {
+                                self.union_find.get_mut(boundary).is_touching_boundary = true;  // this set is touching the boundary
+                            }
                         }
                     },
                     None => { }  // do nothing

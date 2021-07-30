@@ -15,6 +15,13 @@ version 0b7a778 (change all HashSet/Map to BTreeSet/Map because it has lower ite
     time_uf_update: 3.015519134017408 0.9766076585623577
     time_uf_remove: 2.961061023900995 0.9917082865728023
 
+version 3048622 (make HashSet larger to reduce time for querying)
+    time_uf_grow: 2.262533513775233 0.9998991267833665
+    time_uf_merge: 2.3515608627000333 0.9985403883386368
+    time_uf_replace: 1.364844531700878 0.9982136377484513
+    time_uf_update: 2.6118560460181497 0.9996931829900639
+    time_uf_remove: 1.6877165371534537 0.9854092797845478
+    time_run_to_stable: 2.2975556370944705 0.9997011283526477
 
 """
 
