@@ -77,7 +77,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             assert!(dis.len() == djs.len(), "dis and djs should be paired");
             let ps = value_t!(matches, "ps", String).expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let pes = value_t!(matches, "djs", String);
+            let pes = value_t!(matches, "pes", String);
             let pes: Vec<f64> = match pes {
                 Ok(pes) => serde_json::from_str(&pes).expect("pes should be [pe1,pe2,pe3,...,pem]"),
                 Err(_) => vec![0.; ps.len()],  // by default no erasure errors
@@ -746,12 +746,15 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                         }
                         model_error.propagate_error();
                         let measurement = model_error.generate_measurement();
+                        let detected_erasures = model_error.generate_detected_erasures();
                         // use `model_decoder` for decoding, so that it is blind to the real error information
                         let (correction, mut runtime_statistics) = if !bypass_correction {
                             match decoder_type {
                                 DecoderType::MinimumWeightPerfectMatching => model_decoder.decode_MWPM(&measurement),
-                                DecoderType::UnionFind => model_decoder.decode_UnionFind(&measurement, max_half_weight, false, detailed_runtime_statistics),
-                                DecoderType::DistributedUnionFind => model_decoder.decode_UnionFind(&measurement, max_half_weight, true, detailed_runtime_statistics),
+                                DecoderType::UnionFind => model_decoder.decode_UnionFind(&measurement, &detected_erasures
+                                    , max_half_weight, false, detailed_runtime_statistics),
+                                DecoderType::DistributedUnionFind => model_decoder.decode_UnionFind(&measurement, &detected_erasures
+                                    , max_half_weight, true, detailed_runtime_statistics),
                                 // _ => panic!("unsupported decoder type"),
                             }
                         } else {

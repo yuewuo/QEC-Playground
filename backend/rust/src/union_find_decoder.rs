@@ -1426,7 +1426,9 @@ mod tests {
         model.add_error_at(12, 0, 12, &ErrorType::Z).expect("error rate = 0 here");
         model.add_error_at(12, 9, 7, &ErrorType::Z).expect("error rate = 0 here");
         model.propagate_error();
-        let (edge_matchings, boundary_matchings, _runtime_statistics) = suboptimal_matching_by_union_find(&model, 4, false);
+        let measurement = model.generate_measurement();
+        let (edge_matchings, boundary_matchings, _runtime_statistics) = suboptimal_matching_by_union_find_given_measurement(
+            &model, &measurement, 4, false, false);
         println!("edge_matchings: {:?}", edge_matchings);
         println!("boundary_matchings: {:?}", boundary_matchings);
     }
