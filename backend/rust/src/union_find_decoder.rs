@@ -220,7 +220,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
     pub fn run_single_iteration(&mut self) {
         // grow and update cluster boundaries
         let begin = Instant::now();
-        let mut fusion_list = Vec::with_capacity(self.nodes.len());
+        let mut fusion_list = Vec::with_capacity(self.input_neighbors.len());
         for &odd_cluster in self.odd_clusters.iter() {
             let (boundaries_vec, _boundaries) = self.cluster_boundaries.get(&odd_cluster).unwrap();
             for &boundary in boundaries_vec.iter() {

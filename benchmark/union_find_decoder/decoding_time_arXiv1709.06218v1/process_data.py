@@ -1,8 +1,8 @@
 import sys, os, json, math
 import scipy.stats
 
-# p_vec = [0.01, 0.02, 0.03, 0.04, 0.05]
-p_vec = [0.02]
+p_vec = [0.01, 0.02, 0.03, 0.04, 0.05]
+# p_vec = [0.02]
 
 def average(lst):
     return sum(lst) / len(lst)
