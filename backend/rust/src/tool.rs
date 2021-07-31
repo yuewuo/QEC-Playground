@@ -77,6 +77,11 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             assert!(dis.len() == djs.len(), "dis and djs should be paired");
             let ps = value_t!(matches, "ps", String).expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
+            let pes = value_t!(matches, "djs", String);
+            let pes: Vec<f64> = match pes {
+                Ok(pes) => serde_json::from_str(&pes).expect("pes should be [pe1,pe2,pe3,...,pem]"),
+                Err(_) => vec![0.; ps.len()],  // by default no erasure errors
+            };
             let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
             let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
             let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
@@ -102,7 +107,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let no_stop_if_next_model_is_not_prepared = matches.is_present("no_stop_if_next_model_is_not_prepared");
             let log_runtime_statistics = value_t!(matches, "log_runtime_statistics", String).ok();
             let detailed_runtime_statistics = matches.is_present("detailed_runtime_statistics");
-            fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
+            fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight, use_combined_probability
                 , error_model, no_stop_if_next_model_is_not_prepared, log_runtime_statistics, detailed_runtime_statistics);
@@ -500,12 +505,12 @@ default example:
 `cargo run --release -- tool fault_tolerant_benchmark [5] [5] [1e-3]`
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
-fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
-        , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
-        , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, only_count_logical_z: bool, perfect_initialization: bool
-        , shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType, max_half_weight: usize
-        , use_combined_probability: bool, error_model: Option<ErrorModel>, no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>
-        , detailed_runtime_statistics: bool) {
+fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, max_N: usize, min_error_cases: usize
+        , parallel: usize, validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool
+        , extra_measurement_error: f64, bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, only_count_logical_z: bool
+        , perfect_initialization: bool, shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType
+        , max_half_weight: usize, use_combined_probability: bool, error_model: Option<ErrorModel>, no_stop_if_next_model_is_not_prepared: bool
+        , log_runtime_statistics: Option<String>, detailed_runtime_statistics: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -553,14 +558,16 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
     for (di_idx, di) in dis.iter().enumerate() {
         let MeasurementRounds = Ts[di_idx];
         let dj = djs[di_idx];
-        for p in ps {
+        for (p_idx, p) in ps.iter().enumerate() {
             let p = *p;
-            assert!(p <= 1.0, "why should errors (X, Z, Y) happening more than 1.0 probability?");
-            configurations.push((*di, dj, MeasurementRounds, p));
+            let pe = pes[p_idx];
+            assert!(p >= 0. && p <= 1.0, "invalid probability value");
+            assert!(pe >= 0. && pe <= 1.0, "invalid probability value");
+            configurations.push((*di, dj, MeasurementRounds, p, pe));
         }
     }
     let configurations_len = configurations.len();
-    let compute_model = Arc::new(move |di: usize, dj: usize, MeasurementRounds: usize, p: f64| {
+    let compute_model = Arc::new(move |di: usize, dj: usize, MeasurementRounds: usize, p: f64, pe: f64| {
         // build general models
         let mut model = if rotated_planar_code {
             if use_xzzx_code {
@@ -588,12 +595,12 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         // println!("px = {}, py = {}, pz = {}", px, py, pz);
         // initialize error rate
         if !perfect_initialization {
-            model.set_individual_error(px, py, pz);
+            model.set_individual_error_with_erasure(px, py, pz, pe);
         } else {
             // if we use the `set_depolarizing_error` model, then old judgement doesn't work
             // in order to verify that the modification is good, here we mimic the behavior of old model
             // that is, we do not generate error on the added bottom layer, so that there is no bottom boundary
-            model.set_individual_error_with_perfect_initialization(px, py, pz);
+            model.set_individual_error_with_perfect_initialization_with_erasure(px, py, pz, pe);
         }
         if shallow_error_on_bottom {
             model.iterate_snapshot_mut(|t, _i, _j, node| {
@@ -601,6 +608,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                     node.error_rate_x = px;
                     node.error_rate_z = pz;
                     node.error_rate_y = py;
+                    node.erasure_error_rate = pe;
                 }
             })
         }
@@ -654,7 +662,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
     });
     let precomputed_model = Arc::new(Mutex::new(None));
     for i in 0..configurations_len {
-        let (di, dj, MeasurementRounds, p) = configurations[i];
+        let (di, dj, MeasurementRounds, p, pe) = configurations[i];
         match &log_runtime_statistics_file {  // append runtime statistics data
             Some(log_runtime_statistics_file) => {
                 let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
@@ -664,6 +672,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                     "dj": dj,
                     "MeasurementRounds": MeasurementRounds,
                     "p": p,
+                    "pe": pe,
                 }).to_string().as_bytes()).unwrap();
                 log_runtime_statistics_file.write(b"\n").unwrap();
                 log_runtime_statistics_file.sync_data().unwrap();
@@ -671,7 +680,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         }
         if i == 0 {  // only i == 0 need to compute model immediately
             let mut precomputed_model = precomputed_model.lock().unwrap();
-            *precomputed_model = Some((*compute_model)(di, dj, MeasurementRounds, p));
+            *precomputed_model = Some((*compute_model)(di, dj, MeasurementRounds, p, pe));
         }
         let (model, model_error) = {  // must already prepared the model, and will take the value out of `precomputed_model`
             precomputed_model.lock().unwrap().take().expect("already prepared the model")
@@ -681,12 +690,12 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         let qec_failed = Arc::new(Mutex::new(0));
         let mut precomputing_model_thread = None;
         if i + 1 < configurations_len {
-            let (di_next, dj_next, measurement_rounds_next, p_next) = configurations[i + 1];
+            let (di_next, dj_next, measurement_rounds_next, p_next, pe_next) = configurations[i + 1];
             let precomputed_model = Arc::clone(&precomputed_model);
             let compute_model = Arc::clone(&compute_model);
             // create a single thread to prepare next model
             precomputing_model_thread = Some(std::thread::spawn(move || {
-                let (model, model_error) = (*compute_model)(di_next, dj_next, measurement_rounds_next, p_next);
+                let (model, model_error) = (*compute_model)(di_next, dj_next, measurement_rounds_next, p_next, pe_next);
                 // lock only after model is built, otherwise it will block experimenting threads
                 let mut precomputed_model = precomputed_model.lock().unwrap();
                 *precomputed_model = Some((model, model_error));

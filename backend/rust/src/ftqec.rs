@@ -63,9 +63,11 @@ pub struct Node {
     pub gate_type: GateType,
     pub qubit_type: QubitType,
     pub error: ErrorType,
+    pub has_erasure: bool,
     pub error_rate_x: f64,
     pub error_rate_z: f64,
     pub error_rate_y: f64,
+    pub erasure_error_rate: f64,
     pub propagated: ErrorType,
     // graph information
     pub edges: Vec::<Edge>,
@@ -259,9 +261,11 @@ impl PlanarCodeModel {
                             gate_type: gate_type,
                             qubit_type: qubit_type,
                             error: ErrorType::I,
+                            has_erasure: false,
                             error_rate_x: 0.25,  // by default error rate is the highest
                             error_rate_z: 0.25,
                             error_rate_y: 0.25,
+                            erasure_error_rate: 0.5,
                             propagated: ErrorType::I,
                             edges: Vec::new(),
                             boundary: None,
@@ -423,9 +427,11 @@ impl PlanarCodeModel {
                             gate_type: gate_type,
                             qubit_type: qubit_type,
                             error: ErrorType::I,
+                            has_erasure: false,
                             error_rate_x: 0.25,  // by default error rate is the highest
                             error_rate_z: 0.25,
                             error_rate_y: 0.25,
+                            erasure_error_rate: 0.5,
                             propagated: ErrorType::I,
                             edges: Vec::new(),
                             boundary: None,
@@ -479,42 +485,54 @@ impl PlanarCodeModel {
             }
         }
     }
-    pub fn set_individual_error(&mut self, px: f64, py: f64, pz: f64) {  // (1-3p)I + pX + pZ + pY: X error rate = Z error rate = 2p(1-p)
+    pub fn set_individual_error_with_erasure(&mut self, px: f64, py: f64, pz: f64, pe: f64) {
         let height = self.snapshot.len();
         self.iterate_snapshot_mut(|t, _i, _j, node| {
             if t >= height - 6 {  // no error on the top, as a perfect measurement round
                 node.error_rate_x = 0.;
                 node.error_rate_z = 0.;
                 node.error_rate_y = 0.;
+                node.erasure_error_rate = 0.;
             } else {
                 node.error_rate_x = px;
                 node.error_rate_z = pz;
                 node.error_rate_y = py;
+                node.erasure_error_rate = pe;
             }
         })
+    }
+    pub fn set_individual_error(&mut self, px: f64, py: f64, pz: f64) {  // (1-3p)I + pX + pZ + pY: X error rate = Z error rate = 2p(1-p)
+        self.set_individual_error_with_erasure(px, py, pz, 0.)
     }
     pub fn set_depolarizing_error(&mut self, error_rate: f64) {  // (1-3p)I + pX + pZ + pY: X error rate = Z error rate = 2p(1-p)
         self.set_individual_error(error_rate, error_rate, error_rate)
     }
     // this will remove bottom boundary
-    pub fn set_individual_error_with_perfect_initialization(&mut self, px: f64, py: f64, pz: f64) {
+    pub fn set_individual_error_with_perfect_initialization_with_erasure(&mut self, px: f64, py: f64, pz: f64, pe: f64) {
         assert!(px + py + pz <= 1. && px >= 0. && py >= 0. && pz >= 0.);
+        assert!(pe <= 1. && pe >= 0.);
         let height = self.snapshot.len();
         self.iterate_snapshot_mut(|t, _i, _j, node| {
             if t >= height - 6 {  // no error on the top, as a perfect measurement round
                 node.error_rate_x = 0.;
                 node.error_rate_z = 0.;
                 node.error_rate_y = 0.;
+                node.erasure_error_rate = 0.;
             } else if t <= 6 {
                 node.error_rate_x = 0.;
                 node.error_rate_z = 0.;
                 node.error_rate_y = 0.;
+                node.erasure_error_rate = 0.;
             } else {
                 node.error_rate_x = px;
                 node.error_rate_z = pz;
                 node.error_rate_y = py;
+                node.erasure_error_rate = pe;
             }
         })
+    }
+    pub fn set_individual_error_with_perfect_initialization(&mut self, px: f64, py: f64, pz: f64) {
+        self.set_individual_error_with_perfect_initialization_with_erasure(px, py, pz, 0.)
     }
     pub fn set_depolarizing_error_with_perfect_initialization(&mut self, error_rate: f64) {  // (1-3p)I + pX + pZ + pY: X error rate = Z error rate = 2p
         self.set_individual_error_with_perfect_initialization(error_rate, error_rate, error_rate)
@@ -586,15 +604,28 @@ impl PlanarCodeModel {
                 },
                 None => { },
             }
+            let random_number = rng();
+            if random_number < node.erasure_error_rate {
+                node.has_erasure = true;  // apply erasure error after correlated error
+            } else {
+                node.has_erasure = false;
+            }
         });
         // apply pending errors
         for ((t, i, j), peer_error) in pending_errors.drain(..) {
             let mut node = self.snapshot[t][i][j].as_mut().expect("exist");
             node.error = node.error.multiply(&peer_error);
         }
-        // count number of errors
+        // apply erasure error and then count number of errors
         let mut error_count = 0;
         self.iterate_snapshot_mut(|_t, _i, _j, node| {
+            if node.has_erasure {  // apply erasure error as equal probability of all kinds of Pauli errors
+                let random_number = rng();
+                node.error = if random_number < 0.25 { ErrorType::X }
+                    else if random_number < 0.5 { ErrorType::Z }
+                    else if random_number < 0.75 { ErrorType::Y }
+                    else { ErrorType::I };
+            }
             if node.error != ErrorType::I {
                 // println!("error [{}][{}][{}] : {:?}", _t, _i, _j, node.error);
                 error_count += 1;

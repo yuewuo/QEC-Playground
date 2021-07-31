@@ -9,7 +9,10 @@ version ec839ad (add path compression)
 
 """
 
-version = "ec839ad"  # select the version for data processing
+# select the version for data processing
+version = "ec839ad"
+# version = "b330a31"
+
 log_filename = f"decoding_time_study_optimizations_{version}.txt"
 
 
@@ -60,7 +63,7 @@ for i in range(0, len(configurations)):
             time_steps_vec[si].append(e[step_name])
     print(f"time_run_to_stable: {average(time_run_to_stable_vec)}")
     # di_vec = [5, 7, 9, 11, 13, 17, 21, 25, 29, 37, 43, 53, 63]
-    if config["di"] >= 43:
+    if config["di"] >= 17:
         for si in range(len(step_vec)):
             step_name = step_vec[si]
             fitting_data_step = fitting_data[si]
