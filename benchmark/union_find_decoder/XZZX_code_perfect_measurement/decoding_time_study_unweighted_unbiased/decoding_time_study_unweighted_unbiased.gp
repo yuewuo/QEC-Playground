@@ -1,6 +1,6 @@
 set terminal postscript eps color "Arial, 28"
 set xlabel "Code Distance (d)" font "Arial, 28"
-set ylabel "Avergae Decoding Time (s)" font "Arial, 28"
+set ylabel "Average Decoding Time (s)" font "Arial, 28"
 # set grid ytics
 set size 1,1
 
