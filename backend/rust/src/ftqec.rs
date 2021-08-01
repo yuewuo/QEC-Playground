@@ -571,6 +571,7 @@ impl PlanarCodeModel {
             node.error_rate_x = 0.;
             node.error_rate_z = 0.;
             node.error_rate_y = 0.;
+            node.erasure_error_rate = 0.;
             // no error on the top and bottom
             if t < height - 6 && t > 6 {
                 let next_stage = Stage::from(t + 1);
@@ -690,14 +691,42 @@ impl PlanarCodeModel {
                     match element {
                         Some(ref mut node) => {
                             let p = match error {
-                                ErrorType::X => node.error_rate_x + node.error_rate_y,
-                                ErrorType::Z => node.error_rate_z + node.error_rate_y,
+                                ErrorType::X => node.error_rate_x,
+                                ErrorType::Z => node.error_rate_z,
                                 // Y error requires both x and z has corresponding edge
-                                ErrorType::Y => (node.error_rate_x + node.error_rate_y) * (node.error_rate_z + node.error_rate_y),
+                                ErrorType::Y => node.error_rate_y,
                                 ErrorType::I => (1. - node.error_rate_x - node.error_rate_y - node.error_rate_z),
                             };
                             if p > 0. {  // only add error if physical error rate is greater than 0.
                                 node.error = node.error.multiply(error);
+                                Some(node.error.clone())
+                            } else {
+                                None
+                            }
+                        }
+                        None => None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn add_erasure_error_at(&mut self, t: usize, i: usize, j: usize, error: &ErrorType) -> Option<ErrorType> {
+        if let Some(array) = self.snapshot.get_mut(t) {
+            if let Some(array) = array.get_mut(i) {
+                if let Some(element) = array.get_mut(j) {
+                    match element {
+                        Some(ref mut node) => {
+                            let pe = node.erasure_error_rate;
+                            if pe > 0. {  // only add erasure error if error rate is greater than 0.
+                                node.error = node.error.multiply(error);
+                                node.has_erasure = true;
                                 Some(node.error.clone())
                             } else {
                                 None
@@ -993,7 +1022,8 @@ impl PlanarCodeModel {
                                     }
                                 },
                             }; // probability of this error to occur
-                            if p > 0. || error.is_left() {  // always run single Pauli errors to build `pauli_error_connections`
+                            let is_erasure = node.erasure_error_rate > 0. && error.is_left();
+                            if p > 0. || is_erasure {  // always run single Pauli errors to build `pauli_error_connections`
                                 // simulate the error and measure it
                                 let mut errors = Vec::new();
                                 match error {
@@ -1022,7 +1052,7 @@ impl PlanarCodeModel {
                                 if measurement_errors.len() == 1 {  // boundary
                                     let (t1, i1, j1) = measurement_errors[0];
                                     // println!("[{}][{}][{}]:[{}] causes boundary error on [{}][{}][{}]", t, i, j, if *error == ErrorType::X { "X" } else { "Z" }, t1, i1, j1);
-                                    if p > 0. {
+                                    if p > 0. || is_erasure {
                                         let node = self.snapshot[t1][i1][j1].as_mut().expect("exist");
                                         if node.boundary.is_none() {
                                             node.boundary = Some(Boundary {
@@ -1032,15 +1062,16 @@ impl PlanarCodeModel {
                                         }
                                         node.boundary.as_mut().expect("exist").add(p, correction, self.use_combined_probability);
                                     }
-                                    if error.is_left() {  // only consider single qubit errors
+                                    if is_erasure {  // only consider single qubit errors
                                         let node = self.snapshot[t][i][j].as_mut().expect("exist");
                                         node.pauli_error_connections.push(Either::Right(Index::new(t1, i1, j1)));
                                     }
                                 } else if measurement_errors.len() == 2 {  // connection
                                     let (t1, i1, j1) = measurement_errors[0];
                                     let (t2, i2, j2) = measurement_errors[1];
-                                    if p > 0. {
-                                        if self.snapshot[t1][i1][j1].as_ref().unwrap().qubit_type == self.snapshot[t2][i2][j2].as_ref().unwrap().qubit_type {
+                                    let is_same_type = self.snapshot[t1][i1][j1].as_ref().unwrap().qubit_type == self.snapshot[t2][i2][j2].as_ref().unwrap().qubit_type;
+                                    if p > 0. || is_erasure {
+                                        if is_same_type {
                                             // println!("[{}][{}][{}]:[{}] causes paired errors on [{}][{}][{}] and [{}][{}][{}]", t, i, j, if *error == ErrorType::X { "X" } else { "Z" }, t1, i1, j1, t2, i2, j2);
                                             if t1 <= 6 || t2 <= 6 {
                                                 println!("error at {:?}", (t, i, j, error));
@@ -1067,7 +1098,7 @@ impl PlanarCodeModel {
                                             }
                                         }
                                     }
-                                    if error.is_left() {  // only consider single qubit errors
+                                    if is_erasure && is_same_type {  // only consider single qubit errors causing same type of errors
                                         let node = self.snapshot[t][i][j].as_mut().expect("exist");
                                         node.pauli_error_connections.push(Either::Left((Index::new(t1, i1, j1), Index::new(t2, i2, j2))));
                                     }
@@ -1300,11 +1331,11 @@ impl PlanarCodeModel {
     }
     /// Autotune: compute weight based on error model
     pub fn build_exhausted_path_autotune(&mut self) {
-        self.build_exhausted_path(|p| - p.ln())
+        self.build_exhausted_path(|p| if p > 0. { - p.ln() } else { f64::from(f32::MAX) })  // use f32::MAX is enough
     }
     /// Manhattan distance (but not exactly because there is 12 neighbors instead of 8) version
     pub fn build_exhausted_path_equally_weighted(&mut self) {
-        self.build_exhausted_path(|_p| 1.)
+        self.build_exhausted_path(|p| if p > 0. { 1. } else { f64::from(f32::MAX) })  // use f32::MAX is enough
     }
     /// get correction from two matched nodes
     /// use `correction` (or `next_correction` if former not provided) in `exhausted_map`
@@ -1487,7 +1518,6 @@ impl PlanarCodeModel {
     pub fn decode_UnionFind_sparse_correction_with_edge_matchings(&self, measurement: &Measurement, detected_erasures: &DetectedErasures
             , max_half_weight: usize, use_distributed: bool, detailed_runtime_statistics: bool) ->
             (SparseCorrection, serde_json::Value, Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
-        assert_eq!(detected_erasures.has_erasures(), false, "TODO: add support for erasure errors");
         // sanity check
         let shape = measurement.shape();
         let width_i = 2 * self.di - 1;
@@ -1497,7 +1527,7 @@ impl PlanarCodeModel {
         assert_eq!(shape[2], width_j);
         // run union find decoder
         let (edge_matchings, boundary_matchings, runtime_statistics) = union_find_decoder::suboptimal_matching_by_union_find_given_measurement(&self
-            , measurement, max_half_weight, use_distributed, detailed_runtime_statistics);
+            , measurement, detected_erasures, max_half_weight, use_distributed, detailed_runtime_statistics);
         let mut correction = self.generate_default_sparse_correction();
         for &((t1, i1, j1), (t2, i2, j2)) in edge_matchings.iter() {
             correction.combine(&self.get_correction_two_nodes(&Index::new(t1, i1, j1), &Index::new(t2, i2, j2)));
@@ -1752,6 +1782,7 @@ impl PlanarCodeModel {
                     node.error_rate_x = 0.;
                     node.error_rate_z = 0.;
                     node.error_rate_y = 0.;
+                    node.erasure_error_rate = 0.;
                     if t >= height - 6 {  // no error on the top, as a perfect measurement round
                         return
                     } else if t <= 6 {
@@ -1821,7 +1852,7 @@ impl PlanarCodeModel {
                     Some(boundary) => println!("boundary: p = {}", boundary.p),
                     None => println!("boundary: none"),
                 }
-                for edge in node.edges.iter() {
+                for edge in node.edges.iter().filter(|edge| edge.p > 0.) {
                     println!("edge [{}][{}][{}]: p = {}", edge.t, edge.i, edge.j, edge.p);
                 }
             }
@@ -2077,9 +2108,11 @@ pub struct DetectedErasures {
     /// the position of the erasure error
     pub erasures: Vec<Index>,
     /// two-stabilizer connected with 0 weighted caused by the erasure, used by UF decoder or (indirectly) by MWPM decoder
-    connected: HashSet<(Index, Index)>,
+    pub connected: HashSet<(Index, Index)>,
     /// stabilizer connected to boundary with 0 weight caused by the erasure, used by UF decoder
     pub boundaries: HashSet<Index>,
+    /// connected edges for each node, used by UF decoder
+    pub connected_edges: HashMap<Index, HashSet<Index>>,
 }
 
 impl DetectedErasures {
@@ -2088,6 +2121,7 @@ impl DetectedErasures {
             erasures: Vec::new(),
             connected: HashSet::new(),
             boundaries: HashSet::new(),
+            connected_edges: HashMap::new(),
         }
     }
     pub fn has_erasures(&self) -> bool {
@@ -2099,10 +2133,17 @@ impl DetectedErasures {
         (idx1, idx2)
     }
     pub fn connected_insert(&mut self, index1: &Index, index2: &Index) -> bool {
+        assert!(index1 != index2, "one cannot connect to itself");
+        // insert to `connected_edges` for ease of querying
+        if !self.connected_edges.contains_key(index1) { self.connected_edges.insert(*index1, HashSet::new()); }
+        self.connected_edges.get_mut(index1).unwrap().insert(*index2);
+        if !self.connected_edges.contains_key(index2) { self.connected_edges.insert(*index2, HashSet::new()); }
+        self.connected_edges.get_mut(index2).unwrap().insert(*index1);
+        // also insert to `connected`
         let (idx1, idx2) = Self::sorted_index(index1, index2);
         self.connected.insert((*idx1, *idx2))
     }
-    pub fn connected_contains(&mut self, index1: &Index, index2: &Index) -> bool {
+    pub fn connected_contains(&self, index1: &Index, index2: &Index) -> bool {
         let (idx1, idx2) = Self::sorted_index(index1, index2);
         self.connected.contains(&(*idx1, *idx2))
     }

@@ -1574,7 +1574,8 @@ mod tests {
         }
         model.propagate_error();
         let measurement = model.generate_measurement();
-        let decoders = union_find_decoder::suboptimal_matching_by_union_find_given_measurement_build_decoders(&model, &measurement, max_half_weight);
+        let decoders = union_find_decoder::suboptimal_matching_by_union_find_given_measurement_build_decoders(&model, &measurement
+            , &ftqec::DetectedErasures::new(), max_half_weight);
         for mut decoder in decoders.into_iter() {
             // build distributed union-find decoder from union-find decoder
             let (mut duf_decoder, _position_to_index) = build_distributed_union_find_given_uf_decoder_3d(&decoder);

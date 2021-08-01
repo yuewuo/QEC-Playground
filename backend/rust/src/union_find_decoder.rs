@@ -21,6 +21,7 @@ use super::petgraph;
 use super::distributed_uf_decoder;
 use super::serde_json;
 use std::time::Instant;
+use super::ftqec::{Measurement, DetectedErasures, Index};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UnionFindDecoder<U: std::fmt::Debug> {
@@ -216,8 +217,34 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
         }
     }
 
-    /// run a single turn
+    /// need to call this after changing the grown state manually
+    pub fn update_cluster_state(&mut self) {
+        // update touching boundary
+        for node_idx in 0..self.nodes.len() {
+            let node = &self.nodes[node_idx];
+            match node.node.boundary_cost {
+                Some(boundary_cost) => {
+                    if node.boundary_increased >= boundary_cost {
+                        self.union_find.get_mut(node_idx).is_touching_boundary = true
+                    }
+                }, _ => { },
+            }
+        }
+        self.run_single_iteration_optional_grow(false);
+        // update time counter
+        self.time_uf_grow = 0.;
+        self.time_uf_merge = 0.;
+        self.time_uf_replace = 0.;
+        self.time_uf_update = 0.;
+        self.time_uf_remove = 0.;
+    }
+    
     pub fn run_single_iteration(&mut self) {
+        self.run_single_iteration_optional_grow(true)
+    }
+
+    /// run a single turn
+    fn run_single_iteration_optional_grow(&mut self, is_growing: bool) {
         // grow and update cluster boundaries
         let begin = Instant::now();
         let mut fusion_list = Vec::with_capacity(self.input_neighbors.len());
@@ -228,10 +255,12 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
                 let neighbor_len = self.nodes[boundary].neighbors.len();
                 for i in 0..neighbor_len {
                     let partial_edge = &mut self.nodes[boundary].neighbors[i];
-                    if partial_edge.grown {
+                    if partial_edge.grown && is_growing {
                         continue  // already grown
                     }
-                    partial_edge.increased += 1;
+                    if is_growing {
+                        partial_edge.increased += 1;
+                    }
                     let increased = partial_edge.increased;
                     let neighbor_addr = partial_edge.address;
                     let neighbor = &mut self.nodes[neighbor_addr];
@@ -248,8 +277,10 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
                 match self.nodes[boundary].node.boundary_cost {
                     Some(boundary_cost) => {
                         let boundary_increased = &mut self.nodes[boundary].boundary_increased;
-                        if *boundary_increased < boundary_cost {
-                            *boundary_increased += 1;
+                        if *boundary_increased < boundary_cost || !is_growing {
+                            if is_growing {
+                                *boundary_increased += 1;
+                            }
                             if *boundary_increased >= boundary_cost {
                                 self.union_find.get_mut(boundary).is_touching_boundary = true;  // this set is touching the boundary
                             }
@@ -363,6 +394,49 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
     pub fn run_to_stable(&mut self) {
         while !self.odd_clusters.is_empty() {
             self.run_single_iteration()
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn detailed_print_run_to_stable(&mut self) {
+        while !self.odd_clusters.is_empty() {
+            self.pretty_print_standard_planar_code();
+            println!("cluster boundaries:");
+            self.pretty_print_cluster_boundaries();
+            self.run_single_iteration()
+        }
+        self.pretty_print_standard_planar_code();
+        println!("cluster boundaries:");
+        self.pretty_print_cluster_boundaries();
+    }
+
+    #[allow(dead_code)]
+    pub fn pretty_print_standard_planar_code(&self) {
+        let nodes_len = self.nodes.len();
+        for i in 0..nodes_len {
+            let root_user_data = &self.nodes[self.union_find.immutable_find(i)].node.user_data;
+            let node = &self.nodes[i];
+            let error_symbol = if node.node.is_error_syndrome { "x" } else { " " };
+            let boundary_string = match node.node.boundary_cost {
+                Some(boundary_cost) => {
+                    format!("b({}/{})", node.boundary_increased, boundary_cost)
+                },
+                None => format!("      "),
+            };
+            let neighbors_len = node.neighbors.len();
+            let mut neighbor_string = String::new();
+            for j in 0..neighbors_len {
+                let partial_edge = &self.nodes[i].neighbors[j];
+                let increased = partial_edge.increased;
+                let neighbor_addr = partial_edge.address;
+                let neighbor = &self.nodes[neighbor_addr];
+                let reverse_index = neighbor.neighbor_index[&i];
+                let neighbor_partial_edge = &neighbor.neighbors[reverse_index];
+                let neighbor_user_data = &neighbor.node.user_data;
+                let string = format!("{:?}[{}/{}] ", neighbor_user_data, neighbor_partial_edge.increased + increased, neighbor_partial_edge.length);
+                neighbor_string.push_str(string.as_str());
+            }
+            println!("{:?} ∈ {:?} {} {} n: {}", node.node.user_data, root_user_data, error_symbol, boundary_string, neighbor_string);
         }
     }
 
@@ -684,30 +758,33 @@ pub fn run_given_mwpm_decoder_instance_weighted(model: &ftqec::PlanarCodeModel, 
     (has_x_logical_error, has_z_logical_error)
 }
 
-pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model: &ftqec::PlanarCodeModel, measurement: &ftqec::Measurement, max_half_weight: usize)
+pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model: &ftqec::PlanarCodeModel, measurement: &Measurement
+        , detected_erasures: &DetectedErasures, max_half_weight: usize)
         -> Vec<UnionFindDecoder<(usize, usize, usize)>> {
     // first find individual connected regions (so that the decoder weight is optimal for every region)
     let mut g = petgraph::graph::UnGraph::<(usize, usize, usize), ()>::default();
     let mut tij_to_index = HashMap::new();
     // add nodes
     model.iterate_measurement_stabilizers(|t, i, j, _node| {
-        if t > 6 {  // ignore the bottom layer
-            let index = g.add_node((t, i, j));
-            tij_to_index.insert((t, i, j), index);
-        }
+        let index = g.add_node((t, i, j));
+        tij_to_index.insert((t, i, j), index);
     });
-    // add edges
+    // add edges from Pauli errors
     model.iterate_measurement_stabilizers(|t, i, j, node| {
-        if t > 6 {  // ignore the bottom layer
-            for edge in node.edges.iter() {
-                if edge.t > 6 {
-                    let index1 = tij_to_index[&(t, i, j)];
-                    let index2 = tij_to_index[&(edge.t, edge.i, edge.j)];
-                    g.update_edge(index1, index2, ());  // use `update_edge` instead of `add_edge` is to avoid duplicate edges
-                }
-            }
+        for edge in node.edges.iter().filter(|edge| edge.p > 0.) {
+            let index1 = tij_to_index[&(t, i, j)];
+            let index2 = tij_to_index[&(edge.t, edge.i, edge.j)];
+            g.update_edge(index1, index2, ());  // use `update_edge` instead of `add_edge` is to avoid duplicate edges
         }
     });
+    // add edges from erasure errors
+    if detected_erasures.has_erasures() {
+        for (idx1, idx2) in detected_erasures.connected.iter() {
+            let index1 = tij_to_index[&(idx1.t, idx1.i, idx1.j)];
+            let index2 = tij_to_index[&(idx2.t, idx2.i, idx2.j)];
+            g.update_edge(index1, index2, ());  // use `update_edge` instead of `add_edge` is to avoid duplicate edges
+        }
+    }
     // get connected regions, each connected region corresponds to an instance of union find decoder
     let mut already_visited = HashSet::new();
     let mut connected_regions = Vec::new();
@@ -737,18 +814,28 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
     // }
     let mut decoders = Vec::new();
     for region in connected_regions.iter() {
+        let region_set = {
+            let mut region_set = HashSet::new();
+            if detected_erasures.has_erasures() {
+                region_set.extend(region.iter().map(|idx| {
+                    let &(t, i, j) = g.node_weight(*idx).expect("exists");
+                    Index::new(t, i, j)
+                }));
+            }
+            region_set
+        };
         let mut minimum_probability = f64::MAX;
         for idx in region.iter() {
             let &(t, i, j) = g.node_weight(*idx).expect("exists");
             let node = model.snapshot[t][i][j].as_ref().expect("exist");
-            for edge in node.edges.iter() {
+            for edge in node.edges.iter().filter(|edge| edge.p > 0.) {
                 if edge.p < minimum_probability {
                     minimum_probability = edge.p;
                 }
             }
             match &node.boundary {
                 Some(boundary) => {
-                    if boundary.p < minimum_probability {
+                    if boundary.p > 0. && boundary.p < minimum_probability {
                         minimum_probability = boundary.p;
                     }
                 },
@@ -774,10 +861,9 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
             let &(t, i, j) = g.node_weight(*idx).expect("exists");
             let node = model.snapshot[t][i][j].as_ref().expect("exist");
             position_to_index.insert((t, i, j), nodes.len());
-            nodes.push(InputNode::new((t, i, j), false, match &node.boundary {
-                Some(boundary) => Some(probability_to_weight(boundary.p)),
-                None => None,
-            }));
+            nodes.push(InputNode::new((t, i, j), false, node.boundary.as_ref().and_then(|boundary| {
+                if boundary.p > 0. {  Some(probability_to_weight(boundary.p)) } else { None }
+            }).or(detected_erasures.boundaries.get(&Index::new(t, i, j)).and(Some(0)))));
         }
         model.iterate_measurement_stabilizers(|t, i, j, _node| {
             let (mt, mi, mj) = ftqec::Index::new(t, i, j).to_measurement_idx();
@@ -790,23 +876,49 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
             let &(t, i, j) = g.node_weight(*g_idx).expect("exists");
             let node = model.snapshot[t][i][j].as_ref().expect("exist");
             let idx = position_to_index[&(t, i, j)];
-            for edge in node.edges.iter() {
-                if edge.t > 6 {
-                    let peer_idx = position_to_index[&(edge.t, edge.i, edge.j)];
-                    if idx < peer_idx {  // remove duplicated neighbors
-                        neighbors.push(NeighborEdge::new(idx, peer_idx, 0, probability_to_weight(edge.p)));
+            let mut added_edges_idx = HashSet::new();  // to avoid duplicate edges when considering edges caused by pure erasure errors
+            for edge in node.edges.iter().filter(|edge| edge.p > 0.) {
+                let peer_idx = position_to_index[&(edge.t, edge.i, edge.j)];
+                if idx < peer_idx {  // remove duplicated neighbors
+                    let mut edge_increased = 0;
+                    let edge_length = probability_to_weight(edge.p);
+                    if detected_erasures.has_erasures() {  // check for erasure errors
+                        added_edges_idx.insert(Index::new(edge.t, edge.i, edge.j));
+                        if detected_erasures.connected_contains(&Index::new(t, i, j), &Index::new(edge.t, edge.i, edge.j)) {
+                            edge_increased = edge_length;  // set as already grown (actually edge_length/2 suffices)
+                        }
                     }
-                } else {
-                    let new_boundary_cost = match nodes[idx].boundary_cost {
-                        Some(cost) => std::cmp::min(cost, probability_to_weight(edge.p)),
-                        None => probability_to_weight(edge.p),
-                    };
-                    nodes[idx].boundary_cost = Some(new_boundary_cost);  // viewing the bottom layer as boundary
+                    neighbors.push(NeighborEdge::new(idx, peer_idx, edge_increased, edge_length));
+                }
+            }
+            if detected_erasures.has_erasures() {
+                match detected_erasures.connected_edges.get(&Index::new(t, i, j)) {
+                    Some(edges) => {
+                        for target in edges.iter() {
+                            // target must in this region, and also cannot be already added as grown edge
+                            if region_set.get(target).is_some() && added_edges_idx.get(target).is_none() {
+                                let peer_idx = position_to_index[&(target.t, target.i, target.j)];
+                                if idx < peer_idx {  // remove duplicated neighbors
+                                    neighbors.push(NeighborEdge::new(idx, peer_idx, 0, 0));  // weight 0 edges is specific for erasure errors
+                                }
+                            }
+                        }
+                    }, _ => { }
                 }
             }
         }
         // build union find decoder
-        let decoder = UnionFindDecoder::new(nodes, neighbors);
+        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        // set boundary edge already grown for erasure errors
+        if detected_erasures.has_erasures() {
+            for node in decoder.nodes.iter_mut() {
+                let (t, i, j) = node.node.user_data;
+                if detected_erasures.boundaries.get(&Index::new(t, i, j)).is_some() {
+                    node.boundary_increased = node.node.boundary_cost.expect("exists");
+                }
+            }
+            decoder.update_cluster_state();
+        }
         decoders.push(decoder);
     }
     decoders
@@ -862,7 +974,8 @@ pub fn suboptimal_matching_by_union_find_given_measurement_generate_suboptimal_m
     (edge_matchings, boundary_matchings)
 }
 /// given an arbitrary ftqec::PlanarCodeModel, this function returns a suboptimal matching given by union find decoder
-pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::PlanarCodeModel, measurement: &ftqec::Measurement, max_half_weight: usize
+pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::PlanarCodeModel, measurement: &Measurement
+        , detected_erasures: &DetectedErasures, max_half_weight: usize
         , use_distributed: bool, detailed_runtime_statistics: bool)
         -> (Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>, serde_json::Value) {
     let mut edge_matchings = Vec::new();
@@ -871,7 +984,7 @@ pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::Planar
     let mut time_build_decoders = 0.;
     let mut duf_clock_cycles = 0;
     let begin = Instant::now();
-    let decoders = suboptimal_matching_by_union_find_given_measurement_build_decoders(model, measurement, max_half_weight);
+    let decoders = suboptimal_matching_by_union_find_given_measurement_build_decoders(model, measurement, detected_erasures, max_half_weight);
     time_build_decoders += begin.elapsed().as_secs_f64();
     let mut time_uf_grow = 0.;
     let mut time_uf_merge = 0.;
@@ -891,6 +1004,7 @@ pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::Planar
         } else {
             let begin = Instant::now();
             decoder.run_to_stable();
+            // decoder.detailed_print_run_to_stable();
             time_run_to_stable += begin.elapsed().as_secs_f64();
             time_uf_grow += decoder.time_uf_grow;
             time_uf_merge += decoder.time_uf_merge;
@@ -900,6 +1014,8 @@ pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::Planar
         }
         // generate suboptimal matching
         let (mut local_edge_matchings, mut local_boundary_matchings) = suboptimal_matching_by_union_find_given_measurement_generate_suboptimal_matching(&decoder);
+        // println!("local_edge_matchings: {:?}", local_edge_matchings);
+        // println!("local_boundary_matchings: {:?}", local_boundary_matchings);
         edge_matchings.append(&mut local_edge_matchings);
         boundary_matchings.append(&mut local_boundary_matchings);
     }
@@ -1105,47 +1221,6 @@ mod tests {
 
     // use `cargo test union_find_decoder_test_case_1 -- --nocapture` to run specific test
 
-    fn pretty_print_standard_planar_code<U: std::fmt::Debug>(decoder: &UnionFindDecoder<U>) {
-        let nodes_len = decoder.nodes.len();
-        for i in 0..nodes_len {
-            let root_user_data = &decoder.nodes[decoder.union_find.immutable_find(i)].node.user_data;
-            let node = &decoder.nodes[i];
-            let error_symbol = if node.node.is_error_syndrome { "x" } else { " " };
-            let boundary_string = match node.node.boundary_cost {
-                Some(boundary_cost) => {
-                    format!("b({}/{})", node.boundary_increased, boundary_cost)
-                },
-                None => format!("      "),
-            };
-            let neighbors_len = node.neighbors.len();
-            let mut neighbor_string = String::new();
-            for j in 0..neighbors_len {
-                let partial_edge = &decoder.nodes[i].neighbors[j];
-                let increased = partial_edge.increased;
-                let neighbor_addr = partial_edge.address;
-                let neighbor = &decoder.nodes[neighbor_addr];
-                let reverse_index = neighbor.neighbor_index[&i];
-                let neighbor_partial_edge = &neighbor.neighbors[reverse_index];
-                let neighbor_user_data = &neighbor.node.user_data;
-                let string = format!("{:?}[{}/{}] ", neighbor_user_data, neighbor_partial_edge.increased + increased, neighbor_partial_edge.length);
-                neighbor_string.push_str(string.as_str());
-            }
-            println!("{:?} ∈ {:?} {} {} n: {}", node.node.user_data, root_user_data, error_symbol, boundary_string, neighbor_string);
-        }
-    }
-
-    fn detailed_print_run_to_stable<U: std::fmt::Debug>(decoder: &mut UnionFindDecoder<U>) {
-        while !decoder.odd_clusters.is_empty() {
-            pretty_print_standard_planar_code(&decoder);
-            println!("cluster boundaries:");
-            decoder.pretty_print_cluster_boundaries();
-            decoder.run_single_iteration()
-        }
-        pretty_print_standard_planar_code(&decoder);
-        println!("cluster boundaries:");
-        decoder.pretty_print_cluster_boundaries();
-    }
-
     #[test]
     fn union_find_decoder_test_basic_algorithm() {
         let mut uf = UnionFind::new(100);
@@ -1223,7 +1298,7 @@ mod tests {
         nodes[position_to_index[&(2, 1)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
         let mut decoder = UnionFindDecoder::new(nodes, neighbors);
-        detailed_print_run_to_stable(&mut decoder);
+        decoder.detailed_print_run_to_stable();
         // decoder.run_to_stable();
         // pretty_print_standard_planar_code(&decoder);
         assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false, false)
@@ -1239,7 +1314,7 @@ mod tests {
         nodes[position_to_index[&(2, 5)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 7)]].is_error_syndrome = true;
         let mut decoder = UnionFindDecoder::new(nodes, neighbors);
-        detailed_print_run_to_stable(&mut decoder);
+        decoder.detailed_print_run_to_stable();
         // decoder.run_to_stable();
         // pretty_print_standard_planar_code(&decoder);
         assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false, false)
@@ -1256,7 +1331,7 @@ mod tests {
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 5)]].is_error_syndrome = true;
         let mut decoder = UnionFindDecoder::new(nodes, neighbors);
-        detailed_print_run_to_stable(&mut decoder);
+        decoder.detailed_print_run_to_stable();
         // decoder.run_to_stable();
         // pretty_print_standard_planar_code(&decoder);
         assert_eq!(1, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false, false)
@@ -1279,7 +1354,7 @@ mod tests {
         assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
         assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
         let mut decoder = UnionFindDecoder::new(nodes, neighbors);
-        detailed_print_run_to_stable(&mut decoder);
+        decoder.detailed_print_run_to_stable();
     }
 
     #[test]
@@ -1308,7 +1383,7 @@ mod tests {
         assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
         assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
         let mut decoder = UnionFindDecoder::new(nodes, neighbors);
-        detailed_print_run_to_stable(&mut decoder);
+        decoder.detailed_print_run_to_stable();
         assert_eq!(0, get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &decoder, false, false)
             , "cardinality of one side of boundary determines if there is logical error");
     }
@@ -1340,7 +1415,7 @@ mod tests {
         assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
         assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
         let mut decoder = UnionFindDecoder::new(nodes, neighbors);
-        detailed_print_run_to_stable(&mut decoder);
+        decoder.detailed_print_run_to_stable();
         assert_eq!(1, get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &decoder, false, false)
             , "cardinality of one side of boundary determines if there is logical error");
     }
@@ -1371,7 +1446,7 @@ mod tests {
         assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
         assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
         let mut decoder = UnionFindDecoder::new(nodes, neighbors);
-        detailed_print_run_to_stable(&mut decoder);
+        decoder.detailed_print_run_to_stable();
         assert_eq!(1, get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &decoder, false, false)
             , "cardinality of one side of boundary determines if there is logical error");
     }
@@ -1428,9 +1503,111 @@ mod tests {
         model.propagate_error();
         let measurement = model.generate_measurement();
         let (edge_matchings, boundary_matchings, _runtime_statistics) = suboptimal_matching_by_union_find_given_measurement(
-            &model, &measurement, 4, false, false);
+            &model, &measurement, &ftqec::DetectedErasures::new(), 4, false, false);
         println!("edge_matchings: {:?}", edge_matchings);
         println!("boundary_matchings: {:?}", boundary_matchings);
+    }
+
+    #[test]
+    fn union_find_decoder_test_decode_erasure_error_1() {
+        let d = 3;
+        let pe = 0.1;  // erasure error rate
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(0, d);
+        model.set_individual_error_with_perfect_initialization_with_erasure(0., 0., 0., 0.);
+        model.iterate_snapshot_mut(|t, _i, _j, node| {  // shallow error on bottom
+            if t == 6 && node.qubit_type == QubitType::Data {
+                node.erasure_error_rate = pe;
+            }
+        });
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path_autotune();
+        // add errors
+        model.add_erasure_error_at(6, 2, 2, &ErrorType::Z).expect("error rate = 0 here");
+        model.propagate_error();
+        // decode
+        let measurement = model.generate_measurement();
+        let detected_erasures = model.generate_detected_erasures();
+        let (correction, _) = model.decode_UnionFind(&measurement, &detected_erasures, 4, false, false);
+        let validation_ret = model.validate_correction_on_boundary(&correction);
+        assert!(validation_ret.is_ok());
+    }
+
+    #[test]
+    fn union_find_decoder_test_decode_erasure_error_2() {
+        let d = 3;
+        let pe = 0.1;  // erasure error rate
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(0, d);
+        model.set_individual_error_with_perfect_initialization_with_erasure(0., 0., 0., 0.);
+        model.iterate_snapshot_mut(|t, _i, _j, node| {  // shallow error on bottom
+            if t == 6 && node.qubit_type == QubitType::Data {
+                node.erasure_error_rate = pe;
+            }
+        });
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path_autotune();
+        // add errors
+        model.add_erasure_error_at(6, 0, 0, &ErrorType::Z).expect("error rate = 0 here");
+        model.propagate_error();
+        // decode
+        let measurement = model.generate_measurement();
+        let detected_erasures = model.generate_detected_erasures();
+        let (correction, _) = model.decode_UnionFind(&measurement, &detected_erasures, 4, false, false);
+        let validation_ret = model.validate_correction_on_boundary(&correction);
+        assert!(validation_ret.is_ok());
+    }
+
+    #[test]
+    fn union_find_decoder_test_decode_erasure_error_3() {
+        let d = 3;
+        let pe = 0.1;  // erasure error rate
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(0, d);
+        model.set_individual_error_with_perfect_initialization_with_erasure(0., 0., 0., 0.);
+        model.iterate_snapshot_mut(|t, _i, _j, node| {  // shallow error on bottom
+            if t == 6 && node.qubit_type == QubitType::Data {
+                node.erasure_error_rate = pe;
+            }
+        });
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path_autotune();
+        // add errors
+        model.add_erasure_error_at(6, 0, 0, &ErrorType::Z).expect("error rate = 0 here");
+        model.add_erasure_error_at(6, 2, 0, &ErrorType::Z).expect("error rate = 0 here");
+        model.propagate_error();
+        // decode
+        let measurement = model.generate_measurement();
+        let detected_erasures = model.generate_detected_erasures();
+        let (correction, _) = model.decode_UnionFind(&measurement, &detected_erasures, 4, false, false);
+        let validation_ret = model.validate_correction_on_boundary(&correction);
+        assert!(validation_ret.is_ok());
+    }
+
+    #[test]
+    fn union_find_decoder_test_decode_erasure_error_4() {
+        let d = 3;
+        let pe = 0.1;  // erasure error rate
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(0, d);
+        model.set_individual_error_with_perfect_initialization_with_erasure(0., 0., 0., 0.);
+        model.iterate_snapshot_mut(|t, _i, _j, node| {  // shallow error on bottom
+            if t == 6 && node.qubit_type == QubitType::Data {
+                node.erasure_error_rate = pe;
+            }
+        });
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path_autotune();
+        // add errors
+        model.add_erasure_error_at(6, 2, 0, &ErrorType::Z).expect("error rate = 0 here");
+        model.add_erasure_error_at(6, 4, 0, &ErrorType::Z).expect("error rate = 0 here");
+        model.propagate_error();
+        // decode
+        let measurement = model.generate_measurement();
+        let detected_erasures = model.generate_detected_erasures();
+        let (correction, _) = model.decode_UnionFind(&measurement, &detected_erasures, 4, false, false);
+        let validation_ret = model.validate_correction_on_boundary(&correction);
+        assert!(validation_ret.is_ok());
     }
 
 }
