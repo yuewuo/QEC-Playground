@@ -233,7 +233,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
         self.run_single_iteration_optional_grow(true);
         // update time counter
         self.time_uf_grow = 0.;
-        self.time_uf_merge = 0.;
+        // self.time_uf_merge = 0.;  // keep merge time, to test union find operation
         self.time_uf_replace = 0.;
         self.time_uf_update = 0.;
         self.time_uf_remove = 0.;
