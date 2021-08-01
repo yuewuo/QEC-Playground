@@ -646,6 +646,7 @@ impl PlanarCodeModel {
         }
         // apply erasure error and then count number of errors
         let mut error_count = 0;
+        // println!("print erasure error pattern start");
         self.iterate_snapshot_mut(|_t, _i, _j, node| {
             if node.has_erasure {  // apply erasure error as equal probability of all kinds of Pauli errors
                 let random_number = rng();
@@ -653,6 +654,7 @@ impl PlanarCodeModel {
                     else if random_number < 0.5 { ErrorType::Z }
                     else if random_number < 0.75 { ErrorType::Y }
                     else { ErrorType::I };
+                // println!("random erasure error at [{}][{}][{}], type: {:?}", _t, _i, _j, node.error);
             }
             if node.error != ErrorType::I {
                 // println!("error [{}][{}][{}] : {:?}", _t, _i, _j, node.error);

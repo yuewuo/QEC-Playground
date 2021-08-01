@@ -230,7 +230,7 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
                 }, _ => { },
             }
         }
-        self.run_single_iteration_optional_grow(false);
+        self.run_single_iteration_optional_grow(true);
         // update time counter
         self.time_uf_grow = 0.;
         self.time_uf_merge = 0.;
@@ -240,14 +240,17 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
     }
     
     pub fn run_single_iteration(&mut self) {
-        self.run_single_iteration_optional_grow(true)
+        self.run_single_iteration_optional_grow(false)
     }
 
     /// run a single turn
-    fn run_single_iteration_optional_grow(&mut self, is_growing: bool) {
+    fn run_single_iteration_optional_grow(&mut self, no_growing: bool) {
         // grow and update cluster boundaries
         let begin = Instant::now();
         let mut fusion_list = Vec::with_capacity(self.input_neighbors.len());
+        if no_growing {  // iterate all clusters no matter it's odd or even
+            self.odd_clusters = self.cluster_boundaries.keys().map(|idx| *idx).collect();
+        }
         for &odd_cluster in self.odd_clusters.iter() {
             let (boundaries_vec, _boundaries) = self.cluster_boundaries.get(&odd_cluster).unwrap();
             for &boundary in boundaries_vec.iter() {
@@ -255,10 +258,10 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
                 let neighbor_len = self.nodes[boundary].neighbors.len();
                 for i in 0..neighbor_len {
                     let partial_edge = &mut self.nodes[boundary].neighbors[i];
-                    if partial_edge.grown && is_growing {
+                    if partial_edge.grown && !no_growing {
                         continue  // already grown
                     }
-                    if is_growing {
+                    if !no_growing {
                         partial_edge.increased += 1;
                     }
                     let increased = partial_edge.increased;
@@ -277,8 +280,8 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
                 match self.nodes[boundary].node.boundary_cost {
                     Some(boundary_cost) => {
                         let boundary_increased = &mut self.nodes[boundary].boundary_increased;
-                        if *boundary_increased < boundary_cost || !is_growing {
-                            if is_growing {
+                        if *boundary_increased < boundary_cost || no_growing {
+                            if !no_growing {
                                 *boundary_increased += 1;
                             }
                             if *boundary_increased >= boundary_cost {
@@ -290,6 +293,12 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
                 }
             }
         }
+        // {  // debug print `fusion_list`
+        //     println!("fusion_list:");
+        //     for (a, b) in fusion_list.iter() {
+        //         println!("    {:?} {:?}", self.nodes[*a].node.user_data, self.nodes[*b].node.user_data);
+        //     }
+        // }
         self.time_uf_grow += begin.elapsed().as_secs_f64();
         // merge the clusters given `fusion_list` and also update the boundary list
         let begin = Instant::now();
@@ -399,12 +408,16 @@ impl<U: std::fmt::Debug> UnionFindDecoder<U> {
 
     #[allow(dead_code)]
     pub fn detailed_print_run_to_stable(&mut self) {
-        while !self.odd_clusters.is_empty() {
+        // let mut max_steps = 20usize;
+        let mut max_steps = usize::MAX;
+        while !self.odd_clusters.is_empty() && max_steps > 0 {
+            if max_steps != usize::MAX { max_steps -= 1; }
             self.pretty_print_standard_planar_code();
             println!("cluster boundaries:");
             self.pretty_print_cluster_boundaries();
             self.run_single_iteration()
         }
+        assert!(max_steps > 0, "run to stable terminated because of ");
         self.pretty_print_standard_planar_code();
         println!("cluster boundaries:");
         self.pretty_print_cluster_boundaries();
@@ -1603,6 +1616,48 @@ mod tests {
         model.add_erasure_error_at(6, 4, 0, &ErrorType::Z).expect("error rate = 0 here");
         model.propagate_error();
         // decode
+        let measurement = model.generate_measurement();
+        let detected_erasures = model.generate_detected_erasures();
+        let (correction, _) = model.decode_UnionFind(&measurement, &detected_erasures, 4, false, false);
+        let validation_ret = model.validate_correction_on_boundary(&correction);
+        assert!(validation_ret.is_ok());
+    }
+
+    /*
+     * debug case which never terminates
+     * solved: it's because when updating the growing region, I didn't iterating over even clusters to find grown edges
+     *        it's important to fuse even clusters!
+     */
+    #[test]
+    fn union_find_decoder_test_decode_erasure_error_5() {
+        let di = 3;
+        let dj = 7;
+        let pe = 0.2;  // erasure error rate
+        let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code_rectangle(0, di, dj);
+        model.set_individual_error_with_perfect_initialization_with_erasure(0., 0., 0., 0.);
+        model.iterate_snapshot_mut(|t, _i, _j, node| {  // shallow error on bottom
+            if t == 6 && node.qubit_type == QubitType::Data {
+                node.erasure_error_rate = pe;
+            }
+        });
+        model.build_graph();
+        model.optimize_correction_pattern();
+        model.build_exhausted_path_autotune();
+        // add errors
+        model.add_erasure_error_at(6, 0, 0, &ErrorType::Y).expect("error rate = 0 here");
+        model.add_erasure_error_at(6, 1, 1, &ErrorType::Z).expect("error rate = 0 here");
+        model.add_erasure_error_at(6, 1, 5, &ErrorType::I).expect("error rate = 0 here");
+        model.add_erasure_error_at(6, 1, 9, &ErrorType::I).expect("error rate = 0 here");
+        model.add_erasure_error_at(6, 1, 11, &ErrorType::Y).expect("error rate = 0 here");
+        model.add_erasure_error_at(6, 2, 2, &ErrorType::Y).expect("error rate = 0 here");
+        model.add_erasure_error_at(6, 2, 6, &ErrorType::Z).expect("error rate = 0 here");
+        model.add_erasure_error_at(6, 2, 8, &ErrorType::I).expect("error rate = 0 here");
+        model.add_erasure_error_at(6, 3, 7, &ErrorType::X).expect("error rate = 0 here");
+        model.propagate_error();
+        // decode
+        // model.iterate_measurement_errors(|t, i, j, _node| {
+        //     println!("measurement error at [{}][{}][{}]", t, i, j);
+        // });
         let measurement = model.generate_measurement();
         let detected_erasures = model.generate_detected_erasures();
         let (correction, _) = model.decode_UnionFind(&measurement, &detected_erasures, 4, false, false);
