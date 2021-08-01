@@ -24,6 +24,7 @@ use super::ndarray;
 use super::serde_json::{json};
 use std::fs::File;
 use std::io::prelude::*;
+use std::time::Instant;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -107,10 +108,12 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let no_stop_if_next_model_is_not_prepared = matches.is_present("no_stop_if_next_model_is_not_prepared");
             let log_runtime_statistics = value_t!(matches, "log_runtime_statistics", String).ok();
             let detailed_runtime_statistics = matches.is_present("detailed_runtime_statistics");
+            let time_budget = value_t!(matches, "time_budget", f64).ok();
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
-                , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight, use_combined_probability
-                , error_model, no_stop_if_next_model_is_not_prepared, log_runtime_statistics, detailed_runtime_statistics);
+                , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight
+                , use_combined_probability, error_model, no_stop_if_next_model_is_not_prepared, log_runtime_statistics, detailed_runtime_statistics
+                , time_budget);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -510,7 +513,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , extra_measurement_error: f64, bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, only_count_logical_z: bool
         , perfect_initialization: bool, shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType
         , max_half_weight: usize, use_combined_probability: bool, error_model: Option<ErrorModel>, no_stop_if_next_model_is_not_prepared: bool
-        , log_runtime_statistics: Option<String>, detailed_runtime_statistics: bool) {
+        , log_runtime_statistics: Option<String>, detailed_runtime_statistics: bool, time_budget: Option<f64>) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -688,6 +691,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         // create threads to run experiment
         let total_rounds = Arc::new(Mutex::new(0));
         let qec_failed = Arc::new(Mutex::new(0));
+        let external_termination = Arc::new(Mutex::new(false));
         let mut precomputing_model_thread = None;
         if i + 1 < configurations_len {
             let (di_next, dj_next, measurement_rounds_next, p_next, pe_next) = configurations[i + 1];
@@ -709,6 +713,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         for _i in 0..parallel {
             let total_rounds = Arc::clone(&total_rounds);
             let qec_failed = Arc::clone(&qec_failed);
+            let external_termination = Arc::clone(&external_termination);
             let precomputed_model = Arc::clone(&precomputed_model);
             let mut model_error = model_error.clone();  // only for generating error and validating correction
             let model_decoder = Arc::clone(&model_decoder);  // only for decode, so that you're confident I'm not cheating by using information of original errors
@@ -725,6 +730,9 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             handlers.push(std::thread::spawn(move || {
                 // println!("thread {}", _i);
                 let mut rng = thread_rng();
+                let mut current_external_termination = {
+                    *external_termination.lock().unwrap()
+                };
                 let mut current_total_rounds = {
                     *total_rounds.lock().unwrap()
                 };
@@ -736,7 +744,8 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 } else {
                     false
                 };
-                while keep_running_next_model_not_prepared || (current_total_rounds < max_N && current_qec_failed < min_error_cases) {
+                while keep_running_next_model_not_prepared || (current_total_rounds < max_N && current_qec_failed < min_error_cases
+                        && !current_external_termination) {
                     let mut mini_qec_failed = 0;
                     let mut log_runtime_statistics_buffer = String::new();
                     for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
@@ -805,6 +814,9 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                         }
                     }
                     // sync data with outside
+                    current_external_termination = {
+                        *external_termination.lock().unwrap()
+                    };
                     current_total_rounds = {
                         let mut total_rounds = total_rounds.lock().unwrap();
                         *total_rounds += mini_batch;
@@ -831,7 +843,19 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 }
             }));
         }
+        let round_begin = Instant::now();
         loop {
+            let external_termination = {
+                let mut external_termination = external_termination.lock().unwrap();
+                match time_budget {
+                    Some(time_budget) => {
+                        if round_begin.elapsed().as_secs_f64() > time_budget {
+                            *external_termination = true;
+                        }
+                    }, _ => { },
+                }
+                *external_termination
+            };
             let total_rounds = *total_rounds.lock().unwrap();
             let qec_failed = *qec_failed.lock().unwrap();
             let keep_running_next_model_not_prepared = if no_stop_if_next_model_is_not_prepared {
@@ -839,7 +863,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             } else {
                 false
             };
-            if !(keep_running_next_model_not_prepared || (total_rounds < max_N && qec_failed < min_error_cases)) {
+            if !(keep_running_next_model_not_prepared || (total_rounds < max_N && qec_failed < min_error_cases && !external_termination)) {
                 break
             }
             let error_rate = qec_failed as f64 / total_rounds as f64;
