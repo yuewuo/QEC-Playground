@@ -18,7 +18,7 @@ min_error_cases = 1000
 
 max_N = 100000000
 
-UF_parameters = f"-p0 --shallow_error_on_bottom --decoder UF --max_half_weight 10 --time_budget 3600".split(" ")
+UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 3600".split(" ")
 
 results = []
 for di in di_vec:
