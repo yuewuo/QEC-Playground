@@ -21,7 +21,7 @@ set style fill transparent solid 0.2 noborder
 # to remove legend (because I don't know how to plot it just like Fig.1 in arXiv1709.06218v1)
 set nokey
 
-set title "Decoding Time of CSS Surface Code (UF Decoder)"
+set title "Decoding Time of CSS Surface Code with Erasure"
 
 set output "decoding_time_arXiv1709.06218v1_with_erasure.eps"
 
