@@ -7,9 +7,9 @@ set size 1,1.1
 
 # roughly test threshold commands:
 # biased CX: <0.02 >0.01 <0.015 >0.012 <0.014
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.014] -b10 -p0 -m100000 -e3000 --use_xzzx_code --bias_eta 1000 --error_model GenericBiasedWithBiasedCX --no_stop_if_next_model_is_not_prepared
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.014]-p0 -m100000 -e3000 --use_xzzx_code --bias_eta 1000 --error_model GenericBiasedWithBiasedCX --no_stop_if_next_model_is_not_prepared
 # standard CX: <0.01 >0.005 >0.008 <0.009
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.009] -b10 -p0 -m100000 -e3000 --use_xzzx_code --bias_eta 1000 --error_model GenericBiasedWithStandardCX --no_stop_if_next_model_is_not_prepared
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.009]-p0 -m100000 -e3000 --use_xzzx_code --bias_eta 1000 --error_model GenericBiasedWithStandardCX --no_stop_if_next_model_is_not_prepared
 
 
 # data range:
@@ -18,9 +18,9 @@ set size 1,1.1
 
 # data generating commands:
 # biased CX
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.0120,0.0125,0.0130,0.0135,0.0140] -b10 -p0 -m100000 -e100000 --use_xzzx_code --bias_eta 1000 --error_model GenericBiasedWithBiasedCX
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.0120,0.0125,0.0130,0.0135,0.0140]-p0 -m100000 -e100000 --use_xzzx_code --bias_eta 1000 --error_model GenericBiasedWithBiasedCX
 # standard CX
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.0080,0.0085,0.0090,0.0095,0.0100] -b10 -p0 -m100000 -e100000 --use_xzzx_code --bias_eta 1000 --error_model GenericBiasedWithStandardCX
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.0080,0.0085,0.0090,0.0095,0.0100]-p0 -m100000 -e100000 --use_xzzx_code --bias_eta 1000 --error_model GenericBiasedWithStandardCX
 
 set logscale x
 set xrange [0.0075:0.0145]

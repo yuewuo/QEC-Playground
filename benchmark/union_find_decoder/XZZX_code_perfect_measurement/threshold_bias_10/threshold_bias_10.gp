@@ -11,10 +11,10 @@ set size 1,1
 # data generating commands:
 
 # roughly test threshold
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13,17,21,25] [0,0,0,0] [0.24,0.26,0.28,0.30] -p0 -b1000 -m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10 --decoder UF --max_half_weight 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13,17,21,25] [0,0,0,0] [0.24,0.26,0.28,0.30] -p0-m100000000 -e10000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10 --decoder UF --max_half_weight 10
 
 # or joint commands
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13,17,21,25] [0,0,0,0] [0.24,0.25,0.26,0.27,0.28,0.29,0.30] -p0 -b1000 -m20000000 -e200000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10 --decoder UF --max_half_weight 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13,17,21,25] [0,0,0,0] [0.24,0.25,0.26,0.27,0.28,0.29,0.30] -p0-m20000000 -e200000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10 --decoder UF --max_half_weight 10
 
 set logscale x
 set xrange [0.24:0.30]

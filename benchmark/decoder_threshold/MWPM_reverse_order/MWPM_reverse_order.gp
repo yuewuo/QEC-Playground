@@ -5,13 +5,13 @@ set grid ytics
 set size 1,1
 
 # data generating commands:
-# cargo run --release --features MWPM_reverse_order -- tool fault_tolerant_benchmark [3,5,7,9] [0,0,0,0] [9.5e-2,9.6e-2,9.7e-2,9.8e-2,9.9e-2,10e-2,10.1e-2,10.2e-2,10.3e-2,10.4e-2,10.5e-2] -p0 -b1000 -e100000000 --shallow_error_on_bottom --only_count_logical_x --no_autotune --no_y_error
-# cargo run --release --features MWPM_reverse_order -- tool fault_tolerant_benchmark [11] [0] [9.5e-2,9.6e-2,9.7e-2,9.8e-2,9.9e-2,10e-2,10.1e-2,10.2e-2,10.3e-2,10.4e-2,10.5e-2] -p0 -b1000 -e10000000 -m10000000 --shallow_error_on_bottom --only_count_logical_x --no_autotune --no_y_error
-# cargo run --release --features MWPM_reverse_order -- tool fault_tolerant_benchmark [21,31] [0,0,0] [9.5e-2,9.6e-2,9.7e-2,9.8e-2,9.9e-2,10e-2,10.1e-2,10.2e-2,10.3e-2,10.4e-2,10.5e-2] -p0 -b1000 -e1000000 -m1000000 --shallow_error_on_bottom --only_count_logical_x --no_autotune --no_y_error
+# cargo run --release --features MWPM_reverse_order -- tool fault_tolerant_benchmark [3,5,7,9] [0,0,0,0] [9.5e-2,9.6e-2,9.7e-2,9.8e-2,9.9e-2,10e-2,10.1e-2,10.2e-2,10.3e-2,10.4e-2,10.5e-2] -p0-e100000000 --shallow_error_on_bottom --only_count_logical_x --no_autotune --no_y_error
+# cargo run --release --features MWPM_reverse_order -- tool fault_tolerant_benchmark [11] [0] [9.5e-2,9.6e-2,9.7e-2,9.8e-2,9.9e-2,10e-2,10.1e-2,10.2e-2,10.3e-2,10.4e-2,10.5e-2] -p0-e10000000 -m10000000 --shallow_error_on_bottom --only_count_logical_x --no_autotune --no_y_error
+# cargo run --release --features MWPM_reverse_order -- tool fault_tolerant_benchmark [21,31] [0,0,0] [9.5e-2,9.6e-2,9.7e-2,9.8e-2,9.9e-2,10e-2,10.1e-2,10.2e-2,10.3e-2,10.4e-2,10.5e-2] -p0-e1000000 -m1000000 --shallow_error_on_bottom --only_count_logical_x --no_autotune --no_y_error
 
 
 # finding threshold:
-# cargo run --release --features MWPM_reverse_order -- tool fault_tolerant_benchmark [3,5,7] [0,0,0] [10e-2] -p0 -b1000 -e1000000 --shallow_error_on_bottom --only_count_logical_x --no_autotune --no_y_error
+# cargo run --release --features MWPM_reverse_order -- tool fault_tolerant_benchmark [3,5,7] [0,0,0] [10e-2] -p0-e1000000 --shallow_error_on_bottom --only_count_logical_x --no_autotune --no_y_error
 
 
 # set logscale x

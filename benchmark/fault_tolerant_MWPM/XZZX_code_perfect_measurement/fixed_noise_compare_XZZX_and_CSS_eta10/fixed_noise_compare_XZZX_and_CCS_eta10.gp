@@ -7,12 +7,12 @@ set size 1,1
 # data generating commands:
 
 # p0.2_css   p0.2_xzzx
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3,5,7,9,11,13,15,17,19] [0,0,0,0,0,0,0,0,0] [0.2] -p0 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 10
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3,5,7,9,11,13,15,17,19] [0,0,0,0,0,0,0,0,0] [0.2] -p0 -b1000 -m100000000 --shallow_error_on_bottom -e1000000 --bias_eta 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3,5,7,9,11,13,15,17,19] [0,0,0,0,0,0,0,0,0] [0.2] -p0-m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3,5,7,9,11,13,15,17,19] [0,0,0,0,0,0,0,0,0] [0.2] -p0-m100000000 --shallow_error_on_bottom -e1000000 --bias_eta 10
 
 # p0.1_css   p0.1_xzzx
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3,5,7,9,11,13,15,17,19] [0,0,0,0,0,0,0,0,0] [0.1] -p0 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 10
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3,5,7,9,11,13,15,17,19] [0,0,0,0,0,0,0,0,0] [0.1] -p0 -b1000 -m100000000 --shallow_error_on_bottom -e1000000 --bias_eta 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3,5,7,9,11,13,15,17,19] [0,0,0,0,0,0,0,0,0] [0.1] -p0-m100000000 --use_xzzx_code --shallow_error_on_bottom -e1000000 --bias_eta 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3,5,7,9,11,13,15,17,19] [0,0,0,0,0,0,0,0,0] [0.1] -p0-m100000000 --shallow_error_on_bottom -e1000000 --bias_eta 10
 
 set xrange [3:19]
 set xtics ("3" 3, "5" 5, "7" 7, "9" 9, "11" 11, "13" 13, "15" 15, "17" 17, "19" 19)

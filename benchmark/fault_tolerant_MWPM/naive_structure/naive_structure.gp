@@ -7,16 +7,16 @@ set size 1,1
 # data generating commands:
 # cargo run --release -- tool fault_tolerant_benchmark [3] [3] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0 -m100000000 -afalse -i
 # cargo run --release -- tool fault_tolerant_benchmark [5] [5] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5] -p0 -m100000000 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -p0 -m100000000 -b10 -e1000 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-4] -p0 -m100000000 -b10 -e200 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b1 -e1000 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-3] -p0 -m100000000 -b1 -e200 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [5e-4] -p0 -m100000000 -b1 -e50 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [2e-4] -p0 -m100000000 -b1 -e10 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [11] [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3] -p0 -m100000000 -b1 -e200 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [11] [11] [5e-4] -p0 -m100000000 -b1 -e50 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [13] [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3] -p0 -m100000000 -b1 -e200 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [13] [13] [5e-4] -p0 -m100000000 -b1 -e20 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -p0 -m100000000-e1000 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-4] -p0 -m100000000-e200 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000-e1000 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-3] -p0 -m100000000-e200 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [5e-4] -p0 -m100000000-e50 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [2e-4] -p0 -m100000000-e10 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [11] [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3] -p0 -m100000000-e200 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [11] [11] [5e-4] -p0 -m100000000-e50 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [13] [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3] -p0 -m100000000-e200 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [13] [13] [5e-4] -p0 -m100000000-e20 -afalse -i
 
 # collecting more data around the threshold
 

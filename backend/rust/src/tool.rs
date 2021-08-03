@@ -87,7 +87,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
             let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
             let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("boundary".to_string());
-            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
+            let mini_sync_time = value_t!(matches, "mini_sync_time", f64).unwrap_or(0.1);  // default to 0.1s
             let autotune = ! matches.is_present("no_autotune");  // default autotune is enabled
             let rotated_planar_code = matches.is_present("rotated_planar_code");  // default use standard planar code
             let ignore_6_neighbors = matches.is_present("ignore_6_neighbors");  // default use 12 neighbors version
@@ -109,7 +109,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let log_runtime_statistics = value_t!(matches, "log_runtime_statistics", String).ok();
             let detailed_runtime_statistics = matches.is_present("detailed_runtime_statistics");
             let time_budget = value_t!(matches, "time_budget", f64).ok();
-            fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
+            fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight
                 , use_combined_probability, error_model, no_stop_if_next_model_is_not_prepared, log_runtime_statistics, detailed_runtime_statistics
@@ -509,7 +509,7 @@ default example:
 it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
 **/
 fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, max_N: usize, min_error_cases: usize
-        , parallel: usize, validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool
+        , parallel: usize, validate_layer: String, mini_sync_time: f64, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool
         , extra_measurement_error: f64, bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, only_count_logical_z: bool
         , perfect_initialization: bool, shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType
         , max_half_weight: usize, use_combined_probability: bool, error_model: Option<ErrorModel>, no_stop_if_next_model_is_not_prepared: bool
@@ -525,7 +525,6 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         "min_error_cases": min_error_cases,
         "parallel": parallel,
         "validate_layer": validate_layer,
-        "mini_batch": mini_batch,
         "autotune": autotune,
         "rotated_planar_code": rotated_planar_code,
         "ignore_6_neighbors": ignore_6_neighbors,
@@ -705,8 +704,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 *precomputed_model = Some((model, model_error));
             }));
         }
-        let mini_batch_count = 1 + max_N / mini_batch;
-        let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
+        let mut pb = ProgressBar::on(std::io::stderr(), max_N as u64);
         pb.set(0);
         let mut handlers = Vec::new();
         let model_decoder = Arc::new(model);  // only for decode, so that you're confident I'm not cheating by using information of original errors
@@ -725,7 +723,6 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 "top" => MeasurementRounds as isize,
                 _ => validate_layer.parse::<isize>().expect("integer"),
             };
-            let mini_batch = mini_batch;
             let decoder_type = decoder_type.clone();
             handlers.push(std::thread::spawn(move || {
                 // println!("thread {}", _i);
@@ -748,7 +745,11 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                         && !current_external_termination) {
                     let mut mini_qec_failed = 0;
                     let mut log_runtime_statistics_buffer = String::new();
-                    for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
+                    let mut mini_batch = 0;
+                    let mini_batch_begin = Instant::now();
+                    // run for at least `mini_sync_time` before sync with outside, to avoid frequent 
+                    while mini_batch_begin.elapsed().as_secs_f64() < mini_sync_time {
+                        mini_batch += 1;
                         let error_count = model_error.generate_random_errors(|| rng.gen::<f64>());
                         if error_count == 0 {
                             continue
@@ -870,14 +871,14 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_rounds as f64)).sqrt() / error_rate;
             pb.message(format!("{} {} {} {} {} {} {} {:.1e} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj
                 , confidence_interval_95_percent).as_str());
-            let progress = (total_rounds / mini_batch) as u64;
+            let progress = total_rounds as u64;
             if progress >= pb.total {
                 pb.total = progress;  // update the maximum value so that pb is updating properly
             }
             pb.set(progress);
             std::thread::sleep(std::time::Duration::from_millis(200));
         }
-        pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
+        pb.total = *total_rounds.lock().unwrap() as u64;
         pb.finish();
         for handler in handlers {
             handler.join().unwrap();

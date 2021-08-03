@@ -5,10 +5,10 @@ set grid ytics
 set size 1,1
 
 # data generating commands:
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [0] [5e-1,3e-1,2e-1,1.5e-1,1e-1,5e-2,3e-2,2e-2] -p0 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 0.5
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [0] [5e-1,3e-1,2e-1,1.5e-1,1e-1,5e-2,3e-2,2e-2] -p0 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 1
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [0] [5e-1,3e-1,2e-1,1.5e-1,1e-1,5e-2,3e-2,2e-2] -p0 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [0] [5e-1,3e-1,2e-1,1.5e-1,1e-1,5e-2,3e-2,2e-2] -p0 -b1000 -m100000000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 100
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [0] [5e-1,3e-1,2e-1,1.5e-1,1e-1,5e-2,3e-2,2e-2] -p0-m100000000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 0.5
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [0] [5e-1,3e-1,2e-1,1.5e-1,1e-1,5e-2,3e-2,2e-2] -p0-m100000000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 1
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [0] [5e-1,3e-1,2e-1,1.5e-1,1e-1,5e-2,3e-2,2e-2] -p0-m100000000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [0] [5e-1,3e-1,2e-1,1.5e-1,1e-1,5e-2,3e-2,2e-2] -p0-m100000000 --use_xzzx_code --shallow_error_on_bottom --bias_eta 100
 
 set logscale x
 set xrange [0.02:0.5]

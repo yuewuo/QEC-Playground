@@ -25,10 +25,7 @@ for di in di_vec:
     for p in p_vec:
         p_pauli = p * 0.05
         p_erasure = p * 0.95
-        batch = 100
-        if di == 3:
-            batch = 1000
-        UF_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [di], [di], UF_parameters + ["--log_runtime_statistics", "target/pm_decoding_time_multiple_p.txt", "--pes", f"[{p_erasure}]", f"-b{batch}"], max_N=max_N, min_error_cases=min_error_cases)
+        UF_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [di], [di], UF_parameters + ["--log_runtime_statistics", "target/pm_decoding_time_multiple_p.txt", "--pes", f"[{p_erasure}]"], max_N=max_N, min_error_cases=min_error_cases)
         print(" ".join(UF_command))
 
         # run experiment
