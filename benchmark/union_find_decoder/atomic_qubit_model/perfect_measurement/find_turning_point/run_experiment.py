@@ -16,7 +16,7 @@ min_error_cases = 1000
 # p_vec = [0.5 * (10 ** (- i / 3)) for i in range(6)]
 # min_error_cases = 100
 
-max_N = 100000000
+max_N = 10000000000
 
 UF_parameters = f"-p0 --shallow_error_on_bottom --decoder UF --max_half_weight 10 --time_budget 3600".split(" ")
 
