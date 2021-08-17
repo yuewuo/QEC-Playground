@@ -14,9 +14,9 @@ set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder
 
-set output "atomic_qubit_circuit_noise_model.eps"
+set output "atomic_qubit_circuit_noise_model_xzzx.eps"
 
-set title "Atomic Qubit Circuit Noise Model (CSS)"
+set title "Atomic Qubit Circuit Noise Model (XZZX)"
 
 plot "d_3_3.txt" using 1:7 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 3",\
     "d_5_5.txt" using 1:7 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 5",\
@@ -25,17 +25,17 @@ plot "d_3_3.txt" using 1:7 with linespoints lt rgb "red" linewidth 5 pointtype 6
     "d_11_11.txt" using 1:7 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
     "d_13_13.txt" using 1:7 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
 
-set output '|ps2pdf -dEPSCrop atomic_qubit_circuit_noise_model.eps atomic_qubit_circuit_noise_model.pdf'
+set output '|ps2pdf -dEPSCrop atomic_qubit_circuit_noise_model_xzzx.eps atomic_qubit_circuit_noise_model_xzzx.pdf'
 replot
 
 # set size 1,0.75
-# set output "atomic_qubit_circuit_noise_model_w.eps"
+# set output "atomic_qubit_circuit_noise_model_xzzx_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop atomic_qubit_circuit_noise_model_w.eps atomic_qubit_circuit_noise_model_w.pdf'
+# set output '|ps2pdf -dEPSCrop atomic_qubit_circuit_noise_model_xzzx_w.eps atomic_qubit_circuit_noise_model_xzzx_w.pdf'
 # replot
 
 # set size 1,0.6
-# set output "atomic_qubit_circuit_noise_model_w_w.eps"
+# set output "atomic_qubit_circuit_noise_model_xzzx_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop atomic_qubit_circuit_noise_model_w_w.eps atomic_qubit_circuit_noise_model_w_w.pdf'
+# set output '|ps2pdf -dEPSCrop atomic_qubit_circuit_noise_model_xzzx_w_w.eps atomic_qubit_circuit_noise_model_xzzx_w_w.pdf'
 # replot
