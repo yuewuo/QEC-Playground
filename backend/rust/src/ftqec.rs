@@ -1775,7 +1775,7 @@ impl PlanarCodeModel {
         }
     }
 
-    pub fn apply_error_model(&mut self, error_model: &ErrorModel, p: f64, bias_eta: f64) {
+    pub fn apply_error_model(&mut self, error_model: &ErrorModel, p: f64, bias_eta: f64, pe: f64) {
         match error_model {
             ErrorModel::GenericBiasedWithBiasedCX | ErrorModel::GenericBiasedWithStandardCX => {
                 let height = self.snapshot.len();
@@ -1831,6 +1831,7 @@ impl PlanarCodeModel {
                                             correlated_error_model.error_rate_IZ = 0.5 * p;
                                             correlated_error_model.error_rate_ZZ = 0.5 * p;
                                         },
+                                        _ => { }
                                     }
                                     correlated_error_model.sanity_check();
                                     node.correlated_error_model = Some(correlated_error_model);
@@ -1839,6 +1840,31 @@ impl PlanarCodeModel {
                             }
                         },
                         Stage::Measurement => { }  // do nothing
+                    }
+                });
+            },
+            ErrorModel::ErasureOnlyPhenomenological => {
+                assert_eq!(p, 0., "pauli error should be 0 in this error model");
+                let height = self.snapshot.len();
+                self.iterate_snapshot_mut(|t, _i, _j, node| {
+                    // first clear error rate
+                    node.error_rate_x = 0.;
+                    node.error_rate_z = 0.;
+                    node.error_rate_y = 0.;
+                    node.erasure_error_rate = 0.;
+                    if t >= height - 6 {  // no error on the top, as a perfect measurement round
+                        return
+                    } else if t <= 6 {
+                        return  // perfect initialization
+                    }
+                    // do different things for each stage
+                    let stage = Stage::from(t);
+                    match stage {
+                        Stage::CXGate4 => {
+                            // qubit is before the next measurement round's gates, measurement is after current measurement round's gates
+                            node.erasure_error_rate = pe;
+                        },
+                        _ => { }
                     }
                 });
             },

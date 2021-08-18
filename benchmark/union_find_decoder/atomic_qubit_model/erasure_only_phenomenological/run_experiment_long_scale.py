@@ -7,7 +7,7 @@ from automated_threshold_evaluation import qec_playground_fault_tolerant_MWPM_si
 from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 
 di_vec = [3, 5, 7, 9, 11, 13]
-p_vec = [0.5 * (10 ** (- i / 10)) for i in range(10 * 2 + 1)]
+p_vec = [0.5 * (10 ** (- i / 5)) for i in range(5 * 4 + 1)]
 print(p_vec)
 min_error_cases = 1000
 
@@ -18,14 +18,20 @@ min_error_cases = 1000
 
 max_N = 100000000
 
-UF_parameters = f"-p0 --shallow_error_on_bottom --decoder UF --max_half_weight 10 --time_budget 3600".split(" ")
+# test examples
+# cargo run --release -- tool fault_tolerant_benchmark [3] --djs [3] [3] -m100000000 -e1000 [0] -p0 --decoder UF --max_half_weight 10 --time_budget 3600 --use_xzzx_code --pes [0.2] --error_model ErasureOnlyPhenomenological
+# cargo run --release -- tool fault_tolerant_benchmark [5] --djs [5] [5] -m100000000 -e1000 [0] -p0 --decoder UF --max_half_weight 10 --time_budget 3600 --use_xzzx_code --pes [0.2] --error_model ErasureOnlyPhenomenological
+# cargo run --release -- tool fault_tolerant_benchmark [7] --djs [7] [7] -m100000000 -e1000 [0] -p0 --decoder UF --max_half_weight 10 --time_budget 3600 --use_xzzx_code --pes [0.2] --error_model ErasureOnlyPhenomenological
+
+UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model ErasureOnlyPhenomenological".split(" ")  # a maximum 20min for each point
 
 results = []
 for di in di_vec:
+    local_results = []
     for p in p_vec:
-        p_pauli = 0.  # only erasure error
-        p_erasure = p * 0.95
-        UF_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [di], [0], UF_parameters + ["--pes", f"[{p_erasure}]"], max_N=max_N, min_error_cases=min_error_cases)
+        p_pauli = 0
+        p_erasure = p
+        UF_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [di], [di], UF_parameters + ["--pes", f"[{p_erasure}]"], max_N=max_N, min_error_cases=min_error_cases)
         print(" ".join(UF_command))
 
         # run experiment
@@ -42,11 +48,16 @@ for di in di_vec:
 
         # record result
         print_result = f"{p} " + full_result
+        local_results.append(print_result)
         results.append(print_result)
         print(print_result)
 
         if error_count < 100:
             break  # next is not trust-worthy, ignore every p behind it
+
+    print("\n\n")
+    print("\n".join(local_results))
+    print("\n\n")
 
     results.append("")
 

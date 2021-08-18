@@ -629,7 +629,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         });
         match &error_model {
             Some(error_model) => {
-                model.apply_error_model(error_model, p, bias_eta);
+                model.apply_error_model(error_model, p, bias_eta, pe);
             },
             None => { }
         }

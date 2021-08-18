@@ -499,6 +499,7 @@ impl std::fmt::Display for DecoderType {
 pub enum ErrorModel {
     GenericBiasedWithBiasedCX,  // arXiv:2104.09539v1 Sec.IV.A
     GenericBiasedWithStandardCX,  // arXiv:2104.09539v1 Sec.IV.A
+    ErasureOnlyPhenomenological,  // 100% erasure errors only on the data qubits before the gates happen and on the ancilla qubits after the gates finish
 }
 
 impl From<String> for ErrorModel {
@@ -506,6 +507,7 @@ impl From<String> for ErrorModel {
         match name.as_str() {
             "GenericBiasedWithBiasedCX" => Self::GenericBiasedWithBiasedCX,
             "GenericBiasedWithStandardCX" => Self::GenericBiasedWithStandardCX,
+            "ErasureOnlyPhenomenological" => Self::ErasureOnlyPhenomenological,
             _ => panic!("unrecognized error model"),
         }
     }
@@ -516,6 +518,7 @@ impl std::fmt::Display for ErrorModel {
         fmt.write_str(match self {
             Self::GenericBiasedWithBiasedCX => "GenericBiasedWithBiasedCX",
             Self::GenericBiasedWithStandardCX => "GenericBiasedWithStandardCX",
+            Self::ErasureOnlyPhenomenological => "ErasureOnlyPhenomenological",
         })?;
         Ok(())
     }
