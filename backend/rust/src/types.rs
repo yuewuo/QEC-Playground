@@ -500,6 +500,7 @@ pub enum ErrorModel {
     GenericBiasedWithBiasedCX,  // arXiv:2104.09539v1 Sec.IV.A
     GenericBiasedWithStandardCX,  // arXiv:2104.09539v1 Sec.IV.A
     ErasureOnlyPhenomenological,  // 100% erasure errors only on the data qubits before the gates happen and on the ancilla qubits after the gates finish
+    ErasureOnlyCircuitLevel,  // 100% erasure errors everywhere (just what you have already done but don't add Pauli errors). This should decrease the threshold further by a factor of 4ish I think. This is the circuit level noise threshold.
 }
 
 impl From<String> for ErrorModel {
@@ -508,6 +509,7 @@ impl From<String> for ErrorModel {
             "GenericBiasedWithBiasedCX" => Self::GenericBiasedWithBiasedCX,
             "GenericBiasedWithStandardCX" => Self::GenericBiasedWithStandardCX,
             "ErasureOnlyPhenomenological" => Self::ErasureOnlyPhenomenological,
+            "ErasureOnlyCircuitLevel" => Self::ErasureOnlyCircuitLevel,
             _ => panic!("unrecognized error model"),
         }
     }
@@ -519,6 +521,7 @@ impl std::fmt::Display for ErrorModel {
             Self::GenericBiasedWithBiasedCX => "GenericBiasedWithBiasedCX",
             Self::GenericBiasedWithStandardCX => "GenericBiasedWithStandardCX",
             Self::ErasureOnlyPhenomenological => "ErasureOnlyPhenomenological",
+            Self::ErasureOnlyCircuitLevel => "ErasureOnlyCircuitLevel",
         })?;
         Ok(())
     }
