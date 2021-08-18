@@ -31,7 +31,7 @@ num_threads = os.cpu_count() - 3 if ENABLE_MULTITHREADING else 1
 print(num_threads)
 
 log_filename = f"target/decoding_time_study_optimizations.txt"
-UF_parameters = f"-b100 -p{num_threads} --shallow_error_on_bottom --decoder UF --max_half_weight 1 --bias_eta +inf --detailed_runtime_statistics".split(" ")
+UF_parameters = f"-p{num_threads} --shallow_error_on_bottom --decoder UF --max_half_weight 1 --bias_eta +inf --detailed_runtime_statistics".split(" ")
 UF_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command(p_vec, di_vec, dj_vec, T_vec, UF_parameters + ["--log_runtime_statistics", log_filename], max_N=max_N, min_error_cases=min_error_cases)
 print(" ".join(UF_command))
 

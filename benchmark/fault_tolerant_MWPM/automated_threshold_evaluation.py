@@ -24,7 +24,7 @@ def main():
 
     # UnionFind Decoder (max_half_weight = 10), XZZX code, 
     pair = [ (4, 12, 12), (5, 15, 15) ]  # (di, dj, T)
-    parameters = "-b10 -p0 --use_xzzx_code --bias_eta 10 --error_model GenericBiasedWithBiasedCX".split(" ")
+    parameters = "-p0 --use_xzzx_code --bias_eta 10 --error_model GenericBiasedWithBiasedCX".split(" ")
     evaluator = AutomatedThresholdEvaluator(pair, parameters=parameters)
     threshold, relative_confidence_interval = evaluator.evaluate_threshold()
     print("\n\nresult:")
