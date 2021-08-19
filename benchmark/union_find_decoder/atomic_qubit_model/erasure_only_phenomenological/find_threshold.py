@@ -32,7 +32,7 @@ def simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_r
     lst = full_result.split(" ")
     error_rate = float(lst[5])
     confidence_interval = float(lst[7])
-    return error_rate, confidence_interval, full_result
+    return error_rate, confidence_interval, full_result + [p]
 
 
 evaluator = AutomatedThresholdEvaluator(pair, parameters=parameters, simulator_runner=simulator_runner)
