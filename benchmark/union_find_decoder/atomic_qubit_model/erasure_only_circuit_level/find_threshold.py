@@ -8,6 +8,14 @@ from automated_threshold_evaluation import AutomatedThresholdEvaluator, qec_play
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
 parameters = "-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model ErasureOnlyCircuitLevel".split(" ")
 
+# result:
+"""
+pair: [(11, 11, 11), (15, 15, 15)]
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'ErasureOnlyCircuitLevel']
+threshold = 0.0521552531515007
+relative_confidence_interval = 0.0018684947952710184
+"""
+
 # customize simulator runner
 def simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_runner=False, max_N=100000, min_error_cases=3000):
     di, dj, T = pair_one

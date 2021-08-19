@@ -1893,6 +1893,33 @@ impl PlanarCodeModel {
                     }
                 });
             },
+            ErrorModel::PauliOnlyCircuitLevel => {
+                assert_eq!(pe, 0., "erasure error should be 0 in this error model");
+                let height = self.snapshot.len();
+                self.iterate_snapshot_mut(|t, _i, _j, node| {
+                    // first clear error rate
+                    node.error_rate_x = 0.;
+                    node.error_rate_z = 0.;
+                    node.error_rate_y = 0.;
+                    node.erasure_error_rate = 0.;
+                    if t >= height - 6 {  // no error on the top, as a perfect measurement round
+                        return
+                    } else if t <= 6 {
+                        return  // perfect initialization
+                    }
+                    // do different things for each stage
+                    let stage = Stage::from(t);
+                    match stage {
+                        Stage::CXGate1 | Stage::CXGate2 | Stage::CXGate3 | Stage::CXGate4 => {
+                            // errors everywhere
+                            node.error_rate_x = p / 3.;
+                            node.error_rate_z = p / 3.;
+                            node.error_rate_y = p / 3.;
+                        },
+                        _ => { }
+                    }
+                });
+            },
         }
     }
 

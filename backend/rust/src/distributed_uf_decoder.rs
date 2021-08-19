@@ -1562,7 +1562,7 @@ mod tests {
         let p = 0.006;
         let max_half_weight = 4;
         let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code_rectangle(measurement_rounds, di, dj);
-        model.apply_error_model(&ErrorModel::GenericBiasedWithBiasedCX, p, bias_zeta);
+        model.apply_error_model(&ErrorModel::GenericBiasedWithBiasedCX, p, bias_zeta, 0.);
         model.build_graph();
         // model.optimize_correction_pattern();  // no need if not building corrections
         // model.build_exhausted_path_autotune();
