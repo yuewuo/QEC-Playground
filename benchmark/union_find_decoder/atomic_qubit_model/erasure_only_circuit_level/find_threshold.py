@@ -28,7 +28,7 @@ def simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_r
 
 
 evaluator = AutomatedThresholdEvaluator(pair, parameters=parameters, simulator_runner=simulator_runner)
-evaluator.searching_lower_bound = 0.1
+evaluator.searching_lower_bound = 0.01
 threshold, relative_confidence_interval = evaluator.evaluate_threshold()
 print(f"pair: {pair}")
 print(f"parameters: {parameters}")
