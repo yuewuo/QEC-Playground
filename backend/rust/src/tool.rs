@@ -556,6 +556,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
     }
     println!("format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>");
     // first list all configurations
+    assert_eq!(pes.len(), ps.len(), "pe and p should be matched");
     let mut configurations = Vec::new();
     for (di_idx, di) in dis.iter().enumerate() {
         let MeasurementRounds = Ts[di_idx];

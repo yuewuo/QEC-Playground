@@ -6,12 +6,12 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import AutomatedThresholdEvaluator, qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command, run_qec_playground_command_get_stdout
 
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
-parameters = "-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model ErasureOnlyCircuitLevel".split(" ")
+parameters = "-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel".split(" ")
 
 # result:
 """
 pair: [(11, 11, 11), (15, 15, 15)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'ErasureOnlyCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.0521552531515007
 relative_confidence_interval = 0.0018684947952710184
 """
@@ -36,7 +36,9 @@ def simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_r
 
 
 evaluator = AutomatedThresholdEvaluator(pair, parameters=parameters, simulator_runner=simulator_runner)
-evaluator.searching_lower_bound = 0.01
+evaluator.searching_lower_bound = 0.04
+evaluator.searching_upper_bound = 0.06
+evaluator.target_threshold_accuracy = 0.01
 threshold, relative_confidence_interval = evaluator.evaluate_threshold()
 print(f"pair: {pair}")
 print(f"parameters: {parameters}")

@@ -5,11 +5,11 @@ set grid ytics
 set size 1,1
 
 set logscale x
-set xrange [0.23:0.27]
-set xtics ("0.23" 0.23, "0.24" 0.24, "0.25" 0.25, "0.26" 0.26, "0.27" 0.27)
+set xrange [0.245:0.251]
+set xtics ("0.245" 0.245, "0.247" 0.247, "0.249" 0.249, "0.251" 0.251)
 set logscale y
-set ytics ("0.1" 0.1, "0.2" 0.2, "0.3" 0.3, "0.4" 0.4, "0.5" 0.5, "0.6" 0.6)
-set yrange [0.1:0.6]
+set ytics ("0.2" 0.2, "0.24" 0.24, "0.27" 0.27, "0.3" 0.3)
+set yrange [0.2:0.3]
 set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder
@@ -18,8 +18,9 @@ set output "erasure_only_phenomenological_threshold.eps"
 
 set title "Atomic Qubit Erasure Only Phenomenological"
 
-plot "threshold_11_11.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 11",\
-    "threshold_15_15.txt" using 1:6 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 15"
+plot "threshold_11_11.txt" using 9:6 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 11",\
+    "threshold_15_15.txt" using 9:6 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 15",\
+    "threshold_19_19.txt" using 9:6 with linespoints lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 title "d = 19"
 
 set output '|ps2pdf -dEPSCrop erasure_only_phenomenological_threshold.eps erasure_only_phenomenological_threshold.pdf'
 replot
