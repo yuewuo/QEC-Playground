@@ -1775,7 +1775,8 @@ impl PlanarCodeModel {
         }
     }
 
-    pub fn apply_error_model(&mut self, error_model: &ErrorModel, p: f64, bias_eta: f64, pe: f64) {
+    pub fn apply_error_model(&mut self, error_model: &ErrorModel, error_model_configuration: Option<&serde_json::Value>, p: f64, bias_eta: f64, pe: f64) {
+        let mut error_model_configuration_recognized = false;
         match error_model {
             ErrorModel::GenericBiasedWithBiasedCX | ErrorModel::GenericBiasedWithStandardCX => {
                 let height = self.snapshot.len();
@@ -1870,6 +1871,16 @@ impl PlanarCodeModel {
             },
             ErrorModel::OnlyGateErrorCircuitLevel => {
                 let height = self.snapshot.len();
+                let mut initialization_error_rate = 0.;
+                let mut measurement_error_rate = 0.;
+                error_model_configuration_recognized = true;
+                error_model_configuration.map(|config| {
+                    let mut config_cloned = config.clone();
+                    let config = config_cloned.as_object_mut().expect("error_model_configuration must be JSON object");
+                    config.remove("initialization_error_rate").map(|value| initialization_error_rate = value.as_f64().expect("f64"));
+                    config.remove("measurement_error_rate").map(|value| measurement_error_rate = value.as_f64().expect("f64"));
+                    if !config.is_empty() { panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>()); }
+                });
                 self.iterate_snapshot_mut(|t, _i, _j, node| {
                     // first clear error rate
                     node.error_rate_x = 0.;
@@ -1884,18 +1895,32 @@ impl PlanarCodeModel {
                     // do different things for each stage
                     let stage = Stage::from(t);
                     match stage {
-                        Stage::CXGate1 | Stage::CXGate2 | Stage::CXGate3 | Stage::CXGate4 => {
+                        Stage::Initialization => {
+                            node.error_rate_x = initialization_error_rate;
+                            node.error_rate_z = initialization_error_rate;
+                        },
+                        Stage::CXGate1 | Stage::CXGate2 | Stage::CXGate3 => {
                             // errors everywhere
                             node.erasure_error_rate = pe;
                             node.error_rate_x = p / 3.;
                             node.error_rate_z = p / 3.;
                             node.error_rate_y = p / 3.;
                         },
+                        Stage::CXGate4 => {
+                            // add both Pauli+Erasure errors and additional measurement error
+                            node.erasure_error_rate = pe;
+                            let (px, py, pz) = ErrorType::combine_probability((p/3., p/3., p/3.), (measurement_error_rate, 0., measurement_error_rate));
+                            node.error_rate_x = px;
+                            node.error_rate_z = pz;
+                            node.error_rate_y = py;
+                        },
                         _ => { }
                     }
                 });
             },
         }
+        assert_eq!(error_model_configuration_recognized || error_model_configuration.is_none(), true
+            , "error model configuration must be recognized if exists");
     }
 
     #[allow(dead_code)]

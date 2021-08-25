@@ -105,6 +105,9 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
             let use_combined_probability = matches.is_present("use_combined_probability");
             let error_model = value_t!(matches, "error_model", String).ok().map(|x| ErrorModel::from(x));
+            let error_model_configuration: Option<serde_json::Value> = value_t!(matches, "error_model_configuration", String).ok().and_then(|config| {
+                Some(serde_json::from_str(config.as_str()).expect("error_model_configuration must be a json object"))
+            });
             let no_stop_if_next_model_is_not_prepared = matches.is_present("no_stop_if_next_model_is_not_prepared");
             let log_runtime_statistics = value_t!(matches, "log_runtime_statistics", String).ok();
             let detailed_runtime_statistics = matches.is_present("detailed_runtime_statistics");
@@ -112,8 +115,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight
-                , use_combined_probability, error_model, no_stop_if_next_model_is_not_prepared, log_runtime_statistics, detailed_runtime_statistics
-                , time_budget);
+                , use_combined_probability, error_model, error_model_configuration, no_stop_if_next_model_is_not_prepared, log_runtime_statistics
+                , detailed_runtime_statistics, time_budget);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -512,8 +515,8 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , parallel: usize, validate_layer: String, mini_sync_time: f64, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool
         , extra_measurement_error: f64, bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, only_count_logical_z: bool
         , perfect_initialization: bool, shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType
-        , max_half_weight: usize, use_combined_probability: bool, error_model: Option<ErrorModel>, no_stop_if_next_model_is_not_prepared: bool
-        , log_runtime_statistics: Option<String>, detailed_runtime_statistics: bool, time_budget: Option<f64>) {
+        , max_half_weight: usize, use_combined_probability: bool, error_model: Option<ErrorModel>, error_model_configuration: Option<serde_json::Value>
+        , no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>, detailed_runtime_statistics: bool, time_budget: Option<f64>) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -630,7 +633,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         });
         match &error_model {
             Some(error_model) => {
-                model.apply_error_model(error_model, p, bias_eta, pe);
+                model.apply_error_model(error_model, error_model_configuration.as_ref(), p, bias_eta, pe);
             },
             None => { }
         }

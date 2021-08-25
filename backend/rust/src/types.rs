@@ -312,6 +312,16 @@ impl ErrorType {
     pub fn all_possible_errors() -> Vec::<Self> {
         vec![Self::X, Self::Z, Self::Y]
     }
+    pub fn combine_probability(p_xyz_1: (f64, f64, f64), p_xyz_2: (f64, f64, f64)) -> (f64, f64, f64) {
+        let (px1, py1, pz1) = p_xyz_1;
+        let (px2, py2, pz2) = p_xyz_2;
+        let pi1 = 1. - px1 - py1 - pz1;
+        let pi2 = 1. - px2 - py2 - pz2;
+        let px_combined = px1 * pi2 + py1 * pz2 + pz1 * py2 + pi1 * px2;
+        let py_combined = py1 * pi2 + px1 * pz2 + pz1 * px2 + pi1 * py2;
+        let pz_combined = pz1 * pi2 + px1 * py2 + py1 * px2 + pi1 * pz2;
+        (px_combined, py_combined, pz_combined)
+    }
 }
 
 /// Correlated error type for two qubit errors

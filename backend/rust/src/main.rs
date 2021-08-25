@@ -147,6 +147,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg max_half_weight: --max_half_weight +takes_value "[UnionFind decoder only] maximum weight will be 2 * max_half_weight")
                 (@arg use_combined_probability: --use_combined_probability "use combined probability of matching pairs instead of choosing the maximum probability")
                 (@arg error_model: --error_model +takes_value "possible error models see types::ErrorModel")
+                (@arg error_model_configuration: --error_model_configuration +takes_value "a json object describing the error model details")
                 (@arg no_stop_if_next_model_is_not_prepared: -s --no_stop_if_next_model_is_not_prepared "in rough experiment (e.g. estimate the threshold by testing multiple (di,dj,T) configurations) you can use this option to avoid wasting CPU time, as it will not stop current experiment if the model of next experiment is not prepared. Note that you should keep #threads + 1 <= #CPU because the additional thread is for computing the next model")
                 (@arg log_runtime_statistics: --log_runtime_statistics +takes_value "log the runtime statistical information, given the path of the log file")
                 (@arg detailed_runtime_statistics: --detailed_runtime_statistics "log the detailed runtime statistics if available, leading to much larger log file")
