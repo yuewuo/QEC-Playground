@@ -142,6 +142,7 @@ class AutomatedThresholdEvaluator:
     def get_accurate_threshold(self, rough_estimation):
         sampling_p_lower_bound = rough_estimation / (1 + self.target_threshold_accuracy)
         sampling_step = math.pow(1 + self.target_threshold_accuracy, 2 / (self.accurate_sample_count - 1))
+        sampling_p_higher_bound = sampling_p_lower_bound * math.pow(sampling_step, self.accurate_sample_count)
         sampling_p_vec = []
         for i in range(self.accurate_sample_count):
             sampling_p_vec.append(sampling_p_lower_bound * math.pow(sampling_step, i))
@@ -178,7 +179,8 @@ class AutomatedThresholdEvaluator:
             ln_pth_vec.append(lnp)
         threshold = math.exp(np.mean(ln_pth_vec))
         confidence_interval = 1.96 * np.std(ln_pth_vec)  # e^ε = 1 + ε when ε << 1
-        return threshold, confidence_interval
+        is_extrapolated = threshold > sampling_p_higher_bound or threshold < sampling_p_lower_bound
+        return threshold, confidence_interval, is_extrapolated
 
     def evaluate_threshold(self):
         # first roughly search the threshold point
@@ -186,10 +188,12 @@ class AutomatedThresholdEvaluator:
         if self.verbose:
             print("rough_estimation:", rough_estimation)
         # more accurate logical error rate around the threshold point
-        threshold, confidence_interval = self.get_accurate_threshold(rough_estimation)
-        # if error exceeds the target, then re-run the experiment
-        if confidence_interval > self.target_threshold_accuracy:
-            threshold, confidence_interval = self.get_accurate_threshold(threshold)
+        threshold, confidence_interval, is_extrapolated = self.get_accurate_threshold(rough_estimation)
+        # if error exceeds the target or threshold is extrapolated, then re-run the experiment
+        if is_extrapolated or confidence_interval > self.target_threshold_accuracy:
+            threshold, confidence_interval, is_extrapolated = self.get_accurate_threshold(threshold)
+            if is_extrapolated:
+                print(f"[warning] extrapolated threshold value even after retry: {threshold} {confidence_interval}")
         return threshold, confidence_interval
 
 if __name__ == "__main__":
