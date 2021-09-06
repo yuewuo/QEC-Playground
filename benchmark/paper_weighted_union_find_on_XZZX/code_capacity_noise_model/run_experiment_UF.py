@@ -18,10 +18,10 @@ min_error_cases = 100000
 
 max_N = 100000000
 
-# UF_parameters = f"-p0 --shallow_error_on_bottom --use_xzzx_code --decoder UF --max_half_weight 10 --time_budget 3600".split(" ")
+UF_parameters = f"-p0 --shallow_error_on_bottom --use_xzzx_code --decoder UF --max_half_weight 100 --time_budget 3600".split(" ")
 
 # for debug
-UF_parameters = f"-p0 --shallow_error_on_bottom --use_xzzx_code --decoder UF --max_half_weight 10 --time_budget 10".split(" ")
+# UF_parameters = f"-p0 --shallow_error_on_bottom --use_xzzx_code --decoder UF --max_half_weight 10 --time_budget 10".split(" ")
 
 results = []
 for di in di_vec:
