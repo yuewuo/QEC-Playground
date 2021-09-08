@@ -111,12 +111,13 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let no_stop_if_next_model_is_not_prepared = matches.is_present("no_stop_if_next_model_is_not_prepared");
             let log_runtime_statistics = value_t!(matches, "log_runtime_statistics", String).ok();
             let detailed_runtime_statistics = matches.is_present("detailed_runtime_statistics");
+            let log_error_pattern_into_statistics_when_has_logical_error = matches.is_present("log_error_pattern_into_statistics_when_has_logical_error");
             let time_budget = value_t!(matches, "time_budget", f64).ok();
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight
                 , use_combined_probability, error_model, error_model_configuration, no_stop_if_next_model_is_not_prepared, log_runtime_statistics
-                , detailed_runtime_statistics, time_budget);
+                , detailed_runtime_statistics, log_error_pattern_into_statistics_when_has_logical_error, time_budget);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -516,7 +517,8 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , extra_measurement_error: f64, bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, only_count_logical_z: bool
         , perfect_initialization: bool, shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType
         , max_half_weight: usize, use_combined_probability: bool, error_model: Option<ErrorModel>, error_model_configuration: Option<serde_json::Value>
-        , no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>, detailed_runtime_statistics: bool, time_budget: Option<f64>) {
+        , no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>, detailed_runtime_statistics: bool
+        , log_error_pattern_into_statistics_when_has_logical_error: bool, time_budget: Option<f64>) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -813,6 +815,9 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                             mini_qec_failed += 1;
                         }
                         runtime_statistics["error"] = json!(count_as_error);  // add result into runtime statistics information
+                        if log_error_pattern_into_statistics_when_has_logical_error && count_as_error {
+                            runtime_statistics["error_pattern"] = json!(model_error.get_all_qubit_errors_vec());
+                        }
                         if log_runtime_statistics_file.is_some() {
                             log_runtime_statistics_buffer.push_str(&runtime_statistics.to_string());
                             log_runtime_statistics_buffer.push_str(&"\n".to_string())

@@ -937,6 +937,18 @@ impl PlanarCodeModel {
         }
         correction
     }
+
+    /// get all errors (t, i, j, error, has_erasure)
+    pub fn get_all_qubit_errors_vec(&self) -> Vec<(usize, usize, usize, ErrorType, bool)> {
+        let mut errors_vec = Vec::new();
+        self.iterate_snapshot(|t, i, j, node| {
+            if node.error != ErrorType::I || node.has_erasure {
+                errors_vec.push((t, i, j, node.error.clone(), node.has_erasure));
+            }
+        });
+        errors_vec
+    }
+
     /// this is to solve the very high complexity of the original `build_graph` function O(d^6) ~ O(d^7), by assuming few errors at each time
     pub fn fast_measurement_given_few_errors(&mut self, errors: &Vec<(usize, usize, usize, ErrorType)>) -> (SparseCorrection, Vec<(usize, usize, usize)>) {
         // observation: errors will mainly propagate vertically (t) but rarely propagate horizontally (i, j)
@@ -2392,7 +2404,7 @@ mod tests {
         println!("error_count: {}", error_count);
         let detected_erasures = model.generate_detected_erasures();
         println!("{:?}", detected_erasures);
-
+        println!("\n\nget_all_qubit_errors_vec:\n{:?}", model.get_all_qubit_errors_vec());
     }
 
 }

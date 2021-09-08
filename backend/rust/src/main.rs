@@ -151,6 +151,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg no_stop_if_next_model_is_not_prepared: -s --no_stop_if_next_model_is_not_prepared "in rough experiment (e.g. estimate the threshold by testing multiple (di,dj,T) configurations) you can use this option to avoid wasting CPU time, as it will not stop current experiment if the model of next experiment is not prepared. Note that you should keep #threads + 1 <= #CPU because the additional thread is for computing the next model")
                 (@arg log_runtime_statistics: --log_runtime_statistics +takes_value "log the runtime statistical information, given the path of the log file")
                 (@arg detailed_runtime_statistics: --detailed_runtime_statistics "log the detailed runtime statistics if available, leading to much larger log file")
+                (@arg log_error_pattern_into_statistics_when_has_logical_error: --log_error_pattern_into_statistics_when_has_logical_error "log the error pattern in the log file, which makes the log file much larger")
                 (@arg time_budget: --time_budget +takes_value "for each configuration, give a maximum time to run (in second)")
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")

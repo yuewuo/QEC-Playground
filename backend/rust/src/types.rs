@@ -288,6 +288,23 @@ pub enum ErrorType {
     Y,
 }
 
+impl std::fmt::Display for ErrorType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            ErrorType::I => "I",
+            ErrorType::X => "X",
+            ErrorType::Z => "Z",
+            ErrorType::Y => "Y",
+        })
+    }
+}
+
+impl serde::Serialize for ErrorType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+        serializer.serialize_str(format!("{}", self).as_str())
+    }
+}
+
 impl ErrorType {
     pub fn multiply(&self, err: &Self) -> Self {
         match (self, err) {
