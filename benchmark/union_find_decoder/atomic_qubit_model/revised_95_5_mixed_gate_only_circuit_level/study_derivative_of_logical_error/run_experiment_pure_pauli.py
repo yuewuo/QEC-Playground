@@ -8,9 +8,9 @@ from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 
 di_vec = [(3, 5e-05), (5, 0.00019905358527674868), (7, 0.000792446596230557), (9, 0.0012559432157547897)][::-1]
 p_threshold = 0.00578  # threshold error rate, which is the starting point of evaluation
-p_vec = [p_threshold * (0.9 ** i) for i in range(100)]
+p_vec = [p_threshold * (0.95 ** i) for i in range(200)]
 print(p_vec)
-min_error_cases = 1000  # this will have 6% uncertainty in the logical error
+min_error_cases = 4000  # this will have 3% uncertainty in the logical error
 
 # debug configurations
 # di_vec = [3, 5]

@@ -8,9 +8,9 @@ from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 
 di_vec = [(3, 0.0003154786722400965), (5, 0.003154786722400965), (7, 0.007924465962305567), (9, 0.012559432157547897)][::-1]
 p_threshold = 0.0315  # threshold error rate, which is the starting point of evaluation
-p_vec = [p_threshold * (0.9 ** i) for i in range(100)]  # 8 points for d=9, 17 points for d=7, ..., 43 points for d=3
+p_vec = [p_threshold * (0.95 ** i) for i in range(200)]
 print(p_vec)
-min_error_cases = 1000  # this will have 6% uncertainty in the logical error
+min_error_cases = 4000  # this will have 3% uncertainty in the logical error
 
 # debug configurations
 # di_vec = [3, 5]
@@ -19,7 +19,7 @@ min_error_cases = 1000  # this will have 6% uncertainty in the logical error
 
 max_N = 100000000
 
-UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel".split(" ")  # a maximum 20min for each point
+UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 3600 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel".split(" ")  # a maximum 20min for each point
 
 results = []
 for (di, p_stop) in di_vec:
