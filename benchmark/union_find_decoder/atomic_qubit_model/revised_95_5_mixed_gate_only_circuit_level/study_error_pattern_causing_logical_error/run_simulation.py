@@ -8,7 +8,7 @@ from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 
 p = 0.023  # so that d=9 gives logical error rate ~ 1%
 di_vec = [3, 5, 7, 9]
-min_error_cases = 4000
+min_error_cases = 50000
 
 
 """
@@ -27,7 +27,7 @@ for di in di_vec:
     log_filename = f"target/study_error_pattern_causing_logical_error_d_{di}.txt"
     p_pauli = p * 0.05
     p_erasure = p * 0.95
-    UF_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [di], [di], UF_parameters + ["--pes", f"[{p_erasure}]"] + ["--log_runtime_statistics", log_filename, "--log_error_pattern_into_statistics_when_has_logical_error"], max_N=max_N, min_error_cases=min_error_cases)
+    UF_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [di], [di], UF_parameters + ["--pes", f"[{p_erasure}]"] + ["--log_runtime_statistics", log_filename, "--log_error_pattern_into_statistics_when_has_logical_error", "--mini_sync_time", "1"], max_N=max_N, min_error_cases=min_error_cases)
     print(" ".join(UF_command))
 
     # run experiment
