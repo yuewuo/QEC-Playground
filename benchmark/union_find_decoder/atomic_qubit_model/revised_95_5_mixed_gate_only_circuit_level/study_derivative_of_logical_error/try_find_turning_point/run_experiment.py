@@ -48,8 +48,8 @@ for di in di_vec:
         results.append(print_result)
         print(print_result)
 
-        if error_count < 1000:
-            break  # next is not trust-worthy, ignore every p behind it
+        if error_count < min_error_cases:
+            break  # to avoid further time if reaching maximum time budget
 
     print("\n\n")
     print("\n".join(local_results))
