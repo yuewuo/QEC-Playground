@@ -38,9 +38,12 @@ def estimate(d, p_erasure, p_pauli, tune_A = 1.0, tune_E = 1.0, tune_P = 1.0, po
 
 
 for d in [3,5,7,9]:
-    for p in [0.0315 * (0.9 ** i) for i in range(100)]:
-        estimated_pL = estimate(d, 4 * p * 0.95, 4 * p * 0.05)
+    for p in [0.0315 * (0.95 ** i) for i in range(100)]:
+        if p >= 0.02:
+            continue
+        # estimated_pL = estimate(d, p * 0.95, p * 0.05, tune_E = 4, tune_P = 4, possibility_each_turning = 8)
+        estimated_pL=  estimate(d, p * 0.95, p * 0.05, tune_A=11.4404, tune_E = 6.72476, tune_P = 3.30978, possibility_each_turning = 8)
         if estimated_pL < 1e-8:
             break
-        print(d, p, estimate(d, p * 0.95, p * 0.05, tune_E = 4, tune_P = 4, possibility_each_turning = 8))
+        print(d, p, estimated_pL)
     print("")
