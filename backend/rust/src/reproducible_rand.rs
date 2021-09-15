@@ -2,7 +2,7 @@
 //!
 //! There is probabilistic fall back mechanism in offer decoder, but the behavior is highly related to the random number generator which is not reproducible.
 //! Here we try to use a specific random number generator to reproduce the result given the random seed, to better debug the algorithm
-//! We use Xoroshiro128StarStar from https://docs.rs/crate/rand_xoshiro/0.6.0/source/src/xoroshiro128starstar.rs
+//! We use Xoroshiro128StarStar from <https://docs.rs/crate/rand_xoshiro/0.6.0/source/src/xoroshiro128starstar.rs>
 //! The code is mostly copied here so that I can do the same in JavaScript and test it.
 
 use rand_core::le::read_u64_into;

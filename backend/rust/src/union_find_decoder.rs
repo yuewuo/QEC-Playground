@@ -1,8 +1,8 @@
 //! Union Find Decoder
 //!
-//! (this is an implementation of https://arxiv.org/pdf/1709.06218.pdf)
+//! (this is an implementation of <https://arxiv.org/pdf/1709.06218.pdf>)
 //!
-//! The Union Find algorithm borrows code from https://github.com/gifnksm/union-find-rs
+//! The Union Find algorithm borrows code from <https://github.com/gifnksm/union-find-rs>
 //! with some modifications to store extra information of the set.
 //!
 //! A small improvement over the paper is that we allow integer cost of each edge, while the original paper fixed the cost of each edge to 2.
@@ -32,7 +32,7 @@ pub struct UnionFindDecoder<U: std::fmt::Debug> {
     /// all odd clusters that need to update in each turn, clusters are named under the root
     pub odd_clusters: Vec<usize>,  // to reduce complexity of iterating over odd_clusters
     pub odd_clusters_set: HashSet<usize>,  // for ease of query
-    /// record the boundary nodes as an optimization, see https://arxiv.org/pdf/1709.06218.pdf Section "Boundary representation".
+    /// record the boundary nodes as an optimization, see <https://arxiv.org/pdf/1709.06218.pdf> Section "Boundary representation".
     /// even clusters should not be key in HashMap, and only real boundary should be in the `HashSet` value
     /// those nodes without error syndrome also have entries in this HashMap, with the value of { itself }
     pub cluster_boundaries: HashMap<usize, (Vec<usize>, HashSet<usize>)>,
