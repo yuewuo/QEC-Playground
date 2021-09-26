@@ -25,7 +25,7 @@ use std::ops::{Deref, DerefMut};
 use super::blossom_v;
 use super::mwpm_approx;
 use std::sync::{Arc};
-use super::types::{QubitType, ErrorType, CorrelatedErrorType, CorrelatedErrorModel, ErrorModel};
+use super::types::{QubitType, ErrorType, CorrelatedErrorType, CorrelatedErrorModel, ErrorModel, CorrelatedErasureErrorModel};
 use super::union_find_decoder;
 use super::either::Either;
 use super::serde_json;
@@ -83,6 +83,7 @@ pub struct Node {
     pub connection: Option<Connection>,
     /// note that correlated error is applied to next time step, without losing generality
     pub correlated_error_model: Option<CorrelatedErrorModel>,
+    pub correlated_erasure_error_model: Option<CorrelatedErasureErrorModel>,
     pub gate_type: GateType,
     pub qubit_type: QubitType,
     pub error: ErrorType,
@@ -283,6 +284,7 @@ impl PlanarCodeModel {
                             t: t, i: i, j: j,
                             connection: connection,
                             correlated_error_model: None,
+                            correlated_erasure_error_model: None,
                             gate_type: gate_type,
                             qubit_type: qubit_type,
                             error: ErrorType::I,
@@ -450,6 +452,7 @@ impl PlanarCodeModel {
                             t: t, i: i, j: j,
                             connection: connection,
                             correlated_error_model: None,
+                            correlated_erasure_error_model: None,
                             gate_type: gate_type,
                             qubit_type: qubit_type,
                             error: ErrorType::I,
@@ -601,6 +604,7 @@ impl PlanarCodeModel {
     /// generate random error based on `error_rate` in each node, return the number of errors
     pub fn generate_random_errors<F>(&mut self, mut rng: F) -> usize where F: FnMut() -> f64 {
         let mut pending_errors = Vec::new();
+        let mut pending_erasure_errors = Vec::new();
         self.iterate_snapshot_mut(|t, i, j, node| {
             let random_number = rng();
             if random_number < node.error_rate_x {
@@ -614,6 +618,12 @@ impl PlanarCodeModel {
                 // println!("Y error at {} {} {}",node.i, node.j, node.t);
             } else {
                 node.error = ErrorType::I;
+            }
+            let random_number = rng();
+            if random_number < node.erasure_error_rate {
+                node.has_erasure = true;  // apply erasure error after correlated error
+            } else {
+                node.has_erasure = false;
             }
             match &node.correlated_error_model {
                 Some(correlated_error_model) => {
@@ -632,17 +642,33 @@ impl PlanarCodeModel {
                 },
                 None => { },
             }
-            let random_number = rng();
-            if random_number < node.erasure_error_rate {
-                node.has_erasure = true;  // apply erasure error after correlated error
-            } else {
-                node.has_erasure = false;
+            match &node.correlated_erasure_error_model {
+                Some(correlated_erasure_error_model) => {
+                    let random_number = rng();
+                    let correlated_erasure_error_type = correlated_erasure_error_model.generate_random_erasure_error(random_number);
+                    let my_error = correlated_erasure_error_type.my_error();
+                    if my_error {
+                        pending_erasure_errors.push((t, i, j));
+                    }
+                    let peer_error = correlated_erasure_error_type.peer_error();
+                    if peer_error {
+                        let connection = node.connection.as_ref().expect("correlated erasure error must corresponds to a two-qubit gate");
+                        let (ct, ci, cj) = (connection.t, connection.i, connection.j);
+                        pending_erasure_errors.push((ct, ci, cj));
+                    }
+                },
+                None => { },
             }
         });
         // apply pending errors
         for ((t, i, j), peer_error) in pending_errors.drain(..) {
             let mut node = self.snapshot[t][i][j].as_mut().expect("exist");
             node.error = node.error.multiply(&peer_error);
+        }
+        // apply pending erasure errors
+        for (t, i, j) in pending_erasure_errors.drain(..) {
+            let mut node = self.snapshot[t][i][j].as_mut().expect("exist");
+            node.has_erasure = true;
         }
         // apply erasure error and then count number of errors
         let mut error_count = 0;
@@ -1036,7 +1062,16 @@ impl PlanarCodeModel {
                                     }
                                 },
                             }; // probability of this error to occur
-                            let is_erasure = node.erasure_error_rate > 0. && error.is_left();
+                            let possible_erasure_error = node.erasure_error_rate > 0. || node.correlated_erasure_error_model.is_some() || {
+                                match self.snapshot[t][i][j].as_ref().expect("exist").connection.as_ref() {
+                                    Some(connection) => {
+                                        let (ct, ci, cj) = (connection.t, connection.i, connection.j);
+                                        self.snapshot[ct][ci][cj].as_ref().expect("exist").correlated_erasure_error_model.is_some()
+                                    },
+                                    None => false,
+                                }
+                            };
+                            let is_erasure = possible_erasure_error && error.is_left();
                             if p > 0. || is_erasure {  // always run single Pauli errors to build `pauli_error_connections`
                                 // simulate the error and measure it
                                 let mut errors = Vec::new();
@@ -1881,7 +1916,8 @@ impl PlanarCodeModel {
                     }
                 });
             },
-            ErrorModel::OnlyGateErrorCircuitLevel => {
+            ErrorModel::OnlyGateErrorCircuitLevel | ErrorModel::OnlyGateErrorCircuitLevelCorrelatedErasure => {
+                let is_correlated_erasure = error_model == &ErrorModel::OnlyGateErrorCircuitLevelCorrelatedErasure;
                 let height = self.snapshot.len();
                 let mut initialization_error_rate = 0.;
                 let mut measurement_error_rate = 0.;
@@ -1911,20 +1947,41 @@ impl PlanarCodeModel {
                             node.error_rate_x = initialization_error_rate;
                             node.error_rate_z = initialization_error_rate;
                         },
-                        Stage::CXGate1 | Stage::CXGate2 | Stage::CXGate3 => {
+                        Stage::CXGate1 | Stage::CXGate2 | Stage::CXGate3 | Stage::CXGate4 => {
                             // errors everywhere
-                            node.erasure_error_rate = pe;
-                            node.error_rate_x = p / 3.;
-                            node.error_rate_z = p / 3.;
-                            node.error_rate_y = p / 3.;
-                        },
-                        Stage::CXGate4 => {
-                            // add both Pauli+Erasure errors and additional measurement error
-                            node.erasure_error_rate = pe;
-                            let (px, py, pz) = ErrorType::combine_probability((p/3., p/3., p/3.), (measurement_error_rate, 0., measurement_error_rate));
-                            node.error_rate_x = px;
-                            node.error_rate_z = pz;
-                            node.error_rate_y = py;
+                            if is_correlated_erasure {
+                                match node.gate_type {
+                                    GateType::ControlledPhase => {
+                                        if node.qubit_type != QubitType::Data {  // this is ancilla
+                                            // better check whether peer is indeed data qubit, but it's hard here due to Rust's borrow check
+                                            let mut correlated_erasure_error_model = CorrelatedErasureErrorModel::default_with_probability(0.);
+                                            correlated_erasure_error_model.error_rate_EE = pe;
+                                            correlated_erasure_error_model.sanity_check();
+                                            node.correlated_erasure_error_model = Some(correlated_erasure_error_model);
+                                        }
+                                    },
+                                    GateType::Control => {  // this is ancilla
+                                        let mut correlated_erasure_error_model = CorrelatedErasureErrorModel::default_with_probability(0.);
+                                        correlated_erasure_error_model.error_rate_EE = pe;
+                                        correlated_erasure_error_model.sanity_check();
+                                        node.correlated_erasure_error_model = Some(correlated_erasure_error_model);
+                                    },
+                                    _ => { }
+                                }
+                            } else {
+                                node.erasure_error_rate = pe;
+                            }
+                            if stage == Stage::CXGate4 {
+                                // add both Pauli+Erasure errors and additional measurement error
+                                let (px, py, pz) = ErrorType::combine_probability((p/3., p/3., p/3.), (measurement_error_rate, 0., measurement_error_rate));
+                                node.error_rate_x = px;
+                                node.error_rate_z = pz;
+                                node.error_rate_y = py;
+                            } else {
+                                node.error_rate_x = p / 3.;
+                                node.error_rate_z = p / 3.;
+                                node.error_rate_y = p / 3.;
+                            }
                         },
                         _ => { }
                     }

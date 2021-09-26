@@ -493,6 +493,78 @@ impl CorrelatedErrorModel {
     }
 }
 
+/// Correlated erasure error type for two qubit errors
+#[allow(dead_code)]
+#[derive(Debug, PartialEq, Clone)]
+pub enum CorrelatedErasureErrorType {
+    II,
+    IE,
+    EI,
+    EE,
+}
+
+impl CorrelatedErasureErrorType {
+    pub fn my_error(&self) -> bool {
+        match self {
+            Self::II | Self::IE => false,
+            Self::EI | Self::EE => true,
+        }
+    }
+    pub fn peer_error(&self) -> bool {
+        match self {
+            Self::II | Self::EI => false,
+            Self::IE | Self::EE => true,
+        }
+    }
+    // pub fn all_possible_errors() -> Vec::<Self> {
+    //     vec![Self::II, Self::IE, Self::EI, Self::EE]
+    // }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct CorrelatedErasureErrorModel {
+    pub error_rate_IE: f64,
+    pub error_rate_EI: f64,
+    pub error_rate_EE: f64,
+}
+
+impl CorrelatedErasureErrorModel {
+    // pub fn default() -> Self {
+    //     Self::default_with_probability(0.)
+    // }
+    pub fn default_with_probability(p: f64) -> Self {
+        Self {
+            error_rate_IE: p,
+            error_rate_EI: p,
+            error_rate_EE: p,
+        }
+    }
+    pub fn no_error_probability(&self) -> f64 {
+        1.                       - self.error_rate_IE - self.error_rate_EI - self.error_rate_EE
+    }
+    // pub fn error_rate(&self, error_type: &CorrelatedErasureErrorType) -> f64 {
+    //     match error_type {
+    //         CorrelatedErasureErrorType::II => self.no_error_probability(),
+    //         CorrelatedErasureErrorType::IE => self.error_rate_IE,
+    //         CorrelatedErasureErrorType::EI => self.error_rate_EI,
+    //         CorrelatedErasureErrorType::EE => self.error_rate_EE,
+    //     }
+    // }
+    pub fn sanity_check(&self) {
+        assert!(self.no_error_probability() >= 0., "sum of error rate should be no more than 1");
+        assert!(self.error_rate_IE >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_EI >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_EE >= 0., "error rate should be greater than 0");
+    }
+    pub fn generate_random_erasure_error(&self, random_number: f64) -> CorrelatedErasureErrorType {
+        let mut random_number = random_number;
+        if random_number < self.error_rate_IE { return CorrelatedErasureErrorType::IE; } random_number -= self.error_rate_IE;
+        if random_number < self.error_rate_EI { return CorrelatedErasureErrorType::EI; } random_number -= self.error_rate_EI;
+        if random_number < self.error_rate_EE { return CorrelatedErasureErrorType::EE; }
+        CorrelatedErasureErrorType::II
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum DecoderType {
     MinimumWeightPerfectMatching,
@@ -528,6 +600,7 @@ pub enum ErrorModel {
     GenericBiasedWithStandardCX,  // arXiv:2104.09539v1 Sec.IV.A
     ErasureOnlyPhenomenological,  // 100% erasure errors only on the data qubits before the gates happen and on the ancilla qubits after the gates finish
     OnlyGateErrorCircuitLevel,  // errors happen at 4 stages in each measurement round (although removed errors happening at initialization and measurement stage, measurement errors can still occur when curtain error applies on the ancilla after the last gate)
+    OnlyGateErrorCircuitLevelCorrelatedErasure,  // the same as `OnlyGateErrorCircuitLevel`, just the erasures are correlated
 }
 
 impl From<String> for ErrorModel {
@@ -537,6 +610,7 @@ impl From<String> for ErrorModel {
             "GenericBiasedWithStandardCX" => Self::GenericBiasedWithStandardCX,
             "ErasureOnlyPhenomenological" => Self::ErasureOnlyPhenomenological,
             "OnlyGateErrorCircuitLevel" => Self::OnlyGateErrorCircuitLevel,
+            "OnlyGateErrorCircuitLevelCorrelatedErasure" => Self::OnlyGateErrorCircuitLevelCorrelatedErasure,
             _ => panic!("unrecognized error model"),
         }
     }
@@ -549,6 +623,7 @@ impl std::fmt::Display for ErrorModel {
             Self::GenericBiasedWithStandardCX => "GenericBiasedWithStandardCX",
             Self::ErasureOnlyPhenomenological => "ErasureOnlyPhenomenological",
             Self::OnlyGateErrorCircuitLevel => "OnlyGateErrorCircuitLevel",
+            Self::OnlyGateErrorCircuitLevelCorrelatedErasure => "OnlyGateErrorCircuitLevelCorrelatedErasure",
         })?;
         Ok(())
     }

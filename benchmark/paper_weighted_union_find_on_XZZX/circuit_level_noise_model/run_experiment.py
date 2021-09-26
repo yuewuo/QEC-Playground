@@ -6,24 +6,22 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command
 from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 
-di_vec = [11, 13]
-p = 0.1
-bias_eta_vec = [0.5, 1, 3, 10, 30, 100, 300, 1000, 3000, 10000, "+inf"]
+di_vec = [4,5,6,7,8]
+p_vec = [0.0050,0.0055,0.0060,0.0065,0.0070,0.0075,0.0080,0.0085,0.0090,0.0095,0.0100,0.0105,0.0110]
 min_error_cases = 100000
 # min_error_cases = 10  # debug
 
-max_N = 100000000
+max_N = 400000
 
-UF_parameters = f"-p0 --decoder UF --max_half_weight 100 --time_budget 3600 --use_xzzx_code --shallow_error_on_bottom".split(" ")  # a maximum 20min for each point
-MWPM_parameters = f"-p0 --time_budget 3600 --use_xzzx_code --shallow_error_on_bottom".split(" ")
+parameters = f"-p0 --decoder UF --max_half_weight 100 --time_budget 1800 --use_xzzx_code --bias_eta 100".split(" ")  # a maximum 20min for each point
 
-for (filename_prefix, paramters) in [("UF", UF_parameters), ("MWPM", MWPM_parameters)]:
+for (name, error_model) in [("biased", "GenericBiasedWithBiasedCX"), ("standard", "GenericBiasedWithStandardCX")]:
     for di in di_vec:
-        filename = os.path.join(os.path.dirname(__file__), f"{filename_prefix}_d{di}_p{p}.txt")
+        filename = os.path.join(os.path.dirname(__file__), f"{name}_{di}.txt")
         
         results = []
-        for bias_eta in bias_eta_vec:
-            command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p], [di], [di], [0], paramters + ["--bias_eta", f"{bias_eta}"], max_N=max_N, min_error_cases=min_error_cases)
+        for p in p_vec:
+            command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p], [di], [3 * di], [3 * di], parameters + ["--error_model", f"{error_model}"], max_N=max_N, min_error_cases=min_error_cases)
             print(" ".join(command))
 
             # run experiment
@@ -40,7 +38,7 @@ for (filename_prefix, paramters) in [("UF", UF_parameters), ("MWPM", MWPM_parame
             confidence_interval = float(lst[7])
 
             # record result
-            print_result = f"{bias_eta} {p} {di} {total_rounds} {error_count} {error_rate} {confidence_interval}"
+            print_result = f"{full_result}"
             results.append(print_result)
             print(print_result)
         
