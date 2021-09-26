@@ -16,14 +16,20 @@ set style fill transparent solid 0.2 noborder
 
 set output "erasure_only_circuit_level.eps"
 
-set title "Atomic Qubit Erasure Only Circuit-Level"
+set title "Erasure Only Circuit-Level"
 
-plot "d_3_3.txt" using 1:7 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 3",\
-    "d_5_5.txt" using 1:7 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 5",\
-    "d_7_7.txt" using 1:7 with linespoints lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 title "d = 7",\
-    "d_9_9.txt" using 1:7 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "d = 9",\
-    "d_11_11.txt" using 1:7 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
-    "d_13_13.txt" using 1:7 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
+plot "d_3_3.txt" using 1:7 with linespoints lt rgb "red" linewidth 4 pointtype 2 pointsize 1 title "d = 3",\
+    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "red" linewidth 4 pointtype 2 pointsize 1 notitle,\
+    "d_5_5.txt" using 1:7 with linespoints lt rgb "blue" linewidth 4 pointtype 2 pointsize 1 title "d = 5",\
+    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "blue" linewidth 4 pointtype 2 pointsize 1 notitle,\
+    "d_7_7.txt" using 1:7 with linespoints lt rgb "green" linewidth 4 pointtype 2 pointsize 1 title "d = 7",\
+    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "green" linewidth 4 pointtype 2 pointsize 1 notitle,\
+    "d_9_9.txt" using 1:7 with linespoints lt rgb "yellow" linewidth 4 pointtype 2 pointsize 1 title "d = 9",\
+    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "yellow" linewidth 4 pointtype 2 pointsize 1 notitle,\
+    "d_11_11.txt" using 1:7 with linespoints lt rgb "purple" linewidth 4 pointtype 2 pointsize 1 title "d = 11",\
+    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "purple" linewidth 4 pointtype 2 pointsize 1 notitle,\
+    "d_13_13.txt" using 1:7 with linespoints lt rgb "orange" linewidth 4 pointtype 2 pointsize 1 title "d = 13",\
+    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "orange" linewidth 4 pointtype 2 pointsize 1 notitle,
 
 set output '|ps2pdf -dEPSCrop erasure_only_circuit_level.eps erasure_only_circuit_level.pdf'
 replot
