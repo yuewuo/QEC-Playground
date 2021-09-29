@@ -1,6 +1,6 @@
-set terminal postscript eps color "Arial, 28"
-set xlabel "p_z" font "Arial, 28"
-set ylabel "Logical error rate" font "Arial, 28"
+set terminal postscript eps color "Arial, 22"
+set xlabel "p_z" font "Arial, 22"
+set ylabel "Logical error rate" font "Arial, 22"
 # set grid ytics
 set size 1,1.1
 
@@ -29,11 +29,11 @@ set ytics ("10^{-4}" 0.0001, '' 0.0002, '' 0.0003, '' 0.0004, '' 0.0005, '' 0.00
 "10^{-2}" 0.01, '' 0.02, '' 0.03, '' 0.04, '' 0.05, '' 0.06, '' 0.07, '' 0.08, '' 0.09, \
 "10^{-1}" 0.1, '' 0.2, '' 0.3, '' 0.4, '' 0.5, '' 0.6, '' 0.7, '' 0.8, '' 0.9, "10^{0}" 1)
 set yrange [0.0001:1]
-set key outside horizontal top center font "Arial, 24"
+set key outside horizontal top center font "Arial, 22"
 
 set style fill transparent solid 0.2 noborder
 
-set title "Generaic Biased Noise Model (UnionFind Decoder)"
+# set title "Generaic Biased Noise Model (UnionFind Decoder)"
 
 set output "circuit_level_noise_model.eps"
 
@@ -41,37 +41,37 @@ set output "circuit_level_noise_model.eps"
 set nokey
 
 plot "biased_4.txt" using 1:6 with linespoints lt rgb "#e41a1c" linewidth 4 pointtype 7 pointsize 1.5 title "biased 4,12,12",\
-    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#e41a1c" linewidth 4 pointtype 7 pointsize 1.5,\
+    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#e41a1c" linewidth 4 pointtype 7 pointsize 1.5 notitle,\
     "biased_5.txt" using 1:6 with linespoints lt rgb "#377eb8" linewidth 4 pointtype 9 pointsize 1.5 title "biased 5,15,15",\
-    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#377eb8" linewidth 4 pointtype 9 pointsize 1.5,\
+    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#377eb8" linewidth 4 pointtype 9 pointsize 1.5 notitle,\
     "biased_6.txt" using 1:6 with linespoints lt rgb "#4daf4a" linewidth 4 pointtype 11 pointsize 1.5 title "biased 6,18,18",\
-    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#4daf4a" linewidth 4 pointtype 11 pointsize 1.5,\
+    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#4daf4a" linewidth 4 pointtype 11 pointsize 1.5 notitle,\
     "biased_7.txt" using 1:6 with linespoints lt rgb "#ff7f00" linewidth 4 pointtype 5 pointsize 1.5 title "biased 7,21,21",\
-    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#ff7f00" linewidth 4 pointtype 5 pointsize 1.5,\
+    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#ff7f00" linewidth 4 pointtype 5 pointsize 1.5 notitle,\
     "biased_8.txt" using 1:6 with linespoints lt rgb "#984ea3" linewidth 4 pointtype 13 pointsize 1.5 title "biased 8,24,24",\
-    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#984ea3" linewidth 4 pointtype 13 pointsize 1.5,\
+    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#984ea3" linewidth 4 pointtype 13 pointsize 1.5 notitle,\
     "standard_4.txt" using 1:6 with linespoints lt rgb "#e41a1c" linewidth 4 dashtype (1,1) pointtype 6 pointsize 1 title "standard 4,12,12",\
-    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#e41a1c" linewidth 4 dashtype (1,1) pointtype 6 pointsize 1,\
+    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#e41a1c" linewidth 4 dashtype (1,1) pointtype 6 pointsize 1 notitle,\
     "standard_5.txt" using 1:6 with linespoints lt rgb "#377eb8" linewidth 4 dashtype (1,1) pointtype 8 pointsize 1 title "standard 5,15,15",\
-    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#377eb8" linewidth 4 dashtype (1,1) pointtype 8 pointsize 1,\
+    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#377eb8" linewidth 4 dashtype (1,1) pointtype 8 pointsize 1 notitle,\
     "standard_6.txt" using 1:6 with linespoints lt rgb "#4daf4a" linewidth 4 dashtype (1,1) pointtype 10 pointsize 1 title "standard 6,18,18",\
-    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#4daf4a" linewidth 4 dashtype (1,1) pointtype 10 pointsize 1,\
+    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#4daf4a" linewidth 4 dashtype (1,1) pointtype 10 pointsize 1 notitle,\
     "standard_7.txt" using 1:6 with linespoints lt rgb "#ff7f00" linewidth 4 dashtype (1,1) pointtype 4 pointsize 1 title "standard 7,21,21",\
-    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#ff7f00" linewidth 4 dashtype (1,1) pointtype 4 pointsize 1,\
+    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#ff7f00" linewidth 4 dashtype (1,1) pointtype 4 pointsize 1 notitle,\
     "standard_8.txt" using 1:6 with linespoints lt rgb "#984ea3" linewidth 4 dashtype (1,1) pointtype 12 pointsize 1 title "standard 8,24,24",\
-    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#984ea3" linewidth 4 dashtype (1,1) pointtype 12 pointsize 1
+    "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#984ea3" linewidth 4 dashtype (1,1) pointtype 12 pointsize 1 notitle
 
 set output '|ps2pdf -dEPSCrop circuit_level_noise_model.eps circuit_level_noise_model.pdf'
 replot
 
-set size 1,0.75
-set output "circuit_level_noise_model_w.eps"
-replot
-set output '|ps2pdf -dEPSCrop circuit_level_noise_model_w.eps circuit_level_noise_model_w.pdf'
-replot
+# set size 1,0.75
+# set output "circuit_level_noise_model_w.eps"
+# replot
+# set output '|ps2pdf -dEPSCrop circuit_level_noise_model_w.eps circuit_level_noise_model_w.pdf'
+# replot
 
-set size 1,0.6
-set output "circuit_level_noise_model_w_w.eps"
-replot
-set output '|ps2pdf -dEPSCrop circuit_level_noise_model_w_w.eps circuit_level_noise_model_w_w.pdf'
-replot
+# set size 1,0.6
+# set output "circuit_level_noise_model_w_w.eps"
+# replot
+# set output '|ps2pdf -dEPSCrop circuit_level_noise_model_w_w.eps circuit_level_noise_model_w_w.pdf'
+# replot

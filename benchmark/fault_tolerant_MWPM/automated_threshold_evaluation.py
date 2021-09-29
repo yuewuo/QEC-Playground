@@ -43,7 +43,7 @@ return:
     full_result: str
 """
 QEC_PLAYGROUND_COMPILATION_DONE = False
-def run_qec_playground_command_get_stdout(command):
+def run_qec_playground_command_get_stdout(command, no_stdout):
     global QEC_PLAYGROUND_COMPILATION_DONE
     if QEC_PLAYGROUND_COMPILATION_DONE is False:
         process = subprocess.Popen(["cargo", "build", "--release"], universal_newlines=True, stdout=sys.stdout, stderr=sys.stderr)
@@ -52,7 +52,7 @@ def run_qec_playground_command_get_stdout(command):
         QEC_PLAYGROUND_COMPILATION_DONE = True
     env = os.environ.copy()
     env["RUST_BACKTRACE"] = "full"
-    process = subprocess.Popen(command, universal_newlines=True, env=env, stdout=subprocess.PIPE, stderr=sys.stderr)
+    process = subprocess.Popen(command, universal_newlines=True, env=env, stdout=sys.stdout if no_stdout else subprocess.PIPE, stderr=sys.stderr)
     process.wait()
     stdout, _ = process.communicate()
     return stdout, process.returncode

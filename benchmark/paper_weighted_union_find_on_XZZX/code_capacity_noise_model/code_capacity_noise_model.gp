@@ -1,20 +1,20 @@
-set terminal postscript eps color "Arial, 28"
-set xlabel "{/Symbol h}" font "Arial, 28"
-set ylabel "Logical Error Rate (p_L)" font "Arial, 28"
+set terminal postscript eps color "Arial, 22"
+set xlabel "{/Symbol h}" font "Arial, 22"
+set ylabel "Logical Error Rate (p_L)" font "Arial, 22"
 set grid ytics
 set size 1,1
 
 set logscale x
 set xrange [0.5:100000]
-set xtics ('1' 1, '1e1' 10, '1e2' 100, '1e3' 1000, '1e4' 10000, '{/Symbol \245}' 100000)
+set xtics ('0.5' 0.5, '1' 1, '1e1' 10, '1e2' 100, '1e3' 1000, '1e4' 10000, '{/Symbol \245}' 100000)
 set logscale y
 set ytics ("0.001" 0.001, "0.003" 0.003, "0.01" 0.01, "0.03" 0.03, "0.1" 0.1)
 set yrange [0.001:0.1]
-set key outside horizontal top center font "Arial, 24"
+set key outside horizontal top center font "Arial, 22"
 
 set style fill transparent solid 0.2 noborder
 
-set title "XZZX Surface Code p = 0.1"
+# set title "XZZX Surface Code p = 0.1"
 
 set output "code_capacity_noise_model.eps"
 
