@@ -43,7 +43,7 @@ return:
     full_result: str
 """
 QEC_PLAYGROUND_COMPILATION_DONE = False
-def run_qec_playground_command_get_stdout(command, no_stdout):
+def run_qec_playground_command_get_stdout(command, no_stdout=False):
     global QEC_PLAYGROUND_COMPILATION_DONE
     if QEC_PLAYGROUND_COMPILATION_DONE is False:
         process = subprocess.Popen(["cargo", "build", "--release"], universal_newlines=True, stdout=sys.stdout, stderr=sys.stderr)

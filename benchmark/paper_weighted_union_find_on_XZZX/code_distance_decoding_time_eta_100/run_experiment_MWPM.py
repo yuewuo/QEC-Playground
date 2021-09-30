@@ -29,6 +29,6 @@ print(" ".join(MWPM_command))
 
 # MWPM
 print("MWPM running...")
-stdout, returncode = run_qec_playground_command_get_stdout(MWPM_command)
-print("\n" + stdout)
+stdout, returncode = run_qec_playground_command_get_stdout(MWPM_command, no_stdout=True)
+# print("\n" + stdout)
 assert returncode == 0, "command fails..."
