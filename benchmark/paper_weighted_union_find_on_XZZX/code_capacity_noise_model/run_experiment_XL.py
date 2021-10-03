@@ -15,8 +15,8 @@ min_error_cases = 6000
 
 max_N = 100000000
 
-UF_parameters = f"-p0 --decoder UF --max_half_weight 100 --time_budget 3600 --use_xzzx_code --shallow_error_on_bottom --only_count_logical_x".split(" ")  # a maximum 20min for each point
-MWPM_parameters = f"-p0 --time_budget 3600 --use_xzzx_code --shallow_error_on_bottom".split(" ")
+UF_parameters = f"-p0 --decoder UF --max_half_weight 100 --time_budget 1200 --use_xzzx_code --shallow_error_on_bottom --only_count_logical_x".split(" ")  # a maximum 20min for each point
+MWPM_parameters = f"-p0 --time_budget 3600 --use_xzzx_code --shallow_error_on_bottom --only_count_logical_x".split(" ")
 
 for (filename_prefix, paramters) in [("UF", UF_parameters), ("MWPM", MWPM_parameters)]:
     for di in di_vec:
@@ -39,6 +39,8 @@ for (filename_prefix, paramters) in [("UF", UF_parameters), ("MWPM", MWPM_parame
             error_count = int(lst[4])
             error_rate = float(lst[5])
             confidence_interval = float(lst[7])
+            if error_count < 1000:
+                break  # X logical error is rare when bias is high
 
             # record result
             print_result = f"{bias_eta} {p} {di} {total_rounds} {error_count} {error_rate} {confidence_interval}"

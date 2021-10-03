@@ -16,7 +16,7 @@ min_error_cases = 6000
 max_N = 100000000
 
 UF_parameters = f"-p0 --decoder UF --max_half_weight 100 --time_budget 3600 --use_xzzx_code --shallow_error_on_bottom --only_count_logical_z".split(" ")  # a maximum 20min for each point
-MWPM_parameters = f"-p0 --time_budget 3600 --use_xzzx_code --shallow_error_on_bottom".split(" ")
+MWPM_parameters = f"-p0 --time_budget 3600 --use_xzzx_code --shallow_error_on_bottom --only_count_logical_z".split(" ")
 
 for (filename_prefix, paramters) in [("UF", UF_parameters), ("MWPM", MWPM_parameters)]:
     for di in di_vec:
