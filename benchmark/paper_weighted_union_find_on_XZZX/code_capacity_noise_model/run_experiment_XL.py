@@ -39,13 +39,14 @@ for (filename_prefix, paramters) in [("UF", UF_parameters), ("MWPM", MWPM_parame
             error_count = int(lst[4])
             error_rate = float(lst[5])
             confidence_interval = float(lst[7])
-            if error_count < 1000:
-                break  # X logical error is rare when bias is high
 
             # record result
             print_result = f"{bias_eta} {p} {di} {total_rounds} {error_count} {error_rate} {confidence_interval}"
             results.append(print_result)
             print(print_result)
+            
+            if error_count < 1000:
+                break  # X logical error is rare when bias is high
         
         print("\n\n")
         print("\n".join(results))
