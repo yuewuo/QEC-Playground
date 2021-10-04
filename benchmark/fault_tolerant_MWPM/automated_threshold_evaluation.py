@@ -16,6 +16,9 @@ import os, sys, math, subprocess, random
 import scipy.stats
 import numpy as np
 
+qec_playground_root_dir = os.popen("git rev-parse --show-toplevel").read().strip(" \r\n")
+rust_dir = os.path.join(qec_playground_root_dir, "backend", "rust")
+
 def main():
     # # test basic command runner
     # random_error_rate, confidence_interval, full_result = qec_playground_fault_tolerant_MWPM_simulator_runner(0.005, (5, 5, 5), "-b10 -p0 --use_xzzx_code --bias_eta 100 --error_model GenericBiasedWithBiasedCX".split(" "), True, True)
@@ -46,7 +49,7 @@ QEC_PLAYGROUND_COMPILATION_DONE = False
 def run_qec_playground_command_get_stdout(command, no_stdout=False):
     global QEC_PLAYGROUND_COMPILATION_DONE
     if QEC_PLAYGROUND_COMPILATION_DONE is False:
-        process = subprocess.Popen(["cargo", "build", "--release"], universal_newlines=True, stdout=sys.stdout, stderr=sys.stderr)
+        process = subprocess.Popen(["cargo", "build", "--release"], universal_newlines=True, stdout=sys.stdout, stderr=sys.stderr, cwd=rust_dir)
         process.wait()
         assert process.returncode == 0, "compile has error"
         QEC_PLAYGROUND_COMPILATION_DONE = True
@@ -56,12 +59,14 @@ def run_qec_playground_command_get_stdout(command, no_stdout=False):
     process.wait()
     stdout, _ = process.communicate()
     return stdout, process.returncode
+
 def qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command(p_vec, di_vec, dj_vec, T_vec, parameters, max_N=100000, min_error_cases=3000):
     p_str = "[" + ",".join([str(e) for e in p_vec]) + "]"
     di_str = "[" + ",".join([str(e) for e in di_vec]) + "]"
     dj_str = "[" + ",".join([str(e) for e in dj_vec]) + "]"
     T_str = "[" + ",".join([str(e) for e in T_vec]) + "]"
-    command = ["./target/release/rust_qecp", "tool", "fault_tolerant_benchmark", di_str, "--djs", dj_str, T_str, f"-m{max_N}", f"-e{min_error_cases}", p_str] + parameters
+    qecp_path = os.path.join(rust_dir, "target", "release", "rust_qecp")
+    command = [qecp_path, "tool", "fault_tolerant_benchmark", di_str, "--djs", dj_str, T_str, f"-m{max_N}", f"-e{min_error_cases}", p_str] + parameters
     return command
 
 def qec_playground_fault_tolerant_MWPM_simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_runner=False, max_N=100000, min_error_cases=3000):
