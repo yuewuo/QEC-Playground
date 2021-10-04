@@ -1,5 +1,5 @@
 set terminal postscript eps color "Arial, 28"
-set xlabel "Erasure Ratio (p_{erasure} / p)" font "Arial, 28"
+set xlabel "Pauli Ratio (p_{Pauli} / (p_{Pauli} + p_{erasure}))" font "Arial, 28"
 set ylabel "d_{effective} ({/Symbol D} ln(p_L) / {/Symbol D} ln(p))" font "Arial, 28"
 set grid ytics
 set size 1,1
