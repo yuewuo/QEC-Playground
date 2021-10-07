@@ -9,7 +9,9 @@ from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 di_vec = [11, 13]
 p = 0.1
 # bias_eta_vec = [0.5, 1, 3, 10, 30, 100, 300, 1000, 3000, 10000, "+inf"]
-bias_eta_vec = [0.5] + [1 * (10 ** (i / 4)) for i in range(4 * 4 + 1)] + ["+inf"]
+# bias_eta_vec = [0.5] + [1 * (10 ** (i / 4)) for i in range(4 * 4 + 1)] + ["+inf"]
+divide = 20
+bias_eta_vec = [0.5 * (10 ** (i / divide)) for i in range(4 * divide + 1)]  # testing
 min_error_cases = 100000
 # min_error_cases = 10  # debug
 
