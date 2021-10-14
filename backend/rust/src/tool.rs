@@ -880,11 +880,18 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_rounds as f64)).sqrt() / error_rate;
             pb.message(format!("{} {} {} {} {} {} {} {:.1e} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj
                 , confidence_interval_95_percent).as_str());
-            let progress = total_rounds as u64;
-            if progress >= pb.total {
-                pb.total = progress;  // update the maximum value so that pb is updating properly
+            // estimate running time cleverer
+            let ratio_total_rounds = (total_rounds as f64) / (max_N as f64);
+            let ratio_qec_failed = (qec_failed as f64) / (min_error_cases as f64);
+            if ratio_total_rounds > ratio_qec_failed {
+                let progress = total_rounds as u64;
+                pb.total = if max_N as u64 > progress { max_N as u64 } else { progress };
+                pb.set(progress);
+            } else {
+                let progress = qec_failed as u64;
+                pb.total = if min_error_cases as u64 > progress { min_error_cases as u64 } else { progress };
+                pb.set(progress);
             }
-            pb.set(progress);
             std::thread::sleep(std::time::Duration::from_millis(200));
         }
         pb.total = *total_rounds.lock().unwrap() as u64;
