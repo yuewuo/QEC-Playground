@@ -13,6 +13,7 @@ mod offer_mwpm;
 mod union_find_decoder;
 mod distributed_uf_decoder;
 mod fpga_generator;
+mod fast_benchmark;
 
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;
