@@ -3,7 +3,8 @@ extern crate cc;
 fn main() {
 
     cc::Build::new()
-        .file("../../backend/blossomV/test.c")
+        .cpp(true)
+        .file("../../backend/blossomV/test.cpp")
         .compile("test");
     
     cc::Build::new()
@@ -24,7 +25,7 @@ fn main() {
         .flag("-Wno-unused-but-set-variable")
         .compile("blossomV");
 
-    println!("cargo:rerun-if-changed=../../backend/blossomV/test.c");
+    println!("cargo:rerun-if-changed=../../backend/blossomV/test.cpp");
     println!("cargo:rerun-if-changed=../../backend/blossomV/blossomV.cpp");
     println!("cargo:rustc-link-lib=static=stdc++");  // have to add this to compile c++ (new, delete operators)
     println!("cargo:rustc-link-lib=static=test");

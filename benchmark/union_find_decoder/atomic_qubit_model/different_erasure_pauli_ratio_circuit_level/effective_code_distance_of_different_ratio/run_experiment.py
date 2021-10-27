@@ -8,7 +8,7 @@ from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 
 # read in the threshold
 thresholds = []
-with open("../thresholds.txt", "r", encoding="utf8") as f:
+with open(os.path.join(os.path.dirname(__file__), "..", f"thresholds.txt"), "r", encoding="utf8") as f:
     lines = f.readlines()
     for line in lines:
         line = line.strip(" \r\n")

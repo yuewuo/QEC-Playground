@@ -8,7 +8,7 @@ from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 
 # read in the threshold
 thresholds = []
-with open(os.path.join(os.path.dirname(__file__), "..", f"thresholds.txt"), "r", encoding="utf8") as f:
+with open(os.path.join(os.path.dirname(__file__), "..", "..", f"thresholds.txt"), "r", encoding="utf8") as f:
     lines = f.readlines()
     for line in lines:
         line = line.strip(" \r\n")
@@ -30,13 +30,15 @@ for pauli_ratio, threshold, _ in thresholds:
 
     filename = os.path.join(os.path.dirname(__file__), f"pauli_ratio_{pauli_ratio}_extended_range.txt")
 
-    UF_parameters = f"-p0 --decoder UF --max_half_weight 100 --time_budget 18000 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel".split(" ")  # a maximum 5hours for each point
-
+    UF_parameters = f"-p0 --decoder UF --max_half_weight 100 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel".split(" ")  # a maximum 5hours for each point
+    
     results = []
     for p in p_vec:
+        p_str = f"{p}"
         p_pauli = p * pauli_ratio
         p_erasure = p * (1 - pauli_ratio)
-        UF_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [di], [di], UF_parameters + ["--pes", f"[{p_erasure}]"], max_N=max_N, min_error_cases=min_error_cases)
+        log_filename = os.path.join(os.path.dirname(__file__), f"runtime_statistics_{p_str}.txt")
+        UF_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [di], [di], UF_parameters + ["--pes", f"[{p_erasure}]"] + ["--log_runtime_statistics", log_filename, "--log_error_pattern_into_statistics_when_has_logical_error", "--mini_sync_time", "1"], max_N=max_N, min_error_cases=min_error_cases)
         print(" ".join(UF_command))
 
         # run experiment
@@ -52,7 +54,7 @@ for pauli_ratio, threshold, _ in thresholds:
         confidence_interval = float(lst[7])
 
         # record result
-        print_result = f"{p / threshold} {p} " + full_result
+        print_result = f"{p / threshold} {p_str} " + full_result
         results.append(print_result)
         print(print_result)
 
@@ -65,3 +67,4 @@ for pauli_ratio, threshold, _ in thresholds:
 
     with open(filename, "w", encoding="utf-8") as f:
         f.write("\n".join(results) + "\n")
+
