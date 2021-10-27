@@ -24,7 +24,8 @@ num_threads = os.cpu_count() - 2 if ENABLE_MULTITHREADING else 1
 print(num_threads)
 
 MWPM_parameters = f"-p{num_threads} --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100".split(" ")
-MWPM_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command(p_vec, di_vec, dj_vec, T_vec, MWPM_parameters + ["--log_runtime_statistics", "target/decoding_time_MWPM.txt"], max_N=max_N, min_error_cases=min_error_cases)
+log_filepath = os.path.join(os.path.dirname(__file__), f"runtime_statistics_MWPM.txt")
+MWPM_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command(p_vec, di_vec, dj_vec, T_vec, MWPM_parameters + ["--log_runtime_statistics", log_filepath], max_N=max_N, min_error_cases=min_error_cases)
 print(" ".join(MWPM_command))
 
 # MWPM

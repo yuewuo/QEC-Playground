@@ -34,9 +34,9 @@ set key outside horizontal top center font "Arial, 22"
 
 set style fill transparent solid 0.2 noborder
 
-# set title "Generaic Biased Noise Model (UnionFind Decoder)"
+# set title "Generaic Biased Noise Model (MWPM Decoder)"
 
-set output "circuit_level_noise_model.eps"
+set output "circuit_level_noise_model_MWPM.eps"
 
 # plot legends just like Fig.7 in arXiv2104.09539v1
 set key at graph 0.6, 0.3
@@ -79,17 +79,17 @@ plot \
     "standard_8.txt" using 1:6 with linespoints lt rgb "#984ea3" linewidth 4 dashtype (1,1) pointtype 12 pointsize 1 notitle "standard 8,24,24",\
     "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#984ea3" linewidth 4 dashtype (1,1) pointtype 12 pointsize 1 notitle
 
-set output '|ps2pdf -dEPSCrop circuit_level_noise_model.eps circuit_level_noise_model.pdf'
+set output '|ps2pdf -dEPSCrop circuit_level_noise_model_MWPM.eps circuit_level_noise_model_MWPM.pdf'
 replot
 
 # set size 1,0.75
-# set output "circuit_level_noise_model_w.eps"
+# set output "circuit_level_noise_model_MWPM_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop circuit_level_noise_model_w.eps circuit_level_noise_model_w.pdf'
+# set output '|ps2pdf -dEPSCrop circuit_level_noise_model_MWPM_w.eps circuit_level_noise_model_MWPM_w.pdf'
 # replot
 
 # set size 1,0.6
-# set output "circuit_level_noise_model_w_w.eps"
+# set output "circuit_level_noise_model_MWPM_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop circuit_level_noise_model_w_w.eps circuit_level_noise_model_w_w.pdf'
+# set output '|ps2pdf -dEPSCrop circuit_level_noise_model_MWPM_w_w.eps circuit_level_noise_model_MWPM_w_w.pdf'
 # replot

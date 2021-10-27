@@ -26,7 +26,8 @@ print(num_threads)
 
 MWPM_parameters = f"-p{num_threads} --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100".split(" ")
 UF_parameters = MWPM_parameters + "--decoder UF --max_half_weight 10".split(" ")
-UF_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command(p_vec, di_vec, dj_vec, T_vec, UF_parameters + ["--log_runtime_statistics", "target/decoding_time_UF.txt"], max_N=max_N, min_error_cases=min_error_cases)
+log_filepath = os.path.join(os.path.dirname(__file__), f"runtime_statistics_UF.txt")
+UF_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command(p_vec, di_vec, dj_vec, T_vec, UF_parameters + ["--log_runtime_statistics", log_filepath], max_N=max_N, min_error_cases=min_error_cases)
 print(" ".join(UF_command))
 
 # UF
