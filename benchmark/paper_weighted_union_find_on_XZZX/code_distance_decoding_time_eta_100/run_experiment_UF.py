@@ -6,6 +6,8 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command
 from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 
+print("[warning] requiring at least 150GB memory to run")
+
 pairs = [ (3, 9, 9), (4, 12, 12), (5, 15, 15), (6, 18, 18), (7, 21, 21), (8, 24, 24), (9, 27, 27), (10, 30, 30), (11, 33, 33), (12, 36, 36) ]  # (di, dj, T)
 p = 0.008
 
@@ -17,7 +19,7 @@ p_vec = [p]
 max_N = 100000000  # this is rarely achieved because p is large enough
 
 # min_error_cases = 100  # for debugging
-min_error_cases = 2000  # real experiment
+min_error_cases = 4000  # real experiment
 
 ENABLE_MULTITHREADING = True
 num_threads = os.cpu_count() - 2 if ENABLE_MULTITHREADING else 1
