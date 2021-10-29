@@ -46,13 +46,15 @@ return:
     full_result: str
 """
 QEC_PLAYGROUND_COMPILATION_DONE = False
-def run_qec_playground_command_get_stdout(command, no_stdout=False):
+def compile_code_if_necessary():
     global QEC_PLAYGROUND_COMPILATION_DONE
     if QEC_PLAYGROUND_COMPILATION_DONE is False:
         process = subprocess.Popen(["cargo", "build", "--release"], universal_newlines=True, stdout=sys.stdout, stderr=sys.stderr, cwd=rust_dir)
         process.wait()
         assert process.returncode == 0, "compile has error"
         QEC_PLAYGROUND_COMPILATION_DONE = True
+def run_qec_playground_command_get_stdout(command, no_stdout=False):
+    compile_code_if_necessary()
     env = os.environ.copy()
     env["RUST_BACKTRACE"] = "full"
     process = subprocess.Popen(command, universal_newlines=True, env=env, stdout=sys.stdout if no_stdout else subprocess.PIPE, stderr=sys.stderr)

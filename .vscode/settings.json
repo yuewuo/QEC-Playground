@@ -12,6 +12,7 @@
         "petgraph",
         "qecp",
         "ringbuf",
+        "sbatch",
         "vec"
     ]
 }
