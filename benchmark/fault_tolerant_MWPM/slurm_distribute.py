@@ -4,6 +4,11 @@ from datetime import datetime
 
 DEBUG_USING_INTERACTIVE_PARTITION = False  # only enable while debugging
 
+# utility tool
+ONLY_PRINT_COMMANDS = False
+if 'ONLY_PRINT_COMMANDS' in os.environ and os.environ["ONLY_PRINT_COMMANDS"] == "TRUE":
+    ONLY_PRINT_COMMANDS = True
+
 # check for slurm flags in environment
 SLURM_DISTRIBUTE_ENABLED = False
 SLURM_USE_EXISTING_DATA = False
@@ -26,9 +31,7 @@ def confirm_or_die(action=""):
 
 def slurm_distribute_wrap(program):
     def wrapper():
-        if not SLURM_DISTRIBUTE_ENABLED:
-            program()
-        else:
+        if ONLY_PRINT_COMMANDS or SLURM_DISTRIBUTE_ENABLED:
             # first gether all commands
             slurm_commands_vec = []
             def error_run_command_get_stdout(command):
@@ -41,7 +44,14 @@ def slurm_distribute_wrap(program):
             for idx, command in enumerate(slurm_commands_vec):
                 stringify_command = run_stringify_command(command)
                 stringify_commands.append(stringify_command)
+                if ONLY_PRINT_COMMANDS:
+                    print(stringify_command)
+            if ONLY_PRINT_COMMANDS:
+                return None  # terminate the program
 
+        if not SLURM_DISTRIBUTE_ENABLED:
+            return program()
+        else:
             if not SLURM_USE_EXISTING_DATA:
                 # print out for confirmation
                 print("commands:")
@@ -182,7 +192,7 @@ def slurm_distribute_wrap(program):
                     print(f"couldn't find results for command '{stringify_command}'")
                     raise "result not found"
                 return results[stringify_command], 0
-            program(slurm_commands_vec=None, run_command_get_stdout=feeding_output)
+            return program(slurm_commands_vec=None, run_command_get_stdout=feeding_output)
 
     return wrapper
 
