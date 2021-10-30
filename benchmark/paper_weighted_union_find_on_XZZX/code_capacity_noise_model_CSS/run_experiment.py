@@ -5,7 +5,9 @@ fault_toleran_MWPM_dir = os.path.join(qec_playground_root_dir, "benchmark", "fau
 sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command
 from automated_threshold_evaluation import run_qec_playground_command_get_stdout, compile_code_if_necessary
+sys.path.insert(0, os.path.join(qec_playground_root_dir, "benchmark", "slurm_utilities"))
 import slurm_distribute
+from slurm_distribute import slurm_threads_or as STO
 
 di_vec = [11, 13]
 p = 0.1
@@ -18,8 +20,8 @@ min_error_cases = 100000
 
 max_N = 100000000
 
-UF_parameters = f"-p0 --decoder UF --max_half_weight 100 --time_budget 3600 --shallow_error_on_bottom".split(" ")  # a maximum 20min for each point
-MWPM_parameters = f"-p0 --time_budget 3600 --shallow_error_on_bottom".split(" ")
+UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 100 --time_budget 3600 --shallow_error_on_bottom".split(" ")  # a maximum 20min for each point
+MWPM_parameters = f"-p{STO(0)} --time_budget 3600 --shallow_error_on_bottom".split(" ")
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run

@@ -46,6 +46,8 @@ return:
     full_result: str
 """
 QEC_PLAYGROUND_COMPILATION_DONE = False
+if 'MANUALLY_COMPILE_QEC' in os.environ and os.environ["MANUALLY_COMPILE_QEC"] == "TRUE":
+    QEC_PLAYGROUND_COMPILATION_DONE = True
 def compile_code_if_necessary():
     global QEC_PLAYGROUND_COMPILATION_DONE
     if QEC_PLAYGROUND_COMPILATION_DONE is False:

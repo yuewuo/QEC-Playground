@@ -1,2 +1,9 @@
 *.pdf
 *.eps
+
+# this is the realtime output of slurm jobs
+*.joberror
+# also ignore the slurm outputs, typically empty files
+slurm-*.out
+slurm-*.err
+unfinished.tasks
