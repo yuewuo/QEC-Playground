@@ -559,7 +559,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             log_runtime_statistics_file.sync_data().unwrap();
         }, _ => { },
     }
-    println!("format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>");
+    println!("format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>");
     // first list all configurations
     assert_eq!(pes.len(), ps.len(), "pe and p should be matched");
     let mut configurations = Vec::new();
@@ -878,8 +878,8 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             }
             let error_rate = qec_failed as f64 / total_rounds as f64;
             let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_rounds as f64)).sqrt() / error_rate;
-            pb.message(format!("{} {} {} {} {} {} {} {:.1e} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj
-                , confidence_interval_95_percent).as_str());
+            pb.message(format!("{} {} {} {} {} {} {} {:.1e} {} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj
+                , confidence_interval_95_percent, pe).as_str());
             // estimate running time cleverer
             let ratio_total_rounds = (total_rounds as f64) / (max_N as f64);
             let ratio_qec_failed = (qec_failed as f64) / (min_error_cases as f64);
@@ -903,7 +903,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         let qec_failed = *qec_failed.lock().unwrap();
         let error_rate = qec_failed as f64 / total_rounds as f64;
         let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_rounds as f64)).sqrt() / error_rate;
-        println!("{} {} {} {} {} {} {} {:.1e}", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj, confidence_interval_95_percent);
+        println!("{} {} {} {} {} {} {} {:.1e} {}", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj, confidence_interval_95_percent, pe);
         match precomputing_model_thread {
             Some(precomputing_model_thread) => precomputing_model_thread.join().unwrap(),
             None => { }

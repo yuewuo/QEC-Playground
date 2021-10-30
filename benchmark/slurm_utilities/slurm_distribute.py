@@ -5,7 +5,7 @@ from datetime import datetime
 DEBUG_USING_INTERACTIVE_PARTITION = False  # only enable while debugging
 
 # to check which node causes problem, run `sacct -j <JOBID> | grep FAILED`
-NODE_BLACK_LIST = ["p08r07n[01-08]"]  # these nodes fails
+NODE_BLACK_LIST = ["p08r07n[01-08]", "p09r11n25"]  # these nodes fails
 
 # utility tool
 ONLY_PRINT_COMMANDS = False
@@ -243,7 +243,7 @@ def slurm_run_sbatch_wait(job_script_sbatch_path, job_indices, use_interactive_p
         print(f"to re-run the failed cases, run `slurm_jobs/{rerun_sh_filename}`(full path: {rerun_sh_filepath})\n  or command `python3 {rerun_py_path} {original_sbatch_file_path} {','.join([str(e) for e in failed_indices])}`")
         with open(rerun_sh_filepath, "w", encoding="utf8") as f:
             f.write(f"#!/bin/sh\n\n")
-            f.write(f"# failed indices: {','.join([str(e) for e in failed_indices])}")
+            f.write(f"# failed indices: {','.join([str(e) for e in failed_indices])}\n")
             f.write(f"python3 {rerun_py_path} {original_sbatch_file_path} {','.join([str(e) for e in failed_indices])}\n")
         os.chmod(rerun_sh_filepath, os.stat(rerun_sh_filepath).st_mode | stat.S_IRWXU)
         confirm_or_die(f"Seems like there are {error_count} failed tasks, if continue, we'll assume they're all good")

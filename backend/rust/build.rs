@@ -27,7 +27,6 @@ fn main() {
 
     println!("cargo:rerun-if-changed=../../backend/blossomV/test.cpp");
     println!("cargo:rerun-if-changed=../../backend/blossomV/blossomV.cpp");
-    // update 10/27/2021: Yale HPC doesn't allow static libstdc++ (perhaps because of different CPU types), so have to dynamically link
     println!("cargo:rustc-link-lib=static=stdc++");  // have to add this to compile c++ (new, delete operators)
     println!("cargo:rustc-link-lib=static=test");
     println!("cargo:rustc-link-lib=static=blossomV");
