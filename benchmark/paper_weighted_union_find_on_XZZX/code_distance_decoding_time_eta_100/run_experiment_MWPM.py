@@ -1,4 +1,5 @@
 import os, sys
+from process_data import process_file
 qec_playground_root_dir = os.popen("git rev-parse --show-toplevel").read().strip(" \r\n")
 rust_dir = os.path.join(qec_playground_root_dir, "backend", "rust")
 fault_toleran_MWPM_dir = os.path.join(qec_playground_root_dir, "benchmark", "fault_tolerant_MWPM")
@@ -19,12 +20,19 @@ max_N = 100000000  # this is rarely achieved because p is large enough
 # min_error_cases = 100  # for debugging
 min_error_cases = 4000  # real experiment
 
+log_filepath = os.path.join(os.path.dirname(__file__), f"runtime_statistics_MWPM.txt")
+if 'ONLY_PROCESS_DATA' in os.environ and os.environ["ONLY_PROCESS_DATA"] == "TRUE":
+    content = process_file(log_filepath, pairs, "time_blossom_v")
+    print(content, end="")
+    with open(os.path.join(os.path.dirname(__file__), f"processed_MWPM.txt"), "w", encoding="utf8") as f:
+        f.write(content)
+    exit(0)
+
 ENABLE_MULTITHREADING = True
 num_threads = os.cpu_count() - 2 if ENABLE_MULTITHREADING else 1
 print(num_threads)
 
 MWPM_parameters = f"-p{num_threads} --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100".split(" ")
-log_filepath = os.path.join(os.path.dirname(__file__), f"runtime_statistics_MWPM.txt")
 MWPM_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command(p_vec, di_vec, dj_vec, T_vec, MWPM_parameters + ["--log_runtime_statistics", log_filepath], max_N=max_N, min_error_cases=min_error_cases)
 print(" ".join(MWPM_command))
 

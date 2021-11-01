@@ -15,14 +15,18 @@ if 'ONLY_PRINT_COMMANDS' in os.environ and os.environ["ONLY_PRINT_COMMANDS"] == 
 # check for slurm flags in environment
 SLURM_DISTRIBUTE_ENABLED = False
 SLURM_USE_EXISTING_DATA = False
+if 'SLURM_USE_EXISTING_DATA' in os.environ and os.environ["SLURM_USE_EXISTING_DATA"] == "TRUE":
+    SLURM_USE_EXISTING_DATA = True
+    SLURM_DISTRIBUTE_ENABLED = True  # always use slurm workflow
 if 'SLURM_DISTRIBUTE_ENABLED' in os.environ and os.environ["SLURM_DISTRIBUTE_ENABLED"] == "TRUE":
+    SLURM_DISTRIBUTE_ENABLED = True
+
+if SLURM_DISTRIBUTE_ENABLED:
     SLURM_DISTRIBUTE_ENABLED = True
     SLURM_DISTRIBUTE_CPUS_PER_TASK = 36
     SLURM_DISTRIBUTE_MEM_PER_TASK = '8G'  # do not use too much memory, otherwise the task will probably fail with exit code = 1
     SLURM_DISTRIBUTE_MAX_JOB = 25  # 1000 CPUs per person
     SLURM_DISTRIBUTE_TIME = "1-00:00:00"
-if 'SLURM_USE_EXISTING_DATA' in os.environ and os.environ["SLURM_USE_EXISTING_DATA"] == "TRUE":
-    SLURM_USE_EXISTING_DATA = True
 
 def slurm_threads_or(default_threads):
     if SLURM_DISTRIBUTE_ENABLED:
@@ -121,7 +125,6 @@ def slurm_distribute_wrap(program):
             for idx, command in enumerate(slurm_commands_vec):
                 with open(os.path.join(slurm_jobs_folder, f"{idx}.jobout"), "r", encoding="utf8") as f:
                     results[stringify_commands[idx]] = f.read()
-            print(results)
             
             # rerun the simulation feeding the results
             def feeding_output(command):
@@ -188,8 +191,12 @@ def slurm_run_sbatch_wait(job_script_sbatch_path, job_indices, use_interactive_p
     check_cnt = 0
     while True:
         process = subprocess.Popen(["sacct", "-j", f"{JOB_ID}"], universal_newlines=True, stdout=subprocess.PIPE, stderr=sys.stderr)
-        process.wait()
-        stdout, _ = process.communicate()
+        try:
+            process.wait(timeout=60)
+            stdout, _ = process.communicate(timeout=60)
+        except subprocess.TimeoutExpired:
+            print("sacct command timeout, strange... but try again")
+            continue
         assert process.returncode == 0, "sacct command fails..."
         stdout_split = stdout.strip(" \r\n").split("\n")
         status_report_content = stdout_split[0] + "\n"

@@ -10,16 +10,16 @@ import slurm_distribute
 from slurm_distribute import slurm_threads_or as STO
 
 di_vec = [11, 13]
-p = 0.1
-# bias_eta_vec = [0.5, 1, 3, 10, 30, 100, 300, 1000, 3000, 10000, "+inf"]
-# bias_eta_vec = [0.5] + [1 * (10 ** (i / 4)) for i in range(4 * 4 + 1)] + ["+inf"]
-divide = 20
+p = 0.07
+divide = 10
 bias_eta_vec = [0.5 * (10 ** (i / divide)) for i in range(4 * divide + 1)] + ["+inf"]
 min_error_cases = 100000
 # min_error_cases = 10  # debug
 
 max_N = 100000000
 
+slurm_distribute.SLURM_DISTRIBUTE_TIME = "01:20:00"
+slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '4G'
 UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 100 --time_budget 3600 --shallow_error_on_bottom".split(" ")  # a maximum 20min for each point
 MWPM_parameters = f"-p{STO(0)} --time_budget 3600 --shallow_error_on_bottom".split(" ")
 
@@ -39,7 +39,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
                 print(" ".join(command))
 
                 # run experiment
-                stdout, returncode = run_qec_playground_command_get_stdout(command)
+                stdout, returncode = run_command_get_stdout(command)
                 print("\n" + stdout)
                 assert returncode == 0, "command fails..."
 
