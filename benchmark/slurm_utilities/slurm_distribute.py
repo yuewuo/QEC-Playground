@@ -15,17 +15,19 @@ if 'ONLY_PRINT_COMMANDS' in os.environ and os.environ["ONLY_PRINT_COMMANDS"] == 
 # check for slurm flags in environment
 SLURM_DISTRIBUTE_ENABLED = False
 SLURM_USE_EXISTING_DATA = False
+SLURM_USE_SCAVENGE_PARTITION = False
 if 'SLURM_USE_EXISTING_DATA' in os.environ and os.environ["SLURM_USE_EXISTING_DATA"] == "TRUE":
     SLURM_USE_EXISTING_DATA = True
     SLURM_DISTRIBUTE_ENABLED = True  # always use slurm workflow
 if 'SLURM_DISTRIBUTE_ENABLED' in os.environ and os.environ["SLURM_DISTRIBUTE_ENABLED"] == "TRUE":
     SLURM_DISTRIBUTE_ENABLED = True
+if 'SLURM_USE_SCAVENGE_PARTITION' in os.environ and os.environ["SLURM_USE_SCAVENGE_PARTITION"] == "TRUE":
+    SLURM_USE_SCAVENGE_PARTITION = True
 
 if SLURM_DISTRIBUTE_ENABLED:
     SLURM_DISTRIBUTE_ENABLED = True
     SLURM_DISTRIBUTE_CPUS_PER_TASK = 36
     SLURM_DISTRIBUTE_MEM_PER_TASK = '8G'  # do not use too much memory, otherwise the task will probably fail with exit code = 1
-    SLURM_DISTRIBUTE_MAX_JOB = 25  # 1000 CPUs per person
     SLURM_DISTRIBUTE_TIME = "1-00:00:00"
 
 def slurm_threads_or(default_threads):
@@ -83,6 +85,9 @@ def slurm_distribute_wrap(program):
                 parameters = [f"--job-name={job_name}", f"--time={SLURM_DISTRIBUTE_TIME}", f"--mem={SLURM_DISTRIBUTE_MEM_PER_TASK}", "--mail-type=ALL", "--nodes=1", "--ntasks=1"
                     , f"--cpus-per-task={SLURM_DISTRIBUTE_CPUS_PER_TASK}", f"--array=0-{job_count-1}", f'--out="{os.path.join(slurm_jobs_folder, "slurm-%a.out")}"'
                     , f'--error="{os.path.join(slurm_jobs_folder, "slurm-%a.err")}"']
+                if SLURM_USE_SCAVENGE_PARTITION:
+                    parameters.append(f"--requeue")
+                    parameters.append(f"--partition=scavenge")
                 if len(NODE_BLACK_LIST) > 0:
                     parameters.append(f"--exclude={','.join(NODE_BLACK_LIST)}")
                 for parameter in parameters:
@@ -184,7 +189,7 @@ def slurm_run_sbatch_wait(job_script_sbatch_path, job_indices, use_interactive_p
         print(f"\rjobs remaining: [{len(active_jobs)}/{len(job_indices)}]", end="")
         if len(active_jobs) == 0:
             break
-        time.sleep(0.3)  # sleep first because it takes some time to be observed in squeue command output
+        time.sleep(5)  # sleep first because it takes some time to be observed in squeue command output
     print()
 
     # check all states

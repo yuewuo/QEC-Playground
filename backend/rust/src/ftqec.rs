@@ -30,6 +30,7 @@ use super::union_find_decoder;
 use super::either::Either;
 use super::serde_json;
 use std::time::Instant;
+use super::fast_benchmark::FastBenchmark;
 
 /// uniquely index a node
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
@@ -131,6 +132,7 @@ pub struct PlanarCodeModel {
     ///    makes some result to 0), thus we determine there's a logical error if no less than half of the results are 1
     z_homology_lines: Vec< Vec::<(usize, usize)> >,
     x_homology_lines: Vec< Vec::<(usize, usize)> >,
+    // define boundary
 }
 
 impl PlanarCodeModel {
@@ -569,6 +571,9 @@ impl PlanarCodeModel {
     }
     // remove bottom boundary, (1-p)^2I + p(1-p)X + p(1-p)Z + p^2Y
     pub fn set_phenomenological_error_with_perfect_initialization(&mut self, error_rate: f64) {
+        self.set_phenomenological_error_with_perfect_initialization_with_erasure(error_rate, 0.)
+    }
+    pub fn set_phenomenological_error_with_perfect_initialization_with_erasure(&mut self, error_rate: f64, pe: f64) {
         let height = self.snapshot.len();
         self.iterate_snapshot_mut(|t, _i, _j, node| {
             node.error_rate_x = 0.;
@@ -583,6 +588,7 @@ impl PlanarCodeModel {
                         node.error_rate_x = error_rate * (1. - error_rate);
                         node.error_rate_z = error_rate * (1. - error_rate);
                         node.error_rate_y = error_rate * error_rate;
+                        node.erasure_error_rate = pe
                     },
                     _ => {},
                 }
@@ -1028,6 +1034,10 @@ impl PlanarCodeModel {
     }
     /// corresponds to `build_graph_given_error_rate` in `FaultTolerantView.vue`
     pub fn build_graph(&mut self) {
+        self.build_graph_and_build_fast_benchmark();
+    }
+    pub fn build_graph_and_build_fast_benchmark(&mut self) -> FastBenchmark {
+        let mut fast_benchmark = FastBenchmark::new(&self);
         let mut all_possible_errors: Vec<Either<ErrorType, CorrelatedErrorType>> = Vec::new();
         for error_type in ErrorType::all_possible_errors().drain(..) {
             all_possible_errors.push(Either::Left(error_type));
@@ -1062,7 +1072,8 @@ impl PlanarCodeModel {
                                     }
                                 },
                             }; // probability of this error to occur
-                            let possible_erasure_error = node.erasure_error_rate > 0. || node.correlated_erasure_error_model.is_some() || {
+                            let erasure_error_rate = node.erasure_error_rate;
+                            let possible_erasure_error = erasure_error_rate > 0. || node.correlated_erasure_error_model.is_some() || {
                                 match self.snapshot[t][i][j].as_ref().expect("exist").connection.as_ref() {
                                     Some(connection) => {
                                         let (ct, ci, cj) = (connection.t, connection.i, connection.j);
@@ -1109,18 +1120,25 @@ impl PlanarCodeModel {
                                                 cases: Vec::new(),
                                             });
                                         }
-                                        node.boundary.as_mut().expect("exist").add(p, correction, self.use_combined_probability);
+                                        node.boundary.as_mut().expect("exist").add(p, correction.clone(), self.use_combined_probability);
                                     }
                                     if is_erasure {  // only consider single qubit errors
                                         let node = self.snapshot[t][i][j].as_mut().expect("exist");
                                         node.pauli_error_connections.push(Either::Right(Index::new(t1, i1, j1)));
                                     }
+                                    // update fast benchmark
+                                    if p > 0. {
+                                        fast_benchmark.add_possible_boundary(t1, i1, j1, p, t, i, j, Either::Left(error.clone()));
+                                    }
+                                    if is_erasure && erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
+                                        fast_benchmark.add_possible_boundary(t1, i1, j1, erasure_error_rate, t, i, j, Either::Right(()));
+                                    }
                                 } else if measurement_errors.len() == 2 {  // connection
                                     let (t1, i1, j1) = measurement_errors[0];
                                     let (t2, i2, j2) = measurement_errors[1];
                                     let is_same_type = self.snapshot[t1][i1][j1].as_ref().unwrap().qubit_type == self.snapshot[t2][i2][j2].as_ref().unwrap().qubit_type;
-                                    if p > 0. || is_erasure {
-                                        if is_same_type {
+                                    if is_same_type {  // currently do not consider fully connected version between X and Z graph (which shouldn't have too much difference in terms of decoding accuracy)
+                                        if p > 0. || is_erasure {
                                             // println!("[{}][{}][{}]:[{}] causes paired errors on [{}][{}][{}] and [{}][{}][{}]", t, i, j, if *error == ErrorType::X { "X" } else { "Z" }, t1, i1, j1, t2, i2, j2);
                                             if t1 <= 6 || t2 <= 6 {
                                                 println!("error at {:?}", (t, i, j, error));
@@ -1146,11 +1164,20 @@ impl PlanarCodeModel {
                                                     , self.use_combined_probability);
                                             }
                                         }
+                                        if is_erasure {  // only consider single qubit errors causing same type of errors
+                                            let node = self.snapshot[t][i][j].as_mut().expect("exist");
+                                            node.pauli_error_connections.push(Either::Left((Index::new(t1, i1, j1), Index::new(t2, i2, j2))));
+                                        }
+                                        // update fast benchmark
+                                        if p > 0. {
+                                            fast_benchmark.add_possible_match(t1, i1, j1, t2, i2, j2, p, t, i, j, Either::Left(error.clone()));
+                                        }
+                                        if is_erasure && erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
+                                            fast_benchmark.add_possible_match(t1, i1, j1, t2, i2, j2, erasure_error_rate, t, i, j, Either::Right(()));
+                                        }
                                     }
-                                    if is_erasure && is_same_type {  // only consider single qubit errors causing same type of errors
-                                        let node = self.snapshot[t][i][j].as_mut().expect("exist");
-                                        node.pauli_error_connections.push(Either::Left((Index::new(t1, i1, j1), Index::new(t2, i2, j2))));
-                                    }
+                                } else if measurement_errors.len() > 2 {
+                                    // TODO: fast benchmark can also include this kind of error
                                 }
                             }
                         }
@@ -1161,6 +1188,7 @@ impl PlanarCodeModel {
         // reset graph to state without error
         self.clear_error();
         self.propagate_error();
+        fast_benchmark
     }
     fn optimize_correction_cases(original_cases: &Vec::<(Arc<SparseCorrection>, f64)>) -> Vec::<(Arc<SparseCorrection>, f64)> {
         let mut cases = HashMap::<SparseCorrection, f64>::new();

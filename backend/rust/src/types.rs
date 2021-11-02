@@ -291,10 +291,10 @@ pub enum ErrorType {
 impl std::fmt::Display for ErrorType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", match self {
-            ErrorType::I => "I",
-            ErrorType::X => "X",
-            ErrorType::Z => "Z",
-            ErrorType::Y => "Y",
+            Self::I => "I",
+            Self::X => "X",
+            Self::Z => "Z",
+            Self::Y => "Y",
         })
     }
 }
@@ -383,6 +383,17 @@ impl CorrelatedErrorType {
     pub fn all_possible_errors() -> Vec::<Self> {
         vec![           Self::IX, Self::IZ, Self::IY, Self::XI, Self::XX, Self::XZ, Self::XY,
              Self::ZI, Self::ZX, Self::ZZ, Self::ZY, Self::YI, Self::YX, Self::YZ, Self::YY,]
+    }
+}
+
+impl std::fmt::Display for CorrelatedErrorType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            Self::II => "II", Self::IX => "IX", Self::IZ => "IZ", Self::IY => "IY",
+            Self::XI => "XI", Self::XX => "XX", Self::XZ => "XZ", Self::XY => "XY",
+            Self::ZI => "ZI", Self::ZX => "ZX", Self::ZZ => "ZZ", Self::ZY => "ZY",
+            Self::YI => "YI", Self::YX => "YX", Self::YZ => "YZ", Self::YY => "YY",
+        }.to_string())
     }
 }
 
