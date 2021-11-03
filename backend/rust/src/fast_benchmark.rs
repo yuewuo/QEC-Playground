@@ -37,6 +37,8 @@ use ftqec::{GateType, CodeType, Index};
 use super::types::{QubitType, ErrorType, CorrelatedErrorType};
 use std::collections::{BTreeMap, BTreeSet};
 use super::either::Either;
+use super::rand::seq::SliceRandom;
+use super::rand_core::{RngCore};
 
 
 pub struct PossiblePauli {
@@ -56,6 +58,14 @@ pub struct PossibleMatch {
     pub joint_probability: f64,
 }
 
+#[derive(Debug, PartialEq)]
+enum BoundaryCandidate {
+    Left,
+    Right,
+    Back,
+    Front,
+}
+
 pub struct FBNode {
     pub mt: usize,
     pub i: usize,
@@ -67,24 +77,24 @@ pub struct FBNode {
     pub pauli_boundaries: Vec<PossiblePauli>,
     pub erasure_boundaries: Vec<PossibleErasure>,
     // internal static information
-    pub hop_right: Option<usize>,  // how many hops to left boundary (j = 2dj - 3) if applicable
-    pub hop_front: Option<usize>,  // how many hops to front boundary (i = 2di - 3) if applicable
-    // configurations
-    pub weighted_path_sampling: bool,
-    pub weighted_assignment_sampling: bool,
+    pub hop: Option<usize>,  // how many hops to left boundary (j = 2dj - 3) or front boundary (i = 2di - 3) if applicable
     // internal states
-    possible_left_boundary: bool,
-    possible_right_boundary: bool,
-    possible_back_boundary: bool,
-    possible_front_boundary: bool,
-    string_count: usize,  // only valid when `possible_left_boundary` or `possible_back_boundary` is true
-    // temporary registers
+    boundary_candidate: Option<BoundaryCandidate>,
+    string_count: usize,  // only valid when `boundary_candidate` is Left or Back
+    sampling_k: usize,
+    sampling_sum_ps: f64,
+    sampling_sum_elements: f64,
+    // temporary registers and sampling registers
     path_counter: usize,
 }
 
 pub struct FastBenchmark {
-    pub fb_nodes: Vec::< Vec::< Vec::< Option<FBNode> > > >,
-
+    pub fb_nodes: Vec< Vec< Vec< Option<FBNode> > > >,
+    starting_nodes: Vec<(usize, usize, usize)>,
+    // configurations
+    pub use_weighted_path_sampling: bool,
+    pub use_weighted_assignment_sampling: bool,
+    pub assignment_sampling_number: usize,
 }
 
 impl FastBenchmark {
@@ -119,24 +129,22 @@ impl FastBenchmark {
                         for (j, element) in array.iter_mut().enumerate() {
                             match element {
                                 Some(ref mut fb_node) => {
-                                    let mut cnt = 0;
                                     if j == 1 {
-                                        fb_node.possible_left_boundary = true;
-                                        cnt += 1;
+                                        assert!(fb_node.boundary_candidate.is_none(), "cannot be multiple type of boundary at once");
+                                        fb_node.boundary_candidate = Some(BoundaryCandidate::Left);
                                     }
                                     if j == 2 * model.dj - 3 {
-                                        fb_node.possible_right_boundary = true;
-                                        cnt += 1;
+                                        assert!(fb_node.boundary_candidate.is_none(), "cannot be multiple type of boundary at once");
+                                        fb_node.boundary_candidate = Some(BoundaryCandidate::Right);
                                     }
                                     if i == 1 {
-                                        fb_node.possible_back_boundary = true;
-                                        cnt += 1;
+                                        assert!(fb_node.boundary_candidate.is_none(), "cannot be multiple type of boundary at once");
+                                        fb_node.boundary_candidate = Some(BoundaryCandidate::Back);
                                     }
                                     if i == 2 * model.di - 3 {
-                                        fb_node.possible_front_boundary = true;
-                                        cnt += 1;
+                                        assert!(fb_node.boundary_candidate.is_none(), "cannot be multiple type of boundary at once");
+                                        fb_node.boundary_candidate = Some(BoundaryCandidate::Front);
                                     }
-                                    assert!(cnt == 0 || cnt == 1, "being multiple boundaries confuses me");
                                 },
                                 None => { },
                             }
@@ -148,6 +156,10 @@ impl FastBenchmark {
         }
         FastBenchmark {
             fb_nodes: fb_nodes,
+            starting_nodes: Vec::new(),
+            use_weighted_path_sampling: true,
+            use_weighted_assignment_sampling: true,
+            assignment_sampling_number: 100,
         }
     }
 
@@ -155,13 +167,9 @@ impl FastBenchmark {
             , pauli_or_erasure: Either<Either<ErrorType, CorrelatedErrorType>, ()>) {
         let (mt, i, j) = Index::new(t1, i1, j1).to_measurement_idx();
         let mut fb_node = self.fb_nodes[mt][i][j].as_mut().expect("exist");
-        assert!(fb_node.possible_left_boundary || fb_node.possible_right_boundary || fb_node.possible_back_boundary
-            || fb_node.possible_front_boundary, "unrecognized boundary");
-        if fb_node.possible_right_boundary {
-            fb_node.hop_right = Some(1);
-        }
-        if fb_node.possible_front_boundary {
-            fb_node.hop_front = Some(1);
+        assert!(fb_node.boundary_candidate.is_some(), "unrecognized boundary, remember to add to boundary candidate");
+        if Self::is_ending_boundary(fb_node) {
+            fb_node.hop = Some(1);
         }
         match pauli_or_erasure {
             Either::Left(pauli_type) => {
@@ -226,27 +234,17 @@ impl FastBenchmark {
             for mt in 0..mt_len {
                 for i in 0..i_len {
                     for j in 0..j_len {
-                        let mut update_hop_right = None;
-                        let mut update_hop_front = None;
+                        let mut update_hop = None;
                         match self.fb_nodes[mt][i][j] {
                             Some(ref fb_node) => {
                                 for (&(mtp, ip, jp), _possible_match) in fb_node.matches.iter() {
                                     let fb_node_peer = self.fb_nodes[mtp][ip][jp].as_ref().expect("exist");
-                                    match fb_node_peer.hop_right {
-                                        Some(hop_right_peer) => {
-                                            if update_hop_right.is_none() {
-                                                update_hop_right = Some(hop_right_peer + 1);
+                                    match fb_node_peer.hop {
+                                        Some(hop_peer) => {
+                                            if update_hop.is_none() {
+                                                update_hop = Some(hop_peer + 1);
                                             } else {
-                                                update_hop_right = Some(std::cmp::min(hop_right_peer + 1, update_hop_right.unwrap()))
-                                            }
-                                        }, None => { }
-                                    }
-                                    match fb_node_peer.hop_front {
-                                        Some(hop_front_peer) => {
-                                            if update_hop_front.is_none() {
-                                                update_hop_front = Some(hop_front_peer + 1);
-                                            } else {
-                                                update_hop_front = Some(std::cmp::min(hop_front_peer + 1, update_hop_front.unwrap()))
+                                                update_hop = Some(std::cmp::min(hop_peer + 1, update_hop.unwrap()))
                                             }
                                         }, None => { }
                                     }
@@ -254,29 +252,16 @@ impl FastBenchmark {
                             }
                             None => { }
                         }
-                        if update_hop_right.is_some() || update_hop_front.is_some() {
+                        if update_hop.is_some() {
                             let fb_node = self.fb_nodes[mt][i][j].as_mut().expect("exist");
-                            match update_hop_right {
-                                Some(update_hop_right) => {
-                                    if fb_node.hop_right.is_none() {
-                                        fb_node.hop_right = Some(update_hop_right);
+                            match update_hop {
+                                Some(update_hop) => {
+                                    if fb_node.hop.is_none() {
+                                        fb_node.hop = Some(update_hop);
                                         has_update = true;
                                     } else {
-                                        if update_hop_right < fb_node.hop_right.unwrap() {
-                                            fb_node.hop_right = Some(update_hop_right);
-                                            has_update = true;
-                                        }
-                                    }
-                                }, None => { }
-                            }
-                            match update_hop_front {
-                                Some(update_hop_front) => {
-                                    if fb_node.hop_front.is_none() {
-                                        fb_node.hop_front = Some(update_hop_front);
-                                        has_update = true;
-                                    } else {
-                                        if update_hop_front < fb_node.hop_front.unwrap() {
-                                            fb_node.hop_front = Some(update_hop_front);
+                                        if update_hop < fb_node.hop.unwrap() {
+                                            fb_node.hop = Some(update_hop);
                                             has_update = true;
                                         }
                                     }
@@ -303,34 +288,50 @@ impl FastBenchmark {
         }
     }
 
+    fn is_starting_boundary(fb_node: &FBNode) -> bool {
+        match fb_node.boundary_candidate {
+            Some(BoundaryCandidate::Left) | Some(BoundaryCandidate::Back) => true,
+            _ => false,
+        }
+    }
+
+    fn is_ending_boundary(fb_node: &FBNode) -> bool {
+        match fb_node.boundary_candidate {
+            Some(BoundaryCandidate::Right) | Some(BoundaryCandidate::Front) => true,
+            _ => false,
+        }
+    }
+
     pub fn prepare_string_counts(&mut self) {
         let mt_len = self.fb_nodes.len();
         let i_len = self.fb_nodes[0].len();
         let j_len = self.fb_nodes[0][0].len();
+        let mut starting_nodes = Vec::new();
         for mt in 0..mt_len {
             for i in 0..i_len {
                 for j in 0..j_len {
                     self.clear_path_counter();
-                    let mut run_with_hop_count = None;
+                    let mut run_with_hop = None;
                     match self.fb_nodes[mt][i][j] {
                         Some(ref fb_node) => {
-                            if (fb_node.possible_left_boundary || fb_node.possible_back_boundary) && fb_node.boundary_joint_probability > 0. {
+                            if Self::is_starting_boundary(fb_node) && fb_node.boundary_joint_probability > 0. {
+                                starting_nodes.push((mt, i, j));
                                 // println!("[{}][{}][{}] {} {} {}", mt, i, j, fb_node.possible_left_boundary, fb_node.possible_back_boundary, fb_node.boundary_joint_probability);
-                                match fb_node.hop_front.clone().or(fb_node.hop_right.clone()) {
-                                    Some(hop_count) => {
-                                        // println!("[{}][{}][{}] hop_count: {}", mt, i, j, hop_count);
-                                        run_with_hop_count = Some(hop_count);
+                                match fb_node.hop.clone() {
+                                    Some(hop) => {
+                                        // println!("[{}][{}][{}] hop: {}", mt, i, j, hop);
+                                        run_with_hop = Some(hop);
                                     }, None => { }
                                 }
                             }
                         }, None => { }
                     }
-                    match run_with_hop_count {
-                        Some(hop_count) => {
+                    match run_with_hop {
+                        Some(hop) => {
                             self.fb_nodes[mt][i][j].as_mut().unwrap().path_counter = 1;
                             let mut growing = BTreeSet::new();
                             growing.insert((mt, i, j));
-                            for required_hop in (1..hop_count).rev() {
+                            for required_hop in (1..hop).rev() {  // note: hop-1, hop-2, ..., 1
                                 let mut next_growing = BTreeSet::new();
                                 // println!("required_hop: {}, growing.len(): {}", required_hop, growing.len());
                                 for &(mtg, ig, jg) in growing.iter() {
@@ -341,9 +342,9 @@ impl FastBenchmark {
                                     }
                                     for &(mtp, ip, jp) in matches.iter() {
                                         let fb_node_peer = self.fb_nodes[mtp][ip][jp].as_mut().expect("exist");
-                                        match fb_node_peer.hop_front.clone().or(fb_node_peer.hop_right.clone()) {
-                                            Some(hop_count) => {
-                                                if hop_count == required_hop {
+                                        match fb_node_peer.hop.clone() {
+                                            Some(hop_peer) => {
+                                                if hop_peer == required_hop {
                                                     fb_node_peer.path_counter += path_counter;
                                                     next_growing.insert((mtp, ip, jp));
                                                 }
@@ -358,18 +359,79 @@ impl FastBenchmark {
                                 // println!("growing [{}][{}][{}]: path_counter {}", mtg, ig, jg, self.fb_nodes[mtg][ig][jg].as_ref().unwrap().path_counter);
                                 string_count += self.fb_nodes[mtg][ig][jg].as_ref().unwrap().path_counter;
                             }
-                            // println!("[{}][{}][{}] final growing.len(): {}, string_count: {}", mt, i, j, growing.len(), string_count);
+                            println!("[{}][{}][{}] final growing.len(): {}, string_count: {}", mt, i, j, growing.len(), string_count);
+                            self.fb_nodes[mt][i][j].as_mut().unwrap().string_count = string_count;
                         }, None => { }
                     }
                 }
             }
         }
         self.clear_path_counter();
+        // println!("starting_nodes: {:?}", starting_nodes);
+        self.starting_nodes = starting_nodes;
     }
 
-    /// error estimate
-    pub fn benchmark(&mut self) {
+    /// add a single error estimate for each left starting point
+    pub fn benchmark_once(&mut self, rng: &mut impl RngCore) {
+        let starting_nodes = &self.starting_nodes;
+        let use_weighted_path_sampling = self.use_weighted_path_sampling;
+        let use_weighted_assignment_sampling = self.use_weighted_assignment_sampling;
+        let assignment_sampling_number = self.assignment_sampling_number;
+        for &(mts, is, js) in starting_nodes.iter() {
+            // sample a path from (mts, is, js) to any end point, whether weighted sample or not
+            let hop = self.fb_nodes[mts][is][js].as_ref().unwrap().hop.unwrap();
+            let mut sampled_string: Vec<(usize, usize, usize)> = Vec::new();
+            let mut sampled_string_ps = 1.;
+            let mut selection = Vec::new();
+            selection.push(((mts, is, js), 1.));
+            for required_hop in (0..hop).rev() {  // note: hop-1, ..., 1, 0
+                // randomly choose one based on the weight
+                let &((mtc, ic, jc), ps) = selection.as_slice().choose_weighted(rng, |item| item.1).unwrap();
+                sampled_string_ps *= ps;
+                sampled_string.push((mtc, ic, jc));
+                // find next selection
+                if required_hop == 0 {  // no next selection, stop here
+                    break
+                }
+                selection.clear();
+                let mut weight_sum = 0.;  // to normalize weight so that large code distance wouldn't hit bound of f64 type
+                for (&(mtp, ip, jp), possible_match) in self.fb_nodes[mtc][ic][jc].as_ref().unwrap().matches.iter() {
+                    let fb_node_peer = self.fb_nodes[mtp][ip][jp].as_ref().expect("exist");
+                    match fb_node_peer.hop.clone() {
+                        Some(hop_peer) => {
+                            if hop_peer == required_hop {
+                                let weight = if use_weighted_path_sampling { possible_match.joint_probability } else { 1. };
+                                selection.push(((mtp, ip, jp), weight));
+                                weight_sum += weight;
+                            }
+                        }, None => { }
+                    }
+                }
+                for e in selection.iter_mut() {
+                    e.1 /= weight_sum;
+                }
+                // println!("{:?}", selection);
+            }
+            // given the sampled string, now calculate the logical error rate on this string
+            let fb_node = self.fb_nodes[mts][is][js].as_mut().unwrap();
+            let mut string_logical_error_rate = 0.;
+            // let mut erasure_selection = Vec::new();
+            // TODO build erasure selection
+            for erasure_count in 0..hop+1 {
+                let pauli_count = if (hop + 1 - erasure_count) % 2 == 0 {
+                    (hop + 1 - erasure_count) / 2
+                } else {
+                    (hop + 1 - erasure_count + 1) / 2
+                };
+                // println!("erasure_count: {}, pauli_count: {}", erasure_count, pauli_count);
+                assert!(erasure_count + pauli_count <= hop + 1, "should never happen");
 
+            }
+            fb_node.sampling_k += 1;
+            fb_node.sampling_sum_ps += sampled_string_ps;
+            fb_node.sampling_sum_elements += string_logical_error_rate / sampled_string_ps;
+            // println!("sampled_string_ps: {}, sampled_string: {:?}", sampled_string_ps, sampled_string);
+        }
     }
 
     pub fn debug_print(&self) {
@@ -379,7 +441,7 @@ impl FastBenchmark {
                     match element {
                         Some(ref fb_node) => {
                             // let t = Index::from_measurement_idx(mt, 0, 0).t;
-                            println!("[{}][{}][{}] right={:?} front={:?}", mt, i, j, fb_node.hop_right, fb_node.hop_front);
+                            println!("[{}][{}][{}] hop={:?} boundary_candidate={:?}", mt, i, j, fb_node.hop, fb_node.boundary_candidate);
                             if fb_node.boundary_joint_probability > 0. {  // print pauli and erasure boundaries
                                 println!("  Boundary joint probability: {}", fb_node.boundary_joint_probability);
                                 for possible_pauli in fb_node.pauli_boundaries.iter() {
@@ -419,16 +481,13 @@ impl FBNode {
             boundary_joint_probability: 0.,
             pauli_boundaries: Vec::new(),
             erasure_boundaries: Vec::new(),
-            hop_right: None,
-            hop_front: None,
-            weighted_path_sampling: true,
-            weighted_assignment_sampling: true,
+            hop: None,
             // internal state
-            possible_left_boundary: false,
-            possible_right_boundary: false,  // possible search for hop_right=Some(1)
-            possible_back_boundary: false,
-            possible_front_boundary: false,  // possible search for hop_front=Some(1)
+            boundary_candidate: None,
             string_count: 0,
+            sampling_k: 0,
+            sampling_sum_ps: 0.,
+            sampling_sum_elements: 0.,
             // temporary state
             path_counter: 0,
         }
@@ -457,6 +516,7 @@ impl PossibleMatch {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::rand::prelude::*;
 
     // use `cargo test fast_benchmark_1 -- --nocapture` to run specific test
 
@@ -473,7 +533,8 @@ mod tests {
         model.optimize_correction_pattern();
         model.build_exhausted_path_autotune();
         // run benchmark
-
+        let mut rng = thread_rng();
+        fast_benchmark.benchmark_once(&mut rng);
         
     }
 
