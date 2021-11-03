@@ -1560,6 +1560,7 @@ dependencies = [
  "lazy_static",
  "libc",
  "ndarray",
+ "num-integer",
  "num_cpus",
  "pbr",
  "petgraph",

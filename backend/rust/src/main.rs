@@ -35,6 +35,7 @@ extern crate union_find;
 extern crate derive_more;
 extern crate lazy_static;
 extern crate either;
+extern crate num_integer;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
