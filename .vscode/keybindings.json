@@ -1,0 +1,8 @@
+// this is an example of the key bindings, which should be added to user's own keybindings.json
+[
+    {
+        "key": "ctrl+h",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Build and View Gnuplot"
+    }
+]
