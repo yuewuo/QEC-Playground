@@ -42,17 +42,20 @@ use super::rand_core::{RngCore};
 use super::num_integer::binomial;
 
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct PossiblePauli {
     pub pauli_type: Either<ErrorType, CorrelatedErrorType>,
     pub pauli_position: (usize, usize, usize),
     pub probability: f64,
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct PossibleErasure {
     pub erasure_position: (usize, usize, usize),
     pub probability: f64,
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct PossibleMatch {
     pub pauli_matches: Vec<PossiblePauli>,
     pub pauli_joint_probability: f64,
@@ -81,6 +84,7 @@ enum AssignmentElementType {
     Erasure,
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct FBNode {
     pub mt: usize,
     pub i: usize,
@@ -105,6 +109,7 @@ pub struct FBNode {
     path_counter: usize,
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct FastBenchmark {
     pub fb_nodes: Vec< Vec< Vec< Option<FBNode> > > >,
     starting_nodes: Vec<(usize, usize, usize)>,
@@ -112,8 +117,6 @@ pub struct FastBenchmark {
     pub use_weighted_path_sampling: bool,
     pub use_weighted_assignment_sampling: bool,
     pub assignment_sampling_amount: usize,
-    /// fake decoding will always succeed when error is less than half
-    pub use_fake_decoding: bool,
 }
 
 impl FastBenchmark {
@@ -178,8 +181,7 @@ impl FastBenchmark {
             starting_nodes: Vec::new(),
             use_weighted_path_sampling: true,
             use_weighted_assignment_sampling: true,
-            assignment_sampling_amount: 100,
-            use_fake_decoding: true,
+            assignment_sampling_amount: 10,
         }
     }
 
@@ -396,7 +398,9 @@ impl FastBenchmark {
     }
 
     /// add a single error estimate for each left starting point
-    pub fn benchmark_once(&mut self, rng: &mut impl RngCore) {
+    pub fn benchmark_once<F>(&mut self, rng: &mut impl RngCore, mut decode: F)
+            where F: FnMut(Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>, usize) -> bool {
+            // Vec<(te, ie, je, pauli_or_erasure)>, string_d
         let starting_nodes = &self.starting_nodes;
         let use_weighted_path_sampling = self.use_weighted_path_sampling;
         let use_weighted_assignment_sampling = self.use_weighted_assignment_sampling;
@@ -510,6 +514,9 @@ impl FastBenchmark {
                     if erasure_count + pauli_count > hop + 1 || (erasure_count == 0 && pauli_count == 0) {
                         continue  // no need to actually sample, it's impossible to have this amount of errors simultaneously
                     }
+                    if erasure_count + 2 * pauli_count < hop - 1 {  // this kind of error is too small, not worth even trying
+                        continue
+                    }
                     let mut combinatorial_of_selection = binomial(full_erasure_selection.len(), erasure_count);
                     if erasure_count <= full_pauli_selection.len() && pauli_count <= full_pauli_selection.len() - erasure_count {
                         combinatorial_of_selection *= binomial(full_pauli_selection.len() - erasure_count, pauli_count);
@@ -541,7 +548,7 @@ impl FastBenchmark {
                             };
                             for &&(idx, string_element_type, weight, typed_joint_probability) in pauli_selection.iter() {
                                 sampling_ps *= weight;
-                                assignment.push((idx, string_element_type, AssignmentElementType::Erasure, typed_joint_probability));
+                                assignment.push((idx, string_element_type, AssignmentElementType::Pauli, typed_joint_probability));
                             }
                         }
                         let assignment = assignment;  // make it immutable
@@ -549,17 +556,45 @@ impl FastBenchmark {
                         assignment_sampling_s += 1;
                         assignment_sampling_sum_ps += sampling_ps;
                         let has_logical_error = {
-                            if self.use_fake_decoding {
-                                if erasure_count + 2 * pauli_count > hop + 1 {
-                                    true
-                                } else if erasure_count + 2 * pauli_count < hop + 1 {
-                                    false
-                                } else {
-                                    rng.next_u32() % 2 == 0  // fail half of the time
+                            let mut errors = Vec::new();
+                            for &(idx, string_element_type, assignment_element_type, _typed_joint_probability) in assignment.iter() {
+                                let (mt1, i1, j1) = sampled_string[idx];
+                                let fb_node = self.fb_nodes[mt1][i1][j1].as_ref().unwrap();
+                                match string_element_type {
+                                    StringElementType::Boundary => {
+                                        match assignment_element_type {
+                                            AssignmentElementType::Erasure => {
+                                                let possible_erasure = fb_node.erasure_boundaries.choose_weighted(rng, |item| item.probability).unwrap();
+                                                let (te, ie, je) = possible_erasure.erasure_position;
+                                                errors.push((te, ie, je, Either::Right(())));
+                                            }
+                                            AssignmentElementType::Pauli => {
+                                                let possible_pauli = fb_node.pauli_boundaries.choose_weighted(rng, |item| item.probability).unwrap();
+                                                let (te, ie, je) = possible_pauli.pauli_position;
+                                                errors.push((te, ie, je, Either::Left(possible_pauli.pauli_type.clone())));
+                                            }
+                                        }
+                                    },
+                                    StringElementType::MatchNext => {
+                                        let (mt2, i2, j2) = sampled_string[idx + 1];
+                                        let possible_match = fb_node.matches.get(&(mt2, i2, j2)).unwrap();
+                                        match assignment_element_type {
+                                            AssignmentElementType::Erasure => {
+                                                let possible_erasure = possible_match.erasure_matches.choose_weighted(rng, |item| item.probability).unwrap();
+                                                let (te, ie, je) = possible_erasure.erasure_position;
+                                                errors.push((te, ie, je, Either::Right(())));
+                                            }
+                                            AssignmentElementType::Pauli => {
+                                                let possible_pauli = possible_match.pauli_matches.choose_weighted(rng, |item| item.probability).unwrap();
+                                                let (te, ie, je) = possible_pauli.pauli_position;
+                                                errors.push((te, ie, je, Either::Left(possible_pauli.pauli_type.clone())));
+                                            }
+                                        }
+                                    },
                                 }
-                            } else {
-                                true  // run real decoding
                             }
+                            let string_d = hop + 1;
+                            decode(errors, string_d)  // run real decoding
                         };
                         if has_logical_error {
                             let mut physical_error_rate = 1.;
@@ -680,10 +715,32 @@ impl PossibleMatch {
     }
 }
 
+/// fake decoding will always succeed when error is less than half (or more precisely 2s + t < d given s pauli errors and t erasure errors)
+pub fn fake_decoding(errors: Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>, string_d: usize) -> bool {
+    let mut erasure_count = 0;
+    let mut pauli_count = 0;
+    for (_te, _ie, _je, pauli_or_erasure) in errors.iter() {
+        match pauli_or_erasure {
+            Either::Left(_) => {
+                pauli_count += 1;
+            }
+            Either::Right(_) => {
+                erasure_count += 1;
+            }
+        }
+    }
+    if erasure_count + 2 * pauli_count > string_d {
+        true
+    } else if erasure_count + 2 * pauli_count < string_d {
+        false
+    } else {
+        rand::random()  // fail half of the time
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::super::rand::prelude::*;
 
     // use `cargo test fast_benchmark_1 -- --nocapture` to run specific test
 
@@ -694,16 +751,15 @@ mod tests {
         let pe = 0.02;
         let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(d, d);
         model.set_individual_error_with_perfect_initialization_with_erasure(p/3., p/3., p/3., pe);
-        let mut fast_benchmark = model.build_graph_and_build_fast_benchmark();
+        let mut fast_benchmark = model.build_graph();
         fast_benchmark.assignment_sampling_amount = 3;
-        fast_benchmark.use_fake_decoding = true;
         fast_benchmark.prepare();
         // fast_benchmark.debug_print();
         model.optimize_correction_pattern();
         model.build_exhausted_path_autotune();
         // run benchmark
         let mut rng = thread_rng();
-        fast_benchmark.benchmark_once(&mut rng);
+        fast_benchmark.benchmark_once(&mut rng, fake_decoding);
     }
 
     #[test]
@@ -713,9 +769,8 @@ mod tests {
         let pe = 0.0;
         let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(d, d);
         model.set_individual_error_with_perfect_initialization_with_erasure(p/3., p/3., p/3., pe);
-        let mut fast_benchmark = model.build_graph_and_build_fast_benchmark();
+        let mut fast_benchmark = model.build_graph();
         fast_benchmark.assignment_sampling_amount = 10;
-        fast_benchmark.use_fake_decoding = true;
         fast_benchmark.prepare();
         // fast_benchmark.debug_print();
         model.optimize_correction_pattern();
@@ -723,7 +778,7 @@ mod tests {
         // run benchmark
         let mut rng = thread_rng();
         for _ in 0..100 {
-            fast_benchmark.benchmark_once(&mut rng);
+            fast_benchmark.benchmark_once(&mut rng, fake_decoding);
         }
         println!("estimated logical error rate: {}", fast_benchmark.logical_error_rate());
     }

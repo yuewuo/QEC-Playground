@@ -1033,10 +1033,7 @@ impl PlanarCodeModel {
         (sparse_correction, measurement_errors)
     }
     /// corresponds to `build_graph_given_error_rate` in `FaultTolerantView.vue`
-    pub fn build_graph(&mut self) {
-        self.build_graph_and_build_fast_benchmark();
-    }
-    pub fn build_graph_and_build_fast_benchmark(&mut self) -> FastBenchmark {
+    pub fn build_graph(&mut self) -> FastBenchmark {
         let mut fast_benchmark = FastBenchmark::new(&self);
         let mut all_possible_errors: Vec<Either<ErrorType, CorrelatedErrorType>> = Vec::new();
         for error_type in ErrorType::all_possible_errors().drain(..) {

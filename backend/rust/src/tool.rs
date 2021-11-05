@@ -22,6 +22,8 @@ use super::union_find_decoder;
 use super::distributed_uf_decoder;
 use super::ndarray;
 use super::serde_json::{json};
+use super::either::Either;
+use super::fast_benchmark;
 use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
@@ -83,11 +85,17 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
                 Ok(pes) => serde_json::from_str(&pes).expect("pes should be [pe1,pe2,pe3,...,pem]"),
                 Err(_) => vec![0.; ps.len()],  // by default no erasure errors
             };
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
+            let mut max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
+            if max_N == 0 {
+                max_N = usize::MAX;
+            }
+            let mut min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
+            if min_error_cases == 0 {
+                min_error_cases = usize::MAX;
+            }
             let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
             let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("boundary".to_string());
-            let mini_sync_time = value_t!(matches, "mini_sync_time", f64).unwrap_or(0.1);  // default to 0.1s
+            let mini_sync_time = value_t!(matches, "mini_sync_time", f64).unwrap_or(0.5);  // default to 0.5s
             let autotune = ! matches.is_present("no_autotune");  // default autotune is enabled
             let rotated_planar_code = matches.is_present("rotated_planar_code");  // default use standard planar code
             let ignore_6_neighbors = matches.is_present("ignore_6_neighbors");  // default use 12 neighbors version
@@ -113,11 +121,15 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let detailed_runtime_statistics = matches.is_present("detailed_runtime_statistics");
             let log_error_pattern_into_statistics_when_has_logical_error = matches.is_present("log_error_pattern_into_statistics_when_has_logical_error");
             let time_budget = value_t!(matches, "time_budget", f64).ok();
+            let use_fast_benchmark = matches.is_present("use_fast_benchmark");
+            let fast_benchmark_disable_additional_error = matches.is_present("fast_benchmark_disable_additional_error");
+            let fast_benchmark_use_fake_decoder = matches.is_present("fast_benchmark_use_fake_decoder");
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight
                 , use_combined_probability, error_model, error_model_configuration, no_stop_if_next_model_is_not_prepared, log_runtime_statistics
-                , detailed_runtime_statistics, log_error_pattern_into_statistics_when_has_logical_error, time_budget);
+                , detailed_runtime_statistics, log_error_pattern_into_statistics_when_has_logical_error, time_budget, use_fast_benchmark
+                , fast_benchmark_disable_additional_error, fast_benchmark_use_fake_decoder);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -518,11 +530,20 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , perfect_initialization: bool, shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType
         , max_half_weight: usize, use_combined_probability: bool, error_model: Option<ErrorModel>, error_model_configuration: Option<serde_json::Value>
         , no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>, detailed_runtime_statistics: bool
-        , log_error_pattern_into_statistics_when_has_logical_error: bool, time_budget: Option<f64>) {
+        , log_error_pattern_into_statistics_when_has_logical_error: bool, time_budget: Option<f64>, use_fast_benchmark: bool
+        , fast_benchmark_disable_additional_error: bool, fast_benchmark_use_fake_decoder: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
     }
+    // check fast benchmark parameters
+    if fast_benchmark_disable_additional_error || fast_benchmark_disable_additional_error {
+        assert!(use_fast_benchmark, "fast benchmark must be enabled to use additional parameters");
+    }
+    if fast_benchmark_use_fake_decoder {
+        assert!(fast_benchmark_disable_additional_error, "fake decoder only works when the additional error is disabled");
+    }
+    // create runtime statistics file of specified
     let log_runtime_statistics_file = log_runtime_statistics.map(|filename| 
         Arc::new(Mutex::new(File::create(filename.as_str()).expect("cannot create file"))));
     let fixed_configuration = json!({
@@ -549,6 +570,11 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         "error_model": format!("{:?}", error_model),
         "no_stop_if_next_model_is_not_prepared": no_stop_if_next_model_is_not_prepared,
         "detailed_runtime_statistics": detailed_runtime_statistics,
+        "log_error_pattern_into_statistics_when_has_logical_error": log_error_pattern_into_statistics_when_has_logical_error,
+        "time_budget": format!("{:?}", time_budget),
+        "use_fast_benchmark": use_fast_benchmark,
+        "fast_benchmark_disable_additional_error": fast_benchmark_disable_additional_error,
+        "fast_benchmark_use_fake_decoder": fast_benchmark_use_fake_decoder,
     });
     match &log_runtime_statistics_file {  // append runtime statistics data
         Some(log_runtime_statistics_file) => {
@@ -639,7 +665,9 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             },
             None => { }
         }
-        model.build_graph();
+        let mut fast_benchmark = model.build_graph();
+        // TODO: accept more parameters
+        fast_benchmark.prepare();
         if ignore_6_neighbors {
             model.iterate_snapshot_mut(|t, i, j, node| {
                 if node.edges.len() == 12 {
@@ -666,7 +694,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 model.build_exhausted_path_equally_weighted();
             }
         }
-        (model, model_error)
+        (model, model_error, fast_benchmark)
     });
     let precomputed_model = Arc::new(Mutex::new(None));
     for i in 0..configurations_len {
@@ -690,7 +718,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             let mut precomputed_model = precomputed_model.lock().unwrap();
             *precomputed_model = Some((*compute_model)(di, dj, MeasurementRounds, p, pe));
         }
-        let (model, model_error) = {  // must already prepared the model, and will take the value out of `precomputed_model`
+        let (model, model_error, fast_benchmark) = {  // must already prepared the model, and will take the value out of `precomputed_model`
             precomputed_model.lock().unwrap().take().expect("already prepared the model")
         };
         // create threads to run experiment
@@ -704,23 +732,32 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             let compute_model = Arc::clone(&compute_model);
             // create a single thread to prepare next model
             precomputing_model_thread = Some(std::thread::spawn(move || {
-                let (model, model_error) = (*compute_model)(di_next, dj_next, measurement_rounds_next, p_next, pe_next);
+                let (model, model_error, fast_benchmark) = (*compute_model)(di_next, dj_next, measurement_rounds_next, p_next, pe_next);
                 // lock only after model is built, otherwise it will block experimenting threads
                 let mut precomputed_model = precomputed_model.lock().unwrap();
-                *precomputed_model = Some((model, model_error));
+                *precomputed_model = Some((model, model_error, fast_benchmark));
             }));
         }
         let mut pb = ProgressBar::on(std::io::stderr(), max_N as u64);
         pb.set(0);
         let mut handlers = Vec::new();
         let model_decoder = Arc::new(model);  // only for decode, so that you're confident I'm not cheating by using information of original errors
-        for _i in 0..parallel {
+        let fast_benchmark_results = Arc::new(Mutex::new(Vec::new()));  // (result, updated)
+        {
+            let mut fast_benchmark_results = fast_benchmark_results.lock().unwrap();
+            for _ in 0..parallel {
+                fast_benchmark_results.push((0., false));
+            }
+        }
+        for parallel_idx in 0..parallel {
             let total_rounds = Arc::clone(&total_rounds);
             let qec_failed = Arc::clone(&qec_failed);
             let external_termination = Arc::clone(&external_termination);
             let precomputed_model = Arc::clone(&precomputed_model);
             let mut model_error = model_error.clone();  // only for generating error and validating correction
             let model_decoder = Arc::clone(&model_decoder);  // only for decode, so that you're confident I'm not cheating by using information of original errors
+            let mut fast_benchmark = fast_benchmark.clone();
+            let fast_benchmark_results = Arc::clone(&fast_benchmark_results);
             let log_runtime_statistics_file = log_runtime_statistics_file.clone();
             let validate_layer: isize = match validate_layer.as_str() {
                 "boundary" => -2,
@@ -733,6 +770,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             handlers.push(std::thread::spawn(move || {
                 // println!("thread {}", _i);
                 let mut rng = thread_rng();
+                let mut rng_fast_benchmark = thread_rng();
                 let mut current_external_termination = {
                     *external_termination.lock().unwrap()
                 };
@@ -753,74 +791,95 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                     let mut log_runtime_statistics_buffer = String::new();
                     let mut mini_batch = 0;
                     let mini_batch_begin = Instant::now();
-                    // run for at least `mini_sync_time` before sync with outside, to avoid frequent 
+                    // run for at least `mini_sync_time` before sync with outside, to avoid frequent lock
                     while mini_batch_begin.elapsed().as_secs_f64() < mini_sync_time {
-                        mini_batch += 1;
-                        let error_count = model_error.generate_random_errors(|| rng.gen::<f64>());
-                        if error_count == 0 {
-                            continue
-                        }
-                        model_error.propagate_error();
-                        let measurement = model_error.generate_measurement();
-                        let detected_erasures = model_error.generate_detected_erasures();
-                        // use `model_decoder` for decoding, so that it is blind to the real error information
-                        let (correction, mut runtime_statistics) = if !bypass_correction {
-                            match decoder_type {
-                                DecoderType::MinimumWeightPerfectMatching => model_decoder.decode_MWPM(&measurement),
-                                DecoderType::UnionFind => model_decoder.decode_UnionFind(&measurement, &detected_erasures
-                                    , max_half_weight, false, detailed_runtime_statistics),
-                                DecoderType::DistributedUnionFind => model_decoder.decode_UnionFind(&measurement, &detected_erasures
-                                    , max_half_weight, true, detailed_runtime_statistics),
-                                // _ => panic!("unsupported decoder type"),
+                        let mut decode_and_update = |errors: Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>, _: usize| -> bool {
+                            mini_batch += 1;
+                            let mut error_count = model_error.generate_random_errors(|| rng.gen::<f64>());
+                            if !errors.is_empty() {
+                                // TODO add error as specified in `errors`
                             }
-                        } else {
-                            (model_decoder.generate_default_correction(), json!({}))
+                            if error_count == 0 {
+                                return false;
+                            }
+                            model_error.propagate_error();
+                            let measurement = model_error.generate_measurement();
+                            let detected_erasures = model_error.generate_detected_erasures();
+                            // use `model_decoder` for decoding, so that it is blind to the real error information
+                            let (correction, mut runtime_statistics) = if !bypass_correction {
+                                match decoder_type {
+                                    DecoderType::MinimumWeightPerfectMatching => model_decoder.decode_MWPM(&measurement),
+                                    DecoderType::UnionFind => model_decoder.decode_UnionFind(&measurement, &detected_erasures
+                                        , max_half_weight, false, detailed_runtime_statistics),
+                                    DecoderType::DistributedUnionFind => model_decoder.decode_UnionFind(&measurement, &detected_erasures
+                                        , max_half_weight, true, detailed_runtime_statistics),
+                                    // _ => panic!("unsupported decoder type"),
+                                }
+                            } else {
+                                (model_decoder.generate_default_correction(), json!({}))
+                            };
+                            let mut count_as_error = false;
+                            if validate_layer == -2 {
+                                let validation_ret = model_error.validate_correction_on_boundary(&correction);
+                                match validation_ret {
+                                    Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { if !only_count_logical_z {
+                                        count_as_error = true;
+                                    } },
+                                    Err(ftqec::ValidationFailedReason::ZLogicalError(_, _, _)) => { if !only_count_logical_x {
+                                        count_as_error = true;
+                                    } },
+                                    Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => {
+                                        count_as_error = true;
+                                    },
+                                    _ => {},
+                                }
+                            } else if validate_layer == -1 {
+                                if model_error.validate_correction_on_all_layers(&correction).is_err() {
+                                    count_as_error = true;
+                                }
+                            } else {
+                                let validation_ret = model_error.validate_correction_on_t_layer(&correction, validate_layer as usize);
+                                match validation_ret {
+                                    Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { if !only_count_logical_z {
+                                        count_as_error = true;
+                                    } },
+                                    Err(ftqec::ValidationFailedReason::ZLogicalError(_, _, _)) => { if !only_count_logical_x {
+                                        count_as_error = true;
+                                    } },
+                                    Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => {
+                                        count_as_error = true;
+                                    },
+                                    _ => {},
+                                }
+                            }
+                            if count_as_error {
+                                mini_qec_failed += 1;
+                            }
+                            if log_runtime_statistics_file.is_some() {
+                                runtime_statistics["error"] = json!(count_as_error);  // add result into runtime statistics information
+                                if log_error_pattern_into_statistics_when_has_logical_error && count_as_error {
+                                    runtime_statistics["error_pattern"] = json!(model_error.get_all_qubit_errors_vec());
+                                }
+                                log_runtime_statistics_buffer.push_str(&runtime_statistics.to_string());
+                                log_runtime_statistics_buffer.push_str(&"\n".to_string())
+                            }
+                            count_as_error
                         };
-                        let mut count_as_error = false;
-                        if validate_layer == -2 {
-                            let validation_ret = model_error.validate_correction_on_boundary(&correction);
-                            match validation_ret {
-                                Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { if !only_count_logical_z {
-                                    count_as_error = true;
-                                } },
-                                Err(ftqec::ValidationFailedReason::ZLogicalError(_, _, _)) => { if !only_count_logical_x {
-                                    count_as_error = true;
-                                } },
-                                Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => {
-                                    count_as_error = true;
-                                },
-                                _ => {},
-                            }
-                        } else if validate_layer == -1 {
-                            // model_error.validate_correction_on_boundary(&correction);
-                            if model_error.validate_correction_on_all_layers(&correction).is_err() {
-                                count_as_error = true;
+                        if use_fast_benchmark {
+                            if fast_benchmark_use_fake_decoder {
+                                fast_benchmark.benchmark_once(&mut rng_fast_benchmark, |errors, string_d| {
+                                    mini_batch += 1;
+                                    let count_as_error = fast_benchmark::fake_decoding(errors, string_d);
+                                    if count_as_error {
+                                        mini_qec_failed += 1;
+                                    }
+                                    count_as_error
+                                });
+                            } else {
+                                fast_benchmark.benchmark_once(&mut rng_fast_benchmark, decode_and_update);
                             }
                         } else {
-                            let validation_ret = model_error.validate_correction_on_t_layer(&correction, validate_layer as usize);
-                            match validation_ret {
-                                Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { if !only_count_logical_z {
-                                    count_as_error = true;
-                                } },
-                                Err(ftqec::ValidationFailedReason::ZLogicalError(_, _, _)) => { if !only_count_logical_x {
-                                    count_as_error = true;
-                                } },
-                                Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => {
-                                    count_as_error = true;
-                                },
-                                _ => {},
-                            }
-                        }
-                        if count_as_error {
-                            mini_qec_failed += 1;
-                        }
-                        runtime_statistics["error"] = json!(count_as_error);  // add result into runtime statistics information
-                        if log_error_pattern_into_statistics_when_has_logical_error && count_as_error {
-                            runtime_statistics["error_pattern"] = json!(model_error.get_all_qubit_errors_vec());
-                        }
-                        if log_runtime_statistics_file.is_some() {
-                            log_runtime_statistics_buffer.push_str(&runtime_statistics.to_string());
-                            log_runtime_statistics_buffer.push_str(&"\n".to_string())
+                            decode_and_update(Vec::new(), 0);
                         }
                     }
                     // sync data with outside
@@ -837,6 +896,10 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                         *qec_failed += mini_qec_failed;
                         *qec_failed
                     };
+                    if use_fast_benchmark {
+                        let mut fast_benchmark_results = fast_benchmark_results.lock().unwrap();
+                        fast_benchmark_results[parallel_idx] = (fast_benchmark.logical_error_rate(), true);
+                    }
                     keep_running_next_model_not_prepared = if no_stop_if_next_model_is_not_prepared {
                         i + 1 < configurations_len && precomputed_model.lock().unwrap().is_none()
                     } else {
@@ -854,6 +917,31 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             }));
         }
         let round_begin = Instant::now();
+        let generate_fast_benchmark_print = |total_rounds: usize| {
+            if !use_fast_benchmark {
+                return format!("");
+            }
+            let fast_benchmark_results = {
+                let fast_benchmark_results = fast_benchmark_results.lock().unwrap();
+                fast_benchmark_results.clone()
+            };
+            let mut logical_error_rates = Vec::new();
+            for &(logical_error_rate, updated) in fast_benchmark_results.iter() {
+                if updated {
+                    logical_error_rates.push(logical_error_rate);
+                }
+            }
+            if logical_error_rates.is_empty() {
+                return format!("FB <waiting>");
+            }
+            // calculate mean and stddev of these logical_error_rates
+            let average_logical_error_rate = logical_error_rates.iter().sum::<f64>() / logical_error_rates.len() as f64;
+            let variance = logical_error_rates.iter().map(|value| (average_logical_error_rate - *value).powi(2)).sum::<f64>()
+                / logical_error_rates.len() as f64;
+            let confidence_interval_95_percent = 1.96 * variance.sqrt() / average_logical_error_rate;
+            format!("FB {} {} {} {} {} {} {} {:.1e}", p, pe, di, dj, MeasurementRounds, total_rounds, average_logical_error_rate
+                , confidence_interval_95_percent)
+        };
         loop {
             let external_termination = {
                 let mut external_termination = external_termination.lock().unwrap();
@@ -868,6 +956,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             };
             let total_rounds = *total_rounds.lock().unwrap();
             let qec_failed = *qec_failed.lock().unwrap();
+            let fast_benchmark_print = generate_fast_benchmark_print(total_rounds);
             let keep_running_next_model_not_prepared = if no_stop_if_next_model_is_not_prepared {
                 i + 1 < configurations_len && precomputed_model.lock().unwrap().is_none()
             } else {
@@ -878,8 +967,12 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             }
             let error_rate = qec_failed as f64 / total_rounds as f64;
             let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_rounds as f64)).sqrt() / error_rate;
-            pb.message(format!("{} {} {} {} {} {} {} {:.1e} {} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj
-                , confidence_interval_95_percent, pe).as_str());
+            if use_fast_benchmark {
+                pb.message(format!("{} ", fast_benchmark_print).as_str());
+            } else {
+                pb.message(format!("{} {} {} {} {} {} {} {:.1e} {} ", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj
+                    , confidence_interval_95_percent, pe).as_str());
+            }
             // estimate running time cleverer
             let ratio_total_rounds = (total_rounds as f64) / (max_N as f64);
             let ratio_qec_failed = (qec_failed as f64) / (min_error_cases as f64);
@@ -892,7 +985,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 pb.total = if min_error_cases as u64 > progress { min_error_cases as u64 } else { progress };
                 pb.set(progress);
             }
-            std::thread::sleep(std::time::Duration::from_millis(200));
+            std::thread::sleep(std::time::Duration::from_millis(300));
         }
         pb.total = *total_rounds.lock().unwrap() as u64;
         pb.finish();
@@ -901,9 +994,14 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         }
         let total_rounds = *total_rounds.lock().unwrap();
         let qec_failed = *qec_failed.lock().unwrap();
+        let fast_benchmark_print = generate_fast_benchmark_print(total_rounds);
         let error_rate = qec_failed as f64 / total_rounds as f64;
         let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_rounds as f64)).sqrt() / error_rate;
-        println!("{} {} {} {} {} {} {} {:.1e} {}", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj, confidence_interval_95_percent, pe);
+        if use_fast_benchmark {
+            println!("{}", fast_benchmark_print);
+        } else {
+            println!("{} {} {} {} {} {} {} {:.1e} {}", p, di, MeasurementRounds, total_rounds, qec_failed, error_rate, dj, confidence_interval_95_percent, pe);
+        }
         match precomputing_model_thread {
             Some(precomputing_model_thread) => precomputing_model_thread.join().unwrap(),
             None => { }
