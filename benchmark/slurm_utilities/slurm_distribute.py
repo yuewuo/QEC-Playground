@@ -83,8 +83,9 @@ def slurm_distribute_wrap(program):
                     shutil.rmtree(slurm_jobs_folder)
                 os.makedirs(slurm_jobs_folder)
                 parameters = [f"--job-name={job_name}", f"--time={SLURM_DISTRIBUTE_TIME}", f"--mem={SLURM_DISTRIBUTE_MEM_PER_TASK}", "--mail-type=ALL", "--nodes=1", "--ntasks=1"
-                    , f"--cpus-per-task={SLURM_DISTRIBUTE_CPUS_PER_TASK}", f"--array=0-{job_count-1}", f'--out="{os.path.join(slurm_jobs_folder, "slurm-%a.out")}"'
-                    , f'--error="{os.path.join(slurm_jobs_folder, "slurm-%a.err")}"']
+                    , f"--cpus-per-task={SLURM_DISTRIBUTE_CPUS_PER_TASK}", f"--array=0-{job_count-1}"]
+                parameters.append(f'--out="{os.path.join(slurm_jobs_folder, "%a.jobout")}"')
+                parameters.append(f'--error="{os.path.join(slurm_jobs_folder, "%a.joberror")}"')
                 if SLURM_USE_SCAVENGE_PARTITION:
                     parameters.append(f"--requeue")
                     parameters.append(f"--partition=scavenge")
@@ -110,11 +111,11 @@ def slurm_distribute_wrap(program):
                     job_script_sbatch_content += f'if [ "$SLURM_ARRAY_TASK_ID" == "0" ];\n'
                     job_script_sbatch_content += f'then\n'
                     for idx, command in enumerate(slurm_commands_vec):
-                        job_script_sbatch_content += f'    {stringify_commands[idx]} > {os.path.join(slurm_jobs_folder, f"{idx}.jobout")} || exit {ERRCODE};\n'
+                        job_script_sbatch_content += f'    {stringify_commands[idx]} || exit {ERRCODE};\n'
                     job_script_sbatch_content += f'fi\n'
                 else:
                     for idx, command in enumerate(slurm_commands_vec):
-                        job_script_sbatch_content += f'if [ "$SLURM_ARRAY_TASK_ID" == "{idx}" ]; then {stringify_commands[idx]} > {os.path.join(slurm_jobs_folder, f"{idx}.jobout")} 2> {os.path.join(slurm_jobs_folder, f"{idx}.joberror")} || exit {ERRCODE}; fi\n'
+                        job_script_sbatch_content += f'if [ "$SLURM_ARRAY_TASK_ID" == "{idx}" ]; then {stringify_commands[idx]} || exit {ERRCODE}; fi\n'
                 job_script_sbatch_content += "\n"
                 with open(job_script_sbatch_path, "w", encoding="utf8") as f:
                     f.write(job_script_sbatch_content)
