@@ -30,7 +30,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
     results = []
     for di in di_vec:
         local_results = []
-        filename = os.path.join(os.path.dirname(__file__), f"d{di}.txt")
+        filename = os.path.join(os.path.dirname(__file__), f"d_{di}.txt")
         for p in p_vec:
             p_pauli = p * 0.05
             p_erasure = p * 0.95

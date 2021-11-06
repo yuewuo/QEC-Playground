@@ -14,5 +14,10 @@
         "ringbuf",
         "sbatch",
         "vec"
-    ]
+    ],
+    "triggerTaskOnSave.tasks": {
+        "Build Gnuplot": [
+            "*.gp",
+        ],
+    }
 }

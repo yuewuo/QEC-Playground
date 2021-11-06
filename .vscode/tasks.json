@@ -4,21 +4,30 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			// NOT WORKING! DON't know why... It cannot generate pdf although eps is updated, nor can it open pdf in GUI
-			// a workaround is to open eps file using `refreshable-pdfopen xxx.eps` and then use this task with shortcut "Ctrl+G"
-			//    but just remember, since it's not updating pdf file, when using in paper, be careful to update them!
-
-			"label": "Build and View Gnuplot",
-			// "type": "shell",
-			// "command": "echo ${fileDirname}",
+			"label": "Build Gnuplot",
 			"command": "bash",
-			// "command": "gnuplot ${fileBasenameNoExtension}.gp && refreshable-pdfopen ${fileBasenameNoExtension}.pdf",
-			// "args": ["-c", "gnuplot ${fileBasenameNoExtension}.gp && refreshable-pdfopen ${fileBasenameNoExtension}.pdf"],
 			"args": ["-c", "gnuplot ${fileBasenameNoExtension}.gp"],
 			"presentation": {
-				"reveal": "always",
+				"reveal": "silent",
+				"revealProblems": "onProblem",
 				"panel": "dedicated",
-				"clear": true
+				"clear": true,
+				"close": false
+			},
+			"options": {
+				"cwd": "${fileDirname}"
+			}
+		},
+		{
+			"label": "View Gnuplot",
+			"command": "bash",
+			"args": ["-c", "evince ${fileBasenameNoExtension}.pdf"],
+			"presentation": {
+				"reveal": "silent",
+				"revealProblems": "onProblem",
+				"panel": "dedicated",
+				"clear": true,
+				"close": true
 			},
 			"options": {
 				"cwd": "${fileDirname}"

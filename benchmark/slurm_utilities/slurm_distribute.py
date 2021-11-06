@@ -1,6 +1,23 @@
 import os, sys, subprocess, shutil, shlex, time, stat
 from datetime import datetime
 
+if 'SLURM_HELP' in os.environ:
+    OKBLUE = '\033[94m'
+    WARNING = '\033[93m'
+    ENDC = '\033[0m'
+    print(f"Slurm Distributed")
+    print(f"  by Yue Wu (yue.wu@yale.edu)")
+    print(f"Options (only with slurm):")
+    print(f"  {OKBLUE}DEBUG_USING_INTERACTIVE_PARTITION{ENDC} : use interactive session, which is usually faster to get the first (and only) session")
+    print(f"  {OKBLUE}SLURM_USE_SCAVENGE_PARTITION{ENDC} : use scavenge partition can leverage more cores and use less fair-share points")
+    print(f"                                   but depending on the availability of machines, it's unclear whether this will speed up")
+    print(f"Options (any machine):")
+    print(f"  {WARNING}ONLY_PRINT_COMMANDS{ENDC} : to print command only and then exit")
+    print(f"  {WARNING}SLURM_USE_EXISTING_DATA{ENDC} : use existing data to run the script")
+    print(f"")
+    print(f"For more details, please read the script file: {__file__}")
+    print(f"(note: to run normally, you must delete SLURM_HELP in your env variable)")
+    exit(0)
 
 DEBUG_USING_INTERACTIVE_PARTITION = False  # only enable while debugging
 
@@ -9,19 +26,19 @@ NODE_BLACK_LIST = ["p08r07n[01-08]", "p09r11n25"]  # these nodes fails
 
 # utility tool
 ONLY_PRINT_COMMANDS = False
-if 'ONLY_PRINT_COMMANDS' in os.environ and os.environ["ONLY_PRINT_COMMANDS"] == "TRUE":
+if 'ONLY_PRINT_COMMANDS' in os.environ and os.environ["ONLY_PRINT_COMMANDS"] != "":
     ONLY_PRINT_COMMANDS = True
 
 # check for slurm flags in environment
 SLURM_DISTRIBUTE_ENABLED = False
 SLURM_USE_EXISTING_DATA = False
 SLURM_USE_SCAVENGE_PARTITION = False
-if 'SLURM_USE_EXISTING_DATA' in os.environ and os.environ["SLURM_USE_EXISTING_DATA"] == "TRUE":
+if 'SLURM_USE_EXISTING_DATA' in os.environ and os.environ["SLURM_USE_EXISTING_DATA"] != "":
     SLURM_USE_EXISTING_DATA = True
     SLURM_DISTRIBUTE_ENABLED = True  # always use slurm workflow
-if 'SLURM_DISTRIBUTE_ENABLED' in os.environ and os.environ["SLURM_DISTRIBUTE_ENABLED"] == "TRUE":
+if 'SLURM_DISTRIBUTE_ENABLED' in os.environ and os.environ["SLURM_DISTRIBUTE_ENABLED"] != "":
     SLURM_DISTRIBUTE_ENABLED = True
-if 'SLURM_USE_SCAVENGE_PARTITION' in os.environ and os.environ["SLURM_USE_SCAVENGE_PARTITION"] == "TRUE":
+if 'SLURM_USE_SCAVENGE_PARTITION' in os.environ and os.environ["SLURM_USE_SCAVENGE_PARTITION"] != "":
     SLURM_USE_SCAVENGE_PARTITION = True
 
 if SLURM_DISTRIBUTE_ENABLED:
