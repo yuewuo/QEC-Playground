@@ -76,5 +76,8 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
 
         results.append("")
 
+    if slurm_commands_vec is not None:
+        return
+
     print("\n\n")
     print("\n".join(results))

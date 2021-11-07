@@ -401,7 +401,7 @@ impl FastBenchmark {
                                 // println!("growing [{}][{}][{}]: path_counter {}", mtg, ig, jg, self.fb_nodes[mtg][ig][jg].as_ref().unwrap().path_counter);
                                 string_count += self.fb_nodes[mtg][ig][jg].as_ref().unwrap().path_counter;
                             }
-                            println!("[{}][{}][{}] final growing.len(): {}, string_count: {}", mt, i, j, growing.len(), string_count);
+                            // println!("[{}][{}][{}] final growing.len(): {}, string_count: {}", mt, i, j, growing.len(), string_count);
                             self.fb_nodes[mt][i][j].as_mut().unwrap().string_count = string_count;
                         }, None => { }
                     }
