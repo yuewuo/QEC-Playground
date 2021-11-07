@@ -23,17 +23,14 @@ plot "results.txt" using 1:2 with linespoints lt rgb "red" linewidth 5 pointtype
     "results.txt" using 1:4 with linespoints lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 title "theoretical worst = d * (3d + 6)",\
     "budget.txt" using 1:2 with linespoints lt rgb "dark-yellow" linewidth 5 pointtype 3 pointsize 1.5 title "cycle budget (10MHz, 1.8us measurement)"
 
-set output '|ps2pdf -dEPSCrop clock_cycle.eps clock_cycle.pdf'
-replot
+system("ps2pdf -dEPSCrop clock_cycle.eps clock_cycle.pdf")
 
 set size 1,0.75
 set output "clock_cycle_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop clock_cycle_w.eps clock_cycle_w.pdf'
-replot
+system("ps2pdf -dEPSCrop clock_cycle_w.eps clock_cycle_w.pdf")
 
 set size 1,0.6
 set output "clock_cycle_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop clock_cycle_w_w.eps clock_cycle_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop clock_cycle_w_w.eps clock_cycle_w_w.pdf")

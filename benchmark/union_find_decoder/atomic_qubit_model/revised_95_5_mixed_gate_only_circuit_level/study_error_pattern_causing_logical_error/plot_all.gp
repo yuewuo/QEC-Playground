@@ -40,17 +40,14 @@ plot "data_d_9.txt" using 1:3 smooth freq with boxes notitle
 
 unset multiplot
 
-set output '|ps2pdf -dEPSCrop plot_all.eps plot_all.pdf'
-replot
+system("ps2pdf -dEPSCrop plot_all.eps plot_all.pdf")
 
 # set size 1,0.75
 # set output "plot_all_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop plot_all_w.eps plot_all_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop plot_all_w.eps plot_all_w.pdf")
 
 # set size 1,0.6
 # set output "plot_all_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop plot_all_w_w.eps plot_all_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop plot_all_w_w.eps plot_all_w_w.pdf")

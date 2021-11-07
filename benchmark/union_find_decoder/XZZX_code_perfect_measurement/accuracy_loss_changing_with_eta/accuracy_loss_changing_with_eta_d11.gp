@@ -49,17 +49,14 @@ set output "accuracy_loss_changing_with_eta_d11.eps"
 plot "mwpm_d11.txt" using 1:7 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "MWPM Decoder",\
     "uf_d11.txt" using 1:6 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "UnionFind Decoder"
 
-set output '|ps2pdf -dEPSCrop accuracy_loss_changing_with_eta_d11.eps accuracy_loss_changing_with_eta_d11.pdf'
-replot
+system("ps2pdf -dEPSCrop accuracy_loss_changing_with_eta_d11.eps accuracy_loss_changing_with_eta_d11.pdf")
 
 set size 1,0.75
 set output "accuracy_loss_changing_with_eta_d11_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop accuracy_loss_changing_with_eta_d11_w.eps accuracy_loss_changing_with_eta_d11_w.pdf'
-replot
+system("ps2pdf -dEPSCrop accuracy_loss_changing_with_eta_d11_w.eps accuracy_loss_changing_with_eta_d11_w.pdf")
 
 set size 1,0.6
 set output "accuracy_loss_changing_with_eta_d11_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop accuracy_loss_changing_with_eta_d11_w_w.eps accuracy_loss_changing_with_eta_d11_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop accuracy_loss_changing_with_eta_d11_w_w.eps accuracy_loss_changing_with_eta_d11_w_w.pdf")

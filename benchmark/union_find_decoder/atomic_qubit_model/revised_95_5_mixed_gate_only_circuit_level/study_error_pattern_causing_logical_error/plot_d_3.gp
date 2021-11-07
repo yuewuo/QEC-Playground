@@ -25,17 +25,14 @@ set boxwidth binwidth
 
 plot "data_d_3.txt" using 1:3 smooth freq with boxes notitle
 
-set output '|ps2pdf -dEPSCrop plot_d_3.eps plot_d_3.pdf'
-replot
+system("ps2pdf -dEPSCrop plot_d_3.eps plot_d_3.pdf")
 
 # set size 1,0.75
 # set output "plot_d_3_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop plot_d_3_w.eps plot_d_3_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop plot_d_3_w.eps plot_d_3_w.pdf")
 
 # set size 1,0.6
 # set output "plot_d_3_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop plot_d_3_w_w.eps plot_d_3_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop plot_d_3_w_w.eps plot_d_3_w_w.pdf")

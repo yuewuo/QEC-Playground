@@ -22,17 +22,14 @@ plot "only_pauli.txt" using 1:7 with linespoints lt rgb "red" linewidth 5 pointt
     "only_erasure.txt" using 1:7 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "only erasure error",\
     "both.txt" using 1:7 with linespoints lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 title "both"
 
-set output '|ps2pdf -dEPSCrop find_turning_point.eps find_turning_point.pdf'
-replot
+system("ps2pdf -dEPSCrop find_turning_point.eps find_turning_point.pdf")
 
 # set size 1,0.75
 # set output "find_turning_point_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop find_turning_point_w.eps find_turning_point_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop find_turning_point_w.eps find_turning_point_w.pdf")
 
 # set size 1,0.6
 # set output "find_turning_point_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop find_turning_point_w_w.eps find_turning_point_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop find_turning_point_w_w.eps find_turning_point_w_w.pdf")

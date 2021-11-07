@@ -21,17 +21,14 @@ set output "effective_code_distance_of_different_ratio.eps"
 plot "processed_data.txt" using 1:2 with linespoints lt rgb "red" linewidth 3 pointtype 6 pointsize 1 title "d_{effective} from p/p_{th} in [0.4, 0.6]",\
     "" using 1:2:($2-$3):($2+$3) with errorbars lt rgb "red" linewidth 3 pointtype 6 pointsize 1 notitle
 
-set output '|ps2pdf -dEPSCrop effective_code_distance_of_different_ratio.eps effective_code_distance_of_different_ratio.pdf'
-replot
+system("ps2pdf -dEPSCrop effective_code_distance_of_different_ratio.eps effective_code_distance_of_different_ratio.pdf")
 
 # set size 1,0.75
 # set output "effective_code_distance_of_different_ratio_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop effective_code_distance_of_different_ratio_w.eps effective_code_distance_of_different_ratio_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop effective_code_distance_of_different_ratio_w.eps effective_code_distance_of_different_ratio_w.pdf")
 
 # set size 1,0.6
 # set output "effective_code_distance_of_different_ratio_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop effective_code_distance_of_different_ratio_w_w.eps effective_code_distance_of_different_ratio_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop effective_code_distance_of_different_ratio_w_w.eps effective_code_distance_of_different_ratio_w_w.pdf")

@@ -18,30 +18,27 @@ set output "fbench_erasure_only_circuit_level.eps"
 
 set title "FBench Erasure Only Circuit-Level"
 
-plot "d_3_3.txt" using 1:7 with linespoints lt rgb "red" linewidth 4 pointtype 2 pointsize 1 title "d = 3",\
-    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "red" linewidth 4 pointtype 2 pointsize 1 notitle,\
-    "d_5_5.txt" using 1:7 with linespoints lt rgb "blue" linewidth 4 pointtype 2 pointsize 1 title "d = 5",\
-    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "blue" linewidth 4 pointtype 2 pointsize 1 notitle,\
-    "d_7_7.txt" using 1:7 with linespoints lt rgb "green" linewidth 4 pointtype 2 pointsize 1 title "d = 7",\
-    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "green" linewidth 4 pointtype 2 pointsize 1 notitle,\
-    "d_9_9.txt" using 1:7 with linespoints lt rgb "yellow" linewidth 4 pointtype 2 pointsize 1 title "d = 9",\
-    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "yellow" linewidth 4 pointtype 2 pointsize 1 notitle,\
-    "d_11_11.txt" using 1:7 with linespoints lt rgb "purple" linewidth 4 pointtype 2 pointsize 1 title "d = 11",\
-    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "purple" linewidth 4 pointtype 2 pointsize 1 notitle,\
-    "d_13_13.txt" using 1:7 with linespoints lt rgb "orange" linewidth 4 pointtype 2 pointsize 1 title "d = 13",\
-    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "orange" linewidth 4 pointtype 2 pointsize 1 notitle,
+plot "d_3_3.txt" using 1:9 with linespoints lt rgb "red" linewidth 4 pointtype 2 pointsize 1 title "d = 3",\
+    "" using 1:9:($9*(1-$10)):($9*(1+$10)) with errorbars lt rgb "red" linewidth 4 pointtype 2 pointsize 1 notitle,\
+    "d_5_5.txt" using 1:9 with linespoints lt rgb "blue" linewidth 4 pointtype 2 pointsize 1 title "d = 5",\
+    "" using 1:9:($9*(1-$10)):($9*(1+$10)) with errorbars lt rgb "blue" linewidth 4 pointtype 2 pointsize 1 notitle,\
+    "d_7_7.txt" using 1:9 with linespoints lt rgb "green" linewidth 4 pointtype 2 pointsize 1 title "d = 7",\
+    "" using 1:9:($9*(1-$10)):($9*(1+$10)) with errorbars lt rgb "green" linewidth 4 pointtype 2 pointsize 1 notitle,\
+    "d_9_9.txt" using 1:9 with linespoints lt rgb "yellow" linewidth 4 pointtype 2 pointsize 1 title "d = 9",\
+    "" using 1:9:($9*(1-$10)):($9*(1+$10)) with errorbars lt rgb "yellow" linewidth 4 pointtype 2 pointsize 1 notitle,\
+    "d_11_11.txt" using 1:9 with linespoints lt rgb "purple" linewidth 4 pointtype 2 pointsize 1 title "d = 11",\
+    "" using 1:9:($9*(1-$10)):($9*(1+$10)) with errorbars lt rgb "purple" linewidth 4 pointtype 2 pointsize 1 notitle,\
+    "d_13_13.txt" using 1:9 with linespoints lt rgb "orange" linewidth 4 pointtype 2 pointsize 1 title "d = 13",\
+    "" using 1:9:($9*(1-$10)):($9*(1+$10)) with errorbars lt rgb "orange" linewidth 4 pointtype 2 pointsize 1 notitle,
 
-set output '|ps2pdf -dEPSCrop fbench_erasure_only_circuit_level.eps fbench_erasure_only_circuit_level.pdf'
-replot
+system("ps2pdf -dEPSCrop fbench_erasure_only_circuit_level.eps fbench_erasure_only_circuit_level.pdf")
 
 # set size 1,0.75
 # set output "fbench_erasure_only_circuit_level_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop fbench_erasure_only_circuit_level_w.eps fbench_erasure_only_circuit_level_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop fbench_erasure_only_circuit_level_w.eps fbench_erasure_only_circuit_level_w.pdf")
 
 # set size 1,0.6
 # set output "fbench_erasure_only_circuit_level_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop fbench_erasure_only_circuit_level_w_w.eps fbench_erasure_only_circuit_level_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop fbench_erasure_only_circuit_level_w_w.eps fbench_erasure_only_circuit_level_w_w.pdf")

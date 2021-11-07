@@ -29,17 +29,14 @@ plot "time_run_to_stable_b330a31.txt" using 1:2 with linespoints lt rgb "#e41a1c
     "time_uf_update_b330a31.txt" using 1:2 with linespoints lt rgb "#984ea3" linewidth 3 pointtype 5 pointsize 1 title "4. update",\
     "time_uf_remove_b330a31.txt" using 1:2 with linespoints lt rgb "#e41a1c" linewidth 3 pointtype 5 pointsize 1 title "5. remove"
 
-set output '|ps2pdf -dEPSCrop decoding_time_study_optimizations_b330a31.eps decoding_time_study_optimizations_b330a31.pdf'
-replot
+system("ps2pdf -dEPSCrop decoding_time_study_optimizations_b330a31.eps decoding_time_study_optimizations_b330a31.pdf")
 
 # set size 1,0.75
 # set output "decoding_time_study_optimizations_b330a31_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop decoding_time_study_optimizations_b330a31_w.eps decoding_time_study_optimizations_b330a31_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop decoding_time_study_optimizations_b330a31_w.eps decoding_time_study_optimizations_b330a31_w.pdf")
 
 # set size 1,0.6
 # set output "decoding_time_study_optimizations_b330a31_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop decoding_time_study_optimizations_b330a31_w_w.eps decoding_time_study_optimizations_b330a31_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop decoding_time_study_optimizations_b330a31_w_w.eps decoding_time_study_optimizations_b330a31_w_w.pdf")

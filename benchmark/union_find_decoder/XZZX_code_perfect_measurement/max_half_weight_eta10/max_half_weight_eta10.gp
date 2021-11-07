@@ -35,17 +35,14 @@ plot "p_0.1.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6
     "p_0.05.txt" using 1:6 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "p = 0.05",\
     "p_0.02.txt" using 1:6 with linespoints lt rgb "green" linewidth 5 pointtype 6 pointsize 1.5 title "p = 0.02"
 
-set output '|ps2pdf -dEPSCrop max_half_weight_eta10.eps max_half_weight_eta10.pdf'
-replot
+system("ps2pdf -dEPSCrop max_half_weight_eta10.eps max_half_weight_eta10.pdf")
 
 set size 1,0.75
 set output "max_half_weight_eta10_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop max_half_weight_eta10_w.eps max_half_weight_eta10_w.pdf'
-replot
+system("ps2pdf -dEPSCrop max_half_weight_eta10_w.eps max_half_weight_eta10_w.pdf")
 
 set size 1,0.6
 set output "max_half_weight_eta10_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop max_half_weight_eta10_w_w.eps max_half_weight_eta10_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop max_half_weight_eta10_w_w.eps max_half_weight_eta10_w_w.pdf")

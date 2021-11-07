@@ -31,17 +31,14 @@ plot "d_3_3.txt" using 1:7 with linespoints lt rgb "red" linewidth 4 pointtype 2
     "d_13_13.txt" using 1:7 with linespoints lt rgb "orange" linewidth 4 pointtype 2 pointsize 1 title "d = 13",\
     "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "orange" linewidth 4 pointtype 2 pointsize 1 notitle,
 
-set output '|ps2pdf -dEPSCrop revised_95_5_mixed_gate_only_circuit_level.eps revised_95_5_mixed_gate_only_circuit_level.pdf'
-replot
+system("ps2pdf -dEPSCrop revised_95_5_mixed_gate_only_circuit_level.eps revised_95_5_mixed_gate_only_circuit_level.pdf")
 
 # set size 1,0.75
 # set output "revised_95_5_mixed_gate_only_circuit_level_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop revised_95_5_mixed_gate_only_circuit_level_w.eps revised_95_5_mixed_gate_only_circuit_level_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop revised_95_5_mixed_gate_only_circuit_level_w.eps revised_95_5_mixed_gate_only_circuit_level_w.pdf")
 
 # set size 1,0.6
 # set output "revised_95_5_mixed_gate_only_circuit_level_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop revised_95_5_mixed_gate_only_circuit_level_w_w.eps revised_95_5_mixed_gate_only_circuit_level_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop revised_95_5_mixed_gate_only_circuit_level_w_w.eps revised_95_5_mixed_gate_only_circuit_level_w_w.pdf")

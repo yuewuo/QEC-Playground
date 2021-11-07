@@ -21,17 +21,14 @@ plot "p_0.4.txt" using 3:7 with linespoints lt rgb "red" linewidth 5 pointtype 6
     "p_0.3.txt" using 3:7 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "p = 0.3",\
     "p_0.25.txt" using 3:7 with linespoints lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 title "p = 0.25"
 
-set output '|ps2pdf -dEPSCrop logical_error_rate_changing_with_d.eps logical_error_rate_changing_with_d.pdf'
-replot
+system("ps2pdf -dEPSCrop logical_error_rate_changing_with_d.eps logical_error_rate_changing_with_d.pdf")
 
 # set size 1,0.75
 # set output "logical_error_rate_changing_with_d_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop logical_error_rate_changing_with_d_w.eps logical_error_rate_changing_with_d_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop logical_error_rate_changing_with_d_w.eps logical_error_rate_changing_with_d_w.pdf")
 
 # set size 1,0.6
 # set output "logical_error_rate_changing_with_d_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop logical_error_rate_changing_with_d_w_w.eps logical_error_rate_changing_with_d_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop logical_error_rate_changing_with_d_w_w.eps logical_error_rate_changing_with_d_w_w.pdf")

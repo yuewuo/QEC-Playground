@@ -23,17 +23,14 @@ plot "MWPM_p0.2.txt" using 3:6 with linespoints lt rgb "red" linewidth 5 pointty
     "UF_p0.2.txt" using 3:6 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "UnionFind, p = 0.2",\
     "" using 3:6:($6*(1-$7)):($6*(1+$7)) with errorbars lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 notitle,\
 
-set output '|ps2pdf -dEPSCrop keep_X_distance_constant.eps keep_X_distance_constant.pdf'
-replot
+system("ps2pdf -dEPSCrop keep_X_distance_constant.eps keep_X_distance_constant.pdf")
 
 # set size 1,0.75
 # set output "keep_X_distance_constant_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop keep_X_distance_constant_w.eps keep_X_distance_constant_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop keep_X_distance_constant_w.eps keep_X_distance_constant_w.pdf")
 
 # set size 1,0.6
 # set output "keep_X_distance_constant_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop keep_X_distance_constant_w_w.eps keep_X_distance_constant_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop keep_X_distance_constant_w_w.eps keep_X_distance_constant_w_w.pdf")

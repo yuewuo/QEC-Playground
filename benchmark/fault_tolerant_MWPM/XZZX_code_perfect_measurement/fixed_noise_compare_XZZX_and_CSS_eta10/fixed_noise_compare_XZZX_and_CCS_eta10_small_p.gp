@@ -30,17 +30,14 @@ plot "css_p0.02.txt" using 2:6 with linespoints lt rgb "red" linewidth 5 pointty
     "css_p0.01.txt" using 2:6 with linespoints lt rgb "green" linewidth 5 pointtype 6 pointsize 1.5 title "CSS Surface Code p = 0.01",\
     "xzzx_p0.01.txt" using 2:6 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "XZZX Surface Code p = 0.01"
 
-set output '|ps2pdf -dEPSCrop fixed_noise_compare_XZZX_and_CCS_eta10_small_p.eps fixed_noise_compare_XZZX_and_CCS_eta10_small_p.pdf'
-replot
+system("ps2pdf -dEPSCrop fixed_noise_compare_XZZX_and_CCS_eta10_small_p.eps fixed_noise_compare_XZZX_and_CCS_eta10_small_p.pdf")
 
 set size 1,0.75
 set output "fixed_noise_compare_XZZX_and_CCS_eta10_small_p_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop fixed_noise_compare_XZZX_and_CCS_eta10_small_p_w.eps fixed_noise_compare_XZZX_and_CCS_eta10_small_p_w.pdf'
-replot
+system("ps2pdf -dEPSCrop fixed_noise_compare_XZZX_and_CCS_eta10_small_p_w.eps fixed_noise_compare_XZZX_and_CCS_eta10_small_p_w.pdf")
 
 set size 1,0.6
 set output "fixed_noise_compare_XZZX_and_CCS_eta10_small_p_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop fixed_noise_compare_XZZX_and_CCS_eta10_small_p_w_w.eps fixed_noise_compare_XZZX_and_CCS_eta10_small_p_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop fixed_noise_compare_XZZX_and_CCS_eta10_small_p_w_w.eps fixed_noise_compare_XZZX_and_CCS_eta10_small_p_w_w.pdf")

@@ -27,17 +27,14 @@ plot "XL_MWPM_d11_p0.1.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 
     "XL_UF_d13_p0.1.txt" using 1:6 with linespoints lt rgb "skyblue" linewidth 5 pointtype 2 pointsize 1.5 title "UnionFind, d = 13",\
     "" using 1:6:($6*(1-$7)):($6*(1+$7)) with errorbars lt rgb "skyblue" linewidth 5 pointtype 2 pointsize 1.5 notitle
 
-set output '|ps2pdf -dEPSCrop XL_code_capacity_noise_model.eps XL_code_capacity_noise_model.pdf'
-replot
+system("ps2pdf -dEPSCrop XL_code_capacity_noise_model.eps XL_code_capacity_noise_model.pdf")
 
 # set size 1,0.75
 # set output "XL_code_capacity_noise_model_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop XL_code_capacity_noise_model_w.eps XL_code_capacity_noise_model_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop XL_code_capacity_noise_model_w.eps XL_code_capacity_noise_model_w.pdf")
 
 # set size 1,0.6
 # set output "XL_code_capacity_noise_model_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop XL_code_capacity_noise_model_w_w.eps XL_code_capacity_noise_model_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop XL_code_capacity_noise_model_w_w.eps XL_code_capacity_noise_model_w_w.pdf")

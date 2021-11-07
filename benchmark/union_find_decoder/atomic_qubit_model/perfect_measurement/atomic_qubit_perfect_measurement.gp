@@ -25,17 +25,14 @@ plot "d_3.txt" using 1:7 with linespoints lt rgb "red" linewidth 5 pointtype 6 p
     "d_11.txt" using 1:7 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
     "d_13.txt" using 1:7 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
 
-set output '|ps2pdf -dEPSCrop atomic_qubit_perfect_measurement.eps atomic_qubit_perfect_measurement.pdf'
-replot
+system("ps2pdf -dEPSCrop atomic_qubit_perfect_measurement.eps atomic_qubit_perfect_measurement.pdf")
 
 # set size 1,0.75
 # set output "atomic_qubit_perfect_measurement_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop atomic_qubit_perfect_measurement_w.eps atomic_qubit_perfect_measurement_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop atomic_qubit_perfect_measurement_w.eps atomic_qubit_perfect_measurement_w.pdf")
 
 # set size 1,0.6
 # set output "atomic_qubit_perfect_measurement_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop atomic_qubit_perfect_measurement_w_w.eps atomic_qubit_perfect_measurement_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop atomic_qubit_perfect_measurement_w_w.eps atomic_qubit_perfect_measurement_w_w.pdf")

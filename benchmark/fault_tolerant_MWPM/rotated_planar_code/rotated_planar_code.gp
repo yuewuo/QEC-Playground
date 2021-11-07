@@ -40,17 +40,14 @@ plot "d_3_3.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6
     "d_11_11.txt" using 1:6 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
     "d_13_13.txt" using 1:6 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
 
-set output '|ps2pdf -dEPSCrop rotated_planar_code.eps rotated_planar_code.pdf'
-replot
+system("ps2pdf -dEPSCrop rotated_planar_code.eps rotated_planar_code.pdf")
 
 set size 1,0.75
 set output "rotated_planar_code_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop rotated_planar_code_w.eps rotated_planar_code_w.pdf'
-replot
+system("ps2pdf -dEPSCrop rotated_planar_code_w.eps rotated_planar_code_w.pdf")
 
 set size 1,0.6
 set output "rotated_planar_code_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop rotated_planar_code_w_w.eps rotated_planar_code_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop rotated_planar_code_w_w.eps rotated_planar_code_w_w.pdf")

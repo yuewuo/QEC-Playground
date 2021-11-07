@@ -49,17 +49,14 @@ plot "MWPM_d3.txt" using 1:7 with linespoints lt rgb "#e41a1c" linewidth 3 point
     "UF_d7.txt" using 1:7 with linespoints lt rgb "#4daf4a" linewidth 3 pointtype 12 pointsize 1 title "UnionFind 7x21x21",\
     "" using 1:7:($7-$7*$9):($7+$7*$9) with errorbars lt rgb "#4daf4a" linewidth 3 pointtype 12 pointsize 1,\
 
-set output '|ps2pdf -dEPSCrop compare_with_MWPM.eps compare_with_MWPM.pdf'
-replot
+system("ps2pdf -dEPSCrop compare_with_MWPM.eps compare_with_MWPM.pdf")
 
 set size 1,0.75
 set output "compare_with_MWPM_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop compare_with_MWPM_w.eps compare_with_MWPM_w.pdf'
-replot
+system("ps2pdf -dEPSCrop compare_with_MWPM_w.eps compare_with_MWPM_w.pdf")
 
 set size 1,0.6
 set output "compare_with_MWPM_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop compare_with_MWPM_w_w.eps compare_with_MWPM_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop compare_with_MWPM_w_w.eps compare_with_MWPM_w_w.pdf")

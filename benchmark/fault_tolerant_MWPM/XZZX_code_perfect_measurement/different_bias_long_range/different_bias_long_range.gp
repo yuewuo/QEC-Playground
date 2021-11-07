@@ -27,17 +27,14 @@ plot "eta_0.5.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype
     "eta_10.txt" using 1:6 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "{/Symbol h} = 10",\
     "eta_100.txt" using 1:6 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "{/Symbol h} = 100"
 
-set output '|ps2pdf -dEPSCrop XZZX_code_perfect_measurement.eps XZZX_code_perfect_measurement.pdf'
-replot
+system("ps2pdf -dEPSCrop XZZX_code_perfect_measurement.eps XZZX_code_perfect_measurement.pdf")
 
 set size 1,0.75
 set output "XZZX_code_perfect_measurement_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop XZZX_code_perfect_measurement_w.eps XZZX_code_perfect_measurement_w.pdf'
-replot
+system("ps2pdf -dEPSCrop XZZX_code_perfect_measurement_w.eps XZZX_code_perfect_measurement_w.pdf")
 
 set size 1,0.6
 set output "XZZX_code_perfect_measurement_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop XZZX_code_perfect_measurement_w_w.eps XZZX_code_perfect_measurement_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop XZZX_code_perfect_measurement_w_w.eps XZZX_code_perfect_measurement_w_w.pdf")

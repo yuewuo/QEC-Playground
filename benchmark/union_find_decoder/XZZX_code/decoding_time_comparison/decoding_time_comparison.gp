@@ -30,17 +30,14 @@ plot "MWPM_time_blossom_v_prepare_graph.txt" using 1:2 with linespoints lt rgb "
     "UF_time_run_to_stable.txt" using 1:2 with linespoints lt rgb "#4daf4a" linewidth 3 pointtype 6 pointsize 1 title "UnionFind",\
     "" using 1:2:2:3 with errorbars lt rgb "#4daf4a" linewidth 3 pointtype 6 pointsize 1
 
-set output '|ps2pdf -dEPSCrop decoding_time_comparison.eps decoding_time_comparison.pdf'
-replot
+system("ps2pdf -dEPSCrop decoding_time_comparison.eps decoding_time_comparison.pdf")
 
 set size 1,0.75
 set output "decoding_time_comparison_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop decoding_time_comparison_w.eps decoding_time_comparison_w.pdf'
-replot
+system("ps2pdf -dEPSCrop decoding_time_comparison_w.eps decoding_time_comparison_w.pdf")
 
 set size 1,0.6
 set output "decoding_time_comparison_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop decoding_time_comparison_w_w.eps decoding_time_comparison_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop decoding_time_comparison_w_w.eps decoding_time_comparison_w_w.pdf")

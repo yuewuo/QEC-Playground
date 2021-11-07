@@ -44,17 +44,14 @@ plot "biased_MWPM.txt" using 1:($2*(2+12/$1)) with linespoints lt rgb "#e41a1c" 
     "biased_UF.txt" using 1:($2*(2+12/$1)) with linespoints lt rgb "#e41a1c" linewidth 4 dashtype (1,1) pointtype 6 pointsize 1 title "UnionFind Decoder",\
     "" using 1:($2*(2+12/$1)):(($2-$2*$3)*(2+12/$1)):(($2+$2*$3)*(2+12/$1)) with errorbars lt rgb "#e41a1c" linewidth 4 dashtype (1,1) pointtype 6 pointsize 1
 
-set output '|ps2pdf -dEPSCrop threshold_with_zeta_biased_pcx.eps threshold_with_zeta_biased_pcx.pdf'
-replot
+system("ps2pdf -dEPSCrop threshold_with_zeta_biased_pcx.eps threshold_with_zeta_biased_pcx.pdf")
 
 set size 1,0.75
 set output "threshold_with_zeta_biased_pcx_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop threshold_with_zeta_biased_pcx_w.eps threshold_with_zeta_biased_pcx_w.pdf'
-replot
+system("ps2pdf -dEPSCrop threshold_with_zeta_biased_pcx_w.eps threshold_with_zeta_biased_pcx_w.pdf")
 
 set size 1,0.6
 set output "threshold_with_zeta_biased_pcx_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop threshold_with_zeta_biased_pcx_w_w.eps threshold_with_zeta_biased_pcx_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop threshold_with_zeta_biased_pcx_w_w.eps threshold_with_zeta_biased_pcx_w_w.pdf")

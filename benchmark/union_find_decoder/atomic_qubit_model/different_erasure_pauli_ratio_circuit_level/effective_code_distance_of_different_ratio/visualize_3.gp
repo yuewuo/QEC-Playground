@@ -35,17 +35,14 @@ plot "pauli_ratio_0.txt" using 1:($8/pLth0) with linespoints lt rgb "red" linewi
     "pauli_ratio_1.txt" using 1:($8/pLth1) with linespoints lt rgb "yellow" linewidth 3 pointtype 6 pointsize 1 title "R = 1",\
     "" using 1:($8/pLth1):(($8/pLth1)*(1-$10)):(($8/pLth1)*(1+$10)) with errorbars lt rgb "yellow" linewidth 3 pointtype 6 pointsize 1 notitle
 
-set output '|ps2pdf -dEPSCrop visualize_3.eps visualize_3.pdf'
-replot
+system("ps2pdf -dEPSCrop visualize_3.eps visualize_3.pdf")
 
 # set size 1,0.75
 # set output "visualize_3_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop visualize_3_w.eps visualize_3_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop visualize_3_w.eps visualize_3_w.pdf")
 
 # set size 1,0.6
 # set output "visualize_3_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop visualize_3_w_w.eps visualize_3_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop visualize_3_w_w.eps visualize_3_w_w.pdf")

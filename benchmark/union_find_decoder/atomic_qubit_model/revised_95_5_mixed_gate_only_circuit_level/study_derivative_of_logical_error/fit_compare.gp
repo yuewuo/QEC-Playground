@@ -31,17 +31,14 @@ plot "fit_compare_d_3.txt" using 1:2 with linespoints lt rgb "red" linewidth 3 p
     "" using 1:2:($2-$2*$3):($2+$2*$3) with errorbars lt rgb "orange" linewidth 3 pointtype 6 pointsize 1 notitle,\
     "" using 1:4 with linespoints lt rgb "yellow" linewidth 3 pointtype 2 pointsize 1 title "fitted d = 9"
 
-set output '|ps2pdf -dEPSCrop fit_compare.eps fit_compare.pdf'
-replot
+system("ps2pdf -dEPSCrop fit_compare.eps fit_compare.pdf")
 
 # set size 1,0.75
 # set output "fit_compare_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop fit_compare_w.eps fit_compare_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop fit_compare_w.eps fit_compare_w.pdf")
 
 # set size 1,0.6
 # set output "fit_compare_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop fit_compare_w_w.eps fit_compare_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop fit_compare_w_w.eps fit_compare_w_w.pdf")

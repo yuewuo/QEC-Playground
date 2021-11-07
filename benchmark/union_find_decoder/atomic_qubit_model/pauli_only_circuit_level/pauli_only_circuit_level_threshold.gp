@@ -22,17 +22,14 @@ plot "threshold_11_11.txt" using 9:6 with linespoints lt rgb "red" linewidth 5 p
     "threshold_15_15.txt" using 9:6 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 15",\
     "threshold_19_19.txt" using 9:6 with linespoints lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 title "d = 19"
 
-set output '|ps2pdf -dEPSCrop pauli_only_circuit_level_threshold.eps pauli_only_circuit_level_threshold.pdf'
-replot
+system("ps2pdf -dEPSCrop pauli_only_circuit_level_threshold.eps pauli_only_circuit_level_threshold.pdf")
 
 # set size 1,0.75
 # set output "pauli_only_circuit_level_threshold_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop pauli_only_circuit_level_threshold_w.eps pauli_only_circuit_level_threshold_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop pauli_only_circuit_level_threshold_w.eps pauli_only_circuit_level_threshold_w.pdf")
 
 # set size 1,0.6
 # set output "pauli_only_circuit_level_threshold_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop pauli_only_circuit_level_threshold_w_w.eps pauli_only_circuit_level_threshold_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop pauli_only_circuit_level_threshold_w_w.eps pauli_only_circuit_level_threshold_w_w.pdf")

@@ -17,17 +17,14 @@ set output "fixed_error_rate.eps"
 
 plot "results.txt" using 2:5 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "p = 0.01"
 
-set output '|ps2pdf -dEPSCrop fixed_error_rate.eps fixed_error_rate.pdf'
-replot
+system("ps2pdf -dEPSCrop fixed_error_rate.eps fixed_error_rate.pdf")
 
 set size 1,0.75
 set output "fixed_error_rate_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop fixed_error_rate_w.eps fixed_error_rate_w.pdf'
-replot
+system("ps2pdf -dEPSCrop fixed_error_rate_w.eps fixed_error_rate_w.pdf")
 
 set size 1,0.6
 set output "fixed_error_rate_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop fixed_error_rate_w_w.eps fixed_error_rate_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop fixed_error_rate_w_w.eps fixed_error_rate_w_w.pdf")

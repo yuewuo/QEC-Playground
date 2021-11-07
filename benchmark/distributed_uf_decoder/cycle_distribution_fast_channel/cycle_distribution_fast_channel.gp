@@ -31,17 +31,14 @@ everysome(col) = (int(column(col))%50 ==0)?stringcolumn(1):""
 # plot "duf_17_0.01.txt" using 2:xticlabels(everysome(1)) title "d = 17" lc rgbcolor "blue"
 plot "duf_11_0.01.txt" using 2:xticlabels(everysome(1)) title "d = 11" lc rgbcolor "blue"
 
-set output '|ps2pdf -dEPSCrop cycle_distribution_fast_channel.eps cycle_distribution_fast_channel.pdf'
-replot
+system("ps2pdf -dEPSCrop cycle_distribution_fast_channel.eps cycle_distribution_fast_channel.pdf")
 
 set size 1,0.75
 set output "cycle_distribution_fast_channel_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop cycle_distribution_fast_channel_w.eps cycle_distribution_fast_channel_w.pdf'
-replot
+system("ps2pdf -dEPSCrop cycle_distribution_fast_channel_w.eps cycle_distribution_fast_channel_w.pdf")
 
 set size 1,0.6
 set output "cycle_distribution_fast_channel_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop cycle_distribution_fast_channel_w_w.eps cycle_distribution_fast_channel_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop cycle_distribution_fast_channel_w_w.eps cycle_distribution_fast_channel_w_w.pdf")

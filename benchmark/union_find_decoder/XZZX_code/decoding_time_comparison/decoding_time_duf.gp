@@ -28,17 +28,14 @@ set nokey
 plot "DUF_clock_cycles.txt" using 1:2 with linespoints lt rgb "#e41a1c" linewidth 3 pointtype 7 pointsize 1 title "DUF",\
     "" using 1:2:2:3 with errorbars lt rgb "#e41a1c" linewidth 3 pointtype 7 pointsize 1
 
-set output '|ps2pdf -dEPSCrop decoding_time_duf.eps decoding_time_duf.pdf'
-replot
+system("ps2pdf -dEPSCrop decoding_time_duf.eps decoding_time_duf.pdf")
 
 set size 1,0.75
 set output "decoding_time_duf_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop decoding_time_duf_w.eps decoding_time_duf_w.pdf'
-replot
+system("ps2pdf -dEPSCrop decoding_time_duf_w.eps decoding_time_duf_w.pdf")
 
 set size 1,0.6
 set output "decoding_time_duf_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop decoding_time_duf_w_w.eps decoding_time_duf_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop decoding_time_duf_w_w.eps decoding_time_duf_w_w.pdf")

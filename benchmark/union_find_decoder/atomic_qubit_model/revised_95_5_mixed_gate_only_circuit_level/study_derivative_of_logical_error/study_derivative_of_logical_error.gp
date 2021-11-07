@@ -36,17 +36,14 @@ plot "mixed_d_3.txt" using 1:10 with linespoints lt rgb "red" linewidth 3 pointt
     "pure_pauli_d_9.txt" using 1:10 with linespoints lt rgb "yellow" linewidth 3 pointtype 2 pointsize 1 title "pure Pauli d = 9",\
     "" using 1:10:($10-$11):($10+$11) with errorbars lt rgb "yellow" linewidth 3 pointtype 2 pointsize 1 notitle
 
-set output '|ps2pdf -dEPSCrop study_derivative_of_logical_error.eps study_derivative_of_logical_error.pdf'
-replot
+system("ps2pdf -dEPSCrop study_derivative_of_logical_error.eps study_derivative_of_logical_error.pdf")
 
 # set size 1,0.75
 # set output "study_derivative_of_logical_error_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop study_derivative_of_logical_error_w.eps study_derivative_of_logical_error_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop study_derivative_of_logical_error_w.eps study_derivative_of_logical_error_w.pdf")
 
 # set size 1,0.6
 # set output "study_derivative_of_logical_error_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop study_derivative_of_logical_error_w_w.eps study_derivative_of_logical_error_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop study_derivative_of_logical_error_w_w.eps study_derivative_of_logical_error_w_w.pdf")

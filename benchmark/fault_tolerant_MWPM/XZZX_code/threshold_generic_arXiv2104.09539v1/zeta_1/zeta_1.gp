@@ -54,17 +54,14 @@ plot "biased_4.txt" using 1:6 with linespoints lt rgb "#e41a1c" linewidth 4 poin
     "standard_6.txt" using 1:6 with linespoints lt rgb "#4daf4a" linewidth 4 dashtype (1,1) pointtype 10 pointsize 1 title "standard 6,18,18",\
     "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#4daf4a" linewidth 4 dashtype (1,1) pointtype 10 pointsize 1,\
 
-set output '|ps2pdf -dEPSCrop zeta_1.eps zeta_1.pdf'
-replot
+system("ps2pdf -dEPSCrop zeta_1.eps zeta_1.pdf")
 
 set size 1,0.75
 set output "zeta_1_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop zeta_1_w.eps zeta_1_w.pdf'
-replot
+system("ps2pdf -dEPSCrop zeta_1_w.eps zeta_1_w.pdf")
 
 set size 1,0.6
 set output "zeta_1_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop zeta_1_w_w.eps zeta_1_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop zeta_1_w_w.eps zeta_1_w_w.pdf")

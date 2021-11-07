@@ -32,17 +32,14 @@ plot "d_3_3.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6
     "d_11_11.txt" using 1:6 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
     "d_13_13.txt" using 1:6 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
 
-set output '|ps2pdf -dEPSCrop bypass_correction.eps bypass_correction.pdf'
-replot
+system("ps2pdf -dEPSCrop bypass_correction.eps bypass_correction.pdf")
 
 set size 1,0.75
 set output "bypass_correction_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop bypass_correction_w.eps bypass_correction_w.pdf'
-replot
+system("ps2pdf -dEPSCrop bypass_correction_w.eps bypass_correction_w.pdf")
 
 set size 1,0.6
 set output "bypass_correction_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop bypass_correction_w_w.eps bypass_correction_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop bypass_correction_w_w.eps bypass_correction_w_w.pdf")

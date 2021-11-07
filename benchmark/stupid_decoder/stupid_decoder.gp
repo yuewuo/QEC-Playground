@@ -34,17 +34,14 @@ plot "d_3.txt" using 1:5 with linespoints lt rgb "red" linewidth 5 pointtype 6 p
     "d_25.txt" using 1:5 with linespoints lt rgb "black" linewidth 5 pointtype 2 pointsize 1.5 title "d = 25"
     # "d_15.txt" using 1:5 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 15",\
 
-set output '|ps2pdf -dEPSCrop naive_decoder.eps naive_decoder.pdf'
-replot
+system("ps2pdf -dEPSCrop naive_decoder.eps naive_decoder.pdf")
 
 set size 1,0.75
 set output "naive_decoder_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop naive_decoder_w.eps naive_decoder_w.pdf'
-replot
+system("ps2pdf -dEPSCrop naive_decoder_w.eps naive_decoder_w.pdf")
 
 set size 1,0.6
 set output "naive_decoder_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop naive_decoder_w_w.eps naive_decoder_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop naive_decoder_w_w.eps naive_decoder_w_w.pdf")

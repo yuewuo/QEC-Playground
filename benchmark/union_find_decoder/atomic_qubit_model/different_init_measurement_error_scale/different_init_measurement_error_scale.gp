@@ -30,11 +30,9 @@ system("ps2pdf -dEPSCrop different_init_measurement_error_scale.eps different_in
 # set size 1,0.75
 # set output "different_init_measurement_error_scale_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop different_init_measurement_error_scale_w.eps different_init_measurement_error_scale_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop different_init_measurement_error_scale_w.eps different_init_measurement_error_scale_w.pdf")
 
 # set size 1,0.6
 # set output "different_init_measurement_error_scale_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop different_init_measurement_error_scale_w_w.eps different_init_measurement_error_scale_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop different_init_measurement_error_scale_w_w.eps different_init_measurement_error_scale_w_w.pdf")

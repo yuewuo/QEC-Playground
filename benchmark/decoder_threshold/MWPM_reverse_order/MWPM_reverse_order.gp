@@ -34,17 +34,14 @@ plot "d_3.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6 p
     "d_21.txt" using 1:6 with linespoints lt rgb "black" linewidth 5 pointtype 2 pointsize 1.5 title "d = 21",\
     "d_31.txt" using 1:6 with linespoints lt rgb "dark-green" linewidth 5 pointtype 2 pointsize 1.5 title "d = 31",\
 
-set output '|ps2pdf -dEPSCrop MWPM_reverse_order.eps MWPM_reverse_order.pdf'
-replot
+system("ps2pdf -dEPSCrop MWPM_reverse_order.eps MWPM_reverse_order.pdf")
 
 set size 1,0.75
 set output "MWPM_reverse_order_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop MWPM_reverse_order_w.eps MWPM_reverse_order_w.pdf'
-replot
+system("ps2pdf -dEPSCrop MWPM_reverse_order_w.eps MWPM_reverse_order_w.pdf")
 
 set size 1,0.6
 set output "MWPM_reverse_order_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop MWPM_reverse_order_w_w.eps MWPM_reverse_order_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop MWPM_reverse_order_w_w.eps MWPM_reverse_order_w_w.pdf")

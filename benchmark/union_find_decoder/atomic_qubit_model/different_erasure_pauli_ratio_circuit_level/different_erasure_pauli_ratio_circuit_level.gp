@@ -20,17 +20,14 @@ set title "Atomic Qubit Thresholds with Pauli Error Ratio"
 
 plot "thresholds.txt" using 1:2 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 3"
 
-set output '|ps2pdf -dEPSCrop different_erasure_pauli_ratio_circuit_level.eps different_erasure_pauli_ratio_circuit_level.pdf'
-replot
+system("ps2pdf -dEPSCrop different_erasure_pauli_ratio_circuit_level.eps different_erasure_pauli_ratio_circuit_level.pdf")
 
 # set size 1,0.75
 # set output "different_erasure_pauli_ratio_circuit_level_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop different_erasure_pauli_ratio_circuit_level_w.eps different_erasure_pauli_ratio_circuit_level_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop different_erasure_pauli_ratio_circuit_level_w.eps different_erasure_pauli_ratio_circuit_level_w.pdf")
 
 # set size 1,0.6
 # set output "different_erasure_pauli_ratio_circuit_level_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop different_erasure_pauli_ratio_circuit_level_w_w.eps different_erasure_pauli_ratio_circuit_level_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop different_erasure_pauli_ratio_circuit_level_w_w.eps different_erasure_pauli_ratio_circuit_level_w_w.pdf")

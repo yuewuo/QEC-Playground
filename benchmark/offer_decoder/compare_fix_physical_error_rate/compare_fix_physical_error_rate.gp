@@ -20,17 +20,14 @@ plot "MWPM_decoder_1e-2.txt" using 2:6 with linespoints lt rgb "red" linewidth 5
     "offer_decoder_1e-2.txt" using 2:5 with linespoints lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 title "offer p=1e-2",\
     "offer_decoder_2e-2.txt" using 2:5 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "offer p=2e-2"
 
-set output '|ps2pdf -dEPSCrop compare_fix_physical_error_rate.eps compare_fix_physical_error_rate.pdf'
-replot
+system("ps2pdf -dEPSCrop compare_fix_physical_error_rate.eps compare_fix_physical_error_rate.pdf")
 
 set size 1,0.75
 set output "compare_fix_physical_error_rate_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop compare_fix_physical_error_rate_w.eps compare_fix_physical_error_rate_w.pdf'
-replot
+system("ps2pdf -dEPSCrop compare_fix_physical_error_rate_w.eps compare_fix_physical_error_rate_w.pdf")
 
 set size 1,0.6
 set output "compare_fix_physical_error_rate_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop compare_fix_physical_error_rate_w_w.eps compare_fix_physical_error_rate_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop compare_fix_physical_error_rate_w_w.eps compare_fix_physical_error_rate_w_w.pdf")

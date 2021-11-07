@@ -39,17 +39,14 @@ plot "d_13.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6 
     "d_21.txt" using 1:6 with linespoints lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 title "d = 21",\
     "d_25.txt" using 1:6 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "d = 25"
 
-set output '|ps2pdf -dEPSCrop threshold_bias_3.eps threshold_bias_3.pdf'
-replot
+system("ps2pdf -dEPSCrop threshold_bias_3.eps threshold_bias_3.pdf")
 
 set size 1,0.75
 set output "threshold_bias_3_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop threshold_bias_3_w.eps threshold_bias_3_w.pdf'
-replot
+system("ps2pdf -dEPSCrop threshold_bias_3_w.eps threshold_bias_3_w.pdf")
 
 set size 1,0.6
 set output "threshold_bias_3_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop threshold_bias_3_w_w.eps threshold_bias_3_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop threshold_bias_3_w_w.eps threshold_bias_3_w_w.pdf")
