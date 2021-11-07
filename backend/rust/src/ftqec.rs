@@ -102,6 +102,8 @@ pub struct Node {
     pub exhausted_boundary: Option<ExhaustedElement>,
     pub pet_node: Option<petgraph::graph::NodeIndex>,
     pub exhausted_map: HashMap<Index, ExhaustedElement>,
+    // internal states used for temporary manipulation
+    pub disable_in_random_error_generator: bool,
 }
 
 /// record the code type
@@ -302,6 +304,7 @@ impl PlanarCodeModel {
                             exhausted_boundary: None,
                             pet_node: None,
                             exhausted_map: HashMap::new(),
+                            disable_in_random_error_generator: false,
                         }))
                     } else {
                         snapshot_row_1.push(None);
@@ -470,6 +473,7 @@ impl PlanarCodeModel {
                             exhausted_boundary: None,
                             pet_node: None,
                             exhausted_map: HashMap::new(),
+                            disable_in_random_error_generator: false,
                         }))
                     } else {
                         snapshot_row_1.push(None);
@@ -612,6 +616,11 @@ impl PlanarCodeModel {
         let mut pending_errors = Vec::new();
         let mut pending_erasure_errors = Vec::new();
         self.iterate_snapshot_mut(|t, i, j, node| {
+            if node.disable_in_random_error_generator {
+                node.error = ErrorType::I;
+                node.has_erasure = false;
+                return
+            }
             let random_number = rng();
             if random_number < node.error_rate_x {
                 node.error = ErrorType::X;

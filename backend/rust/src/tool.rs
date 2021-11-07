@@ -24,6 +24,7 @@ use super::ndarray;
 use super::serde_json::{json};
 use super::either::Either;
 use super::fast_benchmark;
+use std::collections::BTreeSet;
 use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
@@ -806,10 +807,15 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                     let mini_batch_begin = Instant::now();
                     // run for at least `mini_sync_time` before sync with outside, to avoid frequent lock
                     while mini_batch_begin.elapsed().as_secs_f64() < mini_sync_time {
-                        let mut decode_and_update = |errors: Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>, _: usize| -> bool {
+                        let mut decode_and_update = |errors: Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>
+                                , clearance_region: &BTreeSet<(usize, usize, usize)>, _: usize| -> bool {
                             mini_batch += 1;
                             let error_count = if use_fast_benchmark && !fbench_disable_additional_error {
-                                // first generate errors
+                                // set clearance region
+                                for &(t, i, j) in clearance_region.iter() {
+                                    model_error.snapshot[t][i][j].as_mut().expect("exist").disable_in_random_error_generator = true;
+                                }
+                                // generate errors
                                 model_error.generate_random_errors(|| rng.gen::<f64>());
                                 for (t, i, j, error_type) in errors.iter() {
                                     let (t, i, j) = (*t, *i, *j);
@@ -828,6 +834,10 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                                             model_error.add_random_erasure_error_at(t, i, j, || rng.gen::<f64>()).unwrap();
                                         },
                                     }
+                                }
+                                // recover clearance region
+                                for &(t, i, j) in clearance_region.iter() {
+                                    model_error.snapshot[t][i][j].as_mut().expect("exist").disable_in_random_error_generator = false;
                                 }
                                 model_error.count_error()
                             } else {
@@ -901,9 +911,9 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                         };
                         if use_fast_benchmark {
                             if fbench_use_fake_decoder {
-                                fast_benchmark.benchmark_once(&mut rng_fast_benchmark, |errors, string_d| {
+                                fast_benchmark.benchmark_once(&mut rng_fast_benchmark, |errors, clearance_region, string_d| {
                                     mini_batch += 1;
-                                    let count_as_error = fast_benchmark::fake_decoding(errors, string_d);
+                                    let count_as_error = fast_benchmark::fake_decoding(errors, clearance_region, string_d);
                                     if count_as_error {
                                         mini_qec_failed += 1;
                                     }
@@ -913,7 +923,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                                 fast_benchmark.benchmark_once(&mut rng_fast_benchmark, decode_and_update);
                             }
                         } else {
-                            decode_and_update(Vec::new(), 0);
+                            decode_and_update(Vec::new(), &BTreeSet::new(), 0);
                         }
                     }
                     // sync data with outside

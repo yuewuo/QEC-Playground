@@ -415,7 +415,7 @@ impl FastBenchmark {
 
     /// add a single error estimate for each left starting point
     pub fn benchmark_once<F>(&mut self, rng: &mut impl RngCore, mut decode: F)
-            where F: FnMut(Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>, usize) -> bool {
+            where F: FnMut(Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>, &BTreeSet<(usize, usize, usize)>, usize) -> bool {
             // Vec<(te, ie, je, pauli_or_erasure)>, string_d
         let starting_nodes = &self.starting_nodes;
         let use_weighted_path_sampling = self.use_weighted_path_sampling;
@@ -461,6 +461,44 @@ impl FastBenchmark {
                 // println!("{:?}", selection);
             }
             assert!(sampled_string.len() > 1, "why would sample string have no more than 2 nodes?");
+            // build clearance region of this sampled string, so that additional errors should not happen at these positions
+            let clearance_region = {
+                let mut clearance_region = BTreeSet::<(usize, usize, usize)>::new();
+                {  // first consider starting boundary
+                    let fb_node = self.fb_nodes[mts][is][js].as_ref().unwrap();
+                    for possible_erasure in fb_node.erasure_boundaries.iter() {
+                        clearance_region.insert(possible_erasure.erasure_position);
+                    }
+                    for possible_pauli in fb_node.pauli_boundaries.iter() {
+                        clearance_region.insert(possible_pauli.pauli_position);
+                    }
+                }
+                for idx in 0..sampled_string.len()-1 {
+                    let (mt1, i1, j1) = sampled_string[idx];
+                    let (mt2, i2, j2) = sampled_string[idx + 1];
+                    let fb_node = self.fb_nodes[mt1][i1][j1].as_ref().unwrap();
+                    let possible_match = fb_node.matches.get(&(mt2, i2, j2)).unwrap();
+                    for possible_erasure in possible_match.erasure_matches.iter() {
+                        clearance_region.insert(possible_erasure.erasure_position);
+                    }
+                    for possible_pauli in possible_match.pauli_matches.iter() {
+                        clearance_region.insert(possible_pauli.pauli_position);
+                    }
+                }
+                {   // finally consider ending boundary
+                    let idx = sampled_string.len() - 1;
+                    let (mte, ie, je) = sampled_string[idx];
+                    let fb_node = self.fb_nodes[mte][ie][je].as_ref().unwrap();
+                    for possible_erasure in fb_node.erasure_boundaries.iter() {
+                        clearance_region.insert(possible_erasure.erasure_position);
+                    }
+                    for possible_pauli in fb_node.pauli_boundaries.iter() {
+                        clearance_region.insert(possible_pauli.pauli_position);
+                    }
+                }
+                // println!("clearance_region: {:?}", clearance_region);
+                clearance_region
+            };
             // build full erasure and selection, which is a fixed vec containing all possible erasure positions
             let (full_erasure_selection, full_pauli_selection) = {
                 let mut erasure_weight_sum = 0.;
@@ -610,7 +648,7 @@ impl FastBenchmark {
                                 }
                             }
                             let string_d = hop + 1;
-                            decode(errors, string_d)  // run real decoding
+                            decode(errors, &clearance_region, string_d)  // run real decoding
                         };
                         assignment_sampling_s += 1;
                         assignment_sampling_sum_ps += sampling_ps;
@@ -749,7 +787,8 @@ impl PossibleMatch {
 }
 
 /// fake decoding will always succeed when error is less than half (or more precisely 2s + t < d given s pauli errors and t erasure errors)
-pub fn fake_decoding(errors: Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>, string_d: usize) -> bool {
+pub fn fake_decoding(errors: Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>
+        , _clearance_region: &BTreeSet<(usize, usize, usize)>, string_d: usize) -> bool {
     let mut erasure_count = 0;
     let mut pauli_count = 0;
     for (_te, _ie, _je, pauli_or_erasure) in errors.iter() {
