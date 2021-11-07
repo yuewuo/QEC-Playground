@@ -516,7 +516,7 @@ impl FastBenchmark {
                     if erasure_count + pauli_count > hop + 1 || (erasure_count == 0 && pauli_count == 0) {
                         continue  // no need to actually sample, it's impossible to have this amount of errors simultaneously
                     }
-                    if erasure_count + 2 * pauli_count < hop - 1 {  // this kind of error is too small, not worth even trying
+                    if erasure_count + 2 * pauli_count < hop + 1 {  // this kind of error confuses estimator when adding more errors randomly
                         continue
                     }
                     let mut combinatorial_of_selection = binomial(full_erasure_selection.len(), erasure_count);
@@ -609,7 +609,9 @@ impl FastBenchmark {
                     }
                     if assignment_sampling_s > 0 {  // sometimes it's impossible to sample, e.g. when 
                         // println!("    assignment_sampling_s: {}", assignment_sampling_s);
-                        let error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum).accumulate_multiple(combinatorial_of_selection, assignment_sampling_sum_ps * assignment_sampling_sum_elements / (assignment_sampling_s as f64).powi(2)).error_rate;
+                        let error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum).accumulate_multiple(
+                            combinatorial_of_selection, assignment_sampling_sum_ps * assignment_sampling_sum_elements
+                                / (assignment_sampling_s as f64).powi(2)).error_rate;
                         string_logical_error_rate.accumulate(error_rate);
                     }
                 }
@@ -625,14 +627,24 @@ impl FastBenchmark {
 
     /// get estimated result of logical error rate
     pub fn logical_error_rate(&self) -> f64 {
-        let mut logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum);
+        let mut left_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum);
+        let mut back_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum);
         let starting_nodes = &self.starting_nodes;
         for &(mts, is, js) in starting_nodes.iter() {
             // sample a path from (mts, is, js) to any end point, whether weighted sample or not
             let fb_node = self.fb_nodes[mts][is][js].as_ref().unwrap();
-            logical_error_rate.accumulate_multiple(fb_node.string_count, fb_node.sampling_sum_ps * fb_node.sampling_sum_elements / (fb_node.sampling_k as f64).powi(2));
+            let acc_p = fb_node.sampling_sum_ps * fb_node.sampling_sum_elements / (fb_node.sampling_k as f64).powi(2);
+            match fb_node.boundary_candidate {
+                Some(BoundaryCandidate::Left) => {
+                    left_logical_error_rate.accumulate_multiple(fb_node.string_count, acc_p);
+                }
+                Some(BoundaryCandidate::Back) => {
+                    back_logical_error_rate.accumulate_multiple(fb_node.string_count, acc_p);
+                }
+                _ => unreachable!("boundary candidate must be left or back"),
+            }
         }
-        logical_error_rate.error_rate
+        1. - (1. - left_logical_error_rate.error_rate) * (1. - back_logical_error_rate.error_rate)
     }
 
     pub fn debug_print(&self) {

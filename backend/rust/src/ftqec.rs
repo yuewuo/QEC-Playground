@@ -698,7 +698,7 @@ impl PlanarCodeModel {
     pub fn count_error(&self) -> usize {
         let mut count = 0;
         self.iterate_snapshot(|_t, _i, _j, node| {
-            if node.error != ErrorType::I {
+            if node.error != ErrorType::I || node.has_erasure {
                 count += 1;
             }
         });
@@ -707,8 +707,8 @@ impl PlanarCodeModel {
 
     pub fn print_errors(&self) {
         self.iterate_snapshot(|t, i, j, node| {
-            if node.error != ErrorType::I {
-                println!("{:?} at {} {} {}", node.error,t,i,j);
+            if node.error != ErrorType::I || node.has_erasure {
+                println!("{:?} at {} {} {} {}", node.error, t, i, j, node.has_erasure);
             }
         });
     }
@@ -1225,8 +1225,41 @@ impl PlanarCodeModel {
                                             fast_benchmark.add_possible_match(t1, i1, j1, t2, i2, j2, erasure_error_rate, t, i, j, Either::Right(()));
                                         }
                                     }
-                                } else if measurement_errors.len() > 2 {
-                                    // TODO: fast benchmark can also include this kind of error
+                                } else if measurement_errors.len() > 2 && measurement_errors.len() <= 4 {
+                                    // fast benchmark also includes this kind of error
+                                    let mut group_1 = Vec::new();
+                                    let mut group_2 = Vec::new();
+                                    let (t0, i0, j0) = measurement_errors[0];
+                                    let node0 = self.snapshot[t0][i0][j0].as_ref().unwrap();
+                                    for &(tm, im, jm) in measurement_errors.iter() {
+                                        let nodem = self.snapshot[tm][im][jm].as_ref().unwrap();
+                                        if node0.qubit_type == nodem.qubit_type {
+                                            group_1.push((tm, im, jm));
+                                        } else {
+                                            group_2.push((tm, im, jm));
+                                        }
+                                    }
+                                    // update fast benchmark
+                                    for group in [group_1, group_2].iter() {
+                                        if group.len() == 1 {
+                                            let (t1, i1, j1) = group[0];
+                                            if p > 0. {
+                                                fast_benchmark.add_possible_boundary(t1, i1, j1, p, t, i, j, Either::Left(error.clone()));
+                                            }
+                                            if is_erasure && erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
+                                                fast_benchmark.add_possible_boundary(t1, i1, j1, erasure_error_rate, t, i, j, Either::Right(()));
+                                            }
+                                        } else if group.len() == 2 {
+                                            let (t1, i1, j1) = group[0];
+                                            let (t2, i2, j2) = group[1];
+                                            if p > 0. {
+                                                fast_benchmark.add_possible_match(t1, i1, j1, t2, i2, j2, p, t, i, j, Either::Left(error.clone()));
+                                            }
+                                            if is_erasure && erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
+                                                fast_benchmark.add_possible_match(t1, i1, j1, t2, i2, j2, erasure_error_rate, t, i, j, Either::Right(()));
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

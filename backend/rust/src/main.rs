@@ -159,7 +159,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg fbench_disable_additional_error: --fbench_disable_additional_error "do not add additional error when running fast benchmark")
                 (@arg fbench_use_fake_decoder: --fbench_use_fake_decoder "fake decoder succeed only if mini_sync_time")
                 (@arg fbench_use_simple_sum: --fbench_use_simple_sum +takes_value "by default to false")
-                (@arg fbench_assignment_sampling_amount: --fbench_assignment_sampling_amount +takes_value "by default to 10")
+                (@arg fbench_assignment_sampling_amount: --fbench_assignment_sampling_amount +takes_value "by default to 1")
                 (@arg fbench_no_weighted_path_sampling: --fbench_no_weighted_path_sampling "by default is weighted sampling which is expected to converge faster")
                 (@arg fbench_no_weighted_assignment_sampling: --fbench_no_weighted_assignment_sampling "by default is weighted sampling which is expected to converge faster")
             )

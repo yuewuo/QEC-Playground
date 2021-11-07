@@ -125,7 +125,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let fbench_disable_additional_error = matches.is_present("fbench_disable_additional_error");
             let fbench_use_fake_decoder = matches.is_present("fbench_use_fake_decoder");
             let fbench_use_simple_sum = matches.is_present("fbench_use_simple_sum");
-            let fbench_assignment_sampling_amount = value_t!(matches, "fbench_assignment_sampling_amount", usize).unwrap_or(10);  // default to 10
+            let fbench_assignment_sampling_amount = value_t!(matches, "fbench_assignment_sampling_amount", usize).unwrap_or(1);  // default to 1
             let fbench_weighted_path_sampling = !matches.is_present("fbench_no_weighted_path_sampling");
             let fbench_weighted_assignment_sampling = !matches.is_present("fbench_no_weighted_assignment_sampling");
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
