@@ -205,6 +205,13 @@ impl FastBenchmark {
                 fb_node.pauli_boundaries_joint_probability = fb_node.pauli_boundaries_joint_probability * (1. - p) + p * (1. - fb_node.pauli_boundaries_joint_probability);
             },
             Either::Right(_) => {
+                // need to check whether this erasure has already been in here
+                for possible_erasure in fb_node.erasure_boundaries.iter() {
+                    if possible_erasure.erasure_position == (te, ie, je) {
+                        assert_eq!(possible_erasure.probability, p, "erasure of same position should be added with joint probability");
+                        return  // already been here, avoid duplicate
+                    }
+                }
                 fb_node.erasure_boundaries.push(PossibleErasure {
                     erasure_position: (te, ie, je),
                     probability: p,
@@ -235,6 +242,13 @@ impl FastBenchmark {
                     possible_match.pauli_joint_probability = possible_match.pauli_joint_probability * (1. - p) + p * (1. - possible_match.pauli_joint_probability);
                 },
                 Either::Right(_) => {
+                    // need to check whether this erasure has already been in here
+                    for possible_erasure in possible_match.erasure_matches.iter() {
+                        if possible_erasure.erasure_position == (te, ie, je) {
+                            assert_eq!(possible_erasure.probability, p, "erasure of same position should be added with joint probability");
+                            return  // already been here, avoid duplicate
+                        }
+                    }
                     possible_match.erasure_matches.push(PossibleErasure {
                         erasure_position: (te, ie, je),
                         probability: p,
@@ -387,7 +401,7 @@ impl FastBenchmark {
                                 // println!("growing [{}][{}][{}]: path_counter {}", mtg, ig, jg, self.fb_nodes[mtg][ig][jg].as_ref().unwrap().path_counter);
                                 string_count += self.fb_nodes[mtg][ig][jg].as_ref().unwrap().path_counter;
                             }
-                            // println!("[{}][{}][{}] final growing.len(): {}, string_count: {}", mt, i, j, growing.len(), string_count);
+                            println!("[{}][{}][{}] final growing.len(): {}, string_count: {}", mt, i, j, growing.len(), string_count);
                             self.fb_nodes[mt][i][j].as_mut().unwrap().string_count = string_count;
                         }, None => { }
                     }
@@ -416,8 +430,8 @@ impl FastBenchmark {
             selection.push(((mts, is, js), 1.));
             for required_hop in (0..hop).rev() {  // note: hop-1, ..., 1, 0
                 // randomly choose one based on the weight
-                let &((mtc, ic, jc), ps) = selection.choose_weighted(rng, |item| item.1).unwrap();
-                sampled_string_ps *= ps;
+                let &((mtc, ic, jc), weight_c) = selection.choose_weighted(rng, |item| item.1).unwrap();
+                sampled_string_ps *= weight_c;
                 sampled_string.push((mtc, ic, jc));
                 // find next selection
                 if required_hop == 0 {  // no next selection, stop here
@@ -446,7 +460,7 @@ impl FastBenchmark {
                 }
                 // println!("{:?}", selection);
             }
-            assert!(sampled_string.len() > 1, "why should sample string no more than 2 nodes?");
+            assert!(sampled_string.len() > 1, "why would sample string have no more than 2 nodes?");
             // build full erasure and selection, which is a fixed vec containing all possible erasure positions
             let (full_erasure_selection, full_pauli_selection) = {
                 let mut erasure_weight_sum = 0.;
@@ -462,6 +476,7 @@ impl FastBenchmark {
                     }
                     if !fb_node.pauli_boundaries.is_empty() {
                         let weight = if use_weighted_assignment_sampling { fb_node.pauli_boundaries_joint_probability } else { 1. };
+                        // println!("fb_node.pauli_boundaries_joint_probability: {}", fb_node.pauli_boundaries_joint_probability);
                         full_pauli_selection.push((0, StringElementType::Boundary, weight, fb_node.pauli_boundaries_joint_probability));
                         pauli_weight_sum += weight;
                     }
@@ -478,6 +493,7 @@ impl FastBenchmark {
                     }
                     if !possible_match.pauli_matches.is_empty() {
                         let weight = if use_weighted_assignment_sampling { possible_match.pauli_joint_probability } else { 1. };
+                        // println!("possible_match.pauli_joint_probability: {}", possible_match.pauli_joint_probability);
                         full_pauli_selection.push((idx, StringElementType::MatchNext, weight, possible_match.pauli_joint_probability));
                         pauli_weight_sum += weight;
                     }
@@ -516,7 +532,7 @@ impl FastBenchmark {
                     if erasure_count + pauli_count > hop + 1 || (erasure_count == 0 && pauli_count == 0) {
                         continue  // no need to actually sample, it's impossible to have this amount of errors simultaneously
                     }
-                    if erasure_count + 2 * pauli_count < hop + 1 {  // this kind of error confuses estimator when adding more errors randomly
+                    if erasure_count + 2 * pauli_count < hop {  // this kind of error confuses estimator when adding more errors randomly
                         continue
                     }
                     let mut combinatorial_of_selection = binomial(full_erasure_selection.len(), erasure_count);
@@ -555,8 +571,6 @@ impl FastBenchmark {
                         }
                         let assignment = assignment;  // make it immutable
                         // println!("    assignment: {:?}", assignment);
-                        assignment_sampling_s += 1;
-                        assignment_sampling_sum_ps += sampling_ps;
                         let has_logical_error = {
                             let mut errors = Vec::new();
                             for &(idx, string_element_type, assignment_element_type, _typed_joint_probability) in assignment.iter() {
@@ -598,20 +612,24 @@ impl FastBenchmark {
                             let string_d = hop + 1;
                             decode(errors, string_d)  // run real decoding
                         };
+                        assignment_sampling_s += 1;
+                        assignment_sampling_sum_ps += sampling_ps;
                         if has_logical_error {
                             let mut physical_error_rate = 1.;
                             assert!(assignment.len() > 0, "should have some errors");
                             for (_idx, _string_element_type, _assignment_element_type, typed_joint_probability) in assignment.iter() {
+                                // println!("typed_joint_probability: {}", typed_joint_probability);
                                 physical_error_rate *= typed_joint_probability;
                             }
                             assignment_sampling_sum_elements += physical_error_rate / sampling_ps;
                         }
                     }
-                    if assignment_sampling_s > 0 {  // sometimes it's impossible to sample, e.g. when 
+                    if assignment_sampling_s > 0 {  // sometimes it's impossible to sample, just ignore this case
                         // println!("    assignment_sampling_s: {}", assignment_sampling_s);
                         let error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum).accumulate_multiple(
                             combinatorial_of_selection, assignment_sampling_sum_ps * assignment_sampling_sum_elements
                                 / (assignment_sampling_s as f64).powi(2)).error_rate;
+                        // println!("pauli_count: {}, error_rate: {}, combinatorial_of_selection: {}, sub: {}", pauli_count, error_rate, combinatorial_of_selection, assignment_sampling_sum_ps * assignment_sampling_sum_elements / (assignment_sampling_s as f64).powi(2));
                         string_logical_error_rate.accumulate(error_rate);
                     }
                 }

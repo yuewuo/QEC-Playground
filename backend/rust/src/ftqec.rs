@@ -1121,8 +1121,7 @@ impl PlanarCodeModel {
                                     }
                                 },
                             }; // probability of this error to occur
-                            let erasure_error_rate = node.erasure_error_rate;
-                            let possible_erasure_error = erasure_error_rate > 0. || node.correlated_erasure_error_model.is_some() || {
+                            let possible_erasure_error = node.erasure_error_rate > 0. || node.correlated_erasure_error_model.is_some() || {
                                 match self.snapshot[t][i][j].as_ref().expect("exist").connection.as_ref() {
                                     Some(connection) => {
                                         let (ct, ci, cj) = (connection.t, connection.i, connection.j);
@@ -1175,13 +1174,6 @@ impl PlanarCodeModel {
                                         let node = self.snapshot[t][i][j].as_mut().expect("exist");
                                         node.pauli_error_connections.push(Either::Right(Index::new(t1, i1, j1)));
                                     }
-                                    // update fast benchmark
-                                    if p > 0. {
-                                        fast_benchmark.add_possible_boundary(t1, i1, j1, p, t, i, j, Either::Left(error.clone()));
-                                    }
-                                    if is_erasure && erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
-                                        fast_benchmark.add_possible_boundary(t1, i1, j1, erasure_error_rate, t, i, j, Either::Right(()));
-                                    }
                                 } else if measurement_errors.len() == 2 {  // connection
                                     let (t1, i1, j1) = measurement_errors[0];
                                     let (t2, i2, j2) = measurement_errors[1];
@@ -1217,20 +1209,14 @@ impl PlanarCodeModel {
                                             let node = self.snapshot[t][i][j].as_mut().expect("exist");
                                             node.pauli_error_connections.push(Either::Left((Index::new(t1, i1, j1), Index::new(t2, i2, j2))));
                                         }
-                                        // update fast benchmark
-                                        if p > 0. {
-                                            fast_benchmark.add_possible_match(t1, i1, j1, t2, i2, j2, p, t, i, j, Either::Left(error.clone()));
-                                        }
-                                        if is_erasure && erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
-                                            fast_benchmark.add_possible_match(t1, i1, j1, t2, i2, j2, erasure_error_rate, t, i, j, Either::Right(()));
-                                        }
                                     }
-                                } else if measurement_errors.len() > 2 && measurement_errors.len() <= 4 {
-                                    // fast benchmark also includes this kind of error
-                                    let mut group_1 = Vec::new();
-                                    let mut group_2 = Vec::new();
+                                }
+                                // update fast benchmark
+                                if measurement_errors.len() >= 1 {
                                     let (t0, i0, j0) = measurement_errors[0];
                                     let node0 = self.snapshot[t0][i0][j0].as_ref().unwrap();
+                                    let mut group_1 = Vec::new();
+                                    let mut group_2 = Vec::new();
                                     for &(tm, im, jm) in measurement_errors.iter() {
                                         let nodem = self.snapshot[tm][im][jm].as_ref().unwrap();
                                         if node0.qubit_type == nodem.qubit_type {
@@ -1239,15 +1225,36 @@ impl PlanarCodeModel {
                                             group_2.push((tm, im, jm));
                                         }
                                     }
-                                    // update fast benchmark
+                                    let joint_erasure_error_rate = {
+                                        let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                                        let mut erasure_error_rate = node.erasure_error_rate;
+                                        match &node.correlated_erasure_error_model {
+                                            Some(correlated_model) => {
+                                                let sub_error_rate = correlated_model.error_rate_EI + correlated_model.error_rate_EE;
+                                                erasure_error_rate = 1. - (1. - sub_error_rate) * (1. - erasure_error_rate);
+                                            }, None => { }
+                                        }
+                                        match node.connection.as_ref() {
+                                            Some(connection) => {
+                                                let (ct, ci, cj) = (connection.t, connection.i, connection.j);
+                                                match &self.snapshot[ct][ci][cj].as_ref().expect("exist").correlated_erasure_error_model {
+                                                    Some(correlated_model) => {
+                                                        let sub_error_rate = correlated_model.error_rate_EI + correlated_model.error_rate_EE;
+                                                        erasure_error_rate = 1. - (1. - sub_error_rate) * (1. - erasure_error_rate);
+                                                    }, None => { }
+                                                }
+                                            }, None => { },
+                                        }
+                                        erasure_error_rate
+                                    };
                                     for group in [group_1, group_2].iter() {
                                         if group.len() == 1 {
                                             let (t1, i1, j1) = group[0];
                                             if p > 0. {
                                                 fast_benchmark.add_possible_boundary(t1, i1, j1, p, t, i, j, Either::Left(error.clone()));
                                             }
-                                            if is_erasure && erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
-                                                fast_benchmark.add_possible_boundary(t1, i1, j1, erasure_error_rate, t, i, j, Either::Right(()));
+                                            if is_erasure && joint_erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
+                                                fast_benchmark.add_possible_boundary(t1, i1, j1, joint_erasure_error_rate, t, i, j, Either::Right(()));
                                             }
                                         } else if group.len() == 2 {
                                             let (t1, i1, j1) = group[0];
@@ -1255,8 +1262,8 @@ impl PlanarCodeModel {
                                             if p > 0. {
                                                 fast_benchmark.add_possible_match(t1, i1, j1, t2, i2, j2, p, t, i, j, Either::Left(error.clone()));
                                             }
-                                            if is_erasure && erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
-                                                fast_benchmark.add_possible_match(t1, i1, j1, t2, i2, j2, erasure_error_rate, t, i, j, Either::Right(()));
+                                            if is_erasure && joint_erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
+                                                fast_benchmark.add_possible_match(t1, i1, j1, t2, i2, j2, joint_erasure_error_rate, t, i, j, Either::Right(()));
                                             }
                                         }
                                     }
