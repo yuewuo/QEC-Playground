@@ -122,14 +122,19 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let log_error_pattern_into_statistics_when_has_logical_error = matches.is_present("log_error_pattern_into_statistics_when_has_logical_error");
             let time_budget = value_t!(matches, "time_budget", f64).ok();
             let use_fast_benchmark = matches.is_present("use_fast_benchmark");
-            let fast_benchmark_disable_additional_error = matches.is_present("fast_benchmark_disable_additional_error");
-            let fast_benchmark_use_fake_decoder = matches.is_present("fast_benchmark_use_fake_decoder");
+            let fbench_disable_additional_error = matches.is_present("fbench_disable_additional_error");
+            let fbench_use_fake_decoder = matches.is_present("fbench_use_fake_decoder");
+            let fbench_use_simple_sum = matches.is_present("fbench_use_simple_sum");
+            let fbench_assignment_sampling_amount = value_t!(matches, "fbench_assignment_sampling_amount", usize).unwrap_or(10);  // default to 10
+            let fbench_weighted_path_sampling = !matches.is_present("fbench_no_weighted_path_sampling");
+            let fbench_weighted_assignment_sampling = !matches.is_present("fbench_no_weighted_assignment_sampling");
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight
                 , use_combined_probability, error_model, error_model_configuration, no_stop_if_next_model_is_not_prepared, log_runtime_statistics
                 , detailed_runtime_statistics, log_error_pattern_into_statistics_when_has_logical_error, time_budget, use_fast_benchmark
-                , fast_benchmark_disable_additional_error, fast_benchmark_use_fake_decoder);
+                , fbench_disable_additional_error, fbench_use_fake_decoder, fbench_use_simple_sum, fbench_assignment_sampling_amount
+                , fbench_weighted_path_sampling, fbench_weighted_assignment_sampling);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -531,17 +536,18 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , max_half_weight: usize, use_combined_probability: bool, error_model: Option<ErrorModel>, error_model_configuration: Option<serde_json::Value>
         , no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>, detailed_runtime_statistics: bool
         , log_error_pattern_into_statistics_when_has_logical_error: bool, time_budget: Option<f64>, use_fast_benchmark: bool
-        , fast_benchmark_disable_additional_error: bool, fast_benchmark_use_fake_decoder: bool) {
+        , fbench_disable_additional_error: bool, fbench_use_fake_decoder: bool, fbench_use_simple_sum: bool, fbench_assignment_sampling_amount: usize
+        , fbench_weighted_path_sampling: bool, fbench_weighted_assignment_sampling: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
     }
     // check fast benchmark parameters
-    if fast_benchmark_disable_additional_error || fast_benchmark_disable_additional_error {
+    if fbench_disable_additional_error || fbench_use_fake_decoder {
         assert!(use_fast_benchmark, "fast benchmark must be enabled to use additional parameters");
     }
-    if fast_benchmark_use_fake_decoder {
-        assert!(fast_benchmark_disable_additional_error, "fake decoder only works when the additional error is disabled");
+    if fbench_use_fake_decoder {
+        assert!(fbench_disable_additional_error, "fake decoder only works when the additional error is disabled");
     }
     // create runtime statistics file of specified
     let log_runtime_statistics_file = log_runtime_statistics.map(|filename| 
@@ -573,8 +579,12 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         "log_error_pattern_into_statistics_when_has_logical_error": log_error_pattern_into_statistics_when_has_logical_error,
         "time_budget": format!("{:?}", time_budget),
         "use_fast_benchmark": use_fast_benchmark,
-        "fast_benchmark_disable_additional_error": fast_benchmark_disable_additional_error,
-        "fast_benchmark_use_fake_decoder": fast_benchmark_use_fake_decoder,
+        "fbench_disable_additional_error": fbench_disable_additional_error,
+        "fbench_use_fake_decoder": fbench_use_fake_decoder,
+        "fbench_use_simple_sum": fbench_use_simple_sum,
+        "fbench_assignment_sampling_amount": fbench_assignment_sampling_amount,
+        "fbench_weighted_path_sampling": fbench_weighted_path_sampling,
+        "fbench_weighted_assignment_sampling": fbench_weighted_assignment_sampling,
     });
     match &log_runtime_statistics_file {  // append runtime statistics data
         Some(log_runtime_statistics_file) => {
@@ -666,7 +676,10 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             None => { }
         }
         let mut fast_benchmark = model.build_graph();
-        // TODO: accept more parameters
+        fast_benchmark.assignment_sampling_amount = fbench_assignment_sampling_amount;
+        fast_benchmark.use_weighted_path_sampling = fbench_weighted_path_sampling;
+        fast_benchmark.use_weighted_assignment_sampling = fbench_weighted_assignment_sampling;
+        fast_benchmark.use_simple_sum = fbench_use_simple_sum;
         fast_benchmark.prepare();
         if ignore_6_neighbors {
             model.iterate_snapshot_mut(|t, i, j, node| {
@@ -795,10 +808,31 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                     while mini_batch_begin.elapsed().as_secs_f64() < mini_sync_time {
                         let mut decode_and_update = |errors: Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>, _: usize| -> bool {
                             mini_batch += 1;
-                            let mut error_count = model_error.generate_random_errors(|| rng.gen::<f64>());
-                            if !errors.is_empty() {
-                                // TODO add error as specified in `errors`
-                            }
+                            let error_count = if use_fast_benchmark && !fbench_disable_additional_error {
+                                // first generate errors
+                                model_error.generate_random_errors(|| rng.gen::<f64>());
+                                for (t, i, j, error_type) in errors.iter() {
+                                    let (t, i, j) = (*t, *i, *j);
+                                    match error_type {
+                                        Either::Left(pauli_error) => {
+                                            match pauli_error {
+                                                Either::Left(error) => {
+                                                    model_error.add_error_at(t, i, j, error).unwrap();
+                                                },
+                                                Either::Right(correlated_error) => {
+                                                    model_error.add_correlated_error_at(t, i, j, correlated_error).unwrap();
+                                                },
+                                            }
+                                        },
+                                        Either::Right(_) => {  // erasure error
+                                            model_error.add_random_erasure_error_at(t, i, j, || rng.gen::<f64>()).unwrap();
+                                        },
+                                    }
+                                }
+                                model_error.count_error()
+                            } else {
+                                model_error.generate_random_errors(|| rng.gen::<f64>())
+                            };
                             if error_count == 0 {
                                 return false;
                             }
@@ -866,7 +900,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                             count_as_error
                         };
                         if use_fast_benchmark {
-                            if fast_benchmark_use_fake_decoder {
+                            if fbench_use_fake_decoder {
                                 fast_benchmark.benchmark_once(&mut rng_fast_benchmark, |errors, string_d| {
                                     mini_batch += 1;
                                     let count_as_error = fast_benchmark::fake_decoding(errors, string_d);

@@ -751,6 +751,58 @@ impl PlanarCodeModel {
         }
     }
 
+    pub fn add_correlated_error_at(&mut self, t: usize, i: usize, j: usize, error: &CorrelatedErrorType) -> Option<(ErrorType, ErrorType)> {
+        let peer = if let Some(array) = self.snapshot.get_mut(t) {
+            if let Some(array) = array.get_mut(i) {
+                if let Some(element) = array.get_mut(j) {
+                    match element {
+                        Some(ref mut node) => {
+                            let p = match node.correlated_error_model {
+                                Some(ref correlated_error_model) => {
+                                    correlated_error_model.error_rate(error)
+                                },
+                                None => 0.
+                            };
+                            if p > 0. {  // only add error if physical error rate is greater than 0.
+                                let my_error = error.my_error();
+                                let peer_error = error.peer_error();
+                                let connection = node.connection.as_ref().expect("correlated error must corresponds to a two-qubit gate");
+                                let (ct, ci, cj) = (connection.t, connection.i, connection.j);
+                                node.error = node.error.multiply(&my_error);
+                                Some((node.error.clone(), ct, ci, cj, peer_error.clone()))
+                            } else {
+                                None
+                            }
+                        }
+                        None => None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        if let Some((node_error, ct, ci, cj, peer_error)) = peer {
+            let peer_node = self.snapshot[ct][ci][cj].as_mut().unwrap();
+            peer_node.error = peer_node.error.multiply(&peer_error);
+            Some((node_error, peer_node.error.clone()))
+        } else {
+            None
+        }
+    }
+
+    pub fn add_random_erasure_error_at<F>(&mut self, t: usize, i: usize, j: usize, mut rng: F) -> Option<ErrorType> where F: FnMut() -> f64 {
+        let random_number = rng();
+        let error = if random_number < 0.25 { ErrorType::X }
+            else if random_number < 0.5 { ErrorType::Z }
+            else if random_number < 0.75 { ErrorType::Y }
+            else { ErrorType::I };
+        self.add_erasure_error_at(t, i, j, &error)
+    }
+
     pub fn add_erasure_error_at(&mut self, t: usize, i: usize, j: usize, error: &ErrorType) -> Option<ErrorType> {
         if let Some(array) = self.snapshot.get_mut(t) {
             if let Some(array) = array.get_mut(i) {

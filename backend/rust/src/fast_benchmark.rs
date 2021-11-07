@@ -117,6 +117,7 @@ pub struct FastBenchmark {
     pub use_weighted_path_sampling: bool,
     pub use_weighted_assignment_sampling: bool,
     pub assignment_sampling_amount: usize,
+    pub use_simple_sum: bool,
 }
 
 impl FastBenchmark {
@@ -182,6 +183,7 @@ impl FastBenchmark {
             use_weighted_path_sampling: true,
             use_weighted_assignment_sampling: true,
             assignment_sampling_amount: 10,
+            use_simple_sum: false,
         }
     }
 
@@ -508,7 +510,7 @@ impl FastBenchmark {
                 (full_erasure_selection, full_pauli_selection)
             };
             // given the sampled string, now calculate the logical error rate on this string by iterating over all possible combinations
-            let mut string_logical_error_rate = 0.;
+            let mut string_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum);
             for erasure_count in 0..full_erasure_selection.len()+1 {
                 for pauli_count in 0..full_pauli_selection.len()+1 {
                     if erasure_count + pauli_count > hop + 1 || (erasure_count == 0 && pauli_count == 0) {
@@ -607,7 +609,8 @@ impl FastBenchmark {
                     }
                     if assignment_sampling_s > 0 {  // sometimes it's impossible to sample, e.g. when 
                         // println!("    assignment_sampling_s: {}", assignment_sampling_s);
-                        string_logical_error_rate += (combinatorial_of_selection as f64) * (assignment_sampling_sum_ps * assignment_sampling_sum_elements / (assignment_sampling_s as f64).powi(2));
+                        let error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum).accumulate_multiple(combinatorial_of_selection, assignment_sampling_sum_ps * assignment_sampling_sum_elements / (assignment_sampling_s as f64).powi(2)).error_rate;
+                        string_logical_error_rate.accumulate(error_rate);
                     }
                 }
             }
@@ -615,21 +618,21 @@ impl FastBenchmark {
             let fb_node = self.fb_nodes[mts][is][js].as_mut().unwrap();
             fb_node.sampling_k += 1;
             fb_node.sampling_sum_ps += sampled_string_ps;
-            fb_node.sampling_sum_elements += string_logical_error_rate / sampled_string_ps;
+            fb_node.sampling_sum_elements += string_logical_error_rate.error_rate / sampled_string_ps;
             // println!("sampled_string_ps: {}, sampled_string: {:?}", sampled_string_ps, sampled_string);
         }
     }
 
     /// get estimated result of logical error rate
     pub fn logical_error_rate(&self) -> f64 {
-        let mut logical_error_rate = 0.;
+        let mut logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum);
         let starting_nodes = &self.starting_nodes;
         for &(mts, is, js) in starting_nodes.iter() {
             // sample a path from (mts, is, js) to any end point, whether weighted sample or not
             let fb_node = self.fb_nodes[mts][is][js].as_ref().unwrap();
-            logical_error_rate += (fb_node.string_count as f64) * fb_node.sampling_sum_ps * fb_node.sampling_sum_elements / (fb_node.sampling_k as f64).powi(2);
+            logical_error_rate.accumulate_multiple(fb_node.string_count, fb_node.sampling_sum_ps * fb_node.sampling_sum_elements / (fb_node.sampling_k as f64).powi(2));
         }
-        logical_error_rate
+        logical_error_rate.error_rate
     }
 
     pub fn debug_print(&self) {
@@ -738,9 +741,57 @@ pub fn fake_decoding(errors: Vec<(usize, usize, usize, Either<Either<ErrorType, 
     }
 }
 
+pub struct ErrorRateAccumulator {
+    /// the accumulated error rate
+    pub error_rate: f64,
+    /// configure to use simple sum
+    pub use_simple_sum: bool,
+}
+
+impl ErrorRateAccumulator {
+    pub fn new() -> Self {
+        Self::new_use_simple_sum(false)
+    }
+
+    pub fn new_use_simple_sum(use_simple_sum: bool) -> Self {
+        Self {
+            error_rate: 0.,
+            use_simple_sum: use_simple_sum,
+        }
+    }
+
+    pub fn accumulate(&mut self, p: f64) -> &mut Self {
+        if self.use_simple_sum {
+            self.error_rate = self.error_rate + p;
+        } else {
+            self.error_rate = self.error_rate * (1. - p) + p * (1. - self.error_rate);
+        }
+        self
+    }
+
+    pub fn accumulate_multiple(&mut self, n: usize, p: f64) -> &mut Self {
+        if self.use_simple_sum {
+            self.error_rate = self.error_rate + (n as f64) * p;
+        } else {
+            // need to optimize when doing the sum, beucase n is generally 2^d and we want a lower complexity with d
+            let mut acc_p = 0.;
+            let mut p_i = p;
+            for i in 0..0usize.leading_zeros() - n.leading_zeros() {
+                if (n & (1 << i)) != 0 {
+                    acc_p = acc_p * (1. - p_i) + p_i * (1. - acc_p);
+                }
+                p_i = 2. * p_i * (1. - p_i);
+            }
+            self.error_rate = self.error_rate * (1. - acc_p) + acc_p * (1. - self.error_rate);
+        }
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::rand::prelude::*;
 
     // use `cargo test fast_benchmark_1 -- --nocapture` to run specific test
 
@@ -781,6 +832,18 @@ mod tests {
             fast_benchmark.benchmark_once(&mut rng, fake_decoding);
         }
         println!("estimated logical error rate: {}", fast_benchmark.logical_error_rate());
+    }
+
+    #[test]
+    fn fast_benchmark_error_rate_accumulator() {
+        // let mut accumulator = ErrorRateAccumulator::new();
+        println!("{}", ErrorRateAccumulator::new().accumulate_multiple(100, 0.00001).error_rate);
+
+        println!("{}", ErrorRateAccumulator::new().accumulate_multiple(100, 0.001).error_rate);
+        println!("{}", ErrorRateAccumulator::new_use_simple_sum(true).accumulate_multiple(100, 0.001).error_rate);
+        
+        println!("{}", ErrorRateAccumulator::new().accumulate_multiple(100, 0.01).error_rate);
+        println!("{}", ErrorRateAccumulator::new_use_simple_sum(true).accumulate_multiple(100, 0.01).error_rate);
     }
 
 }

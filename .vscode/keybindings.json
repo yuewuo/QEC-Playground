@@ -1,8 +1,30 @@
 // this is an example of the key bindings, which should be added to user's own keybindings.json
 [
     {
-        "key": "ctrl+h",
+        "key": "alt+g",
         "command": "workbench.action.tasks.runTask",
-        "args": "Build and View Gnuplot"
+        "args": "Build Gnuplot"
+    },
+    {
+        "key": "alt+v",
+        "command": "workbench.action.tasks.runTask",
+        "args": "View Gnuplot"
+    },
+    {
+        "key": "alt+d",
+        "command": "workbench.action.terminal.newWithCwd",
+        "args": {
+            "cwd": "${fileDirname}"
+        }
+    },
+    {
+        "key": "alt+i",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Sync I9X"
+    },
+    {
+        "key": "alt+h",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Sync HPC QEC-Playgound"
     }
 ]

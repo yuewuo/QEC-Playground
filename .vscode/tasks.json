@@ -32,6 +32,28 @@
 			"options": {
 				"cwd": "${fileDirname}"
 			}
+		},
+		{
+			"label": "Sync I9X",
+			"command": "bash",
+			"args": ["-c", "i9x-sync"],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"clear": true,
+				"close": false
+			},
+		},
+		{
+			"label": "Sync HPC QEC-Playgound",
+			"command": "bash",
+			"args": ["-c", "hpc-sync-qec-playground"],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"clear": true,
+				"close": false
+			},
 		}
 	]
 }
