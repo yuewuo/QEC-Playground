@@ -129,8 +129,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let fbench_use_fake_decoder = matches.is_present("fbench_use_fake_decoder");
             let fbench_use_simple_sum = matches.is_present("fbench_use_simple_sum");
             let fbench_assignment_sampling_amount = value_t!(matches, "fbench_assignment_sampling_amount", usize).unwrap_or(1);  // default to 1
-            let fbench_weighted_path_sampling = !matches.is_present("fbench_no_weighted_path_sampling");
-            let fbench_weighted_assignment_sampling = !matches.is_present("fbench_no_weighted_assignment_sampling");
+            let fbench_weighted_path_sampling = matches.is_present("fbench_weighted_path_sampling");
+            let fbench_weighted_assignment_sampling = matches.is_present("fbench_weighted_assignment_sampling");
             let rug_precision = value_t!(matches, "rug_precision", u32).unwrap_or(128);  // default to 128
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
