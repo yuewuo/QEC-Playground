@@ -29,10 +29,9 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
     results = []
     for di in di_vec:
         local_results = []
-        filename = os.path.join(os.path.dirname(__file__), f"d_{di}_{di}.txt")
         for p in p_vec:
-            p_pauli = 0
-            p_erasure = p
+            p_pauli = p * 0.05
+            p_erasure = p * 0.95
             command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [di], [di], UF_parameters + ["--pes", f"[{p_erasure}]"], max_N=max_N, min_error_cases=min_error_cases)
             if slurm_commands_vec is not None:
                 slurm_commands_vec.append(command)
