@@ -20,7 +20,7 @@ p_vec = [p]
 max_N = 100000000  # this is rarely achieved because p is large enough
 
 # min_error_cases = 100  # for debugging
-min_error_cases = 4000  # real experiment
+min_error_cases = 40000  # real experiment
 
 log_filepath = os.path.join(os.path.dirname(__file__), f"runtime_statistics_UF.txt")
 if 'ONLY_PROCESS_DATA' in os.environ and os.environ["ONLY_PROCESS_DATA"] == "TRUE":
