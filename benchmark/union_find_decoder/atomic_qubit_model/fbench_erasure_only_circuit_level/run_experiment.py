@@ -19,7 +19,7 @@ max_N = 0  # +inf
 
 time_budget = 30 * 60  # 30min
 # time_budget = 10  # debug
-UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget {time_budget} --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --use_fast_benchmark".split(" ")
+UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {time_budget} --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --use_fast_benchmark".split(" ")
 
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # it doesn't rely on too much CPUs
 slurm_distribute.SLURM_DISTRIBUTE_TIME = "02:00:00"
@@ -37,7 +37,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
             p_erasure = p
             command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [di], [di], UF_parameters + ["--pes", f"[{p_erasure}]"], max_N=max_N, min_error_cases=min_error_cases)
             if slurm_commands_vec is not None:
-                slurm_commands_vec.append(command)
+                slurm_commands_vec.sanity_checked_append(command)
                 continue
             print(" ".join(command))
 

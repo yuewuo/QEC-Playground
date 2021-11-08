@@ -60,11 +60,19 @@ def confirm_or_die(action=""):
         elif answer.upper() in ["N", "NO"]:
             raise "confirmation failed, exit"
 
+class SlurmDistributeVec(list):
+    def sanity_checked_append(self, command):
+        if SLURM_DISTRIBUTE_ENABLED:
+            for e in command:
+                if e == "-p0":
+                    confirm_or_die(f"You're using `-p0` option in slurm enabled environment, which may create more threads than allocated to you; please use `slurm_threads_or` to access the allocated number of threads in this case")
+        self.append(command)
+
 def slurm_distribute_wrap(program):
     def wrapper():
         if ONLY_PRINT_COMMANDS or SLURM_DISTRIBUTE_ENABLED:
             # first gether all commands
-            slurm_commands_vec = []
+            slurm_commands_vec = SlurmDistributeVec()
             def error_run_command_get_stdout(command):
                 print(f"should not call `run_command_get_stdout` here, command: ${command}")
                 raise "should not call `run_command_get_stdout` here"
@@ -307,7 +315,7 @@ if __name__ == "__main__":
             else:
                 command = ["sleep", "1"]
             if slurm_commands_vec is not None:
-                slurm_commands_vec.append(command)
+                slurm_commands_vec.sanity_checked_append(command)
                 continue
             stdout, returncode = run_command_get_stdout(command)
             print("\n" + stdout)

@@ -8,7 +8,6 @@
 //!
 //! ## 1. Generality more than Fitting
 //!
-//! In the original paper, Dr.Fowler assumes the asymptotic logical error rate $p_L = A p^{d/2}$.
 //! I don't assume any relation between the logical error rate and physical error rate, but directly estimate the error rate.
 //! This is required when we have both erasure errors and Pauli errors and the transition of the major error happens at very low error rate, and we need to confirm the transition before we can assume the relationship.
 //! 

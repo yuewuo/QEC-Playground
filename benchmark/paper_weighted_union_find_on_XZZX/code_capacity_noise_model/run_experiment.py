@@ -34,7 +34,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
             for bias_eta in bias_eta_vec:
                 command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p], [di], [di], [0], paramters + ["--bias_eta", f"{bias_eta}"], max_N=max_N, min_error_cases=min_error_cases)
                 if slurm_commands_vec is not None:
-                    slurm_commands_vec.append(command)
+                    slurm_commands_vec.sanity_checked_append(command)
                     continue
                 print(" ".join(command))
 

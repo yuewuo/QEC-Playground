@@ -68,7 +68,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
             p_erasure = p * (1 - float(pauli_ratio))
             command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [di], [di], parameters + ["--pes", f"[{p_erasure}]"], max_N=max_N, min_error_cases=min_error_cases)
             if slurm_commands_vec is not None:
-                slurm_commands_vec.append(command)
+                slurm_commands_vec.sanity_checked_append(command)
                 continue
             print(" ".join(command))
 

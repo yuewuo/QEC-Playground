@@ -17,12 +17,12 @@ p_vec = [0.5 * (10 ** (- i / 5)) for i in range(5 * 4 + 1)]
 min_error_cases = 0  # +inf
 max_N = 0  # +inf
 
-time_budget = 30 * 60  # 30min
+time_budget = 10 * 60  # 10min
 # time_budget = 10  # debug
-UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {time_budget} --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --use_fast_benchmark".split(" ")
+UF_parameters = f"-p{STO(0)} --time_budget {time_budget} --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --use_fast_benchmark --fbench_use_fake_decoder --fbench_disable_additional_error".split(" ")
 
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # it doesn't rely on too much CPUs
-slurm_distribute.SLURM_DISTRIBUTE_TIME = "02:00:00"
+slurm_distribute.SLURM_DISTRIBUTE_TIME = "00:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '4G'
 
 compile_code_if_necessary()
