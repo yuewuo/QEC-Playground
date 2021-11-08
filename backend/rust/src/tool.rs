@@ -993,7 +993,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             }
             let variance = variance / (logical_error_rates.len() as f64);
             let confidence_interval_95_percent = 1.96 * variance.sqrt() / average_logical_error_rate.clone();
-            format!("FB {} {} {} {} {} {} {:.8e} {:.1e}", p, pe, di, dj, MeasurementRounds, total_rounds, average_logical_error_rate
+            format!("FB {} {} {} {} {} {} {:.8e} {:.2e}", p, pe, di, dj, MeasurementRounds, total_rounds, average_logical_error_rate
                 , confidence_interval_95_percent)
         };
         loop {

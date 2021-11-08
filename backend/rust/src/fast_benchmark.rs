@@ -592,7 +592,7 @@ impl FastBenchmark {
                         if erasure_count > 0 {
                             let erasure_selection = full_erasure_selection.choose_multiple_weighted(rng, erasure_count, |item| item.2).unwrap().collect::<Vec::<&(usize, StringElementType, f64, f64)>>();
                             for &&(idx, string_element_type, weight, typed_joint_probability) in erasure_selection.iter() {
-                                sampling_ps *= weight;
+                                sampling_ps = sampling_ps.clone() * weight;
                                 assignment.push((idx, string_element_type, AssignmentElementType::Erasure, typed_joint_probability));
                                 erasure_selected_set.insert((idx, string_element_type));
                             }
@@ -694,6 +694,7 @@ impl FastBenchmark {
             // sample a path from (mts, is, js) to any end point, whether weighted sample or not
             let fb_node = self.fb_nodes[mts][is][js].as_ref().unwrap();
             let acc_p = fb_node.sampling_sum_ps.clone() * fb_node.sampling_sum_elements.clone() / (fb_node.sampling_k as f64).powi(2);
+            // println!("[{}][{}][{}]: {} {} {} {} {}", mts, is, js, fb_node.sampling_sum_ps, fb_node.sampling_sum_elements, fb_node.sampling_k, fb_node.string_count, acc_p);
             match fb_node.boundary_candidate {
                 Some(BoundaryCandidate::Left) => {
                     left_logical_error_rate.accumulate_multiple(fb_node.string_count.clone(), acc_p.clone());
@@ -704,8 +705,12 @@ impl FastBenchmark {
                 _ => unreachable!("boundary candidate must be left or back"),
             }
         }
-        let float_1 = rug::Float::with_val(self.rug_precision, 1.);
-        float_1.clone() - (float_1.clone() - left_logical_error_rate.error_rate) * (float_1.clone() - back_logical_error_rate.error_rate)
+        // println!("left: {}, back: {}", left_logical_error_rate.error_rate, back_logical_error_rate.error_rate);
+        // let float_1 = rug::Float::with_val(self.rug_precision, 1.);
+        // float_1.clone() - (float_1.clone() - left_logical_error_rate.error_rate) * (float_1.clone() - back_logical_error_rate.error_rate)
+        // the above equation, although correct, has untolerant rounding error; use the equivalent equation below
+        left_logical_error_rate.error_rate.clone() + back_logical_error_rate.error_rate.clone() -
+            left_logical_error_rate.error_rate.clone() * back_logical_error_rate.error_rate.clone()
     }
 
     pub fn debug_print(&self) {
