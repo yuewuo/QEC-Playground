@@ -39,7 +39,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use super::either::Either;
 use super::rand::seq::SliceRandom;
 use super::rand_core::{RngCore};
-use super::num_integer::binomial;
+use super::rug;
+use super::rug::Complete;
 
 
 #[derive(Debug, PartialEq, Clone)]
@@ -101,12 +102,12 @@ pub struct FBNode {
     pub hop: Option<usize>,  // how many hops to left boundary (j = 2dj - 3) or front boundary (i = 2di - 3) if applicable
     // internal states
     boundary_candidate: Option<BoundaryCandidate>,
-    string_count: usize,  // only valid when `boundary_candidate` is Left or Back
+    string_count: rug::Integer,  // only valid when `boundary_candidate` is Left or Back
     sampling_k: usize,
-    sampling_sum_ps: f64,
-    sampling_sum_elements: f64,
+    sampling_sum_ps: rug::Float,
+    sampling_sum_elements: rug::Float,
     // temporary registers and sampling registers
-    path_counter: usize,
+    path_counter: rug::Integer,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -118,6 +119,7 @@ pub struct FastBenchmark {
     pub use_weighted_assignment_sampling: bool,
     pub assignment_sampling_amount: usize,
     pub use_simple_sum: bool,
+    pub rug_precision: u32,  // default to 128 bits
 }
 
 impl FastBenchmark {
@@ -184,6 +186,7 @@ impl FastBenchmark {
             use_weighted_assignment_sampling: true,
             assignment_sampling_amount: 10,
             use_simple_sum: false,
+            rug_precision: 128,  // bits
         }
     }
 
@@ -322,7 +325,7 @@ impl FastBenchmark {
                 for (_j, element) in array.iter_mut().enumerate() {
                     match element {
                         Some(ref mut fb_node) => {
-                            fb_node.path_counter = 0;
+                            fb_node.path_counter = rug::Integer::from(0);
                         }, None => { }
                     }
                 }
@@ -370,7 +373,7 @@ impl FastBenchmark {
                     }
                     match run_with_hop {
                         Some(hop) => {
-                            self.fb_nodes[mt][i][j].as_mut().unwrap().path_counter = 1;
+                            self.fb_nodes[mt][i][j].as_mut().unwrap().path_counter = rug::Integer::from(1);
                             let mut growing = BTreeSet::new();
                             growing.insert((mt, i, j));
                             for required_hop in (1..hop).rev() {  // note: hop-1, hop-2, ..., 1
@@ -378,7 +381,7 @@ impl FastBenchmark {
                                 // println!("required_hop: {}, growing.len(): {}", required_hop, growing.len());
                                 for &(mtg, ig, jg) in growing.iter() {
                                     let mut matches = Vec::new();
-                                    let path_counter = self.fb_nodes[mtg][ig][jg].as_ref().unwrap().path_counter;
+                                    let path_counter = self.fb_nodes[mtg][ig][jg].as_ref().unwrap().path_counter.clone();
                                     for (&(mtp, ip, jp), _possible_match) in self.fb_nodes[mtg][ig][jg].as_ref().unwrap().matches.iter() {
                                         matches.push((mtp, ip, jp));
                                     }
@@ -387,7 +390,7 @@ impl FastBenchmark {
                                         match fb_node_peer.hop.clone() {
                                             Some(hop_peer) => {
                                                 if hop_peer == required_hop {
-                                                    fb_node_peer.path_counter += path_counter;
+                                                    fb_node_peer.path_counter += path_counter.clone();
                                                     next_growing.insert((mtp, ip, jp));
                                                 }
                                             }, None => { }
@@ -396,10 +399,10 @@ impl FastBenchmark {
                                 }
                                 growing = next_growing;
                             }
-                            let mut string_count = 0;
+                            let mut string_count = rug::Integer::from(0);
                             for &(mtg, ig, jg) in growing.iter() {
                                 // println!("growing [{}][{}][{}]: path_counter {}", mtg, ig, jg, self.fb_nodes[mtg][ig][jg].as_ref().unwrap().path_counter);
-                                string_count += self.fb_nodes[mtg][ig][jg].as_ref().unwrap().path_counter;
+                                string_count += self.fb_nodes[mtg][ig][jg].as_ref().unwrap().path_counter.clone();
                             }
                             // println!("[{}][{}][{}] final growing.len(): {}, string_count: {}", mt, i, j, growing.len(), string_count);
                             self.fb_nodes[mt][i][j].as_mut().unwrap().string_count = string_count;
@@ -425,7 +428,7 @@ impl FastBenchmark {
             // sample a path from (mts, is, js) to any end point, whether weighted sample or not
             let hop = self.fb_nodes[mts][is][js].as_ref().unwrap().hop.unwrap();
             let mut sampled_string: Vec<(usize, usize, usize)> = Vec::new();
-            let mut sampled_string_ps = 1.;
+            let mut sampled_string_ps = rug::Float::with_val(self.rug_precision, 1.);
             let mut selection = Vec::new();
             selection.push(((mts, is, js), 1.));
             for required_hop in (0..hop).rev() {  // note: hop-1, ..., 1, 0
@@ -564,7 +567,7 @@ impl FastBenchmark {
                 (full_erasure_selection, full_pauli_selection)
             };
             // given the sampled string, now calculate the logical error rate on this string by iterating over all possible combinations
-            let mut string_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum);
+            let mut string_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum, self.rug_precision);
             for erasure_count in 0..full_erasure_selection.len()+1 {
                 for pauli_count in 0..full_pauli_selection.len()+1 {
                     if erasure_count + pauli_count > hop + 1 || (erasure_count == 0 && pauli_count == 0) {
@@ -579,11 +582,11 @@ impl FastBenchmark {
                     }
                     // println!("erasure_count: {}, pauli_count: {}, combinatorial_of_selection: {}", erasure_count, pauli_count, combinatorial_of_selection);
                     let mut assignment_sampling_s = 0;
-                    let mut assignment_sampling_sum_ps = 0.;
-                    let mut assignment_sampling_sum_elements = 0.;
+                    let mut assignment_sampling_sum_ps = rug::Float::with_val(self.rug_precision, 0.);
+                    let mut assignment_sampling_sum_elements = rug::Float::with_val(self.rug_precision, 0.);
                     for _assignment_idx in 0..self.assignment_sampling_amount {
                         let mut assignment = Vec::<(usize, StringElementType, AssignmentElementType, f64)>::new();
-                        let mut sampling_ps = 1.;
+                        let mut sampling_ps = rug::Float::with_val(self.rug_precision, 1.);
                         // first sample multiple erasure errors
                         let mut erasure_selected_set = BTreeSet::new();
                         if erasure_count > 0 {
@@ -651,9 +654,9 @@ impl FastBenchmark {
                             decode(errors, &clearance_region, string_d)  // run real decoding
                         };
                         assignment_sampling_s += 1;
-                        assignment_sampling_sum_ps += sampling_ps;
+                        assignment_sampling_sum_ps += sampling_ps.clone();
                         if has_logical_error {
-                            let mut physical_error_rate = 1.;
+                            let mut physical_error_rate = rug::Float::with_val(self.rug_precision, 1.);
                             assert!(assignment.len() > 0, "should have some errors");
                             for (_idx, _string_element_type, _assignment_element_type, typed_joint_probability) in assignment.iter() {
                                 // println!("typed_joint_probability: {}", typed_joint_probability);
@@ -664,9 +667,9 @@ impl FastBenchmark {
                     }
                     if assignment_sampling_s > 0 {  // sometimes it's impossible to sample, just ignore this case
                         // println!("    assignment_sampling_s: {}", assignment_sampling_s);
-                        let error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum).accumulate_multiple(
+                        let error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum, self.rug_precision).accumulate_multiple(
                             combinatorial_of_selection, assignment_sampling_sum_ps * assignment_sampling_sum_elements
-                                / (assignment_sampling_s as f64).powi(2)).error_rate;
+                                / rug::Integer::u_pow_u(assignment_sampling_s, 2).complete()).error_rate.clone();
                         // println!("pauli_count: {}, error_rate: {}, combinatorial_of_selection: {}, sub: {}", pauli_count, error_rate, combinatorial_of_selection, assignment_sampling_sum_ps * assignment_sampling_sum_elements / (assignment_sampling_s as f64).powi(2));
                         string_logical_error_rate.accumulate(error_rate);
                     }
@@ -675,32 +678,34 @@ impl FastBenchmark {
             // update state
             let fb_node = self.fb_nodes[mts][is][js].as_mut().unwrap();
             fb_node.sampling_k += 1;
-            fb_node.sampling_sum_ps += sampled_string_ps;
-            fb_node.sampling_sum_elements += string_logical_error_rate.error_rate / sampled_string_ps;
+            fb_node.sampling_sum_ps = sampled_string_ps.clone() + fb_node.sampling_sum_ps.clone();  // note: this will use the left-hand precision
+            fb_node.sampling_sum_elements = string_logical_error_rate.error_rate / sampled_string_ps.clone()
+                + fb_node.sampling_sum_elements.clone();  // note: this will use the left-hand precision
             // println!("sampled_string_ps: {}, sampled_string: {:?}", sampled_string_ps, sampled_string);
         }
     }
 
     /// get estimated result of logical error rate
-    pub fn logical_error_rate(&self) -> f64 {
-        let mut left_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum);
-        let mut back_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum);
+    pub fn logical_error_rate(&self) -> rug::Float {
+        let mut left_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum, self.rug_precision);
+        let mut back_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum, self.rug_precision);
         let starting_nodes = &self.starting_nodes;
         for &(mts, is, js) in starting_nodes.iter() {
             // sample a path from (mts, is, js) to any end point, whether weighted sample or not
             let fb_node = self.fb_nodes[mts][is][js].as_ref().unwrap();
-            let acc_p = fb_node.sampling_sum_ps * fb_node.sampling_sum_elements / (fb_node.sampling_k as f64).powi(2);
+            let acc_p = fb_node.sampling_sum_ps.clone() * fb_node.sampling_sum_elements.clone() / (fb_node.sampling_k as f64).powi(2);
             match fb_node.boundary_candidate {
                 Some(BoundaryCandidate::Left) => {
-                    left_logical_error_rate.accumulate_multiple(fb_node.string_count, acc_p);
+                    left_logical_error_rate.accumulate_multiple(fb_node.string_count.clone(), acc_p.clone());
                 }
                 Some(BoundaryCandidate::Back) => {
-                    back_logical_error_rate.accumulate_multiple(fb_node.string_count, acc_p);
+                    back_logical_error_rate.accumulate_multiple(fb_node.string_count.clone(), acc_p.clone());
                 }
                 _ => unreachable!("boundary candidate must be left or back"),
             }
         }
-        1. - (1. - left_logical_error_rate.error_rate) * (1. - back_logical_error_rate.error_rate)
+        let float_1 = rug::Float::with_val(self.rug_precision, 1.);
+        float_1.clone() - (float_1.clone() - left_logical_error_rate.error_rate) * (float_1.clone() - back_logical_error_rate.error_rate)
     }
 
     pub fn debug_print(&self) {
@@ -755,12 +760,12 @@ impl FBNode {
             hop: None,
             // internal state
             boundary_candidate: None,
-            string_count: 0,
+            string_count: rug::Integer::from(0),
             sampling_k: 0,
-            sampling_sum_ps: 0.,
-            sampling_sum_elements: 0.,
+            sampling_sum_ps: rug::Float::with_val(2, 0.),  // it doesn't matter, will later take the higher precision one
+            sampling_sum_elements: rug::Float::with_val(2, 0.),
             // temporary state
-            path_counter: 0,
+            path_counter: rug::Integer::from(0),
         }
     }
 }
@@ -812,49 +817,61 @@ pub fn fake_decoding(errors: Vec<(usize, usize, usize, Either<Either<ErrorType, 
 
 pub struct ErrorRateAccumulator {
     /// the accumulated error rate
-    pub error_rate: f64,
+    pub error_rate: rug::Float,
     /// configure to use simple sum
     pub use_simple_sum: bool,
+    // internal state
+    rug_precision: u32,
 }
 
 impl ErrorRateAccumulator {
-    pub fn new() -> Self {
-        Self::new_use_simple_sum(false)
+    pub fn new(rug_precision: u32) -> Self {
+        Self::new_use_simple_sum(false, rug_precision)
     }
 
-    pub fn new_use_simple_sum(use_simple_sum: bool) -> Self {
+    pub fn new_use_simple_sum(use_simple_sum: bool, rug_precision: u32) -> Self {
         Self {
-            error_rate: 0.,
+            error_rate: rug::Float::with_val(rug_precision, 0.),
             use_simple_sum: use_simple_sum,
+            rug_precision: rug_precision,
         }
     }
 
-    pub fn accumulate(&mut self, p: f64) -> &mut Self {
+    pub fn accumulate(&mut self, p: rug::Float) -> &mut Self {
         if self.use_simple_sum {
-            self.error_rate = self.error_rate + p;
+            self.error_rate = self.error_rate.clone() + p;
         } else {
-            self.error_rate = self.error_rate * (1. - p) + p * (1. - self.error_rate);
+            self.error_rate = self.error_rate.clone() * (1. - p.clone()) + p * (1. - self.error_rate.clone());
         }
         self
     }
 
-    pub fn accumulate_multiple(&mut self, n: usize, p: f64) -> &mut Self {
+    pub fn accumulate_multiple(&mut self, n: rug::Integer, p: rug::Float) -> &mut Self {
         if self.use_simple_sum {
-            self.error_rate = self.error_rate + (n as f64) * p;
+            self.error_rate = self.error_rate.clone() + rug::Float::with_val(self.rug_precision, n) * p.clone();
         } else {
             // need to optimize when doing the sum, beucase n is generally 2^d and we want a lower complexity with d
-            let mut acc_p = 0.;
-            let mut p_i = p;
-            for i in 0..0usize.leading_zeros() - n.leading_zeros() {
-                if (n & (1 << i)) != 0 {
-                    acc_p = acc_p * (1. - p_i) + p_i * (1. - acc_p);
+            let mut acc_p = rug::Float::with_val(self.rug_precision, 0.);
+            let mut p_i = p.clone();
+            let mut n = n;
+            loop {
+                if n == 0 {  // stop when n == 0
+                    break
                 }
-                p_i = 2. * p_i * (1. - p_i);
+                if n.get_bit(0) {
+                    acc_p = acc_p.clone() * (1. - p_i.clone()) + p_i.clone() * (1. - acc_p.clone());
+                }
+                p_i = 2. * p_i.clone() * (1. - p_i.clone());
+                n = n.clone() >> 1;
             }
-            self.error_rate = self.error_rate * (1. - acc_p) + acc_p * (1. - self.error_rate);
+            self.error_rate = self.error_rate.clone() * (1. - acc_p.clone()) + acc_p.clone() * (1. - self.error_rate.clone());
         }
         self
     }
+}
+
+fn binomial(n: usize, k: usize) -> rug::Integer {
+    rug::Integer::binomial_u(n as u32, k as u32).complete()
 }
 
 #[cfg(test)]
@@ -906,13 +923,43 @@ mod tests {
     #[test]
     fn fast_benchmark_error_rate_accumulator() {
         // let mut accumulator = ErrorRateAccumulator::new();
-        println!("{}", ErrorRateAccumulator::new().accumulate_multiple(100, 0.00001).error_rate);
+        let rug_precision = 128;
+        println!("{}", ErrorRateAccumulator::new(rug_precision).accumulate_multiple(
+            rug::Integer::from(100), rug::Float::with_val(rug_precision, 0.00001)).error_rate);
 
-        println!("{}", ErrorRateAccumulator::new().accumulate_multiple(100, 0.001).error_rate);
-        println!("{}", ErrorRateAccumulator::new_use_simple_sum(true).accumulate_multiple(100, 0.001).error_rate);
+        println!("{}", ErrorRateAccumulator::new(rug_precision).accumulate_multiple(
+            rug::Integer::from(100), rug::Float::with_val(rug_precision, 0.001)).error_rate);
+        println!("{}", ErrorRateAccumulator::new_use_simple_sum(true, rug_precision).accumulate_multiple(
+            rug::Integer::from(100), rug::Float::with_val(rug_precision, 0.001)).error_rate);
         
-        println!("{}", ErrorRateAccumulator::new().accumulate_multiple(100, 0.01).error_rate);
-        println!("{}", ErrorRateAccumulator::new_use_simple_sum(true).accumulate_multiple(100, 0.01).error_rate);
+        println!("{}", ErrorRateAccumulator::new(rug_precision).accumulate_multiple(
+            rug::Integer::from(100), rug::Float::with_val(rug_precision, 0.01)).error_rate);
+        println!("{}", ErrorRateAccumulator::new_use_simple_sum(true, rug_precision).accumulate_multiple(
+            rug::Integer::from(100), rug::Float::with_val(rug_precision, 0.01)).error_rate);
+    }
+
+    #[test]
+    fn fast_benchmark_high_precision_float() {
+        let mut a = rug::Float::with_val(53, 10.5);
+        for _ in 0..10000 {
+            a = a * 1e-40;
+        }
+        println!("{:.16e}", a);
+        // test small sum
+        for &precision in [50u32, 99, 150, 200, 1000, 2000].iter() {  // precision in bits
+            let b = rug::Float::with_val(precision, 10.5);
+            let c = rug::Float::with_val(precision, 1e-100);
+            let mut d = b.clone() + c;
+            d -= b;
+            println!("{}: {:.16e}", precision, d);
+        }
+        // test precision sum
+        let a = rug::Float::with_val(4, 3.1415926);
+        let b = rug::Float::with_val(12, 3.1415926);
+        println!("a: {}", a);
+        println!("b: {}", b);
+        println!("a + b: {}", a.clone() + b.clone());
+        println!("b + a: {}", b.clone() + a.clone());
     }
 
 }

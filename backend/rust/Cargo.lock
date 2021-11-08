@@ -363,6 +363,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "az"
+version = "1.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d6dff4a1892b54d70af377bf7a17064192e822865791d812957f21e3108c325"
+
+[[package]]
 name = "backtrace"
 version = "0.3.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -811,6 +817,16 @@ name = "gimli"
 version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f6503fe142514ca4799d4c26297c4248239fe8838d827db6bd6065c6ed29a6ce"
+
+[[package]]
+name = "gmp-mpfr-sys"
+version = "1.4.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a146a7357ce9573bdcc416fc4a99b960e166e72d8eaffa7c59966d51866b5bfb"
+dependencies = [
+ "libc",
+ "winapi 0.3.9",
+]
 
 [[package]]
 name = "h2"
@@ -1546,6 +1562,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rug"
+version = "1.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee0c6e98de59509e62e09f3456b23cebb75dad21928882016f169bb628843459"
+dependencies = [
+ "az",
+ "gmp-mpfr-sys",
+ "libc",
+]
+
+[[package]]
 name = "rust_qecp"
 version = "0.1.0"
 dependencies = [
@@ -1560,13 +1587,13 @@ dependencies = [
  "lazy_static",
  "libc",
  "ndarray",
- "num-integer",
  "num_cpus",
  "pbr",
  "petgraph",
  "pyo3",
  "rand 0.8.4",
  "rand_core 0.6.1",
+ "rug",
  "serde",
  "serde_json",
  "union-find",

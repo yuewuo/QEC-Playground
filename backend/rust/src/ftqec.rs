@@ -1305,7 +1305,7 @@ impl PlanarCodeModel {
         }
         // println!("{} -> {}", original_cases.len(), optimized_cases.len());  // observation: the max amount of cases reduces from 7 to 3
         // sort the corrections based on its probability
-        optimized_cases.sort_by(|(_, p1), (_, p2)| p2.partial_cmp(&p1).expect("probabilities shouldn't be NaN"));
+        optimized_cases.sort_by(|(_, p1), (_, p2)| p2.partial_cmp(p1).expect("probabilities shouldn't be NaN"));
         // let ps: Vec<f64> = optimized_cases.iter().map(|(_, p)| *p).collect();
         // println!("{:?}", ps);  // to check the order of it
         optimized_cases

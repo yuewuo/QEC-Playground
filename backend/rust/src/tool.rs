@@ -24,6 +24,8 @@ use super::ndarray;
 use super::serde_json::{json};
 use super::either::Either;
 use super::fast_benchmark;
+use super::rug;
+use super::rug::ops::Pow;
 use std::collections::BTreeSet;
 use std::fs::File;
 use std::io::prelude::*;
@@ -129,13 +131,14 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let fbench_assignment_sampling_amount = value_t!(matches, "fbench_assignment_sampling_amount", usize).unwrap_or(1);  // default to 1
             let fbench_weighted_path_sampling = !matches.is_present("fbench_no_weighted_path_sampling");
             let fbench_weighted_assignment_sampling = !matches.is_present("fbench_no_weighted_assignment_sampling");
+            let rug_precision = value_t!(matches, "rug_precision", u32).unwrap_or(128);  // default to 128
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight
                 , use_combined_probability, error_model, error_model_configuration, no_stop_if_next_model_is_not_prepared, log_runtime_statistics
                 , detailed_runtime_statistics, log_error_pattern_into_statistics_when_has_logical_error, time_budget, use_fast_benchmark
                 , fbench_disable_additional_error, fbench_use_fake_decoder, fbench_use_simple_sum, fbench_assignment_sampling_amount
-                , fbench_weighted_path_sampling, fbench_weighted_assignment_sampling);
+                , fbench_weighted_path_sampling, fbench_weighted_assignment_sampling, rug_precision);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -538,7 +541,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>, detailed_runtime_statistics: bool
         , log_error_pattern_into_statistics_when_has_logical_error: bool, time_budget: Option<f64>, use_fast_benchmark: bool
         , fbench_disable_additional_error: bool, fbench_use_fake_decoder: bool, fbench_use_simple_sum: bool, fbench_assignment_sampling_amount: usize
-        , fbench_weighted_path_sampling: bool, fbench_weighted_assignment_sampling: bool) {
+        , fbench_weighted_path_sampling: bool, fbench_weighted_assignment_sampling: bool, rug_precision: u32) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -760,7 +763,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         {
             let mut fast_benchmark_results = fast_benchmark_results.lock().unwrap();
             for _ in 0..parallel {
-                fast_benchmark_results.push((0., false));
+                fast_benchmark_results.push((rug::Float::with_val(rug_precision, 0.), false));
             }
         }
         for parallel_idx in 0..parallel {
@@ -970,8 +973,8 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 fast_benchmark_results.clone()
             };
             let mut logical_error_rates = Vec::new();
-            for &(logical_error_rate, updated) in fast_benchmark_results.iter() {
-                if updated {
+            for (logical_error_rate, updated) in fast_benchmark_results.iter() {
+                if *updated {
                     logical_error_rates.push(logical_error_rate);
                 }
             }
@@ -979,11 +982,18 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 return format!("FB <waiting>");
             }
             // calculate mean and stddev of these logical_error_rates
-            let average_logical_error_rate = logical_error_rates.iter().sum::<f64>() / logical_error_rates.len() as f64;
-            let variance = logical_error_rates.iter().map(|value| (average_logical_error_rate - *value).powi(2)).sum::<f64>()
-                / logical_error_rates.len() as f64;
-            let confidence_interval_95_percent = 1.96 * variance.sqrt() / average_logical_error_rate;
-            format!("FB {} {} {} {} {} {} {} {:.1e}", p, pe, di, dj, MeasurementRounds, total_rounds, average_logical_error_rate
+            let mut average_logical_error_rate = rug::Float::with_val(rug_precision, 0.);
+            for logical_error_rate in logical_error_rates.iter() {
+                average_logical_error_rate += logical_error_rate.clone();
+            }
+            let average_logical_error_rate = average_logical_error_rate / (logical_error_rates.len() as f64);
+            let mut variance = rug::Float::with_val(rug_precision, 0.);
+            for logical_error_rate in logical_error_rates.iter() {
+                variance += (average_logical_error_rate.clone() - logical_error_rate.clone()).pow(2);
+            }
+            let variance = variance / (logical_error_rates.len() as f64);
+            let confidence_interval_95_percent = 1.96 * variance.sqrt() / average_logical_error_rate.clone();
+            format!("FB {} {} {} {} {} {} {:.8e} {:.1e}", p, pe, di, dj, MeasurementRounds, total_rounds, average_logical_error_rate
                 , confidence_interval_95_percent)
         };
         loop {

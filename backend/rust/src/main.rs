@@ -35,7 +35,7 @@ extern crate union_find;
 extern crate derive_more;
 extern crate lazy_static;
 extern crate either;
-extern crate num_integer;
+extern crate rug;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -162,6 +162,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg fbench_assignment_sampling_amount: --fbench_assignment_sampling_amount +takes_value "by default to 1")
                 (@arg fbench_no_weighted_path_sampling: --fbench_no_weighted_path_sampling "by default is weighted sampling which is expected to converge faster")
                 (@arg fbench_no_weighted_assignment_sampling: --fbench_no_weighted_assignment_sampling "by default is weighted sampling which is expected to converge faster")
+                (@arg rug_precision: --rug_precision +takes_value "default to 128, the number of bits in a float number used for fast benchmark")
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")
