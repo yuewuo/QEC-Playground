@@ -40,6 +40,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
                 slurm_commands_vec.sanity_checked_append(command)
                 continue
             print(" ".join(command))
+            
 
             # run experiment
             stdout, returncode = run_command_get_stdout(command)
