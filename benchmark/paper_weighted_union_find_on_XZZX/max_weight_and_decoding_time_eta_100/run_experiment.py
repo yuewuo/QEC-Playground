@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.join(qec_playground_root_dir, "benchmark", "slurm_uti
 import slurm_distribute
 from slurm_distribute import slurm_threads_or as STO
 from slurm_distribute import confirm_or_die
+import json
 
 # import process data library
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "code_distance_decoding_time_eta_100"))
@@ -17,7 +18,7 @@ from process_data import generate_print, print_title
 pairs = [ (4, 12, 12), (5, 15, 15), (6, 18, 18) ]  # (di, dj, T)
 p = 0.008
 
-max_half_weights = [ i for i in range(1, 11) ]
+max_half_weights = [i for i in range(1, 11)] + [i for i in range(12, 51, 2)]
 
 max_N = 100000000  # this is rarely achieved because p is large enough
 
@@ -71,7 +72,9 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
                     else:
                         data.append(json.loads(line))
             time_field_name = "time_run_to_stable"
-            results.append(generate_print(di, dj, T, data, time_field_name))
+            result = generate_print(di, dj, T, data, time_field_name)
+            print(result)
+            results.append(result)
 
         if slurm_commands_vec is not None:
             continue
@@ -81,6 +84,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
         print("\n".join(results))
         print("\n\n")
 
+        filename = os.path.join(os.path.dirname(__file__), f"data_{di}.txt")
         with open(filename, "w", encoding="utf-8") as f:
             f.write(print_title + "\n")
             f.write("\n".join(results) + "\n")

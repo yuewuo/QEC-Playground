@@ -12,11 +12,11 @@ from slurm_distribute import slurm_threads_or as STO
 d = 5
 p = 0.005
 max_N = 100000000
-min_error_cases = 100000
+min_error_cases = 400000
 
-slurm_distribute.SLURM_DISTRIBUTE_TIME = "01:00:00"
+slurm_distribute.SLURM_DISTRIBUTE_TIME = "02:30:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '2G'
-time_budget = 30 * 60  # 30min
+time_budget = 120 * 60  # 2 hour
 parameters = f"-p{STO(0)} --time_budget {time_budget} --use_xzzx_code --error_model GenericBiasedWithBiasedCX".split(" ")  # a maximum 20min for each point
 
 compile_code_if_necessary()
@@ -27,7 +27,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
         filename = os.path.join(os.path.dirname(__file__), f"bias_eta_{bias_eta}.txt")
         results = []
         
-        for max_half_weight in ["MWPM"] + [i for i in range(1, 11)]: # MWPM is baseline
+        for max_half_weight in ["MWPM"] + [i for i in range(1, 11)] + [i for i in range(12, 51, 2)]: # MWPM is baseline
 
             local_parameters = parameters + ["--bias_eta", f"{bias_eta}"]
             if max_half_weight != "MWPM":

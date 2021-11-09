@@ -22,7 +22,8 @@ if 'SLURM_HELP' in os.environ:
 DEBUG_USING_INTERACTIVE_PARTITION = False  # only enable while debugging
 
 # to check which node causes problem, run `sacct -j <JOBID> | grep FAILED`
-NODE_BLACK_LIST = ["p08r07n[01-08]", "p09r11n25"]  # these nodes fails
+# NODE_BLACK_LIST = ["p08r07n[01-08]", "p09r11n25"]  # these nodes fails
+NODE_BLACK_LIST = []
 
 # utility tool
 ONLY_PRINT_COMMANDS = False
