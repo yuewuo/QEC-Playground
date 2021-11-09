@@ -8,6 +8,11 @@ from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 sys.path.insert(0, os.path.join(qec_playground_root_dir, "benchmark", "slurm_utilities"))
 import slurm_distribute
 from slurm_distribute import slurm_threads_or as STO
+from slurm_distribute import confirm_or_die
+
+# import process data library
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "code_distance_decoding_time_eta_100"))
+from process_data import generate_print, print_title
 
 pairs = [ (4, 12, 12), (5, 15, 15), (6, 18, 18) ]  # (di, dj, T)
 p = 0.008
@@ -20,16 +25,21 @@ max_N = 100000000  # this is rarely achieved because p is large enough
 min_error_cases = 40000  # real experiment
 
 slurm_distribute.SLURM_DISTRIBUTE_FORBIDDEN = True  # forbidden the use of slurm distribute
+slurm_distribute.SLURM_DISTRIBUTE_DO_NOT_CHECK_JOBOUT = True
 
 ENABLE_MULTITHREADING = True
 num_threads = os.cpu_count() - 2 if ENABLE_MULTITHREADING else 1
 print("num_threads:", num_threads)
+
+if (not slurm_distribute.ONLY_PRINT_COMMANDS) and (not slurm_distribute.SLURM_USE_EXISTING_DATA):
+    confirm_or_die("sure to start simulation? this will truncate the existing runtime-statistics files")
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run
 def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playground_command_get_stdout):
     for pair in pairs:
         di, dj, T = pair
+        results = []
 
         for max_half_weight in max_half_weights:
 
@@ -43,19 +53,34 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
             print(" ".join(command))
 
             stdout, returncode = run_command_get_stdout(command)
-            print("\n" + stdout)
+            print("\n" + stdout)  # SLURM_DISTRIBUTE_DO_NOT_CHECK_JOBOUT
             assert returncode == 0, "command fails..."
-            
-            # full result
-            full_result = stdout.strip(" \r\n").split("\n")[-1]
-            lst = full_result.split(" ")
-            total_rounds = int(lst[3])
-            error_count = int(lst[4])
-            error_rate = float(lst[5])
-            confidence_interval = float(lst[7])
-            print(full_result)
+
+            # process data
+            data = []
+            with open(log_filepath, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+                for line in lines:
+                    line = line.strip(" \r\n")
+                    if line == "":  # ignore empty line
+                        continue
+                    if line[:3] == "#f ":
+                        pass
+                    elif line[:2] == "# ":
+                        pass
+                    else:
+                        data.append(json.loads(line))
+            time_field_name = "time_run_to_stable"
+            results.append(generate_print(di, dj, T, data, time_field_name))
 
         if slurm_commands_vec is not None:
             continue
 
-        # TODO: process data
+        print("\n\n")
+        print(print_title)
+        print("\n".join(results))
+        print("\n\n")
+
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(print_title + "\n")
+            f.write("\n".join(results) + "\n")

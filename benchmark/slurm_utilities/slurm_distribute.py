@@ -43,6 +43,7 @@ if 'SLURM_USE_SCAVENGE_PARTITION' in os.environ and os.environ["SLURM_USE_SCAVEN
 
 SLURM_DISTRIBUTE_FORBIDDEN = False  # never allow the script run in slurm environment
 # this is used when a script doesn't want user to use slurm to distribute tasks, for example, time sensitive benchmarks
+SLURM_DISTRIBUTE_DO_NOT_CHECK_JOBOUT = False  # used with the above to avoid checking for *.jobout files
 
 if SLURM_DISTRIBUTE_ENABLED:
     SLURM_DISTRIBUTE_ENABLED = True
@@ -94,9 +95,9 @@ def slurm_distribute_wrap(program):
         if not SLURM_DISTRIBUTE_ENABLED:
             return program()
         else:
-            assert not SLURM_DISTRIBUTE_FORBIDDEN, "using slurm to distribute tasks are forbidden"
             slurm_jobs_folder = os.path.join(os.path.abspath(os.getcwd()), "slurm_jobs")
             if not SLURM_USE_EXISTING_DATA:
+                assert not SLURM_DISTRIBUTE_FORBIDDEN, "using slurm to distribute tasks are forbidden"
                 # print out for confirmation
                 print("commands:")
                 for idx, command in enumerate(slurm_commands_vec):
@@ -158,9 +159,12 @@ def slurm_distribute_wrap(program):
             # gather the data with feeding results
             results = {}
             for idx, command in enumerate(slurm_commands_vec):
-                with open(os.path.join(slurm_jobs_folder, f"{idx}.jobout"), "r", encoding="utf8") as f:
-                    results[stringify_commands[idx]] = f.read()
-            
+                if SLURM_DISTRIBUTE_DO_NOT_CHECK_JOBOUT:
+                    results[stringify_commands[idx]] = "SLURM_DISTRIBUTE_DO_NOT_CHECK_JOBOUT"
+                else:
+                    with open(os.path.join(slurm_jobs_folder, f"{idx}.jobout"), "r", encoding="utf8") as f:
+                        results[stringify_commands[idx]] = f.read()
+
             # rerun the simulation feeding the results
             def feeding_output(command):
                 stringify_command = run_stringify_command(command)
