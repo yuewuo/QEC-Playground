@@ -41,6 +41,9 @@ if 'SLURM_DISTRIBUTE_ENABLED' in os.environ and os.environ["SLURM_DISTRIBUTE_ENA
 if 'SLURM_USE_SCAVENGE_PARTITION' in os.environ and os.environ["SLURM_USE_SCAVENGE_PARTITION"] != "":
     SLURM_USE_SCAVENGE_PARTITION = True
 
+SLURM_DISTRIBUTE_FORBIDDEN = False  # never allow the script run in slurm environment
+# this is used when a script doesn't want user to use slurm to distribute tasks, for example, time sensitive benchmarks
+
 if SLURM_DISTRIBUTE_ENABLED:
     SLURM_DISTRIBUTE_ENABLED = True
     SLURM_DISTRIBUTE_CPUS_PER_TASK = 36
@@ -91,6 +94,7 @@ def slurm_distribute_wrap(program):
         if not SLURM_DISTRIBUTE_ENABLED:
             return program()
         else:
+            assert not SLURM_DISTRIBUTE_FORBIDDEN, "using slurm to distribute tasks are forbidden"
             slurm_jobs_folder = os.path.join(os.path.abspath(os.getcwd()), "slurm_jobs")
             if not SLURM_USE_EXISTING_DATA:
                 # print out for confirmation
