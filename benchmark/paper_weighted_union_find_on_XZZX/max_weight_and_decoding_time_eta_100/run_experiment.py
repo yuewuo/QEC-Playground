@@ -16,8 +16,8 @@ max_half_weights = [ i for i in range(1, 11) ]
 
 max_N = 100000000  # this is rarely achieved because p is large enough
 
-min_error_cases = 100  # for debugging
-# min_error_cases = 40000  # real experiment
+# min_error_cases = 100  # for debugging
+min_error_cases = 40000  # real experiment
 
 slurm_distribute.SLURM_DISTRIBUTE_FORBIDDEN = True  # forbidden the use of slurm distribute
 
