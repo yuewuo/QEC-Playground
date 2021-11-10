@@ -72,7 +72,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
                     else:
                         data.append(json.loads(line))
             time_field_name = "time_run_to_stable"
-            result = generate_print(di, dj, T, data, time_field_name)
+            result = f"{max_half_weight} " + generate_print(di, dj, T, data, time_field_name)
             print(result)
             results.append(result)
 
@@ -80,11 +80,11 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
             continue
 
         print("\n\n")
-        print(print_title)
+        print(f"<max_half_weight> " + print_title)
         print("\n".join(results))
         print("\n\n")
 
         filename = os.path.join(os.path.dirname(__file__), f"data_{di}.txt")
         with open(filename, "w", encoding="utf-8") as f:
-            f.write(print_title + "\n")
+            f.write(f"<max_half_weight> " + print_title + "\n")
             f.write("\n".join(results) + "\n")

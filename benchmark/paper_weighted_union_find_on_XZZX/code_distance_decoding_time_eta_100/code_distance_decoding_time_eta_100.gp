@@ -2,7 +2,7 @@ set terminal postscript eps color "Arial, 22"
 set xlabel "Code Distance d" font "Arial, 22"
 set ylabel "Decoding Time (s)" font "Arial, 22"
 set grid ytics
-set size 1,1
+set size 1,1.1
 
 set logscale x
 set xrange [2.5:12.5]
@@ -15,29 +15,18 @@ set yrange [3e-5:20]
 set key outside horizontal top center font "Arial, 22"
 
 set style fill transparent solid 0.2 noborder
-set key samplen 2
+set key samplen 4
 set key maxrows 3
-
-# set title "XZZX Surface Code p = 0.07"
+# set key height 5
 
 set output "code_distance_decoding_time_eta_100.eps"
 
-# "processed_MWPM.txt" using 1:12 with linespoints lt rgb "red" linewidth 3 pointtype 7 pointsize 1 title "MWPM Max",\
-# "processed_UF.txt" using 1:12 with linespoints lt rgb "light-red" linewidth 3 pointtype 7 pointsize 1 title "UF Max",\
-
-plot "processed_MWPM.txt" using 1:7 with linespoints lt rgb "blue" linewidth 3 pointtype 7 pointsize 1 title "MWPM 2x",\
-    "" using 1:5 with linespoints lt rgb "red" linewidth 3 pointtype 7 pointsize 1 title "MWPM 1.1x",\
+plot "processed_MWPM.txt" using 1:5 with linespoints lt rgb "red" linewidth 3 pointtype 7 pointsize 1 title "MWPM 1.1x",\
+    "" using 1:7 with linespoints lt rgb "blue" linewidth 3 pointtype 7 pointsize 1 title "MWPM 2x",\
     "" using 1:10 with linespoints lt rgb "green" linewidth 3 pointtype 7 pointsize 1 title "MWPM Average",\
-    "processed_UF.txt" using 1:7 with linespoints lt rgb "light-blue" linewidth 3 pointtype 7 pointsize 1 title "UF 2x",\
-    "" using 1:5 with linespoints lt rgb "light-red" linewidth 3 pointtype 7 pointsize 1 title "UF 1.1x",\
-    "" using 1:10 with linespoints lt rgb "light-green" linewidth 3 pointtype 7 pointsize 1 title "UF Average"
-    # "" using 1:6:($6*(1-$7)):($6*(1+$7)) with errorbars lt rgb "red" linewidth 3 pointtype 7 pointsize 1 notitle,\
-    # "UF_d11_p0.07.txt" using 1:6 with linespoints lt rgb "blue" linewidth 3 pointtype 11 pointsize 1 title "UnionFind, d = 11",\
-    # "" using 1:6:($6*(1-$7)):($6*(1+$7)) with errorbars lt rgb "blue" linewidth 3 pointtype 11 pointsize 1 notitle,\
-    # "MWPM_d13_p0.07.txt" using 1:6 with linespoints lt rgb "orange" linewidth 3 pointtype 7 pointsize 1 title "MWPM, d = 13",\
-    # "" using 1:6:($6*(1-$7)):($6*(1+$7)) with errorbars lt rgb "orange" linewidth 3 pointtype 7 pointsize 1 notitle,\
-    # "UF_d13_p0.07.txt" using 1:6 with linespoints lt rgb "skyblue" linewidth 3 pointtype 11 pointsize 1 title "UnionFind, d = 13",\
-    # "" using 1:6:($6*(1-$7)):($6*(1+$7)) with errorbars lt rgb "skyblue" linewidth 3 pointtype 11 pointsize 1 notitle
+    "processed_UF.txt" using 1:5 with linespoints lt rgb "light-red" linewidth 3 pointtype 11 pointsize 1 title "UF 1.1x",\
+    "" using 1:7 with linespoints lt rgb "light-blue" linewidth 3 pointtype 11 pointsize 1 title "UF 2x",\
+    "" using 1:10 with linespoints lt rgb "light-green" linewidth 3 pointtype 11 pointsize 1 title "UF Average"
 
 system("ps2pdf -dEPSCrop code_distance_decoding_time_eta_100.eps code_distance_decoding_time_eta_100.pdf")
 
