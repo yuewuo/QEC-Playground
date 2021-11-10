@@ -22,12 +22,13 @@ set key maxrows 3
 
 set output "code_distance_decoding_time_eta_100.eps"
 
+# "processed_MWPM.txt" using 1:12 with linespoints lt rgb "red" linewidth 3 pointtype 7 pointsize 1 title "MWPM Max",\
+# "processed_UF.txt" using 1:12 with linespoints lt rgb "light-red" linewidth 3 pointtype 7 pointsize 1 title "UF Max",\
 
-plot "processed_MWPM.txt" using 1:12 with linespoints lt rgb "red" linewidth 3 pointtype 7 pointsize 1 title "MWPM Max",\
-    "" using 1:7 with linespoints lt rgb "blue" linewidth 3 pointtype 7 pointsize 1 title "MWPM 2x",\
+plot "processed_MWPM.txt" using 1:7 with linespoints lt rgb "blue" linewidth 3 pointtype 7 pointsize 1 title "MWPM 2x",\
+    "" using 1:6 with linespoints lt rgb "red" linewidth 3 pointtype 7 pointsize 1 title "MWPM 1.5x",\
     "" using 1:10 with linespoints lt rgb "green" linewidth 3 pointtype 7 pointsize 1 title "MWPM Average",\
-    "processed_UF.txt" using 1:12 with linespoints lt rgb "light-red" linewidth 3 pointtype 7 pointsize 1 title "UF Max",\
-    "" using 1:7 with linespoints lt rgb "light-blue" linewidth 3 pointtype 7 pointsize 1 title "UF 2x",\
+    "processed_UF.txt" using 1:7 with linespoints lt rgb "light-blue" linewidth 3 pointtype 7 pointsize 1 title "UF 2x",\
     "" using 1:10 with linespoints lt rgb "light-green" linewidth 3 pointtype 7 pointsize 1 title "UF Average"
     # "" using 1:6:($6*(1-$7)):($6*(1+$7)) with errorbars lt rgb "red" linewidth 3 pointtype 7 pointsize 1 notitle,\
     # "UF_d11_p0.07.txt" using 1:6 with linespoints lt rgb "blue" linewidth 3 pointtype 11 pointsize 1 title "UnionFind, d = 11",\

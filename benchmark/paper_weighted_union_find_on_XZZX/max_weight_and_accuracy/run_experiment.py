@@ -14,9 +14,10 @@ p = 0.005
 max_N = 100000000
 min_error_cases = 400000
 
-slurm_distribute.SLURM_DISTRIBUTE_TIME = "02:30:00"
+slurm_distribute.SLURM_DISTRIBUTE_TIME = "04:30:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '2G'
-time_budget = 120 * 60  # 2 hour
+slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 18  # for more available macines
+time_budget = 4 * 3600  # 4 hour
 parameters = f"-p{STO(0)} --time_budget {time_budget} --use_xzzx_code --error_model GenericBiasedWithBiasedCX".split(" ")  # a maximum 20min for each point
 
 compile_code_if_necessary()
