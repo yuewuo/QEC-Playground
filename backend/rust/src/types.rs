@@ -5,7 +5,7 @@ use std::ops::{Deref, DerefMut};
 
 #[derive(Debug, Clone)]
 #[derive(PartialEq)]
-/// Z or X error of L*L qubits => array[L][L]
+/// Z or X error of L*L qubits => array\[L\]\[L\]
 pub struct ZxError(ndarray::Array2<bool>);
 pub type ZxCorrection = ZxError;
 
@@ -16,7 +16,7 @@ pub struct BatchZxError(ndarray::Array3<bool>);
 
 #[derive(Debug, Clone)]
 #[derive(PartialEq)]
-/// Z or X measurement of L*L qubits => array[L+1][L-1] (half of it has no information, only array[i][j] where i+j is odd has measurement result)
+/// Z or X measurement of L*L qubits => array\[L+1\]\[L-1\] (half of it has no information, only array\[i\]\[j\] where i+j is odd has measurement result)
 pub struct ZxMeasurement(ndarray::Array2<bool>);
 
 impl Deref for ZxError {
@@ -267,4 +267,375 @@ pub fn validate_z_correction(z_error: &ZxError, z_correction: &ZxCorrection) -> 
         return Err("there is Z_L logical operator after correction".to_string())
     }
     Ok(())
+}
+
+/// Qubit type, corresponds to `QTYPE` in `FaultTolerantView.vue`
+#[derive(Debug, PartialEq, Clone)]
+pub enum QubitType {
+    Data,
+    StabX,
+    StabZ,
+    StabXZZXLogicalX,
+    StabXZZXLogicalZ,
+}
+
+/// Error type, corresponds to `ETYPE` in `FaultTolerantView.vue`
+#[derive(Debug, PartialEq, Clone)]
+pub enum ErrorType {
+    I,
+    X,
+    Z,
+    Y,
+}
+
+impl std::fmt::Display for ErrorType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            Self::I => "I",
+            Self::X => "X",
+            Self::Z => "Z",
+            Self::Y => "Y",
+        })
+    }
+}
+
+impl serde::Serialize for ErrorType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+        serializer.serialize_str(format!("{}", self).as_str())
+    }
+}
+
+impl ErrorType {
+    pub fn multiply(&self, err: &Self) -> Self {
+        match (self, err) {
+            (Self::I, Self::I) => Self::I,
+            (Self::I, Self::X) => Self::X,
+            (Self::I, Self::Z) => Self::Z,
+            (Self::I, Self::Y) => Self::Y,
+            (Self::X, Self::I) => Self::X,
+            (Self::X, Self::X) => Self::I,
+            (Self::X, Self::Z) => Self::Y,
+            (Self::X, Self::Y) => Self::Z,
+            (Self::Z, Self::I) => Self::Z,
+            (Self::Z, Self::X) => Self::Y,
+            (Self::Z, Self::Z) => Self::I,
+            (Self::Z, Self::Y) => Self::X,
+            (Self::Y, Self::I) => Self::Y,
+            (Self::Y, Self::X) => Self::Z,
+            (Self::Y, Self::Z) => Self::X,
+            (Self::Y, Self::Y) => Self::I,
+        }
+    }
+    pub fn all_possible_errors() -> Vec::<Self> {
+        vec![Self::X, Self::Z, Self::Y]
+    }
+    pub fn combine_probability(p_xyz_1: (f64, f64, f64), p_xyz_2: (f64, f64, f64)) -> (f64, f64, f64) {
+        let (px1, py1, pz1) = p_xyz_1;
+        let (px2, py2, pz2) = p_xyz_2;
+        let pi1 = 1. - px1 - py1 - pz1;
+        let pi2 = 1. - px2 - py2 - pz2;
+        let px_combined = px1 * pi2 + py1 * pz2 + pz1 * py2 + pi1 * px2;
+        let py_combined = py1 * pi2 + px1 * pz2 + pz1 * px2 + pi1 * py2;
+        let pz_combined = pz1 * pi2 + px1 * py2 + py1 * px2 + pi1 * pz2;
+        (px_combined, py_combined, pz_combined)
+    }
+}
+
+/// Correlated error type for two qubit errors
+#[allow(dead_code)]
+#[derive(Debug, PartialEq, Clone)]
+pub enum CorrelatedErrorType {
+    II,
+    IX,
+    IZ,
+    IY,
+    XI,
+    XX,
+    XZ,
+    XY,
+    ZI,
+    ZX,
+    ZZ,
+    ZY,
+    YI,
+    YX,
+    YZ,
+    YY,
+}
+
+impl CorrelatedErrorType {
+    pub fn my_error(&self) -> ErrorType {
+        match self {
+            Self::II | Self::IX | Self::IZ | Self::IY => ErrorType::I,
+            Self::XI | Self::XX | Self::XZ | Self::XY => ErrorType::X,
+            Self::ZI | Self::ZX | Self::ZZ | Self::ZY => ErrorType::Z,
+            Self::YI | Self::YX | Self::YZ | Self::YY => ErrorType::Y,
+        }
+    }
+    pub fn peer_error(&self) -> ErrorType {
+        match self {
+            Self::II | Self::XI | Self::ZI | Self::YI => ErrorType::I,
+            Self::IX | Self::XX | Self::ZX | Self::YX => ErrorType::X,
+            Self::IZ | Self::XZ | Self::ZZ | Self::YZ => ErrorType::Z,
+            Self::IY | Self::XY | Self::ZY | Self::YY => ErrorType::Y,
+        }
+    }
+    pub fn all_possible_errors() -> Vec::<Self> {
+        vec![           Self::IX, Self::IZ, Self::IY, Self::XI, Self::XX, Self::XZ, Self::XY,
+             Self::ZI, Self::ZX, Self::ZZ, Self::ZY, Self::YI, Self::YX, Self::YZ, Self::YY,]
+    }
+}
+
+impl std::fmt::Display for CorrelatedErrorType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            Self::II => "II", Self::IX => "IX", Self::IZ => "IZ", Self::IY => "IY",
+            Self::XI => "XI", Self::XX => "XX", Self::XZ => "XZ", Self::XY => "XY",
+            Self::ZI => "ZI", Self::ZX => "ZX", Self::ZZ => "ZZ", Self::ZY => "ZY",
+            Self::YI => "YI", Self::YX => "YX", Self::YZ => "YZ", Self::YY => "YY",
+        }.to_string())
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct CorrelatedErrorModel {
+    pub error_rate_IX: f64,
+    pub error_rate_IZ: f64,
+    pub error_rate_IY: f64,
+    pub error_rate_XI: f64,
+    pub error_rate_XX: f64,
+    pub error_rate_XZ: f64,
+    pub error_rate_XY: f64,
+    pub error_rate_ZI: f64,
+    pub error_rate_ZX: f64,
+    pub error_rate_ZZ: f64,
+    pub error_rate_ZY: f64,
+    pub error_rate_YI: f64,
+    pub error_rate_YX: f64,
+    pub error_rate_YZ: f64,
+    pub error_rate_YY: f64,
+}
+
+impl CorrelatedErrorModel {
+    // pub fn default() -> Self {
+    //     Self::default_with_probability(0.)
+    // }
+    pub fn default_with_probability(p: f64) -> Self {
+        Self {
+            error_rate_IX: p,
+            error_rate_IZ: p,
+            error_rate_IY: p,
+            error_rate_XI: p,
+            error_rate_XX: p,
+            error_rate_XZ: p,
+            error_rate_XY: p,
+            error_rate_ZI: p,
+            error_rate_ZX: p,
+            error_rate_ZZ: p,
+            error_rate_ZY: p,
+            error_rate_YI: p,
+            error_rate_YX: p,
+            error_rate_YZ: p,
+            error_rate_YY: p,
+        }
+    }
+    pub fn no_error_probability(&self) -> f64 {
+        1.                       - self.error_rate_IX - self.error_rate_IZ - self.error_rate_IY
+            - self.error_rate_XI - self.error_rate_XX - self.error_rate_XZ - self.error_rate_XY
+            - self.error_rate_ZI - self.error_rate_ZX - self.error_rate_ZZ - self.error_rate_ZY
+            - self.error_rate_YI - self.error_rate_YX - self.error_rate_YZ - self.error_rate_YY
+    }
+    pub fn error_rate(&self, error_type: &CorrelatedErrorType) -> f64 {
+        match error_type {
+            CorrelatedErrorType::II => self.no_error_probability(),
+            CorrelatedErrorType::IX => self.error_rate_IX,
+            CorrelatedErrorType::IZ => self.error_rate_IZ,
+            CorrelatedErrorType::IY => self.error_rate_IY,
+            CorrelatedErrorType::XI => self.error_rate_XI,
+            CorrelatedErrorType::XX => self.error_rate_XX,
+            CorrelatedErrorType::XZ => self.error_rate_XZ,
+            CorrelatedErrorType::XY => self.error_rate_XY,
+            CorrelatedErrorType::ZI => self.error_rate_ZI,
+            CorrelatedErrorType::ZX => self.error_rate_ZX,
+            CorrelatedErrorType::ZZ => self.error_rate_ZZ,
+            CorrelatedErrorType::ZY => self.error_rate_ZY,
+            CorrelatedErrorType::YI => self.error_rate_YI,
+            CorrelatedErrorType::YX => self.error_rate_YX,
+            CorrelatedErrorType::YZ => self.error_rate_YZ,
+            CorrelatedErrorType::YY => self.error_rate_YY,
+        }
+    }
+    pub fn sanity_check(&self) {
+        assert!(self.no_error_probability() >= 0., "sum of error rate should be no more than 1");
+        assert!(self.error_rate_IX >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_IZ >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_IY >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_XI >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_XX >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_XZ >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_XY >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_ZI >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_ZX >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_ZZ >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_ZY >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_YI >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_YX >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_YZ >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_YY >= 0., "error rate should be greater than 0");
+    }
+    pub fn generate_random_error(&self, random_number: f64) -> CorrelatedErrorType {
+        let mut random_number = random_number;
+        if random_number < self.error_rate_IX { return CorrelatedErrorType::IX; } random_number -= self.error_rate_IX;
+        if random_number < self.error_rate_IZ { return CorrelatedErrorType::IZ; } random_number -= self.error_rate_IZ;
+        if random_number < self.error_rate_IY { return CorrelatedErrorType::IY; } random_number -= self.error_rate_IY;
+        if random_number < self.error_rate_XI { return CorrelatedErrorType::XI; } random_number -= self.error_rate_XI;
+        if random_number < self.error_rate_XX { return CorrelatedErrorType::XX; } random_number -= self.error_rate_XX;
+        if random_number < self.error_rate_XZ { return CorrelatedErrorType::XZ; } random_number -= self.error_rate_XZ;
+        if random_number < self.error_rate_XY { return CorrelatedErrorType::XY; } random_number -= self.error_rate_XY;
+        if random_number < self.error_rate_ZI { return CorrelatedErrorType::ZI; } random_number -= self.error_rate_ZI;
+        if random_number < self.error_rate_ZX { return CorrelatedErrorType::ZX; } random_number -= self.error_rate_ZX;
+        if random_number < self.error_rate_ZZ { return CorrelatedErrorType::ZZ; } random_number -= self.error_rate_ZZ;
+        if random_number < self.error_rate_ZY { return CorrelatedErrorType::ZY; } random_number -= self.error_rate_ZY;
+        if random_number < self.error_rate_YI { return CorrelatedErrorType::YI; } random_number -= self.error_rate_YI;
+        if random_number < self.error_rate_YX { return CorrelatedErrorType::YX; } random_number -= self.error_rate_YX;
+        if random_number < self.error_rate_YZ { return CorrelatedErrorType::YZ; } random_number -= self.error_rate_YZ;
+        if random_number < self.error_rate_YY { return CorrelatedErrorType::YY; }
+        CorrelatedErrorType::II
+    }
+}
+
+/// Correlated erasure error type for two qubit errors
+#[allow(dead_code)]
+#[derive(Debug, PartialEq, Clone)]
+pub enum CorrelatedErasureErrorType {
+    II,
+    IE,
+    EI,
+    EE,
+}
+
+impl CorrelatedErasureErrorType {
+    pub fn my_error(&self) -> bool {
+        match self {
+            Self::II | Self::IE => false,
+            Self::EI | Self::EE => true,
+        }
+    }
+    pub fn peer_error(&self) -> bool {
+        match self {
+            Self::II | Self::EI => false,
+            Self::IE | Self::EE => true,
+        }
+    }
+    // pub fn all_possible_errors() -> Vec::<Self> {
+    //     vec![Self::II, Self::IE, Self::EI, Self::EE]
+    // }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct CorrelatedErasureErrorModel {
+    pub error_rate_IE: f64,
+    pub error_rate_EI: f64,
+    pub error_rate_EE: f64,
+}
+
+impl CorrelatedErasureErrorModel {
+    // pub fn default() -> Self {
+    //     Self::default_with_probability(0.)
+    // }
+    pub fn default_with_probability(p: f64) -> Self {
+        Self {
+            error_rate_IE: p,
+            error_rate_EI: p,
+            error_rate_EE: p,
+        }
+    }
+    pub fn no_error_probability(&self) -> f64 {
+        1.                       - self.error_rate_IE - self.error_rate_EI - self.error_rate_EE
+    }
+    // pub fn error_rate(&self, error_type: &CorrelatedErasureErrorType) -> f64 {
+    //     match error_type {
+    //         CorrelatedErasureErrorType::II => self.no_error_probability(),
+    //         CorrelatedErasureErrorType::IE => self.error_rate_IE,
+    //         CorrelatedErasureErrorType::EI => self.error_rate_EI,
+    //         CorrelatedErasureErrorType::EE => self.error_rate_EE,
+    //     }
+    // }
+    pub fn sanity_check(&self) {
+        assert!(self.no_error_probability() >= 0., "sum of error rate should be no more than 1");
+        assert!(self.error_rate_IE >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_EI >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_EE >= 0., "error rate should be greater than 0");
+    }
+    pub fn generate_random_erasure_error(&self, random_number: f64) -> CorrelatedErasureErrorType {
+        let mut random_number = random_number;
+        if random_number < self.error_rate_IE { return CorrelatedErasureErrorType::IE; } random_number -= self.error_rate_IE;
+        if random_number < self.error_rate_EI { return CorrelatedErasureErrorType::EI; } random_number -= self.error_rate_EI;
+        if random_number < self.error_rate_EE { return CorrelatedErasureErrorType::EE; }
+        CorrelatedErasureErrorType::II
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum DecoderType {
+    MinimumWeightPerfectMatching,
+    UnionFind,
+    DistributedUnionFind,
+}
+
+impl From<String> for DecoderType {
+    fn from(name: String) -> Self {
+        match name.as_str() {
+            "MWPM" | "MinimumWeightPerfectMatching" => Self::MinimumWeightPerfectMatching,
+            "UF" | "UnionFind" => Self::UnionFind,
+            "DUF" | "DistributedUnionFind" => Self::DistributedUnionFind,
+            _ => panic!("unrecognized decoder type"),
+        }
+    }
+}
+
+impl std::fmt::Display for DecoderType {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        fmt.write_str(match self {
+            Self::MinimumWeightPerfectMatching => "MinimumWeightPerfectMatching",
+            Self::UnionFind => "UnionFind",
+            Self::DistributedUnionFind => "DistributedUnionFind",
+        })?;
+        Ok(())
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum ErrorModel {
+    GenericBiasedWithBiasedCX,  // arXiv:2104.09539v1 Sec.IV.A
+    GenericBiasedWithStandardCX,  // arXiv:2104.09539v1 Sec.IV.A
+    ErasureOnlyPhenomenological,  // 100% erasure errors only on the data qubits before the gates happen and on the ancilla qubits after the gates finish
+    OnlyGateErrorCircuitLevel,  // errors happen at 4 stages in each measurement round (although removed errors happening at initialization and measurement stage, measurement errors can still occur when curtain error applies on the ancilla after the last gate)
+    OnlyGateErrorCircuitLevelCorrelatedErasure,  // the same as `OnlyGateErrorCircuitLevel`, just the erasures are correlated
+}
+
+impl From<String> for ErrorModel {
+    fn from(name: String) -> Self {
+        match name.as_str() {
+            "GenericBiasedWithBiasedCX" => Self::GenericBiasedWithBiasedCX,
+            "GenericBiasedWithStandardCX" => Self::GenericBiasedWithStandardCX,
+            "ErasureOnlyPhenomenological" => Self::ErasureOnlyPhenomenological,
+            "OnlyGateErrorCircuitLevel" => Self::OnlyGateErrorCircuitLevel,
+            "OnlyGateErrorCircuitLevelCorrelatedErasure" => Self::OnlyGateErrorCircuitLevelCorrelatedErasure,
+            _ => panic!("unrecognized error model"),
+        }
+    }
+}
+
+impl std::fmt::Display for ErrorModel {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        fmt.write_str(match self {
+            Self::GenericBiasedWithBiasedCX => "GenericBiasedWithBiasedCX",
+            Self::GenericBiasedWithStandardCX => "GenericBiasedWithStandardCX",
+            Self::ErasureOnlyPhenomenological => "ErasureOnlyPhenomenological",
+            Self::OnlyGateErrorCircuitLevel => "OnlyGateErrorCircuitLevel",
+            Self::OnlyGateErrorCircuitLevelCorrelatedErasure => "OnlyGateErrorCircuitLevelCorrelatedErasure",
+        })?;
+        Ok(())
+    }
 }

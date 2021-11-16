@@ -7,23 +7,23 @@ set size 1,1
 # data generating commands:
 # RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3] [3] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0 -m100000000 -afalse
 # RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [5] [5] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5] -p0 -m100000000 -afalse
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -p0 -m100000000 -b10 -e1000 -afalse
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -p0 -m100000000-e1000 -afalse
 
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b1 -e1000 -afalse
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-3] -p0 -m100000000 -b1 -e200 -afalse
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [9] [9] [5e-4,2e-4] -p0 -m100000000 -b1 -e10 -afalse
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000-e1000 -afalse
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-3] -p0 -m100000000-e200 -afalse
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [9] [9] [5e-4,2e-4] -p0 -m100000000-e10 -afalse
 
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [11] [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3] -p0 -m100000000 -b1 -e200 -afalse
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [11] [11] [5e-4] -p0 -m100000000 -b1 -e20 -afalse
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [11] [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3] -p0 -m100000000-e200 -afalse
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [11] [11] [5e-4] -p0 -m100000000-e20 -afalse
 
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b1 -e200 -afalse
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [13] [1e-3] -p0 -m100000000 -b1 -e50 -afalse
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [13] [5e-4] -p0 -m100000000 -b1 -e10 -afalse
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000-e200 -afalse
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [13] [1e-3] -p0 -m100000000-e50 -afalse
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [13] [5e-4] -p0 -m100000000-e10 -afalse
 
 # collecting more data around the threshold
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3,5,7,9,11,13] [3,5,7,9,11,13] [3e-3] -p0 -m100000000 -b1 -e1000  -afalse
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3,5,7,9,11,13] [3,5,7,9,11,13] [2.4e-3] -p0 -m100000000 -b1 -e1000  -afalse
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3,5,7,9,11,13] [3,5,7,9,11,13] [2.3e-3] -p0 -m100000000 -b1 -e1000  -afalse
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3,5,7,9,11,13] [3,5,7,9,11,13] [3e-3] -p0 -m100000000-e1000  -afalse
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3,5,7,9,11,13] [3,5,7,9,11,13] [2.4e-3] -p0 -m100000000-e1000  -afalse
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3,5,7,9,11,13] [3,5,7,9,11,13] [2.3e-3] -p0 -m100000000-e1000  -afalse
 
 #set logscale x
 set xrange [1:13]
@@ -40,17 +40,14 @@ set output "equally_weighted.eps"
 plot "d_fixed_0005.txt" using 1:2 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = MWPM",\
     "d_fixed_0005.txt" using 1:3 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = Approx"
 
-set output '|ps2pdf -dEPSCrop equally_weighted.eps equally_weighted.pdf'
-replot
+system("ps2pdf -dEPSCrop equally_weighted.eps equally_weighted.pdf")
 
 set size 1,0.75
 set output "equally_weighted_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop equally_weighted_w.eps equally_weighted_w.pdf'
-replot
+system("ps2pdf -dEPSCrop equally_weighted_w.eps equally_weighted_w.pdf")
 
 set size 1,0.6
 set output "equally_weighted_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop equally_weighted_w_w.eps equally_weighted_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop equally_weighted_w_w.eps equally_weighted_w_w.pdf")

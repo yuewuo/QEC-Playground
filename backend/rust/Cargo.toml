@@ -8,23 +8,37 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
+# to enable a feature, use `--features xxx`
 default = []
 noserver = []  # ignore parts with actix-web to speed up compilation
+fpga_amenable = []  # use FPGA-amenable code block (not friendly to read, but to test the equivalency with existing code)
+MWPM_reverse_order = []  # to verify the idea that even MWPM decoders could have different threshold depending on the order of nodes
 
 [dependencies]
-rand = "0.7.3"
+rand = { version = "0.8.4", features = ["alloc"] }
 num_cpus = "1.13.0"
 bytes = "0.6.0"
-serde = "1.0.117"
+serde = { version = "1.0.117", features = ["derive"] }
 serde_json = "1.0.59"
 clap = "2.33.3"
 ndarray = "0.13.1"
 actix-web = "3.3.0"
 actix-cors = "0.5.3"
-pyo3 = "0.12.4"
+pyo3 = { version =  "0.13.2", features = ["auto-initialize"] }
 libc = "0.2.81"
-petgraph = "0.5.1"
-pbr = "1.0.3"
+petgraph = "0.6.0"
+pbr = "1.0.4"
+rand_core = "0.6.1"
+derivative = "2.2.0"
+union-find = "0.3.2"
+derive_more = "0.99.11"
+lazy_static = "1.4.0"
+either = "1.6.1"
+rug = "1.13.0"
 
 [build-dependencies]
 cc = "1.0.66"
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--html-in-header", "katex-header.html" ]
+# to run locally: `RUSTDOCFLAGS="--html-in-header katex-header.html" cargo doc --no-deps`

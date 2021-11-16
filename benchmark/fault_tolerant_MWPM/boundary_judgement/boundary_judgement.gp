@@ -5,15 +5,15 @@ set grid ytics
 set size 1,1
 
 # data generating commands:
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3] [3] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0 -b1000 -m100000000 --validate_layer boundary --only_count_logical_x
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [5] [5] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5] -b1000 -p0 -m100000000 --validate_layer boundary --only_count_logical_x
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -p0 -m100000000 -b10 -e1000 --validate_layer boundary --only_count_logical_x
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000 -b1 -e1000 --validate_layer boundary --only_count_logical_x
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [9] [9] [2e-4] -p0 -m100000000 -b1 -e200 --validate_layer boundary --only_count_logical_x
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [11] [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000 -b1 -e200 --validate_layer boundary --only_count_logical_x
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000 -b1 -e200 --validate_layer boundary --only_count_logical_x
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [3] [3] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0-m100000000 --validate_layer boundary --only_count_logical_x
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [5] [5] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5]-p0 -m100000000 --validate_layer boundary --only_count_logical_x
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -p0 -m100000000-e1000 --validate_layer boundary --only_count_logical_x
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000-e1000 --validate_layer boundary --only_count_logical_x
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [9] [9] [2e-4] -p0 -m100000000-e200 --validate_layer boundary --only_count_logical_x
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [11] [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000-e200 --validate_layer boundary --only_count_logical_x
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [13] [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000-e200 --validate_layer boundary --only_count_logical_x
 
-# nohup ./rust_qecp tool fault_tolerant_benchmark [11] [11] [2e-4] -p50 -m100000000 -b10 -e20 --validate_layer boundary --only_count_logical_x &
+# nohup ./rust_qecp tool fault_tolerant_benchmark [11] [11] [2e-4] -p50 -m100000000-e20 --validate_layer boundary --only_count_logical_x &
 
 set logscale x
 set xrange [0.00001:0.1]
@@ -34,17 +34,14 @@ plot "d_3_3.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6
     "d_11_11.txt" using 1:6 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
     "d_13_13.txt" using 1:6 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
 
-set output '|ps2pdf -dEPSCrop boundary_judgement.eps boundary_judgement.pdf'
-replot
+system("ps2pdf -dEPSCrop boundary_judgement.eps boundary_judgement.pdf")
 
 set size 1,0.75
 set output "boundary_judgement_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop boundary_judgement_w.eps boundary_judgement_w.pdf'
-replot
+system("ps2pdf -dEPSCrop boundary_judgement_w.eps boundary_judgement_w.pdf")
 
 set size 1,0.6
 set output "boundary_judgement_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop boundary_judgement_w_w.eps boundary_judgement_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop boundary_judgement_w_w.eps boundary_judgement_w_w.pdf")

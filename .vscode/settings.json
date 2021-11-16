@@ -1,13 +1,23 @@
 {
     "cSpell.words": [
         "autotune",
+        "combinational",
         "cpus",
+        "deque",
         "ftqec",
         "libc",
         "mwpm",
         "noserver",
         "num",
         "petgraph",
-        "qecp"
-    ]
+        "qecp",
+        "ringbuf",
+        "sbatch",
+        "vec"
+    ],
+    "triggerTaskOnSave.tasks": {
+        "Build Gnuplot": [
+            "*.gp",
+        ],
+    }
 }

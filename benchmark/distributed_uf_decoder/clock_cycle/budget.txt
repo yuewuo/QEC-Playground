@@ -1,0 +1,11 @@
+# 10MHz, 1.8us measurement round time
+# 18 cycle / d
+
+3 54
+5 90
+7 126
+9 162
+11 198
+13 234
+15 270
+17 306

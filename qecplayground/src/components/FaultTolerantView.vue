@@ -89,6 +89,10 @@ export default {
 			type: Boolean,
 			default: true
 		},
+        useXZZXCode: {
+			type: Boolean,
+			default: true
+        },
 		
 		panelWidth: {
 			type: Number,
@@ -395,6 +399,8 @@ export default {
                     DATA: 0,
                     X: 1,
                     Z: 2,
+                    XZZXLogicalX: 3,
+                    XZZXLogicalZ: 4,
                 }),
                 NTYPE: readonly({  // node type, correspond to the nodes in time sequence fiure with detailed gate operations
                     INITIALIZATION: 0,
@@ -403,6 +409,7 @@ export default {
                     MEASUREMENT: 3,
                     NONE: 4,
                     NONE_WITH_DATA_QUBIT: 5,  // for purpose of plotting data qubits
+                    CONTROLLED_PHASE: 6,  // CZ gate
                 }),
                 ETYPE: readonly({  // node type, correspond to the nodes in time sequence fiure with detailed gate operations
                     I: 0,  // no error
@@ -669,6 +676,147 @@ export default {
             }
             return snapshot
         },
+        build_code_in_standard_XZZX_code(filter=((i,j)=>true)) {  // filter determines whether there is a qubit at [t][i][j]
+            console.assert(this.T >= 1, "T should be at least 1, 1 is for perfect measurement condition")
+            const width = 2 * this.L - 1
+            const height = this.T * 6 + 1
+            let snapshot = []
+            for (let t=0; t<height; ++t) {
+                let snapshot_row_0 = []
+                for (let i=0; i<width; ++i) {
+                    let snapshot_row_1 = []
+                    for (let j=0; j<width; ++j) {
+                        if (filter(i,j) && t > 0) {  // if here exists a qubit (either data qubit or ancilla qubit)
+                            const stage = (t+6-1) % 6  // 0: preparation, 1,2,3,4: CNOT gate, 5: measurement
+                            const is_data_qubit = (i+j)%2 == 0 
+                            const q_type = is_data_qubit ? this.constants.QTYPE.DATA : (i % 2 == 0 ? this.constants.QTYPE.XZZXLogicalZ : this.constants.QTYPE.XZZXLogicalX)
+                            let n_type = -1
+                            let connection = null  // { t, i, j, }
+                            switch (stage) {
+                                case 0:
+                                    n_type = is_data_qubit ? this.constants.NTYPE.NONE : this.constants.NTYPE.INITIALIZATION
+                                    break
+                                case 1:
+                                    if (is_data_qubit) {
+                                        if (i+1 < width && filter(i+1, j)) {
+                                            n_type = this.constants.NTYPE.CONTROLLED_PHASE
+                                            connection = { i:i+1, j, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    } else {
+                                        if (i-1 >= 0 && filter(i-1, j)) {
+                                            n_type = this.constants.NTYPE.CONTROLLED_PHASE
+                                            connection = { i:i-1, j, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    }
+                                    break
+                                case 2:
+                                    if (is_data_qubit) {
+                                        if (j+1 < width && filter(i, j+1)) {
+                                            n_type = this.constants.NTYPE.TARGET
+                                            connection = { i, j:j+1, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    } else {
+                                        if (j-1 >= 0 && filter(i, j-1)) {
+                                            n_type = this.constants.NTYPE.CONTROL
+                                            connection = { i, j:j-1, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    }
+                                    break
+                                case 3:
+                                    if (is_data_qubit) {
+                                        if (j-1 >= 0 && filter(i, j-1)) {
+                                            n_type = this.constants.NTYPE.TARGET
+                                            connection = { i, j:j-1, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    } else {
+                                        if (j+1 < width && filter(i, j+1)) {
+                                            n_type = this.constants.NTYPE.CONTROL
+                                            connection = { i, j:j+1, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    }
+                                    break
+                                case 4:
+                                    if (is_data_qubit) {
+                                        if (i-1 >= 0 && filter(i-1, j)) {
+                                            n_type = this.constants.NTYPE.CONTROLLED_PHASE
+                                            connection = { i:i-1, j, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    } else {
+                                        if (i+1 < width && filter(i+1, j)) {
+                                            n_type = this.constants.NTYPE.CONTROLLED_PHASE
+                                            connection = { i:i+1, j, t }
+                                        } else n_type = this.constants.NTYPE.NONE  // boundary
+                                    }
+                                    break
+                                case 5:
+                                    n_type = is_data_qubit ? this.constants.NTYPE.NONE_WITH_DATA_QUBIT : this.constants.NTYPE.MEASUREMENT
+                                    break
+                            }
+                            let qubit = {
+                                t, i, j,
+                                connection,
+                                n_type,
+                                q_type,
+                                error: this.constants.ETYPE.I,  // an error happening from now to next
+                                propagated: this.constants.ETYPE.I,  // propagted error till now
+                            }
+                            if (t >= height - 6) {  // top layer is perfect measurement. by default 0 error rate
+                                qubit.error_rate_x = 0
+                                qubit.error_rate_z = 0
+                                qubit.error_rate_y = 0
+                            } else if (this.IsPerfectInitialization && t <= 6) {
+                                qubit.error_rate_x = 0
+                                qubit.error_rate_z = 0
+                                qubit.error_rate_y = 0
+                            } else {
+                                if (this.errorModel == "depolarizing") {
+                                    qubit.error_rate_x = 2 * this.depolarErrorRate  // X error rate
+                                    qubit.error_rate_z = 2 * this.depolarErrorRate  // Z error rate
+                                    qubit.error_rate_y = 2 * this.depolarErrorRate  // Y error rate
+                                }
+                            }
+                            snapshot_row_1.push(qubit)
+                        } else {
+                            snapshot_row_1.push(null)
+                        }
+                    }
+                    snapshot_row_0.push(snapshot_row_1)
+                }
+                snapshot.push(snapshot_row_0)
+            }
+            return snapshot
+        },
+        build_standard_XZZX_code_snapshot() {
+            let snapshot = this.build_code_in_standard_XZZX_code()
+            // add boundary information (only add possible boundaries. exact boundary will be added `p` after building the graph)
+            for (let t=12; t < snapshot.length; t+=6) {
+                for (let i=0; i < snapshot[t].length; ++i) {
+                    for (let j=0; j < snapshot[t][i].length; ++j) {
+                        let node = snapshot[t][i][j]
+                        if (!node) continue
+                        if (node.n_type == this.constants.NTYPE.MEASUREMENT) {
+                            let bt = t
+                            let bi = i
+                            let bj = j
+                            if (!this.IsPerfectInitialization && t == 12) bt -= 6
+                            else if (i == 1) bi -= 2
+                            else if (i == snapshot[t].length - 2) bi += 2
+                            else if (j == 1) bj -= 2
+                            else if (j == snapshot[t][i].length - 2) bj += 2
+                            else if (t == snapshot.length - 1) bt += 6
+                            if (bi != i || bj != j || bt != t) {
+                                node.boundary = {
+                                    t: bt,
+                                    i: bi,
+                                    j: bj,
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return snapshot
+        },
         error_multiply(err1, err2) {  // return err1.err2
             if (err1 == this.constants.ETYPE.I) return err2
             if (err2 == this.constants.ETYPE.I) return err1
@@ -722,7 +870,7 @@ export default {
                         if (node.n_type == this.constants.NTYPE.INITIALIZATION) {
                             this.snapshot[t+1][i][j].propagated = this.constants.ETYPE.I  // no error after initialization
                         }
-                        // but sometimes it also propagated to other qubits through CX gate
+                        // propagated to other qubits through CX gate
                         if (node.n_type == this.constants.NTYPE.CONTROL) {
                             if (node.propagated == this.constants.ETYPE.X || node.propagated == this.constants.ETYPE.Y) {
                                 const peer_node = this.snapshot[t+1][node.connection.i][node.connection.j]
@@ -731,6 +879,13 @@ export default {
                         }
                         if (node.n_type == this.constants.NTYPE.TARGET) {
                             if (node.propagated == this.constants.ETYPE.Z || node.propagated == this.constants.ETYPE.Y) {
+                                const peer_node = this.snapshot[t+1][node.connection.i][node.connection.j]
+                                peer_node.propagated = this.error_multiply(this.constants.ETYPE.Z, peer_node.propagated)
+                            }
+                        }
+                        // also propagated to other qubits via CZ gate
+                        if (node.n_type == this.constants.NTYPE.CONTROLLED_PHASE) {
+                            if (node.propagated == this.constants.ETYPE.X || node.propagated == this.constants.ETYPE.Y) {
                                 const peer_node = this.snapshot[t+1][node.connection.i][node.connection.j]
                                 peer_node.propagated = this.error_multiply(this.constants.ETYPE.Z, peer_node.propagated)
                             }
@@ -753,7 +908,8 @@ export default {
                                     if (this_result != last_result) {
                                         node.mesh.material.color = this.three.measurement_node_color_error
                                     } else node.mesh.material.color = this.three.initialization_node_color_Z
-                                } else {
+                                } else if (node.q_type == this.constants.QTYPE.X || node.q_type == this.constants.QTYPE.XZZXLogicalX
+                                        || node.q_type == this.constants.QTYPE.XZZXLogicalZ) {
                                     let this_result = node.propagated == this.constants.ETYPE.I || node.propagated == this.constants.ETYPE.X
                                     const last_node = this.snapshot[t-6][i][j]
                                     let last_result = last_node == null ? true :  // if last node doesn't exist, by default to `this.constants.ETYPE.I`
@@ -761,6 +917,8 @@ export default {
                                     if (this_result != last_result) {
                                         node.mesh.material.color = this.three.measurement_node_color_error
                                     } else node.mesh.material.color = this.three.initialization_node_color_X
+                                } else {
+                                    console.error(`unimplemented error measurement for node.q_type = ${node.q_type}`);
                                 }
                             }
                             if (t > 0) {
@@ -859,7 +1017,8 @@ export default {
                                     envMap: this.three.texture_background,
                                     reflectivity: 0.5,
                                 }))
-                                node.mesh.visible = node.q_type == this.constants.QTYPE.Z ? this.show_Z_ancilla : this.show_X_ancilla
+                                node.mesh.visible = (node.q_type == this.constants.QTYPE.Z || node.q_type == this.constants.QTYPE.XZZXLogicalZ) ? 
+                                    this.show_Z_ancilla : this.show_X_ancilla
                                 node.mesh.position.set(x, y, z)
                                 this.three.scene.add(node.mesh)
                             }
@@ -914,6 +1073,36 @@ export default {
                                 node.mesh.position.set(x, y, z)
                                 this.three.scene.add(node.mesh)
                             }
+                            if (node.n_type == this.constants.NTYPE.CONTROLLED_PHASE) {
+                                node.mesh = []
+                                let mesh = new THREE.Mesh(this.three.CX_control_geometry, new THREE.MeshBasicMaterial({
+                                    color: this.three.CX_control_color,
+                                }))
+                                mesh.visible = this.show_CX_gates
+                                mesh.position.set(x, y, z)
+                                node.mesh.push(mesh)
+                                this.three.scene.add(mesh)
+                                // also add CZ link here
+                                mesh = new THREE.Mesh(this.three.CX_link_geometry, new THREE.MeshBasicMaterial({
+                                    color: this.three.CX_link_color,
+                                }))
+                                if (node.connection.i == i+1) {
+                                    mesh.rotateX(Math.PI / 2)
+                                }
+                                if (node.connection.i == i-1) {
+                                    mesh.rotateX(-Math.PI / 2)
+                                }
+                                if (node.connection.j == j+1) {
+                                    mesh.rotateZ(-Math.PI / 2)
+                                }
+                                if (node.connection.j == j-1) {
+                                    mesh.rotateZ(Math.PI / 2)
+                                }
+                                mesh.visible = this.show_CX_gates
+                                node.mesh.push(mesh)
+                                mesh.position.set(x, y, z)
+                                this.three.scene.add(mesh)
+                            }
                             // draw vertical line
                             if (t > 0) {
                                 node.vertical = new THREE.Mesh(this.three.vertical_line_geometry, new THREE.MeshBasicMaterial({
@@ -956,6 +1145,8 @@ export default {
                                     edge.mesh = generate_half_edge_mesh(t, i, j, edge.t, edge.i, edge.j, edge.p)
                                     if (node.q_type == this.constants.QTYPE.X && !this.show_X_edges) edge.mesh.visible = false
                                     if (node.q_type == this.constants.QTYPE.Z && !this.show_Z_edges) edge.mesh.visible = false
+                                    if (node.q_type == this.constants.QTYPE.XZZXLogicalX && !this.show_X_edges) edge.mesh.visible = false
+                                    if (node.q_type == this.constants.QTYPE.XZZXLogicalZ && !this.show_Z_edges) edge.mesh.visible = false
                                     this.three.scene.add(edge.mesh)
                                 }
                             }
@@ -963,6 +1154,8 @@ export default {
                                 node.boundary.mesh = generate_half_edge_mesh(t, i, j, node.boundary.t, node.boundary.i, node.boundary.j, node.boundary.p)
                                 if (node.q_type == this.constants.QTYPE.X && !this.show_X_edges) node.boundary.mesh.visible = false
                                 if (node.q_type == this.constants.QTYPE.Z && !this.show_Z_edges) node.boundary.mesh.visible = false
+                                if (node.q_type == this.constants.QTYPE.XZZXLogicalX && !this.show_X_edges) node.boundary.mesh.visible = false
+                                if (node.q_type == this.constants.QTYPE.XZZXLogicalZ && !this.show_Z_edges) node.boundary.mesh.visible = false
                                 this.three.scene.add(node.boundary.mesh)
                             }
                         }
@@ -1051,13 +1244,16 @@ export default {
                                 if (this_result != last_result) {
                                     error_syndrome_propagated.push([t,i,j])
                                 }
-                            } else {
+                            } else if (node.q_type == this.constants.QTYPE.X || node.q_type == this.constants.QTYPE.XZZXLogicalX
+                                    || node.q_type == this.constants.QTYPE.XZZXLogicalZ) {
                                 let this_result = node.propagated == this.constants.ETYPE.I || node.propagated == this.constants.ETYPE.X
                                 const last_node = this.snapshot[t-6][i][j]
                                 let last_result = last_node.propagated == this.constants.ETYPE.I || last_node.propagated == this.constants.ETYPE.X
                                 if (this_result != last_result) {
                                     error_syndrome_propagated.push([t,i,j])
                                 }
+                            } else {
+                                console.error(`unimplemented error measurement for node.q_type = ${node.q_type}`);
                             }
                         }
                     }
@@ -1120,9 +1316,15 @@ export default {
             }
         },
         regenerate_everything() {
-            if (this.useRotated) {
-                this.swap_snapshot(this.build_rotated_planar_code())
-            } else this.swap_snapshot(this.build_standard_planar_code_snapshot())
+            if (this.useXZZXCode) {
+                if (this.useRotated) {
+                    console.error("not implemented")
+                } else this.swap_snapshot(this.build_standard_XZZX_code_snapshot())
+            } else {
+                if (this.useRotated) {
+                    this.swap_snapshot(this.build_rotated_planar_code())
+                } else this.swap_snapshot(this.build_standard_planar_code_snapshot())
+            }
             this.update_camera()
         },
         update_camera() {
@@ -1146,6 +1348,9 @@ export default {
         useRotated() {
             this.regenerate_everything()
         },
+        useXZZXCode() {
+            this.regenerate_everything()
+        },
         usePerspectiveCamera() {
             this.use_orthogonal_camera(!this.usePerspectiveCamera)
         },
@@ -1161,14 +1366,14 @@ export default {
         },
         show_X_ancilla(show) {
             this.iterate_snapshot((node, t, i, j) => {
-                if (node.n_type == this.constants.NTYPE.MEASUREMENT && node.q_type == this.constants.QTYPE.X) {
+                if (node.n_type == this.constants.NTYPE.MEASUREMENT && (node.q_type == this.constants.QTYPE.X || node.q_type == this.constants.QTYPE.XZZXLogicalX)) {
                     node.mesh.visible = show
                 }
             })
         },
         show_Z_ancilla(show) {
             this.iterate_snapshot((node, t, i, j) => {
-                if (node.n_type == this.constants.NTYPE.MEASUREMENT && node.q_type == this.constants.QTYPE.Z) {
+                if (node.n_type == this.constants.NTYPE.MEASUREMENT && (node.q_type == this.constants.QTYPE.Z || node.q_type == this.constants.QTYPE.XZZXLogicalZ)) {
                     node.mesh.visible = show
                 }
             })
@@ -1185,7 +1390,7 @@ export default {
         },
         show_CX_gates(show) {
             this.iterate_snapshot((node, t, i, j) => {
-                if (node.n_type == this.constants.NTYPE.TARGET) {
+                if (node.n_type == this.constants.NTYPE.TARGET || node.n_type == this.constants.NTYPE.CONTROLLED_PHASE) {
                     for (let mesh of node.mesh) mesh.visible = show
                 }
                 if (node.n_type == this.constants.NTYPE.CONTROL) node.mesh.visible = show
@@ -1193,7 +1398,7 @@ export default {
         },
         show_X_edges(show) {
             this.iterate_snapshot((node, t, i, j) => {
-                if (node.q_type == this.constants.QTYPE.X) {
+                if (node.q_type == this.constants.QTYPE.X || node.q_type == this.constants.QTYPE.XZZXLogicalX) {
                     if (node.edges) for (let edge of node.edges) edge.mesh.visible = show
                     if (node.boundary && node.boundary.mesh) node.boundary.mesh.visible = show
                 }
@@ -1201,7 +1406,7 @@ export default {
         },
         show_Z_edges(show) {
             this.iterate_snapshot((node, t, i, j) => {
-                if (node.q_type == this.constants.QTYPE.Z) {
+                if (node.q_type == this.constants.QTYPE.Z || node.q_type == this.constants.QTYPE.XZZXLogicalZ) {
                     if (node.edges) for (let edge of node.edges) edge.mesh.visible = show
                     if (node.boundary && node.boundary.mesh) node.boundary.mesh.visible = show
                 }

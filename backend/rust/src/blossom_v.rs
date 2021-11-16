@@ -26,7 +26,14 @@ extern {
     fn minimum_weight_perfect_matching(node_num: c_int, edge_num: c_int, edges: *const c_int, weights: *const c_double, matched: *mut c_int);
 }
 
-pub fn safe_minimum_weight_perfect_matching(node_num: usize, weighted_edges: Vec<(usize, usize, f64)>) -> Vec<usize> {
+pub fn safe_minimum_weight_perfect_matching(node_num: usize, input_weighted_edges: Vec<(usize, usize, f64)>) -> Vec<usize> {
+    let weighted_edges = if cfg!(feature="MWPM_reverse_order") {
+        input_weighted_edges.iter().map(|(a, b, cost)| {
+            (node_num - 1 - a, node_num - 1 - b, *cost)
+        }).collect()
+    } else {
+        input_weighted_edges
+    };
     let edge_num = weighted_edges.len();
     let mut edges = Vec::with_capacity(2 * edge_num);
     let mut weights = Vec::with_capacity(edge_num);
@@ -43,7 +50,15 @@ pub fn safe_minimum_weight_perfect_matching(node_num: usize, weighted_edges: Vec
         output.set_len(node_num);
     }
     let output: Vec<usize> = output.iter().map(|x| *x as usize).collect();
-    output
+    if cfg!(feature="MWPM_reverse_order") {
+        let mut result = output.iter().map(|a| {
+            node_num - 1 - a
+        }).collect::<Vec<_>>();
+        result.reverse();
+        result
+    } else {
+        output
+    }
 }
 
 // important: only takes non-positive inputs
