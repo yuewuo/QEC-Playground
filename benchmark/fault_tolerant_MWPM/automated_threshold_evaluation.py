@@ -15,6 +15,7 @@ This script supports simulator in https://github.com/yuewuo/QEC-Playground by de
 import os, sys, math, subprocess, random
 import scipy.stats
 import numpy as np
+import tempfile
 
 qec_playground_root_dir = os.popen("git rev-parse --show-toplevel").read().strip(" \r\n")
 rust_dir = os.path.join(qec_playground_root_dir, "backend", "rust")
@@ -55,13 +56,26 @@ def compile_code_if_necessary():
         process.wait()
         assert process.returncode == 0, "compile has error"
         QEC_PLAYGROUND_COMPILATION_DONE = True
-def run_qec_playground_command_get_stdout(command, no_stdout=False):
+def run_qec_playground_command_get_stdout(command, no_stdout=False, use_tmp_out=False):
     compile_code_if_necessary()
     env = os.environ.copy()
     env["RUST_BACKTRACE"] = "full"
-    process = subprocess.Popen(command, universal_newlines=True, env=env, stdout=sys.stdout if no_stdout else subprocess.PIPE, stderr=sys.stderr)
+    stdout = subprocess.PIPE
+    if use_tmp_out:
+        out_file = tempfile.NamedTemporaryFile(delete=False)
+        out_filename = out_file.name
+        stdout = out_file
+    if no_stdout:
+        stdout = sys.stdout
+    process = subprocess.Popen(command, universal_newlines=True, env=env, stdout=stdout, stderr=sys.stderr, bufsize=100000000)
     process.wait()
     stdout, _ = process.communicate()
+    if use_tmp_out:
+        out_file.flush()
+        out_file.close()
+        with open(out_filename, "r", encoding="utf8") as f:
+            stdout = f.read()
+        os.remove(out_filename)
     return stdout, process.returncode
 
 def qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command(p_vec, di_vec, dj_vec, T_vec, parameters, max_N=100000, min_error_cases=3000, rust_dir=rust_dir):

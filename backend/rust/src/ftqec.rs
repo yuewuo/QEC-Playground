@@ -2118,7 +2118,6 @@ impl PlanarCodeModel {
             , "error model configuration must be recognized if exists");
     }
 
-    #[allow(dead_code)]
     pub fn print_direct_connections(&self) {
         self.iterate_snapshot(|t, i, j, node| {
             if Stage::from(t) == Stage::Measurement && node.qubit_type != QubitType::Data {
@@ -2129,6 +2128,27 @@ impl PlanarCodeModel {
                 }
                 for edge in node.edges.iter().filter(|edge| edge.p > 0.) {
                     println!("edge [{}][{}][{}]: p = {}", edge.t, edge.i, edge.j, edge.p);
+                }
+            }
+        });
+    }
+
+    pub fn print_exhausted_connections(&self) {
+        self.iterate_snapshot(|t, i, j, node| {
+            if Stage::from(t) == Stage::Measurement && node.qubit_type != QubitType::Data {
+                println!("[{}][{}][{}]: {:?}", t, i, j, node.qubit_type);
+                match &node.exhausted_boundary {
+                    Some(boundary) => println!("boundary: c = {}", boundary.cost),
+                    None => println!("boundary: none"),
+                }
+                // sort it before print
+                let mut exhausted_map_vec = Vec::new();
+                for (idx, edge) in node.exhausted_map.iter() {
+                    exhausted_map_vec.push((idx, edge));
+                }
+                exhausted_map_vec.sort_by(|a, b| a.0.partial_cmp(b.0).unwrap());
+                for (idx, edge) in exhausted_map_vec.iter() {
+                    println!("edge [{}][{}][{}]: c = {}", idx.t, idx.i, idx.j, edge.cost);
                 }
             }
         });

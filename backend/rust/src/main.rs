@@ -163,6 +163,11 @@ async fn main() -> std::io::Result<()> {
                 (@arg fbench_weighted_path_sampling: --fbench_weighted_path_sampling "used weighted sampling")
                 (@arg fbench_weighted_assignment_sampling: --fbench_weighted_assignment_sampling "use weighted sampling in error assignment")
                 (@arg rug_precision: --rug_precision +takes_value "default to 128, the number of bits in a float number used for fast benchmark")
+                (@arg disable_optimize_correction_pattern: --disable_optimize_correction_pattern "disable this optimization")
+                // debugging print utilities
+                (@arg debug_print_only: --debug_print_only "only print requested information without running the benchmark")
+                (@arg debug_print_direct_connections: --debug_print_direct_connections "print direct connections, or model graph in our paper https://www.yecl.org/publications/wu2022qec.pdf")
+                (@arg debug_print_exhausted_connections: --debug_print_exhausted_connections "print exhausted connections, or complete model graph in our paper https://www.yecl.org/publications/wu2022qec.pdf")
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")

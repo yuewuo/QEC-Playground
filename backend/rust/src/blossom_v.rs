@@ -1,5 +1,7 @@
 use super::libc;
 use libc::{c_ulonglong, c_double, c_int};
+use super::rand::thread_rng;
+use super::rand::seq::SliceRandom;
 
 #[link(name = "test")]
 extern {
@@ -27,7 +29,14 @@ extern {
 }
 
 pub fn safe_minimum_weight_perfect_matching(node_num: usize, input_weighted_edges: Vec<(usize, usize, f64)>) -> Vec<usize> {
-    let weighted_edges = if cfg!(feature="MWPM_reverse_order") {
+    let mut index_map = Vec::<usize>::new();
+    let weighted_edges = if cfg!(feature="MWPM_shuffle") {
+        index_map = (0..node_num).collect();
+        index_map.shuffle(&mut thread_rng());
+        input_weighted_edges.iter().map(|(a, b, cost)| {
+            (index_map[*a], index_map[*b], *cost)
+        }).collect()
+    } else if cfg!(feature="MWPM_reverse_order") {
         input_weighted_edges.iter().map(|(a, b, cost)| {
             (node_num - 1 - a, node_num - 1 - b, *cost)
         }).collect()
@@ -50,7 +59,18 @@ pub fn safe_minimum_weight_perfect_matching(node_num: usize, input_weighted_edge
         output.set_len(node_num);
     }
     let output: Vec<usize> = output.iter().map(|x| *x as usize).collect();
-    if cfg!(feature="MWPM_reverse_order") {
+    if cfg!(feature="MWPM_shuffle") {
+        let mut inverse_index_map: Vec::<usize> = vec![0; node_num];
+        for i in 0..node_num {
+            inverse_index_map[index_map[i]] = i;
+        }
+        let result = output.iter().map(|a| {
+            inverse_index_map[*a]
+        }).collect::<Vec<_>>();
+        (0..node_num).map(|i| {
+            result[index_map[i]]
+        }).collect::<Vec<_>>()
+    } else if cfg!(feature="MWPM_reverse_order") {
         let mut result = output.iter().map(|a| {
             node_num - 1 - a
         }).collect::<Vec<_>>();
