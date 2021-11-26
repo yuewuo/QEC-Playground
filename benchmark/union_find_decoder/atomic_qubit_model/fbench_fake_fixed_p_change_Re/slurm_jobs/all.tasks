@@ -1,0 +1,13 @@
+JobID    JobName      User  Partition        NodeList    Elapsed      State ExitCode     MaxRSS                        AllocTRES 
+         44050088_24 QEC-Playg+     yw729        day          c27n06   00:00:05  COMPLETED      0:0               billing=8,cpu=8,mem=6G,node=1 
+         44050088_25 QEC-Playg+     yw729        day       p09r18n05   00:00:04  COMPLETED      0:0               billing=8,cpu=8,mem=6G,node=1 
+         44050088_51 QEC-Playg+     yw729        day       p09r18n06   00:00:11  COMPLETED      0:0               billing=8,cpu=8,mem=6G,node=1 
+         44050088_52 QEC-Playg+     yw729        day       p09r12n30   00:00:14  COMPLETED      0:0               billing=8,cpu=8,mem=6G,node=1 
+         44050088_78 QEC-Playg+     yw729        day       p09r12n30   00:00:47  COMPLETED      0:0               billing=8,cpu=8,mem=6G,node=1 
+         44050088_79 QEC-Playg+     yw729        day       p09r18n07   00:02:43  COMPLETED      0:0               billing=8,cpu=8,mem=6G,node=1 
+        44050088_105 QEC-Playg+     yw729        day       p09r12n31   00:05:00  COMPLETED      0:0               billing=8,cpu=8,mem=6G,node=1 
+        44050088_106 QEC-Playg+     yw729        day       p09r12n31   00:02:35  COMPLETED      0:0               billing=8,cpu=8,mem=6G,node=1 
+        44050088_132 QEC-Playg+     yw729        day       p09r18n08   00:02:29  COMPLETED      0:0               billing=8,cpu=8,mem=6G,node=1 
+        44050088_133 QEC-Playg+     yw729        day       p09r18n08   00:06:32  COMPLETED      0:0               billing=8,cpu=8,mem=6G,node=1 
+        44050088_159 QEC-Playg+     yw729        day       p09r18n08   00:18:17  COMPLETED      0:0               billing=8,cpu=8,mem=6G,node=1 
+        44050088_160 QEC-Playg+     yw729        day       p09r18n08   00:45:28    RUNNING      0:0               billing=8,cpu=8,mem=6G,node=1 

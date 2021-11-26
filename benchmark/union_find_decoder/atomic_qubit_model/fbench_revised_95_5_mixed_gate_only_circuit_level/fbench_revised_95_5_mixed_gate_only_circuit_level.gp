@@ -8,8 +8,9 @@ set logscale x
 set xrange [0.00005:0.5]
 set xtics ("5e-5" 0.00005, "5e-4" 0.0005, "5e-3" 0.005, "5e-2" 0.05, "0.5" 0.5)
 set logscale y
-set ytics ("10^{-8}" 0.00000001, "10^{-7}" 0.0000001, "10^{-6}" 0.000001, "10^{-5}" 0.00001, "10^{-4}" 0.0001, "10^{-3}" 0.001, "10^{-2}" 0.01, "10^{-1}" 0.1)
-set yrange [0.00000001:1]
+# print(", ".join([f'"10^{{-{e}}}" 1e-{e}' for e in range(5, 28, 5)]))
+set ytics ("1" 1, "10^{-5}" 1e-5, "10^{-10}" 1e-10, "10^{-15}" 1e-15, "10^{-20}" 1e-20, "10^{-25}" 1e-25)
+set yrange [1e-28:1]
 set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder

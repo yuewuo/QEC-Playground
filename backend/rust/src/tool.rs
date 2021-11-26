@@ -131,6 +131,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let fbench_assignment_sampling_amount = value_t!(matches, "fbench_assignment_sampling_amount", usize).unwrap_or(1);  // default to 1
             let fbench_weighted_path_sampling = matches.is_present("fbench_weighted_path_sampling");
             let fbench_weighted_assignment_sampling = matches.is_present("fbench_weighted_assignment_sampling");
+            let fbench_target_dev = value_t!(matches, "fbench_target_dev", f64).unwrap_or(0.);  // default to 0
             let rug_precision = value_t!(matches, "rug_precision", u32).unwrap_or(128);  // default to 128
             let disable_optimize_correction_pattern = matches.is_present("disable_optimize_correction_pattern");
             let debug_print_only = matches.is_present("debug_print_only");
@@ -142,8 +143,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
                 , use_combined_probability, error_model, error_model_configuration, no_stop_if_next_model_is_not_prepared, log_runtime_statistics
                 , detailed_runtime_statistics, log_error_pattern_into_statistics_when_has_logical_error, time_budget, use_fast_benchmark
                 , fbench_disable_additional_error, fbench_use_fake_decoder, fbench_use_simple_sum, fbench_assignment_sampling_amount
-                , fbench_weighted_path_sampling, fbench_weighted_assignment_sampling, rug_precision, disable_optimize_correction_pattern, debug_print_only
-                , debug_print_direct_connections, debug_print_exhausted_connections);
+                , fbench_weighted_path_sampling, fbench_weighted_assignment_sampling, fbench_target_dev, rug_precision, disable_optimize_correction_pattern
+                , debug_print_only, debug_print_direct_connections, debug_print_exhausted_connections);
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -546,8 +547,8 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>, detailed_runtime_statistics: bool
         , log_error_pattern_into_statistics_when_has_logical_error: bool, time_budget: Option<f64>, use_fast_benchmark: bool
         , fbench_disable_additional_error: bool, fbench_use_fake_decoder: bool, fbench_use_simple_sum: bool, fbench_assignment_sampling_amount: usize
-        , fbench_weighted_path_sampling: bool, fbench_weighted_assignment_sampling: bool, rug_precision: u32, disable_optimize_correction_pattern: bool
-        , debug_print_only: bool, debug_print_direct_connections: bool, debug_print_exhausted_connections: bool) {
+        , fbench_weighted_path_sampling: bool, fbench_weighted_assignment_sampling: bool, fbench_target_dev: f64, rug_precision: u32
+        , disable_optimize_correction_pattern: bool, debug_print_only: bool, debug_print_direct_connections: bool, debug_print_exhausted_connections: bool) {
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -595,6 +596,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         "fbench_assignment_sampling_amount": fbench_assignment_sampling_amount,
         "fbench_weighted_path_sampling": fbench_weighted_path_sampling,
         "fbench_weighted_assignment_sampling": fbench_weighted_assignment_sampling,
+        "fbench_target_dev": fbench_target_dev,
         "rug_precision": rug_precision,
         "disable_optimize_correction_pattern": disable_optimize_correction_pattern,
     });
@@ -933,16 +935,18 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                             };
                             if use_fast_benchmark {
                                 if fbench_use_fake_decoder {
-                                    fast_benchmark.benchmark_once(&mut rng_fast_benchmark, |errors, clearance_region, string_d| {
+                                    // fast_benchmark.benchmark_once(&mut rng_fast_benchmark, ...);
+                                    fast_benchmark.benchmark_random_starting_node(&mut rng_fast_benchmark, |errors, clearance_region, string_d| {
                                         mini_batch += 1;
                                         let count_as_error = fast_benchmark::fake_decoding(errors, clearance_region, string_d);
                                         if count_as_error {
                                             mini_qec_failed += 1;
                                         }
                                         count_as_error
-                                    });
+                                    });  // is same as benchmark_once statistically but gives output quickly
                                 } else {
-                                    fast_benchmark.benchmark_once(&mut rng_fast_benchmark, decode_and_update);
+                                    // fast_benchmark.benchmark_once(&mut rng_fast_benchmark, decode_and_update);
+                                    fast_benchmark.benchmark_random_starting_node(&mut rng_fast_benchmark, decode_and_update);  // is same as benchmark_once statistically but gives output quickly
                                 }
                             } else {
                                 decode_and_update(Vec::new(), &BTreeSet::new(), 0);
@@ -983,7 +987,11 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 }));
             }
             let round_begin = Instant::now();
-            let generate_fast_benchmark_print = |total_rounds: usize| {
+            let mut fast_benchmark_dev_satisfied = false;
+            let mut fast_benchmark_first_total_rounds = 0;
+            let fast_benchmark_exit = Arc::new(Mutex::new(false));
+            let fast_benchmark_exit_updater = fast_benchmark_exit.clone();
+            let mut generate_fast_benchmark_print = |total_rounds: usize| {
                 if !use_fast_benchmark {
                     return format!("");
                 }
@@ -997,9 +1005,6 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                         logical_error_rates.push(logical_error_rate);
                     }
                 }
-                if logical_error_rates.is_empty() {
-                    return format!("FB <waiting>");
-                }
                 // calculate mean and stddev of these logical_error_rates
                 let mut average_logical_error_rate = rug::Float::with_val(rug_precision, 0.);
                 for logical_error_rate in logical_error_rates.iter() {
@@ -1012,6 +1017,17 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 }
                 let variance = variance / (logical_error_rates.len() as f64);
                 let confidence_interval_95_percent = 1.96 * variance.sqrt() / average_logical_error_rate.clone();
+                if confidence_interval_95_percent < fbench_target_dev {
+                    if fast_benchmark_dev_satisfied == false {
+                        fast_benchmark_first_total_rounds = total_rounds;
+                    }
+                    fast_benchmark_dev_satisfied = true;
+                    if total_rounds > fast_benchmark_first_total_rounds + 100 {
+                        *fast_benchmark_exit_updater.lock().unwrap() = true;
+                    }
+                } else {
+                    fast_benchmark_dev_satisfied = false;
+                }
                 format!("FB {} {} {} {} {} {} {:.8e} {:.2e}", p, pe, di, dj, MeasurementRounds, total_rounds, average_logical_error_rate
                     , confidence_interval_95_percent)
             };
@@ -1024,6 +1040,9 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                                 *external_termination = true;
                             }
                         }, _ => { },
+                    }
+                    if *fast_benchmark_exit.lock().unwrap() {
+                        *external_termination = true;
                     }
                     *external_termination
                 };

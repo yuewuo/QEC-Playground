@@ -419,269 +419,301 @@ impl FastBenchmark {
     pub fn benchmark_once<F>(&mut self, rng: &mut impl RngCore, mut decode: F)
             where F: FnMut(Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>, &BTreeSet<(usize, usize, usize)>, usize) -> bool {
             // Vec<(te, ie, je, pauli_or_erasure)>, string_d
-        let starting_nodes = &self.starting_nodes;
+        for starting_nodes_idx in 0..self.starting_nodes.len() {
+            self.benchmark_starting_node(rng, &mut decode, starting_nodes_idx);
+        }
+    }
+
+    pub fn benchmark_random_starting_node<F>(&mut self, rng: &mut impl RngCore, mut decode: F)
+            where F: FnMut(Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>, &BTreeSet<(usize, usize, usize)>, usize) -> bool {
+        let mut smallest_k = None;
+        let mut smallest_idx = None;
+        for i in 0..self.starting_nodes.len() {
+            let (mts, is, js) = self.starting_nodes[i];
+            let fb_node = self.fb_nodes[mts][is][js].as_ref().unwrap();
+            if smallest_k.is_none() || fb_node.sampling_k < smallest_k.unwrap() {
+                smallest_k = Some(fb_node.sampling_k);
+                smallest_idx = Some(i);
+            }
+        }
+        // let mut smallest_indices = Vec::new();
+        // for i in 0..self.starting_nodes.len() {
+        //     let (mts, is, js) = self.starting_nodes[i];
+        //     let fb_node = self.fb_nodes[mts][is][js].as_ref().unwrap();
+        //     if fb_node.sampling_k == smallest_k.unwrap() {
+        //         smallest_indices.push(i);
+        //     }
+        // }
+        // let starting_nodes_idx = *smallest_indices.choose(rng).unwrap();
+        let starting_nodes_idx = smallest_idx.unwrap();
+        self.benchmark_starting_node(rng, &mut decode, starting_nodes_idx)
+    }
+
+    /// run benchmark for a
+    pub fn benchmark_starting_node<F>(&mut self, rng: &mut impl RngCore, decode: &mut F, starting_nodes_idx: usize)
+            where F: FnMut(Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>, &BTreeSet<(usize, usize, usize)>, usize) -> bool {
+            // Vec<(te, ie, je, pauli_or_erasure)>, string_d
+        let (mts, is, js) = self.starting_nodes[starting_nodes_idx];
         let use_weighted_path_sampling = self.use_weighted_path_sampling;
         let use_weighted_assignment_sampling = self.use_weighted_assignment_sampling;
         assert!(self.assignment_sampling_amount >= 1, "at least one sampling is required");
-        for &(mts, is, js) in starting_nodes.iter() {
-            // sample a path from (mts, is, js) to any end point, whether weighted sample or not
-            let hop = self.fb_nodes[mts][is][js].as_ref().unwrap().hop.unwrap();
-            let mut sampled_string: Vec<(usize, usize, usize)> = Vec::new();
-            let mut sampled_string_ps = rug::Float::with_val(self.rug_precision, 1.);
-            let mut selection = Vec::new();
-            selection.push(((mts, is, js), 1.));
-            for required_hop in (0..hop).rev() {  // note: hop-1, ..., 1, 0
-                // randomly choose one based on the weight
-                let &((mtc, ic, jc), weight_c) = selection.choose_weighted(rng, |item| item.1).unwrap();
-                sampled_string_ps *= weight_c;
-                sampled_string.push((mtc, ic, jc));
-                // find next selection
-                if required_hop == 0 {  // no next selection, stop here
-                    break
-                }
-                selection.clear();
-                let mut weight_sum = 0.;  // to normalize weight so that large code distance wouldn't hit bound of f64 type
-                for (&(mtp, ip, jp), possible_match) in self.fb_nodes[mtc][ic][jc].as_ref().unwrap().matches.iter() {
-                    let fb_node_peer = self.fb_nodes[mtp][ip][jp].as_ref().expect("exist");
-                    match fb_node_peer.hop.clone() {
-                        Some(hop_peer) => {
-                            if hop_peer == required_hop {
-                                // use sqrt so that   1. in Pauli case it's more realistic because half of them having error is dominant and that is sqrt(p_all)
-                                //                    2. in erasure case although all of them having error is dominant, it's not bad to use a more averaged case sqrt(p_all)
-                                // in any case, the weight of the sampling should not have any impact on the result for infinite size simulation, but will only affect the speed of convergence
-                                let weight = if use_weighted_path_sampling { possible_match.joint_probability.sqrt() } else { 1. };
-                                selection.push(((mtp, ip, jp), weight));
-                                weight_sum += weight;
-                            }
-                        }, None => { }
-                    }
-                }
-                let weight_avr = weight_sum / selection.len() as f64;
-                for e in selection.iter_mut() {
-                    e.1 /= weight_avr;
-                }
-                // println!("{:?}", selection);
+        // sample a path from (mts, is, js) to any end point, whether weighted sample or not
+        let hop = self.fb_nodes[mts][is][js].as_ref().unwrap().hop.unwrap();
+        let mut sampled_string: Vec<(usize, usize, usize)> = Vec::new();
+        let mut sampled_string_ps = rug::Float::with_val(self.rug_precision, 1.);
+        let mut selection = Vec::new();
+        selection.push(((mts, is, js), 1.));
+        for required_hop in (0..hop).rev() {  // note: hop-1, ..., 1, 0
+            // randomly choose one based on the weight
+            let &((mtc, ic, jc), weight_c) = selection.choose_weighted(rng, |item| item.1).unwrap();
+            sampled_string_ps *= weight_c;
+            sampled_string.push((mtc, ic, jc));
+            // find next selection
+            if required_hop == 0 {  // no next selection, stop here
+                break
             }
-            assert!(sampled_string.len() > 1, "why would sample string have no more than 2 nodes?");
-            // build clearance region of this sampled string, so that additional errors should not happen at these positions
-            let clearance_region = {
-                let mut clearance_region = BTreeSet::<(usize, usize, usize)>::new();
-                {  // first consider starting boundary
-                    let fb_node = self.fb_nodes[mts][is][js].as_ref().unwrap();
-                    for possible_erasure in fb_node.erasure_boundaries.iter() {
-                        clearance_region.insert(possible_erasure.erasure_position);
-                    }
-                    for possible_pauli in fb_node.pauli_boundaries.iter() {
-                        clearance_region.insert(possible_pauli.pauli_position);
-                    }
-                }
-                for idx in 0..sampled_string.len()-1 {
-                    let (mt1, i1, j1) = sampled_string[idx];
-                    let (mt2, i2, j2) = sampled_string[idx + 1];
-                    let fb_node = self.fb_nodes[mt1][i1][j1].as_ref().unwrap();
-                    let possible_match = fb_node.matches.get(&(mt2, i2, j2)).unwrap();
-                    for possible_erasure in possible_match.erasure_matches.iter() {
-                        clearance_region.insert(possible_erasure.erasure_position);
-                    }
-                    for possible_pauli in possible_match.pauli_matches.iter() {
-                        clearance_region.insert(possible_pauli.pauli_position);
-                    }
-                }
-                {   // finally consider ending boundary
-                    let idx = sampled_string.len() - 1;
-                    let (mte, ie, je) = sampled_string[idx];
-                    let fb_node = self.fb_nodes[mte][ie][je].as_ref().unwrap();
-                    for possible_erasure in fb_node.erasure_boundaries.iter() {
-                        clearance_region.insert(possible_erasure.erasure_position);
-                    }
-                    for possible_pauli in fb_node.pauli_boundaries.iter() {
-                        clearance_region.insert(possible_pauli.pauli_position);
-                    }
-                }
-                // println!("clearance_region: {:?}", clearance_region);
-                clearance_region
-            };
-            // build full erasure and selection, which is a fixed vec containing all possible erasure positions
-            let (full_erasure_selection, full_pauli_selection) = {
-                let mut erasure_weight_sum = 0.;
-                let mut full_erasure_selection = Vec::<(usize, StringElementType, f64, f64)>::new();  // idx, string_element_type, weight, type_joint_probability
-                let mut pauli_weight_sum = 0.;
-                let mut full_pauli_selection = Vec::<(usize, StringElementType, f64, f64)>::new();  // idx, string_element_type, weight, type_joint_probability
-                {  // first consider starting boundary
-                    let fb_node = self.fb_nodes[mts][is][js].as_ref().unwrap();
-                    if !fb_node.erasure_boundaries.is_empty() {
-                        let weight = if use_weighted_assignment_sampling { fb_node.erasure_boundaries_joint_probability } else { 1. };
-                        full_erasure_selection.push((0, StringElementType::Boundary, weight, fb_node.erasure_boundaries_joint_probability));
-                        erasure_weight_sum += weight;
-                    }
-                    if !fb_node.pauli_boundaries.is_empty() {
-                        let weight = if use_weighted_assignment_sampling { fb_node.pauli_boundaries_joint_probability } else { 1. };
-                        // println!("fb_node.pauli_boundaries_joint_probability: {}", fb_node.pauli_boundaries_joint_probability);
-                        full_pauli_selection.push((0, StringElementType::Boundary, weight, fb_node.pauli_boundaries_joint_probability));
-                        pauli_weight_sum += weight;
-                    }
-                }
-                for idx in 0..sampled_string.len()-1 {
-                    let (mt1, i1, j1) = sampled_string[idx];
-                    let (mt2, i2, j2) = sampled_string[idx + 1];
-                    let fb_node = self.fb_nodes[mt1][i1][j1].as_ref().unwrap();
-                    let possible_match = fb_node.matches.get(&(mt2, i2, j2)).unwrap();
-                    if !possible_match.erasure_matches.is_empty() {
-                        let weight = if use_weighted_assignment_sampling { possible_match.erasure_joint_probability } else { 1. };
-                        full_erasure_selection.push((idx, StringElementType::MatchNext, weight, possible_match.erasure_joint_probability));
-                        erasure_weight_sum += weight;
-                    }
-                    if !possible_match.pauli_matches.is_empty() {
-                        let weight = if use_weighted_assignment_sampling { possible_match.pauli_joint_probability } else { 1. };
-                        // println!("possible_match.pauli_joint_probability: {}", possible_match.pauli_joint_probability);
-                        full_pauli_selection.push((idx, StringElementType::MatchNext, weight, possible_match.pauli_joint_probability));
-                        pauli_weight_sum += weight;
-                    }
-                }
-                {   // finally consider ending boundary
-                    let idx = sampled_string.len() - 1;
-                    let (mte, ie, je) = sampled_string[idx];
-                    let fb_node = self.fb_nodes[mte][ie][je].as_ref().unwrap();
-                    if !fb_node.erasure_boundaries.is_empty() {
-                        let weight = if use_weighted_assignment_sampling { fb_node.erasure_boundaries_joint_probability } else { 1. };
-                        full_erasure_selection.push((idx, StringElementType::Boundary, weight, fb_node.erasure_boundaries_joint_probability));
-                        erasure_weight_sum += weight;
-                    }
-                    if !fb_node.pauli_boundaries.is_empty() {
-                        let weight = if use_weighted_assignment_sampling { fb_node.pauli_boundaries_joint_probability } else { 1. };
-                        full_pauli_selection.push((idx, StringElementType::Boundary, weight, fb_node.pauli_boundaries_joint_probability));
-                        pauli_weight_sum += weight;
-                    }
-                }
-                let erasure_weight_avr = erasure_weight_sum / full_erasure_selection.len() as f64;
-                for e in full_erasure_selection.iter_mut() {
-                    e.2 /= erasure_weight_avr;
-                }
-                // println!("full_erasure_selection: {:?}", full_erasure_selection);
-                let pauli_weight_avr = pauli_weight_sum / full_pauli_selection.len() as f64;
-                for e in full_pauli_selection.iter_mut() {
-                    e.2 /= pauli_weight_avr;
-                }
-                // println!("full_pauli_selection: {:?}", full_pauli_selection);
-                (full_erasure_selection, full_pauli_selection)
-            };
-            // given the sampled string, now calculate the logical error rate on this string by iterating over all possible combinations
-            let mut string_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum, self.rug_precision);
-            for erasure_count in 0..full_erasure_selection.len()+1 {
-                for pauli_count in 0..full_pauli_selection.len()+1 {
-                    if erasure_count + pauli_count > hop + 1 || (erasure_count == 0 && pauli_count == 0) {
-                        continue  // no need to actually sample, it's impossible to have this amount of errors simultaneously
-                    }
-                    if erasure_count + 2 * pauli_count < hop {  // this kind of error confuses estimator when adding more errors randomly
-                        continue
-                    }
-                    let mut combinatorial_of_selection = binomial(full_erasure_selection.len(), erasure_count);
-                    if erasure_count <= full_pauli_selection.len() && pauli_count <= full_pauli_selection.len() - erasure_count {
-                        combinatorial_of_selection *= binomial(full_pauli_selection.len() - erasure_count, pauli_count);
-                    }
-                    // println!("erasure_count: {}, pauli_count: {}, combinatorial_of_selection: {}", erasure_count, pauli_count, combinatorial_of_selection);
-                    let mut assignment_sampling_s = 0;
-                    let mut assignment_sampling_sum_ps = rug::Float::with_val(self.rug_precision, 0.);
-                    let mut assignment_sampling_sum_elements = rug::Float::with_val(self.rug_precision, 0.);
-                    for _assignment_idx in 0..self.assignment_sampling_amount {
-                        let mut assignment = Vec::<(usize, StringElementType, AssignmentElementType, f64)>::new();
-                        let mut sampling_ps = rug::Float::with_val(self.rug_precision, 1.);
-                        // first sample multiple erasure errors
-                        let mut erasure_selected_set = BTreeSet::new();
-                        if erasure_count > 0 {
-                            let erasure_selection = full_erasure_selection.choose_multiple_weighted(rng, erasure_count, |item| item.2).unwrap().collect::<Vec::<&(usize, StringElementType, f64, f64)>>();
-                            for &&(idx, string_element_type, weight, typed_joint_probability) in erasure_selection.iter() {
-                                sampling_ps = sampling_ps.clone() * weight;
-                                assignment.push((idx, string_element_type, AssignmentElementType::Erasure, typed_joint_probability));
-                                erasure_selected_set.insert((idx, string_element_type));
-                            }
+            selection.clear();
+            let mut weight_sum = 0.;  // to normalize weight so that large code distance wouldn't hit bound of f64 type
+            for (&(mtp, ip, jp), possible_match) in self.fb_nodes[mtc][ic][jc].as_ref().unwrap().matches.iter() {
+                let fb_node_peer = self.fb_nodes[mtp][ip][jp].as_ref().expect("exist");
+                match fb_node_peer.hop.clone() {
+                    Some(hop_peer) => {
+                        if hop_peer == required_hop {
+                            // use sqrt so that   1. in Pauli case it's more realistic because half of them having error is dominant and that is sqrt(p_all)
+                            //                    2. in erasure case although all of them having error is dominant, it's not bad to use a more averaged case sqrt(p_all)
+                            // in any case, the weight of the sampling should not have any impact on the result for infinite size simulation, but will only affect the speed of convergence
+                            let weight = if use_weighted_path_sampling { possible_match.joint_probability.sqrt() } else { 1. };
+                            selection.push(((mtp, ip, jp), weight));
+                            weight_sum += weight;
                         }
-                        // then sample multiple pauli errors at the remaining positions
-                        if pauli_count > 0 {
-                            let mut partial_pauli_selection = full_pauli_selection.clone();
-                            partial_pauli_selection.retain(|&(idx, string_element_type, _weight, _typed_joint_probability)| !erasure_selected_set.contains(&(idx, string_element_type)));
-                            let pauli_selection = match partial_pauli_selection.choose_multiple_weighted(rng, pauli_count, |item| item.2) {
-                                Ok(pauli_selection) => pauli_selection.collect::<Vec::<&(usize, StringElementType, f64, f64)>>(),
-                                Err(_) => { continue }
-                            };
-                            for &&(idx, string_element_type, weight, typed_joint_probability) in pauli_selection.iter() {
-                                sampling_ps *= weight;
-                                assignment.push((idx, string_element_type, AssignmentElementType::Pauli, typed_joint_probability));
-                            }
-                        }
-                        let assignment = assignment;  // make it immutable
-                        // println!("    assignment: {:?}", assignment);
-                        let has_logical_error = {
-                            let mut errors = Vec::new();
-                            for &(idx, string_element_type, assignment_element_type, _typed_joint_probability) in assignment.iter() {
-                                let (mt1, i1, j1) = sampled_string[idx];
-                                let fb_node = self.fb_nodes[mt1][i1][j1].as_ref().unwrap();
-                                match string_element_type {
-                                    StringElementType::Boundary => {
-                                        match assignment_element_type {
-                                            AssignmentElementType::Erasure => {
-                                                let possible_erasure = fb_node.erasure_boundaries.choose_weighted(rng, |item| item.probability).unwrap();
-                                                let (te, ie, je) = possible_erasure.erasure_position;
-                                                errors.push((te, ie, je, Either::Right(())));
-                                            }
-                                            AssignmentElementType::Pauli => {
-                                                let possible_pauli = fb_node.pauli_boundaries.choose_weighted(rng, |item| item.probability).unwrap();
-                                                let (te, ie, je) = possible_pauli.pauli_position;
-                                                errors.push((te, ie, je, Either::Left(possible_pauli.pauli_type.clone())));
-                                            }
-                                        }
-                                    },
-                                    StringElementType::MatchNext => {
-                                        let (mt2, i2, j2) = sampled_string[idx + 1];
-                                        let possible_match = fb_node.matches.get(&(mt2, i2, j2)).unwrap();
-                                        match assignment_element_type {
-                                            AssignmentElementType::Erasure => {
-                                                let possible_erasure = possible_match.erasure_matches.choose_weighted(rng, |item| item.probability).unwrap();
-                                                let (te, ie, je) = possible_erasure.erasure_position;
-                                                errors.push((te, ie, je, Either::Right(())));
-                                            }
-                                            AssignmentElementType::Pauli => {
-                                                let possible_pauli = possible_match.pauli_matches.choose_weighted(rng, |item| item.probability).unwrap();
-                                                let (te, ie, je) = possible_pauli.pauli_position;
-                                                errors.push((te, ie, je, Either::Left(possible_pauli.pauli_type.clone())));
-                                            }
-                                        }
-                                    },
-                                }
-                            }
-                            let string_d = hop + 1;
-                            decode(errors, &clearance_region, string_d)  // run real decoding
-                        };
-                        assignment_sampling_s += 1;
-                        assignment_sampling_sum_ps += sampling_ps.clone();
-                        if has_logical_error {
-                            let mut physical_error_rate = rug::Float::with_val(self.rug_precision, 1.);
-                            assert!(assignment.len() > 0, "should have some errors");
-                            for (_idx, _string_element_type, _assignment_element_type, typed_joint_probability) in assignment.iter() {
-                                // println!("typed_joint_probability: {}", typed_joint_probability);
-                                physical_error_rate *= typed_joint_probability;
-                            }
-                            assignment_sampling_sum_elements += physical_error_rate / sampling_ps;
-                        }
-                    }
-                    if assignment_sampling_s > 0 {  // sometimes it's impossible to sample, just ignore this case
-                        // println!("    assignment_sampling_s: {}", assignment_sampling_s);
-                        let error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum, self.rug_precision).accumulate_multiple(
-                            combinatorial_of_selection, assignment_sampling_sum_ps * assignment_sampling_sum_elements
-                                / rug::Integer::u_pow_u(assignment_sampling_s, 2).complete()).error_rate.clone();
-                        // println!("pauli_count: {}, error_rate: {}, combinatorial_of_selection: {}, sub: {}", pauli_count, error_rate, combinatorial_of_selection, assignment_sampling_sum_ps * assignment_sampling_sum_elements / (assignment_sampling_s as f64).powi(2));
-                        string_logical_error_rate.accumulate(error_rate);
-                    }
+                    }, None => { }
                 }
             }
-            // update state
-            let fb_node = self.fb_nodes[mts][is][js].as_mut().unwrap();
-            fb_node.sampling_k += 1;
-            fb_node.sampling_sum_ps = sampled_string_ps.clone() + fb_node.sampling_sum_ps.clone();  // note: this will use the left-hand precision
-            fb_node.sampling_sum_elements = string_logical_error_rate.error_rate / sampled_string_ps.clone()
-                + fb_node.sampling_sum_elements.clone();  // note: this will use the left-hand precision
-            // println!("sampled_string_ps: {}, sampled_string: {:?}", sampled_string_ps, sampled_string);
+            let weight_avr = weight_sum / selection.len() as f64;
+            for e in selection.iter_mut() {
+                e.1 /= weight_avr;
+            }
+            // println!("{:?}", selection);
         }
+        assert!(sampled_string.len() > 1, "why would sample string have no more than 2 nodes?");
+        // build clearance region of this sampled string, so that additional errors should not happen at these positions
+        let clearance_region = {
+            let mut clearance_region = BTreeSet::<(usize, usize, usize)>::new();
+            {  // first consider starting boundary
+                let fb_node = self.fb_nodes[mts][is][js].as_ref().unwrap();
+                for possible_erasure in fb_node.erasure_boundaries.iter() {
+                    clearance_region.insert(possible_erasure.erasure_position);
+                }
+                for possible_pauli in fb_node.pauli_boundaries.iter() {
+                    clearance_region.insert(possible_pauli.pauli_position);
+                }
+            }
+            for idx in 0..sampled_string.len()-1 {
+                let (mt1, i1, j1) = sampled_string[idx];
+                let (mt2, i2, j2) = sampled_string[idx + 1];
+                let fb_node = self.fb_nodes[mt1][i1][j1].as_ref().unwrap();
+                let possible_match = fb_node.matches.get(&(mt2, i2, j2)).unwrap();
+                for possible_erasure in possible_match.erasure_matches.iter() {
+                    clearance_region.insert(possible_erasure.erasure_position);
+                }
+                for possible_pauli in possible_match.pauli_matches.iter() {
+                    clearance_region.insert(possible_pauli.pauli_position);
+                }
+            }
+            {   // finally consider ending boundary
+                let idx = sampled_string.len() - 1;
+                let (mte, ie, je) = sampled_string[idx];
+                let fb_node = self.fb_nodes[mte][ie][je].as_ref().unwrap();
+                for possible_erasure in fb_node.erasure_boundaries.iter() {
+                    clearance_region.insert(possible_erasure.erasure_position);
+                }
+                for possible_pauli in fb_node.pauli_boundaries.iter() {
+                    clearance_region.insert(possible_pauli.pauli_position);
+                }
+            }
+            // println!("clearance_region: {:?}", clearance_region);
+            clearance_region
+        };
+        // build full erasure and selection, which is a fixed vec containing all possible erasure positions
+        let (full_erasure_selection, full_pauli_selection) = {
+            let mut erasure_weight_sum = 0.;
+            let mut full_erasure_selection = Vec::<(usize, StringElementType, f64, f64)>::new();  // idx, string_element_type, weight, type_joint_probability
+            let mut pauli_weight_sum = 0.;
+            let mut full_pauli_selection = Vec::<(usize, StringElementType, f64, f64)>::new();  // idx, string_element_type, weight, type_joint_probability
+            {  // first consider starting boundary
+                let fb_node = self.fb_nodes[mts][is][js].as_ref().unwrap();
+                if !fb_node.erasure_boundaries.is_empty() {
+                    let weight = if use_weighted_assignment_sampling { fb_node.erasure_boundaries_joint_probability } else { 1. };
+                    full_erasure_selection.push((0, StringElementType::Boundary, weight, fb_node.erasure_boundaries_joint_probability));
+                    erasure_weight_sum += weight;
+                }
+                if !fb_node.pauli_boundaries.is_empty() {
+                    let weight = if use_weighted_assignment_sampling { fb_node.pauli_boundaries_joint_probability } else { 1. };
+                    // println!("fb_node.pauli_boundaries_joint_probability: {}", fb_node.pauli_boundaries_joint_probability);
+                    full_pauli_selection.push((0, StringElementType::Boundary, weight, fb_node.pauli_boundaries_joint_probability));
+                    pauli_weight_sum += weight;
+                }
+            }
+            for idx in 0..sampled_string.len()-1 {
+                let (mt1, i1, j1) = sampled_string[idx];
+                let (mt2, i2, j2) = sampled_string[idx + 1];
+                let fb_node = self.fb_nodes[mt1][i1][j1].as_ref().unwrap();
+                let possible_match = fb_node.matches.get(&(mt2, i2, j2)).unwrap();
+                if !possible_match.erasure_matches.is_empty() {
+                    let weight = if use_weighted_assignment_sampling { possible_match.erasure_joint_probability } else { 1. };
+                    full_erasure_selection.push((idx, StringElementType::MatchNext, weight, possible_match.erasure_joint_probability));
+                    erasure_weight_sum += weight;
+                }
+                if !possible_match.pauli_matches.is_empty() {
+                    let weight = if use_weighted_assignment_sampling { possible_match.pauli_joint_probability } else { 1. };
+                    // println!("possible_match.pauli_joint_probability: {}", possible_match.pauli_joint_probability);
+                    full_pauli_selection.push((idx, StringElementType::MatchNext, weight, possible_match.pauli_joint_probability));
+                    pauli_weight_sum += weight;
+                }
+            }
+            {   // finally consider ending boundary
+                let idx = sampled_string.len() - 1;
+                let (mte, ie, je) = sampled_string[idx];
+                let fb_node = self.fb_nodes[mte][ie][je].as_ref().unwrap();
+                if !fb_node.erasure_boundaries.is_empty() {
+                    let weight = if use_weighted_assignment_sampling { fb_node.erasure_boundaries_joint_probability } else { 1. };
+                    full_erasure_selection.push((idx, StringElementType::Boundary, weight, fb_node.erasure_boundaries_joint_probability));
+                    erasure_weight_sum += weight;
+                }
+                if !fb_node.pauli_boundaries.is_empty() {
+                    let weight = if use_weighted_assignment_sampling { fb_node.pauli_boundaries_joint_probability } else { 1. };
+                    full_pauli_selection.push((idx, StringElementType::Boundary, weight, fb_node.pauli_boundaries_joint_probability));
+                    pauli_weight_sum += weight;
+                }
+            }
+            let erasure_weight_avr = erasure_weight_sum / full_erasure_selection.len() as f64;
+            for e in full_erasure_selection.iter_mut() {
+                e.2 /= erasure_weight_avr;
+            }
+            // println!("full_erasure_selection: {:?}", full_erasure_selection);
+            let pauli_weight_avr = pauli_weight_sum / full_pauli_selection.len() as f64;
+            for e in full_pauli_selection.iter_mut() {
+                e.2 /= pauli_weight_avr;
+            }
+            // println!("full_pauli_selection: {:?}", full_pauli_selection);
+            (full_erasure_selection, full_pauli_selection)
+        };
+        // given the sampled string, now calculate the logical error rate on this string by iterating over all possible combinations
+        let mut string_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum, self.rug_precision);
+        for erasure_count in 0..full_erasure_selection.len()+1 {
+            for pauli_count in 0..full_pauli_selection.len()+1 {
+                if erasure_count + pauli_count > hop + 1 || (erasure_count == 0 && pauli_count == 0) {
+                    continue  // no need to actually sample, it's impossible to have this amount of errors simultaneously
+                }
+                if erasure_count + 2 * pauli_count < hop {  // this kind of error confuses estimator when adding more errors randomly
+                    continue
+                }
+                let mut combinatorial_of_selection = binomial(full_erasure_selection.len(), erasure_count);
+                if erasure_count <= full_pauli_selection.len() && pauli_count <= full_pauli_selection.len() - erasure_count {
+                    combinatorial_of_selection *= binomial(full_pauli_selection.len() - erasure_count, pauli_count);
+                }
+                // println!("erasure_count: {}, pauli_count: {}, combinatorial_of_selection: {}", erasure_count, pauli_count, combinatorial_of_selection);
+                let mut assignment_sampling_s = 0;
+                let mut assignment_sampling_sum_ps = rug::Float::with_val(self.rug_precision, 0.);
+                let mut assignment_sampling_sum_elements = rug::Float::with_val(self.rug_precision, 0.);
+                for _assignment_idx in 0..self.assignment_sampling_amount {
+                    let mut assignment = Vec::<(usize, StringElementType, AssignmentElementType, f64)>::new();
+                    let mut sampling_ps = rug::Float::with_val(self.rug_precision, 1.);
+                    // first sample multiple erasure errors
+                    let mut erasure_selected_set = BTreeSet::new();
+                    if erasure_count > 0 {
+                        let erasure_selection = full_erasure_selection.choose_multiple_weighted(rng, erasure_count, |item| item.2).unwrap().collect::<Vec::<&(usize, StringElementType, f64, f64)>>();
+                        for &&(idx, string_element_type, weight, typed_joint_probability) in erasure_selection.iter() {
+                            sampling_ps = sampling_ps.clone() * weight;
+                            assignment.push((idx, string_element_type, AssignmentElementType::Erasure, typed_joint_probability));
+                            erasure_selected_set.insert((idx, string_element_type));
+                        }
+                    }
+                    // then sample multiple pauli errors at the remaining positions
+                    if pauli_count > 0 {
+                        let mut partial_pauli_selection = full_pauli_selection.clone();
+                        partial_pauli_selection.retain(|&(idx, string_element_type, _weight, _typed_joint_probability)| !erasure_selected_set.contains(&(idx, string_element_type)));
+                        let pauli_selection = match partial_pauli_selection.choose_multiple_weighted(rng, pauli_count, |item| item.2) {
+                            Ok(pauli_selection) => pauli_selection.collect::<Vec::<&(usize, StringElementType, f64, f64)>>(),
+                            Err(_) => { continue }
+                        };
+                        for &&(idx, string_element_type, weight, typed_joint_probability) in pauli_selection.iter() {
+                            sampling_ps *= weight;
+                            assignment.push((idx, string_element_type, AssignmentElementType::Pauli, typed_joint_probability));
+                        }
+                    }
+                    let assignment = assignment;  // make it immutable
+                    // println!("    assignment: {:?}", assignment);
+                    let has_logical_error = {
+                        let mut errors = Vec::new();
+                        for &(idx, string_element_type, assignment_element_type, _typed_joint_probability) in assignment.iter() {
+                            let (mt1, i1, j1) = sampled_string[idx];
+                            let fb_node = self.fb_nodes[mt1][i1][j1].as_ref().unwrap();
+                            match string_element_type {
+                                StringElementType::Boundary => {
+                                    match assignment_element_type {
+                                        AssignmentElementType::Erasure => {
+                                            let possible_erasure = fb_node.erasure_boundaries.choose_weighted(rng, |item| item.probability).unwrap();
+                                            let (te, ie, je) = possible_erasure.erasure_position;
+                                            errors.push((te, ie, je, Either::Right(())));
+                                        }
+                                        AssignmentElementType::Pauli => {
+                                            let possible_pauli = fb_node.pauli_boundaries.choose_weighted(rng, |item| item.probability).unwrap();
+                                            let (te, ie, je) = possible_pauli.pauli_position;
+                                            errors.push((te, ie, je, Either::Left(possible_pauli.pauli_type.clone())));
+                                        }
+                                    }
+                                },
+                                StringElementType::MatchNext => {
+                                    let (mt2, i2, j2) = sampled_string[idx + 1];
+                                    let possible_match = fb_node.matches.get(&(mt2, i2, j2)).unwrap();
+                                    match assignment_element_type {
+                                        AssignmentElementType::Erasure => {
+                                            let possible_erasure = possible_match.erasure_matches.choose_weighted(rng, |item| item.probability).unwrap();
+                                            let (te, ie, je) = possible_erasure.erasure_position;
+                                            errors.push((te, ie, je, Either::Right(())));
+                                        }
+                                        AssignmentElementType::Pauli => {
+                                            let possible_pauli = possible_match.pauli_matches.choose_weighted(rng, |item| item.probability).unwrap();
+                                            let (te, ie, je) = possible_pauli.pauli_position;
+                                            errors.push((te, ie, je, Either::Left(possible_pauli.pauli_type.clone())));
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                        let string_d = hop + 1;
+                        decode(errors, &clearance_region, string_d)  // run real decoding
+                    };
+                    assignment_sampling_s += 1;
+                    assignment_sampling_sum_ps += sampling_ps.clone();
+                    if has_logical_error {
+                        let mut physical_error_rate = rug::Float::with_val(self.rug_precision, 1.);
+                        assert!(assignment.len() > 0, "should have some errors");
+                        for (_idx, _string_element_type, _assignment_element_type, typed_joint_probability) in assignment.iter() {
+                            // println!("typed_joint_probability: {}", typed_joint_probability);
+                            physical_error_rate *= typed_joint_probability;
+                        }
+                        assignment_sampling_sum_elements += physical_error_rate / sampling_ps;
+                    }
+                }
+                if assignment_sampling_s > 0 {  // sometimes it's impossible to sample, just ignore this case
+                    // println!("    assignment_sampling_s: {}", assignment_sampling_s);
+                    let error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum, self.rug_precision).accumulate_multiple(
+                        combinatorial_of_selection, assignment_sampling_sum_ps * assignment_sampling_sum_elements
+                            / rug::Integer::u_pow_u(assignment_sampling_s, 2).complete()).error_rate.clone();
+                    // println!("pauli_count: {}, error_rate: {}, combinatorial_of_selection: {}, sub: {}", pauli_count, error_rate, combinatorial_of_selection, assignment_sampling_sum_ps * assignment_sampling_sum_elements / (assignment_sampling_s as f64).powi(2));
+                    string_logical_error_rate.accumulate(error_rate);
+                }
+            }
+        }
+        // update state
+        let fb_node = self.fb_nodes[mts][is][js].as_mut().unwrap();
+        fb_node.sampling_k += 1;
+        fb_node.sampling_sum_ps = sampled_string_ps.clone() + fb_node.sampling_sum_ps.clone();  // note: this will use the left-hand precision
+        fb_node.sampling_sum_elements = string_logical_error_rate.error_rate / sampled_string_ps.clone()
+            + fb_node.sampling_sum_elements.clone();  // note: this will use the left-hand precision
+        // println!("sampled_string_ps: {}, sampled_string: {:?}", sampled_string_ps, sampled_string);
     }
 
     /// get estimated result of logical error rate
@@ -689,20 +721,34 @@ impl FastBenchmark {
         let mut left_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum, self.rug_precision);
         let mut back_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum, self.rug_precision);
         let starting_nodes = &self.starting_nodes;
+        let mut not_sampled_count = 0;
         for &(mts, is, js) in starting_nodes.iter() {
             // sample a path from (mts, is, js) to any end point, whether weighted sample or not
             let fb_node = self.fb_nodes[mts][is][js].as_ref().unwrap();
-            let acc_p = fb_node.sampling_sum_ps.clone() * fb_node.sampling_sum_elements.clone() / (fb_node.sampling_k as f64).powi(2);
-            // println!("[{}][{}][{}]: {} {} {} {} {}", mts, is, js, fb_node.sampling_sum_ps, fb_node.sampling_sum_elements, fb_node.sampling_k, fb_node.string_count, acc_p);
-            match fb_node.boundary_candidate {
-                Some(BoundaryCandidate::Left) => {
-                    left_logical_error_rate.accumulate_multiple(fb_node.string_count.clone(), acc_p.clone());
+            if fb_node.sampling_k > 0 {
+                let acc_p = fb_node.sampling_sum_ps.clone() * fb_node.sampling_sum_elements.clone() / (fb_node.sampling_k as f64).powi(2);
+                // println!("[{}][{}][{}]: {} {} {} {} {}", mts, is, js, fb_node.sampling_sum_ps, fb_node.sampling_sum_elements, fb_node.sampling_k, fb_node.string_count, acc_p);
+                match fb_node.boundary_candidate {
+                    Some(BoundaryCandidate::Left) => {
+                        left_logical_error_rate.accumulate_multiple(fb_node.string_count.clone(), acc_p.clone());
+                    }
+                    Some(BoundaryCandidate::Back) => {
+                        back_logical_error_rate.accumulate_multiple(fb_node.string_count.clone(), acc_p.clone());
+                    }
+                    _ => unreachable!("boundary candidate must be left or back"),
                 }
-                Some(BoundaryCandidate::Back) => {
-                    back_logical_error_rate.accumulate_multiple(fb_node.string_count.clone(), acc_p.clone());
-                }
-                _ => unreachable!("boundary candidate must be left or back"),
+            } else {
+                not_sampled_count += 1;
             }
+        }
+        if not_sampled_count > 0 {
+            // println!("not_sampled_count: {}", not_sampled_count);
+            let left_divivded_error_rate = left_logical_error_rate.error_rate.clone() / rug::Float::with_val(self.rug_precision, starting_nodes.len() - not_sampled_count);
+            left_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum, self.rug_precision);
+            left_logical_error_rate.accumulate_multiple(rug::Integer::from(starting_nodes.len()), left_divivded_error_rate);
+            let back_divivded_error_rate = back_logical_error_rate.error_rate.clone() / rug::Float::with_val(self.rug_precision, starting_nodes.len() - not_sampled_count);
+            back_logical_error_rate = ErrorRateAccumulator::new_use_simple_sum(self.use_simple_sum, self.rug_precision);
+            back_logical_error_rate.accumulate_multiple(rug::Integer::from(starting_nodes.len()), back_divivded_error_rate);
         }
         // println!("left: {}, back: {}", left_logical_error_rate.error_rate, back_logical_error_rate.error_rate);
         // let float_1 = rug::Float::with_val(self.rug_precision, 1.);

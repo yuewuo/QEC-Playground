@@ -8,6 +8,9 @@ from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 sys.path.insert(0, os.path.join(qec_playground_root_dir, "benchmark", "slurm_utilities"))
 import slurm_distribute
 from slurm_distribute import slurm_threads_or as STO
+slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # it doesn't rely on too much CPUs
+slurm_distribute.SLURM_DISTRIBUTE_TIME = "05:20:00"
+slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '4G'
 import math, random, scipy.stats
 import numpy as np
 
@@ -17,13 +20,9 @@ p_vec = [0.5 * (10 ** (- i / 5)) for i in range(5 * 4 + 1)]
 min_error_cases = 0  # +inf
 max_N = 0  # +inf
 
-time_budget = 10 * 60  # 10min
+time_budget = 5 * 3600  # 5 hours
 # time_budget = 10  # debug
-UF_parameters = f"-p{STO(0)} --time_budget {time_budget} --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --use_fast_benchmark --fbench_use_fake_decoder --fbench_disable_additional_error".split(" ")
-
-slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # it doesn't rely on too much CPUs
-slurm_distribute.SLURM_DISTRIBUTE_TIME = "00:20:00"
-slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '4G'
+UF_parameters = f"-p{STO(0)} --time_budget {time_budget} --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --use_fast_benchmark --fbench_use_fake_decoder --fbench_disable_additional_error --fbench_target_dev 1e-2".split(" ")
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run

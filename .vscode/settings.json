@@ -19,5 +19,6 @@
         "Build Gnuplot": [
             "*.gp",
         ],
-    }
+    },
+    "pdf-preview.default.scale": "page-fit"
 }

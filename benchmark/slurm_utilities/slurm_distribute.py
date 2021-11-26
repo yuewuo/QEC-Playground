@@ -1,5 +1,6 @@
 import os, sys, subprocess, shutil, shlex, time, stat
 from datetime import datetime
+import slurm_rerun_failed
 
 if 'SLURM_HELP' in os.environ:
     OKBLUE = '\033[94m'
@@ -11,6 +12,7 @@ if 'SLURM_HELP' in os.environ:
     print(f"  {OKBLUE}DEBUG_USING_INTERACTIVE_PARTITION{ENDC} : use interactive session, which is usually faster to get the first (and only) session")
     print(f"  {OKBLUE}SLURM_USE_SCAVENGE_PARTITION{ENDC} : use scavenge partition can leverage more cores and use less fair-share points")
     print(f"                                   but depending on the availability of machines, it's unclear whether this will speed up")
+    print(f"  {OKBLUE}SLURM_USE_PREVIOUS_DATA_IF_POSSIBLE{ENDC} : use existing data if possible, and avoid running those slurm commands again")
     print(f"Options (any machine):")
     print(f"  {WARNING}ONLY_PRINT_COMMANDS{ENDC} : to print command only and then exit")
     print(f"  {WARNING}SLURM_USE_EXISTING_DATA{ENDC} : use existing data to run the script")
@@ -41,6 +43,9 @@ if 'SLURM_DISTRIBUTE_ENABLED' in os.environ and os.environ["SLURM_DISTRIBUTE_ENA
     SLURM_DISTRIBUTE_ENABLED = True
 if 'SLURM_USE_SCAVENGE_PARTITION' in os.environ and os.environ["SLURM_USE_SCAVENGE_PARTITION"] != "":
     SLURM_USE_SCAVENGE_PARTITION = True
+SLURM_USE_PREVIOUS_DATA_IF_POSSIBLE = False
+if 'SLURM_USE_PREVIOUS_DATA_IF_POSSIBLE' in os.environ and os.environ["SLURM_USE_PREVIOUS_DATA_IF_POSSIBLE"] != "":
+    SLURM_USE_PREVIOUS_DATA_IF_POSSIBLE = True
 
 SLURM_DISTRIBUTE_FORBIDDEN = False  # never allow the script run in slurm environment
 # this is used when a script doesn't want user to use slurm to distribute tasks, for example, time sensitive benchmarks
@@ -93,10 +98,33 @@ def slurm_distribute_wrap(program):
             if ONLY_PRINT_COMMANDS:
                 return None  # terminate the program
 
+        slurm_jobs_folder = os.path.join(os.path.abspath(os.getcwd()), "slurm_jobs")
+        job_script_sbatch_path = os.path.join(slurm_jobs_folder, f"job_script.sbatch")
+        if SLURM_DISTRIBUTE_ENABLED and SLURM_USE_PREVIOUS_DATA_IF_POSSIBLE:
+            previous_job_commands = read_job_commands_from_sbatch(job_script_sbatch_path)
+            existing_jobouts = [None for e in stringify_commands]
+            def command_equal(cmd1, cmd2):  # don't care bindary path
+                parameters1 = "".join(cmd1.split("rust_qecp ")[1:]).strip("\r\n ")
+                parameters2 = "".join(cmd2.split("rust_qecp ")[1:]).strip("\r\n ")
+                return parameters1 == parameters2
+            reusable_count = 0
+            for new_i, stringify_command in enumerate(stringify_commands):
+                for prev_i, previous_job_command in enumerate(previous_job_commands):
+                    if command_equal(stringify_command, previous_job_command):
+                        job_out_filepath = os.path.join(slurm_jobs_folder, f"{prev_i}.jobout")
+                        if os.path.exists(job_out_filepath):
+                            with open(job_out_filepath, "r", encoding="utf8") as f:
+                                prev_jobout = f.read()
+                                if prev_jobout == "":
+                                    continue  # data not exists
+                        print("found reusable data new_idx =", new_i, "prev_idx =", prev_i)
+                        reusable_count += 1
+                        existing_jobouts[new_i] = prev_jobout
+            confirm_or_die(f"found {reusable_count} reusable data, apart from that only {len(stringify_commands) - reusable_count} remains to run")
+
         if not SLURM_DISTRIBUTE_ENABLED:
             return program()
         else:
-            slurm_jobs_folder = os.path.join(os.path.abspath(os.getcwd()), "slurm_jobs")
             if not SLURM_USE_EXISTING_DATA:
                 assert not SLURM_DISTRIBUTE_FORBIDDEN, "using slurm to distribute tasks are forbidden"
                 # print out for confirmation
@@ -110,9 +138,18 @@ def slurm_distribute_wrap(program):
                 else:
                     job_count = len(slurm_commands_vec)
                 confirm_or_die(f"clear content in {slurm_jobs_folder}")
+                # delete the whole folder
                 if os.path.exists(slurm_jobs_folder):
                     shutil.rmtree(slurm_jobs_folder)
+                # build folder and copy existing data
                 os.makedirs(slurm_jobs_folder)
+                if SLURM_USE_PREVIOUS_DATA_IF_POSSIBLE:
+                    for new_i, stringify_command in enumerate(stringify_commands):
+                        if existing_jobouts[new_i] is not None:
+                            job_out_filepath = os.path.join(slurm_jobs_folder, f"{new_i}.jobout")
+                            with open(job_out_filepath, "w", encoding="utf-8") as f:
+                                f.write(existing_jobouts[new_i])
+                # build scripts
                 parameters = [f"--job-name={job_name}", f"--time={SLURM_DISTRIBUTE_TIME}", f"--mem={SLURM_DISTRIBUTE_MEM_PER_TASK}", "--mail-type=ALL", "--nodes=1", "--ntasks=1"
                     , f"--cpus-per-task={SLURM_DISTRIBUTE_CPUS_PER_TASK}", f"--array=0-{job_count-1}"]
                 parameters.append(f'--out="{os.path.join(slurm_jobs_folder, "%a.jobout")}"')
@@ -124,7 +161,6 @@ def slurm_distribute_wrap(program):
                     parameters.append(f"--exclude={','.join(NODE_BLACK_LIST)}")
                 for parameter in parameters:
                     print(f"    {parameter}")
-                job_script_sbatch_path = os.path.join(slurm_jobs_folder, f"job_script.sbatch")
                 job_script_sbatch_content = ""
                 job_script_sbatch_content += f"#!/bin/bash\n"
                 for parameter in parameters:
@@ -154,8 +190,17 @@ def slurm_distribute_wrap(program):
                 print(job_script_sbatch_content, end='')
                 confirm_or_die(f"Please review job batch file above, jobs will be sent to slurm")
 
-                slurm_run_sbatch_wait(job_script_sbatch_path, [i for i in range(job_count)], slurm_commands_vec=slurm_commands_vec
-                    , use_interactive_partition=DEBUG_USING_INTERACTIVE_PARTITION)
+                if SLURM_USE_PREVIOUS_DATA_IF_POSSIBLE:
+                    run_indices = []
+                    for new_i, stringify_command in enumerate(stringify_commands):
+                        if existing_jobouts[new_i] is None:
+                            run_indices.append(new_i)
+                    print(run_indices)
+                    slurm_rerun_failed.rerun_failed(job_script_sbatch_path, run_indices, slurm_commands_vec=slurm_commands_vec
+                        , use_interactive_partition=DEBUG_USING_INTERACTIVE_PARTITION)
+                else:
+                    slurm_run_sbatch_wait(job_script_sbatch_path, [i for i in range(job_count)], slurm_commands_vec=slurm_commands_vec
+                        , use_interactive_partition=DEBUG_USING_INTERACTIVE_PARTITION)
 
             # gather the data with feeding results
             results = {}
@@ -302,6 +347,17 @@ def get_job_count_from_sbatch(sbatch_file_path):
             if line.startswith("#SBATCH --array=0-"):
                 job_count = int(line[len("#SBATCH --array=0-"):]) + 1
     return job_count
+
+def read_job_commands_from_sbatch(sbatch_file_path):
+    job_commands = []
+    with open(sbatch_file_path, "r", encoding="utf8") as f:
+        for line in f.readlines():
+            if line.startswith('if [ "$SLURM_ARRAY_TASK_ID" == '):
+                line = "".join(line.split("]; then ")[1:])
+                line = "".join(line.split(" || exit")[:-1])
+                # print(line)
+                job_commands.append(line)
+    return job_commands
 
 if __name__ == "__main__":
     # test 3 simple jobs

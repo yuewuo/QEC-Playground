@@ -162,6 +162,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg fbench_assignment_sampling_amount: --fbench_assignment_sampling_amount +takes_value "by default to 1")
                 (@arg fbench_weighted_path_sampling: --fbench_weighted_path_sampling "used weighted sampling")
                 (@arg fbench_weighted_assignment_sampling: --fbench_weighted_assignment_sampling "use weighted sampling in error assignment")
+                (@arg fbench_target_dev: --fbench_target_dev +takes_value "if the deviation of fbench logical error rate is smaller than a number (by default 0 which is never achieved) while keeping for at least 100 rounds, it will exit normally")
                 (@arg rug_precision: --rug_precision +takes_value "default to 128, the number of bits in a float number used for fast benchmark")
                 (@arg disable_optimize_correction_pattern: --disable_optimize_correction_pattern "disable this optimization")
                 // debugging print utilities

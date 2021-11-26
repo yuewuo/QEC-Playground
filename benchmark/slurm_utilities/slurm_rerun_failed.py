@@ -2,7 +2,7 @@ import os, sys, subprocess, time
 import slurm_distribute
 
 
-def rerun_failed(sbatch_file_path, failed_cases):
+def rerun_failed(sbatch_file_path, failed_cases, slurm_commands_vec=None, use_interactive_partition=False):
     # generate rerun sbatch file
     sbatch_file_folder = os.path.dirname(sbatch_file_path)
     rerun_file_path = os.path.join(sbatch_file_folder, "rerun-" + os.path.basename(sbatch_file_path))
@@ -14,7 +14,8 @@ def rerun_failed(sbatch_file_path, failed_cases):
                 f.write(f"#SBATCH --array={','.join([str(e) for e in failed_cases])}\n")
             else:
                 f.write(line)
-    slurm_distribute.slurm_run_sbatch_wait(rerun_file_path, failed_cases, original_sbatch_file_path=sbatch_file_path)
+    print("rerun_file_path", rerun_file_path)
+    slurm_distribute.slurm_run_sbatch_wait(rerun_file_path, failed_cases, original_sbatch_file_path=sbatch_file_path, slurm_commands_vec=slurm_commands_vec, use_interactive_partition=use_interactive_partition)
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
