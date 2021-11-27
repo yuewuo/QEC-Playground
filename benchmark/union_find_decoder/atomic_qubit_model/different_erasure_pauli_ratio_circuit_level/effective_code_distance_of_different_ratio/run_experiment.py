@@ -28,7 +28,7 @@ for pauli_ratio, threshold, _ in thresholds:
 
     filename = os.path.join(os.path.dirname(__file__), f"pauli_ratio_{pauli_ratio}.txt")
 
-    UF_parameters = f"-p0 --decoder UF --max_half_weight 100 --time_budget 600 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel".split(" ")  # a maximum 10min for each point
+    UF_parameters = f"-p0 --decoder UF --max_half_weight 100 --time_budget 600 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")  # a maximum 10min for each point
 
     results = []
     for p in p_vec:
