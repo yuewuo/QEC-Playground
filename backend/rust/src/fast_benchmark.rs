@@ -228,7 +228,7 @@ impl FastBenchmark {
             , pauli_or_erasure: Either<Either<ErrorType, CorrelatedErrorType>, ()>) {
         let mt1 = Index::new(t1, i1, j1).to_measurement_idx().0;
         let mt2 = Index::new(t2, i2, j2).to_measurement_idx().0;
-        for (mt, i, j, mtp, ip, jp) in [(mt1, i1, j1, mt2, i2, j2), (mt2, i2, j2, mt1, i1, j1)] {  // p for peer
+        for &(mt, i, j, mtp, ip, jp) in [(mt1, i1, j1, mt2, i2, j2), (mt2, i2, j2, mt1, i1, j1)].iter() {  // p for peer
             let fb_node = self.fb_nodes[mt][i][j].as_mut().expect("exist");
             if !fb_node.matches.contains_key(&(mtp, ip, jp)) {
                 fb_node.matches.insert((mtp, ip, jp), PossibleMatch::new()); 
