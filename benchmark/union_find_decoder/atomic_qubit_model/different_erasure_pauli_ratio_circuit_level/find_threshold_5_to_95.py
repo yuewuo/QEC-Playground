@@ -36,7 +36,7 @@ def make_simulator_runner(pauli_ratio):
     return simulator_runner
 
 results = []
-for pauli_ratio in [0.05 * i for i in range(1, 20)]:
+for pauli_ratio in [0.05 * i for i in range(0, 20+1)]:
     simulator_runner = make_simulator_runner(pauli_ratio)
     evaluator = AutomatedThresholdEvaluator(pair, parameters=parameters, simulator_runner=simulator_runner)
     evaluator.searching_lower_bound = 0.005

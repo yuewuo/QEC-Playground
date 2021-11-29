@@ -94,7 +94,7 @@ def slurm_distribute_wrap(program):
                 stringify_command = run_stringify_command(command)
                 stringify_commands.append(stringify_command)
                 if ONLY_PRINT_COMMANDS:
-                    print(stringify_command)
+                    print(f"{idx}.", stringify_command)
             if ONLY_PRINT_COMMANDS:
                 return None  # terminate the program
 

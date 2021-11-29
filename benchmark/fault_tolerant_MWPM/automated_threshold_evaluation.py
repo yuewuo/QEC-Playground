@@ -155,7 +155,7 @@ class AutomatedThresholdEvaluator:
             # # early break if the error rate is already indistinguishable
             # if abs(error_rate_1 - error_rate_2) <= error_rate_1 * confidence_interval_1 + error_rate_2 * confidence_interval_2:
             #     break
-            if error_rate_1 > error_rate_2:
+            if error_rate_1 > error_rate_2 or error_rate_1 == 0:
                 lower_bound = searching_p
             else:
                 upper_bound = searching_p
