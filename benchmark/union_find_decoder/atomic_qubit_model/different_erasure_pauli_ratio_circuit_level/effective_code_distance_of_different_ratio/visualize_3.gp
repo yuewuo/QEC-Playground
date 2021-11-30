@@ -22,6 +22,8 @@ pLth0 = "`head -1 pauli_ratio_0.txt | awk '{print $8}'`" + 0
 pLth001 = "`head -1 pauli_ratio_0.01.txt | awk '{print $8}'`" + 0
 pLth005 = "`head -1 pauli_ratio_0.05.txt | awk '{print $8}'`" + 0
 pLth01 = "`head -1 pauli_ratio_0.1.txt | awk '{print $8}'`" + 0
+pLth025 = "`head -1 pauli_ratio_0.25.txt | awk '{print $8}'`" + 0
+pLth05 = "`head -1 pauli_ratio_0.5.txt | awk '{print $8}'`" + 0
 pLth1 = "`head -1 pauli_ratio_1.txt | awk '{print $8}'`" + 0
 
 plot "pauli_ratio_0.txt" using 1:($8/pLth0) with linespoints lt rgb "red" linewidth 3 pointtype 6 pointsize 1 title "R = 0",\
@@ -32,6 +34,10 @@ plot "pauli_ratio_0.txt" using 1:($8/pLth0) with linespoints lt rgb "red" linewi
     "" using 1:($8/pLth005):(($8/pLth005)*(1-$10)):(($8/pLth005)*(1+$10)) with errorbars lt rgb "green" linewidth 3 pointtype 6 pointsize 1 notitle,\
     "pauli_ratio_0.1.txt" using 1:($8/pLth01) with linespoints lt rgb "purple" linewidth 3 pointtype 6 pointsize 1 title "R = 0.1",\
     "" using 1:($8/pLth01):(($8/pLth01)*(1-$10)):(($8/pLth01)*(1+$10)) with errorbars lt rgb "purple" linewidth 3 pointtype 6 pointsize 1 notitle,\
+    "pauli_ratio_0.25.txt" using 1:($8/pLth025) with linespoints lt rgb "red" linewidth 3 pointtype 6 pointsize 1 title "R = 0.25",\
+    "" using 1:($8/pLth025):(($8/pLth025)*(1-$10)):(($8/pLth025)*(1+$10)) with errorbars lt rgb "red" linewidth 3 pointtype 6 pointsize 1 notitle,\
+    "pauli_ratio_0.5.txt" using 1:($8/pLth05) with linespoints lt rgb "blue" linewidth 3 pointtype 6 pointsize 1 title "R = 0.5",\
+    "" using 1:($8/pLth05):(($8/pLth05)*(1-$10)):(($8/pLth05)*(1+$10)) with errorbars lt rgb "blue" linewidth 3 pointtype 6 pointsize 1 notitle,\
     "pauli_ratio_1.txt" using 1:($8/pLth1) with linespoints lt rgb "yellow" linewidth 3 pointtype 6 pointsize 1 title "R = 1",\
     "" using 1:($8/pLth1):(($8/pLth1)*(1-$10)):(($8/pLth1)*(1+$10)) with errorbars lt rgb "yellow" linewidth 3 pointtype 6 pointsize 1 notitle
 

@@ -33,9 +33,10 @@ min_error_cases = 100000
 
 max_N = 100000000
 
-slurm_distribute.SLURM_DISTRIBUTE_TIME = "01:20:00"
+slurm_distribute.SLURM_DISTRIBUTE_TIME = "05:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '4G'
-parameters = f"-p{STO(0)} --decoder UF --max_half_weight 100 --time_budget 3600 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel".split(" ")  # a maximum 60min for each point
+slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # use fewer cores for more available resources (use `SLURM_USE_SCAVENGE_PARTITION` option to speed up)
+parameters = f"-p{STO(0)} --decoder UF --max_half_weight 100 --time_budget 18000 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")  # a maximum 60min for each point
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run
