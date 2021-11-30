@@ -41,6 +41,8 @@ parameters = f"-p{STO(0)} --decoder UF --max_half_weight 100 --time_budget 18000
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run
 def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playground_command_get_stdout):
+    pth_L_results = []
+
     for pauli_ratio, threshold, _ in thresholds:
         filepath = os.path.join(origin_folder, "effective_code_distance_of_different_ratio",  f"pauli_ratio_{pauli_ratio}.txt")
         with open(filepath, "r", encoding="utf8") as f:
@@ -93,6 +95,9 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
             results.append(print_result)
             print(print_result)
 
+            if p == threshold:
+                pth_L_results.append(f"{pauli_ratio} {error_rate} {confidence_interval}")
+
             if error_count < min_error_cases * 0.001:
                 break  # next is not trust-worthy, ignore every p behind it
 
@@ -105,3 +110,11 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
 
         with open(filename, "w", encoding="utf-8") as f:
             f.write("\n".join(results) + "\n")
+
+    print("\n\n")
+    print("\n".join(pth_L_results))
+    print("\n\n")
+
+    pth_L_filepath = os.path.join(os.path.dirname(__file__), f"pth_L.txt")
+    with open(pth_L_filepath, "w", encoding="utf-8") as f:
+        f.write("\n".join(pth_L_results) + "\n")
