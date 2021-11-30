@@ -2047,12 +2047,14 @@ impl PlanarCodeModel {
                 let height = self.snapshot.len();
                 let mut initialization_error_rate = 0.;
                 let mut measurement_error_rate = 0.;
+                let mut use_correlated_pauli = false;
                 error_model_configuration_recognized = true;
                 error_model_configuration.map(|config| {
                     let mut config_cloned = config.clone();
                     let config = config_cloned.as_object_mut().expect("error_model_configuration must be JSON object");
                     config.remove("initialization_error_rate").map(|value| initialization_error_rate = value.as_f64().expect("f64"));
                     config.remove("measurement_error_rate").map(|value| measurement_error_rate = value.as_f64().expect("f64"));
+                    config.remove("use_correlated_pauli").map(|value| use_correlated_pauli = value.as_bool().expect("bool"));
                     if !config.is_empty() { panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>()); }
                 });
                 self.iterate_snapshot_mut(|t, _i, _j, node| {
@@ -2075,6 +2077,7 @@ impl PlanarCodeModel {
                         },
                         Stage::CXGate1 | Stage::CXGate2 | Stage::CXGate3 | Stage::CXGate4 => {
                             // errors everywhere
+                            let mut this_position_use_correlated_pauli = false;
                             if is_correlated_erasure {
                                 match node.gate_type {
                                     GateType::ControlledPhase => {
@@ -2084,6 +2087,7 @@ impl PlanarCodeModel {
                                             correlated_erasure_error_model.error_rate_EE = pe;
                                             correlated_erasure_error_model.sanity_check();
                                             node.correlated_erasure_error_model = Some(correlated_erasure_error_model);
+                                            this_position_use_correlated_pauli = use_correlated_pauli;
                                         }
                                     },
                                     GateType::Control => {  // this is ancilla
@@ -2091,22 +2095,26 @@ impl PlanarCodeModel {
                                         correlated_erasure_error_model.error_rate_EE = pe;
                                         correlated_erasure_error_model.sanity_check();
                                         node.correlated_erasure_error_model = Some(correlated_erasure_error_model);
+                                        this_position_use_correlated_pauli = use_correlated_pauli;
                                     },
                                     _ => { }
                                 }
                             } else {
                                 node.erasure_error_rate = pe;
                             }
+                            let mut px_py_pz = if this_position_use_correlated_pauli { (0., 0., 0.) } else { (p/3., p/3., p/3.) };
                             if stage == Stage::CXGate4 {
                                 // add both Pauli+Erasure errors and additional measurement error
-                                let (px, py, pz) = ErrorType::combine_probability((p/3., p/3., p/3.), (measurement_error_rate, 0., measurement_error_rate));
-                                node.error_rate_x = px;
-                                node.error_rate_z = pz;
-                                node.error_rate_y = py;
-                            } else {
-                                node.error_rate_x = p / 3.;
-                                node.error_rate_z = p / 3.;
-                                node.error_rate_y = p / 3.;
+                                px_py_pz = ErrorType::combine_probability(px_py_pz, (measurement_error_rate, 0., measurement_error_rate));
+                            }
+                            let (px, py, pz) = px_py_pz;
+                            node.error_rate_x = px;
+                            node.error_rate_y = py;
+                            node.error_rate_z = pz;
+                            if this_position_use_correlated_pauli {
+                                let correlated_error_model = CorrelatedErrorModel::default_with_probability(p/3.);
+                                correlated_error_model.sanity_check();
+                                node.correlated_error_model = Some(correlated_error_model);
                             }
                         },
                         _ => { }

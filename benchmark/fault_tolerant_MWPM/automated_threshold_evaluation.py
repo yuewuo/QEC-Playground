@@ -145,17 +145,25 @@ class AutomatedThresholdEvaluator:
             if error_rate_1 >= self.do_not_believe_logical_error_rate_above:
                 upper_bound = searching_p
                 continue
+            # 0 error rate is meaningless, find something higher
+            if error_rate_1 == 0:
+                lower_bound = searching_p
+                continue
             error_rate_2, confidence_interval_2, _ = self.simulator_runner(searching_p, self.pair[1], self.parameters, True, self.verbose)
             # do not believe the data if logical error rate is too high
             if error_rate_2 >= self.do_not_believe_logical_error_rate_above:
                 upper_bound = searching_p
+                continue
+            # 0 error rate is meaningless, find something higher
+            if error_rate_2 == 0:
+                lower_bound = searching_p
                 continue
             if self.verbose:
                 print(f"[{lower_bound}, {upper_bound}] searching_p = {searching_p} [1] {error_rate_1}({confidence_interval_1}) [2] {error_rate_2}({confidence_interval_2})")
             # # early break if the error rate is already indistinguishable
             # if abs(error_rate_1 - error_rate_2) <= error_rate_1 * confidence_interval_1 + error_rate_2 * confidence_interval_2:
             #     break
-            if error_rate_1 > error_rate_2 or error_rate_1 == 0:
+            if error_rate_1 > error_rate_2:
                 lower_bound = searching_p
             else:
                 upper_bound = searching_p

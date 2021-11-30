@@ -1,6 +1,7 @@
 import os, sys, subprocess, shutil, shlex, time, stat
 from datetime import datetime
 import slurm_rerun_failed
+import multiprocessing
 
 if 'SLURM_HELP' in os.environ:
     OKBLUE = '\033[94m'
@@ -62,6 +63,12 @@ def slurm_threads_or(default_threads):
         return SLURM_DISTRIBUTE_CPUS_PER_TASK
     return default_threads
 
+def cpu_hours(target_cpu_hours):
+    target_cpu_seconds = target_cpu_hours * 3600
+    if SLURM_DISTRIBUTE_ENABLED:
+        return target_cpu_seconds / SLURM_DISTRIBUTE_CPUS_PER_TASK
+    return target_cpu_seconds / multiprocessing.cpu_count()
+
 def confirm_or_die(action=""):
     while True:
         answer = input(f"[{action}] Continue? [Y/YES/N/NO]")
@@ -103,9 +110,10 @@ def slurm_distribute_wrap(program):
         if SLURM_DISTRIBUTE_ENABLED and SLURM_USE_PREVIOUS_DATA_IF_POSSIBLE:
             previous_job_commands = read_job_commands_from_sbatch(job_script_sbatch_path)
             existing_jobouts = [None for e in stringify_commands]
-            def command_equal(cmd1, cmd2):  # don't care bindary path
-                parameters1 = "".join(cmd1.split("rust_qecp ")[1:]).strip("\r\n ")
-                parameters2 = "".join(cmd2.split("rust_qecp ")[1:]).strip("\r\n ")
+            def command_equal(cmd1, cmd2):
+                # don't care the parameter (usually binary path) before the first space character
+                parameters1 = "".join(cmd1.split(" ")[1:]).strip("\r\n ")
+                parameters2 = "".join(cmd2.split(" ")[1:]).strip("\r\n ")
                 return parameters1 == parameters2
             reusable_count = 0
             for new_i, stringify_command in enumerate(stringify_commands):
