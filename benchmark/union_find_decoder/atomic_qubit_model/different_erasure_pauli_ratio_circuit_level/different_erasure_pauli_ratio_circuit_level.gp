@@ -7,9 +7,11 @@ set size 1,1
 # set logscale x
 set xrange [0:1]
 set xtics ("0" 0, "0.2" 0.2, "0.4" 0.4, "0.6" 0.6, "0.8" 0.8, "1" 1)
-set logscale y
-set ytics ("0.005" 0.005, "0.01" 0.01, "0.02" 0.02, "0.04" 0.04)
-set yrange [0.005:0.06]
+# set logscale y
+# set ytics ("0.005" 0.005, "0.01" 0.01, "0.02" 0.02, "0.04" 0.04)
+# set yrange [0.005:0.06]
+set yrange [0:0.055]
+set ytics ("0.00" 0.00, "0.01" 0.01, "0.02" 0.02, "0.03" 0.03, "0.04" 0.04, "0.05" 0.05)
 set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder

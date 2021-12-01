@@ -2112,7 +2112,7 @@ impl PlanarCodeModel {
                             node.error_rate_y = py;
                             node.error_rate_z = pz;
                             if this_position_use_correlated_pauli {
-                                let correlated_error_model = CorrelatedErrorModel::default_with_probability(p/3.);
+                                let correlated_error_model = CorrelatedErrorModel::default_with_probability(p / 15.);  // 15 possible errors equally probable
                                 correlated_error_model.sanity_check();
                                 node.correlated_error_model = Some(correlated_error_model);
                             }

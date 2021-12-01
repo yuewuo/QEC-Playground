@@ -14,15 +14,15 @@ slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 36
 
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
 # original time: 60 cores for 5min, which is 60*5/60 = 5 CPU hours
-parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {CH(5)} --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")
+parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {CH(5)} --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration {{\"use_correlated_pauli\":true}}".split(" ")
 
 run_specific_pauli_ratio = None
 if len(sys.argv) > 1:
     run_specific_pauli_ratio = sys.argv[1]
 
 def bothprint(*args, **kwargs):
-    print(*args, **kwargs)
-    print(*args, file=sys.stderr, **kwargs)
+    print(*args, **kwargs, flush=True)
+    print(*args, **kwargs, flush=True, file=sys.stderr)
 
 # customize simulator runner
 def make_simulator_runner(pauli_ratio_str):
@@ -74,7 +74,7 @@ compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run
 def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playground_command_get_stdout):
     for pauli_ratio_str in pauli_ratio_strs:
-        command = ["python3", __file__, pauli_ratio_str]
+        command = ["python3", os.path.abspath(__file__), pauli_ratio_str]
         if slurm_commands_vec is not None:
             slurm_commands_vec.sanity_checked_append(command)
             continue
@@ -98,3 +98,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
         return
 
     print("\n".join(results))
+
+    filename = os.path.join(os.path.dirname(__file__), f"thresholds.txt")
+    with open(filename, "w", encoding="utf8") as f:
+        f.write("\n".join(results) + "\n")

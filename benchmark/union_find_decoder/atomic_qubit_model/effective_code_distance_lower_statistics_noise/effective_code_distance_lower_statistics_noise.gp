@@ -18,7 +18,7 @@ set output "effective_code_distance_lower_statistics_noise.eps"
 
 # set title "Atomic Qubit 95% Erasure + 5% Pauli Circuit-Level"
 
-plot "effective_code_distance.txt" using 1:2 with linespoints lt rgb "red" linewidth 3 pointtype 6 pointsize 1 title "d_{effective} from p/p_{th} in [0.4, 0.6]",\
+plot "effective_code_distance.txt" using 1:2 with linespoints lt rgb "red" linewidth 3 pointtype 6 pointsize 1 title "d_{effective} from lowest p in the simulation",\
     "" using 1:2:($2-$3):($2+$3) with errorbars lt rgb "red" linewidth 3 pointtype 6 pointsize 1 notitle
 
 system("ps2pdf -dEPSCrop effective_code_distance_lower_statistics_noise.eps effective_code_distance_lower_statistics_noise.pdf")

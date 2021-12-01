@@ -8,6 +8,7 @@ from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 sys.path.insert(0, os.path.join(qec_playground_root_dir, "benchmark", "slurm_utilities"))
 import slurm_distribute
 from slurm_distribute import slurm_threads_or as STO
+from slurm_distribute import cpu_hours as CH
 
 origin_folder = os.path.join(os.path.dirname(__file__), "..", "..", "different_erasure_pauli_ratio_circuit_level")
 
@@ -36,7 +37,8 @@ max_N = 100000000
 slurm_distribute.SLURM_DISTRIBUTE_TIME = "05:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '4G'
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # use fewer cores for more available resources (use `SLURM_USE_SCAVENGE_PARTITION` option to speed up)
-parameters = f"-p{STO(0)} --decoder UF --max_half_weight 100 --time_budget 18000 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")  # a maximum 60min for each point
+# 18000 sec for 12 cores, that is 60 CPU hours
+parameters = f"-p{STO(0)} --decoder UF --max_half_weight 100 --time_budget {CH(60)} --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration {{\"use_correlated_pauli\":true}}".split(" ")  # a maximum 60min for each point
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run
@@ -44,25 +46,13 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
     pth_L_results = []
 
     for pauli_ratio, threshold, _ in thresholds:
-        filepath = os.path.join(origin_folder, "effective_code_distance_of_different_ratio",  f"pauli_ratio_{pauli_ratio}.txt")
-        with open(filepath, "r", encoding="utf8") as f:
-            lines = f.readlines()
-            for line in lines:
-                line = line.strip(" \r\n")
-                if line == "":
-                    continue
-                spt = line.split(" ")
-                p_pth = float(spt[0])
-                p = float(spt[1])
-                pL = float(spt[7])
-                pL_dev = float(spt[9])
 
         # print(f"running pauli_ratio = {pauli_ratio}, threshold = {threshold}...")
         step = 0.8
         p_vec = []
         for i in range(-200, 200):
             pi = threshold * (step ** i)
-            if pi < 0.2 and pi/threshold > 0.02:
+            if pi < 0.2 and pi/threshold > 0.01:
                 p_vec.append(pi)
         # print(p_vec)
 

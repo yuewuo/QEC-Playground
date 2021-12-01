@@ -9,13 +9,14 @@ from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 sys.path.insert(0, os.path.join(qec_playground_root_dir, "benchmark", "slurm_utilities"))
 import slurm_distribute
 from slurm_distribute import slurm_threads_or as STO
+from slurm_distribute import cpu_hours as CH
 
 origin_folder = os.path.join(os.path.dirname(__file__), "..", "different_erasure_pauli_ratio_circuit_level")
 
 def read_origin_configurations():
 
     # read in the threshold
-    ratios = []
+    thresholds = []
     with open(os.path.join(origin_folder,  "thresholds.txt"), "r", encoding="utf8") as f:
         lines = f.readlines()
         for line in lines:
@@ -23,12 +24,12 @@ def read_origin_configurations():
             if line == "":
                 continue
             pauli_ratio, threshold, dev = line.split(" ")
-            ratios.append(pauli_ratio)
+            thresholds.append((pauli_ratio, float(threshold), float(dev)))
 
     configurations = []
-    for pauli_ratio in ratios:
+    for (pauli_ratio, threshold, dev) in thresholds:
         ratio_configurations = []
-        filepath = os.path.join(origin_folder, "effective_code_distance_of_different_ratio",  f"pauli_ratio_{pauli_ratio}.txt")
+        filepath = os.path.join(origin_folder, "legacy",  f"pauli_ratio_{pauli_ratio}.txt")
         with open(filepath, "r", encoding="utf8") as f:
             lines = f.readlines()
             for line in lines:
@@ -37,10 +38,10 @@ def read_origin_configurations():
                     continue
                 spt = line.split(" ")
                 p_pth = float(spt[0])
-                p = float(spt[1])
-                pL = float(spt[7])
-                pL_dev = float(spt[9])
-                ratio_configurations.append((p_pth, p))
+                # p = float(spt[1])
+                # pL = float(spt[7])
+                # pL_dev = float(spt[9])
+                ratio_configurations.append((p_pth, p_pth * threshold))
         configurations.append((pauli_ratio, ratio_configurations[-8:]))
     return configurations
 
@@ -56,7 +57,8 @@ max_N = 100000000
 slurm_distribute.SLURM_DISTRIBUTE_TIME = "05:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '4G'
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # use fewer cores for more available resources (use `SLURM_USE_SCAVENGE_PARTITION` option to speed up)
-parameters = f"-p{STO(0)} --decoder UF --max_half_weight 100 --time_budget 18000 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")  # a maximum 60min for each point
+# 18000 sec for 12 cores, that is 60 CPU hours
+parameters = f"-p{STO(0)} --decoder UF --max_half_weight 100 --time_budget {CH(60)} --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration {{\"use_correlated_pauli\":true}}".split(" ")  # a maximum 60min for each point
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run

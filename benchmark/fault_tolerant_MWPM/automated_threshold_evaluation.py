@@ -145,8 +145,8 @@ class AutomatedThresholdEvaluator:
             if error_rate_1 >= self.do_not_believe_logical_error_rate_above:
                 upper_bound = searching_p
                 continue
-            # 0 error rate is meaningless, find something higher
-            if error_rate_1 == 0:
+            # too small error rate is meaningless, find something higher
+            if error_rate_1 == 0 or confidence_interval_1 >= 0.5:
                 lower_bound = searching_p
                 continue
             error_rate_2, confidence_interval_2, _ = self.simulator_runner(searching_p, self.pair[1], self.parameters, True, self.verbose)
@@ -154,8 +154,8 @@ class AutomatedThresholdEvaluator:
             if error_rate_2 >= self.do_not_believe_logical_error_rate_above:
                 upper_bound = searching_p
                 continue
-            # 0 error rate is meaningless, find something higher
-            if error_rate_2 == 0:
+            # too small error rate is meaningless, find something higher
+            if error_rate_2 == 0 or confidence_interval_2 >= 0.5:
                 lower_bound = searching_p
                 continue
             if self.verbose:
