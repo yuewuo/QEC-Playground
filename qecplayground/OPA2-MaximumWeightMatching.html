@@ -34,6 +34,10 @@ html, body {
     border-radius: 100%;
     background-color: #BB86FC;
 }
+.content {
+    font-size: 40px;
+    margin-top: 40px;
+}
 </style>
 
 </head>
@@ -44,6 +48,8 @@ html, body {
 
 <script src="https://unpkg.com/vue/dist/vue.js"></script>
 <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
 <div id="app" style="width: 100%; height: 100%;">
     <div class="abs fwidth" style="top: 80px; text-align: center; font-size: 80px; font-weight: bold;">
@@ -54,10 +60,43 @@ html, body {
     </div>
 
     <!-- left part is for word description -->
-    <div class="abs" style="width: 50%; height: 80%; background-color: red; top: 20%; left: 0%;">
-    
+    <div class="abs" style="width: 50%; height: 80%; top: 20%; left: 0%;">
+        <div style="margin: 30px;">
+            <div class="content">A maximum weighted matching of an <strong style="color: #6200EE;">edge-weighted graph</strong> (each edge \( e \) has a weight \( w_e \)) is a <strong style="color: #6200EE;">matching</strong> for which the sum of the weights of the edges is <strong style="color: #6200EE;">maximum</strong>.</div>
+            <div class="content"><strong>Applications</strong>:
+                <ol style="margin: 0; margin-left: 50px;">
+                    <li>assignment problem for bipartite graph: <strong>resource management</strong></li>
+                    <li>minimum-weight perfect matching problem: <strong>quantum error correction</strong></li>
+                </ol>
+            </div>
+            <div class="content"><strong>Edmond's Blossom Algorithm</strong> solves a Linear Programming (LP) problem:
+                <ul style="margin: 0; margin-left: 50px;">
+                    <li>Primal variable \( x_e \): defined for edge \( e \in E \). <strong style="color: #B00020;">(\( x_e \) indicates whether \( e \) is in the matching)</strong></li>
+                    <li>Dual variable \( y_S \): defined for a set of vertices \( S \subseteq V \).  <strong style="color: #B00020;">(\( y_S \) is the "exploratory radius")</strong></li>
+                    <li>Possible blossoms \( \mathcal{O} \): defined as \( \{S| S  \subseteq V, |S|>1, |S| \textrm{ is odd}\} \).</li>
+                    <li>Hair \( \delta(S) \): defined as the set of edges that have one vertex in \( S \) and the other vertex not in \( S \).</li>
+                </ul>
+            </div>
+            <div style="width: 100%;">
+                <img class="abs" src="OPA2-MaximumWeightMatching.jpg" style="width: 80%; margin-left: 0; margin-top: 20px;">
+                <div class="abs" style="left: 82%; margin-top: 27px; font-size: 30px; width: 370px; height: 331px; padding: 10px; border-style: dotted;">
+                    <strong>Primal Variables:</strong><br>
+                    <span style="color: #eed500;" v-show="x_ab_selected">\( x_{AB} \) = 1,</span>
+                    <span style="color: #eed500;" v-show="x_cd_selected">\( x_{CD} \) = 1,</span>
+                    <span style="color: #eed500;" v-show="x_ef_selected">\( x_{EF} \) = 1</span>
+                    <span style="color: #eed500;" v-show="x_de_selected">\( x_{DE} \) = 1</span>
+                    <br>
+                    <strong>Dual Variables:</strong><br>
+                    <span style="color: #03DAC6;" v-show="nodes[0].radius > 0">\( y_{\{A\}} \) = \( y_{\{B\}} \) = \( y_{\{C\}} \) = <span>{{ nodes[0].radius.toFixed(2) }}</span><br></span>
+                    <span style="color: #03DAC6;" v-show="nodes[0].radius > 0">\( y_{\{D\}} \) = <span>{{ nodes[3].radius.toFixed(2) }}</span>, \( y_{\{E\}} \) = <span>{{ nodes[4].radius.toFixed(2) }}</span><br></span>
+                    <span style="color: #03DAC6;" v-show="nodes[0].radius > 0">\( y_{\{F\}} \) = <span>{{ nodes[5].radius.toFixed(2) }}</span><br></span>
+                    <span style="color: #6200EE;" v-show="b012_radius > 0">\( y_{\{A,B,C\}} \) = <span>{{ b012_radius.toFixed(2) }}</span><br></span>
+                    <span style="color: #BB86FC;" v-show="b01234_radius > 0">\( y_{\{A,B,C,D,E\}} \) = <span>{{ b01234_radius.toFixed(2) }}</span><br></span>
+                </div>
+            </div>
+        </div>
     </div>
-    
+
     <!-- right part is for interactive demo -->
     <div class="abs" style="width: 50%; height: 80%; top: 20%; right: 0%;">
         <div class="abs fwidth" style="top: 20px; text-align: center; font-size: 40px; font-weight: bold;">Demo: fully-connected graph with weight = Constant - geometric distance</div>
@@ -205,6 +244,11 @@ var app = new Vue({
             progress: graph,
             marks: create_marks(),
             build_end: build_end,
+            // display
+            x_ab_selected: false,
+            x_cd_selected: false,
+            x_ef_selected: false,
+            x_de_selected: false,
         }
     },
     mounted() {
@@ -329,6 +373,10 @@ var app = new Vue({
         update_progress() {
             this.clear_radiuses()
             this.update_lines()
+            this.x_ab_selected = false
+            this.x_cd_selected = false
+            this.x_ef_selected = false
+            this.x_de_selected = false
             if (this.progress < 0) {
                 // lines
             } else if (this.progress <= first_blossom) {
@@ -341,7 +389,7 @@ var app = new Vue({
                 }
                 this.nodes[5].radius = this.progress
                 this.b012_radius = this.progress - first_blossom
-                
+                this.x_de_selected = true
             } else if (this.progress <= second_blossom) {
                 for (let i of [0, 1, 2]) {
                     this.nodes[i].radius = first_blossom
@@ -351,6 +399,7 @@ var app = new Vue({
                 this.nodes[4].radius = first_blossom + delta
                 this.nodes[5].radius = this.progress
                 this.b012_radius = this.progress - first_blossom
+                this.x_de_selected = true
             } else {
                 let progress = this.progress
                 if (progress > final) { progress = final }
@@ -362,6 +411,18 @@ var app = new Vue({
                 this.nodes[5].radius = progress
                 this.b012_radius = second_blossom - first_blossom
                 this.b01234_radius = progress - second_blossom
+            }
+            if (this.progress <= final) {
+                
+            } else if (this.progress <= build_1) {
+                this.x_ef_selected = true
+            } else if (this.progress <= build_2) {
+                this.x_ef_selected = true
+                this.x_cd_selected = true
+            } else {
+                this.x_ef_selected = true
+                this.x_cd_selected = true
+                this.x_ab_selected = true
             }
         },
         update_lines() {
