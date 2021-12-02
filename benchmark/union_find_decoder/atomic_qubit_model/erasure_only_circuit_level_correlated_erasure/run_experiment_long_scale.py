@@ -23,7 +23,7 @@ max_N = 100000000
 # cargo run --release -- tool fault_tolerant_benchmark [5] --djs [5] [5] -m100000000 -e1000 [0] -p0 --decoder UF --max_half_weight 10 --time_budget 3600 --use_xzzx_code --pes [0.2] --error_model OnlyGateErrorCircuitLevelCorrelatedErasure
 # cargo run --release -- tool fault_tolerant_benchmark [7] --djs [7] [7] -m100000000 -e1000 [0] -p0 --decoder UF --max_half_weight 10 --time_budget 3600 --use_xzzx_code --pes [0.2] --error_model OnlyGateErrorCircuitLevelCorrelatedErasure
 
-UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")  # a maximum 20min for each point
+UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration {{\"use_correlated_pauli\":true}}".split(" ")  # a maximum 20min for each point
 
 results = []
 for di in di_vec:

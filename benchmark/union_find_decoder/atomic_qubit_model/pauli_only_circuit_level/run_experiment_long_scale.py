@@ -45,7 +45,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
             print(" ".join(command))
 
             # run experiment
-            stdout, returncode = run_qec_playground_command_get_stdout(command)
+            stdout, returncode = run_command_get_stdout(command)
             print("\n" + stdout)
             assert returncode == 0, "command fails..."
 
