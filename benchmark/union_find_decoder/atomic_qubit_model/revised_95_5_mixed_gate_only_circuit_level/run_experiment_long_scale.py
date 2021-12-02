@@ -8,6 +8,7 @@ from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 sys.path.insert(0, os.path.join(qec_playground_root_dir, "benchmark", "slurm_utilities"))
 import slurm_distribute
 from slurm_distribute import slurm_threads_or as STO
+from slurm_distribute import cpu_hours as CH
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # use fewer CPUs for more available resources
 slurm_distribute.SLURM_DISTRIBUTE_TIME = "2:00:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '24G'
@@ -25,7 +26,8 @@ min_error_cases = 1000
 max_N = 100000000
 
 # original was 20min for 60 cores, if using 12 CPUs for each task then it should be 100min which is 6000sec
-UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget 6000 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")  # a maximum 20min for each point
+# this is 20 CPU hours
+UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {CH(20)} --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")  # a maximum 20min for each point
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run
