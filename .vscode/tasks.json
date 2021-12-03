@@ -45,6 +45,17 @@
 			},
 		},
 		{
+			"label": "Sync Laptop",
+			"command": "bash",
+			"args": ["-c", "laptop-sync"],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"clear": true,
+				"close": false
+			},
+		},
+		{
 			"label": "Sync HPC QEC-Playgound",
 			"command": "bash",
 			"args": ["-c", "hpc-sync-qec-playground"],

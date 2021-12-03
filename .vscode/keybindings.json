@@ -26,5 +26,10 @@
         "key": "alt+h",
         "command": "workbench.action.tasks.runTask",
         "args": "Sync HPC QEC-Playgound"
+    },
+    {
+        "key": "alt+l",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Sync Laptop"
     }
 ]

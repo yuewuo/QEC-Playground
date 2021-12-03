@@ -66,10 +66,10 @@ html, body {
             <div class="content"><strong>Applications</strong>:
                 <ol style="margin: 0; margin-left: 50px;">
                     <li>assignment problem for bipartite graph: <strong>resource management</strong></li>
-                    <li>minimum-weight perfect matching problem: <strong>quantum error correction</strong></li>
+                    <li>Minimum-Weight Perfect Matching (MWPM) problem: <strong>quantum error correction</strong></li>
                 </ol>
             </div>
-            <div class="content"><strong>Edmond's Blossom Algorithm</strong> solves a Linear Programming (LP) problem:
+            <div class="content"><strong>Edmond's Blossom Algorithm</strong> for MWPM solves a Linear Programming (LP) problem:
                 <ul style="margin: 0; margin-left: 50px;">
                     <li>Primal variable \( x_e \): defined for edge \( e \in E \). <strong style="color: #B00020;">(\( x_e \) indicates whether \( e \) is in the matching)</strong></li>
                     <li>Dual variable \( y_S \): defined for a set of vertices \( S \subseteq V \).  <strong style="color: #B00020;">(\( y_S \) is the "exploratory radius")</strong></li>
@@ -99,12 +99,12 @@ html, body {
 
     <!-- right part is for interactive demo -->
     <div class="abs" style="width: 50%; height: 80%; top: 20%; right: 0%;">
-        <div class="abs fwidth" style="top: 20px; text-align: center; font-size: 40px; font-weight: bold;">Demo: fully-connected graph with weight = Constant - geometric distance</div>
+        <div class="abs fwidth" style="top: 20px; text-align: center; font-size: 40px; font-weight: bold;">Demo: solving MWPM for fully-connected graph with weight = geometric distance</div>
         <!-- control -->
         <div class="abs" style="bottom: 50px; left: 20px;">
             <div style="width: 1480px; margin-left: 100px;">
                 <el-slider
-                    v-model="progress"
+                    v-model="progress" :show-tooltip="false"
                     :step="0.01" :min="-0.6" :max="Math.round(build_end*100)/100"
                     :marks="marks">
                 </el-slider>
@@ -118,11 +118,11 @@ html, body {
             <div v-for="item in b01234" class="b01234 abs" v-bind:style="{ 'width': wts(2*item.radius), 'height': wts(2*item.radius), 'left': wts(nodes[item.id].position[0]-item.radius), 'top': wts(nodes[item.id].position[1]-item.radius) }"></div>
             <div v-for="item in b012" class="b012 abs" v-bind:style="{ 'width': wts(2*item.radius), 'height': wts(2*item.radius), 'left': wts(nodes[item.id].position[0]-item.radius), 'top': wts(nodes[item.id].position[1]-item.radius) }"></div>
             <!-- individual nodes -->
-            <div v-for="item in nodes" v-bind:key="item.id" class="node abs" v-bind:style="{ 'width': wts(2*item.radius), 'height': wts(2*item.radius), 'left': wts(item.position[0]-item.radius), 'top': wts(item.position[1]-item.radius) }"></div>
+            <div v-for="item in nodes" class="node abs" v-bind:style="{ 'width': wts(2*item.radius), 'height': wts(2*item.radius), 'left': wts(item.position[0]-item.radius), 'top': wts(item.position[1]-item.radius) }"></div>
             <!-- alternating tree -->
             <canvas class="abs" id="tree" :width="canvas_width + 'px'" :height="canvas_height + 'px'"></canvas>
             <!-- individual nodes -->
-            <div v-for="item in nodes" v-bind:key="item.id" class="abs" v-bind:style="{ 'width': wts(2*item.radius), 'height': wts(2*item.radius), 'left': wts(item.position[0]-item.radius), 'top': wts(item.position[1]-item.radius) }">
+            <div v-for="item in nodes" class="abs" v-bind:style="{ 'width': wts(2*item.radius), 'height': wts(2*item.radius), 'left': wts(item.position[0]-item.radius), 'top': wts(item.position[1]-item.radius) }">
                 <div class="abs" v-bind:style="{ 'left': wts(item.radius-point_radius), 'top': wts(item.radius-point_radius), 'width': wts(2*point_radius), 'height': wts(2*point_radius) }" style="border-radius: 100%; background-color: black;"></div>
                 <div class="abs" v-bind:style="{ 'left': wts(item.radius+0.1), 'top': wts(item.radius-0.45) }" style="font-size: 35px; font-weight: bold; color: blue;">{{ item.name }}</div>
             </div>
