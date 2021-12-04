@@ -36,6 +36,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
     results = []
     for Re in Re_vec:
         local_results = []
+        effective_distances = []
         filename = os.path.join(os.path.dirname(__file__), f"Re_{Re:.4g}.txt")
         for p in p_vec:
             p_pauli = p * (1 - Re)
@@ -73,6 +74,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
                     slope_vec.append(slope)
                 slope_confidence_interval = 1.96 * np.std(slope_vec)
                 full_result += f" {baseline_slope} {slope_confidence_interval} {math.sqrt(p * p_last)}"
+                effective_distances.append([math.sqrt(p * p_last), baseline_slope, slope_confidence_interval])
             if p == p_vec[-1]:
                 last_data = None
             else:
@@ -103,3 +105,4 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
     print("\n".join(results))
 
     # analyze slopes
+    # 2021.12.3 we found that fbench is somehow inconsistent with MC simulation, so I'll just put it here to wait to a fix to fbench

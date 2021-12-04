@@ -21,7 +21,7 @@ with open(os.path.join(origin_folder,  "thresholds.txt"), "r", encoding="utf8") 
         if line == "":
             continue
         pauli_ratio, threshold, dev = line.split(" ")
-        if pauli_ratio not in ["0", "0.01", "0.05", "0.1", "0.25", "0.5", "1"]:
+        if pauli_ratio not in ["0", "0.01", "0.02", "0.05", "0.1", "0.25", "0.5", "1"]:
             continue
         thresholds.append((pauli_ratio, float(threshold), float(dev)))
 
@@ -62,7 +62,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
         for p in p_vec:
             p_pauli = p * float(pauli_ratio)
             p_erasure = p * (1 - float(pauli_ratio))
-            command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [di], [di], parameters + ["--pes", f"[{p_erasure}]"], max_N=max_N, min_error_cases=min_error_cases)
+            command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [di], [di], parameters + ["--pes", f"[{p_erasure:.8e}]"], max_N=max_N, min_error_cases=min_error_cases)
             if slurm_commands_vec is not None:
                 slurm_commands_vec.sanity_checked_append(command)
                 continue
