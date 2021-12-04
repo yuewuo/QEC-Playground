@@ -20,6 +20,7 @@ set output "relative_error_rate.eps"
 
 pLth0 = "`grep '^0 ' pth_L.txt | awk '{print $2}'`" + 0
 pLth001 = "`grep '^0\.01 ' pth_L.txt | awk '{print $2}'`" + 0
+pLth002 = "`grep '^0\.02 ' pth_L.txt | awk '{print $2}'`" + 0
 pLth005 = "`grep '^0\.05 ' pth_L.txt | awk '{print $2}'`" + 0
 pLth01 = "`grep '^0\.1 ' pth_L.txt | awk '{print $2}'`" + 0
 pLth025 = "`grep '^0\.25 ' pth_L.txt | awk '{print $2}'`" + 0
@@ -30,6 +31,8 @@ plot "pauli_ratio_0.txt" using 1:($8/pLth0) with linespoints lt rgb "red" linewi
     "" using 1:($8/pLth0):(($8/pLth0)*(1-$10)):(($8/pLth0)*(1+$10)) with errorbars lt rgb "red" linewidth 3 pointtype 6 pointsize 1 notitle,\
     "pauli_ratio_0.01.txt" using 1:($8/pLth001) with linespoints lt rgb "blue" linewidth 3 pointtype 6 pointsize 1 title "R = 0.01",\
     "" using 1:($8/pLth001):(($8/pLth001)*(1-$10)):(($8/pLth001)*(1+$10)) with errorbars lt rgb "blue" linewidth 3 pointtype 6 pointsize 1 notitle,\
+    "pauli_ratio_0.02.txt" using 1:($8/pLth002) with linespoints lt rgb "yellow" linewidth 3 pointtype 6 pointsize 1 title "R = 0.02",\
+    "" using 1:($8/pLth002):(($8/pLth002)*(1-$10)):(($8/pLth002)*(1+$10)) with errorbars lt rgb "yellow" linewidth 3 pointtype 6 pointsize 1 notitle,\
     "pauli_ratio_0.05.txt" using 1:($8/pLth005) with linespoints lt rgb "green" linewidth 3 pointtype 6 pointsize 1 title "R = 0.05",\
     "" using 1:($8/pLth005):(($8/pLth005)*(1-$10)):(($8/pLth005)*(1+$10)) with errorbars lt rgb "green" linewidth 3 pointtype 6 pointsize 1 notitle,\
     "pauli_ratio_0.1.txt" using 1:($8/pLth01) with linespoints lt rgb "purple" linewidth 3 pointtype 6 pointsize 1 title "R = 0.1",\

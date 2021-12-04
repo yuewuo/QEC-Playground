@@ -105,4 +105,4 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
     print("\n".join(results))
 
     # analyze slopes
-    # 2021.12.3 we found that fbench is somehow inconsistent with MC simulation, so I'll just put it here to wait to a fix to fbench
+    # 2021.12.3 we found that fbench is somehow inconsistent with MC simulation (probably because of combinatorial number in each chain), so I'll just put it here to wait to a fix to fbench

@@ -23,6 +23,8 @@ plot "pauli_ratio_0.txt" using 2:($8) with linespoints lt rgb "red" linewidth 3 
     "" using 2:($8):(($8)*(1-$10)):(($8)*(1+$10)) with errorbars lt rgb "red" linewidth 3 pointtype 6 pointsize 1 notitle,\
     "pauli_ratio_0.01.txt" using 2:($8) with linespoints lt rgb "blue" linewidth 3 pointtype 6 pointsize 1 title "R = 0.01",\
     "" using 2:($8):(($8)*(1-$10)):(($8)*(1+$10)) with errorbars lt rgb "blue" linewidth 3 pointtype 6 pointsize 1 notitle,\
+    "pauli_ratio_0.02.txt" using 2:($8) with linespoints lt rgb "yellow" linewidth 3 pointtype 6 pointsize 1 title "R = 0.02",\
+    "" using 2:($8):(($8)*(1-$10)):(($8)*(1+$10)) with errorbars lt rgb "yellow" linewidth 3 pointtype 6 pointsize 1 notitle,\
     "pauli_ratio_0.05.txt" using 2:($8) with linespoints lt rgb "green" linewidth 3 pointtype 6 pointsize 1 title "R = 0.05",\
     "" using 2:($8):(($8)*(1-$10)):(($8)*(1+$10)) with errorbars lt rgb "green" linewidth 3 pointtype 6 pointsize 1 notitle,\
     "pauli_ratio_0.1.txt" using 2:($8) with linespoints lt rgb "purple" linewidth 3 pointtype 6 pointsize 1 title "R = 0.1",\
