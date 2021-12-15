@@ -13,15 +13,17 @@ di_vec = [11, 13]
 p = 0.07
 divide = 10
 bias_eta_vec = [str(0.5 * (10 ** (i / divide))) for i in range(4 * divide + 1)] + ["+inf"]
-min_error_cases = 100000
+min_error_cases = 1000000
 # min_error_cases = 10  # debug
 
 max_N = 100000000
 
-slurm_distribute.SLURM_DISTRIBUTE_TIME = "01:20:00"
+slurm_distribute.SLURM_DISTRIBUTE_TIME = "12:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '4G'
-UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 100 --time_budget 3600 --use_xzzx_code --shallow_error_on_bottom".split(" ")  # a maximum 20min for each point
-MWPM_parameters = f"-p{STO(0)} --time_budget 3600 --use_xzzx_code --shallow_error_on_bottom".split(" ")
+slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # for more usuable machines, use `SLURM_USE_SCAVENGE_PARTITION=1` flag
+# this will consume 167*12*12=24048 CPU hours, taking 2004 CPUs working simultaneously
+UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 100 --time_budget {3600*3*4} --use_xzzx_code --shallow_error_on_bottom".split(" ")  # a maximum 20min for each point
+MWPM_parameters = f"-p{STO(0)} --time_budget {3600*3*4} --use_xzzx_code --shallow_error_on_bottom".split(" ")
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run

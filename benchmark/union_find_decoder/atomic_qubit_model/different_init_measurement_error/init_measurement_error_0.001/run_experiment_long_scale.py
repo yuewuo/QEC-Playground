@@ -19,8 +19,8 @@ min_error_cases = 1000
 max_N = 100000000
 
 init_measurement_error_rate = 0.001
-error_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate}}}'
-UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel".split(" ") + ["--error_model_configuration", error_model_configuration]  # a maximum 20min for each point
+error_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate},"use_correlated_pauli":true}}'
+UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ") + ["--error_model_configuration", error_model_configuration]  # a maximum 20min for each point
 
 results = []
 for di in di_vec:
