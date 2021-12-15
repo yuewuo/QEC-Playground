@@ -18,8 +18,8 @@ def make_simulator_runner(init_measurement_error_rate):
     def simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_runner=False, max_N=1000000, min_error_cases=3000):
         di, dj, T = pair_one
         min_error_cases = min_error_cases if is_rough_test else max_N
-        p_pauli = p * 0.05
-        p_erasure = p * (1 - 0.05)
+        p_pauli = p * 0.02
+        p_erasure = p * 0.98
         error_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate},"use_correlated_pauli":true}}'
         command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [dj], [T], parameters + ["--pes", f"[{p_erasure}]", "--error_model_configuration", error_model_configuration], max_N, min_error_cases)
         if verbose:

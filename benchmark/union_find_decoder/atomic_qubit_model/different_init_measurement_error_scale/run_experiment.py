@@ -32,8 +32,8 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
         local_results = []
         filename = os.path.join(os.path.dirname(__file__), f"d_{di}.txt")
         for p in p_vec:
-            p_pauli = p * 0.05
-            p_erasure = p * 0.95
+            p_pauli = p * 0.02
+            p_erasure = p * 0.98
             init_measurement_error_rate = p
             error_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate},"use_correlated_pauli":true}}'
             parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget 3600 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ") + ["--error_model_configuration", error_model_configuration]  # a maximum 20min for each point
