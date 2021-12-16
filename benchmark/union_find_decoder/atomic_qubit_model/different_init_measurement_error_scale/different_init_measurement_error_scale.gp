@@ -16,7 +16,7 @@ set style fill transparent solid 0.2 noborder
 
 set output "different_init_measurement_error_scale.eps"
 
-set title "Initialization = Measure = p; 2 qubits gates = 0.95p erasure + 0.05p Pauli" font "Arial, 18"
+set title "Initialization = Measure = p; 2 qubits gates = 0.98p erasure + 0.02p Pauli" font "Arial, 18"
 
 plot "d_3.txt" using 1:7 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 3",\
     "d_5.txt" using 1:7 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 5",\

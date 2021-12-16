@@ -31,17 +31,14 @@ plot "decode_million_p0.01.txt" using 3:4 with points lt rgb "#5e81b5" linewidth
     "decode_million_p0.04.txt" using 3:4 with points lt rgb "#eb6235" linewidth 3 pointtype 9 pointsize 1.5 title "pz = 0.04",\
     "decode_million_p0.05.txt" using 3:4 with points lt rgb "#8778b3" linewidth 3 pointtype 11 pointsize 1.5 title "pz = 0.05"
 
-set output '|ps2pdf -dEPSCrop decoding_time_arXiv1709.06218v1.eps decoding_time_arXiv1709.06218v1.pdf'
-replot
+system("ps2pdf -dEPSCrop decoding_time_arXiv1709.06218v1.eps decoding_time_arXiv1709.06218v1.pdf")
 
 # set size 1,0.75
 # set output "decoding_time_arXiv1709.06218v1_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop decoding_time_arXiv1709.06218v1_w.eps decoding_time_arXiv1709.06218v1_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop decoding_time_arXiv1709.06218v1_w.eps decoding_time_arXiv1709.06218v1_w.pdf")
 
 # set size 1,0.6
 # set output "decoding_time_arXiv1709.06218v1_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop decoding_time_arXiv1709.06218v1_w_w.eps decoding_time_arXiv1709.06218v1_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop decoding_time_arXiv1709.06218v1_w_w.eps decoding_time_arXiv1709.06218v1_w_w.pdf")

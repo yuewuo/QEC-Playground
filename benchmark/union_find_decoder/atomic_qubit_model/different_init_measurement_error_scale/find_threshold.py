@@ -16,6 +16,13 @@ threshold = 0.03149750906360633
 relative_confidence_interval = 0.0038001285503755367
 """
 
+"""
+pair: [(11, 11, 11), (15, 15, 15)]
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevelCorrelatedErasure']
+threshold = 0.01014903001434555
+relative_confidence_interval = 0.0019504618662941182
+"""
+
 # customize simulator runner
 def simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_runner=False, max_N=1000000, min_error_cases=3000):
     di, dj, T = pair_one

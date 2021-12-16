@@ -20,17 +20,14 @@ set title "Atomic Qubit Compared with Pure Pauli (p = 0.02)"
 plot "mixed_0.02.txt" using 3:7 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "95% erasure + 5% Pauli",\
     "pauli_0.02.txt" using 3:7 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "pure Pauli"
 
-set output '|ps2pdf -dEPSCrop ierror_rate_0.02.eps ierror_rate_0.02.pdf'
-replot
+system("ps2pdf -dEPSCrop ierror_rate_0.02.eps ierror_rate_0.02.pdf")
 
 # set size 1,0.75
 # set output "ierror_rate_0.02_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop ierror_rate_0.02_w.eps ierror_rate_0.02_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop ierror_rate_0.02_w.eps ierror_rate_0.02_w.pdf")
 
 # set size 1,0.6
 # set output "ierror_rate_0.02_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop ierror_rate_0.02_w_w.eps ierror_rate_0.02_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop ierror_rate_0.02_w_w.eps ierror_rate_0.02_w_w.pdf")

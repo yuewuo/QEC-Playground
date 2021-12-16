@@ -6,7 +6,7 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import AutomatedThresholdEvaluator, qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command, run_qec_playground_command_get_stdout
 
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
-parameters = "-p0 --decoder UF --max_half_weight 10 --time_budget 600 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel".split(" ")
+parameters = "-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")
 
 # result:
 """
@@ -28,15 +28,34 @@ threshold = 0.029854638556969574
 relative_confidence_interval = 0.0037588641453433157
 """
 
+"""
+configuration 1:
+0.000658529139 11 11 1000601 57306 0.05727157978055189 11 7.9e-3 0.03226792780649795 0.032926456945406066 0.001
+0.000661813594 11 11 1000630 59587 0.05954948382519013 11 7.8e-3 0.03242886610066126 0.0330906796945523 0.001
+0.00066511443 11 11 1000578 62116 0.06208011769197404 11 7.6e-3 0.03259060708456292 0.03325572151486012 0.001
+0.00066843173 11 11 1000598 64182 0.06414364210202299 11 7.5e-3 0.03275315476166786 0.03342158649149782 0.001
+0.000671765575 11 11 1000566 66584 0.06654633477451763 11 7.3e-3 0.03291651315540854 0.03358827873000872 0.001
+configuration 2:
+0.000658529139 15 15 359888 19236 0.053449962210465475 15 1.4e-2 0.03226792780649795 0.032926456945406066 0.001
+0.000661813594 15 15 276040 15528 0.05625271699753659 15 1.5e-2 0.03242886610066126 0.0330906796945523 0.001
+0.00066511443 15 15 267785 16154 0.06032451406912262 15 1.5e-2 0.03259060708456292 0.03325572151486012 0.001
+0.00066843173 15 15 272062 17175 0.06312899265608575 15 1.4e-2 0.03275315476166786 0.03342158649149782 0.001
+0.000671765575 15 15 280791 18585 0.06618801884675792 15 1.4e-2 0.03291651315540854 0.03358827873000872 0.001
+pair: [(11, 11, 11), (15, 15, 15)]
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevelCorrelatedErasure']
+threshold = 0.03360633590361438
+relative_confidence_interval = 0.004037809216847374
+"""
+
 init_measurement_error_rate = 0.001
 
 # customize simulator runner
 def simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_runner=False, max_N=1000000, min_error_cases=3000):
     di, dj, T = pair_one
     min_error_cases = min_error_cases if is_rough_test else max_N
-    p_pauli = p * 0.05
-    p_erasure = p * (1 - 0.05)
-    error_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate}}}'
+    p_pauli = p * 0.02
+    p_erasure = p * 0.98
+    error_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate},"use_correlated_pauli":true}}'
     command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [dj], [T], parameters + ["--pes", f"[{p_erasure}]", "--error_model_configuration", error_model_configuration], max_N, min_error_cases)
     if verbose:
         print(" ".join(command))

@@ -30,17 +30,14 @@ plot "uf_p0.2.txt" using 2:5 with linespoints lt rgb "red" linewidth 5 pointtype
     "uf_p0.1.txt" using 2:5 with linespoints lt rgb "green" linewidth 5 pointtype 6 pointsize 1.5 title "UnionFind Decoder p = 0.1",\
     "mwpm_p0.1.txt" using 2:6 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "MWPM Decoder p = 0.1"
 
-set output '|ps2pdf -dEPSCrop compare_with_MWPM_eta0.5.eps compare_with_MWPM_eta0.5.pdf'
-replot
+system("ps2pdf -dEPSCrop compare_with_MWPM_eta0.5.eps compare_with_MWPM_eta0.5.pdf")
 
 set size 1,0.75
 set output "compare_with_MWPM_eta0.5_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop compare_with_MWPM_eta0.5_w.eps compare_with_MWPM_eta0.5_w.pdf'
-replot
+system("ps2pdf -dEPSCrop compare_with_MWPM_eta0.5_w.eps compare_with_MWPM_eta0.5_w.pdf")
 
 set size 1,0.6
 set output "compare_with_MWPM_eta0.5_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop compare_with_MWPM_eta0.5_w_w.eps compare_with_MWPM_eta0.5_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop compare_with_MWPM_eta0.5_w_w.eps compare_with_MWPM_eta0.5_w_w.pdf")

@@ -32,17 +32,14 @@ plot "mixed_d_3.txt" using 1:10 with linespoints lt rgb "red" linewidth 3 pointt
     "pure_pauli_d_7.txt" using 1:10 with linespoints lt rgb "light-green" linewidth 3 pointtype 2 pointsize 1 title "pure Pauli d = 7",\
     "" using 1:10:($10-$11):($10+$11) with errorbars lt rgb "light-green" linewidth 3 pointtype 2 pointsize 1 notitle
 
-set output '|ps2pdf -dEPSCrop pauli_ratio_0.2.eps pauli_ratio_0.2.pdf'
-replot
+system("ps2pdf -dEPSCrop pauli_ratio_0.2.eps pauli_ratio_0.2.pdf")
 
 # set size 1,0.75
 # set output "pauli_ratio_0.2_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop pauli_ratio_0.2_w.eps pauli_ratio_0.2_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop pauli_ratio_0.2_w.eps pauli_ratio_0.2_w.pdf")
 
 # set size 1,0.6
 # set output "pauli_ratio_0.2_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop pauli_ratio_0.2_w_w.eps pauli_ratio_0.2_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop pauli_ratio_0.2_w_w.eps pauli_ratio_0.2_w_w.pdf")

@@ -16,7 +16,7 @@ set style fill transparent solid 0.2 noborder
 
 set output "init_measurement_error_0.001.eps"
 
-set title "Atomic Qubit Init Measure Error 0.001"
+set title "Atomic Qubit Init Measure Error 0.001 (0.98p erasure + 0.02p Pauli)" font "Arial, 18"
 
 plot "d_3.txt" using 1:7 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 3",\
     "d_5.txt" using 1:7 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 5",\
@@ -25,17 +25,14 @@ plot "d_3.txt" using 1:7 with linespoints lt rgb "red" linewidth 5 pointtype 6 p
     "d_11.txt" using 1:7 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
     "d_13.txt" using 1:7 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
 
-set output '|ps2pdf -dEPSCrop init_measurement_error_0.001.eps init_measurement_error_0.001.pdf'
-replot
+system("ps2pdf -dEPSCrop init_measurement_error_0.001.eps init_measurement_error_0.001.pdf")
 
 # set size 1,0.75
 # set output "init_measurement_error_0.001_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop init_measurement_error_0.001_w.eps init_measurement_error_0.001_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop init_measurement_error_0.001_w.eps init_measurement_error_0.001_w.pdf")
 
 # set size 1,0.6
 # set output "init_measurement_error_0.001_w_w.eps"
 # replot
-# set output '|ps2pdf -dEPSCrop init_measurement_error_0.001_w_w.eps init_measurement_error_0.001_w_w.pdf'
-# replot
+# system("ps2pdf -dEPSCrop init_measurement_error_0.001_w_w.eps init_measurement_error_0.001_w_w.pdf")

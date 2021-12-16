@@ -61,17 +61,14 @@ plot "biased_4.txt" using 1:6 with linespoints lt rgb "#e41a1c" linewidth 4 poin
     "standard_8.txt" using 1:6 with linespoints lt rgb "#984ea3" linewidth 4 dashtype (1,1) pointtype 12 pointsize 1 title "standard 8,24,24",\
     "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#984ea3" linewidth 4 dashtype (1,1) pointtype 12 pointsize 1
 
-set output '|ps2pdf -dEPSCrop threshold_generic_arXiv2104.09539v1.eps threshold_generic_arXiv2104.09539v1.pdf'
-replot
+system("ps2pdf -dEPSCrop threshold_generic_arXiv2104.09539v1.eps threshold_generic_arXiv2104.09539v1.pdf")
 
 set size 1,0.75
 set output "threshold_generic_arXiv2104.09539v1_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop threshold_generic_arXiv2104.09539v1_w.eps threshold_generic_arXiv2104.09539v1_w.pdf'
-replot
+system("ps2pdf -dEPSCrop threshold_generic_arXiv2104.09539v1_w.eps threshold_generic_arXiv2104.09539v1_w.pdf")
 
 set size 1,0.6
 set output "threshold_generic_arXiv2104.09539v1_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop threshold_generic_arXiv2104.09539v1_w_w.eps threshold_generic_arXiv2104.09539v1_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop threshold_generic_arXiv2104.09539v1_w_w.eps threshold_generic_arXiv2104.09539v1_w_w.pdf")
