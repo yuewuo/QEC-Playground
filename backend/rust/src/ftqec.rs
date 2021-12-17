@@ -2042,6 +2042,36 @@ impl PlanarCodeModel {
                     }
                 });
             },
+            ErrorModel::PauliZandErasurePhenomenological => {  // this error model is from https://arxiv.org/pdf/1709.06218v3.pdf
+                let height = self.snapshot.len();
+                self.iterate_snapshot_mut(|t, _i, _j, node| {
+                    // first clear error rate
+                    node.error_rate_x = 0.;
+                    node.error_rate_z = 0.;
+                    node.error_rate_y = 0.;
+                    node.erasure_error_rate = 0.;
+                    if t >= height - 6 {  // no error on the top, as a perfect measurement round
+                        return
+                    } else if t <= 6 {
+                        return  // perfect initialization
+                    }
+                    // do different things for each stage
+                    let stage = Stage::from(t);
+                    match stage {
+                        Stage::CXGate4 => {
+                            // qubit is before the next measurement round's gates, measurement is after current measurement round's gates
+                            node.erasure_error_rate = pe;
+                            if node.qubit_type == QubitType::Data {
+                                node.error_rate_z = p;
+                            } else { // ancilla, to make sure it always cause only 1 measurement error if it happens
+                                node.error_rate_z = p;
+                                node.error_rate_x = p;
+                            }
+                        },
+                        _ => { }
+                    }
+                });
+            },
             ErrorModel::OnlyGateErrorCircuitLevel | ErrorModel::OnlyGateErrorCircuitLevelCorrelatedErasure => {
                 let is_correlated_erasure = error_model == &ErrorModel::OnlyGateErrorCircuitLevelCorrelatedErasure;
                 let height = self.snapshot.len();
@@ -2072,8 +2102,10 @@ impl PlanarCodeModel {
                     let stage = Stage::from(t);
                     match stage {
                         Stage::Initialization => {
-                            node.error_rate_x = initialization_error_rate;
-                            node.error_rate_z = initialization_error_rate;
+                            if node.qubit_type != QubitType::Data {
+                                node.error_rate_x = initialization_error_rate;
+                                node.error_rate_z = initialization_error_rate;
+                            }
                         },
                         Stage::CXGate1 | Stage::CXGate2 | Stage::CXGate3 | Stage::CXGate4 => {
                             // errors everywhere
@@ -2103,8 +2135,8 @@ impl PlanarCodeModel {
                                 node.erasure_error_rate = pe;
                             }
                             let mut px_py_pz = if this_position_use_correlated_pauli { (0., 0., 0.) } else { (p/3., p/3., p/3.) };
-                            if stage == Stage::CXGate4 {
-                                // add both Pauli+Erasure errors and additional measurement error
+                            if stage == Stage::CXGate4 && node.qubit_type != QubitType::Data {
+                                // add additional measurement error
                                 px_py_pz = ErrorType::combine_probability(px_py_pz, (measurement_error_rate, 0., measurement_error_rate));
                             }
                             let (px, py, pz) = px_py_pz;

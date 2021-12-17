@@ -610,6 +610,7 @@ pub enum ErrorModel {
     GenericBiasedWithBiasedCX,  // arXiv:2104.09539v1 Sec.IV.A
     GenericBiasedWithStandardCX,  // arXiv:2104.09539v1 Sec.IV.A
     ErasureOnlyPhenomenological,  // 100% erasure errors only on the data qubits before the gates happen and on the ancilla qubits after the gates finish
+    PauliZandErasurePhenomenological,  // this error model is from https://arxiv.org/pdf/1709.06218v3.pdf
     OnlyGateErrorCircuitLevel,  // errors happen at 4 stages in each measurement round (although removed errors happening at initialization and measurement stage, measurement errors can still occur when curtain error applies on the ancilla after the last gate)
     OnlyGateErrorCircuitLevelCorrelatedErasure,  // the same as `OnlyGateErrorCircuitLevel`, just the erasures are correlated
 }
@@ -620,6 +621,7 @@ impl From<String> for ErrorModel {
             "GenericBiasedWithBiasedCX" => Self::GenericBiasedWithBiasedCX,
             "GenericBiasedWithStandardCX" => Self::GenericBiasedWithStandardCX,
             "ErasureOnlyPhenomenological" => Self::ErasureOnlyPhenomenological,
+            "PauliZandErasurePhenomenological" => Self::PauliZandErasurePhenomenological,
             "OnlyGateErrorCircuitLevel" => Self::OnlyGateErrorCircuitLevel,
             "OnlyGateErrorCircuitLevelCorrelatedErasure" => Self::OnlyGateErrorCircuitLevelCorrelatedErasure,
             _ => panic!("unrecognized error model"),
@@ -633,6 +635,7 @@ impl std::fmt::Display for ErrorModel {
             Self::GenericBiasedWithBiasedCX => "GenericBiasedWithBiasedCX",
             Self::GenericBiasedWithStandardCX => "GenericBiasedWithStandardCX",
             Self::ErasureOnlyPhenomenological => "ErasureOnlyPhenomenological",
+            Self::PauliZandErasurePhenomenological => "PauliZandErasurePhenomenological",
             Self::OnlyGateErrorCircuitLevel => "OnlyGateErrorCircuitLevel",
             Self::OnlyGateErrorCircuitLevelCorrelatedErasure => "OnlyGateErrorCircuitLevelCorrelatedErasure",
         })?;
