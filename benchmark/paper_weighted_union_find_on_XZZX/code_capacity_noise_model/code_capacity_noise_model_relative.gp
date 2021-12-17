@@ -6,7 +6,15 @@ set size 1,1
 
 set logscale x
 set xrange [0.5:50000]
-set xtics ('0.5' 0.5, '5' 5, '50' 50, '5e2' 500, '5e3' 5000, '{/Symbol \245}' 50000)
+
+# for i in range(-1, 5):
+#     for j in range(1, 10):
+#         number = j * (10 ** i)
+#         if number < 0.5 or number > 5000:
+#             continue
+#         print(f"'{number if j == 5 else ''}' {number:g}", end=", ")
+
+set xtics ('0.5' 0.5, '' 0.6, '' 0.7, '' 0.8, '' 0.9, '' 1, '' 2, '' 3, '' 4, '5' 5, '' 6, '' 7, '' 8, '' 9, '' 10, '' 20, '' 30, '' 40, '50' 50, '' 60, '' 70, '' 80, '' 90, '' 100, '' 200, '' 300, '' 400, '500' 500, '' 600, '' 700, '' 800, '' 900, '' 1000, '' 2000, '' 3000, '' 4000, '5000' 5000, '{/Symbol \245}' 50000)
 # set logscale y
 set ytics ("0" 0, "0.1" 0.1, "0.2" 0.2)
 # set yrange [0:0.25]
@@ -24,7 +32,7 @@ E1=-0.05;	# The min of the y range
 E2=0.25;		# The max of the y range
 eps=0.03*(E2-E1)
 epsx=1500
-eps2=0.01*(D-B-C)
+eps2=0.03*(D-B-C)
 set yrange [E1:E2]
 set arrow 1 from A-eps2, E1 to A+eps2, E1 nohead lc rgb "#ffffff" front
 set arrow 2 from A-eps2, E2 to A+eps2, E2 nohead lc rgb "#ffffff" front
