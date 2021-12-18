@@ -16,7 +16,8 @@ threshold = 0.03149750906360633
 relative_confidence_interval = 0.0038001285503755367
 """
 
-"""
+"""    !!!! wrong result! code has bug: mistakenly add initialization errors and measurement errors to data qubits
+
 pair: [(11, 11, 11), (15, 15, 15)]
 parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevelCorrelatedErasure']
 threshold = 0.01014903001434555

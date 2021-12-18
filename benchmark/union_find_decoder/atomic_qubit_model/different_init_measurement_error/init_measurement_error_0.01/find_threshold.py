@@ -6,22 +6,14 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import AutomatedThresholdEvaluator, qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command, run_qec_playground_command_get_stdout
 
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
-parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")
+parameters = "-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")
 
 # result:
 """
-pair: [(11, 11, 11), (15, 15, 15)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
-threshold = 0.03149750906360633
-relative_confidence_interval = 0.0038001285503755367
-"""
 
 """
-pair: [(11, 11, 11), (15, 15, 15)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevelCorrelatedErasure']
-threshold = 0.01014903001434555
-relative_confidence_interval = 0.0019504618662941182
-"""
+
+init_measurement_error_rate = 0.01
 
 # customize simulator runner
 def simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_runner=False, max_N=1000000, min_error_cases=3000):
@@ -29,9 +21,8 @@ def simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_r
     min_error_cases = min_error_cases if is_rough_test else max_N
     p_pauli = p * 0.02
     p_erasure = p * 0.98
-    measurement_error_rate = p
-    error_model_configuration = f'{{"initialization_error_rate":{0},"measurement_error_rate":{measurement_error_rate}}}'
-    command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [dj], [T], parameters + ["--pes", f"[{p_erasure}]"] + ["--error_model_configuration", error_model_configuration], max_N, min_error_cases)
+    error_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate},"use_correlated_pauli":true}}'
+    command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [dj], [T], parameters + ["--pes", f"[{p_erasure}]", "--error_model_configuration", error_model_configuration], max_N, min_error_cases)
     if verbose:
         print(" ".join(command))
     stdout, returncode = run_qec_playground_command_get_stdout(command)
@@ -43,16 +34,14 @@ def simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_r
     lst = full_result.split(" ")
     error_rate = float(lst[5])
     confidence_interval = float(lst[7])
-    return error_rate, confidence_interval, full_result + f" {p}"
-
+    return error_rate, confidence_interval, full_result + f" {p} {init_measurement_error_rate}"
 
 evaluator = AutomatedThresholdEvaluator(pair, parameters=parameters, simulator_runner=simulator_runner)
 evaluator.searching_lower_bound = 0.005
-evaluator.searching_upper_bound = 0.05
+evaluator.searching_upper_bound = 0.06
 evaluator.target_threshold_accuracy = 0.01
 threshold, relative_confidence_interval = evaluator.evaluate_threshold()
 print(f"pair: {pair}")
 print(f"parameters: {parameters}")
 print(f"threshold = {threshold}")
 print(f"relative_confidence_interval = {relative_confidence_interval}")
-print("\n\n")

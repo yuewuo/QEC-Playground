@@ -19,11 +19,17 @@ set output "init_measurement_error_0.001.eps"
 set title "Atomic Qubit Init Measure Error 0.001 (0.98p erasure + 0.02p Pauli)" font "Arial, 18"
 
 plot "d_3.txt" using 1:7 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 3",\
+    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 notitle,\
     "d_5.txt" using 1:7 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "d = 5",\
+    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 notitle,\
     "d_7.txt" using 1:7 with linespoints lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 title "d = 7",\
+    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "green" linewidth 5 pointtype 2 pointsize 1.5 notitle,\
     "d_9.txt" using 1:7 with linespoints lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 title "d = 9",\
+    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "yellow" linewidth 5 pointtype 2 pointsize 1.5 notitle,\
     "d_11.txt" using 1:7 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
-    "d_13.txt" using 1:7 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
+    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 notitle,\
+    "d_13.txt" using 1:7 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13",\
+    "" using 1:7:($7*(1-$9)):($7*(1+$9)) with errorbars lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 notitle
 
 system("ps2pdf -dEPSCrop init_measurement_error_0.001.eps init_measurement_error_0.001.pdf")
 
