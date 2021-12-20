@@ -51,6 +51,9 @@ impl Index {
         assert!(self.t >= 6 && self.t % 6 == 0, "only these indexes can be matched to measurement index");
         (self.t / 6 - 2, self.i, self.j)
     }
+    pub fn distance(&self, other: &Self) -> usize {
+        ((self.t as isize - other.t as isize).abs() + (self.i as isize - other.i as isize).abs() + (self.j as isize - other.j as isize).abs()) as usize
+    }
 }
 
 impl Ord for Index {
@@ -1325,6 +1328,7 @@ impl PlanarCodeModel {
     }
     /// exhaustively search the minimum path from every measurement stabilizer to the others.
     /// Running `build_graph` required before running this function.
+    /// bug fix 2021.12.20: building correction based on "next" may cause infinite loop, due to zero weight paths (e.g. erasure) that can jump between two nodes
     pub fn build_exhausted_path<F>(&mut self, weight_of: F) where F: Fn(f64) -> f64 {
         // first build petgraph
         let mut graph = petgraph::graph::Graph::new_undirected();
@@ -1391,7 +1395,7 @@ impl PlanarCodeModel {
                                     // compute the cost of node -> next_index -> target_index
                                     match min_cost.clone() {
                                         Some(min_cost_value) => {
-                                            if current_cost < min_cost_value {
+                                            if current_cost < min_cost_value || (current_cost == min_cost_value && target_index.distance(&next_index) < target_index.distance(&min_index.unwrap())) {
                                                 min_cost = Some(current_cost);
                                                 min_index = Some(next_index.clone());
                                             }
@@ -1528,10 +1532,15 @@ impl PlanarCodeModel {
             None => {
                 let mut correction: SparseCorrection = (**node_a.exhausted_map[&b].next_correction.as_ref().expect("must call `build_exhausted_path`")).clone();
                 let mut next_index = node_a.exhausted_map[&b].next.as_ref().expect("exist");
-                while next_index != b {
+                let mut loop_counter = 10000;  // should not exceed 10000 for a path, this is used to detect infinite loop
+                while next_index != b && loop_counter > 0 {
                     let this_node = self.snapshot[next_index.t][next_index.i][next_index.j].as_ref().expect("exist");
                     correction.combine(&this_node.exhausted_map[&b].next_correction.as_ref().expect("must call `build_exhausted_path`"));
                     next_index = this_node.exhausted_map[&b].next.as_ref().expect("exist");
+                    loop_counter -= 1;
+                }
+                if loop_counter == 0 {
+                    panic!("potential infinite loop detected in ftqec::get_correction_two_nodes, check exhausted path building")
                 }
                 correction
             }
@@ -2103,8 +2112,9 @@ impl PlanarCodeModel {
                     match stage {
                         Stage::Initialization => {
                             if node.qubit_type != QubitType::Data {
-                                node.error_rate_x = initialization_error_rate;
-                                node.error_rate_z = initialization_error_rate;
+                                node.error_rate_x = initialization_error_rate / 3.;
+                                node.error_rate_z = initialization_error_rate / 3.;
+                                node.error_rate_y = initialization_error_rate / 3.;
                             }
                         },
                         Stage::CXGate1 | Stage::CXGate2 | Stage::CXGate3 | Stage::CXGate4 => {
@@ -2137,7 +2147,8 @@ impl PlanarCodeModel {
                             let mut px_py_pz = if this_position_use_correlated_pauli { (0., 0., 0.) } else { (p/3., p/3., p/3.) };
                             if stage == Stage::CXGate4 && node.qubit_type != QubitType::Data {
                                 // add additional measurement error
-                                px_py_pz = ErrorType::combine_probability(px_py_pz, (measurement_error_rate, 0., measurement_error_rate));
+                                // whether it's X axis measurement or Z axis measurement, the additional error rate is always `measurement_error_rate`
+                                px_py_pz = ErrorType::combine_probability(px_py_pz, (measurement_error_rate / 2., measurement_error_rate / 2., measurement_error_rate / 2.));
                             }
                             let (px, py, pz) = px_py_pz;
                             node.error_rate_x = px;
