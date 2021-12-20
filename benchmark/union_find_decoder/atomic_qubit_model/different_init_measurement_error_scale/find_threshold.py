@@ -47,10 +47,11 @@ relative_confidence_interval = 0.00520590392973419
 def simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_runner=False, max_N=1000000, min_error_cases=3000):
     di, dj, T = pair_one
     min_error_cases = min_error_cases if is_rough_test else max_N
-    p_pauli = p
+    p_pauli = p * 0.02
+    p_erasure = p * 0.98
     init_measurement_error_rate = p
     error_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate},"use_correlated_pauli":true}}'
-    command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [dj], [T], parameters + ["--error_model_configuration", error_model_configuration], max_N, min_error_cases)
+    command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [dj], [T], parameters + ["--pes", f"[{p_erasure}]"] + ["--error_model_configuration", error_model_configuration], max_N, min_error_cases)
     if verbose:
         print(" ".join(command))
     stdout, returncode = run_qec_playground_command_get_stdout(command)

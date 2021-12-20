@@ -18,9 +18,8 @@ parameters = "-p0 --decoder UF --max_half_weight 100 --time_budget 1200 --use_xz
 def simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_runner=False, max_N=1000000, min_error_cases=3000):
     di, dj, T = pair_one
     min_error_cases = min_error_cases if is_rough_test else max_N
-    p_pauli = p * 0.05
-    p_erasure = p * 0.95
-    command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [dj], [T], parameters + ["--pes", f"[{p_erasure}]"], max_N, min_error_cases)
+    p_pauli = p
+    command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [dj], [T], parameters, max_N, min_error_cases)
     if verbose:
         print(" ".join(command))
     stdout, returncode = run_qec_playground_command_get_stdout(command)
