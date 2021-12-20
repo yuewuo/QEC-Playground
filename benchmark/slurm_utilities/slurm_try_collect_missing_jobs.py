@@ -31,3 +31,4 @@ if __name__ == "__main__":
     missing_indices, missing_or_empty_indices = try_collect_missing_jobs(sbatch_file_path)
     print(f"{len(missing_indices)} missing indices: {','.join([str(e) for e in missing_indices])}")
     print(f"{len(missing_or_empty_indices)} missing or empty indices: {','.join([str(e) for e in missing_or_empty_indices])}")
+    print(f"tip: rerun them: ./slurm_rerun_failed.py <sbatch_file_path> <failed_cases: comma separated>")
