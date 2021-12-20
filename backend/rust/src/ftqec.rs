@@ -1962,6 +1962,14 @@ impl PlanarCodeModel {
         match error_model {
             ErrorModel::GenericBiasedWithBiasedCX | ErrorModel::GenericBiasedWithStandardCX => {
                 let height = self.snapshot.len();
+                let mut initialization_error_rate = p;  // by default initialization error rate is the same as p
+                error_model_configuration_recognized = true;
+                error_model_configuration.map(|config| {
+                    let mut config_cloned = config.clone();
+                    let config = config_cloned.as_object_mut().expect("error_model_configuration must be JSON object");
+                    config.remove("initialization_error_rate").map(|value| initialization_error_rate = value.as_f64().expect("f64"));
+                    if !config.is_empty() { panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>()); }
+                });
                 self.iterate_snapshot_mut(|t, _i, _j, node| {
                     // first clear error rate
                     node.error_rate_x = 0.;
@@ -1979,9 +1987,9 @@ impl PlanarCodeModel {
                         Stage::Initialization => {
                             // note that error rate at measurement round will NOT cause measurement errors
                             //     to add measurement errors, need to be Stage::CXGate4
-                            node.error_rate_x = p / bias_eta;
-                            node.error_rate_z = p;
-                            node.error_rate_y = p / bias_eta;
+                            node.error_rate_x = initialization_error_rate / bias_eta;
+                            node.error_rate_z = initialization_error_rate;
+                            node.error_rate_y = initialization_error_rate / bias_eta;
                         },
                         Stage::CXGate1 | Stage::CXGate2 | Stage::CXGate3 | Stage::CXGate4 => {
                             if stage == Stage::CXGate4 && node.qubit_type != QubitType::Data {  // add measurement errors (p + p/bias_eta)
