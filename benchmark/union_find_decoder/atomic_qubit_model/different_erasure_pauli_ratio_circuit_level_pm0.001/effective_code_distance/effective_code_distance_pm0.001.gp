@@ -16,9 +16,9 @@ set style fill transparent solid 0.2 noborder
 
 set output "effective_code_distance_pm0.001.eps"
 
-# set title "Atomic Qubit 95% Erasure + 5% Pauli Circuit-Level"
+set title "d_{effective} from lowest p in the simulation pm=0.001"
 
-plot "effective_code_distance.txt" using 1:2 with linespoints lt rgb "red" linewidth 3 pointtype 6 pointsize 1 title "d_{effective} from lowest p in the simulation",\
+plot "effective_code_distance.txt" using 1:2 with linespoints lt rgb "red" linewidth 3 pointtype 6 pointsize 1 notitle,\
     "" using 1:2:($2-$3):($2+$3) with errorbars lt rgb "red" linewidth 3 pointtype 6 pointsize 1 notitle
 
 system("ps2pdf -dEPSCrop effective_code_distance_pm0.001.eps effective_code_distance_pm0.001.pdf")

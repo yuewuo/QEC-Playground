@@ -18,7 +18,7 @@ set style fill transparent solid 0.2 noborder
 
 set output "different_erasure_pauli_ratio_circuit_level_pm0.001.eps"
 
-set title "Atomic Qubit Thresholds with Pauli Error Ratio"
+set title "Atomic Qubit Thresholds with Pauli Error Ratio pm=0.001" font "Arial, 24"
 
 plot "thresholds.txt" using 1:2 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "d = 3"
 
