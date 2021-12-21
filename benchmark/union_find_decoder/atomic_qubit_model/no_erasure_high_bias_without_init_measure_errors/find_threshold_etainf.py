@@ -6,7 +6,7 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import AutomatedThresholdEvaluator, qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command, run_qec_playground_command_get_stdout
 
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
-error_model_configuration = f'{{"initialization_error_rate":0}}'
+error_model_configuration = f'{{"initialization_error_rate":0,"measurement_error_rate":0}}'
 parameters = "-p0 --decoder UF --max_half_weight 100 --time_budget 3600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta +inf".split(" ") + ["--error_model_configuration", error_model_configuration]
 
 # result:
@@ -35,8 +35,8 @@ def simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_r
 
 
 evaluator = AutomatedThresholdEvaluator(pair, parameters=parameters, simulator_runner=simulator_runner)
-evaluator.searching_lower_bound = 0.0166
-evaluator.searching_upper_bound = 0.0166
+evaluator.searching_lower_bound = 0.005
+evaluator.searching_upper_bound = 0.03
 evaluator.target_threshold_accuracy = 0.01
 threshold, relative_confidence_interval = evaluator.evaluate_threshold()
 print(f"pair: {pair}")

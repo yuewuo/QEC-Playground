@@ -1963,11 +1963,13 @@ impl PlanarCodeModel {
             ErrorModel::GenericBiasedWithBiasedCX | ErrorModel::GenericBiasedWithStandardCX => {
                 let height = self.snapshot.len();
                 let mut initialization_error_rate = p;  // by default initialization error rate is the same as p
+                let mut measurement_error_rate = p;
                 error_model_configuration_recognized = true;
                 error_model_configuration.map(|config| {
                     let mut config_cloned = config.clone();
                     let config = config_cloned.as_object_mut().expect("error_model_configuration must be JSON object");
                     config.remove("initialization_error_rate").map(|value| initialization_error_rate = value.as_f64().expect("f64"));
+                    config.remove("measurement_error_rate").map(|value| measurement_error_rate = value.as_f64().expect("f64"));
                     if !config.is_empty() { panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>()); }
                 });
                 self.iterate_snapshot_mut(|t, _i, _j, node| {
@@ -1993,9 +1995,9 @@ impl PlanarCodeModel {
                         },
                         Stage::CXGate1 | Stage::CXGate2 | Stage::CXGate3 | Stage::CXGate4 => {
                             if stage == Stage::CXGate4 && node.qubit_type != QubitType::Data {  // add measurement errors (p + p/bias_eta)
-                                node.error_rate_x = p / bias_eta;
-                                node.error_rate_z = p;
-                                node.error_rate_y = p / bias_eta;
+                                node.error_rate_x = measurement_error_rate / bias_eta;
+                                node.error_rate_z = measurement_error_rate;
+                                node.error_rate_y = measurement_error_rate / bias_eta;
                             }
                             match node.gate_type {
                                 GateType::ControlledPhase => {
