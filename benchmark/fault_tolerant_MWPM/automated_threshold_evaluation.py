@@ -56,7 +56,7 @@ def compile_code_if_necessary():
         process.wait()
         assert process.returncode == 0, "compile has error"
         QEC_PLAYGROUND_COMPILATION_DONE = True
-def run_qec_playground_command_get_stdout(command, no_stdout=False, use_tmp_out=False):
+def run_qec_playground_command_get_stdout(command, no_stdout=False, use_tmp_out=False, stderr_to_stdout=False):
     compile_code_if_necessary()
     env = os.environ.copy()
     env["RUST_BACKTRACE"] = "full"
@@ -67,7 +67,7 @@ def run_qec_playground_command_get_stdout(command, no_stdout=False, use_tmp_out=
         stdout = out_file
     if no_stdout:
         stdout = sys.stdout
-    process = subprocess.Popen(command, universal_newlines=True, env=env, stdout=stdout, stderr=sys.stderr, bufsize=100000000)
+    process = subprocess.Popen(command, universal_newlines=True, env=env, stdout=stdout, stderr=(stdout if stderr_to_stdout else sys.stderr), bufsize=100000000)
     process.wait()
     stdout, _ = process.communicate()
     if use_tmp_out:
