@@ -2064,7 +2064,7 @@ impl PlanarCodeModel {
             ErrorModel::PauliZandErasurePhenomenological => {  // this error model is from https://arxiv.org/pdf/1709.06218v3.pdf
                 let height = self.snapshot.len();
                 error_model_configuration_recognized = true;
-                let also_include_pauli_x = false;
+                let mut also_include_pauli_x = false;
                 error_model_configuration.map(|config| {
                     let mut config_cloned = config.clone();
                     let config = config_cloned.as_object_mut().expect("error_model_configuration must be JSON object");
