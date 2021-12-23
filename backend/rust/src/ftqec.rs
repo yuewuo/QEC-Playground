@@ -2063,6 +2063,14 @@ impl PlanarCodeModel {
             },
             ErrorModel::PauliZandErasurePhenomenological => {  // this error model is from https://arxiv.org/pdf/1709.06218v3.pdf
                 let height = self.snapshot.len();
+                error_model_configuration_recognized = true;
+                let also_include_pauli_x = false;
+                error_model_configuration.map(|config| {
+                    let mut config_cloned = config.clone();
+                    let config = config_cloned.as_object_mut().expect("error_model_configuration must be JSON object");
+                    config.remove("also_include_pauli_x").map(|value| also_include_pauli_x = value.as_bool().expect("bool"));
+                    if !config.is_empty() { panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>()); }
+                });
                 self.iterate_snapshot_mut(|t, _i, _j, node| {
                     // first clear error rate
                     node.error_rate_x = 0.;
@@ -2082,6 +2090,9 @@ impl PlanarCodeModel {
                             node.erasure_error_rate = pe;
                             if node.qubit_type == QubitType::Data {
                                 node.error_rate_z = p;
+                                if also_include_pauli_x {
+                                    node.error_rate_x = p;
+                                }
                             } else { // ancilla, to make sure it always cause only 1 measurement error if it happens
                                 node.error_rate_z = p;
                                 node.error_rate_x = p;
