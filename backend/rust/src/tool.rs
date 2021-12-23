@@ -628,6 +628,15 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             configurations.push((*di, dj, MeasurementRounds, p, pe));
         }
     }
+    let weight_function = if autotune {
+        if autotune_minus_no_error {
+            ftqec::weight_autotune_minus_no_error
+        } else {
+            ftqec::weight_autotune
+        }
+    } else {
+        ftqec::weight_equal
+    };
     let configurations_len = configurations.len();
     let compute_model = Arc::new(move |di: usize, dj: usize, MeasurementRounds: usize, p: f64, pe: f64| {
         // build general models
@@ -693,7 +702,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             },
             None => { }
         }
-        let mut fast_benchmark = model.build_graph();
+        let mut fast_benchmark = model.build_graph(weight_function);
         fast_benchmark.assignment_sampling_amount = fbench_assignment_sampling_amount;
         fast_benchmark.use_weighted_path_sampling = fbench_weighted_path_sampling;
         fast_benchmark.use_weighted_assignment_sampling = fbench_weighted_assignment_sampling;
@@ -721,15 +730,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             model.optimize_correction_pattern();
         }
         if !bypass_correction {
-            if autotune {
-                if autotune_minus_no_error {
-                    model.build_exhausted_path_autotune_minus_no_error();
-                } else {
-                    model.build_exhausted_path_autotune();
-                }
-            } else {
-                model.build_exhausted_path_equally_weighted();
-            }
+            model.build_exhausted_path();
         }
         (model, model_error, fast_benchmark)
     });
@@ -1118,6 +1119,11 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
     println!("format: <p> <L> <T> <total_rounds> <qec_failed_MWPM> <qec_failed_approx> <error_rate_MWPM> <error_rate_approx>");
     // println!("FT BM {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?}", Ls, Ts, ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code, ignore_6_neighbors, extra_measurement_error);
 
+    let weight_function = if autotune {
+        ftqec::weight_autotune
+    } else {
+        ftqec::weight_equal
+    };
     for (L_idx, L) in Ls.iter().enumerate() {
         let MeasurementRounds = Ts[L_idx];
         for p in ps {
@@ -1154,7 +1160,7 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
                     node.error_rate_y = node.error_rate_x * node.error_rate_z;
                 }
             });
-            model.build_graph();
+            model.build_graph(weight_function);
             if ignore_6_neighbors {
                 model.iterate_snapshot_mut(|t, i, j, node| {
                     if node.edges.len() == 12 {
@@ -1175,11 +1181,7 @@ fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>,
             let model_error = model.clone();  // avoid copying decoding structure a lot of times
             model.optimize_correction_pattern();
             if !bypass_correction {
-                if autotune {
-                    model.build_exhausted_path_autotune();
-                } else {
-                    model.build_exhausted_path_equally_weighted();
-                }
+                model.build_exhausted_path();
             }
             let model_decoder_MWPM = Arc::new(model.clone());
             let model_decoder_approx = Arc::new(model.clone());  // only for decode, so that you're confident I'm not cheating by using information of original errors
@@ -1676,7 +1678,7 @@ fn union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, 
                             }
                         }
                     });
-                    model.build_graph();
+                    model.build_graph(ftqec::weight_autotune);
                     let mut rng = thread_rng();
                     let mut current_total_rounds = {
                         *total_rounds.lock().unwrap()

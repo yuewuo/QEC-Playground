@@ -673,19 +673,19 @@ pub fn make_decoder_given_ftqec_model(model: &ftqec::PlanarCodeModel, stabilizer
 pub fn make_decoder_given_ftqec_model_weighted(model: &ftqec::PlanarCodeModel, stabilizer: QubitType, max_half_weight: usize)
         -> (Vec<InputNode<(usize, usize, usize)>>, HashMap<(usize, usize, usize), usize>, Vec<NeighborEdge>) {
     assert!(stabilizer != QubitType::Data, "cannot build decoder on data qubits");
-    // first find the minimum probability
-    let mut minimum_probability = f64::MAX;
+    // first find the maximum weight
+    let mut maximum_weight = f64::MIN;
     model.iterate_measurement_stabilizers(|t, _i, _j, node| {
         if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
             for edge in node.edges.iter() {
-                if edge.p < minimum_probability {
-                    minimum_probability = edge.p;
+                if edge.p > 0. && edge.weight > maximum_weight {
+                    maximum_weight = edge.weight;
                 }
             }
             match &node.boundary {
                 Some(boundary) => {
-                    if boundary.p < minimum_probability {
-                        minimum_probability = boundary.p;
+                    if boundary.p > 0. && boundary.weight > maximum_weight {
+                        maximum_weight = boundary.weight;
                     }
                 },
                 None => { }
@@ -693,8 +693,8 @@ pub fn make_decoder_given_ftqec_model_weighted(model: &ftqec::PlanarCodeModel, s
         }
     });
     // the minimum probability has weight `max_half_weight`, all other probability will scale accordingly
-    let probability_to_weight = |probability: f64| -> usize {
-        let mut half_weight = ((max_half_weight as f64) * probability.ln() / minimum_probability.ln()).round() as usize;
+    let scale_weight = |weight: f64| -> usize {
+        let mut half_weight = ((max_half_weight as f64) * weight / maximum_weight).round() as usize;
         if half_weight > max_half_weight {
             half_weight = max_half_weight;
         }
@@ -711,7 +711,7 @@ pub fn make_decoder_given_ftqec_model_weighted(model: &ftqec::PlanarCodeModel, s
         if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
             position_to_index.insert((t, i, j), nodes.len());
             nodes.push(InputNode::new((t, i, j), false, match &node.boundary {
-                Some(boundary) => Some(probability_to_weight(boundary.p)),
+                Some(boundary) => Some(scale_weight(boundary.weight)),
                 None => None,
             }));
         }
@@ -729,12 +729,12 @@ pub fn make_decoder_given_ftqec_model_weighted(model: &ftqec::PlanarCodeModel, s
                 if edge.t > 12 {
                     let peer_idx = position_to_index[&(edge.t, edge.i, edge.j)];
                     if idx < peer_idx {  // remove duplicated neighbors
-                        neighbors.push(NeighborEdge::new(idx, peer_idx, 0, probability_to_weight(edge.p)));
+                        neighbors.push(NeighborEdge::new(idx, peer_idx, 0, scale_weight(edge.weight)));
                     }
                 } else {
                     let new_boundary_cost = match nodes[idx].boundary_cost {
-                        Some(cost) => std::cmp::min(cost, probability_to_weight(edge.p)),
-                        None => probability_to_weight(edge.p),
+                        Some(cost) => std::cmp::min(cost, scale_weight(edge.weight)),
+                        None => scale_weight(edge.weight),
                     };
                     nodes[idx].boundary_cost = Some(new_boundary_cost);  // viewing the bottom layer as boundary
                 }
@@ -837,27 +837,28 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
             }
             region_set
         };
-        let mut minimum_probability = f64::MAX;
+        // first find the maximum weight
+        let mut maximum_weight = f64::MIN;
         for idx in region.iter() {
             let &(t, i, j) = g.node_weight(*idx).expect("exists");
             let node = model.snapshot[t][i][j].as_ref().expect("exist");
             for edge in node.edges.iter().filter(|edge| edge.p > 0.) {
-                if edge.p < minimum_probability {
-                    minimum_probability = edge.p;
+                if edge.weight > maximum_weight {
+                    maximum_weight = edge.weight;
                 }
             }
             match &node.boundary {
                 Some(boundary) => {
-                    if boundary.p > 0. && boundary.p < minimum_probability {
-                        minimum_probability = boundary.p;
+                    if boundary.p > 0. && boundary.weight > maximum_weight {
+                        maximum_weight = boundary.weight;
                     }
                 },
                 None => { }
             }
         }
-        // the minimum probability has weight `max_half_weight`, all other probability will scale accordingly
-        let probability_to_weight = |probability: f64| -> usize {
-            let mut half_weight = ((max_half_weight as f64) * probability.ln() / minimum_probability.ln()).round() as usize;
+        // weight will scale accordingly
+        let scale_weight = |weight: f64| -> usize {
+            let mut half_weight = ((max_half_weight as f64) * weight / maximum_weight).round() as usize;
             if half_weight > max_half_weight {
                 half_weight = max_half_weight;
             }
@@ -875,7 +876,7 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
             let node = model.snapshot[t][i][j].as_ref().expect("exist");
             position_to_index.insert((t, i, j), nodes.len());
             nodes.push(InputNode::new((t, i, j), false, node.boundary.as_ref().and_then(|boundary| {
-                if boundary.p > 0. {  Some(probability_to_weight(boundary.p)) } else { None }
+                if boundary.p > 0. {  Some(scale_weight(boundary.weight)) } else { None }
             }).or(detected_erasures.boundaries.get(&Index::new(t, i, j)).and(Some(0)))));
         }
         model.iterate_measurement_stabilizers(|t, i, j, _node| {
@@ -894,7 +895,7 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
                 let peer_idx = position_to_index[&(edge.t, edge.i, edge.j)];
                 if idx < peer_idx {  // remove duplicated neighbors
                     let mut edge_increased = 0;
-                    let edge_length = probability_to_weight(edge.p);
+                    let edge_length = scale_weight(edge.weight);
                     if detected_erasures.has_erasures() {  // check for erasure errors
                         added_edges_idx.insert(Index::new(edge.t, edge.i, edge.j));
                         if detected_erasures.connected_contains(&Index::new(t, i, j), &Index::new(edge.t, edge.i, edge.j)) {
@@ -1358,7 +1359,7 @@ mod tests {
         let p = 0.01;  // physical error rate
         let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
         model.set_phenomenological_error_with_perfect_initialization(p);
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
         model.add_error_at(el2t(0), 0, 2, &ErrorType::X).expect("error rate = 0 here");  // data qubit error (detected by next layer)
         model.add_error_at(el2t(1), 2, 3, &ErrorType::X).expect("error rate = 0 here");  // measurement error (detected by this and next layer)
@@ -1389,7 +1390,7 @@ mod tests {
                 node.error_rate_y = py;
             }
         });
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         model.add_error_at(12, 0, 2, &ErrorType::Z).expect("error rate = 0 here");  // data qubit error (detected by next layer)
         model.propagate_error();
         let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, QubitType::StabXZZXLogicalZ, 4);
@@ -1420,7 +1421,7 @@ mod tests {
                 node.error_rate_y = py;
             }
         });
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         model.add_error_at(12, 0, 2, &ErrorType::Z).expect("error rate = 0 here");  // data qubit error (detected by next layer)
         model.add_error_at(12, 0, 4, &ErrorType::Z).expect("error rate = 0 here");  // data qubit error (detected by next layer)
         model.propagate_error();
@@ -1452,7 +1453,7 @@ mod tests {
                 node.error_rate_y = py;
             }
         });
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         model.add_error_at(12, 2, 0, &ErrorType::Z).expect("error rate = 0 here");  // data qubit error (detected by next layer)
         model.propagate_error();
         let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, QubitType::StabXZZXLogicalZ, 4);
@@ -1483,7 +1484,7 @@ mod tests {
                 node.error_rate_y = py;
             }
         });
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         let (has_x_logical_error, has_z_logical_error) = run_given_mwpm_decoder_instance_weighted(&mut model
             , false, 4, true);
         println!("has_x_logical_error: {}, has_z_logical_error: {}", has_x_logical_error, has_z_logical_error);
@@ -1508,7 +1509,7 @@ mod tests {
                 node.error_rate_y = py;
             }
         });
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         // add errors
         model.add_error_at(12, 0, 0, &ErrorType::Z).expect("error rate = 0 here");
         model.add_error_at(12, 0, 12, &ErrorType::Z).expect("error rate = 0 here");
@@ -1532,9 +1533,9 @@ mod tests {
                 node.erasure_error_rate = pe;
             }
         });
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         model.optimize_correction_pattern();
-        model.build_exhausted_path_autotune();
+        model.build_exhausted_path();
         // add errors
         model.add_erasure_error_at(6, 2, 2, &ErrorType::Z).expect("error rate = 0 here");
         model.propagate_error();
@@ -1557,9 +1558,9 @@ mod tests {
                 node.erasure_error_rate = pe;
             }
         });
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         model.optimize_correction_pattern();
-        model.build_exhausted_path_autotune();
+        model.build_exhausted_path();
         // add errors
         model.add_erasure_error_at(6, 0, 0, &ErrorType::Z).expect("error rate = 0 here");
         model.propagate_error();
@@ -1582,9 +1583,9 @@ mod tests {
                 node.erasure_error_rate = pe;
             }
         });
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         model.optimize_correction_pattern();
-        model.build_exhausted_path_autotune();
+        model.build_exhausted_path();
         // add errors
         model.add_erasure_error_at(6, 0, 0, &ErrorType::Z).expect("error rate = 0 here");
         model.add_erasure_error_at(6, 2, 0, &ErrorType::Z).expect("error rate = 0 here");
@@ -1608,9 +1609,9 @@ mod tests {
                 node.erasure_error_rate = pe;
             }
         });
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         model.optimize_correction_pattern();
-        model.build_exhausted_path_autotune();
+        model.build_exhausted_path();
         // add errors
         model.add_erasure_error_at(6, 2, 0, &ErrorType::Z).expect("error rate = 0 here");
         model.add_erasure_error_at(6, 4, 0, &ErrorType::Z).expect("error rate = 0 here");
@@ -1640,9 +1641,9 @@ mod tests {
                 node.erasure_error_rate = pe;
             }
         });
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         model.optimize_correction_pattern();
-        model.build_exhausted_path_autotune();
+        model.build_exhausted_path();
         // add errors
         model.add_erasure_error_at(6, 0, 0, &ErrorType::Y).expect("error rate = 0 here");
         model.add_erasure_error_at(6, 1, 1, &ErrorType::Z).expect("error rate = 0 here");

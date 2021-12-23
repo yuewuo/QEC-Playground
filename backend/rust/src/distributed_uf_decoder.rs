@@ -1517,7 +1517,7 @@ mod tests {
         let p = 0.01;  // physical error rate
         let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
         model.set_phenomenological_error_with_perfect_initialization(p);
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
         model.add_error_at(el2t(0), 0, 2, &ErrorType::X).expect("error rate = 0 here");  // data qubit error (detected by next layer)
         model.add_error_at(el2t(1), 2, 3, &ErrorType::X).expect("error rate = 0 here");  // measurement error (detected by this and next layer)
@@ -1539,7 +1539,7 @@ mod tests {
         let p = 0.01;  // physical error rate
         let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
         model.set_phenomenological_error_with_perfect_initialization(p);
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
         model.add_error_at(el2t(0), 0, 0, &ErrorType::X).expect("error rate = 0 here");  // data qubit error (detected by next layer)
         model.propagate_error();
@@ -1563,9 +1563,9 @@ mod tests {
         let max_half_weight = 4;
         let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code_rectangle(measurement_rounds, di, dj);
         model.apply_error_model(&ErrorModel::GenericBiasedWithBiasedCX, None, p, bias_zeta, 0.);
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         // model.optimize_correction_pattern();  // no need if not building corrections
-        // model.build_exhausted_path_autotune();
+        // model.build_exhausted_path();
         let use_random_error = true;
         if use_random_error {
             let mut rng = thread_rng();

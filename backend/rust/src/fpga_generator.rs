@@ -322,7 +322,7 @@ fn fault_tolerant_distributed_union_find(d: usize, measurement_rounds: usize, p:
     } else {
         model.set_phenomenological_error_with_perfect_initialization(p);
     }
-    model.build_graph();
+    model.build_graph(ftqec::weight_autotune);
     let (nodes, _position_to_index, neighbors, fast_channels) = distributed_uf_decoder::make_decoder_given_ftqec_model(&model, QubitType::StabZ, fast_channel_interval);
     let decoder = distributed_uf_decoder::DistributedUnionFind::new(nodes, neighbors, fast_channels,
         distributed_uf_decoder::manhattan_distance_standard_planar_code_3d_nodes, distributed_uf_decoder::compare_standard_planar_code_3d_nodes);

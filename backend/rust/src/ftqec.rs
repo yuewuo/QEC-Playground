@@ -56,6 +56,18 @@ impl Index {
     }
 }
 
+/// Autotune: compute weight based on error model
+pub fn weight_autotune(p: f64) -> f64 {
+    if p > 0. { - p.ln() } else { f64::from(f32::MAX) }  // use f32::MAX is enough
+}
+pub fn weight_autotune_minus_no_error(p: f64) -> f64 {
+    if p > 0. { (1.-p).ln() - p.ln() } else { f64::from(f32::MAX) }  // use f32::MAX is enough
+}
+/// Manhattan distance (but not exactly because there is 12 neighbors instead of 8) version
+pub fn weight_equal(p: f64) -> f64 {
+    if p > 0. { 1. } else { f64::from(f32::MAX) }  // use f32::MAX is enough
+}
+
 impl Ord for Index {
     fn cmp(&self, other: &Self) -> Ordering {
         match self.t.cmp(&other.t) {
@@ -1097,7 +1109,7 @@ impl PlanarCodeModel {
         (sparse_correction, measurement_errors)
     }
     /// corresponds to `build_graph_given_error_rate` in `FaultTolerantView.vue`
-    pub fn build_graph(&mut self) -> FastBenchmark {
+    pub fn build_graph<F>(&mut self, weight_of: F) -> FastBenchmark where F: Fn(f64) -> f64 + Copy {
         let mut fast_benchmark = FastBenchmark::new(&self);
         let mut all_possible_errors: Vec<Either<ErrorType, CorrelatedErrorType>> = Vec::new();
         for error_type in ErrorType::all_possible_errors().drain(..) {
@@ -1177,10 +1189,11 @@ impl PlanarCodeModel {
                                         if node.boundary.is_none() {
                                             node.boundary = Some(Boundary {
                                                 p: 0.,
+                                                weight: f64::MAX,
                                                 cases: Vec::new(),
                                             });
                                         }
-                                        node.boundary.as_mut().expect("exist").add(p, correction.clone(), self.use_combined_probability);
+                                        node.boundary.as_mut().expect("exist").add(p, correction.clone(), self.use_combined_probability, weight_of);
                                     }
                                     if is_erasure {  // only consider single qubit errors
                                         let node = self.snapshot[t][i][j].as_mut().expect("exist");
@@ -1205,16 +1218,17 @@ impl PlanarCodeModel {
                                                 if node.boundary.is_none() {
                                                     node.boundary = Some(Boundary {
                                                         p: 0.,
+                                                        weight: f64::MAX,
                                                         cases: Vec::new(),
                                                     });
                                                 }
-                                                node.boundary.as_mut().expect("exist").add(p, correction, self.use_combined_probability);
+                                                node.boundary.as_mut().expect("exist").add(p, correction, self.use_combined_probability, weight_of);
                                             } else {
                                                 // println!("add_edge_case [{}][{}][{}] [{}][{}][{}] with p = {}", t1, i1, j1, t2, i2, j2, p);
                                                 add_edge_case(&mut self.snapshot[t1][i1][j1].as_mut().expect("exist").edges, t2, i2, j2, p, correction.clone()
-                                                    , self.use_combined_probability);
+                                                    , self.use_combined_probability, weight_of);
                                                 add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").edges, t1, i1, j1, p, correction
-                                                    , self.use_combined_probability);
+                                                    , self.use_combined_probability, weight_of);
                                             }
                                         }
                                         if is_erasure {  // only consider single qubit errors causing same type of errors
@@ -1329,7 +1343,7 @@ impl PlanarCodeModel {
     /// exhaustively search the minimum path from every measurement stabilizer to the others.
     /// Running `build_graph` required before running this function.
     /// bug fix 2021.12.20: building correction based on "next" may cause infinite loop, due to zero weight paths (e.g. erasure) that can jump between two nodes
-    pub fn build_exhausted_path<F>(&mut self, weight_of: F) where F: Fn(f64) -> f64 {
+    pub fn build_exhausted_path(&mut self) {
         // first build petgraph
         let mut graph = petgraph::graph::Graph::new_undirected();
         // add nodes before adding edge, so that they all have node number
@@ -1345,7 +1359,7 @@ impl PlanarCodeModel {
                 graph.add_edge(node.pet_node.expect("exist"), node_target, PetGraphEdge {
                     a: Index { t: t, i: i, j: j },
                     b: Index { t: edge.t, i: edge.i, j: edge.j },
-                    weight: weight_of(edge.p),  // so that w1 + w2 = - log(p1) - log(p2) = - log(p1*p2) = - log(p_line)
+                    weight: edge.weight,  // so that w1 + w2 = - log(p1) - log(p2) = - log(p1*p2) = - log(p_line)
                     // we want p_line to be as large as possible, it meets the goal of minimizing -log(p) 
                 });
                 // println!("add edge [{}][{}][{}] and [{}][{}][{}] with weight {}", t, i, j, edge.t, edge.i, edge.j, weight_of(edge.p));
@@ -1461,8 +1475,7 @@ impl PlanarCodeModel {
                                     Some(boundary) => {
                                         // only try if this node is directly connected to boundary
                                         if node.qubit_type == node_b.qubit_type && (node_b.exhausted_map.get(&index).is_some() || (t == tb && i == ib && j == jb)) {
-                                            let (_, p) = &boundary.cases[0];
-                                            let cost = weight_of(*p) + (if t == tb && i == ib && j == jb { 0. } else {
+                                            let cost = boundary.weight + (if t == tb && i == ib && j == jb { 0. } else {
                                                 node_b.exhausted_map[&index].cost
                                             });
                                             // println!("[{}][{}][{}] [{}][{}][{}] {}", t, i, j, tb, ib, jb, cost);
@@ -1508,17 +1521,6 @@ impl PlanarCodeModel {
             }
         }
     }
-    /// Autotune: compute weight based on error model
-    pub fn build_exhausted_path_autotune(&mut self) {
-        self.build_exhausted_path(|p| if p > 0. { - p.ln() } else { f64::from(f32::MAX) })  // use f32::MAX is enough
-    }
-    pub fn build_exhausted_path_autotune_minus_no_error(&mut self) {
-        self.build_exhausted_path(|p| if p > 0. { (1.-p).ln() - p.ln() } else { f64::from(f32::MAX) })  // use f32::MAX is enough
-    }
-    /// Manhattan distance (but not exactly because there is 12 neighbors instead of 8) version
-    pub fn build_exhausted_path_equally_weighted(&mut self) {
-        self.build_exhausted_path(|p| if p > 0. { 1. } else { f64::from(f32::MAX) })  // use f32::MAX is enough
-    }
     /// get correction from two matched nodes
     /// use `correction` (or `next_correction` if former not provided) in `exhausted_map`
     pub fn get_correction_two_nodes(&self, a: &Index, b: &Index) -> SparseCorrection {
@@ -1543,7 +1545,7 @@ impl PlanarCodeModel {
                     loop_counter -= 1;
                 }
                 if loop_counter == 0 {
-                    panic!("potential infinite loop detected in ftqec::get_correction_two_nodes, check exhausted path building")
+                    panic!("potential infinite loop detected in get_correction_two_nodes, check exhausted path building")
                 }
                 correction
             }
@@ -2376,6 +2378,8 @@ pub struct Edge {
     pub j: usize,
     pub p: f64,
     pub cases: Vec::<(Arc<SparseCorrection>, f64)>,
+    // calculated
+    pub weight: f64,
 }
 
 impl From<&Edge> for Index {
@@ -2388,28 +2392,30 @@ impl From<&Edge> for Index {
     }
 }
 
-pub fn add_edge_case(edges: &mut Vec::<Edge>, t: usize, i: usize, j: usize, p: f64, correction: Arc<SparseCorrection>, use_combined_probability: bool) {
+pub fn add_edge_case<F>(edges: &mut Vec::<Edge>, t: usize, i: usize, j: usize, p: f64, correction: Arc<SparseCorrection>, use_combined_probability: bool, weight_of: F) where F: Fn(f64) -> f64 {
     for edge in edges.iter_mut() {
         if edge.t == t && edge.i == i && edge.j == j {
-            edge.add(p, correction, use_combined_probability);
+            edge.add(p, correction, use_combined_probability, weight_of);
             return  // already found
         }
     }
     let mut edge = Edge {
         t: t, i: i, j: j, p: 0.,
+        weight: f64::MAX,
         cases: Vec::new(),
     };
-    edge.add(p, correction, use_combined_probability);
+    edge.add(p, correction, use_combined_probability, weight_of);
     edges.push(edge);
 }
 
 impl Edge {
-    pub fn add(&mut self, p: f64, correction: Arc<SparseCorrection>, use_combined_probability: bool) {
+    pub fn add<F>(&mut self, p: f64, correction: Arc<SparseCorrection>, use_combined_probability: bool, weight_of: F) where F: Fn(f64) -> f64 {
         if use_combined_probability {
             self.p = self.p * (1. - p) + p * (1. - self.p);  // XOR
         } else {
             self.p = self.p.max(p);  // max
         }
+        self.weight = weight_of(self.p);
         self.cases.push((correction, p));
     }
 }
@@ -2419,15 +2425,18 @@ impl Edge {
 pub struct Boundary {
     pub p: f64,
     pub cases: Vec::<(Arc<SparseCorrection>, f64)>,
+    // calculated
+    pub weight: f64,
 }
 
 impl Boundary {
-    pub fn add(&mut self, p: f64, correction: Arc<SparseCorrection>, use_combined_probability: bool) {
+    pub fn add<F>(&mut self, p: f64, correction: Arc<SparseCorrection>, use_combined_probability: bool, weight_of: F) where F: Fn(f64) -> f64 {
         if use_combined_probability {
             self.p = self.p * (1. - p) + p * (1. - self.p);  // XOR
         } else {
             self.p = self.p.max(p);  // max
         }
+        self.weight = weight_of(self.p);
         self.cases.push((correction, p));
     }
 }
@@ -2666,7 +2675,7 @@ mod tests {
         let p = 0.01;  // physical error rate
         let mut model = PlanarCodeModel::new_standard_XZZX_code(measurement_rounds, d);
         model.set_phenomenological_error_with_perfect_initialization(p);
-        model.build_graph();
+        model.build_graph(weight_autotune);
         let assert_error_is = |model: &mut PlanarCodeModel, errors| {
             model.propagate_error();
             let mut measurement_errors = Vec::new();
@@ -2741,9 +2750,9 @@ mod tests {
                 node.error_rate_y = py;
             }
         });
-        model.build_graph();
+        model.build_graph(weight_autotune);
         model.optimize_correction_pattern();
-        model.build_exhausted_path_autotune();
+        model.build_exhausted_path();
         // add errors
         model.add_error_at(12, 0, 0, &ErrorType::Z).expect("error rate = 0 here");
         model.add_error_at(12, 0, 12, &ErrorType::Z).expect("error rate = 0 here");
@@ -2767,7 +2776,7 @@ mod tests {
                 node.erasure_error_rate = pe;
             }
         });
-        model.build_graph();
+        model.build_graph(weight_autotune);
         let error_count = model.generate_random_errors(|| rng.gen::<f64>());
         println!("error_count: {}", error_count);
         let detected_erasures = model.generate_detected_erasures();

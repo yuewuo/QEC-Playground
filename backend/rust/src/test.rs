@@ -276,9 +276,9 @@ fn offer_decoder_study(d: usize, p: f64, count: usize, max_resend: usize, max_cy
             node.error_rate_y = p;
         }
     });
-    model.build_graph();
+    model.build_graph(ftqec::weight_autotune);
     model.optimize_correction_pattern();
-    model.build_exhausted_path_autotune();
+    model.build_exhausted_path();
     while cases < count {
         decoder.reinitialize();
         decoder.use_reproducible_error_generator = true;
@@ -348,9 +348,9 @@ fn offer_algorithm_study(d: usize, p: f64, count: usize, max_resend: usize, max_
             node.error_rate_y = 0.;
         }
     });
-    model.build_graph();
+    model.build_graph(ftqec::weight_autotune);
     model.optimize_correction_pattern();
-    model.build_exhausted_path_autotune();
+    model.build_exhausted_path();
     while cases < count {
         decoder.reinitialize();
         decoder.use_reproducible_error_generator = true;
@@ -433,9 +433,9 @@ fn union_find_decoder_study(d: usize, p: f64, count: usize, max_cost: f64) {
             node.error_rate_y = 0.;
         }
     });
-    model.build_graph();
+    model.build_graph(ftqec::weight_equal);
     model.optimize_correction_pattern();
-    model.build_exhausted_path_equally_weighted();
+    model.build_exhausted_path();
     while cases < count {
         decoder.reinitialize();
         decoder.use_reproducible_error_generator = true;
@@ -502,9 +502,9 @@ fn union_find_decoder_xzzx_code_study(d: usize, p: f64, count: usize, max_half_w
             node.error_rate_y = py;
         }
     });
-    model.build_graph();
+    model.build_graph(ftqec::weight_autotune);
     model.optimize_correction_pattern();
-    model.build_exhausted_path_autotune();
+    model.build_exhausted_path();
     // create union find decoder instance
     while cases < count {
         // generate random error
@@ -562,9 +562,9 @@ fn distributed_union_find_decoder_study(d: usize, p: f64, count: usize) {
             node.error_rate_y = 0.;
         }
     });
-    model.build_graph();
+    model.build_graph(ftqec::weight_autotune);
     model.optimize_correction_pattern();
-    model.build_exhausted_path_autotune();
+    model.build_exhausted_path();
     while cases < count {
         decoder.reinitialize();
         decoder.use_reproducible_error_generator = true;
@@ -671,9 +671,9 @@ fn archived_debug_tests() {
         let error_rate = 0.01;  // (1-3p)I + pX + pZ + pY
         let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(T, L);
         model.set_depolarizing_error(error_rate);
-        model.build_graph();
+        model.build_graph(ftqec::weight_equal);
         model.optimize_correction_pattern();
-        model.build_exhausted_path_equally_weighted();
+        model.build_exhausted_path();
         // println!("exhausted of Z stabilizer at [6][0][1]: {:?}", model.snapshot[6][0][1].as_ref().expect("exist").exhausted_map);
     }
     {
@@ -713,7 +713,7 @@ fn archived_debug_tests() {
             println!("verified: any single qubit error only causes at most two measurement errors");
         }
         {  // build auxiliary information to assist decoding
-            model.build_graph();
+            model.build_graph(ftqec::weight_autotune);
             model.optimize_correction_pattern();
             let mut max_edge_count = 0;
             model.iterate_measurement_stabilizers(|_t, _i, _j, node| {
@@ -722,7 +722,7 @@ fn archived_debug_tests() {
             println!("maximum neighbor amount on a single stabilizer is {}", max_edge_count);
             assert!(max_edge_count <= 12, "verified: at most 12 neighbors in graph");
             // build exhausted path helps to speed up decoder
-            model.build_exhausted_path_autotune();
+            model.build_exhausted_path();
             // println!("exhausted of Z stabilizer at [12][0][1]: {:?}", model.snapshot[12][0][1].as_ref().expect("exist").exhausted_map);
             // println!("{:?}", model.get_correction_two_nodes(ftqec::Index::new(12, 0, 1), ftqec::Index::new(24, 4, 1)));
             let _correction = model.get_correction_two_nodes(&ftqec::Index::new(12, 0, 1), &ftqec::Index::new(12, 4, 1));
@@ -765,9 +765,9 @@ fn archived_debug_tests() {
         let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(3, 4);
         let very_small_error_rate = 0.0001;
         model.set_depolarizing_error(very_small_error_rate);
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         model.optimize_correction_pattern();
-        model.build_exhausted_path_autotune();
+        model.build_exhausted_path();
         let error_source = ftqec::Index::new(18, 2, 3);
         let error_target = vec![
             (ftqec::Index::new(18, 2, 1), "left"),
@@ -847,9 +847,9 @@ fn archived_debug_tests() {
         let error_rate = 0.01;  // (1-3p)I + pX + pZ + pY
         let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, L);
         model.set_depolarizing_error(error_rate);
-        model.build_graph();
+        model.build_graph(ftqec::weight_equal);
         model.optimize_correction_pattern();
-        model.build_exhausted_path_equally_weighted();
+        model.build_exhausted_path();
         println!("model.snapshot.len(): {}", model.snapshot.len());
         let default_correction = model.generate_default_correction();
         println!("default_correction.x.shape(): {:?}", default_correction.x.shape());
@@ -884,9 +884,9 @@ fn archived_debug_tests() {
                 node.error_rate_y = p;
             }
         });
-        model.build_graph();
+        model.build_graph(ftqec::weight_autotune);
         model.optimize_correction_pattern();
-        model.build_exhausted_path_autotune();
+        model.build_exhausted_path();
         {  // add errors
             // {  // no logical error
             //     model.snapshot[6][0][0].as_mut().unwrap().error = ErrorType::X;
