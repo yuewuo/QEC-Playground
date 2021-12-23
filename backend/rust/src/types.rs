@@ -450,11 +450,14 @@ impl CorrelatedErrorModel {
             error_rate_YY: p,
         }
     }
+    pub fn error_probability(&self) -> f64 {
+                               self.error_rate_IX + self.error_rate_IZ + self.error_rate_IY
+        + self.error_rate_XI + self.error_rate_XX + self.error_rate_XZ + self.error_rate_XY
+        + self.error_rate_ZI + self.error_rate_ZX + self.error_rate_ZZ + self.error_rate_ZY
+        + self.error_rate_YI + self.error_rate_YX + self.error_rate_YZ + self.error_rate_YY
+    }
     pub fn no_error_probability(&self) -> f64 {
-        1.                       - self.error_rate_IX - self.error_rate_IZ - self.error_rate_IY
-            - self.error_rate_XI - self.error_rate_XX - self.error_rate_XZ - self.error_rate_XY
-            - self.error_rate_ZI - self.error_rate_ZX - self.error_rate_ZZ - self.error_rate_ZY
-            - self.error_rate_YI - self.error_rate_YX - self.error_rate_YZ - self.error_rate_YY
+        1. - self.error_probability()
     }
     pub fn error_rate(&self, error_type: &CorrelatedErrorType) -> f64 {
         match error_type {
@@ -561,8 +564,11 @@ impl CorrelatedErasureErrorModel {
             error_rate_EE: p,
         }
     }
+    pub fn error_probability(&self) -> f64 {
+        self.error_rate_IE + self.error_rate_EI + self.error_rate_EE
+    }
     pub fn no_error_probability(&self) -> f64 {
-        1.                       - self.error_rate_IE - self.error_rate_EI - self.error_rate_EE
+        1. - self.error_probability()
     }
     // pub fn error_rate(&self, error_type: &CorrelatedErasureErrorType) -> f64 {
     //     match error_type {

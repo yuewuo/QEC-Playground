@@ -53,8 +53,8 @@ for UF_decoder in [False, True]:
     for no_autotune in [False, True]:
         for autotune_minus_no_error in [False, True]:
             for use_combined_probability in [False, True]:
-                for use_nature_initialization_error in [True]:  # no need to iterate for now
-                    for use_nature_measurement_error in [True]:  # no need to iterate for now
+                for use_nature_initialization_error in [False]:  # no need to iterate for now
+                    for use_nature_measurement_error in [False]:  # no need to iterate for now
                         error_model_configuration = f'{{"use_nature_initialization_error":{"true" if use_nature_initialization_error else "false"},"use_nature_measurement_error":{"true" if use_nature_measurement_error else "false"}}}'
                         parameters = common_parameters + ["--error_model_configuration", error_model_configuration]
                         if UF_decoder:
@@ -111,7 +111,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
         full_result = stdout.strip(" \r\n").split("\n")[-1]
         lst = full_result.split(" ")
         run_specific_idx = lst[0]
-        assert run_specific_idx == idx, "sanity check"
+        assert run_specific_idx == str(idx), "sanity check"
         threshold = float(lst[1])
         relative_confidence_interval = float(lst[2])
 

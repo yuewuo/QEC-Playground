@@ -1137,7 +1137,7 @@ impl PlanarCodeModel {
                                 match self.snapshot[t][i][j].as_ref().expect("exist").connection.as_ref() {
                                     Some(connection) => {
                                         let (ct, ci, cj) = (connection.t, connection.i, connection.j);
-                                        self.snapshot[ct][ci][cj].as_ref().expect("exist").correlated_erasure_error_model.is_some()
+                                        self.snapshot[ct][ci][cj].as_ref().expect("exist").correlated_erasure_error_model.clone().and_then(|v| if v.error_probability() > 0. {Some(true)} else {None}).is_some()
                                     },
                                     None => false,
                                 }
@@ -2168,7 +2168,7 @@ impl PlanarCodeModel {
                             } else {
                                 node.erasure_error_rate = pe;
                             }
-                            let mut px_py_pz = if this_position_use_correlated_pauli { (0., 0., 0.) } else { (p/3., p/3., p/3.) };
+                            let mut px_py_pz = if use_correlated_pauli { (0., 0., 0.) } else { (p/3., p/3., p/3.) };
                             if stage == Stage::CXGate4 && node.qubit_type != QubitType::Data {
                                 // add additional measurement error
                                 // whether it's X axis measurement or Z axis measurement, the additional error rate is always `measurement_error_rate`
