@@ -1512,6 +1512,9 @@ impl PlanarCodeModel {
     pub fn build_exhausted_path_autotune(&mut self) {
         self.build_exhausted_path(|p| if p > 0. { - p.ln() } else { f64::from(f32::MAX) })  // use f32::MAX is enough
     }
+    pub fn build_exhausted_path_autotune_minus_no_error(&mut self) {
+        self.build_exhausted_path(|p| if p > 0. { (1.-p).ln() - p.ln() } else { f64::from(f32::MAX) })  // use f32::MAX is enough
+    }
     /// Manhattan distance (but not exactly because there is 12 neighbors instead of 8) version
     pub fn build_exhausted_path_equally_weighted(&mut self) {
         self.build_exhausted_path(|p| if p > 0. { 1. } else { f64::from(f32::MAX) })  // use f32::MAX is enough
@@ -2182,6 +2185,96 @@ impl PlanarCodeModel {
                             }
                         },
                         _ => { }
+                    }
+                });
+            },
+            ErrorModel::Arxiv200404693 => {
+                let height = self.snapshot.len();
+                let mut use_nature_initialization_error = false;  // by default use the one defined in the paper (although I believe it's the same with p/3 X,Y,Z pauli errors)
+                let mut use_nature_measurement_error = false;  // I believe they're the same
+                error_model_configuration_recognized = true;
+                error_model_configuration.map(|config| {
+                    let mut config_cloned = config.clone();
+                    let config = config_cloned.as_object_mut().expect("error_model_configuration must be JSON object");
+                    config.remove("use_nature_initialization_error").map(|value| use_nature_initialization_error = value.as_bool().expect("bool"));
+                    config.remove("use_nature_measurement_error").map(|value| use_nature_measurement_error = value.as_bool().expect("bool"));
+                    if !config.is_empty() { panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>()); }
+                });
+                self.iterate_snapshot_mut(|t, _i, _j, node| {
+                    // first clear error rate
+                    node.error_rate_x = 0.;
+                    node.error_rate_z = 0.;
+                    node.error_rate_y = 0.;
+                    node.erasure_error_rate = 0.;
+                    if t >= height - 6 {  // no error on the top, as a perfect measurement round
+                        return
+                    } else if t <= 6 {
+                        return  // perfect initialization
+                    }
+                    // do different things for each stage
+                    let stage = Stage::from(t);
+                    match stage {
+                        Stage::Initialization => {
+                            if node.qubit_type == QubitType::Data {
+                                node.error_rate_x = p / 3.;
+                                node.error_rate_z = p / 3.;
+                                node.error_rate_y = p / 3.;
+                            } else {
+                                if use_nature_initialization_error {
+                                    node.error_rate_x = p / 3.;
+                                    node.error_rate_z = p / 3.;
+                                    node.error_rate_y = p / 3.;
+                                } else {
+                                    // |0> has 2p/3 probability to be |1>, |+> has 2p/3 probability to be |->
+                                    if node.qubit_type.is_measured_in_z_basis().unwrap() {
+                                        node.error_rate_x = 2. * p / 3.;  // |0> apply X error is |1>
+                                    } else {
+                                        node.error_rate_z = 2. * p / 3.;  // |+> apply Z error is |->
+                                    }
+                                }
+                            }
+                        },
+                        Stage::CXGate1 | Stage::CXGate2 | Stage::CXGate3 | Stage::CXGate4 => {
+                            if stage == Stage::CXGate4 && node.qubit_type != QubitType::Data {
+                                // add additional measurement error
+                                // paper requires that whether measure in X or Z basis, the error probability should both be 2p/3
+                                if use_nature_measurement_error {
+                                    node.error_rate_x = p / 3.;
+                                    node.error_rate_z = p / 3.;
+                                    node.error_rate_y = p / 3.;
+                                } else {
+                                    if node.qubit_type.is_measured_in_z_basis().unwrap() {
+                                        node.error_rate_x = 2. * p / 3.;  // sensitive to X errors
+                                    } else {
+                                        node.error_rate_z = 2. * p / 3.;  // sensitive to Z errors
+                                    }
+                                }
+                            }
+                            match node.gate_type {
+                                GateType::ControlledPhase => {
+                                    if node.qubit_type != QubitType::Data {  // this is ancilla
+                                        // better check whether peer is indeed data qubit, but it's hard here due to Rust's borrow check
+                                        let correlated_error_model = CorrelatedErrorModel::default_with_probability(p / 15.);
+                                        correlated_error_model.sanity_check();
+                                        node.correlated_error_model = Some(correlated_error_model);
+                                    }
+                                },
+                                GateType::Control => {  // this is ancilla in XZZX code, see arXiv:2104.09539v1
+                                    let correlated_error_model = CorrelatedErrorModel::default_with_probability(p / 15.);
+                                    correlated_error_model.sanity_check();
+                                    node.correlated_error_model = Some(correlated_error_model);
+                                },
+                                _ => { }
+                            }
+                        },
+                        Stage::Measurement => {
+                            // idle gate on data qubits
+                            if node.qubit_type == QubitType::Data {
+                                node.error_rate_x = p / 3.;
+                                node.error_rate_z = p / 3.;
+                                node.error_rate_y = p / 3.;
+                            }
+                        },
                     }
                 });
             },

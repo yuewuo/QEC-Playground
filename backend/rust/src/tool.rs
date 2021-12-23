@@ -115,6 +115,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let decoder_type = DecoderType::from(value_t!(matches, "decoder", String).unwrap_or("MWPM".to_string()));
             let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
             let use_combined_probability = matches.is_present("use_combined_probability");
+            let autotune_minus_no_error = matches.is_present("autotune_minus_no_error");
             let error_model = value_t!(matches, "error_model", String).ok().map(|x| ErrorModel::from(x));
             let error_model_configuration: Option<serde_json::Value> = value_t!(matches, "error_model_configuration", String).ok().and_then(|config| {
                 Some(serde_json::from_str(config.as_str()).expect("error_model_configuration must be a json object"))
@@ -140,7 +141,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight
-                , use_combined_probability, error_model, error_model_configuration, no_stop_if_next_model_is_not_prepared, log_runtime_statistics
+                , use_combined_probability, autotune_minus_no_error, error_model, error_model_configuration, no_stop_if_next_model_is_not_prepared, log_runtime_statistics
                 , detailed_runtime_statistics, log_error_pattern_into_statistics_when_has_logical_error, time_budget, use_fast_benchmark
                 , fbench_disable_additional_error, fbench_use_fake_decoder, fbench_use_simple_sum, fbench_assignment_sampling_amount
                 , fbench_weighted_path_sampling, fbench_weighted_assignment_sampling, fbench_target_dev, rug_precision, disable_optimize_correction_pattern
@@ -543,9 +544,9 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , parallel: usize, validate_layer: String, mini_sync_time: f64, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool
         , extra_measurement_error: f64, bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, only_count_logical_z: bool
         , perfect_initialization: bool, shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType
-        , max_half_weight: usize, use_combined_probability: bool, error_model: Option<ErrorModel>, error_model_configuration: Option<serde_json::Value>
-        , no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>, detailed_runtime_statistics: bool
-        , log_error_pattern_into_statistics_when_has_logical_error: bool, time_budget: Option<f64>, use_fast_benchmark: bool
+        , max_half_weight: usize, use_combined_probability: bool, autotune_minus_no_error: bool, error_model: Option<ErrorModel>
+        , error_model_configuration: Option<serde_json::Value>, no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>
+        , detailed_runtime_statistics: bool, log_error_pattern_into_statistics_when_has_logical_error: bool, time_budget: Option<f64>, use_fast_benchmark: bool
         , fbench_disable_additional_error: bool, fbench_use_fake_decoder: bool, fbench_use_simple_sum: bool, fbench_assignment_sampling_amount: usize
         , fbench_weighted_path_sampling: bool, fbench_weighted_assignment_sampling: bool, fbench_target_dev: f64, rug_precision: u32
         , disable_optimize_correction_pattern: bool, debug_print_only: bool, debug_print_direct_connections: bool, debug_print_exhausted_connections: bool) {
@@ -584,6 +585,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         "decoder_type": format!("{:?}", decoder_type),
         "max_half_weight": max_half_weight,
         "use_combined_probability": use_combined_probability,
+        "autotune_minus_no_error": autotune_minus_no_error,
         "error_model": format!("{:?}", error_model),
         "no_stop_if_next_model_is_not_prepared": no_stop_if_next_model_is_not_prepared,
         "detailed_runtime_statistics": detailed_runtime_statistics,
@@ -720,7 +722,11 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         }
         if !bypass_correction {
             if autotune {
-                model.build_exhausted_path_autotune();
+                if autotune_minus_no_error {
+                    model.build_exhausted_path_autotune_minus_no_error();
+                } else {
+                    model.build_exhausted_path_autotune();
+                }
             } else {
                 model.build_exhausted_path_equally_weighted();
             }

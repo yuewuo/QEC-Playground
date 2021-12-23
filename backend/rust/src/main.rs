@@ -148,6 +148,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg decoder: --decoder +takes_value "supported decoders: MWPM=MinimumWeightPerfectMatching, UF=UnionFind")
                 (@arg max_half_weight: --max_half_weight +takes_value "[UnionFind decoder only] maximum weight will be 2 * max_half_weight")
                 (@arg use_combined_probability: --use_combined_probability "use combined probability of matching pairs instead of choosing the maximum probability")
+                (@arg autotune_minus_no_error: --autotune_minus_no_error "use ln((1-p)/p) as weight instead of the default ln(1/p)")
                 (@arg error_model: --error_model +takes_value "possible error models see types::ErrorModel")
                 (@arg error_model_configuration: --error_model_configuration +takes_value "a json object describing the error model details")
                 (@arg no_stop_if_next_model_is_not_prepared: -s --no_stop_if_next_model_is_not_prepared "in rough experiment (e.g. estimate the threshold by testing multiple (di,dj,T) configurations) you can use this option to avoid wasting CPU time, as it will not stop current experiment if the model of next experiment is not prepared. Note that you should keep #threads + 1 <= #CPU because the additional thread is for computing the next model")

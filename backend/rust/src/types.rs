@@ -279,6 +279,17 @@ pub enum QubitType {
     StabXZZXLogicalZ,
 }
 
+impl QubitType {
+    /// if measure in Z basis, it's prepared in |0> state, otherwise it's measuring X basis and prepared in |+> state; data qubit will return None
+    pub fn is_measured_in_z_basis(&self) -> Option<bool> {
+        match self {
+            Self::Data => None,
+            Self::StabZ => Some(true),
+            Self::StabX | Self::StabXZZXLogicalX | Self::StabXZZXLogicalZ => Some(false),
+        }
+    }
+}
+
 /// Error type, corresponds to `ETYPE` in `FaultTolerantView.vue`
 #[derive(Debug, PartialEq, Clone)]
 pub enum ErrorType {
@@ -613,6 +624,7 @@ pub enum ErrorModel {
     PauliZandErasurePhenomenological,  // this error model is from https://arxiv.org/pdf/1709.06218v3.pdf
     OnlyGateErrorCircuitLevel,  // errors happen at 4 stages in each measurement round (although removed errors happening at initialization and measurement stage, measurement errors can still occur when curtain error applies on the ancilla after the last gate)
     OnlyGateErrorCircuitLevelCorrelatedErasure,  // the same as `OnlyGateErrorCircuitLevel`, just the erasures are correlated
+    Arxiv200404693,  // Huang 2020 paper https://arxiv.org/pdf/2004.04693.pdf (note that periodic boundary condition is currently not supported)
 }
 
 impl From<String> for ErrorModel {
@@ -624,6 +636,7 @@ impl From<String> for ErrorModel {
             "PauliZandErasurePhenomenological" => Self::PauliZandErasurePhenomenological,
             "OnlyGateErrorCircuitLevel" => Self::OnlyGateErrorCircuitLevel,
             "OnlyGateErrorCircuitLevelCorrelatedErasure" => Self::OnlyGateErrorCircuitLevelCorrelatedErasure,
+            "Arxiv200404693" => Self::Arxiv200404693,
             _ => panic!("unrecognized error model"),
         }
     }
@@ -638,6 +651,7 @@ impl std::fmt::Display for ErrorModel {
             Self::PauliZandErasurePhenomenological => "PauliZandErasurePhenomenological",
             Self::OnlyGateErrorCircuitLevel => "OnlyGateErrorCircuitLevel",
             Self::OnlyGateErrorCircuitLevelCorrelatedErasure => "OnlyGateErrorCircuitLevelCorrelatedErasure",
+            Self::Arxiv200404693 => "Arxiv200404693",
         })?;
         Ok(())
     }
