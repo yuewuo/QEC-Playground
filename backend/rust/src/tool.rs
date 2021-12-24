@@ -706,12 +706,14 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             },
             None => { }
         }
-        let mut fast_benchmark = model.build_graph(weight_function);
-        fast_benchmark.assignment_sampling_amount = fbench_assignment_sampling_amount;
-        fast_benchmark.use_weighted_path_sampling = fbench_weighted_path_sampling;
-        fast_benchmark.use_weighted_assignment_sampling = fbench_weighted_assignment_sampling;
-        fast_benchmark.use_simple_sum = fbench_use_simple_sum;
-        fast_benchmark.prepare();
+        let mut fast_benchmark = model.build_graph_fast_benchmark(weight_function, use_fast_benchmark);
+        if use_fast_benchmark {
+            fast_benchmark.as_mut().unwrap().assignment_sampling_amount = fbench_assignment_sampling_amount;
+            fast_benchmark.as_mut().unwrap().use_weighted_path_sampling = fbench_weighted_path_sampling;
+            fast_benchmark.as_mut().unwrap().use_weighted_assignment_sampling = fbench_weighted_assignment_sampling;
+            fast_benchmark.as_mut().unwrap().use_simple_sum = fbench_use_simple_sum;
+            fast_benchmark.as_mut().unwrap().prepare();
+        }
         if ignore_6_neighbors {
             model.iterate_snapshot_mut(|t, i, j, node| {
                 if node.edges.len() == 12 {
@@ -950,7 +952,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                             if use_fast_benchmark {
                                 if fbench_use_fake_decoder {
                                     // fast_benchmark.benchmark_once(&mut rng_fast_benchmark, ...);
-                                    fast_benchmark.benchmark_random_starting_node(&mut rng_fast_benchmark, |errors, clearance_region, string_d| {
+                                    fast_benchmark.as_mut().unwrap().benchmark_random_starting_node(&mut rng_fast_benchmark, |errors, clearance_region, string_d| {
                                         mini_batch += 1;
                                         let count_as_error = fast_benchmark::fake_decoding(errors, clearance_region, string_d);
                                         if count_as_error {
@@ -960,7 +962,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                                     });  // is same as benchmark_once statistically but gives output quickly
                                 } else {
                                     // fast_benchmark.benchmark_once(&mut rng_fast_benchmark, decode_and_update);
-                                    fast_benchmark.benchmark_random_starting_node(&mut rng_fast_benchmark, decode_and_update);  // is same as benchmark_once statistically but gives output quickly
+                                    fast_benchmark.as_mut().unwrap().benchmark_random_starting_node(&mut rng_fast_benchmark, decode_and_update);  // is same as benchmark_once statistically but gives output quickly
                                 }
                             } else {
                                 decode_and_update(Vec::new(), &BTreeSet::new(), 0);
@@ -982,7 +984,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                         };
                         if use_fast_benchmark {
                             let mut fast_benchmark_results = fast_benchmark_results.lock().unwrap();
-                            fast_benchmark_results[parallel_idx] = (fast_benchmark.logical_error_rate(), true);
+                            fast_benchmark_results[parallel_idx] = (fast_benchmark.as_mut().unwrap().logical_error_rate(), true);
                         }
                         keep_running_next_model_not_prepared = if no_stop_if_next_model_is_not_prepared {
                             i + 1 < configurations_len && precomputed_model.lock().unwrap().is_none()

@@ -1124,8 +1124,17 @@ impl PlanarCodeModel {
         (sparse_correction, measurement_errors)
     }
     /// corresponds to `build_graph_given_error_rate` in `FaultTolerantView.vue`
-    pub fn build_graph<F>(&mut self, weight_of: F) -> FastBenchmark where F: Fn(f64) -> f64 + Copy {
-        let mut fast_benchmark = FastBenchmark::new(&self);
+    pub fn build_graph<F>(&mut self, weight_of: F) where F: Fn(f64) -> f64 + Copy {
+        self.build_graph_fast_benchmark(weight_of, false);
+    }
+    pub fn build_graph_with_fast_benchmark<F>(&mut self, weight_of: F) -> FastBenchmark where F: Fn(f64) -> f64 + Copy {
+        self.build_graph_fast_benchmark(weight_of, true).unwrap()
+    }
+    pub fn build_graph_fast_benchmark<F>(&mut self, weight_of: F, build_fast_benchmark: bool) -> Option<FastBenchmark> where F: Fn(f64) -> f64 + Copy {
+        let mut fast_benchmark = None;
+        if build_fast_benchmark {
+            fast_benchmark = Some(FastBenchmark::new(&self));
+        }
         let mut all_possible_errors: Vec<Either<ErrorType, CorrelatedErrorType>> = Vec::new();
         for error_type in ErrorType::all_possible_errors().drain(..) {
             all_possible_errors.push(Either::Left(error_type));
@@ -1288,23 +1297,25 @@ impl PlanarCodeModel {
                                         }
                                         erasure_error_rate
                                     };
-                                    for group in [group_1, group_2].iter() {
-                                        if group.len() == 1 {
-                                            let (t1, i1, j1) = group[0];
-                                            if p > 0. {
-                                                fast_benchmark.add_possible_boundary(t1, i1, j1, p, t, i, j, Either::Left(error.clone()));
-                                            }
-                                            if is_erasure && joint_erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
-                                                fast_benchmark.add_possible_boundary(t1, i1, j1, joint_erasure_error_rate, t, i, j, Either::Right(()));
-                                            }
-                                        } else if group.len() == 2 {
-                                            let (t1, i1, j1) = group[0];
-                                            let (t2, i2, j2) = group[1];
-                                            if p > 0. {
-                                                fast_benchmark.add_possible_match(t1, i1, j1, t2, i2, j2, p, t, i, j, Either::Left(error.clone()));
-                                            }
-                                            if is_erasure && joint_erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
-                                                fast_benchmark.add_possible_match(t1, i1, j1, t2, i2, j2, joint_erasure_error_rate, t, i, j, Either::Right(()));
+                                    if build_fast_benchmark {
+                                        for group in [group_1, group_2].iter() {
+                                            if group.len() == 1 {
+                                                let (t1, i1, j1) = group[0];
+                                                if p > 0. {
+                                                    fast_benchmark.as_mut().unwrap().add_possible_boundary(t1, i1, j1, p, t, i, j, Either::Left(error.clone()));
+                                                }
+                                                if is_erasure && joint_erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
+                                                    fast_benchmark.as_mut().unwrap().add_possible_boundary(t1, i1, j1, joint_erasure_error_rate, t, i, j, Either::Right(()));
+                                                }
+                                            } else if group.len() == 2 {
+                                                let (t1, i1, j1) = group[0];
+                                                let (t2, i2, j2) = group[1];
+                                                if p > 0. {
+                                                    fast_benchmark.as_mut().unwrap().add_possible_match(t1, i1, j1, t2, i2, j2, p, t, i, j, Either::Left(error.clone()));
+                                                }
+                                                if is_erasure && joint_erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
+                                                    fast_benchmark.as_mut().unwrap().add_possible_match(t1, i1, j1, t2, i2, j2, joint_erasure_error_rate, t, i, j, Either::Right(()));
+                                                }
                                             }
                                         }
                                     }
