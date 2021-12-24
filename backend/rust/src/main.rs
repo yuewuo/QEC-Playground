@@ -38,7 +38,7 @@ extern crate either;
 extern crate rug;
 extern crate shlex;
 
-fn create_clap_parser(color_setting: clap::AppSettings) -> clap::App<'static, 'static> {
+fn create_clap_parser<'a, 'b>(color_setting: clap::AppSettings) -> clap::App<'a, 'b> {
     clap_app!(QECPlayground =>
         (version: "1.1")
         (author: "Yue Wu (yue.wu@yale.edu), Namitha Liyanage (namitha.liyanage@yale.edu)")
