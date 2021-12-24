@@ -27,6 +27,7 @@ pub async fn run_server(port: i32, addr: String, root_url: String) -> std::io::R
                     .route("/hello", web::get().to(|| { HttpResponse::Ok().body("hello world") }))
                     .route("/naive_decoder", web::post().to(naive_decoder))
                     .route("/MWPM_decoder", web::post().to(maximum_max_weight_matching_decoder))
+                    .route("/view_error_model", web::get().to(view_error_model))
             )
         }).bind(format!("{}:{}", addr, port))?.run().await
 }
@@ -158,4 +159,47 @@ async fn maximum_max_weight_matching_decoder(form: web::Json<DecodeSingleForm>) 
         "if_all_z_stabilizers_plus1": if_all_z_stabilizers_plus1,
     });
     Ok(HttpResponse::Ok().body(serde_json::to_string(&ret)?))
+}
+
+fn default_probability() -> f64 {
+    0.
+}
+
+#[derive(Deserialize)]
+struct ViewErrorModelQuery {
+    parameters: String,
+    #[serde(default = "default_probability")]
+    p: f64,
+    #[serde(default = "default_probability")]
+    pe: f64,
+}
+
+/// call `tool fault_tolerant_benchmark` with code distance 5x5x5
+#[cfg(not(feature="noserver"))]
+async fn view_error_model(info: web::Query<ViewErrorModelQuery>) -> Result<HttpResponse, Error> {
+    let di = 5;
+    let dj = di;
+    let T = di;
+    let mut tokens = vec![format!("rust_qecp"), format!("tool"), format!("fault_tolerant_benchmark")
+        , format!("--debug_print_only"), format!("--debug_print_error_model")
+        , format!("[{}]", di), format!("--djs"), format!("[{}]", dj)
+        , format!("[{}]", T), format!("[{}]", info.p), format!("--pes"), format!("[{}]", info.pe)];
+    tokens.append(&mut match super::shlex::split(&info.parameters) {
+        Some(mut t) => t,
+        None => {
+            return Ok(HttpResponse::BadRequest().body(format!("building tokens from parameters failed")))
+        }
+    });
+    // println!("full_command: {:?}", tokens);
+    let matches = match super::create_clap_parser(clap::AppSettings::ColorNever).get_matches_from_safe(tokens) {
+        Ok(matches) => matches,
+        Err(error) => { return Ok(HttpResponse::BadRequest().body(error.message)) }
+    };
+    let output = match matches.subcommand() {
+        ("tool", Some(matches)) => {
+            super::tool::run_matched_tool(&matches).expect("fault_tolerant_benchmark always gives output")
+        }
+        _ => unreachable!()
+    };
+    Ok(HttpResponse::Ok().body(output))
 }

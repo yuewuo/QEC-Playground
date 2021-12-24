@@ -31,7 +31,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
 
-pub fn run_matched_tool(matches: &clap::ArgMatches) {
+pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
         ("generate_random_errors", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -138,14 +138,15 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
             let debug_print_only = matches.is_present("debug_print_only");
             let debug_print_direct_connections = matches.is_present("debug_print_direct_connections");
             let debug_print_exhausted_connections = matches.is_present("debug_print_exhausted_connections");
-            fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
+            let debug_print_error_model = matches.is_present("debug_print_error_model");
+            return Some(fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight
                 , use_combined_probability, autotune_minus_no_error, error_model, error_model_configuration, no_stop_if_next_model_is_not_prepared, log_runtime_statistics
                 , detailed_runtime_statistics, log_error_pattern_into_statistics_when_has_logical_error, time_budget, use_fast_benchmark
                 , fbench_disable_additional_error, fbench_use_fake_decoder, fbench_use_simple_sum, fbench_assignment_sampling_amount
                 , fbench_weighted_path_sampling, fbench_weighted_assignment_sampling, fbench_target_dev, rug_precision, disable_optimize_correction_pattern
-                , debug_print_only, debug_print_direct_connections, debug_print_exhausted_connections);
+                , debug_print_only, debug_print_direct_connections, debug_print_exhausted_connections, debug_print_error_model));
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -240,6 +241,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) {
         }
         _ => unreachable!()
     }
+    None
 }
 
 /**
@@ -549,7 +551,9 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , detailed_runtime_statistics: bool, log_error_pattern_into_statistics_when_has_logical_error: bool, time_budget: Option<f64>, use_fast_benchmark: bool
         , fbench_disable_additional_error: bool, fbench_use_fake_decoder: bool, fbench_use_simple_sum: bool, fbench_assignment_sampling_amount: usize
         , fbench_weighted_path_sampling: bool, fbench_weighted_assignment_sampling: bool, fbench_target_dev: f64, rug_precision: u32
-        , disable_optimize_correction_pattern: bool, debug_print_only: bool, debug_print_direct_connections: bool, debug_print_exhausted_connections: bool) {
+        , disable_optimize_correction_pattern: bool, debug_print_only: bool, debug_print_direct_connections: bool, debug_print_exhausted_connections: bool
+        , debug_print_error_model: bool) -> String {
+    let mut output = format!("");  // empty output string
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
@@ -729,7 +733,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         if !disable_optimize_correction_pattern {
             model.optimize_correction_pattern();
         }
-        if !bypass_correction {
+        if !bypass_correction && !debug_print_error_model {
             model.build_exhausted_path();
         }
         (model, model_error, fast_benchmark)
@@ -759,6 +763,9 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         let (model, model_error, fast_benchmark) = {  // must already prepared the model, and will take the value out of `precomputed_model`
             precomputed_model.lock().unwrap().take().expect("already prepared the model")
         };
+        if debug_print_error_model {
+            output += &format!("{}\n", serde_json::to_string(&model).expect("serialize should success"));
+        }
         if debug_print_direct_connections {
             model.print_direct_connections();
         }
@@ -1107,6 +1114,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             }
         }
     }
+    output
 }
 
 fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize

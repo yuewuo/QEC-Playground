@@ -36,14 +36,14 @@ extern crate derive_more;
 extern crate lazy_static;
 extern crate either;
 extern crate rug;
+extern crate shlex;
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-
-    let matches = clap_app!(QECPlayground =>
+fn create_clap_parser(color_setting: clap::AppSettings) -> clap::App<'static, 'static> {
+    clap_app!(QECPlayground =>
         (version: "1.1")
         (author: "Yue Wu (yue.wu@yale.edu), Namitha Liyanage (namitha.liyanage@yale.edu)")
         (setting: clap::AppSettings::VersionlessSubcommands)
+        (setting: color_setting)
         (about: "Quantum Error Correction Playground")
         (setting: clap::AppSettings::SubcommandRequiredElseHelp)
         (@subcommand test => (about: "testing features")
@@ -170,6 +170,7 @@ async fn main() -> std::io::Result<()> {
                 (@arg debug_print_only: --debug_print_only "only print requested information without running the benchmark")
                 (@arg debug_print_direct_connections: --debug_print_direct_connections "print direct connections, or model graph in our paper https://www.yecl.org/publications/wu2022qec.pdf")
                 (@arg debug_print_exhausted_connections: --debug_print_exhausted_connections "print exhausted connections, or complete model graph in our paper https://www.yecl.org/publications/wu2022qec.pdf")
+                (@arg debug_print_error_model: --debug_print_error_model "print error model, without building the exhausted graph")
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")
@@ -260,14 +261,24 @@ async fn main() -> std::io::Result<()> {
             (@arg addr: -a --addr +takes_value "listening on <addr>:<port>, default to \"127.0.0.1\"")
             (@arg root_url: -r --root_url +takes_value "root url")
         )
-    ).get_matches();
+    )
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+
+    let matches = create_clap_parser(clap::AppSettings::ColorAuto).get_matches();
 
     match matches.subcommand() {
         ("test", Some(matches)) => {
             test::run_matched_test(&matches);
         }
         ("tool", Some(matches)) => {
-            tool::run_matched_tool(&matches);
+            let output = tool::run_matched_tool(&matches);
+            match output {
+                Some(to_print) => { print!("{}", to_print); }
+                None => { }
+            }
         }
         ("server", Some(matches)) => {
             let port = matches.value_of("port").unwrap_or("8066").to_string().parse::<i32>().unwrap();

@@ -2,6 +2,7 @@
 
 use super::ndarray;
 use std::ops::{Deref, DerefMut};
+use serde::Serialize;
 
 #[derive(Debug, Clone)]
 #[derive(PartialEq)]
@@ -270,7 +271,7 @@ pub fn validate_z_correction(z_error: &ZxError, z_correction: &ZxCorrection) -> 
 }
 
 /// Qubit type, corresponds to `QTYPE` in `FaultTolerantView.vue`
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub enum QubitType {
     Data,
     StabX,
@@ -408,7 +409,7 @@ impl std::fmt::Display for CorrelatedErrorType {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub struct CorrelatedErrorModel {
     pub error_rate_IX: f64,
     pub error_rate_IZ: f64,
@@ -546,7 +547,7 @@ impl CorrelatedErasureErrorType {
     // }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub struct CorrelatedErasureErrorModel {
     pub error_rate_IE: f64,
     pub error_rate_EI: f64,
