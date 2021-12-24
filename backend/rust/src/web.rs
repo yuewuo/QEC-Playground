@@ -165,8 +165,13 @@ fn default_probability() -> f64 {
     0.
 }
 
+fn default_parameters() -> String {
+    format!("")
+}
+
 #[derive(Deserialize)]
 struct ViewErrorModelQuery {
+    #[serde(default = "default_parameters")]
     parameters: String,
     #[serde(default = "default_probability")]
     p: f64,
