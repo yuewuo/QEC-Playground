@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=QEC-Playground=12-01-2021=21:55:54
+#SBATCH --job-name=QEC-Playground=12-24-2021=03:03:25
 #SBATCH --time=2:00:00
 #SBATCH --mem=24G
 #SBATCH --mail-type=ALL
@@ -9,6 +9,8 @@
 #SBATCH --array=0-125
 #SBATCH --out="/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/benchmark/union_find_decoder/atomic_qubit_model/pauli_only_circuit_level/slurm_jobs/%a.jobout"
 #SBATCH --error="/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/benchmark/union_find_decoder/atomic_qubit_model/pauli_only_circuit_level/slurm_jobs/%a.joberror"
+#SBATCH --requeue
+#SBATCH --partition=scavenge
 
 if [ "$SLURM_ARRAY_TASK_ID" == "0" ]; then /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[5.00000000e-01]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.00000000e+00]' || exit 91; fi
 if [ "$SLURM_ARRAY_TASK_ID" == "1" ]; then /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[3.15478672e-01]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.00000000e+00]' || exit 91; fi
