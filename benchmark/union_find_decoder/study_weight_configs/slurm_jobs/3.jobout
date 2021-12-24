@@ -1,0 +1,154 @@
+run_specific_idx: 3
+rough threshold estimation:
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [5.47722558e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00547722558 11 11 198974 3023 0.015192939781076924 11 3.5e-2 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [5.47722558e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00547722558 15 15 357131 2691 0.007535050163665433 15 3.8e-2 0
+
+[0.001, 0.03] searching_p = 0.005477225575051661 [1] 0.015192939781076924(0.035) [2] 0.007535050163665433(0.038)
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [1.28186102e-02] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.0128186102 11 11 4938 3160 0.639935196435804 11 2.1e-2 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [8.37916580e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.0083791658 11 11 16971 3128 0.18431441871427728 11 3.2e-2 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [8.37916580e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.0083791658 15 15 13993 3007 0.21489316086614735 15 3.2e-2 0
+
+[0.005477225575051661, 0.012818610191887021] searching_p = 0.008379165804519056 [1] 0.18431441871427728(0.032) [2] 0.21489316086614735(0.032)
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [6.77455395e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00677455395 11 11 54398 3062 0.05628883414831427 11 3.4e-2 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [6.77455395e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00677455395 15 15 62331 3010 0.04829057772216072 15 3.5e-2 0
+
+[0.005477225575051661, 0.008379165804519056] searching_p = 0.006774553951524049 [1] 0.05628883414831427(0.034) [2] 0.04829057772216072(0.035)
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [7.53426246e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00753426246 11 11 29922 3073 0.10270035425439476 11 3.3e-2 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [7.53426246e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00753426246 15 15 27910 3007 0.10773916159082766 15 3.4e-2 0
+
+[0.006774553951524049, 0.008379165804519056] searching_p = 0.007534262459689054 [1] 0.10270035425439476(0.033) [2] 0.10773916159082766(0.034)
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [7.14431715e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00714431715 11 11 39375 3074 0.07806984126984128 11 3.4e-2 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [7.14431715e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00714431715 15 15 41250 3007 0.0728969696969697 15 3.4e-2 0
+
+[0.006774553951524049, 0.007534262459689054] searching_p = 0.007144317148482826 [1] 0.07806984126984128(0.034) [2] 0.0728969696969697(0.034)
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [7.33669956e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00733669956 11 11 35104 3085 0.08788172288058341 11 3.4e-2 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [7.33669956e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00733669956 15 15 33634 3008 0.0894333115299994 15 3.4e-2 0
+
+[0.007144317148482826, 0.007534262459689054] searching_p = 0.007336699563967909 [1] 0.08788172288058341(0.034) [2] 0.0894333115299994(0.034)
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [7.23986937e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00723986937 11 11 36305 3066 0.08445117752375705 11 3.4e-2 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [7.23986937e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00723986937 15 15 37678 3011 0.07991400817453155 15 3.4e-2 0
+
+[0.007144317148482826, 0.007336699563967909] searching_p = 0.007239869370929451 [1] 0.08445117752375705(0.034) [2] 0.07991400817453155(0.034)
+rough_estimation: 0.007288123658177235
+accurate threshold estimation: [0.007145219272722779, 0.00721631773305436, 0.007288123658177235, 0.007360644087715447, 0.007433886131340781]
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e1000000 [7.14521927e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00714521927 11 11 1000924 78029 0.0779569677617881 11 6.7e-3 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e1000000 [7.14521927e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00714521927 15 15 123093 8751 0.07109258853062318 15 2.0e-2 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e1000000 [7.21631773e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00721631773 11 11 1000886 82447 0.08237401662127355 11 6.5e-3 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e1000000 [7.21631773e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00721631773 15 15 115737 8985 0.07763290909562197 15 2.0e-2 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e1000000 [7.28812366e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00728812366 11 11 1000900 86997 0.08691877310420622 11 6.3e-3 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e1000000 [7.28812366e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00728812366 15 15 114436 9580 0.08371491488692369 15 1.9e-2 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e1000000 [7.36064409e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00736064409 11 11 1000866 91981 0.09190141337601637 11 6.2e-3 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e1000000 [7.36064409e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00736064409 15 15 100204 9019 0.09000638697058001 15 2.0e-2 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e1000000 [7.43388613e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00743388613 11 11 1000813 97107 0.0970281161415769 11 6.0e-3 0
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e1000000 [7.43388613e-03] -p36 --time_budget 1000.0 --error_model Arxiv200404693 --error_model_configuration {"use_nature_initialization_error":false,"use_nature_measurement_error":false} --autotune_minus_no_error --use_combined_probability
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00743388613 15 15 103646 10060 0.09706115045443144 15 1.9e-2 0
+
+configuration 1:
+0.00714521927 11 11 1000924 78029 0.0779569677617881 11 6.7e-3 0
+0.00721631773 11 11 1000886 82447 0.08237401662127355 11 6.5e-3 0
+0.00728812366 11 11 1000900 86997 0.08691877310420622 11 6.3e-3 0
+0.00736064409 11 11 1000866 91981 0.09190141337601637 11 6.2e-3 0
+0.00743388613 11 11 1000813 97107 0.0970281161415769 11 6.0e-3 0
+configuration 2:
+0.00714521927 15 15 123093 8751 0.07109258853062318 15 2.0e-2 0
+0.00721631773 15 15 115737 8985 0.07763290909562197 15 2.0e-2 0
+0.00728812366 15 15 114436 9580 0.08371491488692369 15 1.9e-2 0
+0.00736064409 15 15 100204 9019 0.09000638697058001 15 2.0e-2 0
+0.00743388613 15 15 103646 10060 0.09706115045443144 15 1.9e-2 0
+pair: [(11, 11, 11), (15, 15, 15)]
+parameters: ['-p36', '--time_budget', '1000.0', '--error_model', 'Arxiv200404693', '--error_model_configuration', '{"use_nature_initialization_error":false,"use_nature_measurement_error":false}', '--decoder', 'UF', '--max_half_weight', '20', '--no_autotune', '--autotune_minus_no_error', '--use_combined_probability']
+threshold = 0.0074273138612917676
+relative_confidence_interval = 0.007151497510385921
+UF_decoder, no_autotune, autotune_minus_no_error, use_combined_probability, use_nature_initialization_error, use_nature_measurement_error = (False, False, True, True, False, False)
+3 0.0074273138612917676 0.007151497510385921

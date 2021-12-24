@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=QEC-Playground=11-30-2021=17:46:41
+#SBATCH --job-name=QEC-Playground=12-23-2021=19:24:19
 #SBATCH --time=24:00:00
 #SBATCH --mem=16G
 #SBATCH --mail-type=ALL
