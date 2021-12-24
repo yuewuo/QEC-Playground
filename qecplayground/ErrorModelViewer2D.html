@@ -5,16 +5,263 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Error Model Viewer 2D</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
 </head>
+<style>
+.abs {
+    position: absolute;
+}
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    font-family: courier, serif;
+}
+p {
+    margin: 0;
+}
+.el-slider__runway {
+    margin: 0 !important;
+}
+.el-slider__stop {
+    background-color: rgb(202, 202, 202) !important;
+}
+textarea {
+    line-height: 1.5;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    box-shadow: 1px 1px 1px #999;
+    word-break: break-all;
+}
+.qubit:hover {
+    background-color: rgb(255, 145, 0) !important;
+}
+</style>
 <body>
 
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<div id="app" style="width: 100%; height: 100%;">
+    <div class="abs" style="background-color: white" :style="{ width: main_width+'px', height: main_height+'px', left: ((window_width-main_width)/2)+'px', top: ((window_height-main_height)/2)+'px' }">
+        <div v-if="!data_ready" class="abs" style="background-color: rgb(253, 204, 204); text-align: center;" :style="{ width: main_height+'px', height: main_height+'px', 'line-height': main_height+'px', left: 0, top: 0, 'font-size': (70*scale)+'px' }">Loading...</div>
+        <div v-if="data_ready" class="abs" :style="{ width: main_height+'px', height: main_height+'px', left: 0, top: 0 }">
+            <div class="abs" style="width: 100%; height: 100%; top: 0; left: 0" @click="select_node(null)"></div>
+            <div v-for="(item, i) in data.snapshot[t]">
+                <div v-for="(node, j) in data.snapshot[t][i]">
+                    <div class="abs qubit" style="border-radius: 100%;" :style="{ 'background-color': qubit_color(node), width: (qubit_radius*2)+'px', height: (qubit_radius*2)+'px', left: pos(i)+'px', top: pos(j)+'px' }"
+                        @click="select_node(node)"></div>
+                </div>
+            </div>
+        </div>
+        <div class="abs" style="background-color: white;" :style="{ width: (main_height*0.05)+'px', height: main_height+'px', left: main_height+'px', top: 0 }">
+            <el-slider v-model="t" vertical :height="(main_height*0.96)+'px'" :min="0" :max="42" :step="1" :show-stops="true" :style="{ margin: `${20*scale}px 0 0 ${25*scale}px` }" :marks="marks"></el-slider>
+        </div>
+        <div class="abs" style="background-color: rgba(0, 0, 255, 0.199);right: 0; top: 0;" :style="{ width: (main_width-main_height*1.15)+'px', height: main_height+'px' }">
+            <div :style="{ margin: (20*scale)+'px', 'font-size': (22*scale)+'px' }">
+                <p style="font-size: 160%; font-weight: bold;">Error Model<span v-if="data_ready" style="font-weight: normal;"> ({{ data.code_type }})</span></p>
+                <p style="font-size: 100%; max-width: 100%;" :style="{ 'margin-top': (20*scale)+'px' }">parameters: \( d_i = d_j = T = \;\){{consts.di}}, \( p_{\small\text{Pauli}} = \;\){{consts.p}}, \(p_{\small\text{erasure}} = \;\){{consts.pe}}</p>
+                <textarea readonly style="width: 95%; resize: none;" :style="{ padding: (10*scale)+'px', 'margin-top': (10*scale)+'px', 'font-size': (15*scale)+'px' }" id="story" name="story" rows="4">{{ full_parameters }}</textarea>
+                <div v-if="data_ready" v-show="selected != null">
+                    <div v-for="node of [data.snapshot[t][si][sj]]">
+                        <p style="font-size: 150%; font-weight: bold;" :style="{ 'margin-top': (20*scale)+'px' }">Selected [t][i][j] = [{{t}}][{{si}}][{{sj}}]</p>
+                        <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (20*scale)+'px' }">Qubit Type: {{ node.qubit_type }}</p>
+                        <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (20*scale)+'px' }">Single-Qubit Pauli Error: 
+                            <span :style="{ color: node.error_rate_x > 0 ? non_zero_color : zero_color }">\( p_X = \;\){{ node.error_rate_x }}</span>, 
+                            <span :style="{ color: node.error_rate_z > 0 ? non_zero_color : zero_color }">\( p_Z = \;\){{ node.error_rate_z }}</span>, 
+                            <span :style="{ color: node.error_rate_y > 0 ? non_zero_color : zero_color }">\( p_Y = \;\){{ node.error_rate_y }}</span></p>
+                        <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (20*scale)+'px' }">Single-Qubit Erasure Error: 
+                            <span :style="{ color: node.erasure_error_rate > 0 ? non_zero_color : zero_color }">\( p_{\small\text{erasure}} = \;\){{ node.erasure_error_rate }}</span></p>
+                        <div v-show="node.connection != null">
+                            <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (20*scale)+'px' }">Peer Qubit: [{{(node.connection||{})["t"]}}][{{(node.connection||{})["i"]}}][{{(node.connection||{})["j"]}}]</p>
+                            <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (20*scale)+'px' }">Two-Qubit Pauli Error:</p>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="selected == null">
+                    <p style="font-size: 100%; font-weight: bold; color: blue;" :style="{ 'margin-top': (20*scale)+'px' }">👈 Click qubit on the left to view error model</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- TODO: remove debug data -->
+<script src="./ErrorModelViewerDebugData.js"></script>
 
 <script>
 
+// const base_url = "https://qec.wuyue98.cn/api/view_error_model"
+const base_url = "http://127.0.0.1:8066/view_error_model"  // start local server using `cargo run -- server`
+
 // debug url: ?p=0.01&pe=0.05&parameters=--use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration "{\"use_correlated_pauli\":true}"
-function get_error_model_data() {
-    let url = "https://qec.wuyue98.cn/" + window.location.search
+async function get_error_model_data() {
+
+    // TODO: remove debug data
+    return debug_data
+
+
+    const url = base_url + window.location.search
+    // console.log(url)
+    const response = await axios.get(url)
+    return response.data
 }
+
+const di = 5
+
+const urlParams = new URLSearchParams(window.location.search)
+const p = parseFloat(urlParams.get('p') || 0)
+const pe = parseFloat(urlParams.get('pe') || 0)
+const parameters = urlParams.get('parameters') || ""
+const full_parameters = `[${di}] --djs [${di}] [${di}] [${p}] --pes [${pe}] ${parameters}`
+
+function create_marks(scale=1) {
+    let marks = {}
+    let make_mark = (name, color='grey', font_weight="normal") => {
+        return {
+            style: {
+                color: color,
+                'font-size': `${25*scale}px`,
+                'font-weight': font_weight,
+            },
+            label: name
+        }
+    }
+    marks[0] = make_mark(`time`, color="black")
+    for (let mt = 0; mt <= di; mt++) {
+        const t = 6 * (mt + 2)
+        marks[t] = make_mark(`meas${mt}`, color="#1989FA", font_weight="bold")
+        marks[t-1] = make_mark(`gate4`)
+        marks[t-2] = make_mark(`gate3`)
+        marks[t-3] = make_mark(`gate2`)
+        marks[t-4] = make_mark(`gate1`)
+        marks[t-5] = make_mark(`init`)
+    }
+    return marks
+}
+
+var app = new Vue({
+    el: '#app',
+    data: function() {
+        return {
+            window_width: 0,
+            window_height: 0,
+            main_width: 0,
+            main_height: 0,
+            scale: 1,
+            data_ready: false,
+            t: 20,
+            marks: create_marks(),
+            full_parameters: full_parameters,
+            consts: {
+                di: di,
+                p: p,
+                pe: pe,
+            },
+            selected: [4, 3],  // TODO: set to null after debug
+            non_zero_color: "red",
+            zero_color: "grey",
+            all_zero_correlated_pauli: {
+                "error_rate_IX": 0,
+                "error_rate_IZ": 0,
+                "error_rate_IY": 0,
+                "error_rate_XI": 0,
+                "error_rate_XX": 0,
+                "error_rate_XZ": 0,
+                "error_rate_XY": 0,
+                "error_rate_ZI": 0,
+                "error_rate_ZX": 0,
+                "error_rate_ZZ": 0,
+                "error_rate_ZY": 0,
+                "error_rate_YI": 0,
+                "error_rate_YX": 0,
+                "error_rate_YZ": 0,
+                "error_rate_YY": 0,
+            },
+            all_zero_correlated_erasure: {
+                "error_rate_IE": 0.0,
+                "error_rate_EI": 0.0,
+                "error_rate_EE": 0.0,
+            },
+        }
+    },
+    async mounted() {
+        this.data = await get_error_model_data()
+        console.assert(this.data.di == di)
+        console.assert(this.data.dj == di)
+        console.assert(this.data.MeasurementRounds == di)
+        this.data_ready = true
+    },
+    methods: {
+        on_resize() {
+            this.window_width = document.documentElement.clientWidth
+            this.window_height = document.documentElement.clientHeight
+            // console.log(`${this.window_width} * ${this.window_height}`)
+            let ratio = 1920 / 1080
+            this.main_width = Math.floor(Math.min(this.window_width, this.window_height * ratio))
+            this.main_height = Math.floor(Math.min(this.window_width / ratio, this.window_height))
+            this.scale = this.main_width / 1920
+            // update
+            this.marks = create_marks(this.scale)
+        },
+        pos(i) {
+            return Math.round(this.main_height * (0.5 + (i - (di - 1)) / (di - 1) * 0.45) - this.qubit_radius)
+        },
+        qubit_color(node) {
+            if (this.selected != null) {
+                const [i, j] = this.selected
+                if (node.i == i && node.j == j) {
+                    return "red"
+                }
+            }
+            if (node.qubit_type == "Data") {
+                return "grey"
+            }
+            if (node.qubit_type == "StabX") {
+                return "#FFFF00"
+            }
+            if (node.qubit_type == "StabZ") {
+                return "#CFE2F3"
+            }
+            if (node.qubit_type == "StabXZZXLogicalX" || node.qubit_type == "StabXZZXLogicalZ") {
+                return "#F4CCCC"
+            }
+            return "black"
+        },
+        select_node(node) {
+            if (node == null) {
+                this.selected = null
+                return
+            }
+            this.selected = [node.i, node.j]
+        },
+    },
+    watch: {
+        
+    },
+    computed: {
+        qubit_radius() {
+            return 20 * this.scale
+        },
+        si() {
+            if (this.selected == null) return 0
+            return this.selected[0]
+        },
+        sj() {
+            if (this.selected == null) return 0
+            return this.selected[1]
+        },
+    },
+})
+
+app.on_resize()
+window.addEventListener('resize', function(event) {
+    app.on_resize()
+});
 
 </script>
 
