@@ -74,7 +74,7 @@ textarea {
                 <p style="font-size: 100%; max-width: 100%;" :style="{ 'margin-top': (20*scale)+'px' }">parameters: \( d_i = d_j = T = \;\){{consts.di}}, \( p_{\small\text{Pauli}} = \;\){{consts.p}}, \(p_{\small\text{erasure}} = \;\){{consts.pe}}</p>
                 <textarea readonly style="width: 95%; resize: none;" :style="{ padding: (10*scale)+'px', 'margin-top': (10*scale)+'px', 'font-size': (15*scale)+'px' }" id="story" name="story" rows="4">{{ full_parameters }}</textarea>
                 <div style="font-size: 80%; font-family: arial; color: grey;">
-                    <p>- Errors are placed *after* the gate (thus any error at measurement stage is meaningless because it's after the current measurement and before the next initialization; in order to add pure additional measurement errors, add them to gate4 stage as single-qubit pauli error)</p>
+                    <p>- Errors are placed *after* the gate (thus any ancilla error at measurement stage is meaningless because it's after the current measurement and before the next initialization; in order to add pure additional measurement errors, add them to gate4 stage as single-qubit pauli error)</p>
                     <p>- <span><span class="demo":style="{ width: (20*scale)+'px', height: (20*scale)+'px', 'border-radius': (20*scale)+'px', 'top': (5*scale)+'px', 'margin-right': (5*scale)+'px', 'background-color': pauli_color }"></span>single-qubit Pauli error</span>
                          <span><span class="demo":style="{ width: (20*scale)+'px', height: (20*scale)+'px', 'border-radius': (20*scale)+'px', 'top': (5*scale)+'px', 'margin-right': (5*scale)+'px', 'background-color': erasure_color }"></span>single-qubit erasure error</span></p>
                     <p>- <span><span class="demo":style="{ width: (30*scale)+'px', height: (20*scale)+'px', 'top': (5*scale)+'px', 'margin-right': (5*scale)+'px', 'background-color': pauli_color }"></span>correlated two-qubit Pauli error</span>
@@ -122,6 +122,8 @@ const base_url = "https://qec.wuyue98.cn/api/view_error_model"
 // const base_url = "http://127.0.0.1:8066/view_error_model"  // start local server using `cargo run -- server`
 
 // debug url: ?p=0.01&pe=0.05&parameters=--use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration "{\"use_correlated_pauli\":true}"
+// debug url: ?p=0.01&pe=0.05&parameters=--use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration "{\"use_correlated_pauli\":true,\"initialization_error_rate\":0.005,\"measurement_error_rate\":0.005}"
+
 async function get_error_model_data() {
     const url = base_url + window.location.search
     // console.log(url)
