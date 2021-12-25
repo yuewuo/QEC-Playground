@@ -1,0 +1,159 @@
+rough threshold estimation:
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [3.16227766e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.015495160534825057] --error_model_configuration {"initialization_error_rate":0.015811388300841896,"measurement_error_rate":0.015811388300841896,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000316227766 11 11 1000521 36 0.000035981253766787504 11 3.3e-1 0.015495160534825057
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [3.16227766e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.015495160534825057] --error_model_configuration {"initialization_error_rate":0.015811388300841896,"measurement_error_rate":0.015811388300841896,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000316227766 15 15 397357 1 0.0000025166286236306393 15 2.0e0 0.015495160534825057
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [5.62341325e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.027554724934327104] --error_model_configuration {"initialization_error_rate":0.028117066259517456,"measurement_error_rate":0.028117066259517456,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000562341325 11 11 126616 3012 0.023788462753522463 11 3.5e-2 0.027554724934327104
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [5.62341325e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.027554724934327104] --error_model_configuration {"initialization_error_rate":0.028117066259517456,"measurement_error_rate":0.028117066259517456,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000562341325 15 15 132923 3001 0.022576980657974918 15 3.5e-2 0.027554724934327104
+
+[0.015811388300841896, 0.05] searching_p = 0.028117066259517456 [1] 0.023788462753522463(0.035) [2] 0.022576980657974918(0.035)
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [7.49894209e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.03674481625729034] --error_model_configuration {"initialization_error_rate":0.037494710466622796,"measurement_error_rate":0.037494710466622796,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000749894209 11 11 11062 3142 0.28403543662990416 11 3.0e-2 0.03674481625729034
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [7.49894209e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.03674481625729034] --error_model_configuration {"initialization_error_rate":0.037494710466622796,"measurement_error_rate":0.037494710466622796,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000749894209 15 15 6830 3071 0.4496339677891654 15 2.6e-2 0.03674481625729034
+
+[0.028117066259517456, 0.05] searching_p = 0.037494710466622796 [1] 0.28403543662990416(0.03) [2] 0.4496339677891654(0.026)
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [6.49381632e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.03181969994723435] --error_model_configuration {"initialization_error_rate":0.032469081578810566,"measurement_error_rate":0.032469081578810566,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000649381632 11 11 31656 3034 0.09584281020975487 11 3.4e-2 0.03181969994723435
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [6.49381632e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.03181969994723435] --error_model_configuration {"initialization_error_rate":0.032469081578810566,"measurement_error_rate":0.032469081578810566,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000649381632 15 15 20938 3016 0.1440443213296399 15 3.3e-2 0.03181969994723435
+
+[0.028117066259517456, 0.037494710466622796] searching_p = 0.032469081578810566 [1] 0.09584281020975487(0.034) [2] 0.1440443213296399(0.033)
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [6.04296390e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.02961052312166851] --error_model_configuration {"initialization_error_rate":0.030214819511906642,"measurement_error_rate":0.030214819511906642,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00060429639 11 11 61291 3009 0.0490936679120915 11 3.5e-2 0.02961052312166851
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [6.04296390e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.02961052312166851] --error_model_configuration {"initialization_error_rate":0.030214819511906642,"measurement_error_rate":0.030214819511906642,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.00060429639 15 15 51629 3012 0.0583393054291193 15 3.5e-2 0.02961052312166851
+
+[0.028117066259517456, 0.032469081578810566] searching_p = 0.030214819511906642 [1] 0.0490936679120915(0.035) [2] 0.0583393054291193(0.035)
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [5.82941535e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.028564135200966765] --error_model_configuration {"initialization_error_rate":0.02914707673568037,"measurement_error_rate":0.02914707673568037,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000582941535 11 11 87518 3013 0.03442720354669897 11 3.5e-2 0.028564135200966765
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [5.82941535e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.028564135200966765] --error_model_configuration {"initialization_error_rate":0.02914707673568037,"measurement_error_rate":0.02914707673568037,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000582941535 15 15 79332 3003 0.037853577371048254 15 3.5e-2 0.028564135200966765
+
+[0.028117066259517456, 0.030214819511906642] searching_p = 0.02914707673568037 [1] 0.03442720354669897(0.035) [2] 0.037853577371048254(0.035)
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [5.72548788e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.028054890633356058] --error_model_configuration {"initialization_error_rate":0.028627439421791898,"measurement_error_rate":0.028627439421791898,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000572548788 11 11 106404 3016 0.02834479906770422 11 3.5e-2 0.028054890633356058
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [5.72548788e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.028054890633356058] --error_model_configuration {"initialization_error_rate":0.028627439421791898,"measurement_error_rate":0.028627439421791898,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000572548788 15 15 104488 3001 0.028721001454712503 15 3.5e-2 0.028054890633356058
+
+[0.028117066259517456, 0.02914707673568037] searching_p = 0.028627439421791898 [1] 0.02834479906770422(0.035) [2] 0.028721001454712503(0.035)
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e3000 [5.67422104e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.027803683109702503] --error_model_configuration {"initialization_error_rate":0.028371105213982145,"measurement_error_rate":0.028371105213982145,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000567422104 11 11 113864 3018 0.02650530457387761 11 3.5e-2 0.027803683109702503
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e3000 [5.67422104e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.027803683109702503] --error_model_configuration {"initialization_error_rate":0.028371105213982145,"measurement_error_rate":0.028371105213982145,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000567422104 15 15 117169 3003 0.02562964606679241 15 3.5e-2 0.027803683109702503
+
+[0.028117066259517456, 0.028627439421791898] searching_p = 0.028371105213982145 [1] 0.02650530457387761(0.035) [2] 0.02562964606679241(0.035)
+rough_estimation: 0.028498984119483244
+accurate threshold estimation: [0.0282168159598844, 0.028357549082089706, 0.028498984119483237, 0.028641124572910598, 0.02878397396067807]
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e1000000 [5.64336319e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.027652479640686713] --error_model_configuration {"initialization_error_rate":0.0282168159598844,"measurement_error_rate":0.0282168159598844,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000564336319 11 11 1000471 24814 0.024802318108171052 11 1.2e-2 0.027652479640686713
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e1000000 [5.64336319e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.027652479640686713] --error_model_configuration {"initialization_error_rate":0.0282168159598844,"measurement_error_rate":0.0282168159598844,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000564336319 15 15 383772 9088 0.02368072709838133 15 2.0e-2 0.027652479640686713
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e1000000 [5.67150982e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.02779039810044791] --error_model_configuration {"initialization_error_rate":0.028357549082089706,"measurement_error_rate":0.028357549082089706,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000567150982 11 11 1000447 26290 0.02627825362063158 11 1.2e-2 0.02779039810044791
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e1000000 [5.67150982e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.02779039810044791] --error_model_configuration {"initialization_error_rate":0.028357549082089706,"measurement_error_rate":0.028357549082089706,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000567150982 15 15 378795 9627 0.025414802201718607 15 2.0e-2 0.02779039810044791
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e1000000 [5.69979682e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.027929004437093573] --error_model_configuration {"initialization_error_rate":0.028498984119483237,"measurement_error_rate":0.028498984119483237,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000569979682 11 11 1000499 27399 0.02738533471797573 11 1.2e-2 0.027929004437093573
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e1000000 [5.69979682e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.027929004437093573] --error_model_configuration {"initialization_error_rate":0.028498984119483237,"measurement_error_rate":0.028498984119483237,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000569979682 15 15 380678 10628 0.027918608377684027 15 1.9e-2 0.027929004437093573
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e1000000 [5.72822491e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.028068302081452386] --error_model_configuration {"initialization_error_rate":0.028641124572910598,"measurement_error_rate":0.028641124572910598,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000572822491 11 11 1000457 28799 0.028785844868894916 11 1.1e-2 0.028068302081452383
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e1000000 [5.72822491e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.028068302081452386] --error_model_configuration {"initialization_error_rate":0.028641124572910598,"measurement_error_rate":0.028641124572910598,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000572822491 15 15 381424 11270 0.029547170602793743 15 1.8e-2 0.028068302081452383
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [11] --djs [11] [11] -m1000000 -e1000000 [5.75679479e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.02820829448146451] --error_model_configuration {"initialization_error_rate":0.02878397396067807,"measurement_error_rate":0.02878397396067807,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000575679479 11 11 1000488 30656 0.030641047168981538 11 1.1e-2 0.02820829448146451
+
+/gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [15] --djs [15] [15] -m1000000 -e1000000 [5.75679479e-04] -p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --pes [0.02820829448146451] --error_model_configuration {"initialization_error_rate":0.02878397396067807,"measurement_error_rate":0.02878397396067807,"use_correlated_pauli":true}
+
+format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.000575679479 15 15 381049 11824 0.03103012998328299 15 1.8e-2 0.02820829448146451
+
+configuration 1:
+0.000564336319 11 11 1000471 24814 0.024802318108171052 11 1.2e-2 0.027652479640686713 0.0282168159598844
+0.000567150982 11 11 1000447 26290 0.02627825362063158 11 1.2e-2 0.02779039810044791 0.028357549082089706
+0.000569979682 11 11 1000499 27399 0.02738533471797573 11 1.2e-2 0.027929004437093573 0.028498984119483237
+0.000572822491 11 11 1000457 28799 0.028785844868894916 11 1.1e-2 0.028068302081452383 0.028641124572910598
+0.000575679479 11 11 1000488 30656 0.030641047168981538 11 1.1e-2 0.02820829448146451 0.02878397396067807
+configuration 2:
+0.000564336319 15 15 383772 9088 0.02368072709838133 15 2.0e-2 0.027652479640686713 0.0282168159598844
+0.000567150982 15 15 378795 9627 0.025414802201718607 15 2.0e-2 0.02779039810044791 0.028357549082089706
+0.000569979682 15 15 380678 10628 0.027918608377684027 15 1.9e-2 0.027929004437093573 0.028498984119483237
+0.000572822491 15 15 381424 11270 0.029547170602793743 15 1.8e-2 0.028068302081452383 0.028641124572910598
+0.000575679479 15 15 381049 11824 0.03103012998328299 15 1.8e-2 0.02820829448146451 0.02878397396067807
+pair: [(11, 11, 11), (15, 15, 15)]
+parameters: ['-p0', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevelCorrelatedErasure']
+threshold = 0.028533226903382943
+relative_confidence_interval = 0.003045279360513855
+
+
+
