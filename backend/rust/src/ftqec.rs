@@ -2139,6 +2139,7 @@ impl PlanarCodeModel {
                 let mut initialization_error_rate = 0.;
                 let mut measurement_error_rate = 0.;
                 let mut use_correlated_pauli = false;
+                let mut before_pauli_bug_fix = false;
                 error_model_configuration_recognized = true;
                 error_model_configuration.map(|config| {
                     let mut config_cloned = config.clone();
@@ -2146,6 +2147,7 @@ impl PlanarCodeModel {
                     config.remove("initialization_error_rate").map(|value| initialization_error_rate = value.as_f64().expect("f64"));
                     config.remove("measurement_error_rate").map(|value| measurement_error_rate = value.as_f64().expect("f64"));
                     config.remove("use_correlated_pauli").map(|value| use_correlated_pauli = value.as_bool().expect("bool"));
+                    config.remove("before_pauli_bug_fix").map(|value| before_pauli_bug_fix = value.as_bool().expect("bool"));
                     if !config.is_empty() { panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>()); }
                 });
                 self.iterate_snapshot_mut(|t, _i, _j, node| {
@@ -2196,7 +2198,11 @@ impl PlanarCodeModel {
                             } else {
                                 node.erasure_error_rate = pe;
                             }
-                            let mut px_py_pz = if use_correlated_pauli { (0., 0., 0.) } else { (p/3., p/3., p/3.) };
+                            let mut px_py_pz = if before_pauli_bug_fix {
+                                if this_position_use_correlated_pauli { (0., 0., 0.) } else { (p/3., p/3., p/3.) }
+                            } else {
+                                if use_correlated_pauli { (0., 0., 0.) } else { (p/3., p/3., p/3.) }
+                            };
                             if stage == Stage::CXGate4 && node.qubit_type != QubitType::Data {
                                 // add additional measurement error
                                 // whether it's X axis measurement or Z axis measurement, the additional error rate is always `measurement_error_rate`

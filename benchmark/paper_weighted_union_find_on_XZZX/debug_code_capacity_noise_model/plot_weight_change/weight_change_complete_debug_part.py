@@ -21,6 +21,8 @@ parameters = f"-p1 --time_budget 3600 --use_xzzx_code --shallow_error_on_bottom 
 interested_node = "[12][10][9]"  # in the middle
 # interested_node = "[12][20][19]"  # on the boundary
 
+interested_addr = [int(e) for e in interested_node[1:-1].split("][")]
+
 results = []
 for bias_eta in bias_eta_vec:
     command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p], [di], [di], [0], parameters + ["--bias_eta", f"{bias_eta}"])
@@ -63,6 +65,8 @@ ax0.set_title(f"direct neighbors of {interested_node}")
 ax0.set_xlabel("bias eta")
 ax0.set_ylabel("weight")
 float_bias_eta_vec = [float(e) for e in bias_eta_vec]
+color_cycle = ["black"] + ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'] + ["#DDDDDD", "#AAAAAA"]
+ax0.set_prop_cycle(color=color_cycle)
 if results[0][0] is not None:
     boundaries = [results[i][0] for i in range(len(results))]
     ax0.plot(float_bias_eta_vec, boundaries, label="boundary")
@@ -72,7 +76,8 @@ for ni in range(len(results[0][1])):
         if addr != results[i][1][ni][0]:
             print(addr, results[i][1][ni][0])
         assert addr == results[i][1][ni][0]
-    values = [results[i][1][ni][1] for i in range(len(results))]
-    ax0.plot(float_bias_eta_vec, values, label=f"[{addr[0]}][{addr[1]}][{addr[2]}]")
+    if results[0][1][ni][1] < 25 and results[0][1][ni][1] > 15 and addr[0] >= interested_addr[0] and addr[1] > interested_addr[1] and addr[2] > interested_addr[2]:  # only plot part of it for ease of visualization
+        values = [results[i][1][ni][1] for i in range(len(results))]
+        ax0.plot(float_bias_eta_vec, values, label=f"[{addr[0]}][{addr[1]}][{addr[2]}]")
 ax0.legend()
 plt.show()

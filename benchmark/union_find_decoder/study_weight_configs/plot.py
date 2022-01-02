@@ -83,7 +83,7 @@ def draw(ax, title, key, key_values):
 
 draw(ax0, "Decoder Type", "UF_decoder", [True, False])
 draw(ax1, "Autotune (weighted decoding graph)", "no_autotune", [True, False])
-draw(ax2, "Weight Calculation", "autotune_minus_no_error", [True, False])
+draw(ax2, "Weight Calculation", "autotune_minus_no_error", [False, True])
 draw(ax3, "Probability Calculation", "use_combined_probability", [False, True])
 
 # with ax1 as ax:
