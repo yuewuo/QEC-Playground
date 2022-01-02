@@ -2198,6 +2198,11 @@ impl PlanarCodeModel {
                             } else {
                                 node.erasure_error_rate = pe;
                             }
+                            // this bug is hard to find without visualization tool...
+                            // so I develop such a tool at https://qec.wuyue98.cn/ErrorModelViewer2D.html
+                            // to compare: (in url, %20 is space, %22 is double quote)
+                            //     https://qec.wuyue98.cn/ErrorModelViewer2D.html?p=0.01&pe=0.05&parameters=--use_xzzx_code%20--error_model%20OnlyGateErrorCircuitLevelCorrelatedErasure%20--error_model_configuration%20%22{\%22use_correlated_pauli\%22:true}%22
+                            //     https://qec.wuyue98.cn/ErrorModelViewer2D.html?p=0.01&pe=0.05&parameters=--use_xzzx_code%20--error_model%20OnlyGateErrorCircuitLevelCorrelatedErasure%20--error_model_configuration%20%22{\%22use_correlated_pauli\%22:true,\%22before_pauli_bug_fix\%22:true}%22
                             let mut px_py_pz = if before_pauli_bug_fix {
                                 if this_position_use_correlated_pauli { (0., 0., 0.) } else { (p/3., p/3., p/3.) }
                             } else {

@@ -431,7 +431,7 @@ var app = new Vue({
                             if (this.sum_correlated_pauli(node) > 0) {
                                 let linear_gradident = context.createLinearGradient(this.pos(i) + this.qubit_radius, this.pos(j) + this.qubit_radius, this.pos(ei) + this.qubit_radius, this.pos(ej) + this.qubit_radius)
                                 linear_gradident.addColorStop(0, this.pauli_color)
-                                linear_gradident.addColorStop(1, "white")
+                                linear_gradident.addColorStop(1, "rgba(255, 255, 255, 0)")
                                 context.fillStyle = linear_gradident
                                 const expand_width = this.qubit_radius * 0.7
                                 let left = Math.min(this.pos(i), this.pos(ei)) + this.qubit_radius - expand_width
@@ -443,7 +443,7 @@ var app = new Vue({
                             if (this.sum_correlated_erasure(node) > 0) {
                                 let linear_gradident = context.createLinearGradient(this.pos(i) + this.qubit_radius, this.pos(j) + this.qubit_radius, this.pos(ei) + this.qubit_radius, this.pos(ej) + this.qubit_radius)
                                 linear_gradident.addColorStop(0, this.erasure_color)
-                                linear_gradident.addColorStop(1, "white")
+                                linear_gradident.addColorStop(1, "rgba(255, 255, 255, 0)")
                                 context.fillStyle = linear_gradident
                                 const expand_width = this.qubit_radius * 0.4
                                 let left = Math.min(this.pos(i), this.pos(ei)) + this.qubit_radius - expand_width
