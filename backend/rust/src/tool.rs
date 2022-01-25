@@ -114,8 +114,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let bias_eta = value_t!(matches, "bias_eta", f64).unwrap_or(0.5);  // default to 0.5
             let decoder_type = DecoderType::from(value_t!(matches, "decoder", String).unwrap_or("MWPM".to_string()));
             let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
-            let use_combined_probability = matches.is_present("use_combined_probability");
-            let autotune_minus_no_error = matches.is_present("autotune_minus_no_error");
+            let disable_combined_probability = matches.is_present("disable_combined_probability");
+            let disable_autotune_minus_no_error = matches.is_present("disable_autotune_minus_no_error");
             let error_model = value_t!(matches, "error_model", String).ok().map(|x| ErrorModel::from(x));
             let error_model_configuration: Option<serde_json::Value> = value_t!(matches, "error_model_configuration", String).ok().and_then(|config| {
                 Some(serde_json::from_str(config.as_str()).expect("error_model_configuration must be a json object"))
@@ -142,7 +142,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             return Some(fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight
-                , use_combined_probability, autotune_minus_no_error, error_model, error_model_configuration, no_stop_if_next_model_is_not_prepared, log_runtime_statistics
+                , !disable_combined_probability, !disable_autotune_minus_no_error, error_model, error_model_configuration, no_stop_if_next_model_is_not_prepared, log_runtime_statistics
                 , detailed_runtime_statistics, log_error_pattern_into_statistics_when_has_logical_error, time_budget, use_fast_benchmark
                 , fbench_disable_additional_error, fbench_use_fake_decoder, fbench_use_simple_sum, fbench_assignment_sampling_amount
                 , fbench_weighted_path_sampling, fbench_weighted_assignment_sampling, fbench_target_dev, rug_precision, disable_optimize_correction_pattern
