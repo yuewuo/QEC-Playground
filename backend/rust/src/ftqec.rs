@@ -156,6 +156,8 @@ pub struct PlanarCodeModel {
     pub graph: Option<petgraph::graph::Graph<Index, PetGraphEdge>>,
     #[serde(skip)]
     pub use_combined_probability: bool,
+    #[serde(skip)]
+    pub use_reduced_graph: bool,  // feature that remove edge between two vertices if both of them have smaller weight matching to boundary than matching each other
     /// for each line, XOR the result. Only if no less than half of the result is 1.
     /// We do this because stabilizer operators will definitely have all 0 (because it generate 2 or 0 errors on every homology lines, XOR = 0)
     /// Only logical error will pose all 1 results, but sometimes single qubit errors will "hide" the logical error (because it
@@ -353,6 +355,7 @@ impl PlanarCodeModel {
             MeasurementRounds: MeasurementRounds,
             graph: None,
             use_combined_probability: false,
+            use_reduced_graph: false,
             z_homology_lines: Vec::new(),
             x_homology_lines: Vec::new(),
         }
@@ -522,6 +525,7 @@ impl PlanarCodeModel {
             MeasurementRounds: MeasurementRounds,
             graph: None,
             use_combined_probability: false,
+            use_reduced_graph: false,
             z_homology_lines: Vec::new(),
             x_homology_lines: Vec::new(),
         }
@@ -1541,6 +1545,52 @@ impl PlanarCodeModel {
                                 correction: Some(Arc::new(correction)),
                                 next_correction: None,
                             });
+                        }
+                    }
+                }
+            }
+        }
+        // if `use_reduced_graph` is enabled, remove edge between two vertices if both of them have smaller weight matching to boundary than matching each other
+        if self.use_reduced_graph {
+            for t in (12..self.snapshot.len()).step_by(6) {
+                for i in 0..self.snapshot[t].len() {
+                    for j in 0..self.snapshot[t][i].len() {
+                        if self.snapshot[t][i][j].is_some() {
+                            if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
+                                let node = self.snapshot[t][i][j].as_ref().expect("exist");
+                                let index = Index::new(t, i, j);
+                                let target_indexes: Vec::<Index> = node.exhausted_map.keys().cloned().collect();
+                                let mut to_be_removed = Vec::<Index>::new();
+                                if node.exhausted_boundary.is_none() {
+                                    continue  // node not connected to boundary
+                                }
+                                let boundary_cost = node.exhausted_boundary.as_ref().unwrap().cost;
+                                for target_index in target_indexes {
+                                    let target_node = self.snapshot[target_index.t][target_index.i][target_index.j].as_ref().expect("exist");
+                                    if target_node.exhausted_boundary.is_none() {
+                                        continue  // target node not connected to boundary
+                                    }
+                                    let target_boundary_cost = target_node.exhausted_boundary.as_ref().unwrap().cost;
+                                    let need_remove = {
+                                        if target_node.exhausted_map.contains_key(&index) {
+                                            let match_cost = target_node.exhausted_map[&index].cost;
+                                            boundary_cost + target_boundary_cost < match_cost
+                                        } else {
+                                            true  // always remove if the peer doesn't have it, because it's removed in the previous iterations already checked the above attribute
+                                        }
+                                    };
+                                    if need_remove {
+                                        to_be_removed.push(target_index);
+                                    }
+                                }
+                                // for remove_index in to_be_removed {
+                                //     println!("remove edge of [{}][{}][{}] and [{}][{}][{}]", t, i, j, remove_index.t, remove_index.i, remove_index.j);
+                                // }
+                                let node = self.snapshot[t][i][j].as_mut().expect("exist");
+                                for remove_index in to_be_removed {
+                                    node.exhausted_map.remove(&remove_index);
+                                }
+                            }
                         }
                     }
                 }

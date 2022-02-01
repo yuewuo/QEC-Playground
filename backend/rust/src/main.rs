@@ -173,6 +173,8 @@ fn create_clap_parser<'a, 'b>(color_setting: clap::AppSettings) -> clap::App<'a,
                 (@arg debug_print_direct_connections: --debug_print_direct_connections "print direct connections, or model graph in our paper https://www.yecl.org/publications/wu2022qec.pdf")
                 (@arg debug_print_exhausted_connections: --debug_print_exhausted_connections "print exhausted connections, or complete model graph in our paper https://www.yecl.org/publications/wu2022qec.pdf")
                 (@arg debug_print_error_model: --debug_print_error_model "print error model, without building the exhausted graph")
+                // adding features from Fowler's paper
+                (@arg use_reduced_graph: --use_reduced_graph "remove edge between two vertices if both of them have smaller weight matching to boundary than matching each other")
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")
