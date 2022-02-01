@@ -1,2 +1,2 @@
 format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-0.005 5 5 24441214 400115 0.01637050434565157 5 3.1e-3 0
+0.005 5 5 24637200 400063 0.016238168298345592 5 3.1e-3 0

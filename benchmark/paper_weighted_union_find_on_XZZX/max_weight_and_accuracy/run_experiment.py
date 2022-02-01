@@ -13,17 +13,18 @@ d = 5
 p = 0.005
 max_N = 100000000
 min_error_cases = 400000
+bias_eta_vec = ["10", "100", "1000", "inf"]
 
-slurm_distribute.SLURM_DISTRIBUTE_TIME = "04:30:00"
+slurm_distribute.SLURM_DISTRIBUTE_TIME = "06:30:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '2G'
-slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 18  # for more available macines
-time_budget = 4 * 3600  # 4 hour
-parameters = f"-p{STO(0)} --time_budget {time_budget} --use_xzzx_code --error_model GenericBiasedWithBiasedCX".split(" ")  # a maximum 20min for each point
+slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # for more usuable machines, use `SLURM_USE_SCAVENGE_PARTITION=1` flag
+time_budget = 6 * 3600  # 6 hour
+parameters = f"-p{STO(0)} --time_budget {time_budget} --use_xzzx_code --error_model GenericBiasedWithBiasedCX".split(" ")
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run
 def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playground_command_get_stdout):
-    for bias_eta in ["10", "100", "1000", "inf"]:
+    for bias_eta in bias_eta_vec:
 
         filename = os.path.join(os.path.dirname(__file__), f"bias_eta_{bias_eta}.txt")
         results = []
