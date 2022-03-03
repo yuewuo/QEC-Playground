@@ -147,8 +147,10 @@ fn create_clap_parser<'a, 'b>(color_setting: clap::AppSettings) -> clap::App<'a,
                 (@arg bias_eta: --bias_eta +takes_value "bias_eta = pz / (px + py) and px = py, px + py + pz = p. default to 1/2, which is px = pz = py")
                 (@arg decoder: --decoder +takes_value "supported decoders: MWPM=MinimumWeightPerfectMatching, UF=UnionFind")
                 (@arg max_half_weight: --max_half_weight +takes_value "[UnionFind decoder only] maximum weight will be 2 * max_half_weight")
-                (@arg use_combined_probability: --use_combined_probability "use combined probability of matching pairs instead of choosing the maximum probability")
-                (@arg autotune_minus_no_error: --autotune_minus_no_error "use ln((1-p)/p) as weight instead of the default ln(1/p)")
+                // 2022.1.25: change default behavior to use combined probability, this will improve threshold and makes more sense
+                (@arg disable_combined_probability: --disable_combined_probability "disable combined probability of matching pairs instead of choosing the maximum probability")
+                // 2022.1.25: change default behavior to use ln((1-p)/p) instead of -ln(p), this will improve threshold (although very slightly) but makes more sense
+                (@arg disable_autotune_minus_no_error: --disable_autotune_minus_no_error "use ln(1/p) as weight instead of the default ln((1-p)/p)")
                 (@arg error_model: --error_model +takes_value "possible error models see types::ErrorModel")
                 (@arg error_model_configuration: --error_model_configuration +takes_value "a json object describing the error model details")
                 (@arg no_stop_if_next_model_is_not_prepared: -s --no_stop_if_next_model_is_not_prepared "in rough experiment (e.g. estimate the threshold by testing multiple (di,dj,T) configurations) you can use this option to avoid wasting CPU time, as it will not stop current experiment if the model of next experiment is not prepared. Note that you should keep #threads + 1 <= #CPU because the additional thread is for computing the next model")
@@ -171,6 +173,8 @@ fn create_clap_parser<'a, 'b>(color_setting: clap::AppSettings) -> clap::App<'a,
                 (@arg debug_print_direct_connections: --debug_print_direct_connections "print direct connections, or model graph in our paper https://www.yecl.org/publications/wu2022qec.pdf")
                 (@arg debug_print_exhausted_connections: --debug_print_exhausted_connections "print exhausted connections, or complete model graph in our paper https://www.yecl.org/publications/wu2022qec.pdf")
                 (@arg debug_print_error_model: --debug_print_error_model "print error model, without building the exhausted graph")
+                // adding features from Fowler's paper
+                (@arg use_reduced_graph: --use_reduced_graph "remove edge between two vertices if both of them have smaller weight matching to boundary than matching each other")
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")

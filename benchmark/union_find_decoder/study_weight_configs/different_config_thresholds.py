@@ -61,10 +61,10 @@ for UF_decoder in [False, True]:
                             parameters += ["--decoder", "UF", "--max_half_weight", "20"]
                         if no_autotune:
                             parameters += ["--no_autotune"]
-                        if autotune_minus_no_error:
-                            parameters += ["--autotune_minus_no_error"]
-                        if use_combined_probability:
-                            parameters += ["--use_combined_probability"]
+                        if not autotune_minus_no_error:
+                            parameters += ["--disable_autotune_minus_no_error"]
+                        if not use_combined_probability:
+                            parameters += ["--disable_combined_probability"]
                         parameters_vec.append(parameters)
                         settings_vec.append((
                             UF_decoder,

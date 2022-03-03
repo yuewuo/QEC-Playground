@@ -114,8 +114,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let bias_eta = value_t!(matches, "bias_eta", f64).unwrap_or(0.5);  // default to 0.5
             let decoder_type = DecoderType::from(value_t!(matches, "decoder", String).unwrap_or("MWPM".to_string()));
             let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
-            let use_combined_probability = matches.is_present("use_combined_probability");
-            let autotune_minus_no_error = matches.is_present("autotune_minus_no_error");
+            let disable_combined_probability = matches.is_present("disable_combined_probability");
+            let disable_autotune_minus_no_error = matches.is_present("disable_autotune_minus_no_error");
             let error_model = value_t!(matches, "error_model", String).ok().map(|x| ErrorModel::from(x));
             let error_model_configuration: Option<serde_json::Value> = value_t!(matches, "error_model_configuration", String).ok().and_then(|config| {
                 Some(serde_json::from_str(config.as_str()).expect("error_model_configuration must be a json object"))
@@ -139,14 +139,15 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let debug_print_direct_connections = matches.is_present("debug_print_direct_connections");
             let debug_print_exhausted_connections = matches.is_present("debug_print_exhausted_connections");
             let debug_print_error_model = matches.is_present("debug_print_error_model");
+            let use_reduced_graph = matches.is_present("use_reduced_graph");
             return Some(fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight
-                , use_combined_probability, autotune_minus_no_error, error_model, error_model_configuration, no_stop_if_next_model_is_not_prepared, log_runtime_statistics
+                , !disable_combined_probability, !disable_autotune_minus_no_error, error_model, error_model_configuration, no_stop_if_next_model_is_not_prepared, log_runtime_statistics
                 , detailed_runtime_statistics, log_error_pattern_into_statistics_when_has_logical_error, time_budget, use_fast_benchmark
                 , fbench_disable_additional_error, fbench_use_fake_decoder, fbench_use_simple_sum, fbench_assignment_sampling_amount
                 , fbench_weighted_path_sampling, fbench_weighted_assignment_sampling, fbench_target_dev, rug_precision, disable_optimize_correction_pattern
-                , debug_print_only, debug_print_direct_connections, debug_print_exhausted_connections, debug_print_error_model));
+                , debug_print_only, debug_print_direct_connections, debug_print_exhausted_connections, debug_print_error_model, use_reduced_graph));
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -552,7 +553,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , fbench_disable_additional_error: bool, fbench_use_fake_decoder: bool, fbench_use_simple_sum: bool, fbench_assignment_sampling_amount: usize
         , fbench_weighted_path_sampling: bool, fbench_weighted_assignment_sampling: bool, fbench_target_dev: f64, rug_precision: u32
         , disable_optimize_correction_pattern: bool, debug_print_only: bool, debug_print_direct_connections: bool, debug_print_exhausted_connections: bool
-        , debug_print_error_model: bool) -> String {
+        , debug_print_error_model: bool, use_reduced_graph: bool) -> String {
     let mut output = format!("");  // empty output string
     let mut parallel = parallel;
     if parallel == 0 {
@@ -605,6 +606,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         "fbench_target_dev": fbench_target_dev,
         "rug_precision": rug_precision,
         "disable_optimize_correction_pattern": disable_optimize_correction_pattern,
+        "use_reduced_graph": use_reduced_graph,
     });
     match &log_runtime_statistics_file {  // append runtime statistics data
         Some(log_runtime_statistics_file) => {
@@ -661,6 +663,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             }
         };
         model.use_combined_probability = use_combined_probability;
+        model.use_reduced_graph = use_reduced_graph;
         // compute pz, px, py individually given bias_eta
         // bias_eta = pz / (px + py) and px = py, px + py + pz = p
         // (px + py) * (1 + bias_eta) = p
