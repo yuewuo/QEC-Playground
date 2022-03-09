@@ -938,7 +938,7 @@ mod tests {
         let pe = 0.02;
         let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(d, d);
         model.set_individual_error_with_perfect_initialization_with_erasure(p/3., p/3., p/3., pe);
-        let mut fast_benchmark = model.build_graph(ftqec::weight_autotune);
+        let mut fast_benchmark = model.build_graph_fast_benchmark(ftqec::weight_autotune, true).unwrap();
         fast_benchmark.assignment_sampling_amount = 3;
         fast_benchmark.prepare();
         // fast_benchmark.debug_print();
@@ -956,7 +956,7 @@ mod tests {
         let pe = 0.0;
         let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code(d, d);
         model.set_individual_error_with_perfect_initialization_with_erasure(p/3., p/3., p/3., pe);
-        let mut fast_benchmark = model.build_graph(ftqec::weight_autotune);
+        let mut fast_benchmark = model.build_graph_fast_benchmark(ftqec::weight_autotune, true).unwrap();
         fast_benchmark.assignment_sampling_amount = 10;
         fast_benchmark.prepare();
         // fast_benchmark.debug_print();

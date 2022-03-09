@@ -632,6 +632,8 @@ pub enum ErrorModel {
     OnlyGateErrorCircuitLevel,  // errors happen at 4 stages in each measurement round (although removed errors happening at initialization and measurement stage, measurement errors can still occur when curtain error applies on the ancilla after the last gate)
     OnlyGateErrorCircuitLevelCorrelatedErasure,  // the same as `OnlyGateErrorCircuitLevel`, just the erasures are correlated
     Arxiv200404693,  // Huang 2020 paper https://arxiv.org/pdf/2004.04693.pdf (note that periodic boundary condition is currently not supported)
+    SimpleBiasedY,  // tailored surface code requires biased Y instead of biased Z
+    TailoredYPhenomenological,  // arXiv:1907.02554v2 Biased noise models
 }
 
 impl From<String> for ErrorModel {
@@ -644,6 +646,8 @@ impl From<String> for ErrorModel {
             "OnlyGateErrorCircuitLevel" => Self::OnlyGateErrorCircuitLevel,
             "OnlyGateErrorCircuitLevelCorrelatedErasure" => Self::OnlyGateErrorCircuitLevelCorrelatedErasure,
             "Arxiv200404693" => Self::Arxiv200404693,
+            "SimpleBiasedY" => Self::SimpleBiasedY,
+            "TailoredYPhenomenological" => Self::TailoredYPhenomenological,
             _ => panic!("unrecognized error model"),
         }
     }
@@ -659,6 +663,8 @@ impl std::fmt::Display for ErrorModel {
             Self::OnlyGateErrorCircuitLevel => "OnlyGateErrorCircuitLevel",
             Self::OnlyGateErrorCircuitLevelCorrelatedErasure => "OnlyGateErrorCircuitLevelCorrelatedErasure",
             Self::Arxiv200404693 => "Arxiv200404693",
+            Self::SimpleBiasedY => "SimpleBiasedY",
+            Self::TailoredYPhenomenological => "TailoredYPhenomenological",
         })?;
         Ok(())
     }

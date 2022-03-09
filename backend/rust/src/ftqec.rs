@@ -139,6 +139,7 @@ pub enum CodeType {
     RotatedPlanarCode,
     StandardXZZXCode,
     RotatedXZZXCode,
+    StandardTailoredCode,
     Unknown,
 }
 
@@ -170,6 +171,28 @@ pub struct PlanarCodeModel {
 }
 
 impl PlanarCodeModel {
+    pub fn new_standard_tailored_code(MeasurementRounds: usize, L: usize) -> Self {
+        // MeasurementRounds = 0 means only one perfect measurement round
+        assert!(L >= 2, "at lease one stabilizer is required");
+        let mut model = Self::new_planar_code(CodeType::StandardTailoredCode, MeasurementRounds, L, L, |_i, _j| true);
+        // create Z stabilizer homology lines, detecting X errors
+        for j in 0..L {
+            let mut z_homology_line = Vec::new();
+            for i in 0..L {
+                z_homology_line.push((2 * i, 2 * j));
+            }
+            model.z_homology_lines.push(z_homology_line);
+        }
+        // create X stabilizer homology lines, detecting Z errors
+        for i in 0..L {
+            let mut x_homology_line = Vec::new();
+            for j in 0..L {
+                x_homology_line.push((2 * i, 2 * j));
+            }
+            model.x_homology_lines.push(x_homology_line);
+        }
+        model
+    }
     pub fn new_standard_planar_code(MeasurementRounds: usize, L: usize) -> Self {
         // MeasurementRounds = 0 means only one perfect measurement round
         assert!(L >= 2, "at lease one stabilizer is required");
@@ -2367,6 +2390,54 @@ impl PlanarCodeModel {
                     }
                 });
             },
+            ErrorModel::SimpleBiasedY => {
+                let px = p / (1. + bias_eta) / 2.;
+                let pz = px;
+                let py = p - 2. * px;
+                self.set_individual_error_with_perfect_initialization_with_erasure(px, py, pz, pe);
+            },
+            ErrorModel::TailoredYPhenomenological => {
+                let height = self.snapshot.len();
+                let px = p / (1. + bias_eta) / 2.;
+                let pz = px;
+                let py = p - 2. * px;
+                let mut measurement_error_rate = p;  // by default, can be adjusted using configuration
+                error_model_configuration_recognized = true;
+                error_model_configuration.map(|config| {
+                    let mut config_cloned = config.clone();
+                    let config = config_cloned.as_object_mut().expect("error_model_configuration must be JSON object");
+                    config.remove("measurement_error_rate").map(|value| measurement_error_rate = value.as_f64().expect("f64"));
+                    if !config.is_empty() { panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>()); }
+                });
+                self.iterate_snapshot_mut(|t, _i, _j, node| {
+                    // first clear error rate
+                    node.error_rate_x = 0.;
+                    node.error_rate_z = 0.;
+                    node.error_rate_y = 0.;
+                    if t >= height - 6 {  // no error on the top, as a perfect measurement round
+                        return
+                    } else if t <= 6 {
+                        return  // perfect initialization
+                    }
+                    // do different things for each stage
+                    let stage = Stage::from(t);
+                    match stage {
+                        Stage::CXGate4 => {
+                            // qubit is before the next measurement round's gates, measurement is after current measurement round's gates
+                            node.erasure_error_rate = pe;
+                            if node.qubit_type == QubitType::Data {
+                                node.error_rate_x = px;
+                                node.error_rate_z = pz;
+                                node.error_rate_y = py;
+                            } else { // ancilla, to make sure it always cause only 1 measurement error if it happens
+                                node.error_rate_z = measurement_error_rate;
+                                node.error_rate_x = measurement_error_rate;
+                            }
+                        },
+                        _ => { }
+                    }
+                });
+            },
         }
         assert_eq!(error_model_configuration_recognized || error_model_configuration.is_none(), true
             , "error model configuration must be recognized if exists");
@@ -2869,6 +2940,173 @@ mod tests {
         let detected_erasures = model.generate_detected_erasures();
         println!("{:?}", detected_erasures);
         println!("\n\nget_all_qubit_errors_vec:\n{:?}", model.get_all_qubit_errors_vec());
+    }
+
+    #[test]
+    fn tailored_code_test_simulation_1() {
+        let measurement_rounds = 3;
+        let d = 3;
+        let p = 0.01;  // physical error rate
+        let mut model = PlanarCodeModel::new_standard_tailored_code(measurement_rounds, d);
+        model.set_phenomenological_error_with_perfect_initialization(p);
+        model.build_graph(weight_autotune);
+        let assert_error_is = |model: &mut PlanarCodeModel, errors| {
+            model.propagate_error();
+            let mut measurement_errors = Vec::new();
+            model.iterate_measurement_errors(|t, i, j, _node| {
+                measurement_errors.push((t, i, j));
+            });
+            // println!("{:?}", measurement_errors);
+            assert_eq!(measurement_errors, errors);
+        };
+        let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
+        // single X error on the top boundary
+        model.clear_error();
+        model.add_error_at(el2t(0), 0, 2, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 0, 1), (24, 0, 3)]);
+        // single Z error on the top boundary
+        model.clear_error();
+        model.add_error_at(el2t(0), 0, 2, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2)]);
+        // single Y error on the top boundary
+        model.clear_error();
+        model.add_error_at(el2t(0), 0, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 0, 1), (24, 0, 3), (24, 1, 2)]);
+        // single X error in the middle
+        model.clear_error();
+        model.add_error_at(el2t(0), 2, 2, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 2, 1), (24, 2, 3)]);
+        // single Z error in the middle
+        model.clear_error();
+        model.add_error_at(el2t(0), 2, 2, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2), (24, 3, 2)]);
+        // single Y error in the middle
+        model.clear_error();
+        model.add_error_at(el2t(0), 2, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2), (24, 2, 1), (24, 2, 3), (24, 3, 2)]);
+    }
+
+    #[test]
+    fn tailored_code_test_simulation_circuit_level() {
+        let measurement_rounds = 3;
+        let d = 3;
+        let p = 0.01;  // physical error rate
+        let bias_eta = 100.;
+        let mut model = PlanarCodeModel::new_standard_tailored_code(measurement_rounds, d);
+        model.apply_error_model(&ErrorModel::SimpleBiasedY, None, p, bias_eta, 0.);
+        model.build_graph(weight_autotune);
+        let assert_error_is = |model: &mut PlanarCodeModel, errors| {
+            model.propagate_error();
+            let mut measurement_errors = Vec::new();
+            model.iterate_measurement_errors(|t, i, j, _node| {
+                measurement_errors.push((t, i, j));
+            });
+            // println!("{:?}", measurement_errors);
+            assert_eq!(measurement_errors, errors);
+        };
+        let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
+        // single Y error at data qubit
+        model.clear_error();
+        model.add_error_at(el2t(0), 2, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2), (24, 2, 1), (24, 2, 3), (24, 3, 2)]);
+        model.clear_error();
+        model.add_error_at(el2t(0) + 1, 2, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2), (24, 2, 1), (24, 2, 3), (24, 3, 2)]);
+        model.clear_error();
+        model.add_error_at(el2t(0) + 2, 2, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2), (24, 2, 1), (24, 2, 3), (24, 3, 2)]);
+        model.clear_error();
+        model.add_error_at(el2t(0) + 3, 2, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2), (24, 2, 1), (24, 2, 3), (30, 3, 2)]);  // this is equivalent to 4 errors + a measurement error, p' = py ^ 2
+        model.clear_error();
+        model.add_error_at(el2t(0) + 4, 2, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2), (24, 2, 1), (30, 2, 3), (30, 3, 2)]);  // this is equivalent to 4 errors + 2 measurement errors, p' = py ^ 3
+        model.clear_error();
+        model.add_error_at(el2t(0) + 5, 2, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2), (30, 2, 1), (30, 2, 3), (30, 3, 2)]);  // this is equivalent to 4 errors + a measurement error, p' = py ^ 2
+        // single Y error at X stabilizer ancilla qubit
+        model.clear_error();
+        model.add_error_at(el2t(0), 1, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(18, 1, 2), (24, 1, 2)]);  // single measurement error, because it just flip the measurement result
+        model.clear_error();
+        model.add_error_at(el2t(0) + 1, 1, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![]);  // no error here because it will be reset by initialization
+        model.clear_error();
+        model.add_error_at(el2t(0) + 2, 1, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![]);  // no error here because it will be reset by initialization
+        model.clear_error();
+        model.add_error_at(el2t(0) + 3, 1, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 0, 1), (24, 0, 3), (24, 1, 2), (30, 1, 2)]);  // this is equivalent to a X error on data qubit + a measurement error, p' = px * py
+        model.clear_error();
+        model.add_error_at(el2t(0) + 4, 1, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 0, 3), (24, 1, 2), (30, 1, 2), (30, 2, 1)]);  // this is equivalent to a 2 X errors + 2 measurement errors, p' = px ^ 2 * py ^ 2
+        model.clear_error();
+        model.add_error_at(el2t(0) + 5, 1, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2), (30, 1, 2), (30, 2, 1), (30, 2, 3)]);  // this is equivalent to a X error + a measurement error, p' = px * py
+        // single Y error at Z stabilizer ancilla qubit
+        model.clear_error();
+        model.add_error_at(el2t(0), 2, 1, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(18, 2, 1), (24, 2, 1)]);  // single measurement error, because it just flip the measurement result
+        model.clear_error();
+        model.add_error_at(el2t(0) + 1, 2, 1, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![]);  // no error here because it will be reset by initialization
+        model.clear_error();
+        model.add_error_at(el2t(0) + 2, 2, 1, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![]);  // no error here because it will be reset by initialization
+        model.clear_error();
+        model.add_error_at(el2t(0) + 3, 2, 1, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 0), (24, 1, 2), (24, 2, 1), (30, 2, 1)]);  // this is equivalent to a Z error on data qubit + a measurement error, p' = pz * py
+        model.clear_error();
+        model.add_error_at(el2t(0) + 4, 2, 1, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2), (24, 2, 1), (30, 2, 1), (30, 3, 0)]);  // this is equivalent to a 2 Z errors + 2 measurement errors, p' = pz ^ 2 * py ^ 2
+        model.clear_error();
+        model.add_error_at(el2t(0) + 5, 2, 1, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 2, 1), (30, 2, 1), (30, 3, 0), (30, 3, 2)]);  // this is equivalent to a Z error + a measurement error, p' = pz * py
+    }
+
+    #[test]
+    fn tailored_code_test_simulation_phenomenological() {
+        let measurement_rounds = 3;
+        let d = 3;
+        let p = 0.01;  // physical error rate
+        let bias_eta = 100.;
+        let mut model = PlanarCodeModel::new_standard_tailored_code(measurement_rounds, d);
+        model.apply_error_model(&ErrorModel::TailoredYPhenomenological, None, p, bias_eta, 0.);
+        model.build_graph(weight_autotune);
+        let assert_error_is = |model: &mut PlanarCodeModel, errors| {
+            model.propagate_error();
+            let mut measurement_errors = Vec::new();
+            model.iterate_measurement_errors(|t, i, j, _node| {
+                measurement_errors.push((t, i, j));
+            });
+            // println!("{:?}", measurement_errors);
+            assert_eq!(measurement_errors, errors);
+        };
+        let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
+        // single error at data qubit
+        model.clear_error();
+        model.add_error_at(el2t(0), 2, 2, &ErrorType::Y).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2), (24, 2, 1), (24, 2, 3), (24, 3, 2)]);
+        model.clear_error();
+        model.add_error_at(el2t(0), 2, 2, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 2, 1), (24, 2, 3)]);
+        model.clear_error();
+        model.add_error_at(el2t(0), 2, 2, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2), (24, 3, 2)]);
+        // single measurement error on X stabilizers
+        model.clear_error();
+        model.add_error_at(el2t(0), 1, 2, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(18, 1, 2), (24, 1, 2)]);  // single measurement error, because it just flip the measurement result
+        model.clear_error();
+        model.add_error_at(el2t(0), 1, 2, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![]);  // not sensitive
+        // single measurement error on Z stabilizers
+        model.clear_error();
+        model.add_error_at(el2t(0), 2, 1, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(18, 2, 1), (24, 2, 1)]);  // single measurement error, because it just flip the measurement result
+        model.clear_error();
+        model.add_error_at(el2t(0), 2, 1, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![]);  // not sensitive
     }
 
 }

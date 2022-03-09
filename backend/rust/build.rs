@@ -26,11 +26,11 @@ fn main() {
 
     if target_os != Ok("macos".to_string()) {  // exclude from macOS
         build.cpp_link_stdlib("stdc++"); // use libstdc++
+        build.flag("-Wno-unused-but-set-variable");  // this option is not available in clang
     }
 
     build.flag("-Wno-unused-parameter")
         .flag("-Wno-unused-variable")
-        .flag("-Wno-unused-but-set-variable")
         .compile("blossomV");
 
     println!("cargo:rerun-if-changed=../../backend/blossomV/test.cpp");
