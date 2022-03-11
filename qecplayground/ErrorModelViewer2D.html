@@ -59,7 +59,7 @@ textarea {
             <div class="abs" style="width: 100%; height: 100%; top: 0; left: 0" @click="select_node(null)"></div>
             <div v-for="(item, i) in data.snapshot[t]">
                 <div v-for="(node, j) in data.snapshot[t][i]">
-                    <div v-if="node != null" class="abs qubit" style="border-radius: 100%;" :style="{ 'background-color': qubit_color(node), width: (qubit_radius*2)+'px', height: (qubit_radius*2)+'px', left: pos(i)+'px', top: pos(j)+'px' }"
+                    <div v-if="node != null" class="abs qubit" style="border-radius: 100%;" :style="{ 'background-color': qubit_color(node), width: (qubit_radius*2)+'px', height: (qubit_radius*2)+'px', left: pos(j)+'px', top: pos(i)+'px' }"
                         @click="select_node(node)"></div>
                 </div>
             </div>
@@ -71,8 +71,8 @@ textarea {
         <div class="abs" style="right: 0; top: 0;" :style="{ width: (main_width-main_height*1.15)+'px', height: main_height+'px' }">
             <div :style="{ margin: (20*scale)+'px', 'font-size': (18*scale)+'px' }">
                 <p style="font-size: 160%; font-weight: bold;">Error Model<span v-if="data_ready" style="font-weight: normal;"> ({{ data.code_type }})</span></p>
-                <p style="font-size: 100%; max-width: 100%;" :style="{ 'margin-top': (20*scale)+'px' }">parameters: \( d_i = d_j = T = \;\){{consts.di}}, \( p_{\small\text{Pauli}} = \;\){{consts.p}}, \(p_{\small\text{erasure}} = \;\){{consts.pe}}</p>
-                <textarea readonly style="width: 95%; resize: none;" :style="{ padding: (10*scale)+'px', 'margin-top': (10*scale)+'px', 'font-size': (15*scale)+'px' }" id="story" name="story" rows="4">{{ full_parameters }}</textarea>
+                <p style="font-size: 100%; max-width: 100%;" :style="{ 'margin-top': (20*scale)+'px' }">parameters: \( d_i = d_j = T = \;\){{di}}, \( p_{\small\text{Pauli}} = \;\){{p_str}}, \(p_{\small\text{erasure}} = \;\){{pe_str}}</p>
+                <textarea style="width: 95%; resize: none;" :style="{ padding: (10*scale)+'px', 'margin-top': (10*scale)+'px', 'font-size': (15*scale)+'px' }" id="parameters-textarea" rows="4" v-model="full_parameters" v-on:keypress="textarea_keypress" v-on:blur="textarea_updated"></textarea>
                 <div style="font-size: 80%; font-family: arial; color: grey;">
                     <p>- Errors are placed *after* the gate (thus any ancilla error at measurement stage is meaningless because it's after the current measurement and before the next initialization; in order to add pure additional measurement errors, add them to gate4 stage as single-qubit pauli error)</p>
                     <p>- <span><span class="demo":style="{ width: (20*scale)+'px', height: (20*scale)+'px', 'border-radius': (20*scale)+'px', 'top': (5*scale)+'px', 'margin-right': (5*scale)+'px', 'background-color': pauli_color }"></span>single-qubit Pauli error</span>
@@ -118,8 +118,11 @@ textarea {
 
 <script>
 
-const base_url = "https://qec.wuyue98.cn/api/view_error_model"
-// const base_url = "http://127.0.0.1:8066/view_error_model"  // start local server using `cargo run -- server`
+var base_url = "https://qec.wuyue98.cn/api/view_error_model"
+if (window.location.href.startsWith("file://")) {
+    console.log("[info] detected you're using local file, development url is used. start local server using `cargo run -- server`.")
+    base_url = "http://127.0.0.1:8066/view_error_model"  // start local server using `cargo run -- server`
+}
 
 // debug url: ?p=0.01&pe=0.05&parameters=--use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration "{\"use_correlated_pauli\":true}"
 // debug url: ?p=0.01&pe=0.05&parameters=--use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration "{\"use_correlated_pauli\":true,\"initialization_error_rate\":0.005,\"measurement_error_rate\":0.005}"
@@ -134,10 +137,13 @@ async function get_error_model_data() {
 const di = 5
 
 const urlParams = new URLSearchParams(window.location.search)
-const p = parseFloat(urlParams.get('p') || 0)
-const pe = parseFloat(urlParams.get('pe') || 0)
+const p_str = urlParams.get('p') || 0
+const pe_str = urlParams.get('pe') || 0
+if (isNaN(p_str) || isNaN(pe_str)) {
+    alert("p or pe is not a float number, format error")
+}
 const parameters = urlParams.get('parameters') || ""
-const full_parameters = `[${di}] --djs [${di}] [${di}] [${p}] --pes [${pe}] ${parameters}`
+const full_parameters = `[${di}] --djs [${di}] [${di}] [${p_str}] --pes [${pe_str}] ${parameters}`
 
 function create_marks(scale=1) {
     let marks = {}
@@ -177,11 +183,10 @@ var app = new Vue({
             t: 21,
             marks: create_marks(),
             full_parameters: full_parameters,
-            consts: {
-                di: di,
-                p: p,
-                pe: pe,
-            },
+            last_confirmed_parameters: full_parameters,
+            di: di,
+            p_str: p_str,
+            pe_str: pe_str,
             selected: null,
             default_selection: [0, 0],
             non_zero_color: "red",
@@ -251,6 +256,47 @@ var app = new Vue({
         })
     },
     methods: {
+        textarea_updated() {
+            console.log(this.full_parameters)
+            if (this.full_parameters == this.last_confirmed_parameters) {
+                return  // not changed, no need to refresh
+            }
+            const found = this.full_parameters.match(/^\[(\d+)\] +--djs +\[(\d+)\] +\[(\d+)\] +\[([+-e\d\.]+)\] +--pes +\[([+-e\d\.]+)\]( (.*))?/)
+            if (found == null) {
+                alert("parameter format error")
+                return
+            }
+            console.log(found)
+            const names = ["di", "dj", "T", "p_pauli", "p_erasure"]
+            for (let i=1; i <= 5; ++i) {
+                if (isNaN(found[i])) {
+                    alert(`invalid format: ${names[i-1]}`)
+                    return
+                }
+            }
+            for (let i=1; i <= 3; ++i) {
+                if (parseInt(found[i]) != di) {
+                    alert(`current visualization doesn't support any other di,dj,T values, they must all be ${di}`)
+                    return
+                }
+            }
+            let p_str = found[4]
+            let pe_str = found[5]
+            let parameters_str = found.length <= 7 ? "" : found[7] || ""
+            let composed_configure = `[${di}] --djs [${di}] [${di}] [${p_str}] --pes [${pe_str}] ${parameters_str}`
+            if (confirm(`apply new configuration and refresh? ${composed_configure}`)) {
+                let new_url = window.location.origin + window.location.pathname + `?p=${encodeURIComponent(p_str)}&pe=${encodeURIComponent(pe_str)}&parameters=${encodeURIComponent(parameters_str)}`
+                console.log(new_url)
+                window.location.href = new_url
+                this.last_confirmed_parameters = this.full_parameters  // to prevent another confirm block
+            }
+        },
+        textarea_keypress(e) {
+            if(e.which === 13) {
+                e.preventDefault();
+                this.textarea_updated()
+            }
+        },
         update_mathjax() {
             this.$nextTick(async () => {
                 await MathJax.typesetPromise()
@@ -349,21 +395,21 @@ var app = new Vue({
                             // draw CNOT:target
                             const circle_radius = this.qubit_radius * 0.8
                             context.beginPath()
-                            context.arc(this.pos(i) + this.qubit_radius, this.pos(j) + this.qubit_radius, circle_radius, 0, 2 * Math.PI)
+                            context.arc(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius, circle_radius, 0, 2 * Math.PI)
                             context.stroke()
                             context.beginPath()
-                            context.moveTo(this.pos(i) + this.qubit_radius - circle_radius, this.pos(j) + this.qubit_radius)
-                            context.lineTo(this.pos(i) + this.qubit_radius + circle_radius, this.pos(j) + this.qubit_radius)
+                            context.moveTo(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius - circle_radius)
+                            context.lineTo(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius + circle_radius)
                             context.stroke()
                             context.beginPath()
-                            context.moveTo(this.pos(i) + this.qubit_radius, this.pos(j) + this.qubit_radius - circle_radius)
-                            context.lineTo(this.pos(i) + this.qubit_radius, this.pos(j) + this.qubit_radius + circle_radius)
+                            context.moveTo(this.pos(j) + this.qubit_radius - circle_radius, this.pos(i) + this.qubit_radius)
+                            context.lineTo(this.pos(j) + this.qubit_radius + circle_radius, this.pos(i) + this.qubit_radius)
                             context.stroke()
                         } else if (node.gate_type == "Control" || node.gate_type == "ControlledPhase") {
                             // draw CNOT:control
                             const circle_radius = 8 * this.scale
                             context.beginPath()
-                            context.arc(this.pos(i) + this.qubit_radius, this.pos(j) + this.qubit_radius, circle_radius, 0, 2 * Math.PI)
+                            context.arc(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius, circle_radius, 0, 2 * Math.PI)
                             context.fill()
                         }
                         if (this.t > 0 && node.qubit_type != "Data") {
@@ -379,10 +425,10 @@ var app = new Vue({
                             context.textAlign = "center"
                             if (this.t % 6 == 0) {
                                 // draw measurement
-                                context.fillText("Meas." + measure_basis, this.pos(i) + this.qubit_radius, this.pos(j) + this.qubit_radius)
+                                context.fillText("Meas." + measure_basis, this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius)
                             } else if (this.t % 6 == 1) {
                                 // draw initialization
-                                context.fillText("Init." + init_basis, this.pos(i) + this.qubit_radius, this.pos(j) + this.qubit_radius)
+                                context.fillText("Init." + init_basis, this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius)
                             }
                         }
                         if (node.connection != null) {
@@ -390,8 +436,8 @@ var app = new Vue({
                             let ci = node.connection.i
                             let cj = node.connection.j
                             context.beginPath()
-                            context.moveTo(this.pos(i) + this.qubit_radius, this.pos(j) + this.qubit_radius)
-                            context.lineTo(this.pos((i+ci)/2) + this.qubit_radius, this.pos((j+cj)/2) + this.qubit_radius)
+                            context.moveTo(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius)
+                            context.lineTo(this.pos((j+cj)/2) + this.qubit_radius, this.pos((i+ci)/2) + this.qubit_radius)
                             context.stroke()
                         }
                     }
@@ -411,14 +457,14 @@ var app = new Vue({
                         if (node.error_rate_x > 0 || node.error_rate_z > 0 || node.error_rate_y > 0) {
                             const circle_radius = this.qubit_radius * 1.5
                             context.beginPath()
-                            context.arc(this.pos(i) + this.qubit_radius, this.pos(j) + this.qubit_radius, circle_radius, 0, 2 * Math.PI)
+                            context.arc(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius, circle_radius, 0, 2 * Math.PI)
                             context.fillStyle = this.pauli_color
                             context.fill()
                         }
                         if (node.erasure_error_rate > 0) {
                             const circle_radius = this.qubit_radius * 1.25
                             context.beginPath()
-                            context.arc(this.pos(i) + this.qubit_radius, this.pos(j) + this.qubit_radius, circle_radius, 0, 2 * Math.PI)
+                            context.arc(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius, circle_radius, 0, 2 * Math.PI)
                             context.fillStyle = this.erasure_color
                             context.fill()
                         }
@@ -429,27 +475,27 @@ var app = new Vue({
                             let ei = ci * mid_point + i * (1 - mid_point)
                             let ej = cj * mid_point + j * (1 - mid_point)
                             if (this.sum_correlated_pauli(node) > 0) {
-                                let linear_gradident = context.createLinearGradient(this.pos(i) + this.qubit_radius, this.pos(j) + this.qubit_radius, this.pos(ei) + this.qubit_radius, this.pos(ej) + this.qubit_radius)
+                                let linear_gradident = context.createLinearGradient(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius, this.pos(ej) + this.qubit_radius, this.pos(ei) + this.qubit_radius)
                                 linear_gradident.addColorStop(0, this.pauli_color)
                                 linear_gradident.addColorStop(1, "rgba(255, 255, 255, 0)")
                                 context.fillStyle = linear_gradident
                                 const expand_width = this.qubit_radius * 0.7
-                                let left = Math.min(this.pos(i), this.pos(ei)) + this.qubit_radius - expand_width
-                                let right = Math.max(this.pos(i), this.pos(ei)) + this.qubit_radius + expand_width
-                                let top = Math.min(this.pos(j), this.pos(ej)) + this.qubit_radius - expand_width
-                                let bottom = Math.max(this.pos(j), this.pos(ej)) + this.qubit_radius + expand_width
+                                let left = Math.min(this.pos(j), this.pos(ej)) + this.qubit_radius - expand_width
+                                let right = Math.max(this.pos(j), this.pos(ej)) + this.qubit_radius + expand_width
+                                let top = Math.min(this.pos(i), this.pos(ei)) + this.qubit_radius - expand_width
+                                let bottom = Math.max(this.pos(i), this.pos(ei)) + this.qubit_radius + expand_width
                                 context.fillRect(left, bottom, right - left, top - bottom)
                             }
                             if (this.sum_correlated_erasure(node) > 0) {
-                                let linear_gradident = context.createLinearGradient(this.pos(i) + this.qubit_radius, this.pos(j) + this.qubit_radius, this.pos(ei) + this.qubit_radius, this.pos(ej) + this.qubit_radius)
+                                let linear_gradident = context.createLinearGradient(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius, this.pos(ej) + this.qubit_radius, this.pos(ei) + this.qubit_radius)
                                 linear_gradident.addColorStop(0, this.erasure_color)
                                 linear_gradident.addColorStop(1, "rgba(255, 255, 255, 0)")
                                 context.fillStyle = linear_gradident
                                 const expand_width = this.qubit_radius * 0.4
-                                let left = Math.min(this.pos(i), this.pos(ei)) + this.qubit_radius - expand_width
-                                let right = Math.max(this.pos(i), this.pos(ei)) + this.qubit_radius + expand_width
-                                let top = Math.min(this.pos(j), this.pos(ej)) + this.qubit_radius - expand_width
-                                let bottom = Math.max(this.pos(j), this.pos(ej)) + this.qubit_radius + expand_width
+                                let left = Math.min(this.pos(j), this.pos(ej)) + this.qubit_radius - expand_width
+                                let right = Math.max(this.pos(j), this.pos(ej)) + this.qubit_radius + expand_width
+                                let top = Math.min(this.pos(i), this.pos(ei)) + this.qubit_radius - expand_width
+                                let bottom = Math.max(this.pos(i), this.pos(ei)) + this.qubit_radius + expand_width
                                 context.fillRect(left, bottom, right - left, top - bottom)
                             }
                         }

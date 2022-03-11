@@ -177,6 +177,7 @@ fn create_clap_parser<'a, 'b>(color_setting: clap::AppSettings) -> clap::App<'a,
                 (@arg debug_print_error_model: --debug_print_error_model "print error model, without building the exhausted graph")
                 // adding features from Fowler's paper
                 (@arg use_reduced_graph: --use_reduced_graph "remove edge between two vertices if both of them have smaller weight matching to boundary than matching each other")
+                // swap the gate sequence of stabilizers in rotated surface code for better
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")

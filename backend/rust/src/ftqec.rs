@@ -200,7 +200,12 @@ pub struct PlanarCodeModel {
     #[serde(skip)]
     x_homology_lines: Vec< Vec::<(usize, usize)> >,
     // define boundary
+    #[serde(skip)]
     pub enabled_tailored_decoding: bool,  // by default to false, use special method to decode tailored surface code arXiv:1907.02554v2
+    // improve rotated surface code by swap the two gates of stabilizer on the boundary
+    pub enabled_swapping_two_gates_sequence: bool,
+    #[serde(skip)]
+    swap_two_gates_sequence_stabilizers: Vec::<(usize, usize)>,
 }
 
 impl PlanarCodeModel {
@@ -217,7 +222,9 @@ impl PlanarCodeModel {
             use_reduced_graph: false,
             z_homology_lines: Vec::new(),
             x_homology_lines: Vec::new(),
-            enabled_tailored_decoding: false
+            enabled_tailored_decoding: false,
+            enabled_swapping_two_gates_sequence: false,  // TODO: by default swap them for better performance
+            swap_two_gates_sequence_stabilizers: Vec::new(),
         }
     }
     pub fn new_standard_planar_code(MeasurementRounds: usize, L: usize) -> Self {
