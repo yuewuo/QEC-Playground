@@ -1,5 +1,7 @@
 #![allow(non_snake_case)]
 
+use super::cfg_if;
+
 #[cfg(not(feature="noserver"))]
 use super::util;
 #[cfg(not(feature="noserver"))]
@@ -12,9 +14,9 @@ use super::types::*;
 use super::actix_web::{web, App, HttpServer, HttpResponse, Error, error};
 #[cfg(not(feature="noserver"))]
 use super::qec;
-#[cfg(not(feature="noserver"))]
+#[cfg(all(not(feature="noserver"), feature="python_interfaces"))]
 use super::pyo3::prelude::*;
-#[cfg(not(feature="noserver"))]
+#[cfg(all(not(feature="noserver"), feature="python_interfaces"))]
 use super::pyo3::types::{IntoPyDict};
 
 #[cfg(not(feature="noserver"))]
@@ -26,7 +28,7 @@ pub async fn run_server(port: i32, addr: String, root_url: String) -> std::io::R
                 web::scope(root_url.as_str())
                     .route("/hello", web::get().to(|| { HttpResponse::Ok().body("hello world") }))
                     .route("/naive_decoder", web::post().to(naive_decoder))
-                    .route("/MWPM_decoder", web::post().to(maximum_max_weight_matching_decoder))
+                    .route("/MWPM_decoder", web::post().to(maximum_max_weight_matching_decoder))  // temporarily disabled to remove dependency of python
                     .route("/view_error_model", web::get().to(view_error_model))
             )
         }).bind(format!("{}:{}", addr, port))?.run().await
@@ -113,52 +115,59 @@ async fn naive_decoder(form: web::Json<DecodeSingleForm>) -> Result<HttpResponse
 /// Decode a single error pattern using naive_correction
 #[cfg(not(feature="noserver"))]
 async fn maximum_max_weight_matching_decoder(form: web::Json<DecodeSingleForm>) -> Result<HttpResponse, Error> {
-    let L = form.L;
-    if L < 2 { return Err(error::ErrorBadRequest("L must be no less than 2")) }
-    let x_error = ZxError::new(parse_L2_bit_array_from_json(L, &form.x_error).map_err(|e| error::ErrorBadRequest(e))?);
-    let z_error = ZxError::new(parse_L2_bit_array_from_json(L, &form.z_error).map_err(|e| error::ErrorBadRequest(e))?);
-    let measurement = util::generate_perfect_measurements(&x_error, &z_error);
-    let (x_correction, z_correction) = Python::with_gil(|py| {
-        (|py: Python| -> PyResult<(ZxCorrection, ZxCorrection)> {
-            // prepare python library
-            let networkx = py.import("networkx")?;
-            let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
-            let maximum_max_weight_matching = |_node_num: usize, weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
-                let G = networkx.call_method0("Graph").unwrap();
-                let weighted_edges = weighted_edges.to_object(py);
-                G.call_method1("add_weighted_edges_from", (weighted_edges,)).unwrap();
-                let dict = vec![("maxcardinality", true)].into_py_dict(py);
-                let matched: std::collections::HashSet<(usize, usize)> = max_weight_matching.call((G,), Some(dict)).unwrap().extract().unwrap();
-                matched
-            };
-            let (x_correction, z_correction) = qec::maximum_max_weight_matching_correction(&measurement, maximum_max_weight_matching);
-            Ok((x_correction, z_correction))
-        })(py).map_err(|e| {
-            e.print_and_set_sys_last_vars(py);
-        })
-    }).expect("python run failed");
-    let x_corrected = x_error.do_correction(&x_correction);
-    let z_corrected = z_error.do_correction(&z_correction);
-    let corrected_measurement = util::generate_perfect_measurements(&x_corrected, &z_corrected);
-    let x_valid = x_error.validate_x_correction(&x_correction).is_ok();
-    let z_valid = z_error.validate_z_correction(&z_correction).is_ok();
-    let if_all_x_stabilizers_plus1 = z_corrected.if_all_x_stabilizers_plus1();  // x stabilizers only detect z errors
-    let if_all_z_stabilizers_plus1 = x_corrected.if_all_z_stabilizers_plus1();
-    let ret = json!({
-        "x_error": output_L2_bit_array_to_json(&x_error),
-        "z_error": output_L2_bit_array_to_json(&z_error),
-        "measurement": output_L2_bit_array_to_json(&measurement),
-        "x_correction": output_L2_bit_array_to_json(&x_correction),
-        "z_correction": output_L2_bit_array_to_json(&z_correction),
-        "x_corrected": output_L2_bit_array_to_json(&x_corrected),
-        "z_corrected": output_L2_bit_array_to_json(&z_corrected),
-        "corrected_measurement": output_L2_bit_array_to_json(&corrected_measurement),
-        "x_valid": x_valid,
-        "z_valid": z_valid,
-        "if_all_x_stabilizers_plus1": if_all_x_stabilizers_plus1,
-        "if_all_z_stabilizers_plus1": if_all_z_stabilizers_plus1,
-    });
-    Ok(HttpResponse::Ok().body(serde_json::to_string(&ret)?))
+    cfg_if::cfg_if! {
+        if #[cfg(feature="python_interfaces")] {
+            let L = form.L;
+            if L < 2 { return Err(error::ErrorBadRequest("L must be no less than 2")) }
+            let x_error = ZxError::new(parse_L2_bit_array_from_json(L, &form.x_error).map_err(|e| error::ErrorBadRequest(e))?);
+            let z_error = ZxError::new(parse_L2_bit_array_from_json(L, &form.z_error).map_err(|e| error::ErrorBadRequest(e))?);
+            let measurement = util::generate_perfect_measurements(&x_error, &z_error);
+            let (x_correction, z_correction) = Python::with_gil(|py| {
+                (|py: Python| -> PyResult<(ZxCorrection, ZxCorrection)> {
+                    // prepare python library
+                    let networkx = py.import("networkx")?;
+                    let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
+                    let maximum_max_weight_matching = |_node_num: usize, weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
+                        let G = networkx.call_method0("Graph").unwrap();
+                        let weighted_edges = weighted_edges.to_object(py);
+                        G.call_method1("add_weighted_edges_from", (weighted_edges,)).unwrap();
+                        let dict = vec![("maxcardinality", true)].into_py_dict(py);
+                        let matched: std::collections::HashSet<(usize, usize)> = max_weight_matching.call((G,), Some(dict)).unwrap().extract().unwrap();
+                        matched
+                    };
+                    let (x_correction, z_correction) = qec::maximum_max_weight_matching_correction(&measurement, maximum_max_weight_matching);
+                    Ok((x_correction, z_correction))
+                })(py).map_err(|e| {
+                    e.print_and_set_sys_last_vars(py);
+                })
+            }).expect("python run failed");
+            let x_corrected = x_error.do_correction(&x_correction);
+            let z_corrected = z_error.do_correction(&z_correction);
+            let corrected_measurement = util::generate_perfect_measurements(&x_corrected, &z_corrected);
+            let x_valid = x_error.validate_x_correction(&x_correction).is_ok();
+            let z_valid = z_error.validate_z_correction(&z_correction).is_ok();
+            let if_all_x_stabilizers_plus1 = z_corrected.if_all_x_stabilizers_plus1();  // x stabilizers only detect z errors
+            let if_all_z_stabilizers_plus1 = x_corrected.if_all_z_stabilizers_plus1();
+            let ret = json!({
+                "x_error": output_L2_bit_array_to_json(&x_error),
+                "z_error": output_L2_bit_array_to_json(&z_error),
+                "measurement": output_L2_bit_array_to_json(&measurement),
+                "x_correction": output_L2_bit_array_to_json(&x_correction),
+                "z_correction": output_L2_bit_array_to_json(&z_correction),
+                "x_corrected": output_L2_bit_array_to_json(&x_corrected),
+                "z_corrected": output_L2_bit_array_to_json(&z_corrected),
+                "corrected_measurement": output_L2_bit_array_to_json(&corrected_measurement),
+                "x_valid": x_valid,
+                "z_valid": z_valid,
+                "if_all_x_stabilizers_plus1": if_all_x_stabilizers_plus1,
+                "if_all_z_stabilizers_plus1": if_all_z_stabilizers_plus1,
+            });
+            Ok(HttpResponse::Ok().body(serde_json::to_string(&ret)?))
+        } else {
+            let _ = form;
+            Ok(HttpResponse::InternalServerError().body("compiling feature `python_interfaces` not enabled"))
+        }
+    }
 }
 
 fn default_probability() -> f64 {

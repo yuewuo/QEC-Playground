@@ -8,12 +8,16 @@ use super::union_find_decoder;
 use super::distributed_uf_decoder;
 use super::ftqec;
 use super::types::QubitType;
+#[cfg(feature="python_interfaces")]
 use super::pyo3::prelude::*;
+#[cfg(feature="python_interfaces")]
 use super::pyo3::types::{IntoPyDict};
 use std::collections::{HashMap};
 use lazy_static::lazy_static;
 use std::sync::RwLock;
+#[cfg(feature="python_interfaces")]
 use super::util::getFileContentFromMultiplePlaces;
+use super::cfg_if;
 
 lazy_static! {
     static ref PY_SEARCH_DIRECTORIES: RwLock<Vec<String>> = RwLock::new(vec![
@@ -51,10 +55,12 @@ pub struct DistributedUnionFind<N: DufNode> {
 }
 
 pub trait DufNode {
+    #[cfg(feature="python_interfaces")]
     fn build_py<'a>(&self, module: &'a PyModule, py: Python) -> PyResult<&'a PyAny>;
 }
 
 impl<N: DufNode> DistributedUnionFind<N> {
+    #[cfg(feature="python_interfaces")]
     pub fn build_py<'a>(&self, module: &'a PyModule, py: Python) -> PyResult<&'a PyAny> {
         let mut nodes: Vec<&PyAny> = Vec::new();
         for node in self.nodes.iter() {
@@ -78,21 +84,27 @@ impl<N: DufNode> DistributedUnionFind<N> {
         ].into_py_dict(py)))
     }
     pub fn generate_code(&self) -> String {
-        Python::with_gil(|py| {
-            (|py: Python| -> PyResult<String> {
-                // get source file
-                let py_module_name = format!("distributed_union_find_FPGA_generator");
-                let lib_filename = format!("{}.py", py_module_name);
-                let lib_source = getFileContentFromMultiplePlaces(&PY_SEARCH_DIRECTORIES.read().unwrap(), &lib_filename).unwrap();
-                let module = PyModule::from_code(py, lib_source.as_str(), lib_filename.as_str(), py_module_name.as_str())?;
-                // generate code
-                let duf = self.build_py(module, py)?;
-                let ret: String = duf.call_method0("generate_code")?.extract()?;
-                Ok(ret)
-            })(py).map_err(|e| {
-                e.print_and_set_sys_last_vars(py);
-            })
-        }).expect("python run failed")
+        cfg_if::cfg_if! {
+            if #[cfg(feature="python_interfaces")] {
+                Python::with_gil(|py| {
+                    (|py: Python| -> PyResult<String> {
+                        // get source file
+                        let py_module_name = format!("distributed_union_find_FPGA_generator");
+                        let lib_filename = format!("{}.py", py_module_name);
+                        let lib_source = getFileContentFromMultiplePlaces(&PY_SEARCH_DIRECTORIES.read().unwrap(), &lib_filename).unwrap();
+                        let module = PyModule::from_code(py, lib_source.as_str(), lib_filename.as_str(), py_module_name.as_str())?;
+                        // generate code
+                        let duf = self.build_py(module, py)?;
+                        let ret: String = duf.call_method0("generate_code")?.extract()?;
+                        Ok(ret)
+                    })(py).map_err(|e| {
+                        e.print_and_set_sys_last_vars(py);
+                    })
+                }).expect("python run failed")
+            } else {
+                panic!("compiling feature `python_interfaces` not enabled")
+            }
+        }
     }
 }
 
@@ -106,6 +118,7 @@ pub struct DufNeighbor {
 }
 
 impl DufNeighbor {
+    #[cfg(feature="python_interfaces")]
     fn build_py<'a>(&self, module: &'a PyModule, py: Python) -> PyResult<&'a PyAny> {
         module.getattr("DufNeighbor")?.call((), Some([
             ("a", self.a.into_py(py)),
@@ -123,6 +136,7 @@ pub struct DufFastChannel {
 }
 
 impl DufFastChannel {
+    #[cfg(feature="python_interfaces")]
     fn build_py<'a>(&self, module: &'a PyModule, py: Python) -> PyResult<&'a PyAny> {
         module.getattr("DufFastChannel")?.call((), Some([
             ("a", self.a.into_py(py)),
@@ -142,6 +156,7 @@ pub struct DufNode2d {
 }
 
 impl DufNode for DufNode2d {
+    #[cfg(feature="python_interfaces")]
     fn build_py<'a>(&self, module: &'a PyModule, py: Python) -> PyResult<&'a PyAny> {
         module.getattr("DufNode")?.call((), Some([
             ("address", [self.address.0, self.address.1].into_py(py)),
@@ -166,6 +181,7 @@ pub struct DufNode3d {
 }
 
 impl DufNode for DufNode3d {
+    #[cfg(feature="python_interfaces")]
     fn build_py<'a>(&self, module: &'a PyModule, py: Python) -> PyResult<&'a PyAny> {
         module.getattr("DufNode")?.call((), Some([
             ("address", [self.address.0, self.address.1, self.address.2].into_py(py)),
@@ -332,12 +348,15 @@ fn fault_tolerant_distributed_union_find(d: usize, measurement_rounds: usize, p:
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature="python_interfaces")]
     use super::*;
+    #[cfg(feature="python_interfaces")]
     use super::super::pyo3::types::{PyDict};
 
     // use `cargo test fpga_generator_test_basic_python_call -- --nocapture` to run specific test
 
     #[test]
+    #[cfg(feature="python_interfaces")]
     fn fpga_generator_test_basic_python_call() {
         Python::with_gil(|py| {
             (|py: Python| -> PyResult<()> {

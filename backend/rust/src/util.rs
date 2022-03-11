@@ -118,6 +118,7 @@ pub fn generate_perfect_measurements(x_error: &ZxError, z_error: &ZxError) -> Zx
 }
 
 /// filename should contain .py, folders should end with slash
+#[allow(dead_code)]
 pub fn getFileContentFromMultiplePlaces(folders: &Vec<String>, filename: &String) -> Result<String, String> {
     for folder in folders {
         let path = Path::new(folder).join(filename.as_str());

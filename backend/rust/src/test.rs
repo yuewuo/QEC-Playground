@@ -7,7 +7,9 @@ use super::serde_json;
 use super::serde_json::{Value, Map, json};
 use super::types::*;
 use super::qec;
+#[cfg(feature="python_interfaces")]
 use super::pyo3::prelude::*;
+#[cfg(feature="python_interfaces")]
 use super::pyo3::types::{IntoPyDict};
 use super::blossom_v;
 use super::ftqec;
@@ -226,39 +228,45 @@ fn naive_correction() {
 }
 
 fn maximum_max_weight_matching_correction() {
-    Python::with_gil(|py| {
-        (|py: Python| -> PyResult<()> {
-            // prepare python library
-            let networkx = py.import("networkx")?;
-            let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
-            let maximum_max_weight_matching = |_node_num: usize, weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
-                let G = networkx.call_method0("Graph").unwrap();
-                let weighted_edges = weighted_edges.to_object(py);
-                G.call_method1("add_weighted_edges_from", (weighted_edges,)).unwrap();
-                let dict = vec![("maxcardinality", true)].into_py_dict(py);
-                let matched: std::collections::HashSet<(usize, usize)> = max_weight_matching.call((G,), Some(dict)).unwrap().extract().unwrap();
-                matched
-            };
-            // prepare error syndrome
-            let L = 5;
-            let mut x_error_ro = ZxError::new_L(L);
-            let mut x_error = x_error_ro.view_mut();
-            x_error[[1, 0]] = true;
-            x_error[[3, 2]] = true;
-            x_error[[3, 3]] = true;
-            println!("z_error_ro:");
-            x_error_ro.print();
-            let measurement = util::generate_perfect_measurements(&x_error_ro, &x_error_ro);
-            println!("measurement:");
-            measurement.print();
-            let (x_correction, z_correction) = qec::maximum_max_weight_matching_correction(&measurement, maximum_max_weight_matching);
-            assert_eq!(x_error_ro.validate_x_correction(&x_correction), Ok(()));
-            assert_eq!(x_error_ro.validate_z_correction(&z_correction), Ok(()));
-            Ok(())
-        })(py).map_err(|e| {
-            e.print_and_set_sys_last_vars(py);
-        })
-    }).expect("python run failed");
+    cfg_if::cfg_if! {
+        if #[cfg(feature="python_interfaces")] {
+            Python::with_gil(|py| {
+                (|py: Python| -> PyResult<()> {
+                    // prepare python library
+                    let networkx = py.import("networkx")?;
+                    let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
+                    let maximum_max_weight_matching = |_node_num: usize, weighted_edges: Vec<(usize, usize, f64)>| -> std::collections::HashSet<(usize, usize)> {
+                        let G = networkx.call_method0("Graph").unwrap();
+                        let weighted_edges = weighted_edges.to_object(py);
+                        G.call_method1("add_weighted_edges_from", (weighted_edges,)).unwrap();
+                        let dict = vec![("maxcardinality", true)].into_py_dict(py);
+                        let matched: std::collections::HashSet<(usize, usize)> = max_weight_matching.call((G,), Some(dict)).unwrap().extract().unwrap();
+                        matched
+                    };
+                    // prepare error syndrome
+                    let L = 5;
+                    let mut x_error_ro = ZxError::new_L(L);
+                    let mut x_error = x_error_ro.view_mut();
+                    x_error[[1, 0]] = true;
+                    x_error[[3, 2]] = true;
+                    x_error[[3, 3]] = true;
+                    println!("z_error_ro:");
+                    x_error_ro.print();
+                    let measurement = util::generate_perfect_measurements(&x_error_ro, &x_error_ro);
+                    println!("measurement:");
+                    measurement.print();
+                    let (x_correction, z_correction) = qec::maximum_max_weight_matching_correction(&measurement, maximum_max_weight_matching);
+                    assert_eq!(x_error_ro.validate_x_correction(&x_correction), Ok(()));
+                    assert_eq!(x_error_ro.validate_z_correction(&z_correction), Ok(()));
+                    Ok(())
+                })(py).map_err(|e| {
+                    e.print_and_set_sys_last_vars(py);
+                })
+            }).expect("python run failed");
+        } else {
+            panic!("compiling feature `python_interfaces` not enabled")
+        }
+    }
 }
 
 fn offer_decoder_study(d: usize, p: f64, count: usize, max_resend: usize, max_cycles: usize, print_error_pattern_to_find_infinite_loop: bool) {
@@ -617,32 +625,37 @@ fn distributed_union_find_decoder_study(d: usize, p: f64, count: usize) {
 }
 
 fn archived_debug_tests() {
-    {  // call python networkx.algorithms.matching.max_weight_matching
-        Python::with_gil(|py| {
-            (|py: Python| -> PyResult<()> {
-                let networkx = py.import("networkx")?;
-                let G = networkx.call_method0("Graph")?;
-                let weighted_edges = vec![
-                    (0, 1, -3.),
-                    (1, 2, -2.),
-                    (2, 0, -3.),
-                    (0, 3, -1.),
-                    (1, 4, -2.),
-                    (2, 5, -1.),
-                    (3, 4, 0.),
-                    (3, 5, 0.),
-                    (4, 5, 0.),
-                ].to_object(py);
-                G.call_method1("add_weighted_edges_from", (weighted_edges,))?;
-                let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
-                let dict = vec![("maxcardinality", true)].into_py_dict(py);
-                let matched: std::collections::HashSet<(usize, usize)> = max_weight_matching.call((G,), Some(dict))?.extract()?;
-                println!("{:?}", matched);
-                Ok(())
-            })(py).map_err(|e| {
-                e.print_and_set_sys_last_vars(py);
-            })
-        }).expect("python run failed");
+    cfg_if::cfg_if! {
+        if #[cfg(feature="python_interfaces")] {
+            // call python networkx.algorithms.matching.max_weight_matching
+            Python::with_gil(|py| {
+                (|py: Python| -> PyResult<()> {
+                    let networkx = py.import("networkx")?;
+                    let G = networkx.call_method0("Graph")?;
+                    let weighted_edges = vec![
+                        (0, 1, -3.),
+                        (1, 2, -2.),
+                        (2, 0, -3.),
+                        (0, 3, -1.),
+                        (1, 4, -2.),
+                        (2, 5, -1.),
+                        (3, 4, 0.),
+                        (3, 5, 0.),
+                        (4, 5, 0.),
+                    ].to_object(py);
+                    G.call_method1("add_weighted_edges_from", (weighted_edges,))?;
+                    let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
+                    let dict = vec![("maxcardinality", true)].into_py_dict(py);
+                    let matched: std::collections::HashSet<(usize, usize)> = max_weight_matching.call((G,), Some(dict))?.extract()?;
+                    println!("{:?}", matched);
+                    Ok(())
+                })(py).map_err(|e| {
+                    e.print_and_set_sys_last_vars(py);
+                })
+            }).expect("python run failed");
+        } else {
+            println!("[error] compiling feature `python_interfaces` not enabled")
+        }
     }
     {  // test call c function
         println!("{}", blossom_v::safe_square(5));

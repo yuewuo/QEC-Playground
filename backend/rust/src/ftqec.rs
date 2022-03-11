@@ -130,6 +130,38 @@ pub struct Node {
     // internal states used for temporary manipulation
     #[serde(skip)]
     pub disable_in_random_error_generator: bool,
+    // specific for tailored surface code, where decoding high probability 4 non-trivial measurement errors are essential
+    pub tailored_positive_edges: Vec::<Edge>,  // edges that connects stabilizers (x, y) and (x+1, y+1)
+    pub tailored_negative_edges: Vec::<Edge>,  // edges that connects stabilizers (x, y) and (x+1, y-1)
+}
+
+impl Node {
+    fn __new_default(t: usize, i: usize, j: usize, gate_type: GateType, qubit_type: QubitType) -> Self {
+        Self {
+            t: t, i: i, j: j,
+            connection: None,
+            correlated_error_model: None,
+            correlated_erasure_error_model: None,
+            gate_type: gate_type,
+            qubit_type: qubit_type,
+            error: ErrorType::I,
+            has_erasure: false,
+            error_rate_x: 0.25,  // by default error rate is the highest
+            error_rate_z: 0.25,
+            error_rate_y: 0.25,
+            erasure_error_rate: 0.5,
+            propagated: ErrorType::I,
+            pauli_error_connections: Vec::new(),
+            edges: Vec::new(),
+            boundary: None,
+            exhausted_boundary: None,
+            pet_node: None,
+            exhausted_map: HashMap::new(),
+            disable_in_random_error_generator: false,
+            tailored_positive_edges: Vec::new(),
+            tailored_negative_edges: Vec::new(),
+        }
+    }
 }
 
 /// record the code type
@@ -168,30 +200,25 @@ pub struct PlanarCodeModel {
     #[serde(skip)]
     x_homology_lines: Vec< Vec::<(usize, usize)> >,
     // define boundary
+    pub enabled_tailored_decoding: bool,  // by default to false, use special method to decode tailored surface code arXiv:1907.02554v2
 }
 
 impl PlanarCodeModel {
-    pub fn new_standard_tailored_code(MeasurementRounds: usize, L: usize) -> Self {
-        // MeasurementRounds = 0 means only one perfect measurement round
-        assert!(L >= 2, "at lease one stabilizer is required");
-        let mut model = Self::new_planar_code(CodeType::StandardTailoredCode, MeasurementRounds, L, L, |_i, _j| true);
-        // create Z stabilizer homology lines, detecting X errors
-        for j in 0..L {
-            let mut z_homology_line = Vec::new();
-            for i in 0..L {
-                z_homology_line.push((2 * i, 2 * j));
-            }
-            model.z_homology_lines.push(z_homology_line);
+    fn __new_default(code_type: CodeType, snapshot: Vec::< Vec::< Vec::< Option<Node> > > >, di: usize, dj: usize, MeasurementRounds: usize, T: usize) -> Self {
+        Self {
+            code_type: code_type,
+            snapshot: snapshot,
+            di: di,
+            dj: dj,
+            T: T,
+            MeasurementRounds: MeasurementRounds,
+            graph: None,
+            use_combined_probability: false,
+            use_reduced_graph: false,
+            z_homology_lines: Vec::new(),
+            x_homology_lines: Vec::new(),
+            enabled_tailored_decoding: false
         }
-        // create X stabilizer homology lines, detecting Z errors
-        for i in 0..L {
-            let mut x_homology_line = Vec::new();
-            for j in 0..L {
-                x_homology_line.push((2 * i, 2 * j));
-            }
-            model.x_homology_lines.push(x_homology_line);
-        }
-        model
     }
     pub fn new_standard_planar_code(MeasurementRounds: usize, L: usize) -> Self {
         // MeasurementRounds = 0 means only one perfect measurement round
@@ -339,28 +366,9 @@ impl PlanarCodeModel {
                                 }
                             },
                         }
-                        snapshot_row_1.push(Some(Node{
-                            t: t, i: i, j: j,
-                            connection: connection,
-                            correlated_error_model: None,
-                            correlated_erasure_error_model: None,
-                            gate_type: gate_type,
-                            qubit_type: qubit_type,
-                            error: ErrorType::I,
-                            has_erasure: false,
-                            error_rate_x: 0.25,  // by default error rate is the highest
-                            error_rate_z: 0.25,
-                            error_rate_y: 0.25,
-                            erasure_error_rate: 0.5,
-                            propagated: ErrorType::I,
-                            pauli_error_connections: Vec::new(),
-                            edges: Vec::new(),
-                            boundary: None,
-                            exhausted_boundary: None,
-                            pet_node: None,
-                            exhausted_map: HashMap::new(),
-                            disable_in_random_error_generator: false,
-                        }))
+                        let mut node = Node::__new_default(t, i, j, gate_type, qubit_type);
+                        node.connection = connection;
+                        snapshot_row_1.push(Some(node));
                     } else {
                         snapshot_row_1.push(None);
                     }
@@ -369,19 +377,8 @@ impl PlanarCodeModel {
             }
             snapshot.push(snapshot_row_0);
         }
-        Self {
-            code_type: code_type,
-            snapshot: snapshot,
-            di: di,
-            dj: dj,
-            T: T,
-            MeasurementRounds: MeasurementRounds,
-            graph: None,
-            use_combined_probability: false,
-            use_reduced_graph: false,
-            z_homology_lines: Vec::new(),
-            x_homology_lines: Vec::new(),
-        }
+        let code = Self::__new_default(code_type, snapshot, di, dj, MeasurementRounds, T);
+        code
     }
 
     pub fn new_rotated_XZZX_code(MeasurementRounds: usize, L: usize) -> Self {
@@ -509,28 +506,9 @@ impl PlanarCodeModel {
                                 }
                             },
                         }
-                        snapshot_row_1.push(Some(Node{
-                            t: t, i: i, j: j,
-                            connection: connection,
-                            correlated_error_model: None,
-                            correlated_erasure_error_model: None,
-                            gate_type: gate_type,
-                            qubit_type: qubit_type,
-                            error: ErrorType::I,
-                            has_erasure: false,
-                            error_rate_x: 0.25,  // by default error rate is the highest
-                            error_rate_z: 0.25,
-                            error_rate_y: 0.25,
-                            erasure_error_rate: 0.5,
-                            propagated: ErrorType::I,
-                            pauli_error_connections: Vec::new(),
-                            edges: Vec::new(),
-                            boundary: None,
-                            exhausted_boundary: None,
-                            pet_node: None,
-                            exhausted_map: HashMap::new(),
-                            disable_in_random_error_generator: false,
-                        }))
+                        let mut node = Node::__new_default(t, i, j, gate_type, qubit_type);
+                        node.connection = connection;
+                        snapshot_row_1.push(Some(node));
                     } else {
                         snapshot_row_1.push(None);
                     }
@@ -539,19 +517,8 @@ impl PlanarCodeModel {
             }
             snapshot.push(snapshot_row_0);
         }
-        Self {
-            code_type: code_type,
-            snapshot: snapshot,
-            di: di,
-            dj: dj,
-            T: T,
-            MeasurementRounds: MeasurementRounds,
-            graph: None,
-            use_combined_probability: false,
-            use_reduced_graph: false,
-            z_homology_lines: Vec::new(),
-            x_homology_lines: Vec::new(),
-        }
+        let code = Self::__new_default(code_type, snapshot, di, dj, MeasurementRounds, T);
+        code
     }
 
     pub fn iterate_snapshot_mut<F>(&mut self, mut func: F) where F: FnMut(usize, usize, usize, &mut Node) {
@@ -1288,8 +1255,23 @@ impl PlanarCodeModel {
                                         }
                                     }
                                 }
+                                if self.enabled_tailored_decoding && (measurement_errors.len() >= 2 && measurement_errors.len() <= 4) {
+                                    // tailored surface code decoding method can handle special cases arXiv:1907.02554v2
+                                    // for is_positive in [true, false] {
+                                    //     for mi in 0..measurement_errors.len() {
+                                    //         for mj in 0..measurement_errors.len() {
+                                    //             if mi == mj {
+                                    //                 continue
+                                    //             }
+                                    //             let (t1, i1, j1) = measurement_errors[mi];
+                                    //             let (t2, i2, j2) = measurement_errors[mj];
+                                    //             // TODO
+                                    //         }
+                                    //     }
+                                    // }
+                                }
                                 // update fast benchmark
-                                if measurement_errors.len() >= 1 {
+                                if build_fast_benchmark && measurement_errors.len() >= 1 {
                                     let (t0, i0, j0) = measurement_errors[0];
                                     let node0 = self.snapshot[t0][i0][j0].as_ref().unwrap();
                                     let mut group_1 = Vec::new();
@@ -1324,25 +1306,23 @@ impl PlanarCodeModel {
                                         }
                                         erasure_error_rate
                                     };
-                                    if build_fast_benchmark {
-                                        for group in [group_1, group_2].iter() {
-                                            if group.len() == 1 {
-                                                let (t1, i1, j1) = group[0];
-                                                if p > 0. {
-                                                    fast_benchmark.as_mut().unwrap().add_possible_boundary(t1, i1, j1, p, t, i, j, Either::Left(error.clone()));
-                                                }
-                                                if is_erasure && joint_erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
-                                                    fast_benchmark.as_mut().unwrap().add_possible_boundary(t1, i1, j1, joint_erasure_error_rate, t, i, j, Either::Right(()));
-                                                }
-                                            } else if group.len() == 2 {
-                                                let (t1, i1, j1) = group[0];
-                                                let (t2, i2, j2) = group[1];
-                                                if p > 0. {
-                                                    fast_benchmark.as_mut().unwrap().add_possible_match(t1, i1, j1, t2, i2, j2, p, t, i, j, Either::Left(error.clone()));
-                                                }
-                                                if is_erasure && joint_erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
-                                                    fast_benchmark.as_mut().unwrap().add_possible_match(t1, i1, j1, t2, i2, j2, joint_erasure_error_rate, t, i, j, Either::Right(()));
-                                                }
+                                    for group in [group_1, group_2].iter() {
+                                        if group.len() == 1 {
+                                            let (t1, i1, j1) = group[0];
+                                            if p > 0. {
+                                                fast_benchmark.as_mut().unwrap().add_possible_boundary(t1, i1, j1, p, t, i, j, Either::Left(error.clone()));
+                                            }
+                                            if is_erasure && joint_erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
+                                                fast_benchmark.as_mut().unwrap().add_possible_boundary(t1, i1, j1, joint_erasure_error_rate, t, i, j, Either::Right(()));
+                                            }
+                                        } else if group.len() == 2 {
+                                            let (t1, i1, j1) = group[0];
+                                            let (t2, i2, j2) = group[1];
+                                            if p > 0. {
+                                                fast_benchmark.as_mut().unwrap().add_possible_match(t1, i1, j1, t2, i2, j2, p, t, i, j, Either::Left(error.clone()));
+                                            }
+                                            if is_erasure && joint_erasure_error_rate > 0. {  // fast benchmark doesn't consider correlated erasure error
+                                                fast_benchmark.as_mut().unwrap().add_possible_match(t1, i1, j1, t2, i2, j2, joint_erasure_error_rate, t, i, j, Either::Right(()));
                                             }
                                         }
                                     }
@@ -2390,13 +2370,15 @@ impl PlanarCodeModel {
                     }
                 });
             },
-            ErrorModel::SimpleBiasedY => {
+            ErrorModel::TailoredYCircuitLevel => {
+                self.enabled_tailored_decoding = true;  // mark it to use tailored decoding
                 let px = p / (1. + bias_eta) / 2.;
                 let pz = px;
                 let py = p - 2. * px;
                 self.set_individual_error_with_perfect_initialization_with_erasure(px, py, pz, pe);
             },
             ErrorModel::TailoredYPhenomenological => {
+                self.enabled_tailored_decoding = true;  // mark it to use tailored decoding
                 let height = self.snapshot.len();
                 let px = p / (1. + bias_eta) / 2.;
                 let pz = px;
@@ -2453,6 +2435,12 @@ impl PlanarCodeModel {
                 }
                 for edge in node.edges.iter().filter(|edge| edge.p > 0.) {
                     println!("edge [{}][{}][{}]: p = {}", edge.t, edge.i, edge.j, edge.p);
+                }
+                for edge in node.tailored_positive_edges.iter().filter(|edge| edge.p > 0.) {
+                    println!("positive edge [{}][{}][{}]: p = {}", edge.t, edge.i, edge.j, edge.p);
+                }
+                for edge in node.tailored_negative_edges.iter().filter(|edge| edge.p > 0.) {
+                    println!("negative edge [{}][{}][{}]: p = {}", edge.t, edge.i, edge.j, edge.p);
                 }
             }
         });
@@ -2947,7 +2935,7 @@ mod tests {
         let measurement_rounds = 3;
         let d = 3;
         let p = 0.01;  // physical error rate
-        let mut model = PlanarCodeModel::new_standard_tailored_code(measurement_rounds, d);
+        let mut model = PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
         model.set_phenomenological_error_with_perfect_initialization(p);
         model.build_graph(weight_autotune);
         let assert_error_is = |model: &mut PlanarCodeModel, errors| {
@@ -2992,8 +2980,8 @@ mod tests {
         let d = 3;
         let p = 0.01;  // physical error rate
         let bias_eta = 100.;
-        let mut model = PlanarCodeModel::new_standard_tailored_code(measurement_rounds, d);
-        model.apply_error_model(&ErrorModel::SimpleBiasedY, None, p, bias_eta, 0.);
+        let mut model = PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
+        model.apply_error_model(&ErrorModel::TailoredYCircuitLevel, None, p, bias_eta, 0.);
         model.build_graph(weight_autotune);
         let assert_error_is = |model: &mut PlanarCodeModel, errors| {
             model.propagate_error();
@@ -3070,7 +3058,7 @@ mod tests {
         let d = 3;
         let p = 0.01;  // physical error rate
         let bias_eta = 100.;
-        let mut model = PlanarCodeModel::new_standard_tailored_code(measurement_rounds, d);
+        let mut model = PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
         model.apply_error_model(&ErrorModel::TailoredYPhenomenological, None, p, bias_eta, 0.);
         model.build_graph(weight_autotune);
         let assert_error_is = |model: &mut PlanarCodeModel, errors| {

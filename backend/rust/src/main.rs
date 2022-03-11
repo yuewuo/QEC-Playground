@@ -24,7 +24,6 @@ extern crate actix_web;
 #[cfg(not(feature="noserver"))]
 extern crate actix_cors;
 extern crate serde;
-extern crate pyo3;
 extern crate libc;
 extern crate num_cpus;
 extern crate petgraph;
@@ -37,6 +36,9 @@ extern crate lazy_static;
 extern crate either;
 extern crate rug;
 extern crate shlex;
+extern crate cfg_if;
+#[cfg(feature="python_interfaces")]
+extern crate pyo3;
 
 fn create_clap_parser<'a, 'b>(color_setting: clap::AppSettings) -> clap::App<'a, 'b> {
     clap_app!(QECPlayground =>

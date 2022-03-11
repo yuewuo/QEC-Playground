@@ -1561,6 +1561,7 @@ dependencies = [
  "actix-web",
  "bytes 0.6.0",
  "cc",
+ "cfg-if 1.0.0",
  "clap",
  "derivative",
  "derive_more",
