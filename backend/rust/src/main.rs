@@ -146,6 +146,7 @@ fn create_clap_parser<'a, 'b>(color_setting: clap::AppSettings) -> clap::App<'a,
                 (@arg shallow_error_on_bottom: --shallow_error_on_bottom "add error to data qubit at t=6, so that no measurement error happens at bottom layer. this option can be used with T=0 for single perfect measurement round with only data qubit errors")
                 (@arg no_y_error: --no_y_error "set probability of y errors to 0")
                 (@arg use_xzzx_code: --use_xzzx_code "use XZZX surface code")
+                (@arg use_rotated_tailored_code: --use_rotated_tailored_code "use rotated tailored surface code with high bias to Z errors (X stabilizers and Y stabilizers)")
                 (@arg bias_eta: --bias_eta +takes_value "bias_eta = pz / (px + py) and px = py, px + py + pz = p. default to 1/2, which is px = pz = py")
                 (@arg decoder: --decoder +takes_value "supported decoders: MWPM=MinimumWeightPerfectMatching, UF=UnionFind")
                 (@arg max_half_weight: --max_half_weight +takes_value "[UnionFind decoder only] maximum weight will be 2 * max_half_weight")

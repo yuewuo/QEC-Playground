@@ -113,6 +113,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let shallow_error_on_bottom = matches.is_present("shallow_error_on_bottom");
             let no_y_error = matches.is_present("no_y_error");
             let use_xzzx_code = matches.is_present("use_xzzx_code");
+            let use_rotated_tailored_code = matches.is_present("use_rotated_tailored_code");
             let bias_eta = value_t!(matches, "bias_eta", f64).unwrap_or(0.5);  // default to 0.5
             let decoder_type = DecoderType::from(value_t!(matches, "decoder", String).unwrap_or("MWPM".to_string()));
             let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
@@ -144,7 +145,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let use_reduced_graph = matches.is_present("use_reduced_graph");
             return Some(fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
-                , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, bias_eta, decoder_type, max_half_weight
+                , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, use_rotated_tailored_code, bias_eta, decoder_type, max_half_weight
                 , !disable_combined_probability, !disable_autotune_minus_no_error, error_model, error_model_configuration, no_stop_if_next_model_is_not_prepared, log_runtime_statistics
                 , detailed_runtime_statistics, log_error_pattern_into_statistics_when_has_logical_error, time_budget, use_fast_benchmark
                 , fbench_disable_additional_error, fbench_use_fake_decoder, fbench_use_simple_sum, fbench_assignment_sampling_amount
@@ -554,7 +555,7 @@ it supports progress bar (in stderr), so you can run this in backend by redirect
 fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, max_N: usize, min_error_cases: usize
         , parallel: usize, validate_layer: String, mini_sync_time: f64, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool
         , extra_measurement_error: f64, bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, only_count_logical_z: bool
-        , perfect_initialization: bool, shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, bias_eta: f64, decoder_type: DecoderType
+        , perfect_initialization: bool, shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, use_rotated_tailored_code: bool, bias_eta: f64, decoder_type: DecoderType
         , max_half_weight: usize, use_combined_probability: bool, autotune_minus_no_error: bool, error_model: Option<ErrorModel>
         , error_model_configuration: Option<serde_json::Value>, no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>
         , detailed_runtime_statistics: bool, log_error_pattern_into_statistics_when_has_logical_error: bool, time_budget: Option<f64>, use_fast_benchmark: bool
@@ -594,6 +595,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         "shallow_error_on_bottom": shallow_error_on_bottom,
         "no_y_error": no_y_error,
         "use_xzzx_code": use_xzzx_code,
+        "use_rotated_tailored_code": use_rotated_tailored_code,
         "bias_eta": bias_eta,
         "decoder_type": format!("{:?}", decoder_type),
         "max_half_weight": max_half_weight,
@@ -655,19 +657,26 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
     let compute_model = Arc::new(move |di: usize, dj: usize, MeasurementRounds: usize, p: f64, pe: f64| {
         // build general models
         let mut model = if rotated_planar_code {
-            if use_xzzx_code {
+            if use_xzzx_code && !use_rotated_tailored_code {
                 assert_eq!(di, dj, "rotated XZZX code doesn't support rectangle lattice yet");
                 ftqec::PlanarCodeModel::new_rotated_XZZX_code(MeasurementRounds, di)
-            } else {
+            } else if !use_xzzx_code && !use_rotated_tailored_code {
                 assert_eq!(di, dj, "rotated planar code doesn't support rectangle lattice yet");
                 ftqec::PlanarCodeModel::new_rotated_planar_code(MeasurementRounds, di)
+            } else {
+                panic!("conflict parameters: --rotated_planar_code, --use_xzzx_code and --use_rotated_tailored_code")
             }
         } else {
-            if use_xzzx_code {
+            if use_xzzx_code && !use_rotated_tailored_code {
                 ftqec::PlanarCodeModel::new_standard_XZZX_code_rectangle(MeasurementRounds, di, dj)
-            } else {
+            } else if !use_xzzx_code && use_rotated_tailored_code {
+                assert_eq!(di, dj, "rotated tailored code doesn't support rectangle lattice yet");
+                ftqec::PlanarCodeModel::new_rotated_tailored_code(MeasurementRounds, di)
+            } else if !use_xzzx_code && !use_rotated_tailored_code {
                 assert_eq!(di, dj, "standard planar code doesn't support rectangle lattice yet");
                 ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, di)
+            } else {
+                panic!("conflict parameters: --rotated_planar_code, --use_xzzx_code and --use_rotated_tailored_code")
             }
         };
         model.use_combined_probability = use_combined_probability;

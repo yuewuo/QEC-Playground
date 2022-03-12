@@ -239,7 +239,7 @@ var app = new Vue({
                 }
             }
         }
-        let all_qubit_types = ["Data", "StabX", "StabZ", "StabXZZXLogicalX"]  // StabXZZXLogicalZ is not necessary
+        let all_qubit_types = ["Data", "StabX", "StabZ", "StabXZZXLogicalX", "StabY"]  // StabXZZXLogicalZ is not necessary
         for (let qubit_type of all_qubit_types) {
             if (found_qubit_types[this.qubit_type_name(qubit_type)]) {
                 this.existing_qubit_types.push(qubit_type)
@@ -324,6 +324,7 @@ var app = new Vue({
             if (qubit_type == "StabZ") { return "Z Ancilla" }
             if (qubit_type == "StabXZZXLogicalX") { return "XZZX Ancilla" }
             if (qubit_type == "StabXZZXLogicalZ") { return "XZZX Ancilla" }
+            if (qubit_type == "StabY") { return "Y Ancilla" }
             return qubit_type
         },
         qubit_type_color(qubit_type) {
@@ -338,6 +339,9 @@ var app = new Vue({
             }
             if (qubit_type == "StabXZZXLogicalX" || qubit_type == "StabXZZXLogicalZ") {
                 return "#F4CCCC"
+            }
+            if (qubit_type == "StabY") {
+                return "#4287f5"
             }
             return "black"
         },
@@ -405,7 +409,19 @@ var app = new Vue({
                             context.moveTo(this.pos(j) + this.qubit_radius - circle_radius, this.pos(i) + this.qubit_radius)
                             context.lineTo(this.pos(j) + this.qubit_radius + circle_radius, this.pos(i) + this.qubit_radius)
                             context.stroke()
-                        } else if (node.gate_type == "Control" || node.gate_type == "ControlledPhase") {
+                        } else if (node.gate_type == "TargetCY") {
+                            const half_square_length = this.qubit_radius * 0.6
+                            context.beginPath()
+                            context.moveTo(this.pos(j) + this.qubit_radius + half_square_length, this.pos(i) + this.qubit_radius + half_square_length)
+                            context.lineTo(this.pos(j) + this.qubit_radius + half_square_length, this.pos(i) + this.qubit_radius - half_square_length)
+                            context.lineTo(this.pos(j) + this.qubit_radius - half_square_length, this.pos(i) + this.qubit_radius - half_square_length)
+                            context.lineTo(this.pos(j) + this.qubit_radius - half_square_length, this.pos(i) + this.qubit_radius + half_square_length)
+                            context.lineTo(this.pos(j) + this.qubit_radius + half_square_length, this.pos(i) + this.qubit_radius + half_square_length)
+                            context.stroke()
+                            context.font = `${30 * this.scale}px Arial`
+                            context.textAlign = "center"
+                            context.fillText("Y", this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius + 12 * this.scale)
+                        } else if (node.gate_type == "Control" || node.gate_type == "ControlledPhase" || node.gate_type == "ControlCY") {
                             // draw CNOT:control
                             const circle_radius = 8 * this.scale
                             context.beginPath()
@@ -418,6 +434,7 @@ var app = new Vue({
                             if (node.qubit_type == "StabX") { measure_basis = "X" }
                             if (node.qubit_type == "StabXZZXLogicalX") { measure_basis = "X" }
                             if (node.qubit_type == "StabXZZXLogicalZ") { measure_basis = "X" }
+                            if (node.qubit_type == "StabY") { measure_basis = "X" }
                             let init_basis = "|?〉"
                             if (measure_basis == "X") { init_basis = "|+〉" }
                             if (measure_basis == "Z") { init_basis = "|0〉" }
