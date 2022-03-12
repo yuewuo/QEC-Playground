@@ -12,6 +12,7 @@ This script supports simulator in https://github.com/yuewuo/QEC-Playground by de
 
 """
 
+from distutils.command.build import build
 import os, sys, math, subprocess, random
 import scipy.stats
 import numpy as np
@@ -49,10 +50,14 @@ return:
 QEC_PLAYGROUND_COMPILATION_DONE = False
 if 'MANUALLY_COMPILE_QEC' in os.environ and os.environ["MANUALLY_COMPILE_QEC"] == "TRUE":
     QEC_PLAYGROUND_COMPILATION_DONE = True
-def compile_code_if_necessary():
+def compile_code_if_necessary(additional_build_parameters=None):
     global QEC_PLAYGROUND_COMPILATION_DONE
     if QEC_PLAYGROUND_COMPILATION_DONE is False:
-        process = subprocess.Popen(["cargo", "build", "--release"], universal_newlines=True, stdout=sys.stdout, stderr=sys.stderr, cwd=rust_dir)
+        build_parameters = ["cargo", "build", "--release"]
+        if additional_build_parameters is not None:
+            build_parameters += additional_build_parameters
+        # print(build_parameters)
+        process = subprocess.Popen(build_parameters, universal_newlines=True, stdout=sys.stdout, stderr=sys.stderr, cwd=rust_dir)
         process.wait()
         assert process.returncode == 0, "compile has error"
         QEC_PLAYGROUND_COMPILATION_DONE = True

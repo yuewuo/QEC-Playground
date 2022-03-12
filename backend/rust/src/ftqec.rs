@@ -202,10 +202,6 @@ pub struct PlanarCodeModel {
     // define boundary
     #[serde(skip)]
     pub enabled_tailored_decoding: bool,  // by default to false, use special method to decode tailored surface code arXiv:1907.02554v2
-    // improve rotated surface code by swap the two gates of stabilizer on the boundary
-    pub enabled_swapping_two_gates_sequence: bool,
-    #[serde(skip)]
-    swap_two_gates_sequence_stabilizers: Vec::<(usize, usize)>,
 }
 
 impl PlanarCodeModel {
@@ -223,8 +219,6 @@ impl PlanarCodeModel {
             z_homology_lines: Vec::new(),
             x_homology_lines: Vec::new(),
             enabled_tailored_decoding: false,
-            enabled_swapping_two_gates_sequence: false,  // TODO: by default swap them for better performance
-            swap_two_gates_sequence_stabilizers: Vec::new(),
         }
     }
     pub fn new_standard_planar_code(MeasurementRounds: usize, L: usize) -> Self {
@@ -329,28 +323,88 @@ impl PlanarCodeModel {
                                 }
                             },
                             Stage::CXGate2 => {
-                                if qubit_type == QubitType::Data {
-                                    if j+1 < width_j && filter(i, j+1) {
-                                        gate_type = if i % 2 == 0 { GateType::Control} else { GateType::Target};
-                                        connection = Some(Connection{ t: t, i: i, j: j+1 });
-                                    }
-                                } else {
-                                    if j >= 1 && filter(i, j-1) {
-                                        gate_type = if i % 2 == 0 { GateType::Target} else { GateType::Control};
-                                        connection = Some(Connection{ t: t, i: i, j: j-1 });
+                                cfg_if::cfg_if! {
+                                    if #[cfg(feature="reordered_css_gates")] {
+                                        if i % 2 == 0 {  // for Z stabilizers, operate with the data qubit on the left ("Z" shape)
+                                            if qubit_type == QubitType::Data {
+                                                if j+1 < width_j && filter(i, j+1) {
+                                                    gate_type = GateType::Control;
+                                                    connection = Some(Connection{ t: t, i: i, j: j+1 });
+                                                }
+                                            } else {
+                                                if j >= 1 && filter(i, j-1) {
+                                                    gate_type = GateType::Target;
+                                                    connection = Some(Connection{ t: t, i: i, j: j-1 });
+                                                }
+                                            }
+                                        } else {  // for X stabilizers, operate with the data qubit on the right ("S" shape)
+                                            if qubit_type == QubitType::Data {
+                                                if j >= 1 && filter(i, j-1) {
+                                                    gate_type = GateType::Target;
+                                                    connection = Some(Connection{ t: t, i: i, j: j-1 });
+                                                }
+                                            } else {
+                                                if j+1 < width_i && filter(i, j+1) {
+                                                    gate_type = GateType::Control;
+                                                    connection = Some(Connection{ t: t, i: i, j: j+1 });
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        if qubit_type == QubitType::Data {
+                                            if j+1 < width_j && filter(i, j+1) {
+                                                gate_type = if i % 2 == 0 { GateType::Control} else { GateType::Target};
+                                                connection = Some(Connection{ t: t, i: i, j: j+1 });
+                                            }
+                                        } else {
+                                            if j >= 1 && filter(i, j-1) {
+                                                gate_type = if i % 2 == 0 { GateType::Target} else { GateType::Control};
+                                                connection = Some(Connection{ t: t, i: i, j: j-1 });
+                                            }
+                                        }
                                     }
                                 }
                             },
                             Stage::CXGate3 => {
-                                if qubit_type == QubitType::Data {
-                                    if j >= 1 && filter(i, j-1) {
-                                        gate_type = if i % 2 == 0 { GateType::Control} else { GateType::Target};
-                                        connection = Some(Connection{ t: t, i: i, j: j-1 });
-                                    }
-                                } else {
-                                    if j+1 < width_i && filter(i, j+1) {
-                                        gate_type = if i % 2 == 0 { GateType::Target} else { GateType::Control};
-                                        connection = Some(Connection{ t: t, i: i, j: j+1 });
+                                cfg_if::cfg_if! {
+                                    if #[cfg(feature="reordered_css_gates")] {
+                                        if i % 2 == 0 {  // for Z stabilizers, operate with the data qubit on the right ("Z" shape)
+                                            if qubit_type == QubitType::Data {
+                                                if j >= 1 && filter(i, j-1) {
+                                                    gate_type = GateType::Control;
+                                                    connection = Some(Connection{ t: t, i: i, j: j-1 });
+                                                }
+                                            } else {
+                                                if j+1 < width_i && filter(i, j+1) {
+                                                    gate_type = GateType::Target;
+                                                    connection = Some(Connection{ t: t, i: i, j: j+1 });
+                                                }
+                                            }
+                                        } else {  // for X stabilizers, operate with the data qubit on the right ("S" shape)
+                                            if qubit_type == QubitType::Data {
+                                                if j+1 < width_j && filter(i, j+1) {
+                                                    gate_type = GateType::Target;
+                                                    connection = Some(Connection{ t: t, i: i, j: j+1 });
+                                                }
+                                            } else {
+                                                if j >= 1 && filter(i, j-1) {
+                                                    gate_type = GateType::Control;
+                                                    connection = Some(Connection{ t: t, i: i, j: j-1 });
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        if qubit_type == QubitType::Data {
+                                            if j >= 1 && filter(i, j-1) {
+                                                gate_type = if i % 2 == 0 { GateType::Control} else { GateType::Target};
+                                                connection = Some(Connection{ t: t, i: i, j: j-1 });
+                                            }
+                                        } else {
+                                            if j+1 < width_i && filter(i, j+1) {
+                                                gate_type = if i % 2 == 0 { GateType::Target} else { GateType::Control};
+                                                connection = Some(Connection{ t: t, i: i, j: j+1 });
+                                            }
+                                        }
                                     }
                                 }
                             },
@@ -1994,6 +2048,22 @@ impl PlanarCodeModel {
                     }
                 }
             },
+            CodeType::RotatedPlanarCode => {
+                assert_eq!(self.di, self.dj, "rotated CSS code doesn't support rectangle lattice right now");
+                let middle_point = self.di - 1;
+                // Z stabilizer boundary, e.g. d=3: left boundary: [(2,0), (3,1), (4,2)]
+                for delta in 0..self.di {
+                    if corrected.x[[self.MeasurementRounds, middle_point + delta, delta]] {
+                        x_error_count += 1;
+                    }
+                }
+                // X stabilizer boundary, e.g. d=3: left boundary: [(0,2), (1,1), (2,0)]
+                for delta in 0..self.di {
+                    if corrected.z[[self.MeasurementRounds, delta, middle_point - delta]] {
+                        z_error_count += 1;
+                    }
+                }
+            },
             CodeType::StandardXZZXCode => {
                 // logical Z boundary, j = 0
                 for i in 0..self.di {
@@ -2821,6 +2891,16 @@ mod tests {
 
     // use `cargo test xzzx_code_test_simulation_1 -- --nocapture` to run specific test
 
+    fn assert_error_is(model: &mut PlanarCodeModel, errors: Vec<(usize, usize, usize)>) {
+        model.propagate_error();
+        let mut measurement_errors = Vec::new();
+        model.iterate_measurement_errors(|t, i, j, _node| {
+            measurement_errors.push((t, i, j));
+        });
+        // println!("{:?}", measurement_errors);
+        assert_eq!(measurement_errors, errors);
+    }
+
     #[test]
     fn xzzx_code_test_simulation_1() {
         let measurement_rounds = 3;
@@ -2829,15 +2909,6 @@ mod tests {
         let mut model = PlanarCodeModel::new_standard_XZZX_code(measurement_rounds, d);
         model.set_phenomenological_error_with_perfect_initialization(p);
         model.build_graph(weight_autotune);
-        let assert_error_is = |model: &mut PlanarCodeModel, errors| {
-            model.propagate_error();
-            let mut measurement_errors = Vec::new();
-            model.iterate_measurement_errors(|t, i, j, _node| {
-                measurement_errors.push((t, i, j));
-            });
-            // println!("{:?}", measurement_errors);
-            assert_eq!(measurement_errors, errors);
-        };
         let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
         // single X error on the top boundary
         model.clear_error();
@@ -2945,15 +3016,6 @@ mod tests {
         let mut model = PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
         model.set_phenomenological_error_with_perfect_initialization(p);
         model.build_graph(weight_autotune);
-        let assert_error_is = |model: &mut PlanarCodeModel, errors| {
-            model.propagate_error();
-            let mut measurement_errors = Vec::new();
-            model.iterate_measurement_errors(|t, i, j, _node| {
-                measurement_errors.push((t, i, j));
-            });
-            // println!("{:?}", measurement_errors);
-            assert_eq!(measurement_errors, errors);
-        };
         let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
         // single X error on the top boundary
         model.clear_error();
@@ -2990,15 +3052,6 @@ mod tests {
         let mut model = PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
         model.apply_error_model(&ErrorModel::TailoredYCircuitLevel, None, p, bias_eta, 0.);
         model.build_graph(weight_autotune);
-        let assert_error_is = |model: &mut PlanarCodeModel, errors| {
-            model.propagate_error();
-            let mut measurement_errors = Vec::new();
-            model.iterate_measurement_errors(|t, i, j, _node| {
-                measurement_errors.push((t, i, j));
-            });
-            // println!("{:?}", measurement_errors);
-            assert_eq!(measurement_errors, errors);
-        };
         let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
         // single Y error at data qubit
         model.clear_error();
@@ -3068,15 +3121,6 @@ mod tests {
         let mut model = PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
         model.apply_error_model(&ErrorModel::TailoredYPhenomenological, None, p, bias_eta, 0.);
         model.build_graph(weight_autotune);
-        let assert_error_is = |model: &mut PlanarCodeModel, errors| {
-            model.propagate_error();
-            let mut measurement_errors = Vec::new();
-            model.iterate_measurement_errors(|t, i, j, _node| {
-                measurement_errors.push((t, i, j));
-            });
-            // println!("{:?}", measurement_errors);
-            assert_eq!(measurement_errors, errors);
-        };
         let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
         // single error at data qubit
         model.clear_error();
@@ -3102,6 +3146,80 @@ mod tests {
         model.clear_error();
         model.add_error_at(el2t(0), 2, 1, &ErrorType::Z).expect("error rate = 0 here");
         assert_error_is(&mut model, vec![]);  // not sensitive
+    }
+
+    #[test]
+    fn reordered_css_surface_code_test_simulation_circuit_level() {
+        let measurement_rounds = 3;
+        let d = 3;
+        let p = 0.01;  // physical error rate
+        let mut model = PlanarCodeModel::new_rotated_planar_code(measurement_rounds, d);
+        model.set_individual_error_with_perfect_initialization_with_erasure(p/3., p/3., p/3., 0.);
+        model.build_graph(weight_autotune);
+        let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
+        // Z error on Z stabilizers will not propagate to 2 data qubits along the logical operator direction
+        model.clear_error();
+        model.add_error_at(el2t(0), 2, 1, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![]);
+        model.clear_error();
+        model.add_error_at(el2t(0)+1, 2, 1, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![]);
+        model.clear_error();
+        model.add_error_at(el2t(0)+2, 2, 1, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![]);
+        model.clear_error();
+        model.add_error_at(el2t(0)+3, 2, 1, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2)]);  // fine
+        model.clear_error();
+        model.add_error_at(el2t(0)+4, 2, 1, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 1, 2), (30, 3, 0)]);  // fine
+        model.clear_error();
+        model.add_error_at(el2t(0)+5, 2, 1, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(30, 3, 0), (30, 3, 2)]);  // fine
+
+        cfg_if::cfg_if! {
+            if #[cfg(feature="reordered_css_gates")] {
+                model.clear_error();
+                model.add_error_at(el2t(0), 1, 2, &ErrorType::X).expect("error rate = 0 here");
+                assert_error_is(&mut model, vec![]);
+                model.clear_error();
+                model.add_error_at(el2t(0)+1, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+                assert_error_is(&mut model, vec![]);
+                model.clear_error();
+                model.add_error_at(el2t(0)+2, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+                assert_error_is(&mut model, vec![]);
+                model.clear_error();
+                model.add_error_at(el2t(0)+3, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+                assert_error_is(&mut model, vec![(24, 0, 1)]);  // fine
+                model.clear_error();
+                model.add_error_at(el2t(0)+4, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+                assert_error_is(&mut model, vec![(24, 0, 1), (30, 2, 3)]);  // fine: fixed!!!
+                model.clear_error();
+                model.add_error_at(el2t(0)+5, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+                assert_error_is(&mut model, vec![(30, 2, 1), (30, 2, 3)]);
+            } else {  // before the fix of this, 
+                model.clear_error();
+                model.add_error_at(el2t(0), 1, 2, &ErrorType::X).expect("error rate = 0 here");
+                assert_error_is(&mut model, vec![]);
+                model.clear_error();
+                model.add_error_at(el2t(0)+1, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+                assert_error_is(&mut model, vec![]);
+                model.clear_error();
+                model.add_error_at(el2t(0)+2, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+                assert_error_is(&mut model, vec![]);
+                model.clear_error();
+                model.add_error_at(el2t(0)+3, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+                assert_error_is(&mut model, vec![(24, 0, 1)]);  // fine
+                model.clear_error();
+                model.add_error_at(el2t(0)+4, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+                assert_error_is(&mut model, vec![(30, 2, 1)]);  // NO!!! this will cause logical error!!! a single error in circuit-level noise model causes a logical error, this is unacceptable
+                // to fix this issue, refer to arXiv:1404.3747v3, the order of Z stabilizers and X stabilizers should be different to fight against this, i.e. one should be "Z" shape, the other should be "S" 
+                // enable feature "reordered_css_gates" to fix this issue (by default enabled)
+                model.clear_error();
+                model.add_error_at(el2t(0)+5, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+                assert_error_is(&mut model, vec![(30, 2, 1), (30, 2, 3)]);
+            }
+        }
     }
 
 }
