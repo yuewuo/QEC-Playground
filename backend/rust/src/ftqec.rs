@@ -34,6 +34,7 @@ use super::fast_benchmark::FastBenchmark;
 use serde::Serialize;
 use super::util;
 use super::util::simple_hasher::SimpleHasher;
+use super::union_find_decoder::UnionFind;
 
 /// uniquely index a node
 /// update 2022.3.13: remove hash support for index; if use hash, change to FastHashIndex
@@ -2264,26 +2265,76 @@ impl PlanarCodeModel {
         let mut correction = self.generate_default_sparse_correction();
         let mut edge_matchings = Vec::new();
         let mut boundary_matchings = Vec::new();
+        let mut time_tailored_prepare_graph = 0.;
+        let mut time_tailored_blossom_v_union = 0.;
         let mut time_prepare_graph = 0.;
         let mut time_blossom_v = 0.;
         let mut time_constructing_correction = 0.;
         if to_be_matched.len() != 0 {
-            let begin = Instant::now();
             // then add the edges to the graph
             let m_len = to_be_matched.len();  // boundary connection to `i` is `i + m_len`
             let node_num = m_len * 2;
+            // prepare union-find structures
+            let mut tailored_union = UnionFind::new(if self.enabled_tailored_decoding { to_be_matched.len() } else { 0 } );
+            if self.enabled_tailored_decoding {
+                macro_rules! run_tailored_sub_matching_and_union {
+                    // `()` indicates that the macro takes no argument.
+                    ($tailored_exhausted_map:ident, $tailored_exhausted_boundary:ident) => {
+                        let begin = Instant::now();
+                        // Y (X) stabilizers are fully connected, boundaries are fully connected
+                        // stabilizer to boundary is one-to-one connected
+                        let mut tailored_weighted_edges = Vec::<(usize, usize, f64)>::new();
+                        for i in 0..m_len {
+                            for j in (i+1)..m_len {
+                                tailored_weighted_edges.push((i + m_len, j + m_len, 0.));
+                                let a = &to_be_matched[i];
+                                let b = &to_be_matched[j];
+                                let tailored_path = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").$tailored_exhausted_map.get(&self.fhi(*b));
+                                if tailored_path.is_some() && !tailored_path.expect("exist").removed {
+                                    let cost = tailored_path.expect("exist").cost;
+                                    tailored_weighted_edges.push((i, j, cost));
+                                }
+                            }
+                            let a = &to_be_matched[i];
+                            match self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").$tailored_exhausted_boundary.as_ref() {
+                                Some(tailored_exhausted_boundary) => {
+                                    let cost = tailored_exhausted_boundary.cost;
+                                    tailored_weighted_edges.push((i, i + m_len, cost));
+                                },
+                                None => { }
+                            }
+                        }
+                        time_tailored_prepare_graph += begin.elapsed().as_secs_f64();
+                        let begin = Instant::now();
+                        let tailored_matching = blossom_v::safe_minimum_weight_perfect_matching(node_num, tailored_weighted_edges);
+                        for i in 0..m_len {
+                            let j = tailored_matching[i];
+                            if j < m_len {  // only non-boundary connections will be added
+                                tailored_union.union(i, j);
+                                // println!("union {} {}", i, j);
+                            }
+                        }
+                        time_tailored_blossom_v_union += begin.elapsed().as_secs_f64();
+                    }
+                }
+                run_tailored_sub_matching_and_union!(tailored_positive_exhausted_map, tailored_positive_exhausted_boundary);
+                run_tailored_sub_matching_and_union!(tailored_negative_exhausted_map, tailored_negative_exhausted_boundary);
+            }
+            let begin = Instant::now();
             // Z (X) stabilizers are fully connected, boundaries are fully connected
             // stabilizer to boundary is one-to-one connected
             let mut weighted_edges = Vec::<(usize, usize, f64)>::new();
             for i in 0..m_len {
                 for j in (i+1)..m_len {
+                    weighted_edges.push((i + m_len, j + m_len, 0.));  // update 2022.3.15 Yue: virtual boundaries are always fully connected, no matter whether exhaust path exists
                     let a = &to_be_matched[i];
                     let b = &to_be_matched[j];
                     let path = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_map.get(&self.fhi(*b));
                     if path.is_some() && !path.expect("exist").removed {
                         let cost = path.expect("exist").cost;
-                        weighted_edges.push((i, j, cost));
-                        weighted_edges.push((i + m_len, j + m_len, 0.));
+                        if !self.enabled_tailored_decoding || tailored_union.find(i) == tailored_union.find(j) {
+                            weighted_edges.push((i, j, cost));
+                        }
                         // if to_be_matched.len() > 2 {
                         //     println!{"{} {} {} ", i, j, cost};
                         // }
@@ -2298,13 +2349,13 @@ impl PlanarCodeModel {
                     None => { }
                 }
             }
-            time_prepare_graph = begin.elapsed().as_secs_f64();
+            time_prepare_graph += begin.elapsed().as_secs_f64();
             // if to_be_matched.len() > 2 {
             //     println!{"node num {:?}, weighted edges {:?}", node_num, weighted_edges};
             // }
             let begin = Instant::now();
             let matching = blossom_v::safe_minimum_weight_perfect_matching(node_num, weighted_edges);
-            time_blossom_v = begin.elapsed().as_secs_f64();
+            time_blossom_v += begin.elapsed().as_secs_f64();
             // println!("{:?}", to_be_matched);
             // println!("matching: {:?}", matching);
             // if to_be_matched.len() > 2 {
@@ -2326,13 +2377,15 @@ impl PlanarCodeModel {
                     boundary_matchings.push((a.t, a.i, a.j));
                 }
             }
-            time_constructing_correction = begin.elapsed().as_secs_f64();
+            time_constructing_correction += begin.elapsed().as_secs_f64();
             // if to_be_matched.len() > 2 {
             //     println!("correction: {:?}", correction);
             // }
         }
         (correction, json!({
             "to_be_matched": to_be_matched.len(),
+            "time_tailored_prepare_graph": time_tailored_prepare_graph,
+            "time_tailored_blossom_v_union": time_tailored_blossom_v_union,
             "time_prepare_graph": time_prepare_graph,
             "time_blossom_v": time_blossom_v,
             "time_constructing_correction": time_constructing_correction,
@@ -3747,5 +3800,32 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn tailored_code_test_decode_phenomenological() {
+        let measurement_rounds = 5;
+        let d = 5;
+        let p = 0.01;  // physical error rate
+        let bias_eta = 100.;
+        let mut model = PlanarCodeModel::new_rotated_tailored_code(measurement_rounds, d);
+        model.apply_error_model(&ErrorModel::TailoredPhenomenological, None, p, bias_eta, 0.);
+        model.build_graph(weight_autotune);
+        model.build_exhausted_path();
+        let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
+        model.clear_error();
+        // single error at data qubit
+        model.add_error_at(el2t(0), 4, 4, &ErrorType::Z).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 3, 4), (24, 4, 3), (24, 4, 5), (24, 5, 4)]);
+        // single measurement error on Y stabilizers
+        // model.add_error_at(el2t(2), 2, 1, &ErrorType::Z).expect("error rate = 0 here");
+        // assert_error_is(&mut model, vec![(18, 2, 1), (24, 2, 1)]);  // single measurement error, because it just flip the measurement result
+        model.propagate_error();
+        let measurement = model.generate_measurement();
+        let (correction, runtime_statistics) = model.decode_MWPM(&measurement);
+        println!("runtime_statistics: {:?}", runtime_statistics);
+        let validation_ret = model.validate_correction_on_boundary(&correction);
+        println!("validation_ret: {:?}", validation_ret);
+    }
+
 
 }
