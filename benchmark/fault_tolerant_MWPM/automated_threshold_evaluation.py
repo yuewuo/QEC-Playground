@@ -73,7 +73,7 @@ def run_qec_playground_command_get_stdout(command, no_stdout=False, use_tmp_out=
     if no_stdout:
         stdout = sys.stdout
     process = subprocess.Popen(command, universal_newlines=True, env=env, stdout=stdout, stderr=(stdout if stderr_to_stdout else sys.stderr), bufsize=100000000)
-    process.wait()
+    # process.wait()  # this causes lock on macOS, why is this even necessary? process.communicate already wait for ending
     stdout, _ = process.communicate()
     if use_tmp_out:
         out_file.flush()

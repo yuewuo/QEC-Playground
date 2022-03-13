@@ -143,6 +143,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let debug_print_direct_connections = matches.is_present("debug_print_direct_connections");
             let debug_print_exhausted_connections = matches.is_present("debug_print_exhausted_connections");
             let debug_print_error_model = matches.is_present("debug_print_error_model");
+            let debug_print_with_all_possible_error_rates = matches.is_present("debug_print_with_all_possible_error_rates");
             let use_reduced_graph = !matches.is_present("disable_reduced_graph");
             return Some(fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
@@ -151,7 +152,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
                 , detailed_runtime_statistics, log_error_pattern_into_statistics_when_has_logical_error, time_budget, use_fast_benchmark
                 , fbench_disable_additional_error, fbench_use_fake_decoder, fbench_use_simple_sum, fbench_assignment_sampling_amount
                 , fbench_weighted_path_sampling, fbench_weighted_assignment_sampling, fbench_target_dev, rug_precision, disable_optimize_correction_pattern
-                , debug_print_only, debug_print_direct_connections, debug_print_exhausted_connections, debug_print_error_model, use_reduced_graph));
+                , debug_print_only, debug_print_direct_connections, debug_print_exhausted_connections, debug_print_error_model, debug_print_with_all_possible_error_rates
+                , use_reduced_graph));
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -563,7 +565,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , fbench_disable_additional_error: bool, fbench_use_fake_decoder: bool, fbench_use_simple_sum: bool, fbench_assignment_sampling_amount: usize
         , fbench_weighted_path_sampling: bool, fbench_weighted_assignment_sampling: bool, fbench_target_dev: f64, rug_precision: u32
         , disable_optimize_correction_pattern: bool, debug_print_only: bool, debug_print_direct_connections: bool, debug_print_exhausted_connections: bool
-        , debug_print_error_model: bool, use_reduced_graph: bool) -> String {
+        , debug_print_error_model: bool, debug_print_with_all_possible_error_rates: bool, use_reduced_graph: bool) -> String {
     let mut output = format!("");  // empty output string
     let mut parallel = parallel;
     if parallel == 0 {
@@ -726,6 +728,18 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 model.apply_error_model(error_model, error_model_configuration.as_ref(), p, bias_eta, pe);
             },
             None => { }
+        }
+        if debug_print_with_all_possible_error_rates {
+            model.iterate_snapshot_mut(|_t, _i, _j, node| {
+                if node.connection.is_some() {
+                    if node.correlated_error_model.is_none() {
+                        node.correlated_error_model = Some(CorrelatedErrorModel::default_with_probability(0.));
+                    }
+                    if node.correlated_erasure_error_model.is_none() {
+                        node.correlated_erasure_error_model = Some(CorrelatedErasureErrorModel::default_with_probability(0.));
+                    }
+                }
+            });
         }
         let mut fast_benchmark = model.build_graph_fast_benchmark(weight_function, use_fast_benchmark);
         if use_fast_benchmark {
