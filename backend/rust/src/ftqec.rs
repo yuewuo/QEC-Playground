@@ -32,6 +32,7 @@ use super::serde_json;
 use std::time::Instant;
 use super::fast_benchmark::FastBenchmark;
 use serde::Serialize;
+use super::util;
 
 /// uniquely index a node
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Serialize)]
@@ -131,8 +132,10 @@ pub struct Node {
     #[serde(skip)]
     pub disable_in_random_error_generator: bool,
     // specific for tailored surface code, where decoding high probability 4 non-trivial measurement errors are essential
-    pub tailored_positive_edges: Vec::<Edge>,  // edges that connects stabilizers (x, y) and (x+1, y+1)
-    pub tailored_negative_edges: Vec::<Edge>,  // edges that connects stabilizers (x, y) and (x+1, y-1)
+    #[serde(skip)] pub tailored_positive_edges: Vec::<Edge>,  // edges that connects stabilizers (x, y) and (x+1, y+1)
+    #[serde(skip)] pub tailored_positive_boundary: Option<Boundary>,
+    #[serde(skip)] pub tailored_negative_edges: Vec::<Edge>,  // edges that connects stabilizers (x, y) and (x+1, y-1)
+    #[serde(skip)] pub tailored_negative_boundary: Option<Boundary>,
 }
 
 impl Node {
@@ -159,7 +162,9 @@ impl Node {
             exhausted_map: HashMap::new(),
             disable_in_random_error_generator: false,
             tailored_positive_edges: Vec::new(),
+            tailored_positive_boundary: None,
             tailored_negative_edges: Vec::new(),
+            tailored_negative_boundary: None,
         }
     }
 }
@@ -1493,7 +1498,9 @@ impl PlanarCodeModel {
                                     let (t1, i1, j1) = measurement_errors[0];
                                     let (t2, i2, j2) = measurement_errors[1];
                                     let is_same_type = self.snapshot[t1][i1][j1].as_ref().unwrap().qubit_type == self.snapshot[t2][i2][j2].as_ref().unwrap().qubit_type;
-                                    if is_same_type {  // currently do not consider fully connected version between X and Z graph (which shouldn't have too much difference in terms of decoding accuracy)
+                                    // currently do not consider fully connected version between X and Z graph (which shouldn't have too much difference in terms of decoding accuracy)
+                                    // if enabled tailored decoding, this type of cross-type connection is allowed
+                                    if is_same_type || self.enabled_tailored_decoding {
                                         if p > 0. || is_erasure {
                                             // println!("[{}][{}][{}]:[{}] causes paired errors on [{}][{}][{}] and [{}][{}][{}]", t, i, j, if *error == ErrorType::X { "X" } else { "Z" }, t1, i1, j1, t2, i2, j2);
                                             if t1 <= 6 || t2 <= 6 {
@@ -1512,12 +1519,12 @@ impl PlanarCodeModel {
                                                         cases: Vec::new(),
                                                     });
                                                 }
-                                                node.boundary.as_mut().expect("exist").add(p, correction, self.use_combined_probability, weight_of);
+                                                node.boundary.as_mut().expect("exist").add(p, correction.clone(), self.use_combined_probability, weight_of);
                                             } else {
                                                 // println!("add_edge_case [{}][{}][{}] [{}][{}][{}] with p = {}", t1, i1, j1, t2, i2, j2, p);
                                                 add_edge_case(&mut self.snapshot[t1][i1][j1].as_mut().expect("exist").edges, t2, i2, j2, p, correction.clone()
                                                     , self.use_combined_probability, weight_of);
-                                                add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").edges, t1, i1, j1, p, correction
+                                                add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").edges, t1, i1, j1, p, correction.clone()
                                                     , self.use_combined_probability, weight_of);
                                             }
                                         }
@@ -1527,21 +1534,97 @@ impl PlanarCodeModel {
                                         }
                                     }
                                 }
-                                if self.enabled_tailored_decoding && (measurement_errors.len() >= 2 && measurement_errors.len() <= 4) {
-                                    
+                                if self.enabled_tailored_decoding && (measurement_errors.len() == 3 || measurement_errors.len() == 4) {
                                     // tailored surface code decoding method can handle special cases arXiv:1907.02554v2
-                                    // for is_positive in [true, false] {
-                                    //     for mi in 0..measurement_errors.len() {
-                                    //         for mj in 0..measurement_errors.len() {
-                                    //             if mi == mj {
-                                    //                 continue
-                                    //             }
-                                    //             let (t1, i1, j1) = measurement_errors[mi];
-                                    //             let (t2, i2, j2) = measurement_errors[mj];
-                                    //             // TODO
-                                    //         }
-                                    //     }
-                                    // }
+                                    // first find the individual median i and j, then (i, j) must be the center data qubit
+                                    let mut vec_i = Vec::new();
+                                    let mut vec_j = Vec::new();
+                                    for &(_tm, im, jm) in measurement_errors.iter() {
+                                        vec_i.push(im);
+                                        vec_j.push(jm);
+                                    }
+                                    let center_i = util::find_strict_one_median(&mut vec_i);
+                                    let center_j = util::find_strict_one_median(&mut vec_j);
+                                    let mut unknown_case_warning = false;
+                                    match (center_i, center_j) {
+                                        (Some(center_i), Some(center_j)) => {
+                                            let mut up = None;
+                                            let mut down = None;
+                                            let mut left = None;
+                                            let mut right = None;
+                                            let mut counter = 0;
+                                            for &(tm, im, jm) in measurement_errors.iter() {
+                                                if im == center_i - 1 && jm == center_j {
+                                                    up = Some((tm, im, jm));
+                                                    counter += 1;
+                                                }
+                                                if im == center_i + 1 && jm == center_j {
+                                                    down = Some((tm, im, jm));
+                                                    counter += 1;
+                                                }
+                                                if im == center_i && jm == center_j + 1 {
+                                                    right = Some((tm, im, jm));
+                                                    counter += 1;
+                                                }
+                                                if im == center_i && jm == center_j - 1 {
+                                                    left = Some((tm, im, jm));
+                                                    counter += 1;
+                                                }
+                                            }
+                                            if counter == measurement_errors.len() {
+                                                // add them to `tailored_positive_edges` and `tailored_negative_edges`
+                                                {  // positive: up + right, left + down
+                                                    for (A, B) in [(up, right), (left, down)] {
+                                                        match (A, B) {
+                                                            (Some((t1, i1, j1)), Some((t2, i2, j2))) => {
+                                                                // println!("add_edge_case tailored_positive_edges [{}][{}][{}] [{}][{}][{}] with p = {}", t1, i1, j1, t2, i2, j2, p);
+                                                                add_edge_case(&mut self.snapshot[t1][i1][j1].as_mut().expect("exist").tailored_positive_edges, t2, i2, j2, p, correction.clone()
+                                                                    , self.use_combined_probability, weight_of);
+                                                                add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").tailored_positive_edges, t1, i1, j1, p, correction.clone()
+                                                                    , self.use_combined_probability, weight_of);
+                                                            }
+                                                            (Some((tm, im, jm)), None) | (None, Some((tm, im, jm))) => {  // add to boundary
+                                                                self.snapshot[tm][im][jm].as_mut().expect("exist").tailored_positive_boundary.as_mut().expect("exist").add(p, correction.clone()
+                                                                    , self.use_combined_probability, weight_of);
+                                                            }
+                                                            _ => { unreachable!() }
+                                                        }
+                                                    }
+                                                }
+                                                {  // negative: left + up, down + right
+                                                    for (A, B) in [(left, up), (down, right)] {
+                                                        match (A, B) {
+                                                            (Some((t1, i1, j1)), Some((t2, i2, j2))) => {
+                                                                // println!("add_edge_case tailored_negative_edges [{}][{}][{}] [{}][{}][{}] with p = {}", t1, i1, j1, t2, i2, j2, p);
+                                                                add_edge_case(&mut self.snapshot[t1][i1][j1].as_mut().expect("exist").tailored_negative_edges, t2, i2, j2, p, correction.clone()
+                                                                    , self.use_combined_probability, weight_of);
+                                                                add_edge_case(&mut self.snapshot[t2][i2][j2].as_mut().expect("exist").tailored_negative_edges, t1, i1, j1, p, correction.clone()
+                                                                    , self.use_combined_probability, weight_of);
+                                                            }
+                                                            (Some((tm, im, jm)), None) | (None, Some((tm, im, jm))) => {  // add to boundary
+                                                                self.snapshot[tm][im][jm].as_mut().expect("exist").tailored_negative_boundary.as_mut().expect("exist").add(p, correction.clone()
+                                                                    , self.use_combined_probability, weight_of);
+                                                            }
+                                                            _ => { unreachable!() }
+                                                        }
+                                                    }
+                                                }
+                                            } else {
+                                                unknown_case_warning = true;  // cannot fit them in
+                                            }
+                                        }
+                                        _ => {
+                                            unknown_case_warning = true;
+                                        }
+                                    }
+                                    if unknown_case_warning {
+                                        println!("error at {:?}: cannot recognize the pattern of this 3 or 4 non-trivial measurements, strange... just skipped", (t, i, j, error));
+                                        for i in 0..measurement_errors.len() {
+                                            let (tm, im, jm) = measurement_errors[i];
+                                            print!("t{}: {:?}, ", i, (tm, im, jm));
+                                        }
+                                        println!("");
+                                    }
                                 }
                                 // update fast benchmark
                                 if build_fast_benchmark && measurement_errors.len() >= 1 {

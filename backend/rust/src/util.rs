@@ -133,3 +133,35 @@ pub fn getFileContentFromMultiplePlaces(folders: &Vec<String>, filename: &String
     }
     Err(format!("cannot find '{}' from folders {:?}", filename, folders))
 }
+
+// if even but the median is not unique, return None
+pub fn find_strict_one_median(numbers: &mut Vec<usize>) -> Option<usize> {
+    numbers.sort();
+    if numbers.len() % 2 == 0 {
+        let first = numbers[numbers.len() / 2 - 1];
+        let second = numbers[numbers.len() / 2];
+        if first != second {
+            None
+        } else {
+            Some(first)
+        }
+    } else {
+        Some(numbers[numbers.len() / 2])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    // use `cargo test util_find_strict_one_median -- --nocapture` to run specific test
+
+    #[test]
+    fn util_find_strict_one_median() {
+        assert_eq!(find_strict_one_median(&mut vec![4,3,3,8]), None);
+        assert_eq!(find_strict_one_median(&mut vec![4,3,4,8]), Some(4));
+        assert_eq!(find_strict_one_median(&mut vec![5,3,7]), Some(5));
+    }
+
+}
