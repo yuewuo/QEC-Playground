@@ -170,7 +170,7 @@ pub struct Node {
     #[serde(skip)]
     pub exhausted_boundary: Option<ExhaustedElement>,
     #[serde(skip)]
-    pub pet_node: Option<petgraph::graph::NodeIndex>,
+    pub pet_node: Option<petgraph::graph::NodeIndex>,  // temporary parameter
     #[serde(skip)]
     // pub exhausted_map: HashMap<Index, ExhaustedElement>,  // note: only when the key is `Index` should I use SimpleHasher
     pub exhausted_map: HashMap<FastHashIndex, ExhaustedElement, std::hash::BuildHasherDefault::<SimpleHasher> >,
@@ -180,12 +180,17 @@ pub struct Node {
     // specific for tailored surface code, where decoding high probability 4 non-trivial measurement errors are essential: arXiv:1907.02554v2
     #[serde(skip)] pub tailored_positive_edges: Vec::<Edge>,  // edges that connects stabilizers (x, y) and (x+1, y+1)
     #[serde(skip)] pub tailored_positive_boundary: Option<Boundary>,
+    #[serde(skip)] pub tailored_positive_exhausted_boundary: Option<ExhaustedElement>,
+    #[serde(skip)] pub tailored_positive_exhausted_map: HashMap<FastHashIndex, ExhaustedElement, std::hash::BuildHasherDefault::<SimpleHasher> >,
     #[serde(skip)] pub tailored_negative_edges: Vec::<Edge>,  // edges that connects stabilizers (x, y) and (x+1, y-1)
     #[serde(skip)] pub tailored_negative_boundary: Option<Boundary>,
+    #[serde(skip)] pub tailored_negative_exhausted_boundary: Option<ExhaustedElement>,
+    #[serde(skip)] pub tailored_negative_exhausted_map: HashMap<FastHashIndex, ExhaustedElement, std::hash::BuildHasherDefault::<SimpleHasher> >,
 }
 
 impl Node {
-    fn __new_default(t: usize, i: usize, j: usize, gate_type: GateType, qubit_type: QubitType, exhausted_map_capacity: usize) -> Self {
+    fn __new_default(t: usize, i: usize, j: usize, gate_type: GateType, qubit_type: QubitType, exhausted_map_capacity: usize, enabled_tailored_decoding: bool) -> Self {
+        let scaled_exhausted_map_capacity = exhausted_map_capacity / 8;
         Self {
             t: t, i: i, j: j,
             connection: None,
@@ -205,12 +210,16 @@ impl Node {
             boundary: None,
             exhausted_boundary: None,
             pet_node: None,
-            exhausted_map: HashMap::with_capacity_and_hasher(exhausted_map_capacity / 8, std::hash::BuildHasherDefault::<SimpleHasher>::default()),
+            exhausted_map: HashMap::with_capacity_and_hasher(scaled_exhausted_map_capacity, std::hash::BuildHasherDefault::<SimpleHasher>::default()),
             disable_in_random_error_generator: false,
             tailored_positive_edges: Vec::new(),
             tailored_positive_boundary: None,
+            tailored_positive_exhausted_boundary: None,
+            tailored_positive_exhausted_map: HashMap::with_capacity_and_hasher(if enabled_tailored_decoding { scaled_exhausted_map_capacity } else { 0 }, std::hash::BuildHasherDefault::<SimpleHasher>::default()),
             tailored_negative_edges: Vec::new(),
             tailored_negative_boundary: None,
+            tailored_negative_exhausted_boundary: None,
+            tailored_negative_exhausted_map: HashMap::with_capacity_and_hasher(if enabled_tailored_decoding { scaled_exhausted_map_capacity } else { 0 }, std::hash::BuildHasherDefault::<SimpleHasher>::default()),
         }
     }
 }
@@ -237,8 +246,6 @@ pub struct PlanarCodeModel {
     pub MeasurementRounds: usize,
     pub T: usize,
     #[serde(skip)]
-    pub graph: Option<petgraph::graph::Graph<FastHashIndex, PetGraphEdge>>,
-    #[serde(skip)]
     pub use_combined_probability: bool,
     #[serde(skip)]
     pub use_reduced_graph: bool,  // feature that remove edge between two vertices if both of them have smaller weight matching to boundary than matching each other
@@ -264,7 +271,6 @@ impl PlanarCodeModel {
             dj: dj,
             T: T,
             MeasurementRounds: MeasurementRounds,
-            graph: None,
             use_combined_probability: true,  // this feature is stable, enable it by default (2022.3.13 Yue)
             use_reduced_graph: true,  // this feature is stable, enable it by default (2022.3.13 Yue)
             z_homology_lines: Vec::new(),
@@ -483,7 +489,7 @@ impl PlanarCodeModel {
                                 }
                             },
                         }
-                        let mut node = Node::__new_default(t, i, j, gate_type, qubit_type, if qubit_type != QubitType::Data && stage == Stage::Measurement { exhausted_map_capacity } else { 0 });
+                        let mut node = Node::__new_default(t, i, j, gate_type, qubit_type, if qubit_type != QubitType::Data && stage == Stage::Measurement { exhausted_map_capacity } else { 0 }, false);
                         node.connection = connection;
                         snapshot_row_1.push(Some(node));
                     } else {
@@ -624,7 +630,7 @@ impl PlanarCodeModel {
                                 }
                             },
                         }
-                        let mut node = Node::__new_default(t, i, j, gate_type, qubit_type, if qubit_type != QubitType::Data && stage == Stage::Measurement { exhausted_map_capacity } else { 0 });
+                        let mut node = Node::__new_default(t, i, j, gate_type, qubit_type, if qubit_type != QubitType::Data && stage == Stage::Measurement { exhausted_map_capacity } else { 0 }, false);
                         node.connection = connection;
                         snapshot_row_1.push(Some(node));
                     } else {
@@ -816,7 +822,7 @@ impl PlanarCodeModel {
                                 }
                             },
                         }
-                        let mut node = Node::__new_default(t, i, j, gate_type, qubit_type, if qubit_type != QubitType::Data && stage == Stage::Measurement { exhausted_map_capacity } else { 0 });
+                        let mut node = Node::__new_default(t, i, j, gate_type, qubit_type, if qubit_type != QubitType::Data && stage == Stage::Measurement { exhausted_map_capacity } else { 0 }, true);
                         node.connection = connection;
                         snapshot_row_1.push(Some(node));
                     } else {
@@ -1824,8 +1830,6 @@ impl PlanarCodeModel {
             }
             // println!("[{}][{}][{}] boundary: {:?}", t, i, j, node.boundary);
         });
-        // TODO: then run floyd warshall
-
         // then run dijkstra for every node
         self.iterate_measurement_stabilizers_mut(|t, i, j, node| {
             let map = petgraph::algo::dijkstra(&graph, node.pet_node.expect("exist"), None, |e| e.weight().weight);
@@ -2024,6 +2028,144 @@ impl PlanarCodeModel {
                 }
             }
         }
+        if self.enabled_tailored_decoding {
+            macro_rules! build_tailored_exhausted_map_no_correction {
+                // `()` indicates that the macro takes no argument.
+                ($tailored_edges:ident, $tailored_boundary:ident, $tailored_exhausted_boundary:ident, $tailored_exhausted_map:ident) => {
+                    let mut graph = petgraph::graph::Graph::new_undirected();
+                    // add nodes before adding edge, so that they all have node number
+                    self.iterate_measurement_stabilizers_mut(|t, i, j, node| {
+                        node.pet_node = Some(graph.add_node(fhi(Index {
+                            t: t, i: i, j: j
+                        })));
+                    });
+                    // then add every edge
+                    self.iterate_measurement_stabilizers(|t, i, j, node| {
+                        for edge in &node.edges {  // these edges are added no matter in both positive and negative graphs
+                            let node_target = self.snapshot[edge.t][edge.i][edge.j].as_ref().expect("exist").pet_node.expect("exist");
+                            graph.add_edge(node.pet_node.expect("exist"), node_target, PetGraphEdge {
+                                a: self.fhi(Index { t: t, i: i, j: j }),
+                                b: self.fhi(Index { t: edge.t, i: edge.i, j: edge.j }),
+                                weight: edge.weight,  // so that w1 + w2 = - log(p1) - log(p2) = - log(p1*p2) = - log(p_line)
+                                // we want p_line to be as large as possible, it meets the goal of minimizing -log(p) 
+                            });
+                            // println!("add edge [{}][{}][{}] and [{}][{}][{}] with weight {}", t, i, j, edge.t, edge.i, edge.j, weight_of(edge.p));
+                        }
+                        for edge in &node.$tailored_edges {  // specific to positive or negative graph
+                            let node_target = self.snapshot[edge.t][edge.i][edge.j].as_ref().expect("exist").pet_node.expect("exist");
+                            graph.add_edge(node.pet_node.expect("exist"), node_target, PetGraphEdge {
+                                a: self.fhi(Index { t: t, i: i, j: j }),
+                                b: self.fhi(Index { t: edge.t, i: edge.i, j: edge.j }),
+                                weight: edge.weight / 2.,  // Special: in tailored edges, each error generates 2 pairs of matchings, so each weight should be half of total and summing up with be the original
+                                // we want p_line to be as large as possible, it meets the goal of minimizing -log(p) 
+                            });
+                            // println!("add edge [{}][{}][{}] and [{}][{}][{}] with weight {}", t, i, j, edge.t, edge.i, edge.j, weight_of(edge.p));
+                        }
+                        // println!("[{}][{}][{}] tailored_boundary: {:?}", t, i, j, node.$tailored_boundary);
+                    });
+                    // then run dijkstra for every node
+                    self.iterate_measurement_stabilizers_mut(|t, i, j, node| {
+                        let map = petgraph::algo::dijkstra(&graph, node.pet_node.expect("exist"), None, |e| e.weight().weight);
+                        for (node_id, cost) in map.iter() {
+                            let fh_index = graph.node_weight(*node_id).expect("exist");
+                            if fh_index != &(fhi(Index{ t: t, i: i, j: j })) { // do not add map to itself
+                                node.$tailored_exhausted_map.insert(*fh_index, ExhaustedElement {
+                                    cost: *cost,
+                                    next: None,
+                                    correction: None,
+                                    next_correction: None,
+                                    removed: false,
+                                });
+                                // println!("[{}][{}][{}] insert [{}][{}][{}] with cost = {}", t, i, j, index.t, index.i, index.j, *cost);
+                            }
+                        }
+                    });
+                    // generate exhaust tailored_boundary without building correction pattern
+                    for t in (12..self.snapshot.len()).step_by(6) {
+                        for i in 0..self.snapshot[t].len() {
+                            for j in 0..self.snapshot[t][i].len() {
+                                if self.snapshot[t][i][j].is_some() {
+                                    if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
+                                        let mut min_cost = None;
+                                        let mut min_index = None;
+                                        let index = Index::new(t, i, j);
+                                        self.iterate_measurement_stabilizers(|tb, ib, jb, node_b| {
+                                            match &node_b.boundary {
+                                                Some(boundary) => {
+                                                    // only try if this node is directly connected to boundary
+                                                    if node_b.$tailored_exhausted_map.get(&self.fhi(index)).is_some() || (t == tb && i == ib && j == jb) {
+                                                        let cost = boundary.weight + (if t == tb && i == ib && j == jb { 0. } else {
+                                                            node_b.$tailored_exhausted_map[&self.fhi(index)].cost
+                                                        });
+                                                        // println!("[{}][{}][{}] [{}][{}][{}] {}", t, i, j, tb, ib, jb, cost);
+                                                        match min_cost.clone() {
+                                                            Some(min_cost_value) => {
+                                                                if cost < min_cost_value {
+                                                                    min_cost = Some(cost);
+                                                                    min_index = Some(Index::new(tb, ib, jb));
+                                                                }
+                                                            }
+                                                            None => {
+                                                                min_cost = Some(cost);
+                                                                min_index = Some(Index::new(tb, ib, jb));
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                None => { }
+                                            }
+                                            match &node_b.$tailored_boundary {
+                                                Some(tailored_boundary) => {
+                                                    // only try if this node is directly connected to boundary
+                                                    if node_b.$tailored_exhausted_map.get(&self.fhi(index)).is_some() || (t == tb && i == ib && j == jb) {
+                                                        let cost = tailored_boundary.weight + (if t == tb && i == ib && j == jb { 0. } else {
+                                                            node_b.$tailored_exhausted_map[&self.fhi(index)].cost
+                                                        });
+                                                        // println!("[{}][{}][{}] [{}][{}][{}] {}", t, i, j, tb, ib, jb, cost);
+                                                        match min_cost.clone() {
+                                                            Some(min_cost_value) => {
+                                                                if cost < min_cost_value {
+                                                                    min_cost = Some(cost);
+                                                                    min_index = Some(Index::new(tb, ib, jb));
+                                                                }
+                                                            }
+                                                            None => {
+                                                                min_cost = Some(cost);
+                                                                min_index = Some(Index::new(tb, ib, jb));
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                None => { }
+                                            }
+                                        });
+                                        if min_cost.is_none() {
+                                            continue  // node not involved
+                                        }
+                                        let min_cost = min_cost.expect("exist");
+                                        let min_index = min_index.expect("exist");
+                                        // println!("tailored_boundary of [{}][{}][{}] {} {:?}", t, i, j, min_cost, min_index);
+                                        // redefine node as a mutable one
+                                        let node = self.snapshot[t][i][j].as_mut().expect("exist");
+                                        node.$tailored_exhausted_boundary = Some(ExhaustedElement {
+                                            cost: min_cost,
+                                            next: Some(min_index),
+                                            correction: None,
+                                            next_correction: None,
+                                            removed: false,
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+            }
+            // println!("positive");
+            build_tailored_exhausted_map_no_correction!(tailored_positive_edges, tailored_positive_boundary, tailored_positive_exhausted_boundary, tailored_positive_exhausted_map);
+            // println!("negative");
+            build_tailored_exhausted_map_no_correction!(tailored_negative_edges, tailored_negative_boundary, tailored_negative_exhausted_boundary, tailored_negative_exhausted_map);
+        }
     }
     /// get correction from two matched nodes
     /// use `correction` (or `next_correction` if former not provided) in `exhausted_map`
@@ -2032,7 +2174,9 @@ impl PlanarCodeModel {
         let node_b = self.snapshot[b.t][b.i][b.j].as_ref().expect("exist");
         assert_eq!(node_a.gate_type, GateType::Measurement);
         assert_eq!(node_b.gate_type, GateType::Measurement);
-        assert_eq!(node_a.qubit_type, node_b.qubit_type);  // so that it has a path
+        if !self.enabled_tailored_decoding {  // this requirement doesn't exist in a tailored surface code decoding
+            assert_eq!(node_a.qubit_type, node_b.qubit_type);  // so that it has a path
+        }
         if a == b {
             return self.generate_default_sparse_correction()
         }

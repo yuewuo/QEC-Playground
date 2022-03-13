@@ -154,6 +154,7 @@ impl RngCore for SplitMix64 {
 
 impl SplitMix64 {
     #[inline]
+    #[allow(dead_code)]
     pub fn next_f64(&mut self) -> f64 {
         f64::from_bits(0x3FF << 52 | self.next_u64() >> 12) - 1.
     }
