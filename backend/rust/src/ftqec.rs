@@ -1528,6 +1528,7 @@ impl PlanarCodeModel {
                                     }
                                 }
                                 if self.enabled_tailored_decoding && (measurement_errors.len() >= 2 && measurement_errors.len() <= 4) {
+                                    
                                     // tailored surface code decoding method can handle special cases arXiv:1907.02554v2
                                     // for is_positive in [true, false] {
                                     //     for mi in 0..measurement_errors.len() {
