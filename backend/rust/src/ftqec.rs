@@ -774,7 +774,8 @@ impl PlanarCodeModel {
             }
             snapshot.push(snapshot_row_0);
         }
-        let code = Self::__new_default(code_type, snapshot, di, dj, MeasurementRounds, T);
+        let mut code = Self::__new_default(code_type, snapshot, di, dj, MeasurementRounds, T);
+        code.enabled_tailored_decoding = true;
         code
     }
 
@@ -1469,10 +1470,6 @@ impl PlanarCodeModel {
                                 if measurement_errors.len() == 0 {  // no way to detect it, ignore
                                     continue
                                 }
-                                if measurement_errors.len() > 2 {  // MWPM cannot handle this kind of error... just ignore
-                                    // println!("[warning] single qubit error cause more than 2 measurement errors: {:?}", error);
-                                    continue
-                                }
                                 // compute correction pattern, so that applying this error pattern will exactly recover data qubit errors
                                 let correction = Arc::new(sparse_correction);
                                 // add this to edges and update probability
@@ -1533,7 +1530,7 @@ impl PlanarCodeModel {
                                             node.pauli_error_connections.push(Either::Left((Index::new(t1, i1, j1), Index::new(t2, i2, j2))));
                                         }
                                     }
-                                }
+                                }  // MWPM cannot handle this kind of error... just ignore
                                 if self.enabled_tailored_decoding && (measurement_errors.len() == 3 || measurement_errors.len() == 4) {
                                     // tailored surface code decoding method can handle special cases arXiv:1907.02554v2
                                     // first find the individual median i and j, then (i, j) must be the center data qubit
@@ -1554,7 +1551,7 @@ impl PlanarCodeModel {
                                             let mut right = None;
                                             let mut counter = 0;
                                             for &(tm, im, jm) in measurement_errors.iter() {
-                                                if im == center_i - 1 && jm == center_j {
+                                                if im + 1 == center_i && jm == center_j {
                                                     up = Some((tm, im, jm));
                                                     counter += 1;
                                                 }
@@ -1566,7 +1563,7 @@ impl PlanarCodeModel {
                                                     right = Some((tm, im, jm));
                                                     counter += 1;
                                                 }
-                                                if im == center_i && jm == center_j - 1 {
+                                                if im == center_i && jm + 1 == center_j {
                                                     left = Some((tm, im, jm));
                                                     counter += 1;
                                                 }
@@ -1584,8 +1581,15 @@ impl PlanarCodeModel {
                                                                     , self.use_combined_probability, weight_of);
                                                             }
                                                             (Some((tm, im, jm)), None) | (None, Some((tm, im, jm))) => {  // add to boundary
-                                                                self.snapshot[tm][im][jm].as_mut().expect("exist").tailored_positive_boundary.as_mut().expect("exist").add(p, correction.clone()
-                                                                    , self.use_combined_probability, weight_of);
+                                                                let node = self.snapshot[tm][im][jm].as_mut().expect("exist");
+                                                                if node.tailored_positive_boundary.is_none() {
+                                                                    node.tailored_positive_boundary = Some(Boundary {
+                                                                        p: 0.,
+                                                                        weight: f64::MAX,
+                                                                        cases: Vec::new(),
+                                                                    });
+                                                                }
+                                                                node.tailored_positive_boundary.as_mut().expect("exist").add(p, correction.clone(), self.use_combined_probability, weight_of);
                                                             }
                                                             _ => { unreachable!() }
                                                         }
@@ -1602,8 +1606,15 @@ impl PlanarCodeModel {
                                                                     , self.use_combined_probability, weight_of);
                                                             }
                                                             (Some((tm, im, jm)), None) | (None, Some((tm, im, jm))) => {  // add to boundary
-                                                                self.snapshot[tm][im][jm].as_mut().expect("exist").tailored_negative_boundary.as_mut().expect("exist").add(p, correction.clone()
-                                                                    , self.use_combined_probability, weight_of);
+                                                                let node = self.snapshot[tm][im][jm].as_mut().expect("exist");
+                                                                if node.tailored_negative_boundary.is_none() {
+                                                                    node.tailored_negative_boundary = Some(Boundary {
+                                                                        p: 0.,
+                                                                        weight: f64::MAX,
+                                                                        cases: Vec::new(),
+                                                                    });
+                                                                }
+                                                                node.tailored_negative_boundary.as_mut().expect("exist").add(p, correction.clone(), self.use_combined_probability, weight_of);
                                                             }
                                                             _ => { unreachable!() }
                                                         }
@@ -1617,13 +1628,13 @@ impl PlanarCodeModel {
                                             unknown_case_warning = true;
                                         }
                                     }
-                                    if unknown_case_warning {
-                                        println!("error at {:?}: cannot recognize the pattern of this 3 or 4 non-trivial measurements, strange... just skipped", (t, i, j, error));
-                                        for i in 0..measurement_errors.len() {
-                                            let (tm, im, jm) = measurement_errors[i];
-                                            print!("t{}: {:?}, ", i, (tm, im, jm));
-                                        }
-                                        println!("");
+                                    if unknown_case_warning {  // this cases seem to be normal for circuit-level noise model of tailored surface code: Pauli Y would generate some strange cases, but those are low-biased errors
+                                        // println!("error at {:?}: cannot recognize the pattern of this 3 or 4 non-trivial measurements, strange... just skipped", (t, i, j, error));
+                                        // for i in 0..measurement_errors.len() {
+                                        //     let (tm, im, jm) = measurement_errors[i];
+                                        //     print!("t{}: {:?}, ", i, (tm, im, jm));
+                                        // }
+                                        // println!("");
                                     }
                                 }
                                 // update fast benchmark
@@ -2797,15 +2808,24 @@ impl PlanarCodeModel {
                     Some(boundary) => println!("boundary: p = {}", boundary.p),
                     None => println!("boundary: none"),
                 }
+                match &node.tailored_positive_boundary {
+                    Some(boundary) => println!("tailored positive boundary: p = {}", boundary.p),
+                    None => { },
+                }
+                match &node.tailored_negative_boundary {
+                    Some(boundary) => println!("tailored negative boundary: p = {}", boundary.p),
+                    None => { },
+                }
                 for edge in node.edges.iter().filter(|edge| edge.p > 0.) {
                     println!("edge [{}][{}][{}]: p = {}", edge.t, edge.i, edge.j, edge.p);
                 }
                 for edge in node.tailored_positive_edges.iter().filter(|edge| edge.p > 0.) {
-                    println!("positive edge [{}][{}][{}]: p = {}", edge.t, edge.i, edge.j, edge.p);
+                    println!("tailored positive edge [{}][{}][{}]: p = {}", edge.t, edge.i, edge.j, edge.p);
                 }
                 for edge in node.tailored_negative_edges.iter().filter(|edge| edge.p > 0.) {
-                    println!("negative edge [{}][{}][{}]: p = {}", edge.t, edge.i, edge.j, edge.p);
+                    println!("tailored negative edge [{}][{}][{}]: p = {}", edge.t, edge.i, edge.j, edge.p);
                 }
+                println!("");
             }
         });
     }
