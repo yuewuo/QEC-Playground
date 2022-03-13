@@ -26,7 +26,7 @@ compile_code_if_necessary()
 def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playground_command_get_stdout):
 
     for di in di_vec:
-        filename = os.path.join(os.path.dirname(__file__), f"after_fix_{di}.txt")
+        filename = os.path.join(os.path.dirname(__file__), f"d_{di}.txt")
 
         results = []
         for p in p_vec:
