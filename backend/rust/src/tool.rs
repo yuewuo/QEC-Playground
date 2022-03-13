@@ -32,6 +32,7 @@ use std::collections::BTreeSet;
 use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
+use super::reproducible_rand::Xoroshiro128StarStar;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -843,8 +844,9 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 let decoder_type = decoder_type.clone();
                 handlers.push(std::thread::spawn(move || {
                     // println!("thread {}", _i);
-                    let mut rng = thread_rng();
-                    let mut rng_fast_benchmark = thread_rng();
+                    let mut slow_rng = thread_rng();
+                    let mut rng = Xoroshiro128StarStar::seed_from_u64(slow_rng.gen::<u64>());
+                    let mut rng_fast_benchmark = Xoroshiro128StarStar::seed_from_u64(slow_rng.gen::<u64>());
                     let mut current_external_termination = {
                         *external_termination.lock().unwrap()
                     };
@@ -876,7 +878,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                                         model_error.snapshot[t][i][j].as_mut().expect("exist").disable_in_random_error_generator = true;
                                     }
                                     // generate errors
-                                    model_error.generate_random_errors(|| rng.gen::<f64>());
+                                    model_error.generate_random_errors(|| rng.next_f64());
                                     for (t, i, j, error_type) in errors.iter() {
                                         let (t, i, j) = (*t, *i, *j);
                                         match error_type {
@@ -891,7 +893,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                                                 }
                                             },
                                             Either::Right(_) => {  // erasure error
-                                                model_error.add_random_erasure_error_at(t, i, j, || rng.gen::<f64>()).unwrap();
+                                                model_error.add_random_erasure_error_at(t, i, j, || rng.next_f64()).unwrap();
                                             },
                                         }
                                     }
@@ -901,7 +903,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                                     }
                                     model_error.count_error()
                                 } else {
-                                    model_error.generate_random_errors(|| rng.gen::<f64>())
+                                    model_error.generate_random_errors(|| rng.next_f64())
                                 };
                                 if error_count == 0 {
                                     return false;
