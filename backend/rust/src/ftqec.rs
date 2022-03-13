@@ -2119,9 +2119,9 @@ impl PlanarCodeModel {
                                                 Some(tailored_boundary) => {
                                                     // only try if this node is directly connected to boundary
                                                     if node_b.$tailored_exhausted_map.get(&self.fhi(index)).is_some() || (t == tb && i == ib && j == jb) {
-                                                        let cost = tailored_boundary.weight + (if t == tb && i == ib && j == jb { 0. } else {
+                                                        let cost = (tailored_boundary.weight + (if t == tb && i == ib && j == jb { 0. } else {
                                                             node_b.$tailored_exhausted_map[&self.fhi(index)].cost
-                                                        });
+                                                        })) / 2.;  // Special: in tailored edges, each error generates 2 pairs of matchings, so each weight should be half of total and summing up with be the original
                                                         // println!("[{}][{}][{}] [{}][{}][{}] {}", t, i, j, tb, ib, jb, cost);
                                                         match min_cost.clone() {
                                                             Some(min_cost_value) => {
