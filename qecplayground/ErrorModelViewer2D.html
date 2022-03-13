@@ -143,7 +143,7 @@ if (isNaN(p_str) || isNaN(pe_str)) {
     alert("p or pe is not a float number, format error")
 }
 const parameters = urlParams.get('parameters') || ""
-const full_parameters = `[${di}] --djs [${di}] [${di}] [${p_str}] --pes [${pe_str}] ${parameters}`
+const full_parameters = `"[${di}]" --djs "[${di}]" "[${di}]" "[${p_str}]" --pes "[${pe_str}]" ${parameters}`
 
 function create_marks(scale=1) {
     let marks = {}
@@ -261,7 +261,7 @@ var app = new Vue({
             if (this.full_parameters == this.last_confirmed_parameters) {
                 return  // not changed, no need to refresh
             }
-            const found = this.full_parameters.match(/^\[(\d+)\] +--djs +\[(\d+)\] +\[(\d+)\] +\[([+-e\d\.]+)\] +--pes +\[([+-e\d\.]+)\]( (.*))?/)
+            const found = this.full_parameters.match(/^"\[(\d+)\]" +--djs +"\[(\d+)\]" +"\[(\d+)\]" +"\[([+-e\d\.]+)\]" +--pes +"\[([+-e\d\.]+)\]"( (.*))?/)
             if (found == null) {
                 alert("parameter format error")
                 return
