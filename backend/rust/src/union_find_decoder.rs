@@ -21,7 +21,8 @@ use super::petgraph;
 use super::distributed_uf_decoder;
 use super::serde_json;
 use std::time::Instant;
-use super::ftqec::{Measurement, DetectedErasures, Index};
+use super::ftqec::{Measurement, DetectedErasures, Index, FastHashIndex};
+use super::util::simple_hasher::SimpleHasher;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UnionFindDecoder<U: std::fmt::Debug> {
@@ -774,6 +775,11 @@ pub fn run_given_mwpm_decoder_instance_weighted(model: &ftqec::PlanarCodeModel, 
 pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model: &ftqec::PlanarCodeModel, measurement: &Measurement
         , detected_erasures: &DetectedErasures, max_half_weight: usize)
         -> Vec<UnionFindDecoder<(usize, usize, usize)>> {
+    let di = model.di;
+    let dj = model.dj;
+    let fhi = |index: Index| -> FastHashIndex {
+        FastHashIndex::with_di_dj(&index, di, dj)
+    };
     // first find individual connected regions (so that the decoder weight is optimal for every region)
     let mut g = petgraph::graph::UnGraph::<(usize, usize, usize), ()>::default();
     let mut tij_to_index = HashMap::new();
@@ -793,8 +799,8 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
     // add edges from erasure errors
     if detected_erasures.has_erasures() {
         for (idx1, idx2) in detected_erasures.connected.iter() {
-            let index1 = tij_to_index[&(idx1.t, idx1.i, idx1.j)];
-            let index2 = tij_to_index[&(idx2.t, idx2.i, idx2.j)];
+            let index1 = tij_to_index[&(idx1.index.t, idx1.index.i, idx1.index.j)];
+            let index2 = tij_to_index[&(idx2.index.t, idx2.index.i, idx2.index.j)];
             g.update_edge(index1, index2, ());  // use `update_edge` instead of `add_edge` is to avoid duplicate edges
         }
     }
@@ -828,11 +834,11 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
     let mut decoders = Vec::new();
     for region in connected_regions.iter() {
         let region_set = {
-            let mut region_set = HashSet::new();
+            let mut region_set = HashSet::<FastHashIndex, std::hash::BuildHasherDefault::<SimpleHasher> >::default();
             if detected_erasures.has_erasures() {
                 region_set.extend(region.iter().map(|idx| {
                     let &(t, i, j) = g.node_weight(*idx).expect("exists");
-                    Index::new(t, i, j)
+                    fhi(Index::new(t, i, j))
                 }));
             }
             region_set
@@ -877,7 +883,7 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
             position_to_index.insert((t, i, j), nodes.len());
             nodes.push(InputNode::new((t, i, j), false, node.boundary.as_ref().and_then(|boundary| {
                 if boundary.p > 0. {  Some(scale_weight(boundary.weight)) } else { None }
-            }).or(detected_erasures.boundaries.get(&Index::new(t, i, j)).and(Some(0)))));
+            }).or(detected_erasures.boundaries.get(&fhi(Index::new(t, i, j))).and(Some(0)))));
         }
         model.iterate_measurement_stabilizers(|t, i, j, _node| {
             let (mt, mi, mj) = ftqec::Index::new(t, i, j).to_measurement_idx();
@@ -897,7 +903,7 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
                     let mut edge_increased = 0;
                     let edge_length = scale_weight(edge.weight);
                     if detected_erasures.has_erasures() {  // check for erasure errors
-                        added_edges_idx.insert(Index::new(edge.t, edge.i, edge.j));
+                        added_edges_idx.insert(fhi(Index::new(edge.t, edge.i, edge.j)));
                         if detected_erasures.connected_contains(&Index::new(t, i, j), &Index::new(edge.t, edge.i, edge.j)) {
                             edge_increased = edge_length;  // set as already grown (actually edge_length/2 suffices)
                         }
@@ -906,12 +912,12 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
                 }
             }
             if detected_erasures.has_erasures() {
-                match detected_erasures.connected_edges.get(&Index::new(t, i, j)) {
+                match detected_erasures.connected_edges.get(&fhi(Index::new(t, i, j))) {
                     Some(edges) => {
                         for target in edges.iter() {
                             // target must in this region, and also cannot be already added as grown edge
                             if region_set.get(target).is_some() && added_edges_idx.get(target).is_none() {
-                                let peer_idx = position_to_index[&(target.t, target.i, target.j)];
+                                let peer_idx = position_to_index[&(target.index.t, target.index.i, target.index.j)];
                                 if idx < peer_idx {  // remove duplicated neighbors
                                     neighbors.push(NeighborEdge::new(idx, peer_idx, 0, 0));  // weight 0 edges is specific for erasure errors
                                 }
@@ -927,7 +933,7 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
         if detected_erasures.has_erasures() {
             for node in decoder.nodes.iter_mut() {
                 let (t, i, j) = node.node.user_data;
-                if detected_erasures.boundaries.get(&Index::new(t, i, j)).is_some() {
+                if detected_erasures.boundaries.get(&fhi(Index::new(t, i, j))).is_some() {
                     node.boundary_increased = node.node.boundary_cost.expect("exists");
                 }
             }
@@ -937,6 +943,7 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
     }
     decoders
 }
+
 pub fn suboptimal_matching_by_union_find_given_measurement_generate_suboptimal_matching(decoder: &UnionFindDecoder<(usize, usize, usize)>)
         -> (Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
     let mut edge_matchings = Vec::new();

@@ -142,7 +142,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let debug_print_direct_connections = matches.is_present("debug_print_direct_connections");
             let debug_print_exhausted_connections = matches.is_present("debug_print_exhausted_connections");
             let debug_print_error_model = matches.is_present("debug_print_error_model");
-            let use_reduced_graph = matches.is_present("use_reduced_graph");
+            let use_reduced_graph = !matches.is_present("disable_reduced_graph");
             return Some(fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, use_rotated_tailored_code, bias_eta, decoder_type, max_half_weight

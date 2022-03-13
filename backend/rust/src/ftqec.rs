@@ -33,9 +33,11 @@ use std::time::Instant;
 use super::fast_benchmark::FastBenchmark;
 use serde::Serialize;
 use super::util;
+use super::util::simple_hasher::SimpleHasher;
 
 /// uniquely index a node
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Serialize)]
+/// update 2022.3.13: remove hash support for index; if use hash, change to FastHashIndex
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize)]
 pub struct Index {
     pub t: usize,
     pub i: usize,
@@ -58,18 +60,6 @@ impl Index {
     }
 }
 
-/// Autotune: compute weight based on error model
-pub fn weight_autotune(p: f64) -> f64 {
-    if p > 0. { - p.ln() } else { f64::from(f32::MAX) }  // use f32::MAX is enough
-}
-pub fn weight_autotune_minus_no_error(p: f64) -> f64 {
-    if p > 0. { (1.-p).ln() - p.ln() } else { f64::from(f32::MAX) }  // use f32::MAX is enough
-}
-/// Manhattan distance (but not exactly because there is 12 neighbors instead of 8) version
-pub fn weight_equal(p: f64) -> f64 {
-    if p > 0. { 1. } else { f64::from(f32::MAX) }  // use f32::MAX is enough
-}
-
 impl Ord for Index {
     fn cmp(&self, other: &Self) -> Ordering {
         match self.t.cmp(&other.t) {
@@ -90,6 +80,61 @@ impl PartialOrd for Index {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
+}
+
+#[derive(Debug, Eq, Clone, Copy)]
+pub struct FastHashIndex {
+    pub max_i: usize,
+    pub max_j: usize,
+    pub index: Index,
+}
+
+/// profiling tells me the default hasher is super slow... here's my own faster hasher leveraging the fact that i and j are typically under 16 bits and t is usually no more than 32 bits
+impl std::hash::Hash for FastHashIndex {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let combined = ((self.index.t / 6) * self.max_i * self.max_j + self.index.i * self.max_j + self.index.j) as u64;
+        combined.hash(state);
+    }
+}
+
+impl PartialEq for FastHashIndex {
+    fn eq(&self, other: &Self) -> bool {
+        self.index == other.index  // max_t,i,j doesn't matter when comparing
+    }
+}
+
+impl FastHashIndex {
+    pub fn with_di_dj(index: &Index, di: usize, dj: usize) -> Self {
+        Self {
+            max_i: 2 * di - 1,
+            max_j: 2 * dj - 1,
+            index: *index,
+        }
+    }
+}
+
+impl Ord for FastHashIndex {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.index.cmp(&other.index)
+    }
+}
+
+impl PartialOrd for FastHashIndex {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+/// Autotune: compute weight based on error model
+pub fn weight_autotune(p: f64) -> f64 {
+    if p > 0. { - p.ln() } else { f64::from(f32::MAX) }  // use f32::MAX is enough
+}
+pub fn weight_autotune_minus_no_error(p: f64) -> f64 {
+    if p > 0. { (1.-p).ln() - p.ln() } else { f64::from(f32::MAX) }  // use f32::MAX is enough
+}
+/// Manhattan distance (but not exactly because there is 12 neighbors instead of 8) version
+pub fn weight_equal(p: f64) -> f64 {
+    if p > 0. { 1. } else { f64::from(f32::MAX) }  // use f32::MAX is enough
 }
 
 /// Corresponds to `this.snapshot` in `FaultTolerantView.vue`
@@ -127,11 +172,12 @@ pub struct Node {
     #[serde(skip)]
     pub pet_node: Option<petgraph::graph::NodeIndex>,
     #[serde(skip)]
-    pub exhausted_map: HashMap<Index, ExhaustedElement>,
+    // pub exhausted_map: HashMap<Index, ExhaustedElement>,  // note: only when the key is `Index` should I use SimpleHasher
+    pub exhausted_map: HashMap<FastHashIndex, ExhaustedElement, std::hash::BuildHasherDefault::<SimpleHasher> >,
     // internal states used for temporary manipulation
     #[serde(skip)]
     pub disable_in_random_error_generator: bool,
-    // specific for tailored surface code, where decoding high probability 4 non-trivial measurement errors are essential
+    // specific for tailored surface code, where decoding high probability 4 non-trivial measurement errors are essential: arXiv:1907.02554v2
     #[serde(skip)] pub tailored_positive_edges: Vec::<Edge>,  // edges that connects stabilizers (x, y) and (x+1, y+1)
     #[serde(skip)] pub tailored_positive_boundary: Option<Boundary>,
     #[serde(skip)] pub tailored_negative_edges: Vec::<Edge>,  // edges that connects stabilizers (x, y) and (x+1, y-1)
@@ -139,7 +185,7 @@ pub struct Node {
 }
 
 impl Node {
-    fn __new_default(t: usize, i: usize, j: usize, gate_type: GateType, qubit_type: QubitType) -> Self {
+    fn __new_default(t: usize, i: usize, j: usize, gate_type: GateType, qubit_type: QubitType, exhausted_map_capacity: usize) -> Self {
         Self {
             t: t, i: i, j: j,
             connection: None,
@@ -159,7 +205,7 @@ impl Node {
             boundary: None,
             exhausted_boundary: None,
             pet_node: None,
-            exhausted_map: HashMap::new(),
+            exhausted_map: HashMap::with_capacity_and_hasher(exhausted_map_capacity / 8, std::hash::BuildHasherDefault::<SimpleHasher>::default()),
             disable_in_random_error_generator: false,
             tailored_positive_edges: Vec::new(),
             tailored_positive_boundary: None,
@@ -191,7 +237,7 @@ pub struct PlanarCodeModel {
     pub MeasurementRounds: usize,
     pub T: usize,
     #[serde(skip)]
-    pub graph: Option<petgraph::graph::Graph<Index, PetGraphEdge>>,
+    pub graph: Option<petgraph::graph::Graph<FastHashIndex, PetGraphEdge>>,
     #[serde(skip)]
     pub use_combined_probability: bool,
     #[serde(skip)]
@@ -219,12 +265,16 @@ impl PlanarCodeModel {
             T: T,
             MeasurementRounds: MeasurementRounds,
             graph: None,
-            use_combined_probability: false,
-            use_reduced_graph: false,
+            use_combined_probability: true,  // this feature is stable, enable it by default (2022.3.13 Yue)
+            use_reduced_graph: true,  // this feature is stable, enable it by default (2022.3.13 Yue)
             z_homology_lines: Vec::new(),
             x_homology_lines: Vec::new(),
             enabled_tailored_decoding: false,
         }
+    }
+    #[inline(always)]
+    pub fn fhi(&self, index: Index) -> FastHashIndex {
+        FastHashIndex::with_di_dj(&index, self.di, self.dj)
     }
     pub fn new_standard_planar_code(MeasurementRounds: usize, L: usize) -> Self {
         // MeasurementRounds = 0 means only one perfect measurement round
@@ -297,6 +347,7 @@ impl PlanarCodeModel {
         let width_j = 2 * dj - 1;
         let T = MeasurementRounds + 2;
         let height = T * 6 + 1;
+        let exhausted_map_capacity = width_i * width_j * T;
         let mut snapshot = Vec::with_capacity(height);
         for t in 0..height {
             let mut snapshot_row_0 = Vec::with_capacity(width_i);
@@ -432,7 +483,7 @@ impl PlanarCodeModel {
                                 }
                             },
                         }
-                        let mut node = Node::__new_default(t, i, j, gate_type, qubit_type);
+                        let mut node = Node::__new_default(t, i, j, gate_type, qubit_type, if qubit_type != QubitType::Data && stage == Stage::Measurement { exhausted_map_capacity } else { 0 });
                         node.connection = connection;
                         snapshot_row_1.push(Some(node));
                     } else {
@@ -496,6 +547,7 @@ impl PlanarCodeModel {
         let width_j = 2 * dj - 1;
         let T = MeasurementRounds + 2;
         let height = T * 6 + 1;
+        let exhausted_map_capacity = width_i * width_j * T;
         let mut snapshot = Vec::with_capacity(height);
         for t in 0..height {
             let mut snapshot_row_0 = Vec::with_capacity(width_i);
@@ -572,7 +624,7 @@ impl PlanarCodeModel {
                                 }
                             },
                         }
-                        let mut node = Node::__new_default(t, i, j, gate_type, qubit_type);
+                        let mut node = Node::__new_default(t, i, j, gate_type, qubit_type, if qubit_type != QubitType::Data && stage == Stage::Measurement { exhausted_map_capacity } else { 0 });
                         node.connection = connection;
                         snapshot_row_1.push(Some(node));
                     } else {
@@ -628,6 +680,7 @@ impl PlanarCodeModel {
         let width_j = 2 * dj - 1;
         let T = MeasurementRounds + 2;
         let height = T * 6 + 1;
+        let exhausted_map_capacity = width_i * width_j * T;
         let mut snapshot = Vec::with_capacity(height);
         for t in 0..height {
             let mut snapshot_row_0 = Vec::with_capacity(width_i);
@@ -763,7 +816,7 @@ impl PlanarCodeModel {
                                 }
                             },
                         }
-                        let mut node = Node::__new_default(t, i, j, gate_type, qubit_type);
+                        let mut node = Node::__new_default(t, i, j, gate_type, qubit_type, if qubit_type != QubitType::Data && stage == Stage::Measurement { exhausted_map_capacity } else { 0 });
                         node.connection = connection;
                         snapshot_row_1.push(Some(node));
                     } else {
@@ -1744,21 +1797,26 @@ impl PlanarCodeModel {
     /// Running `build_graph` required before running this function.
     /// bug fix 2021.12.20: building correction based on "next" may cause infinite loop, due to zero weight paths (e.g. erasure) that can jump between two nodes
     pub fn build_exhausted_path(&mut self) {
+        let di = self.di;
+        let dj = self.dj;
+        let fhi = |index: Index| -> FastHashIndex {
+            FastHashIndex::with_di_dj(&index, di, dj)
+        };
         // first build petgraph
         let mut graph = petgraph::graph::Graph::new_undirected();
         // add nodes before adding edge, so that they all have node number
         self.iterate_measurement_stabilizers_mut(|t, i, j, node| {
-            node.pet_node = Some(graph.add_node(Index {
+            node.pet_node = Some(graph.add_node(fhi(Index {
                 t: t, i: i, j: j
-            }));
+            })));
         });
         // then add every edge
         self.iterate_measurement_stabilizers(|t, i, j, node| {
             for edge in &node.edges {
                 let node_target = self.snapshot[edge.t][edge.i][edge.j].as_ref().expect("exist").pet_node.expect("exist");
                 graph.add_edge(node.pet_node.expect("exist"), node_target, PetGraphEdge {
-                    a: Index { t: t, i: i, j: j },
-                    b: Index { t: edge.t, i: edge.i, j: edge.j },
+                    a: self.fhi(Index { t: t, i: i, j: j }),
+                    b: self.fhi(Index { t: edge.t, i: edge.i, j: edge.j }),
                     weight: edge.weight,  // so that w1 + w2 = - log(p1) - log(p2) = - log(p1*p2) = - log(p_line)
                     // we want p_line to be as large as possible, it meets the goal of minimizing -log(p) 
                 });
@@ -1766,21 +1824,20 @@ impl PlanarCodeModel {
             }
             // println!("[{}][{}][{}] boundary: {:?}", t, i, j, node.boundary);
         });
+        // TODO: then run floyd warshall
+
         // then run dijkstra for every node
         self.iterate_measurement_stabilizers_mut(|t, i, j, node| {
             let map = petgraph::algo::dijkstra(&graph, node.pet_node.expect("exist"), None, |e| e.weight().weight);
             for (node_id, cost) in map.iter() {
-                let index = graph.node_weight(*node_id).expect("exist");
-                if index != &(Index{ t: t, i: i, j: j }) { // do not add map to itself
-                    node.exhausted_map.insert(Index {
-                        t: index.t,
-                        i: index.i,
-                        j: index.j,
-                    }, ExhaustedElement {
+                let fh_index = graph.node_weight(*node_id).expect("exist");
+                if fh_index != &(fhi(Index{ t: t, i: i, j: j })) { // do not add map to itself
+                    node.exhausted_map.insert(*fh_index, ExhaustedElement {
                         cost: *cost,
                         next: None,
                         correction: None,
                         next_correction: None,
+                        removed: false,
                     });
                     // println!("[{}][{}][{}] insert [{}][{}][{}] with cost = {}", t, i, j, index.t, index.i, index.j, *cost);
                 }
@@ -1793,36 +1850,36 @@ impl PlanarCodeModel {
                     if self.snapshot[t][i][j].is_some() {
                         if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
                             let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                            let target_indexes: Vec::<Index> = node.exhausted_map.keys().cloned().collect();
-                            for target_index in target_indexes {
+                            let fh_target_indexes: Vec::<FastHashIndex> = node.exhausted_map.keys().cloned().collect();
+                            for fh_target_index in fh_target_indexes {
                                 // find the next element by searching in `edges`
                                 let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                                let mut min_cost = None;
-                                let mut min_index = None;
+                                let mut min_cost: Option<f64> = None;
+                                let mut min_index: Option<Index> = None;
                                 for edge in &node.edges {
-                                    let next_index = Index::from(edge);
-                                    let mut current_cost = node.exhausted_map[&next_index].cost;
-                                    if next_index != target_index {
-                                        let next_node = self.snapshot[next_index.t][next_index.i][next_index.j].as_ref().expect("exist");
-                                        current_cost += next_node.exhausted_map[&target_index].cost;
+                                    let fh_next_index = self.fhi(Index::from(edge));
+                                    let mut current_cost = node.exhausted_map[&fh_next_index].cost;
+                                    if fh_next_index != fh_target_index {
+                                        let next_node = self.snapshot[fh_next_index.index.t][fh_next_index.index.i][fh_next_index.index.j].as_ref().expect("exist");
+                                        current_cost += next_node.exhausted_map[&fh_target_index].cost;
                                     }
                                     // compute the cost of node -> next_index -> target_index
                                     match min_cost.clone() {
                                         Some(min_cost_value) => {
-                                            if current_cost < min_cost_value || (current_cost == min_cost_value && target_index.distance(&next_index) < target_index.distance(&min_index.unwrap())) {
+                                            if current_cost < min_cost_value || (current_cost == min_cost_value && fh_target_index.index.distance(&fh_next_index.index) < fh_target_index.index.distance(&min_index.unwrap())) {
                                                 min_cost = Some(current_cost);
-                                                min_index = Some(next_index.clone());
+                                                min_index = Some(fh_next_index.index);
                                             }
                                         }
                                         None => {
                                             min_cost = Some(current_cost);
-                                            min_index = Some(next_index.clone());
+                                            min_index = Some(fh_next_index.index);
                                         }
                                     }
                                 }
                                 // redefine node as a mutable one
                                 let node = self.snapshot[t][i][j].as_mut().expect("exist");
-                                node.exhausted_map.get_mut(&target_index).expect("exist").next = Some(min_index.expect("exist"));
+                                node.exhausted_map.get_mut(&fh_target_index).expect("exist").next = Some(min_index.expect("exist"));
                             }
                         }
                     }
@@ -1836,12 +1893,12 @@ impl PlanarCodeModel {
                     if self.snapshot[t][i][j].is_some() {
                         if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
                             let node = self.snapshot[t][i][j].as_ref().expect("exist");
-                            let target_indexes: Vec::<Index> = node.exhausted_map.keys().cloned().collect();
-                            for target_index in target_indexes {
+                            let fh_target_indexes: Vec::<FastHashIndex> = node.exhausted_map.keys().cloned().collect();
+                            for fh_target_index in fh_target_indexes {
                                 // go along `next` and combine over the `correction`
                                 let this_index = Index{ t: t, i: i, j: j };
                                 let this_node = self.snapshot[this_index.t][this_index.i][this_index.j].as_ref().expect("exist");
-                                let next_index = this_node.exhausted_map[&target_index].next.as_ref().expect("exist");
+                                let next_index = this_node.exhausted_map[&fh_target_index].next.as_ref().expect("exist");
                                 let mut correction = None;
                                 for edge in this_node.edges.iter() {  // find the edge of `next_index`
                                     if *next_index == Index::from(edge) {
@@ -1853,7 +1910,7 @@ impl PlanarCodeModel {
                                 let correction = correction.expect("exist");
                                 // redefine node as a mutable one
                                 let node = self.snapshot[t][i][j].as_mut().expect("exist");
-                                node.exhausted_map.get_mut(&target_index).expect("exist").next_correction = Some(correction);
+                                node.exhausted_map.get_mut(&fh_target_index).expect("exist").next_correction = Some(correction);
                             }
                         }
                     }
@@ -1874,9 +1931,9 @@ impl PlanarCodeModel {
                                 match &node_b.boundary {
                                     Some(boundary) => {
                                         // only try if this node is directly connected to boundary
-                                        if node.qubit_type == node_b.qubit_type && (node_b.exhausted_map.get(&index).is_some() || (t == tb && i == ib && j == jb)) {
+                                        if node.qubit_type == node_b.qubit_type && (node_b.exhausted_map.get(&self.fhi(index)).is_some() || (t == tb && i == ib && j == jb)) {
                                             let cost = boundary.weight + (if t == tb && i == ib && j == jb { 0. } else {
-                                                node_b.exhausted_map[&index].cost
+                                                node_b.exhausted_map[&self.fhi(index)].cost
                                             });
                                             // println!("[{}][{}][{}] [{}][{}][{}] {}", t, i, j, tb, ib, jb, cost);
                                             match min_cost.clone() {
@@ -1905,7 +1962,7 @@ impl PlanarCodeModel {
                             let node_b = self.snapshot[min_index.t][min_index.i][min_index.j].as_ref().expect("exist");
                             let mut correction: SparseCorrection = (*node_b.boundary.as_ref().expect("exist").cases[0].0).clone();
                             if index != min_index {
-                                correction.combine(node_b.exhausted_map[&index].next_correction.as_ref().expect("exist"));
+                                correction.combine(node_b.exhausted_map[&self.fhi(index)].next_correction.as_ref().expect("exist"));
                             }
                             // redefine node as a mutable one
                             let node = self.snapshot[t][i][j].as_mut().expect("exist");
@@ -1914,6 +1971,7 @@ impl PlanarCodeModel {
                                 next: Some(min_index),
                                 correction: Some(Arc::new(correction)),
                                 next_correction: None,
+                                removed: false,
                             });
                         }
                     }
@@ -1929,36 +1987,36 @@ impl PlanarCodeModel {
                             if self.snapshot[t][i][j].as_ref().expect("exist").gate_type == GateType::Measurement {
                                 let node = self.snapshot[t][i][j].as_ref().expect("exist");
                                 let index = Index::new(t, i, j);
-                                let target_indexes: Vec::<Index> = node.exhausted_map.keys().cloned().collect();
-                                let mut to_be_removed = Vec::<Index>::new();
+                                let fh_target_indexes: Vec::<FastHashIndex> = node.exhausted_map.keys().cloned().collect();
+                                let mut fh_to_be_removed = Vec::<FastHashIndex>::new();
                                 if node.exhausted_boundary.is_none() {
                                     continue  // node not connected to boundary
                                 }
                                 let boundary_cost = node.exhausted_boundary.as_ref().unwrap().cost;
-                                for target_index in target_indexes {
-                                    let target_node = self.snapshot[target_index.t][target_index.i][target_index.j].as_ref().expect("exist");
+                                for fh_target_index in fh_target_indexes {
+                                    let target_node = self.snapshot[fh_target_index.index.t][fh_target_index.index.i][fh_target_index.index.j].as_ref().expect("exist");
                                     if target_node.exhausted_boundary.is_none() {
                                         continue  // target node not connected to boundary
                                     }
                                     let target_boundary_cost = target_node.exhausted_boundary.as_ref().unwrap().cost;
                                     let need_remove = {
-                                        if target_node.exhausted_map.contains_key(&index) {
-                                            let match_cost = target_node.exhausted_map[&index].cost;
+                                        if target_node.exhausted_map.contains_key(&self.fhi(index)) {
+                                            let match_cost = target_node.exhausted_map[&self.fhi(index)].cost;
                                             boundary_cost + target_boundary_cost < match_cost
                                         } else {
                                             true  // always remove if the peer doesn't have it, because it's removed in the previous iterations already checked the above attribute
                                         }
                                     };
                                     if need_remove {
-                                        to_be_removed.push(target_index);
+                                        fh_to_be_removed.push(fh_target_index);
                                     }
                                 }
                                 // for remove_index in to_be_removed {
                                 //     println!("remove edge of [{}][{}][{}] and [{}][{}][{}]", t, i, j, remove_index.t, remove_index.i, remove_index.j);
                                 // }
                                 let node = self.snapshot[t][i][j].as_mut().expect("exist");
-                                for remove_index in to_be_removed {
-                                    node.exhausted_map.remove(&remove_index);
+                                for fh_remove_index in fh_to_be_removed {
+                                    node.exhausted_map.get_mut(&fh_remove_index).unwrap().removed = true;
                                 }
                             }
                         }
@@ -1978,16 +2036,16 @@ impl PlanarCodeModel {
         if a == b {
             return self.generate_default_sparse_correction()
         }
-        match &node_a.exhausted_map[&b].correction {
+        match &node_a.exhausted_map[&self.fhi(*b)].correction {
             Some(correction) => { (**correction).clone() }
             None => {
-                let mut correction: SparseCorrection = (**node_a.exhausted_map[&b].next_correction.as_ref().expect("must call `build_exhausted_path`")).clone();
-                let mut next_index = node_a.exhausted_map[&b].next.as_ref().expect("exist");
+                let mut correction: SparseCorrection = (**node_a.exhausted_map[&self.fhi(*b)].next_correction.as_ref().expect("must call `build_exhausted_path`")).clone();
+                let mut next_index = node_a.exhausted_map[&self.fhi(*b)].next.as_ref().expect("exist");
                 let mut loop_counter = 10000;  // should not exceed 10000 for a path, this is used to detect infinite loop
                 while next_index != b && loop_counter > 0 {
                     let this_node = self.snapshot[next_index.t][next_index.i][next_index.j].as_ref().expect("exist");
-                    correction.combine(&this_node.exhausted_map[&b].next_correction.as_ref().expect("must call `build_exhausted_path`"));
-                    next_index = this_node.exhausted_map[&b].next.as_ref().expect("exist");
+                    correction.combine(&this_node.exhausted_map[&self.fhi(*b)].next_correction.as_ref().expect("must call `build_exhausted_path`"));
+                    next_index = this_node.exhausted_map[&self.fhi(*b)].next.as_ref().expect("exist");
                     loop_counter -= 1;
                 }
                 if loop_counter == 0 {
@@ -2009,7 +2067,7 @@ impl PlanarCodeModel {
         measurement
     }
     pub fn generate_detected_erasures(&self) -> DetectedErasures {
-        let mut detected_erasures = DetectedErasures::new();
+        let mut detected_erasures = DetectedErasures::new(self.di, self.dj);
         self.iterate_snapshot(|t, i, j, node| {
             if node.has_erasure {
                 detected_erasures.erasures.push(Index::new(t, i, j));
@@ -2019,7 +2077,7 @@ impl PlanarCodeModel {
                             detected_erasures.connected_insert(index1, index2);
                         },
                         Either::Right(idx) => {
-                            detected_erasures.boundaries.insert(*idx);
+                            detected_erasures.boundaries.insert(self.fhi(*idx));
                         },
                     }
                 }
@@ -2077,8 +2135,8 @@ impl PlanarCodeModel {
                 for j in (i+1)..m_len {
                     let a = &to_be_matched[i];
                     let b = &to_be_matched[j];
-                    let path = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_map.get(&b);
-                    if path.is_some() {
+                    let path = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_map.get(&self.fhi(*b));
+                    if path.is_some() && !path.expect("exist").removed {
                         let cost = path.expect("exist").cost;
                         weighted_edges.push((i, j, cost));
                         weighted_edges.push((i + m_len, j + m_len, 0.));
@@ -2213,7 +2271,7 @@ impl PlanarCodeModel {
                 for j in (i+1)..m_len {
                     let a = &to_be_matched[i];
                     let b = &to_be_matched[j];
-                    let path = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_map.get(&b);
+                    let path = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_map.get(&self.fhi(*b));
                     if path.is_some() {
                         let cost = path.expect("exist").cost;
                         weighted_edges.push((i, j, cost));
@@ -2845,7 +2903,7 @@ impl PlanarCodeModel {
                 }
                 exhausted_map_vec.sort_by(|a, b| a.0.partial_cmp(b.0).unwrap());
                 for (idx, edge) in exhausted_map_vec.iter() {
-                    println!("edge [{}][{}][{}]: c = {}", idx.t, idx.i, idx.j, edge.cost);
+                    println!("edge [{}][{}][{}]: c = {}", idx.index.t, idx.index.i, idx.index.j, edge.cost);
                 }
             }
         });
@@ -3107,24 +3165,33 @@ impl Correction {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DetectedErasures {
+    /// used for converting hash
+    pub di: usize,
+    pub dj: usize,
     /// the position of the erasure error
     pub erasures: Vec<Index>,
     /// two-stabilizer connected with 0 weighted caused by the erasure, used by UF decoder or (indirectly) by MWPM decoder
-    pub connected: HashSet<(Index, Index)>,
+    pub connected: HashSet<(FastHashIndex, FastHashIndex)>,
     /// stabilizer connected to boundary with 0 weight caused by the erasure, used by UF decoder
-    pub boundaries: HashSet<Index>,
+    pub boundaries: HashSet<FastHashIndex, std::hash::BuildHasherDefault::<SimpleHasher>>,
     /// connected edges for each node, used by UF decoder
-    pub connected_edges: HashMap<Index, HashSet<Index>>,
+    pub connected_edges: HashMap<FastHashIndex, HashSet<FastHashIndex, std::hash::BuildHasherDefault::<SimpleHasher> >, std::hash::BuildHasherDefault::<SimpleHasher> >,
 }
 
 impl DetectedErasures {
-    pub fn new() -> Self {
+    pub fn new(di: usize, dj: usize) -> Self {
         Self {
+            di: di,
+            dj: dj,
             erasures: Vec::new(),
-            connected: HashSet::new(),
-            boundaries: HashSet::new(),
-            connected_edges: HashMap::new(),
+            connected: HashSet::default(),
+            boundaries: HashSet::default(),
+            connected_edges: HashMap::default(),
         }
+    }
+    #[inline(always)]
+    pub fn fhi(&self, index: Index) -> FastHashIndex {
+        FastHashIndex::with_di_dj(&index, self.di, self.dj)
     }
     pub fn has_erasures(&self) -> bool {
         !self.erasures.is_empty()
@@ -3135,26 +3202,31 @@ impl DetectedErasures {
         (idx1, idx2)
     }
     pub fn connected_insert(&mut self, index1: &Index, index2: &Index) -> bool {
+        let di = self.di;
+        let dj = self.dj;
+        let fhi = |index: Index| -> FastHashIndex {
+            FastHashIndex::with_di_dj(&index, di, dj)
+        };
         assert!(index1 != index2, "one cannot connect to itself");
         // insert to `connected_edges` for ease of querying
-        if !self.connected_edges.contains_key(index1) { self.connected_edges.insert(*index1, HashSet::new()); }
-        self.connected_edges.get_mut(index1).unwrap().insert(*index2);
-        if !self.connected_edges.contains_key(index2) { self.connected_edges.insert(*index2, HashSet::new()); }
-        self.connected_edges.get_mut(index2).unwrap().insert(*index1);
+        if !self.connected_edges.contains_key(&self.fhi(*index1)) { self.connected_edges.insert(self.fhi(*index1), HashSet::default()); }
+        self.connected_edges.get_mut(&self.fhi(*index1)).unwrap().insert(fhi(*index2));
+        if !self.connected_edges.contains_key(&self.fhi(*index2)) { self.connected_edges.insert(self.fhi(*index2), HashSet::default()); }
+        self.connected_edges.get_mut(&self.fhi(*index2)).unwrap().insert(fhi(*index1));
         // also insert to `connected`
         let (idx1, idx2) = Self::sorted_index(index1, index2);
-        self.connected.insert((*idx1, *idx2))
+        self.connected.insert((self.fhi(*idx1), self.fhi(*idx2)))
     }
     pub fn connected_contains(&self, index1: &Index, index2: &Index) -> bool {
         let (idx1, idx2) = Self::sorted_index(index1, index2);
-        self.connected.contains(&(*idx1, *idx2))
+        self.connected.contains(&(self.fhi(*idx1), self.fhi(*idx2)))
     }
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct PetGraphEdge {
-    pub a: Index,
-    pub b: Index,
+    pub a: FastHashIndex,
+    pub b: FastHashIndex,
     pub weight: f64,
 }
 
@@ -3167,6 +3239,8 @@ pub struct ExhaustedElement {
     pub correction: Option< Arc<SparseCorrection> >,
     /// `next_correction` is generated by default
     pub next_correction: Option< Arc<SparseCorrection> >,
+    /// if `removed`, not included in matching graph
+    pub removed: bool,
 }
 
 #[derive(Debug, Clone)]

@@ -2,3 +2,4 @@ target/
 tmp/
 *.bin
 *.json
+flamegraph*.svg

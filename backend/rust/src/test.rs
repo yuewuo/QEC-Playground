@@ -23,6 +23,7 @@ use super::offer_mwpm::{OfferAlgorithm, OfferNode};
 use super::offer_mwpm;
 use super::union_find_decoder;
 use super::distributed_uf_decoder;
+use super::ftqec::FastHashIndex;
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
@@ -775,7 +776,8 @@ fn archived_debug_tests() {
         }
     }
     {  // find one example for each 12 boundaries
-        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(3, 4);
+        let L = 4;
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(3, L);
         let very_small_error_rate = 0.0001;
         model.set_depolarizing_error(very_small_error_rate);
         model.build_graph(ftqec::weight_autotune);
@@ -847,7 +849,7 @@ fn archived_debug_tests() {
             }
             // println!("target {:?}: single error at {:?}", *target, found_error);
             let found_error = found_error.unwrap();
-            let cost = model.snapshot[error_source.t][error_source.i][error_source.j].as_ref().unwrap().exhausted_map[target].cost;
+            let cost = model.snapshot[error_source.t][error_source.i][error_source.j].as_ref().unwrap().exhausted_map[&FastHashIndex::with_di_dj(target, L, L)].cost;
             let probability = (-cost).exp();
             let case_count = (probability / very_small_error_rate).round() as usize;
             println!("[[{}, {}, {}], [{}, {}, {}], {}, {}, {:?}],  // {}", target.t, target.i, target.j, found_error.t, found_error.i, found_error.j,

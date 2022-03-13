@@ -271,7 +271,7 @@ pub fn validate_z_correction(z_error: &ZxError, z_correction: &ZxCorrection) -> 
 }
 
 /// Qubit type, corresponds to `QTYPE` in `FaultTolerantView.vue`
-#[derive(Debug, PartialEq, Clone, Serialize)]
+#[derive(Debug, PartialEq, Clone, Serialize, Copy)]
 pub enum QubitType {
     Data,
     StabX,
@@ -293,7 +293,7 @@ impl QubitType {
 }
 
 /// Error type, corresponds to `ETYPE` in `FaultTolerantView.vue`
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum ErrorType {
     I,
     X,
@@ -356,7 +356,7 @@ impl ErrorType {
 
 /// Correlated error type for two qubit errors
 #[allow(dead_code)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum CorrelatedErrorType {
     II,
     IX,

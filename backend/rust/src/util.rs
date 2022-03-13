@@ -150,6 +150,59 @@ pub fn find_strict_one_median(numbers: &mut Vec<usize>) -> Option<usize> {
     }
 }
 
+// https://users.rust-lang.org/t/hashmap-performance/6476/8
+// https://gist.github.com/arthurprs/88eef0b57b9f8341c54e2d82ec775698
+// a much simpler but super fast hasher, only suitable for `ftqec::Index`!!!
+pub mod simple_hasher {
+    use std::hash::Hasher;
+    pub struct SimpleHasher(u64);
+
+    #[inline]
+    fn load_u64_le(buf: &[u8], len: usize) -> u64 {
+        use std::ptr;
+        debug_assert!(len <= buf.len());
+        let mut data = 0u64;
+        unsafe {
+            ptr::copy_nonoverlapping(buf.as_ptr(), &mut data as *mut _ as *mut u8, len);
+        }
+        data.to_le()
+    }
+
+
+    impl Default for SimpleHasher {
+
+        #[inline]
+        fn default() -> SimpleHasher {
+            SimpleHasher(0)
+        }
+    }
+
+    // impl SimpleHasher {
+    //     #[inline]
+    //     pub fn set_u64(&mut self, value: u64) {
+    //         self.0 = value;
+    //     }
+    // }
+
+    impl Hasher for SimpleHasher {
+
+        #[inline]
+        fn finish(&self) -> u64 {
+            self.0
+        }
+
+        #[inline]
+        fn write(&mut self, bytes: &[u8]) {
+            if self.0 != 0 {
+                panic!("do not use SimpleHasher for struct other than ftqec::Index");
+            }
+            let value = load_u64_le(bytes, bytes.len());
+            // println!("value: {}", value);
+            *self = SimpleHasher(value);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
