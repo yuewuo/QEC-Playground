@@ -7,3 +7,4 @@
 slurm-*.out
 slurm-*.err
 unfinished.tasks
+python_interface/example.json

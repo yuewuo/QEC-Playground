@@ -140,12 +140,6 @@ const urlParams = new URLSearchParams(window.location.search)
 const p_str = urlParams.get('p') || 0
 const pe_str = urlParams.get('pe') || 0
 const error_model_temporary_id = urlParams.get('error_model_temporary_id') || 0
-if (error_model_temporary_id > 0) {
-    alert("You're viewing a temporary error model, which might be removed soon")
-}
-if (isNaN(p_str) || isNaN(pe_str)) {
-    alert("p or pe is not a float number, format error")
-}
 const parameters = urlParams.get('parameters') || ""
 const full_parameters = `"[${di}]" --djs "[${di}]" "[${di}]" "[${p_str}]" --pes "[${pe_str}]" ${parameters}`
 
@@ -211,6 +205,15 @@ var app = new Vue({
         }
     },
     async mounted() {
+        if (error_model_temporary_id > 0) {
+            this.$message({
+                message: "You're viewing a temporary error model, which might be removed soon",
+                type: "warning",
+            })
+        }
+        if (isNaN(p_str) || isNaN(pe_str)) {
+            this.$message.error("p or pe is not a float number, format error")
+        }
         // generate static information
         for (let first of ["I", "X", "Z", "Y"]) {
             for (let second of ["I", "X", "Z", "Y"]) {
@@ -267,20 +270,20 @@ var app = new Vue({
             }
             const found = this.full_parameters.match(/^"\[(\d+)\]" +--djs +"\[(\d+)\]" +"\[(\d+)\]" +"\[([+-e\d\.]+)\]" +--pes +"\[([+-e\d\.]+)\]"( (.*))?/)
             if (found == null) {
-                alert("parameter format error")
+                this.$message.error("parameter format error")
                 return
             }
             console.log(found)
             const names = ["di", "dj", "T", "p_pauli", "p_erasure"]
             for (let i=1; i <= 5; ++i) {
                 if (isNaN(found[i])) {
-                    alert(`invalid format: ${names[i-1]}`)
+                    this.$message.error(`invalid format: ${names[i-1]}`)
                     return
                 }
             }
             for (let i=1; i <= 3; ++i) {
                 if (parseInt(found[i]) != di) {
-                    alert(`current visualization doesn't support any other di,dj,T values, they must all be ${di}`)
+                    this.$message.error(`current visualization doesn't support any other di,dj,T values, they must all be ${di}`)
                     return
                 }
             }

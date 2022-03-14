@@ -1,4 +1,5 @@
 from benchmarker import fetch_error_model
+import os
 
 """
 example using tailored surface code of code distance 3
@@ -12,12 +13,15 @@ measurement_rounds = 5
 # this parameters only specify the size of the tailored surface code, but no error rate
 configuration = ["--use_rotated_tailored_code"]
 
+
 # now fetch the error model with default probability = 0
 error_model = fetch_error_model(code_distance, code_distance, measurement_rounds, p=0, configuration=configuration)
+
 
 # print out a single qubit in the middle to see what field it has, initially all error rate is configured to 0
 middle_qubit = error_model.at(14, 2, 2)
 print(middle_qubit)
+
 
 # compute phenomenological error model
 p = 0.01
@@ -26,6 +30,7 @@ px = p / (1. + bias_eta) / 2.
 py = px
 pz = p - 2. * px
 measurement_error_rate = p
+
 
 # update the error model
 for mt in range(measurement_rounds):
@@ -79,11 +84,26 @@ for mt in range(measurement_rounds):
                     # it's good to output unrecognized qubit type, to reduce bug
                     print(f"[warning] unrecognized qubit at [{t}][{i}][{j}]")
 
+
 # it's tedious to check your error model is as expected by just printing them out
 # instead, I developed a visualization tool of any error model
 # unfortunately, due to technical simplicity I didn't implement arbitrary sized visualization, currently the code_distance and measurement_rounds must be 5
 if code_distance == 5 and measurement_rounds == 5:
-    # error_model.visualize("https://qec.wuyue98.cn")
-    error_model.visualize("http://localhost:8066", None)  # if you decide to start local server using `cargo run --release -- server --port 8066`, uncomment this line
+    error_model.visualize()  # by default use web server: https://qec.wuyue98.cn
+    # error_model.visualize("http://localhost:8066", None)  # if you decide to start local server using `cargo run --release -- server --port 8066`, uncomment this line
+    pass
 else:
     print("[info] visualization is not supported for code distance and measurement rounds other than 5, skipped")
+
+
+# you can also save this error model to a file, and run benchmark using this error model
+# this will save error model description file, which can be loaded using `cargo run --release -- tool fault_tolerant_benchmark ...... --load_error_model_from_file /path/to/example.json`
+filepath = os.path.join(os.path.dirname(__file__), f"example.json")
+error_model.save(filepath)
+
+
+# this will automatically create a temporary file for the error model and then run benchmark
+print("\n[info] start benchmarking...\n")
+stdout, returncode = error_model.run_benchmark(max_N=100000, min_error_cases=3000)
+print("\n" + stdout)
+assert returncode == 0, "command fails..."

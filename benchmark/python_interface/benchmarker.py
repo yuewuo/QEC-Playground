@@ -6,7 +6,7 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command
 from automated_threshold_evaluation import run_qec_playground_command_get_stdout, compile_code_if_necessary
 sys.path.insert(0, os.path.join(qec_playground_root_dir, "benchmark", "slurm_utilities"))
-import json, webbrowser
+import json, webbrowser, tempfile
 from urllib import request, parse
 from urllib.error import URLError, HTTPError
 
@@ -477,6 +477,7 @@ class ErrorModel:
                     return QubitErrorModel(self, t, i, j)
         # raise Exception(f"position [{t}][{i}][{j}] not exist")
         return None
+
     def visualize(self, api_base_url="https://qec.wuyue98.cn/api", viewer_url="https://qec.wuyue98.cn/ErrorModelViewer2D.html"):
         assert self.di == 5 and self.dj == 5 and self.measurement_rounds == 5, "visualization tool currently only support di = dj = measurement_rounds = 5"
         # upload to temporary store
@@ -508,6 +509,25 @@ class ErrorModel:
         download_url = api_base_url + "/get_temporary_store/" + error_model_temporary_id
         print(f"[info] you can download the error model Json file using: {download_url}")
         return error_model_temporary_id
+
+    def save(self, filepath):
+        with open(filepath, "w", encoding="utf8") as f:
+            modified_error_model = json.dumps(self.error_model)
+            f.write(modified_error_model)
+            f.flush()
+    
+    def run_benchmark(self, max_N=100000, min_error_cases=3000):
+        out_file = tempfile.NamedTemporaryFile(delete=True)  # this file will be deleted as long as the file is closed
+        out_filename = out_file.name
+        with open(out_filename, "w", encoding="utf8") as f:
+            modified_error_model = json.dumps(self.error_model)
+            f.write(modified_error_model)
+            f.flush()
+            command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([self.p], [self.di], [self.dj], [self.measurement_rounds], ["--pes", f"[{self.pe}]"] + self.configuration + ["--load_error_model_from_file", f"{out_filename}"], max_N=max_N, min_error_cases=min_error_cases)
+            stdout, returncode = run_qec_playground_command_get_stdout(command)
+        # print("\n" + stdout)
+        # assert returncode == 0, "command fails..."
+        return stdout, returncode
 
 def fetch_error_model(di, dj, measurement_rounds, p=0, pe=0, configuration=[]):
     qecp_path = os.path.join(rust_dir, "target", "release", "rust_qecp")
