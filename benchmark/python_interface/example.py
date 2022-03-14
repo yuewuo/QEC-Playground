@@ -90,8 +90,8 @@ for mt in range(measurement_rounds):
 # unfortunately, due to technical simplicity I didn't implement arbitrary sized visualization, so currently the code_distance and measurement_rounds must be 5
 # (you can still run benchmark for other code size of course, just without visualization)
 if code_distance == 5 and measurement_rounds == 5:
-    # error_model.visualize()  # by default use web server: https://qec.wuyue98.cn, you can easily share the link with others
-    error_model.visualize("http://localhost:8066", None)  # if you decide to start local server using `cargo run --release -- server --port 8066`, uncomment this line
+    error_model.visualize()  # by default use web server: https://qec.wuyue98.cn, you can easily share the link with others
+    # error_model.visualize("http://localhost:8066", None)  # if you decide to start local server using `cargo run --release -- server --port 8066`, uncomment this line
     pass
 else:
     print("[info] visualization is not supported for code distance and measurement rounds other than 5, skipped")
