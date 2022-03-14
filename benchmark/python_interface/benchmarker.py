@@ -516,14 +516,20 @@ class ErrorModel:
             f.write(modified_error_model)
             f.flush()
     
-    def run_benchmark(self, max_N=100000, min_error_cases=3000):
-        out_file = tempfile.NamedTemporaryFile(delete=True)  # this file will be deleted as long as the file is closed
+    def run_benchmark(self, max_N=100000, min_error_cases=3000, time_budget=None, verbose=False):
+        delete_tmp_file = True
+        if verbose:
+            delete_tmp_file = False  # user expect to run the printed command later
+        out_file = tempfile.NamedTemporaryFile(delete=delete_tmp_file)  # this file will be deleted as long as the file is closed if delete=True
         out_filename = out_file.name
         with open(out_filename, "w", encoding="utf8") as f:
             modified_error_model = json.dumps(self.error_model)
             f.write(modified_error_model)
             f.flush()
-            command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([self.p], [self.di], [self.dj], [self.measurement_rounds], ["--pes", f"[{self.pe}]"] + self.configuration + ["--load_error_model_from_file", f"{out_filename}"], max_N=max_N, min_error_cases=min_error_cases)
+            command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([self.p], [self.di], [self.dj], [self.measurement_rounds], ["--pes", f"[{self.pe}]"] + self.configuration + ["--load_error_model_from_file"
+                , f"{out_filename}"], max_N=max_N, min_error_cases=min_error_cases, time_budget=time_budget)
+            if verbose:
+                print("[verbose] command:", " ".join(command))
             stdout, returncode = run_qec_playground_command_get_stdout(command)
         # print("\n" + stdout)
         # assert returncode == 0, "command fails..."

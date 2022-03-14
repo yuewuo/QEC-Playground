@@ -83,13 +83,15 @@ def run_qec_playground_command_get_stdout(command, no_stdout=False, use_tmp_out=
         os.remove(out_filename)
     return stdout, process.returncode
 
-def qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command(p_vec, di_vec, dj_vec, T_vec, parameters, max_N=100000, min_error_cases=3000, rust_dir=rust_dir):
+def qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command(p_vec, di_vec, dj_vec, T_vec, parameters, max_N=100000, min_error_cases=3000, rust_dir=rust_dir, time_budget=None):
     p_str = "[" + ",".join([f"{e:.8e}" for e in p_vec]) + "]"
     di_str = "[" + ",".join([str(e) for e in di_vec]) + "]"
     dj_str = "[" + ",".join([str(e) for e in dj_vec]) + "]"
     T_str = "[" + ",".join([str(e) for e in T_vec]) + "]"
     qecp_path = os.path.join(rust_dir, "target", "release", "rust_qecp")
     command = [qecp_path, "tool", "fault_tolerant_benchmark", di_str, "--djs", dj_str, T_str, f"-m{max_N}", f"-e{min_error_cases}", p_str] + parameters
+    if time_budget is not None:
+        command += ["--time_budget", f"{time_budget}"]
     return command
 
 def qec_playground_fault_tolerant_MWPM_simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_runner=False, max_N=100000, min_error_cases=3000):
