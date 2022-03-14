@@ -39,6 +39,7 @@ extern crate shlex;
 extern crate cfg_if;
 #[cfg(feature="python_interfaces")]
 extern crate pyo3;
+extern crate platform_dirs;
 
 fn create_clap_parser<'a, 'b>(color_setting: clap::AppSettings) -> clap::App<'a, 'b> {
     clap_app!(QECPlayground =>

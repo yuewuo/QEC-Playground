@@ -17,21 +17,107 @@ use super::qec;
 use super::pyo3::prelude::*;
 #[cfg(all(not(feature="noserver"), feature="python_interfaces"))]
 use super::pyo3::types::{IntoPyDict};
+
 use lazy_static::lazy_static;
 use std::sync::{RwLock};
 use std::collections::{BTreeMap};
+use std::fs;
+use std::path::{PathBuf};
+use super::platform_dirs::AppDirs;
 
-#[cfg(not(feature="noserver"))]
-pub const TEMPORARY_STORE_SIZE_LIMIT: usize = 10_000_000;  // 10MB
-#[cfg(not(feature="noserver"))]
-pub const TEMPORARY_STORE_MAX_COUNT: usize = 10;  // 100MB max
+#[allow(dead_code)]
+pub const TEMPORARY_STORE_MAX_COUNT: usize = 10;  // 100MB max, this option only applies to in memory temporary store; for file-based store, it will not delete any file for safety consideration
+
+struct TemporaryStore {
+    use_file: bool,  // save data to file instead of in memory, this will also let data persist over program restart
+    temporary_store_folder: PathBuf,
+    memory_store: BTreeMap<usize, String>,  // in memory store, will not be used if `use_file` is set to true
+}
 
 lazy_static! {
-    pub static ref TEMPORARY_STORE: RwLock<BTreeMap<usize, String>> = RwLock::new(BTreeMap::new());  // must use RwLock, because web request will lock as a reader, and tool.rs will also acquire a reader lock
+    // must use RwLock, because web request will lock as a reader, and tool.rs will also acquire a reader lock
+    static ref TEMPORARY_STORE: RwLock<TemporaryStore> = RwLock::new(TemporaryStore {
+        use_file: true,  // suitable for low memory machines, by default
+        temporary_store_folder: AppDirs::new(Some("qec"), true).unwrap().data_dir.join("temporary-store"),
+        memory_store: BTreeMap::new(),
+    });
+}
+
+pub fn local_get_temporary_store(resource_id: usize) -> Option<String> {
+    let temporary_store = TEMPORARY_STORE.read().unwrap();
+    if temporary_store.use_file {
+        match fs::create_dir_all(&temporary_store.temporary_store_folder) {
+            Ok(_) => { },
+            Err(_) => { return None },  // cannot open folder
+        }
+        match fs::read_to_string(temporary_store.temporary_store_folder.join(format!("{}.dat", resource_id))) {
+            Ok(value) => Some(value),
+            Err(_) => None,
+        }
+    } else {
+        match temporary_store.memory_store.get(&resource_id) {
+            Some(value) => Some(value.clone()),
+            None => None,
+        }
+    }
+}
+
+#[allow(dead_code)]
+pub fn local_put_temporary_store(value: String) -> Option<usize> {
+    let mut temporary_store = TEMPORARY_STORE.write().unwrap();
+    let mut insert_key = 1;  // starting from 1
+    if temporary_store.use_file {
+        match fs::create_dir_all(&temporary_store.temporary_store_folder) {
+            Ok(_) => { },
+            Err(_) => { return None },  // cannot create folder
+        }
+        let paths = match fs::read_dir(&temporary_store.temporary_store_folder) {
+            Ok(paths) => { paths },
+            Err(_) => { return None },  // cannot read folder
+        };
+        for path in paths {
+            if path.is_err() {
+                continue
+            }
+            let path = path.unwrap().path();
+            if path.extension() != Some(&std::ffi::OsStr::new("dat")) {
+                continue
+            }
+            match path.file_stem() {
+                Some(file_stem) => {
+                    match file_stem.to_string_lossy().parse::<usize>() {
+                        Ok(this_key) => {
+                            if this_key >= insert_key {
+                                insert_key = this_key + 1;
+                            }
+                        },
+                        Err(_) => { },
+                    }
+                },
+                None => { },
+            }
+        }
+        if fs::write(temporary_store.temporary_store_folder.join(format!("{}.dat", insert_key)), value.as_bytes()).is_err() {
+            return None;  // failed to write file
+        }
+    } else {
+        let keys: Vec<usize> = temporary_store.memory_store.keys().cloned().collect();
+        if keys.len() > 0 {
+            insert_key = keys[keys.len() - 1] + 1
+        }
+        if keys.len() >= TEMPORARY_STORE_MAX_COUNT {  // delete the first one
+            temporary_store.memory_store.remove(&keys[0]);
+        }
+        temporary_store.memory_store.insert(insert_key, value);
+    }
+    Some(insert_key)
 }
 
 cfg_if::cfg_if! {
     if #[cfg(not(feature="noserver"))] {
+
+
+        pub const TEMPORARY_STORE_SIZE_LIMIT: usize = 10_000_000;  // 10MB, only applicable to web service
 
         pub async fn run_server(port: i32, addr: String, root_url: String) -> std::io::Result<()> {
             HttpServer::new(move || {
@@ -210,7 +296,7 @@ cfg_if::cfg_if! {
                 , format!("[{}]", T), format!("[{}]", info.p), format!("--pes"), format!("[{}]", info.pe)];
             let temporary_store = TEMPORARY_STORE.read().unwrap();  // must acquire a reader lock, so that tool.rs is definitely; will slow down requests a little bit, but safety worth it
             if info.error_model_temporary_id > 0 {
-                match temporary_store.get(&info.error_model_temporary_id) {
+                match local_get_temporary_store(info.error_model_temporary_id) {
                     Some(_) => { },
                     None => {
                         return Ok(HttpResponse::NotFound().body(format!("error_model_temporary_id={} not found, might be expired", info.error_model_temporary_id)))
@@ -249,18 +335,13 @@ cfg_if::cfg_if! {
             if form.value.len() > TEMPORARY_STORE_SIZE_LIMIT {
                 return Ok(HttpResponse::BadRequest().body(format!("upload size {} > limit {}", form.value.len(), TEMPORARY_STORE_SIZE_LIMIT)));
             }
-            let mut temporary_store = TEMPORARY_STORE.write().unwrap();
-            let mut insert_key = 1;  // starting from 1
-            let keys: Vec<usize> = temporary_store.keys().cloned().collect();
-            if keys.len() > 0 {
-                insert_key = keys[keys.len() - 1] + 1
+            match local_put_temporary_store(form.value.clone()) {
+                Some(insert_key) => {
+                    // println!("[web] inserted a temporary store with key: {}, length: {}", insert_key, form.value.len());
+                    Ok(HttpResponse::Ok().body(format!("{}", insert_key)))
+                },
+                None => Ok(HttpResponse::InternalServerError().body(format!("temporary store not available"))),
             }
-            if keys.len() >= TEMPORARY_STORE_MAX_COUNT {  // delete the first one
-                temporary_store.remove(&keys[0]);
-            }
-            temporary_store.insert(insert_key, form.value.clone());
-            // println!("[web] inserted a temporary store with key: {}, length: {}", insert_key, form.value.len());
-            Ok(HttpResponse::Ok().body(format!("{}", insert_key)))
         }
 
         async fn get_temporary_store(req: HttpRequest) -> Result<HttpResponse, Error> {
@@ -270,10 +351,9 @@ cfg_if::cfg_if! {
                     return Ok(HttpResponse::BadRequest().body(format!("invalid resource id")))
                 }
             };
-            let temporary_store = TEMPORARY_STORE.read().unwrap();
-            match temporary_store.get(&resource_id) {
+            match local_get_temporary_store(resource_id) {
                 Some(value) => Ok(HttpResponse::Ok().body(value.clone())),
-                None => Ok(HttpResponse::NotFound().body("")),
+                None => Ok(HttpResponse::NotFound().body(format!("error_model_temporary_id={} not found, might be expired", resource_id))),
             }
         }
 
@@ -286,10 +366,22 @@ cfg_if::cfg_if! {
     }
 }
 
-pub fn local_get_temporary_store(resource_id: usize) -> Option<String> {
-    let temporary_store = TEMPORARY_STORE.read().unwrap();
-    match temporary_store.get(&resource_id) {
-        Some(value) => Some(value.clone()),
-        None => None,
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // use `cargo test temporary_store_read_files -- --nocapture` to run specific test
+
+    #[test]
+    fn temporary_store_read_files() {
+        let resource_id_1 = local_put_temporary_store(format!("hello")).unwrap();
+        let resource_id_2 = local_put_temporary_store(format!("world")).unwrap();
+        // println!("{:?}", resource_id_1);
+        // println!("{:?}", resource_id_2);
+        let read_1 = local_get_temporary_store(resource_id_1);
+        let read_2 = local_get_temporary_store(resource_id_2);
+        assert_eq!(read_1, Some(format!("hello")));
+        assert_eq!(read_2, Some(format!("world")));
     }
+
 }
