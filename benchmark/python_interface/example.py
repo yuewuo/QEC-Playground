@@ -82,10 +82,8 @@ for mt in range(measurement_rounds):
 # it's tedious to check your error model is as expected by just printing them out
 # instead, I developed a visualization tool of any error model
 # unfortunately, due to technical simplicity I didn't implement arbitrary sized visualization, currently the code_distance and measurement_rounds must be 5
-base_url = "https://qec.wuyue98.cn"
-# base_url = "http://localhost:8066"  # if you decide to start local server using `cargo run --release -- server --port 8066`, uncomment this line
-
 if code_distance == 5 and measurement_rounds == 5:
-    error_model.visualize(base_url)
+    # error_model.visualize("https://qec.wuyue98.cn")
+    error_model.visualize("http://localhost:8066", None)  # if you decide to start local server using `cargo run --release -- server --port 8066`, uncomment this line
 else:
     print("[info] visualization is not supported for code distance and measurement rounds other than 5, skipped")

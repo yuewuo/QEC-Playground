@@ -233,6 +233,7 @@ pub enum CodeType {
     StandardXZZXCode,
     RotatedXZZXCode,
     StandardTailoredCode,
+    RotatedTailoredCode,
     Unknown,
 }
 
@@ -649,7 +650,7 @@ impl PlanarCodeModel {
     pub fn new_standard_tailored_code(MeasurementRounds: usize, L: usize) -> Self {
         // MeasurementRounds = 0 means only one perfect measurement round
         assert!(L >= 2, "at lease one stabilizer is required");
-        let model = Self::new_tailored_code(CodeType::StandardPlanarCode, MeasurementRounds, L, L, |_i, _j| true);
+        let model = Self::new_tailored_code(CodeType::StandardTailoredCode, MeasurementRounds, L, L, |_i, _j| true);
         model
     }
 
@@ -677,7 +678,7 @@ impl PlanarCodeModel {
             }
             false
         };
-        let model = Self::new_tailored_code(CodeType::RotatedPlanarCode, MeasurementRounds, L, L, filter);
+        let model = Self::new_tailored_code(CodeType::RotatedTailoredCode, MeasurementRounds, L, L, filter);
         model
     }
 
@@ -2664,6 +2665,38 @@ impl PlanarCodeModel {
                     }
                 }
             },
+            CodeType::StandardTailoredCode => {
+                // Y stabilizer boundary, j = 0
+                for i in 0..self.di {
+                    // single X or single Z anti-commute with Y stabilizer, otherwise commute
+                    if corrected.x[[self.MeasurementRounds, (i*2), 0]] ^ corrected.z[[self.MeasurementRounds, (i*2), 0]] {
+                        x_error_count += 1;
+                    }
+                }
+                // X stabilizer boundary, i = 0
+                for j in 0..self.dj {
+                    if corrected.z[[self.MeasurementRounds, 0, (j*2)]] {
+                        z_error_count += 1;  // logical Y error in tailored surface code
+                    }
+                }
+            },
+            CodeType::RotatedTailoredCode => {
+                assert_eq!(self.di, self.dj, "rotated tailored code doesn't support rectangle lattice right now");
+                let middle_point = self.di - 1;
+                // Y stabilizer boundary, e.g. d=3: left boundary: [(2,0), (3,1), (4,2)]
+                for delta in 0..self.di {
+                    // single X or single Z anti-commute with Y stabilizer, otherwise commute
+                    if corrected.x[[self.MeasurementRounds, middle_point + delta, delta]] ^ corrected.z[[self.MeasurementRounds, middle_point + delta, delta]] {
+                        x_error_count += 1;
+                    }
+                }
+                // X stabilizer boundary, e.g. d=3: left boundary: [(0,2), (1,1), (2,0)]
+                for delta in 0..self.di {
+                    if corrected.z[[self.MeasurementRounds, delta, middle_point - delta]] {
+                        z_error_count += 1;  // logical Y error in tailored surface code
+                    }
+                }
+            },
             _ => unimplemented!("boundary validation not implemented for this code type")
         }
         (x_error_count, z_error_count)
@@ -2677,6 +2710,87 @@ impl PlanarCodeModel {
             (false, true) => Err(ValidationFailedReason::ZLogicalError(0, z_error_count, 0)),
             _ => Ok(())
         }
+    }
+
+    /// check as strictly as possible!
+    pub fn apply_error_model_modifier(&mut self, modifier: &serde_json::Value) -> Result<(), String> {
+        if modifier.get("code_type").ok_or(format!("missing field: code_type"))? != &json!(self.code_type) {
+            return Err(format!("mismatch: code_type"))
+        }
+        if modifier.get("di").ok_or(format!("missing field: di"))? != &json!(self.di) {
+            return Err(format!("mismatch: di"))
+        }
+        if modifier.get("dj").ok_or(format!("missing field: dj"))? != &json!(self.dj) {
+            return Err(format!("mismatch: dj"))
+        }
+        if modifier.get("MeasurementRounds").ok_or(format!("missing field: MeasurementRounds"))? != &json!(self.MeasurementRounds) {
+            return Err(format!("mismatch: MeasurementRounds"))
+        }
+        if modifier.get("T").ok_or(format!("missing field: T"))? != &json!(self.T) {
+            return Err(format!("mismatch: T"))
+        }
+        // snapshot
+        let snapshot = modifier.get("snapshot").ok_or(format!("missing field: snapshot"))?.as_array().ok_or(format!("format error: snapshot"))?;
+        if self.snapshot.len() != snapshot.len() {
+            return Err(format!("mismatch: snapshot"))
+        }
+        for t in 0..snapshot.len() {
+            let snapshot_row_0 = snapshot[t].as_array().ok_or(format!("format error: snapshot[{}]", t))?;
+            if snapshot_row_0.len() != self.snapshot[t].len() {
+                return Err(format!("mismatch: snapshot[{}]", t))
+            }
+            for i in 0..snapshot_row_0.len() {
+                let snapshot_row_1 = snapshot_row_0[i].as_array().ok_or(format!("format error: snapshot[{}][{}]", t, i))?;
+                if snapshot_row_1.len() != self.snapshot[t][i].len() {
+                    return Err(format!("mismatch: snapshot[{}][{}]", t, i))
+                }
+                for j in 0..snapshot_row_1.len() {
+                    let node = &snapshot_row_1[j];
+                    if node.is_null() != self.snapshot[t][i][j].is_none() {
+                        return Err(format!("mismatch: snapshot[{}][{}][{}]", t, i, j))
+                    }
+                    if !node.is_null() {
+                        let self_node = self.snapshot[t][i][j].as_mut().unwrap();  // already checked existance
+                        if node.get("t").ok_or(format!("missing field: t"))? != &json!(self_node.t) {
+                            return Err(format!("mismatch [{}][{}][{}]: t", t, i, j))
+                        }
+                        if node.get("i").ok_or(format!("missing field: i"))? != &json!(self_node.i) {
+                            return Err(format!("mismatch [{}][{}][{}]: i", t, i, j))
+                        }
+                        if node.get("j").ok_or(format!("missing field: j"))? != &json!(self_node.j) {
+                            return Err(format!("mismatch [{}][{}][{}]: j", t, i, j))
+                        }
+                        if node.get("connection").ok_or(format!("missing field: connection"))? != &json!(self_node.connection) {
+                            return Err(format!("mismatch [{}][{}][{}]: connection", t, i, j))
+                        }
+                        if node.get("gate_type").ok_or(format!("missing field: gate_type"))? != &json!(self_node.gate_type) {
+                            return Err(format!("mismatch [{}][{}][{}]: gate_type", t, i, j))
+                        }
+                        if node.get("qubit_type").ok_or(format!("missing field: qubit_type"))? != &json!(self_node.qubit_type) {
+                            return Err(format!("mismatch [{}][{}][{}]: qubit_type", t, i, j))
+                        }
+                        // then copy error rate data
+                        self_node.error_rate_x = node.get("error_rate_x").ok_or(format!("missing field: error_rate_x"))?.as_f64().ok_or(format!("format error: error_rate_x"))?;
+                        self_node.error_rate_z = node.get("error_rate_z").ok_or(format!("missing field: error_rate_z"))?.as_f64().ok_or(format!("format error: error_rate_z"))?;
+                        self_node.error_rate_y = node.get("error_rate_y").ok_or(format!("missing field: error_rate_y"))?.as_f64().ok_or(format!("format error: error_rate_y"))?;
+                        self_node.erasure_error_rate = node.get("erasure_error_rate").ok_or(format!("missing field: erasure_error_rate"))?.as_f64().ok_or(format!("format error: erasure_error_rate"))?;
+                        let correlated_error_model = node.get("correlated_error_model").ok_or(format!("missing field: correlated_error_model"))?;
+                        if !correlated_error_model.is_null() {
+                            self_node.correlated_error_model = Some(serde_json::from_value(correlated_error_model.clone()).map_err(|_| format!("correlated_error_model deserialize error"))?);
+                        } else {
+                            self_node.correlated_error_model = None;
+                        }
+                        let correlated_erasure_error_model = node.get("correlated_erasure_error_model").ok_or(format!("missing field: correlated_erasure_error_model"))?;
+                        if !correlated_erasure_error_model.is_null() {
+                            self_node.correlated_erasure_error_model = Some(serde_json::from_value(correlated_erasure_error_model.clone()).map_err(|_| format!("correlated_erasure_error_model deserialize error"))?);
+                        } else {
+                            self_node.correlated_erasure_error_model = None;
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 
     pub fn apply_error_model(&mut self, error_model: &ErrorModel, error_model_configuration: Option<&serde_json::Value>, p: f64, bias_eta: f64, pe: f64) {

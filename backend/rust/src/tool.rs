@@ -33,6 +33,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
 use super::reproducible_rand::Xoroshiro128StarStar;
+use super::web::local_get_temporary_store;
+use std::fs;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -145,6 +147,32 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let debug_print_error_model = matches.is_present("debug_print_error_model");
             let debug_print_with_all_possible_error_rates = matches.is_present("debug_print_with_all_possible_error_rates");
             let use_reduced_graph = !matches.is_present("disable_reduced_graph");
+            let mut error_model_modifier_str: Option<String> = None;
+            match value_t!(matches, "load_error_model_from_temporary_store", usize) {
+                Ok(error_model_temporary_id) => {
+                    match local_get_temporary_store(error_model_temporary_id) {
+                        Some(value) => { error_model_modifier_str = Some(value); },
+                        None => { return Some(format!("[error] temporary id not found (may expire): {}", error_model_temporary_id)) }
+                    }
+                },
+                Err(_) => { },
+            }
+            match value_t!(matches, "load_error_model_from_file", String) {
+                Ok(error_model_filepath) => {
+                    match fs::read_to_string(error_model_filepath.clone()) {
+                        Ok(value) => { error_model_modifier_str = Some(value); },
+                        Err(_) => { return Some(format!("[error] error model file cannot open: {}", error_model_filepath)) }
+                    }
+                },
+                Err(_) => { },
+            }
+            let error_model_modifier: Option<serde_json::Value> = match error_model_modifier_str {
+                Some(value) => match serde_json::from_str(&value) {
+                    Ok(error_model_modifier) => Some(error_model_modifier),
+                    Err(_) => { return Some(format!("[error] error model cannot recognize, please check file format")) }
+                },
+                None => None,
+            };
             return Some(fault_tolerant_benchmark(&dis, &djs, &Ts, &ps, &pes, max_N, min_error_cases, parallel, validate_layer, mini_sync_time, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, only_count_logical_z
                 , !imperfect_initialization, shallow_error_on_bottom, no_y_error, use_xzzx_code, use_rotated_tailored_code, bias_eta, decoder_type, max_half_weight
@@ -153,7 +181,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
                 , fbench_disable_additional_error, fbench_use_fake_decoder, fbench_use_simple_sum, fbench_assignment_sampling_amount
                 , fbench_weighted_path_sampling, fbench_weighted_assignment_sampling, fbench_target_dev, rug_precision, disable_optimize_correction_pattern
                 , debug_print_only, debug_print_direct_connections, debug_print_exhausted_connections, debug_print_error_model, debug_print_with_all_possible_error_rates
-                , use_reduced_graph));
+                , use_reduced_graph, error_model_modifier));
         }
         ("decoder_comparison_benchmark", Some(matches)) => {
             let Ls = value_t!(matches, "Ls", String).expect("required");
@@ -565,7 +593,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , fbench_disable_additional_error: bool, fbench_use_fake_decoder: bool, fbench_use_simple_sum: bool, fbench_assignment_sampling_amount: usize
         , fbench_weighted_path_sampling: bool, fbench_weighted_assignment_sampling: bool, fbench_target_dev: f64, rug_precision: u32
         , disable_optimize_correction_pattern: bool, debug_print_only: bool, debug_print_direct_connections: bool, debug_print_exhausted_connections: bool
-        , debug_print_error_model: bool, debug_print_with_all_possible_error_rates: bool, use_reduced_graph: bool) -> String {
+        , debug_print_error_model: bool, debug_print_with_all_possible_error_rates: bool, use_reduced_graph: bool, error_model_modifier: Option<serde_json::Value>) -> String {
     let mut output = format!("");  // empty output string
     let mut parallel = parallel;
     if parallel == 0 {
@@ -726,6 +754,17 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         match &error_model {
             Some(error_model) => {
                 model.apply_error_model(error_model, error_model_configuration.as_ref(), p, bias_eta, pe);
+            },
+            None => { }
+        }
+        match &error_model_modifier {
+            Some(modifier) => {
+                match model.apply_error_model_modifier(&modifier) {
+                    Ok(_) => { },
+                    Err(reason) => {
+                        panic!("[error] apply error model failed: {}", reason);
+                    },
+                }
             },
             None => { }
         }

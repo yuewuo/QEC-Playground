@@ -177,9 +177,9 @@ fn create_clap_parser<'a, 'b>(color_setting: clap::AppSettings) -> clap::App<'a,
                 (@arg debug_print_exhausted_connections: --debug_print_exhausted_connections "print exhausted connections, or complete model graph in our paper https://www.yecl.org/publications/wu2022qec.pdf")
                 (@arg debug_print_error_model: --debug_print_error_model "print error model, without building the exhausted graph")
                 (@arg debug_print_with_all_possible_error_rates: --debug_print_with_all_possible_error_rates "with all possible positions of error rate, used for externally generating error model")
-                // adding features from Fowler's paper
-                (@arg disable_reduced_graph: --disable_reduced_graph "disable feature: remove edge between two vertices if both of them have smaller weight matching to boundary than matching each other")
-                // swap the gate sequence of stabilizers in rotated surface code for better
+                (@arg disable_reduced_graph: --disable_reduced_graph "disable feature: remove edge between two vertices if both of them have smaller weight matching to boundary than matching each other")  // adding features from Fowler's paper
+                (@arg load_error_model_from_temporary_store: --load_error_model_from_temporary_store +takes_value "if provided, will fetch a Json from temporary store in web module to update error model")
+                (@arg load_error_model_from_file: --load_error_model_from_file +takes_value "if provided, will fetch a Json from file to update error model")
             )
             (@subcommand decoder_comparison_benchmark => (about: "benchmark fault tolerant algorithm")
                 (@arg Ls: +required "[L1,L2,L3,...,Ln]")

@@ -139,6 +139,10 @@ const di = 5
 const urlParams = new URLSearchParams(window.location.search)
 const p_str = urlParams.get('p') || 0
 const pe_str = urlParams.get('pe') || 0
+const error_model_temporary_id = urlParams.get('error_model_temporary_id') || 0
+if (error_model_temporary_id > 0) {
+    alert("You're viewing a temporary error model, which might be removed soon")
+}
 if (isNaN(p_str) || isNaN(pe_str)) {
     alert("p or pe is not a float number, format error")
 }
@@ -286,6 +290,9 @@ var app = new Vue({
             let composed_configure = `[${di}] --djs [${di}] [${di}] [${p_str}] --pes [${pe_str}] ${parameters_str}`
             if (confirm(`apply new configuration and refresh? ${composed_configure}`)) {
                 let new_url = window.location.origin + window.location.pathname + `?p=${encodeURIComponent(p_str)}&pe=${encodeURIComponent(pe_str)}&parameters=${encodeURIComponent(parameters_str)}`
+                if (error_model_temporary_id > 0) {
+                    new_url += `&error_model_temporary_id=${error_model_temporary_id}`
+                }
                 console.log(new_url)
                 window.location.href = new_url
                 this.last_confirmed_parameters = this.full_parameters  // to prevent another confirm block

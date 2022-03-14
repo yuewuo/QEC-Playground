@@ -2,7 +2,7 @@
 
 use super::ndarray;
 use std::ops::{Deref, DerefMut};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone)]
 #[derive(PartialEq)]
@@ -410,7 +410,7 @@ impl std::fmt::Display for CorrelatedErrorType {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Serialize)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct CorrelatedErrorModel {
     pub error_rate_IX: f64,
     pub error_rate_IZ: f64,
@@ -548,7 +548,7 @@ impl CorrelatedErasureErrorType {
     // }
 }
 
-#[derive(Debug, PartialEq, Clone, Serialize)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct CorrelatedErasureErrorModel {
     pub error_rate_IE: f64,
     pub error_rate_EI: f64,

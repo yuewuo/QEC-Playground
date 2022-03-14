@@ -6,8 +6,9 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command
 from automated_threshold_evaluation import run_qec_playground_command_get_stdout, compile_code_if_necessary
 sys.path.insert(0, os.path.join(qec_playground_root_dir, "benchmark", "slurm_utilities"))
-import json
-import urllib.parse
+import json, webbrowser
+from urllib import request, parse
+from urllib.error import URLError, HTTPError
 
 compile_code_if_necessary()
 
@@ -476,11 +477,37 @@ class ErrorModel:
                     return QubitErrorModel(self, t, i, j)
         # raise Exception(f"position [{t}][{i}][{j}] not exist")
         return None
-    def visualize(self, base_url="https://qec.wuyue98.cn"):
+    def visualize(self, api_base_url="https://qec.wuyue98.cn/api", viewer_url="https://qec.wuyue98.cn/ErrorModelViewer2D.html"):
         assert self.di == 5 and self.dj == 5 and self.measurement_rounds == 5, "visualization tool currently only support di = dj = measurement_rounds = 5"
-        configuration_escaped = urllib.parse.quote(" ".join(self.configuration).encode('utf8'))
-        url = base_url + f"?p={float(self.p)}&pe={float(self.pe)}&parameters={configuration_escaped}"
-        return url
+        # upload to temporary store
+        modified_error_model = json.dumps(self.error_model)
+        data = json.dumps({"value": modified_error_model}).encode('utf-8')
+        req = request.Request(api_base_url + "/new_temporary_store", method="POST", data=data)
+        req.add_header('Content-Type', 'application/json')
+        try:
+            response = request.urlopen(req)
+            error_model_temporary_id = response.read().decode('utf-8')
+        except HTTPError as e:
+            print(e)
+            raise e
+        except URLError as e:
+            print('Reason: ', e.reason)
+            raise e
+        except Exception as e:
+            raise e
+        print()
+        # generate viewer link
+        configuration_escaped = parse.quote(" ".join(self.configuration).encode('utf8'))
+        query_paramters = f"?p={float(self.p)}&pe={float(self.pe)}&parameters={configuration_escaped}&error_model_temporary_id={error_model_temporary_id}"
+        if viewer_url is not None:
+            url = viewer_url + query_paramters
+            webbrowser.open(url, new=2)
+        else:
+            print(f"viewer_url not provided, please open html viewer (e.g. QEC-Playground/qecplayground/ErrorModelViewer2D.html) and append the following parameters to it:")
+            print(f"    {query_paramters}")
+        download_url = api_base_url + "/get_temporary_store/" + error_model_temporary_id
+        print(f"[info] you can download the error model Json file using: {download_url}")
+        return error_model_temporary_id
 
 def fetch_error_model(di, dj, measurement_rounds, p=0, pe=0, configuration=[]):
     qecp_path = os.path.join(rust_dir, "target", "release", "rust_qecp")
