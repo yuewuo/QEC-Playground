@@ -3990,17 +3990,17 @@ mod tests {
             let validation_ret = model.validate_correction_on_boundary(&correction);
             assert!(validation_ret.is_ok());
         }
-        // { // debug 3
-        //     model.clear_error();
-        //     model.add_error_at(t0, 0, 4, &ErrorType::Z).expect("error rate = 0 here");
-        //     model.add_error_at(t0, 1, 5, &ErrorType::Z).expect("error rate = 0 here");
-        //     model.add_error_at(t0, 5, 7, &ErrorType::Z).expect("error rate = 0 here");
-        //     model.propagate_error();
-        //     let measurement = model.generate_measurement();
-        //     let (correction, _runtime_statistics) = model.decode_MWPM(&measurement);
-        //     let validation_ret = model.validate_correction_on_boundary(&correction);
-        //     assert!(validation_ret.is_ok());
-        // }
+        { // debug 3
+            model.clear_error();
+            model.add_error_at(t0, 0, 4, &ErrorType::Z).expect("error rate = 0 here");
+            model.add_error_at(t0, 1, 5, &ErrorType::Z).expect("error rate = 0 here");
+            model.add_error_at(t0, 5, 7, &ErrorType::Z).expect("error rate = 0 here");
+            model.propagate_error();
+            let measurement = model.generate_measurement();
+            let (correction, _runtime_statistics) = model.decode_MWPM(&measurement);
+            let validation_ret = model.validate_correction_on_boundary(&correction);
+            assert!(validation_ret.is_ok());
+        }
         { // debug 4: in the paper
             model.clear_error();
             model.add_error_at(t0, 4, 4, &ErrorType::Z).expect("error rate = 0 here");
