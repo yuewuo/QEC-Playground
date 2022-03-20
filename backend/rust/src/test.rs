@@ -87,6 +87,14 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
             let count = value_t!(matches, "count", usize).unwrap_or(1);
             distributed_union_find_decoder_study(d, p, count);
         }
+        ("code_capacity_tailored_decoder_study", Some(matches)) => {
+            let d = value_t!(matches, "d", usize).expect("required");
+            let p = value_t!(matches, "p", f64).expect("required");
+            let bias_eta = value_t!(matches, "bias_eta", f64).expect("required");
+            let count = value_t!(matches, "count", usize).unwrap_or(1);
+            let print_error_pattern_to_find_infinite_loop = matches.is_present("print_error_pattern_to_find_infinite_loop");
+            code_capacity_tailored_decoder_study(d, p, bias_eta, count, print_error_pattern_to_find_infinite_loop);
+        }
         ("all", Some(_)) => {  // remember to add new test functions here
             save_load();
             perfect_measurement();
@@ -621,6 +629,59 @@ fn distributed_union_find_decoder_study(d: usize, p: f64, count: usize) {
                 }).to_string());
                 cases += 1;
             }
+        }
+    }
+}
+
+// example usage: `cargo run --release -- test code_capacity_tailored_decoder_study 5 0.001 1e5`
+fn code_capacity_tailored_decoder_study(d: usize, p: f64, bias_eta: f64, count: usize, print_error_pattern_to_find_infinite_loop: bool) {
+    let mut cases = 0;
+    let mut rng = thread_rng();
+    let mut model = ftqec::PlanarCodeModel::new_rotated_tailored_code(0, d);
+    let px = p / (1. + bias_eta) / 2.;
+    let py = px;
+    let pz = p - 2. * px;
+    model.set_individual_error_with_perfect_initialization(px, py, pz);
+    model.iterate_snapshot_mut(|t, _i, _j, node| {  // shallow error on bottom
+        if t == 6 && node.qubit_type == QubitType::Data {
+            node.error_rate_x = px;
+            node.error_rate_z = pz;
+            node.error_rate_y = py;
+        }
+    });
+    model.build_graph(ftqec::weight_autotune);
+    model.optimize_correction_pattern();
+    model.build_exhausted_path();
+    while cases < count {
+        model.clear_error();
+        model.generate_random_errors(|| rng.gen::<f64>());
+        model.propagate_error();
+        if print_error_pattern_to_find_infinite_loop {
+            println!("[info] new error pattern");
+            model.print_errors();  // to find infinite looping case if any
+        }
+        let measurement = model.generate_measurement();
+        let (correction, _runtime_statistics) = model.decode_MWPM(&measurement);
+        // println!("runtime_statistics: {:?}", runtime_statistics);
+        let validation_ret = model.validate_correction_on_boundary(&correction);
+        // println!("validation_ret: {:?}", validation_ret);
+        match validation_ret {
+            Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => {
+                println!("[error] found X logical error");
+                model.print_errors();  // to find infinite looping case if any
+                cases += 1;
+            },
+            Err(ftqec::ValidationFailedReason::ZLogicalError(_, _, _)) => {
+                println!("[error] found Y logical error");  // note: in tailored surface code, this is logical Y error (see `ftqec.rs/get_boundary_cardinality` for more information)
+                model.print_errors();  // to find infinite looping case if any
+                cases += 1;
+            },
+            Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => {
+                println!("[error] found Z logical error");
+                model.print_errors();  // to find infinite looping case if any
+                cases += 1;
+            },
+            _ => {},
         }
     }
 }

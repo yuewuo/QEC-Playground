@@ -1558,7 +1558,7 @@ impl PlanarCodeModel {
                                     let is_same_type = self.snapshot[t1][i1][j1].as_ref().unwrap().qubit_type == self.snapshot[t2][i2][j2].as_ref().unwrap().qubit_type;
                                     // currently do not consider fully connected version between X and Z graph (which shouldn't have too much difference in terms of decoding accuracy)
                                     // if enabled tailored decoding, this type of cross-type connection is allowed
-                                    if is_same_type || self.enabled_tailored_decoding {
+                                    if is_same_type {
                                         if p > 0. || is_erasure {
                                             // println!("[{}][{}][{}]:[{}] causes paired errors on [{}][{}][{}] and [{}][{}][{}]", t, i, j, if *error == ErrorType::X { "X" } else { "Z" }, t1, i1, j1, t2, i2, j2);
                                             if t1 <= 6 || t2 <= 6 {
@@ -1589,6 +1589,11 @@ impl PlanarCodeModel {
                                         if is_erasure {  // only consider single qubit errors causing same type of errors
                                             let node = self.snapshot[t][i][j].as_mut().expect("exist");
                                             node.pauli_error_connections.push(Either::Left((Index::new(t1, i1, j1), Index::new(t2, i2, j2))));
+                                        }
+                                    } else {
+                                        if self.enabled_tailored_decoding {
+                                            // TODO: add them to positive/negative decoding graph accordingly
+                                            // or it's unnecessary? in i.i.d. error model, this edge will eventually be added by adjacent Z error
                                         }
                                     }
                                 }  // MWPM cannot handle this kind of error... just ignore
@@ -2176,9 +2181,9 @@ impl PlanarCodeModel {
         let node_b = self.snapshot[b.t][b.i][b.j].as_ref().expect("exist");
         assert_eq!(node_a.gate_type, GateType::Measurement);
         assert_eq!(node_b.gate_type, GateType::Measurement);
-        if !self.enabled_tailored_decoding {  // this requirement doesn't exist in a tailored surface code decoding
-            assert_eq!(node_a.qubit_type, node_b.qubit_type);  // so that it has a path
-        }
+        // if !self.enabled_tailored_decoding {  // this requirement doesn't exist in a tailored surface code decoding; commented out 2022.3.18: even in tailored surface code, this should not happen
+        assert_eq!(node_a.qubit_type, node_b.qubit_type);  // so that it has a path
+        // }
         if a == b {
             return self.generate_default_sparse_correction()
         }
@@ -2308,11 +2313,12 @@ impl PlanarCodeModel {
                         time_tailored_prepare_graph += begin.elapsed().as_secs_f64();
                         let begin = Instant::now();
                         let tailored_matching = blossom_v::safe_minimum_weight_perfect_matching(node_num, tailored_weighted_edges);
+                        // println!("matchings from {}", stringify!($tailored_exhausted_map));
                         for i in 0..m_len {
                             let j = tailored_matching[i];
                             if j < m_len {  // only non-boundary connections will be added
                                 tailored_union.union(i, j);
-                                // println!("union {} {}", i, j);
+                                // println!("    union {} {}", i, j);
                             }
                         }
                         time_tailored_blossom_v_union += begin.elapsed().as_secs_f64();
@@ -2333,7 +2339,7 @@ impl PlanarCodeModel {
                     let path = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_map.get(&self.fhi(*b));
                     if path.is_some() && !path.expect("exist").removed {
                         let cost = path.expect("exist").cost;
-                        if !self.enabled_tailored_decoding || tailored_union.find(i) == tailored_union.find(j) {
+                        if !self.enabled_tailored_decoding || tailored_union.find(i) == tailored_union.find(j) || (tailored_union.immutable_get(i).set_size % 2 == 1 && tailored_union.immutable_get(j).set_size % 2 == 1) {
                             weighted_edges.push((i, j, cost));
                         }
                         // if to_be_matched.len() > 2 {
@@ -3941,5 +3947,72 @@ mod tests {
         println!("validation_ret: {:?}", validation_ret);
     }
 
+    #[test]
+    fn tailored_code_test_decode_code_capacity() {
+        let d = 5;
+        let p = 0.01;  // physical error rate
+        let bias_eta = 100.;
+        let mut model = PlanarCodeModel::new_rotated_tailored_code(0, d);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = p - 2. * px;
+        let t0 = 6;
+        model.set_individual_error_with_perfect_initialization(px, py, pz);
+        model.iterate_snapshot_mut(|t, _i, _j, node| {  // shallow error on bottom
+            if t == t0 && node.qubit_type == QubitType::Data {
+                node.error_rate_x = px;
+                node.error_rate_z = pz;
+                node.error_rate_y = py;
+            }
+        });
+        model.build_graph(weight_autotune);
+        model.build_exhausted_path();
+        // Z error at data qubit
+        { // debug 1
+            model.clear_error();
+            model.add_error_at(t0, 3, 3, &ErrorType::Z).expect("error rate = 0 here");
+            model.add_error_at(t0, 4, 2, &ErrorType::Z).expect("error rate = 0 here");
+            model.propagate_error();
+            assert_error_is(&mut model, vec![(12, 2, 3), (12, 3, 4), (12, 4, 1), (12, 5, 2)]);
+            let measurement = model.generate_measurement();
+            let (correction, _runtime_statistics) = model.decode_MWPM(&measurement);
+            let validation_ret = model.validate_correction_on_boundary(&correction);
+            assert!(validation_ret.is_ok());
+        }
+        { // debug 2
+            model.clear_error();
+            model.add_error_at(t0, 5, 5, &ErrorType::Z).expect("error rate = 0 here");
+            model.add_error_at(t0, 5, 7, &ErrorType::Z).expect("error rate = 0 here");
+            model.add_error_at(t0, 7, 5, &ErrorType::Z).expect("error rate = 0 here");
+            model.propagate_error();
+            let measurement = model.generate_measurement();
+            let (correction, _runtime_statistics) = model.decode_MWPM(&measurement);
+            let validation_ret = model.validate_correction_on_boundary(&correction);
+            assert!(validation_ret.is_ok());
+        }
+        // { // debug 3
+        //     model.clear_error();
+        //     model.add_error_at(t0, 0, 4, &ErrorType::Z).expect("error rate = 0 here");
+        //     model.add_error_at(t0, 1, 5, &ErrorType::Z).expect("error rate = 0 here");
+        //     model.add_error_at(t0, 5, 7, &ErrorType::Z).expect("error rate = 0 here");
+        //     model.propagate_error();
+        //     let measurement = model.generate_measurement();
+        //     let (correction, _runtime_statistics) = model.decode_MWPM(&measurement);
+        //     let validation_ret = model.validate_correction_on_boundary(&correction);
+        //     assert!(validation_ret.is_ok());
+        // }
+        { // debug 4: in the paper
+            model.clear_error();
+            model.add_error_at(t0, 4, 4, &ErrorType::Z).expect("error rate = 0 here");
+            model.add_error_at(t0, 5, 3, &ErrorType::Z).expect("error rate = 0 here");
+            model.add_error_at(t0, 6, 2, &ErrorType::Z).expect("error rate = 0 here");
+            model.add_error_at(t0, 7, 3, &ErrorType::Z).expect("error rate = 0 here");
+            model.propagate_error();
+            let measurement = model.generate_measurement();
+            let (correction, _runtime_statistics) = model.decode_MWPM(&measurement);
+            let validation_ret = model.validate_correction_on_boundary(&correction);
+            assert!(validation_ret.is_ok());
+        }
+    }
 
 }
