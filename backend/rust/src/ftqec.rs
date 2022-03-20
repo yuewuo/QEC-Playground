@@ -2125,9 +2125,9 @@ impl PlanarCodeModel {
                                                 Some(tailored_boundary) => {
                                                     // only try if this node is directly connected to boundary
                                                     if node_b.$tailored_exhausted_map.get(&self.fhi(index)).is_some() || (t == tb && i == ib && j == jb) {
-                                                        let cost = (tailored_boundary.weight + (if t == tb && i == ib && j == jb { 0. } else {
+                                                        let cost = tailored_boundary.weight / 2. + (if t == tb && i == ib && j == jb { 0. } else { // bug fix 2022.3.20: only tailored_boundary.weight should be half, not all expression because exhausted_map is already a half cost
                                                             node_b.$tailored_exhausted_map[&self.fhi(index)].cost
-                                                        })) / 2.;  // Special: in tailored edges, each error generates 2 pairs of matchings, so each weight should be half of total and summing up with be the original
+                                                        });  // Special: in tailored edges, each error generates 2 pairs of matchings, so each weight should be half of total and summing up with be the original
                                                         // println!("[{}][{}][{}] [{}][{}][{}] {}", t, i, j, tb, ib, jb, cost);
                                                         match min_cost.clone() {
                                                             Some(min_cost_value) => {
@@ -2281,11 +2281,13 @@ impl PlanarCodeModel {
             let m_len = to_be_matched.len();  // boundary connection to `i` is `i + m_len`
             let node_num = m_len * 2;
             // prepare union-find structures
-            let mut tailored_union = UnionFind::new(if self.enabled_tailored_decoding { to_be_matched.len() } else { 0 } );
+            let mut tailored_union = UnionFind::new(if self.enabled_tailored_decoding { m_len * 3 } else { 0 } );
+            // note: tailored_union needs to keep track of boundary connections as well, so the length is `m_len * 3`
+            //     this is because it needs to distinguish the positive boundary and negative boundary
             if self.enabled_tailored_decoding {
                 macro_rules! run_tailored_sub_matching_and_union {
                     // `()` indicates that the macro takes no argument.
-                    ($tailored_exhausted_map:ident, $tailored_exhausted_boundary:ident) => {
+                    ($tailored_exhausted_map:ident, $tailored_exhausted_boundary:ident, $is_negative:expr) => {
                         let begin = Instant::now();
                         // Y (X) stabilizers are fully connected, boundaries are fully connected
                         // stabilizer to boundary is one-to-one connected
@@ -2299,6 +2301,7 @@ impl PlanarCodeModel {
                                 if tailored_path.is_some() && !tailored_path.expect("exist").removed {
                                     let cost = tailored_path.expect("exist").cost;
                                     tailored_weighted_edges.push((i, j, cost));
+                                    // println!("[debug] {} can match with {} with cost {}", i, j, cost);
                                 }
                             }
                             let a = &to_be_matched[i];
@@ -2306,6 +2309,7 @@ impl PlanarCodeModel {
                                 Some(tailored_exhausted_boundary) => {
                                     let cost = tailored_exhausted_boundary.cost;
                                     tailored_weighted_edges.push((i, i + m_len, cost));
+                                    // println!("[debug] {} can match to {} boundary with cost {}", i, if $is_negative { "negative" } else { "positive" }, cost);
                                 },
                                 None => { }
                             }
@@ -2318,14 +2322,36 @@ impl PlanarCodeModel {
                             let j = tailored_matching[i];
                             if j < m_len {  // only non-boundary connections will be added
                                 tailored_union.union(i, j);
-                                // println!("    union {} {}", i, j);
+                                println!("    union {} {}", i, j);
+                            } else {  // boundary connection needs special handling in tailored decoding, because we need to remember "where" is this boundary: left or right
+                                // without this special handling, 4 Z errors in a code distance 5 will cause logical error (tailored_code_test_decode_phenomenological, debug 2.5), which is unacceptable
+                                let j_bias = if $is_negative { m_len } else { 0 };  // negative boundary will be biased
+                                tailored_union.union(i, j + j_bias);
+                                println!("    union {} {} boundary", i, if $is_negative { "negative" } else { "positive" });
                             }
                         }
                         time_tailored_blossom_v_union += begin.elapsed().as_secs_f64();
                     }
                 }
-                run_tailored_sub_matching_and_union!(tailored_positive_exhausted_map, tailored_positive_exhausted_boundary);
-                run_tailored_sub_matching_and_union!(tailored_negative_exhausted_map, tailored_negative_exhausted_boundary);
+                run_tailored_sub_matching_and_union!(tailored_positive_exhausted_map, tailored_positive_exhausted_boundary, false);
+                run_tailored_sub_matching_and_union!(tailored_negative_exhausted_map, tailored_negative_exhausted_boundary, true);
+                // then update the cardinality of each cluster to see if it is charged
+                // for i in 0..m_len {
+                //     if tailored_union.immutable_get(i).cardinality == 0 {  // once run, this will update cardinality to nonzero
+                //         // first check this cluster indeed contains even number of vertices
+                //         let mut vertices_count = 1;  // itself
+                //         if tailored_union.find(i) == tailored_union.find(i + m_len) { vertices_count += 1; }
+                //         if tailored_union.find(i) == tailored_union.find(i + m_len * 2) { vertices_count += 1; }
+                //         for j in (i+1)..m_len {
+                //             if tailored_union.find(i) == tailored_union.find(j) { vertices_count += 1; }
+                //             if tailored_union.find(i) == tailored_union.find(j + m_len) { vertices_count += 1; }
+                //             if tailored_union.find(i) == tailored_union.find(j + m_len * 2) { vertices_count += 1; }
+                //         }
+                //         println!("vertices_count = {}", vertices_count);
+                //         assert_eq!(vertices_count % 2, 0, "cluster must have even number of vertices, if you see this, the algorithm has bug");
+                //         tailored_union.get_mut(i).cardinality = vertices_count;  // TODO: update this
+                //     }
+                // }
             }
             let begin = Instant::now();
             // Z (X) stabilizers are fully connected, boundaries are fully connected
@@ -2339,7 +2365,8 @@ impl PlanarCodeModel {
                     let path = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_map.get(&self.fhi(*b));
                     if path.is_some() && !path.expect("exist").removed {
                         let cost = path.expect("exist").cost;
-                        if !self.enabled_tailored_decoding || tailored_union.find(i) == tailored_union.find(j) || (tailored_union.immutable_get(i).set_size % 2 == 1 && tailored_union.immutable_get(j).set_size % 2 == 1) {
+                        // (tailored_union.immutable_get(i).cardinality % 2 == 1 && tailored_union.immutable_get(j).cardinality % 2 == 1)
+                        if !self.enabled_tailored_decoding || tailored_union.find(i) == tailored_union.find(j) {
                             weighted_edges.push((i, j, cost));
                         }
                         // if to_be_matched.len() > 2 {
@@ -3950,8 +3977,8 @@ mod tests {
     #[test]
     fn tailored_code_test_decode_code_capacity() {
         let d = 5;
-        let p = 0.01;  // physical error rate
-        let bias_eta = 100.;
+        let p = 0.001;  // physical error rate
+        let bias_eta = 10000.;
         let mut model = PlanarCodeModel::new_rotated_tailored_code(0, d);
         let px = p / (1. + bias_eta) / 2.;
         let py = px;
@@ -3979,40 +4006,52 @@ mod tests {
             let validation_ret = model.validate_correction_on_boundary(&correction);
             assert!(validation_ret.is_ok());
         }
-        { // debug 2
+        // { // debug 2
+        //     model.clear_error();
+        //     model.add_error_at(t0, 5, 5, &ErrorType::Z).expect("error rate = 0 here");
+        //     model.add_error_at(t0, 5, 7, &ErrorType::Z).expect("error rate = 0 here");
+        //     model.add_error_at(t0, 7, 5, &ErrorType::Z).expect("error rate = 0 here");
+        //     model.propagate_error();
+        //     let measurement = model.generate_measurement();
+        //     let (correction, _runtime_statistics) = model.decode_MWPM(&measurement);
+        //     let validation_ret = model.validate_correction_on_boundary(&correction);
+        //     assert!(validation_ret.is_ok());
+        // }
+        { // debug 2.5
             model.clear_error();
+            model.add_error_at(t0, 6, 6, &ErrorType::Z).expect("error rate = 0 here");
             model.add_error_at(t0, 5, 5, &ErrorType::Z).expect("error rate = 0 here");
-            model.add_error_at(t0, 5, 7, &ErrorType::Z).expect("error rate = 0 here");
-            model.add_error_at(t0, 7, 5, &ErrorType::Z).expect("error rate = 0 here");
-            model.propagate_error();
-            let measurement = model.generate_measurement();
-            let (correction, _runtime_statistics) = model.decode_MWPM(&measurement);
-            let validation_ret = model.validate_correction_on_boundary(&correction);
-            assert!(validation_ret.is_ok());
-        }
-        { // debug 3
-            model.clear_error();
-            model.add_error_at(t0, 0, 4, &ErrorType::Z).expect("error rate = 0 here");
-            model.add_error_at(t0, 1, 5, &ErrorType::Z).expect("error rate = 0 here");
-            model.add_error_at(t0, 5, 7, &ErrorType::Z).expect("error rate = 0 here");
-            model.propagate_error();
-            let measurement = model.generate_measurement();
-            let (correction, _runtime_statistics) = model.decode_MWPM(&measurement);
-            let validation_ret = model.validate_correction_on_boundary(&correction);
-            assert!(validation_ret.is_ok());
-        }
-        { // debug 4: in the paper
-            model.clear_error();
             model.add_error_at(t0, 4, 4, &ErrorType::Z).expect("error rate = 0 here");
-            model.add_error_at(t0, 5, 3, &ErrorType::Z).expect("error rate = 0 here");
-            model.add_error_at(t0, 6, 2, &ErrorType::Z).expect("error rate = 0 here");
-            model.add_error_at(t0, 7, 3, &ErrorType::Z).expect("error rate = 0 here");
+            model.add_error_at(t0, 3, 3, &ErrorType::Z).expect("error rate = 0 here");
             model.propagate_error();
             let measurement = model.generate_measurement();
             let (correction, _runtime_statistics) = model.decode_MWPM(&measurement);
             let validation_ret = model.validate_correction_on_boundary(&correction);
             assert!(validation_ret.is_ok());
         }
+        // { // debug 3: this one comes from the misunderstanding of "charged" and "neutral" cluster
+        //     model.clear_error();
+        //     model.add_error_at(t0, 0, 4, &ErrorType::Z).expect("error rate = 0 here");
+        //     model.add_error_at(t0, 1, 5, &ErrorType::Z).expect("error rate = 0 here");
+        //     model.add_error_at(t0, 5, 7, &ErrorType::Z).expect("error rate = 0 here");
+        //     model.propagate_error();
+        //     let measurement = model.generate_measurement();
+        //     let (correction, _runtime_statistics) = model.decode_MWPM(&measurement);
+        //     let validation_ret = model.validate_correction_on_boundary(&correction);
+        //     assert!(validation_ret.is_ok());
+        // }
+        // { // debug 4: in the paper
+        //     model.clear_error();
+        //     model.add_error_at(t0, 4, 4, &ErrorType::Z).expect("error rate = 0 here");
+        //     model.add_error_at(t0, 5, 3, &ErrorType::Z).expect("error rate = 0 here");
+        //     model.add_error_at(t0, 6, 2, &ErrorType::Z).expect("error rate = 0 here");
+        //     model.add_error_at(t0, 7, 3, &ErrorType::Z).expect("error rate = 0 here");
+        //     model.propagate_error();
+        //     let measurement = model.generate_measurement();
+        //     let (correction, _runtime_statistics) = model.decode_MWPM(&measurement);
+        //     let validation_ret = model.validate_correction_on_boundary(&correction);
+        //     assert!(validation_ret.is_ok());
+        // }
     }
 
 }
