@@ -1,6 +1,0 @@
-create_time = "2022-03-21 00:05:39"
-time_consumption = 69.21271300315857
-command = [ "sudo", "flamegraph", "-o", "/Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.0/CSS_decoding_d_13_p_0.002.svg", "/Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp", "tool", "fault_tolerant_benchmark", "[13]", "[13]", "[0.002]", "--max_N", "0", "--min_error_cases", "0", "--time_budget", "60",]
-command_str = "sudo flamegraph -o /Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.0/CSS_decoding_d_13_p_0.002.svg /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [13] [13] [0.002] --max_N 0 --min_error_cases 0 --time_budget 60"
-name = "CSS_decoding_d_13_p_0.002"
-stdout = [ "format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>", "0.002 13 13 11716 0 0 13 NaN 0", "writing flamegraph to \"/Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.0/CSS_decoding_d_13_p_0.002.svg\"", "",]

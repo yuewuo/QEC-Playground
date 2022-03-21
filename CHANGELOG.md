@@ -8,10 +8,11 @@ For major updates, please run the [auto profiler](benchmark/auto_profiler/auto_p
 
 ## 0.2.0 (2022.3.20)
 
-- [ ] design a set of profiling test cases to both test correctness of existing decoders and record performance for future optimization compares
+- [x] design a set of profiling test cases to both test correctness of existing decoders and record performance for future optimization compares
 - [ ] delete unused and obsolete benchmark tools to avoid confusion
 - [ ] redesign the simulator for much smaller memory usage for faster simulation (the current bottleneck), use Box for optional fields, for example correlated error rate
 - [ ] split the project into using `workspace`, to improve compile speed by letting different packages be compiled individually
+- [ ] update 3D tool to support visualizing data structure from backend
 
 ## 0.1.0 (2020.11.8 - 2022.3.20)
 
