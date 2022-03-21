@@ -2,7 +2,6 @@ mod util;
 mod test;
 mod tool;
 mod types;
-mod qec;
 mod web;
 mod blossom_v;
 mod mwpm_approx;
@@ -19,9 +18,7 @@ extern crate clap;
 #[macro_use] extern crate serde_json;
 extern crate ndarray;
 extern crate rand;
-#[cfg(not(feature="noserver"))]
 extern crate actix_web;
-#[cfg(not(feature="noserver"))]
 extern crate actix_cors;
 extern crate serde;
 extern crate libc;
@@ -54,10 +51,6 @@ fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> 
             .about("testing features")
             .subcommand_required(true)
             .arg_required_else_help(true)
-            .subcommand(clap::Command::new("save_load").about("testing save and load functionality"))
-            .subcommand(clap::Command::new("perfect_measurement").about("print a perfect measurement"))
-            .subcommand(clap::Command::new("validate_correction").about("validate x and z correction"))
-            .subcommand(clap::Command::new("naive_correction").about("a naive error correction algorithm"))
             .subcommand(clap::Command::new("try_blossom_correction").about("try to use blossom library to decoder"))
             .subcommand(clap::Command::new("maximum_max_weight_matching_correction").about("try to use networkx python library to decoder"))
             .subcommand(clap::Command::new("debug_tests").about("test for debug"))
@@ -109,33 +102,6 @@ fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> 
             .about("tools")
             .subcommand_required(true)
             .arg_required_else_help(true)
-            .subcommand(clap::Command::new("generate_random_errors").about("generate random errors")
-                .arg(clap::Arg::new("Ls").help("[L1,L2,L3,...,Ln]").takes_value(true).required(true))
-                .arg(clap::Arg::new("ps").help("[p1,p2,p3,...,pm]").takes_value(true).required(true))
-                .arg(clap::Arg::new("N").help("how many valid samples for each (d,p) config").takes_value(true).required(true))
-                .arg(clap::Arg::new("directory").short('d').long("directory").help("directory to output files, default to ./").takes_value(true))
-            )
-            .subcommand(clap::Command::new("decoder_benchmark").about("test decoder")
-                .arg(clap::Arg::new("Ls").help("[L1,L2,L3,...,Ln]").takes_value(true).required(true))
-                .arg(clap::Arg::new("ps").help("[p1,p2,p3,...,pm]").takes_value(true).required(true))
-                .arg(clap::Arg::new("directory").short('d').long("directory").help("directory to output files, default to ./").takes_value(true))
-                .arg(clap::Arg::new("qec_decoder").short('q').long("qec_decoder").help("available decoders, e.g. `naive_decoder`").takes_value(true))
-            )
-            .subcommand(clap::Command::new("automatic_benchmark").about("automatically run benchmark with round upper bound, lower bound and minimum error cases")
-                .arg(clap::Arg::new("Ls").help("[L1,L2,L3,...,Ln]").takes_value(true).required(true))
-                .arg(clap::Arg::new("ps").help("[p1,p2,p3,...,pm]").takes_value(true).required(true))
-                .arg(clap::Arg::new("max_N").short('m').long("max_N").help("maximum total count, default to 100000000").takes_value(true))
-                .arg(clap::Arg::new("min_error_cases").short('e').long("min_error_cases").help("minimum error cases, default to 1000").takes_value(true))
-                .arg(clap::Arg::new("qec_decoder").short('q').long("qec_decoder").help("available decoders, e.g. `naive_decoder`").takes_value(true))
-            )
-            .subcommand(clap::Command::new("error_rate_MWPM_with_weight").about("automatic benchmark on MWPM with weights from file")
-                .arg(clap::Arg::new("Ls").help("[L1,L2,L3,...,Ln]").takes_value(true).required(true))
-                .arg(clap::Arg::new("ps").help("[p1,p2,p3,...,pm]").takes_value(true).required(true))
-                .arg(clap::Arg::new("max_N").short('m').long("max_N").help("maximum total count, default to 100000000").takes_value(true))
-                .arg(clap::Arg::new("min_error_cases").short('e').long("min_error_cases").help("minimum error cases, default to 1000").takes_value(true))
-                .arg(clap::Arg::new("weights").short('w').long("weights").help("path to weights file, e.g. `default_weights.txt`").takes_value(true))
-                .arg(clap::Arg::new("parallel").short('p').long("parallel").help("how many parallel threads to use. 0 will use number of CPUs - 1. WARNING: this doesn't work well! seems like it has global python locks or so. try to parallel using processes instead! DO NOT USE THIS!").takes_value(true))
-            )
             .subcommand(clap::Command::new("fault_tolerant_benchmark").about("benchmark fault tolerant algorithm")
                 .arg(clap::Arg::new("Ls").help("[L1,L2,L3,...,Ln] will be code distance of i and j dimension if djs is not provided").takes_value(true).required(true))
                 .arg(clap::Arg::new("djs").long("djs").help("[dj1,dj2,dj3,...,djn], will be [L1,L2,L3,...,Ln] if not provided").takes_value(true))

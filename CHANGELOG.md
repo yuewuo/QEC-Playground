@@ -6,12 +6,20 @@ See [this](https://keepachangelog.com/en/1.0.0/) for format of writing change lo
 
 For major updates, please run the [auto profiler](benchmark/auto_profiler/auto_profiler.md) to test performance and verify correctness
 
-## 0.1.2 (2022.3.21)
+- [ ] update 3D tool to support visualizing data structure from backend
 
-- [ ] delete unused and obsolete benchmark tools
+## 0.1.3 (2022.3.21)
+
 - [ ] redesign the simulator for much smaller memory usage for faster simulation (the current bottleneck), use Box for optional fields, for example correlated error rate
 - [ ] split the project into using `workspace`, to improve compile speed by letting different packages be compiled individually
-- [ ] update 3D tool to support visualizing data structure from backend
+
+## 0.1.2 (2022.3.21)
+
+- [x] remove `BatchZxError`, `ZxError`, `ZxCorrection`, `ZxMeasurement` and several obsolete types and related functions
+- [x] delete unused and obsolete benchmark tools
+- [x] remove features `MWPM_reverse_order` and `MWPM_shuffle`
+- [x] remove feature `reordered_css_gates` because it's now the default option
+- [x] remove feature `noserver` because it doesn't work as expected to speed up compilation
 
 ## 0.1.1 (2022.3.20)
 

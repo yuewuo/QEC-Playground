@@ -9,7 +9,7 @@ import toml
 """
 compare mode will skip profiling, but instead work on compare functions
 """
-COMPARE_WITH_VERSION = False
+COMPARE_WITH_VERSION = None
 if 'COMPARE_WITH_VERSION' in os.environ and os.environ["COMPARE_WITH_VERSION"] != "":
     COMPARE_WITH_VERSION = os.environ["COMPARE_WITH_VERSION"]
 print(f"[info] COMPARE_WITH_VERSION = {COMPARE_WITH_VERSION}")

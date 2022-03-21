@@ -387,87 +387,55 @@ impl PlanarCodeModel {
                                 }
                             },
                             Stage::CXGate2 => {
-                                cfg_if::cfg_if! {
-                                    if #[cfg(feature="reordered_css_gates")] {
-                                        if i % 2 == 0 {  // for Z stabilizers, operate with the data qubit on the left ("Z" shape)
-                                            if qubit_type == QubitType::Data {
-                                                if j+1 < width_j && filter(i, j+1) {
-                                                    gate_type = GateType::Control;
-                                                    connection = Some(Connection{ t: t, i: i, j: j+1 });
-                                                }
-                                            } else {
-                                                if j >= 1 && filter(i, j-1) {
-                                                    gate_type = GateType::Target;
-                                                    connection = Some(Connection{ t: t, i: i, j: j-1 });
-                                                }
-                                            }
-                                        } else {  // for X stabilizers, operate with the data qubit on the right ("S" shape)
-                                            if qubit_type == QubitType::Data {
-                                                if j >= 1 && filter(i, j-1) {
-                                                    gate_type = GateType::Target;
-                                                    connection = Some(Connection{ t: t, i: i, j: j-1 });
-                                                }
-                                            } else {
-                                                if j+1 < width_i && filter(i, j+1) {
-                                                    gate_type = GateType::Control;
-                                                    connection = Some(Connection{ t: t, i: i, j: j+1 });
-                                                }
-                                            }
+                                if i % 2 == 0 {  // for Z stabilizers, operate with the data qubit on the left ("Z" shape)
+                                    if qubit_type == QubitType::Data {
+                                        if j+1 < width_j && filter(i, j+1) {
+                                            gate_type = GateType::Control;
+                                            connection = Some(Connection{ t: t, i: i, j: j+1 });
                                         }
                                     } else {
-                                        if qubit_type == QubitType::Data {
-                                            if j+1 < width_j && filter(i, j+1) {
-                                                gate_type = if i % 2 == 0 { GateType::Control} else { GateType::Target};
-                                                connection = Some(Connection{ t: t, i: i, j: j+1 });
-                                            }
-                                        } else {
-                                            if j >= 1 && filter(i, j-1) {
-                                                gate_type = if i % 2 == 0 { GateType::Target} else { GateType::Control};
-                                                connection = Some(Connection{ t: t, i: i, j: j-1 });
-                                            }
+                                        if j >= 1 && filter(i, j-1) {
+                                            gate_type = GateType::Target;
+                                            connection = Some(Connection{ t: t, i: i, j: j-1 });
+                                        }
+                                    }
+                                } else {  // for X stabilizers, operate with the data qubit on the right ("S" shape)
+                                    if qubit_type == QubitType::Data {
+                                        if j >= 1 && filter(i, j-1) {
+                                            gate_type = GateType::Target;
+                                            connection = Some(Connection{ t: t, i: i, j: j-1 });
+                                        }
+                                    } else {
+                                        if j+1 < width_i && filter(i, j+1) {
+                                            gate_type = GateType::Control;
+                                            connection = Some(Connection{ t: t, i: i, j: j+1 });
                                         }
                                     }
                                 }
                             },
                             Stage::CXGate3 => {
-                                cfg_if::cfg_if! {
-                                    if #[cfg(feature="reordered_css_gates")] {
-                                        if i % 2 == 0 {  // for Z stabilizers, operate with the data qubit on the right ("Z" shape)
-                                            if qubit_type == QubitType::Data {
-                                                if j >= 1 && filter(i, j-1) {
-                                                    gate_type = GateType::Control;
-                                                    connection = Some(Connection{ t: t, i: i, j: j-1 });
-                                                }
-                                            } else {
-                                                if j+1 < width_i && filter(i, j+1) {
-                                                    gate_type = GateType::Target;
-                                                    connection = Some(Connection{ t: t, i: i, j: j+1 });
-                                                }
-                                            }
-                                        } else {  // for X stabilizers, operate with the data qubit on the right ("S" shape)
-                                            if qubit_type == QubitType::Data {
-                                                if j+1 < width_j && filter(i, j+1) {
-                                                    gate_type = GateType::Target;
-                                                    connection = Some(Connection{ t: t, i: i, j: j+1 });
-                                                }
-                                            } else {
-                                                if j >= 1 && filter(i, j-1) {
-                                                    gate_type = GateType::Control;
-                                                    connection = Some(Connection{ t: t, i: i, j: j-1 });
-                                                }
-                                            }
+                                if i % 2 == 0 {  // for Z stabilizers, operate with the data qubit on the right ("Z" shape)
+                                    if qubit_type == QubitType::Data {
+                                        if j >= 1 && filter(i, j-1) {
+                                            gate_type = GateType::Control;
+                                            connection = Some(Connection{ t: t, i: i, j: j-1 });
                                         }
                                     } else {
-                                        if qubit_type == QubitType::Data {
-                                            if j >= 1 && filter(i, j-1) {
-                                                gate_type = if i % 2 == 0 { GateType::Control} else { GateType::Target};
-                                                connection = Some(Connection{ t: t, i: i, j: j-1 });
-                                            }
-                                        } else {
-                                            if j+1 < width_i && filter(i, j+1) {
-                                                gate_type = if i % 2 == 0 { GateType::Target} else { GateType::Control};
-                                                connection = Some(Connection{ t: t, i: i, j: j+1 });
-                                            }
+                                        if j+1 < width_i && filter(i, j+1) {
+                                            gate_type = GateType::Target;
+                                            connection = Some(Connection{ t: t, i: i, j: j+1 });
+                                        }
+                                    }
+                                } else {  // for X stabilizers, operate with the data qubit on the right ("S" shape)
+                                    if qubit_type == QubitType::Data {
+                                        if j+1 < width_j && filter(i, j+1) {
+                                            gate_type = GateType::Target;
+                                            connection = Some(Connection{ t: t, i: i, j: j+1 });
+                                        }
+                                    } else {
+                                        if j >= 1 && filter(i, j-1) {
+                                            gate_type = GateType::Control;
+                                            connection = Some(Connection{ t: t, i: i, j: j-1 });
                                         }
                                     }
                                 }
@@ -720,87 +688,55 @@ impl PlanarCodeModel {
                                 }
                             },
                             Stage::CXGate2 => {
-                                cfg_if::cfg_if! {
-                                    if #[cfg(feature="reordered_css_gates")] {
-                                        if i % 2 == 0 {  // for Y stabilizers, operate with the data qubit on the left ("Z" shape)
-                                            if qubit_type == QubitType::Data {
-                                                if j+1 < width_j && filter(i, j+1) {
-                                                    gate_type = GateType::TargetCY;
-                                                    connection = Some(Connection{ t: t, i: i, j: j+1 });
-                                                }
-                                            } else {
-                                                if j >= 1 && filter(i, j-1) {
-                                                    gate_type = GateType::ControlCY;
-                                                    connection = Some(Connection{ t: t, i: i, j: j-1 });
-                                                }
-                                            }
-                                        } else {  // for X stabilizers, operate with the data qubit on the right ("S" shape)
-                                            if qubit_type == QubitType::Data {
-                                                if j >= 1 && filter(i, j-1) {
-                                                    gate_type = GateType::Target;
-                                                    connection = Some(Connection{ t: t, i: i, j: j-1 });
-                                                }
-                                            } else {
-                                                if j+1 < width_i && filter(i, j+1) {
-                                                    gate_type = GateType::Control;
-                                                    connection = Some(Connection{ t: t, i: i, j: j+1 });
-                                                }
-                                            }
+                                if i % 2 == 0 {  // for Y stabilizers, operate with the data qubit on the left ("Z" shape)
+                                    if qubit_type == QubitType::Data {
+                                        if j+1 < width_j && filter(i, j+1) {
+                                            gate_type = GateType::TargetCY;
+                                            connection = Some(Connection{ t: t, i: i, j: j+1 });
                                         }
                                     } else {
-                                        if qubit_type == QubitType::Data {
-                                            if j+1 < width_j && filter(i, j+1) {
-                                                gate_type = if i % 2 == 0 { GateType::TargetCY} else { GateType::Target};
-                                                connection = Some(Connection{ t: t, i: i, j: j+1 });
-                                            }
-                                        } else {
-                                            if j >= 1 && filter(i, j-1) {
-                                                gate_type = if i % 2 == 0 { GateType::ControlCY} else { GateType::Control};
-                                                connection = Some(Connection{ t: t, i: i, j: j-1 });
-                                            }
+                                        if j >= 1 && filter(i, j-1) {
+                                            gate_type = GateType::ControlCY;
+                                            connection = Some(Connection{ t: t, i: i, j: j-1 });
+                                        }
+                                    }
+                                } else {  // for X stabilizers, operate with the data qubit on the right ("S" shape)
+                                    if qubit_type == QubitType::Data {
+                                        if j >= 1 && filter(i, j-1) {
+                                            gate_type = GateType::Target;
+                                            connection = Some(Connection{ t: t, i: i, j: j-1 });
+                                        }
+                                    } else {
+                                        if j+1 < width_i && filter(i, j+1) {
+                                            gate_type = GateType::Control;
+                                            connection = Some(Connection{ t: t, i: i, j: j+1 });
                                         }
                                     }
                                 }
                             },
                             Stage::CXGate3 => {
-                                cfg_if::cfg_if! {
-                                    if #[cfg(feature="reordered_css_gates")] {
-                                        if i % 2 == 0 {  // for Y stabilizers, operate with the data qubit on the right ("Z" shape)
-                                            if qubit_type == QubitType::Data {
-                                                if j >= 1 && filter(i, j-1) {
-                                                    gate_type = GateType::TargetCY;
-                                                    connection = Some(Connection{ t: t, i: i, j: j-1 });
-                                                }
-                                            } else {
-                                                if j+1 < width_i && filter(i, j+1) {
-                                                    gate_type = GateType::ControlCY;
-                                                    connection = Some(Connection{ t: t, i: i, j: j+1 });
-                                                }
-                                            }
-                                        } else {  // for X stabilizers, operate with the data qubit on the right ("S" shape)
-                                            if qubit_type == QubitType::Data {
-                                                if j+1 < width_j && filter(i, j+1) {
-                                                    gate_type = GateType::Target;
-                                                    connection = Some(Connection{ t: t, i: i, j: j+1 });
-                                                }
-                                            } else {
-                                                if j >= 1 && filter(i, j-1) {
-                                                    gate_type = GateType::Control;
-                                                    connection = Some(Connection{ t: t, i: i, j: j-1 });
-                                                }
-                                            }
+                                if i % 2 == 0 {  // for Y stabilizers, operate with the data qubit on the right ("Z" shape)
+                                    if qubit_type == QubitType::Data {
+                                        if j >= 1 && filter(i, j-1) {
+                                            gate_type = GateType::TargetCY;
+                                            connection = Some(Connection{ t: t, i: i, j: j-1 });
                                         }
                                     } else {
-                                        if qubit_type == QubitType::Data {
-                                            if j >= 1 && filter(i, j-1) {
-                                                gate_type = if i % 2 == 0 { GateType::TargetCY} else { GateType::Target};
-                                                connection = Some(Connection{ t: t, i: i, j: j-1 });
-                                            }
-                                        } else {
-                                            if j+1 < width_i && filter(i, j+1) {
-                                                gate_type = if i % 2 == 0 { GateType::ControlCY} else { GateType::Control};
-                                                connection = Some(Connection{ t: t, i: i, j: j+1 });
-                                            }
+                                        if j+1 < width_i && filter(i, j+1) {
+                                            gate_type = GateType::ControlCY;
+                                            connection = Some(Connection{ t: t, i: i, j: j+1 });
+                                        }
+                                    }
+                                } else {  // for X stabilizers, operate with the data qubit on the right ("S" shape)
+                                    if qubit_type == QubitType::Data {
+                                        if j+1 < width_j && filter(i, j+1) {
+                                            gate_type = GateType::Target;
+                                            connection = Some(Connection{ t: t, i: i, j: j+1 });
+                                        }
+                                    } else {
+                                        if j >= 1 && filter(i, j-1) {
+                                            gate_type = GateType::Control;
+                                            connection = Some(Connection{ t: t, i: i, j: j-1 });
                                         }
                                     }
                                 }
@@ -3903,49 +3839,46 @@ mod tests {
         model.add_error_at(el2t(0)+5, 2, 1, &ErrorType::Z).expect("error rate = 0 here");
         assert_error_is(&mut model, vec![(30, 3, 0), (30, 3, 2)]);  // fine
 
-        cfg_if::cfg_if! {
-            if #[cfg(feature="reordered_css_gates")] {
-                model.clear_error();
-                model.add_error_at(el2t(0), 1, 2, &ErrorType::X).expect("error rate = 0 here");
-                assert_error_is(&mut model, vec![]);
-                model.clear_error();
-                model.add_error_at(el2t(0)+1, 1, 2, &ErrorType::X).expect("error rate = 0 here");
-                assert_error_is(&mut model, vec![]);
-                model.clear_error();
-                model.add_error_at(el2t(0)+2, 1, 2, &ErrorType::X).expect("error rate = 0 here");
-                assert_error_is(&mut model, vec![]);
-                model.clear_error();
-                model.add_error_at(el2t(0)+3, 1, 2, &ErrorType::X).expect("error rate = 0 here");
-                assert_error_is(&mut model, vec![(24, 0, 1)]);  // fine
-                model.clear_error();
-                model.add_error_at(el2t(0)+4, 1, 2, &ErrorType::X).expect("error rate = 0 here");
-                assert_error_is(&mut model, vec![(24, 0, 1), (30, 2, 3)]);  // fine: fixed!!!
-                model.clear_error();
-                model.add_error_at(el2t(0)+5, 1, 2, &ErrorType::X).expect("error rate = 0 here");
-                assert_error_is(&mut model, vec![(30, 2, 1), (30, 2, 3)]);
-            } else {  // before the fix of this, 
-                model.clear_error();
-                model.add_error_at(el2t(0), 1, 2, &ErrorType::X).expect("error rate = 0 here");
-                assert_error_is(&mut model, vec![]);
-                model.clear_error();
-                model.add_error_at(el2t(0)+1, 1, 2, &ErrorType::X).expect("error rate = 0 here");
-                assert_error_is(&mut model, vec![]);
-                model.clear_error();
-                model.add_error_at(el2t(0)+2, 1, 2, &ErrorType::X).expect("error rate = 0 here");
-                assert_error_is(&mut model, vec![]);
-                model.clear_error();
-                model.add_error_at(el2t(0)+3, 1, 2, &ErrorType::X).expect("error rate = 0 here");
-                assert_error_is(&mut model, vec![(24, 0, 1)]);  // fine
-                model.clear_error();
-                model.add_error_at(el2t(0)+4, 1, 2, &ErrorType::X).expect("error rate = 0 here");
-                assert_error_is(&mut model, vec![(30, 2, 1)]);  // NO!!! this will cause logical error!!! a single error in circuit-level noise model causes a logical error, this is unacceptable
-                // to fix this issue, refer to arXiv:1404.3747v3, the order of Z stabilizers and X stabilizers should be different to fight against this, i.e. one should be "Z" shape, the other should be "S" 
-                // enable feature "reordered_css_gates" to fix this issue (by default enabled)
-                model.clear_error();
-                model.add_error_at(el2t(0)+5, 1, 2, &ErrorType::X).expect("error rate = 0 here");
-                assert_error_is(&mut model, vec![(30, 2, 1), (30, 2, 3)]);
-            }
-        }
+        model.clear_error();
+        model.add_error_at(el2t(0), 1, 2, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![]);
+        model.clear_error();
+        model.add_error_at(el2t(0)+1, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![]);
+        model.clear_error();
+        model.add_error_at(el2t(0)+2, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![]);
+        model.clear_error();
+        model.add_error_at(el2t(0)+3, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 0, 1)]);  // fine
+        model.clear_error();
+        model.add_error_at(el2t(0)+4, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(24, 0, 1), (30, 2, 3)]);  // fine: fixed!!!
+        model.clear_error();
+        model.add_error_at(el2t(0)+5, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+        assert_error_is(&mut model, vec![(30, 2, 1), (30, 2, 3)]);
+        
+        // // before the fix of this, 
+        // model.clear_error();
+        // model.add_error_at(el2t(0), 1, 2, &ErrorType::X).expect("error rate = 0 here");
+        // assert_error_is(&mut model, vec![]);
+        // model.clear_error();
+        // model.add_error_at(el2t(0)+1, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+        // assert_error_is(&mut model, vec![]);
+        // model.clear_error();
+        // model.add_error_at(el2t(0)+2, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+        // assert_error_is(&mut model, vec![]);
+        // model.clear_error();
+        // model.add_error_at(el2t(0)+3, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+        // assert_error_is(&mut model, vec![(24, 0, 1)]);  // fine
+        // model.clear_error();
+        // model.add_error_at(el2t(0)+4, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+        // assert_error_is(&mut model, vec![(30, 2, 1)]);  // NO!!! this will cause logical error!!! a single error in circuit-level noise model causes a logical error, this is unacceptable
+        // // to fix this issue, refer to arXiv:1404.3747v3, the order of Z stabilizers and X stabilizers should be different to fight against this, i.e. one should be "Z" shape, the other should be "S" 
+        // // enable feature "reordered_css_gates" to fix this issue (by default enabled)
+        // model.clear_error();
+        // model.add_error_at(el2t(0)+5, 1, 2, &ErrorType::X).expect("error rate = 0 here");
+        // assert_error_is(&mut model, vec![(30, 2, 1), (30, 2, 3)]);
     }
 
     #[test]

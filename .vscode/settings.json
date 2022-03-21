@@ -7,7 +7,6 @@
         "ftqec",
         "libc",
         "mwpm",
-        "noserver",
         "num",
         "petgraph",
         "qecp",
@@ -20,7 +19,5 @@
             "*.gp",
         ],
     },
-    "pdf-preview.default.scale": "page-fit",
-    "svgviewer.enableautopreview": true,
-    "svgviewer.previewcolumn": "Active"
+    "pdf-preview.default.scale": "page-fit"
 }

@@ -1,6 +1,6 @@
 [package]
 name = "rust_qecp"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Yue Wu <yue.wu@yale.edu>", "Namitha Liyanage (namitha.liyanage@yale.edu)"]
 description = "Quantum Error Correction Playground for Surface Code Research"
 edition = "2021"
@@ -16,13 +16,9 @@ debug = true
 
 [features]
 # to enable a feature, use `--features xxx`
-default = ["reordered_css_gates"]
-noserver = []  # ignore parts with actix-web to speed up compilation
+default = []
 fpga_amenable = []  # use FPGA-amenable code block (not friendly to read, but to test the equivalency with existing code)
-MWPM_reverse_order = []  # to verify the idea that even MWPM decoders could have different threshold depending on the order of nodes
-MWPM_shuffle = []  # to verify the order of vertices for MWPM doesn't effect the result
 python_interfaces = ["pyo3"]  # by default to avoid using python interface, which includes `fpga_generator.rs`,
-reordered_css_gates = []  # by default to true, this is especially good for rotated CSS surface code arXiv:1404.3747v3
 
 [dependencies]
 rand = { version = "0.8.4", features = ["alloc"] }
