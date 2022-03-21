@@ -28,16 +28,16 @@ lazy_static! {
 
 pub fn run_matched_fpga_generator(matches: &clap::ArgMatches) {
     match matches.subcommand() {
-        ("perfect_measurement_distributed_union_find", Some(matches)) => {
-            let d = value_t!(matches, "d", usize).expect("required");
+        Some(("perfect_measurement_distributed_union_find", matches)) => {
+            let d: usize = matches.value_of_t("d").expect("required");
             perfect_measurement_distributed_union_find(d);
         }
-        ("fault_tolerant_distributed_union_find", Some(matches)) => {
-            let d = value_t!(matches, "d", usize).expect("required");
-            let measurement_rounds = value_t!(matches, "measurement_rounds", usize).expect("required");
-            let p = value_t!(matches, "p", f64).unwrap_or(0.001);  // not required if all weights are identical
+        Some(("fault_tolerant_distributed_union_find", matches)) => {
+            let d: usize = matches.value_of_t("d").expect("required");
+            let measurement_rounds: usize = matches.value_of_t("measurement_rounds").expect("required");
+            let p: f64 = matches.value_of_t("p").unwrap_or(0.001);  // not required if all weights are identical
             let autotune = matches.is_present("autotune");  // default autotune is disabled
-            let fast_channel_interval = value_t!(matches, "fast_channel_interval", usize).unwrap_or(1);
+            let fast_channel_interval: usize = matches.value_of_t("fast_channel_interval").unwrap_or(1);
             fault_tolerant_distributed_union_find(d, measurement_rounds, p, autotune, fast_channel_interval);
         }
         _ => unreachable!()

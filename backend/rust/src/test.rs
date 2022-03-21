@@ -27,75 +27,75 @@ use super::ftqec::FastHashIndex;
 
 pub fn run_matched_test(matches: &clap::ArgMatches) {
     match matches.subcommand() {
-        ("save_load", Some(_)) => {
+        Some(("save_load", _)) => {
             save_load()
         }
-        ("perfect_measurement", Some(_)) => {
+        Some(("perfect_measurement", _)) => {
             perfect_measurement()
         }
-        ("validate_correction", Some(_)) => {
+        Some(("validate_correction", _)) => {
             validate_correction()
         }
-        ("naive_correction", Some(_)) => {
+        Some(("naive_correction", _)) => {
             naive_correction()
         }
-        ("maximum_max_weight_matching_correction", Some(_)) => {
+        Some(("maximum_max_weight_matching_correction", _)) => {
             maximum_max_weight_matching_correction()
         }
-        ("debug_tests", Some(_)) => {
+        Some(("debug_tests", _)) => {
             debug_tests()
         }
-        ("archived_debug_tests", Some(_)) => {
+        Some(("archived_debug_tests", _)) => {
             archived_debug_tests()
         }
-        ("offer_decoder_study", Some(matches)) => {
-            let d = value_t!(matches, "d", usize).expect("required");
-            let p = value_t!(matches, "p", f64).expect("required");
-            let count = value_t!(matches, "count", usize).unwrap_or(1);
-            let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(usize::MAX);
-            let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(usize::MAX);
+        Some(("offer_decoder_study", matches)) => {
+            let d: usize = matches.value_of_t("d").expect("required");
+            let p: f64 = matches.value_of_t("p").expect("required");
+            let count: usize = matches.value_of_t("count").unwrap_or(1);
+            let max_resend: usize = matches.value_of_t("max_resend").unwrap_or(usize::MAX);
+            let max_cycles: usize = matches.value_of_t("max_cycles").unwrap_or(usize::MAX);
             let print_error_pattern_to_find_infinite_loop = matches.is_present("print_error_pattern_to_find_infinite_loop");
             offer_decoder_study(d, p, count, max_resend, max_cycles, print_error_pattern_to_find_infinite_loop);
         }
-        ("offer_algorithm_study", Some(matches)) => {
-            let d = value_t!(matches, "d", usize).expect("required");
-            let p = value_t!(matches, "p", f64).expect("required");
-            let count = value_t!(matches, "count", usize).unwrap_or(1);
-            let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(usize::MAX);
-            let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(usize::MAX);
+        Some(("offer_algorithm_study", matches)) => {
+            let d: usize = matches.value_of_t("d").expect("required");
+            let p: f64 = matches.value_of_t("p").expect("required");
+            let count: usize = matches.value_of_t("count").unwrap_or(1);
+            let max_resend: usize = matches.value_of_t("max_resend").unwrap_or(usize::MAX);
+            let max_cycles: usize = matches.value_of_t("max_cycles").unwrap_or(usize::MAX);
             let print_error_pattern_to_find_infinite_loop = matches.is_present("print_error_pattern_to_find_infinite_loop");
             offer_algorithm_study(d, p, count, max_resend, max_cycles, print_error_pattern_to_find_infinite_loop);
         }
-        ("union_find_decoder_study", Some(matches)) => {
-            let d = value_t!(matches, "d", usize).expect("required");
-            let p = value_t!(matches, "p", f64).expect("required");
-            let count = value_t!(matches, "count", usize).unwrap_or(1);
-            let max_cost = value_t!(matches, "max_cost", f64).unwrap_or(f64::MAX);
+        Some(("union_find_decoder_study", matches)) => {
+            let d: usize = matches.value_of_t("d").expect("required");
+            let p: f64 = matches.value_of_t("p").expect("required");
+            let count: usize = matches.value_of_t("count").unwrap_or(1);
+            let max_cost: f64 = matches.value_of_t("max_cost").unwrap_or(f64::MAX);
             union_find_decoder_study(d, p, count, max_cost);
         }
-        ("union_find_decoder_xzzx_code_study", Some(matches)) => {
-            let d = value_t!(matches, "d", usize).expect("required");
-            let p = value_t!(matches, "p", f64).expect("required");
-            let count = value_t!(matches, "count", usize).unwrap_or(1);
-            let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);
-            let bias_eta = value_t!(matches, "bias_eta", f64).unwrap_or(0.5);
+        Some(("union_find_decoder_xzzx_code_study", matches)) => {
+            let d: usize = matches.value_of_t("d").expect("required");
+            let p: f64 = matches.value_of_t("p").expect("required");
+            let count: usize = matches.value_of_t("count").unwrap_or(1);
+            let max_half_weight: usize = matches.value_of_t("max_half_weight").unwrap_or(1);
+            let bias_eta: f64 = matches.value_of_t("bias_eta").unwrap_or(0.5);
             union_find_decoder_xzzx_code_study(d, p, count, max_half_weight, bias_eta);
         }
-        ("distributed_union_find_decoder_study", Some(matches)) => {
-            let d = value_t!(matches, "d", usize).expect("required");
-            let p = value_t!(matches, "p", f64).expect("required");
-            let count = value_t!(matches, "count", usize).unwrap_or(1);
+        Some(("distributed_union_find_decoder_study", matches)) => {
+            let d: usize = matches.value_of_t("d").expect("required");
+            let p: f64 = matches.value_of_t("p").expect("required");
+            let count: usize = matches.value_of_t("count").unwrap_or(1);
             distributed_union_find_decoder_study(d, p, count);
         }
-        ("code_capacity_tailored_decoder_study", Some(matches)) => {
-            let d = value_t!(matches, "d", usize).expect("required");
-            let p = value_t!(matches, "p", f64).expect("required");
-            let bias_eta = value_t!(matches, "bias_eta", f64).expect("required");
-            let count = value_t!(matches, "count", usize).unwrap_or(1);
+        Some(("code_capacity_tailored_decoder_study", matches)) => {
+            let d: usize = matches.value_of_t("d").expect("required");
+            let p: f64 = matches.value_of_t("p").expect("required");
+            let bias_eta: f64 = matches.value_of_t("bias_eta").expect("required");
+            let count: usize = matches.value_of_t("count").unwrap_or(1);
             let print_error_pattern_to_find_infinite_loop = matches.is_present("print_error_pattern_to_find_infinite_loop");
             code_capacity_tailored_decoder_study(d, p, bias_eta, count, print_error_pattern_to_find_infinite_loop);
         }
-        ("all", Some(_)) => {  // remember to add new test functions here
+        Some(("all", _)) => {  // remember to add new test functions here
             save_load();
             perfect_measurement();
             validate_correction();

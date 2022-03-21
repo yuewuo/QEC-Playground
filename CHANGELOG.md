@@ -6,13 +6,17 @@ See [this](https://keepachangelog.com/en/1.0.0/) for format of writing change lo
 
 For major updates, please run the [auto profiler](benchmark/auto_profiler/auto_profiler.md) to test performance and verify correctness
 
-## 0.2.0 (2022.3.20)
+## 0.1.2 (2022.3.21)
 
-- [x] design a set of profiling test cases to both test correctness of existing decoders and record performance for future optimization compares
 - [ ] delete unused and obsolete benchmark tools
 - [ ] redesign the simulator for much smaller memory usage for faster simulation (the current bottleneck), use Box for optional fields, for example correlated error rate
 - [ ] split the project into using `workspace`, to improve compile speed by letting different packages be compiled individually
 - [ ] update 3D tool to support visualizing data structure from backend
+
+## 0.1.1 (2022.3.20)
+
+- [x] design a set of profiling test cases to both test correctness of existing decoders and record performance for future optimization compares
+- [x] upgrade dependencies to latest version
 
 ## 0.1.0 (2020.11.8 - 2022.3.20)
 

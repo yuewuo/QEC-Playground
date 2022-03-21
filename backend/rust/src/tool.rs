@@ -38,76 +38,76 @@ use std::fs;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
-        ("generate_random_errors", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
+        Some(("generate_random_errors", matches)) => {
+            let Ls: String = matches.value_of_t("Ls").expect("required");
             let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
+            let ps: String = matches.value_of_t("ps").expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let N = value_t!(matches, "N", usize).expect("N should be integer");
-            let directory = value_t!(matches, "directory", String).unwrap_or("./".to_string());
+            let N: usize = matches.value_of_t("N").expect("N should be integer");
+            let directory: String = matches.value_of_t("directory").unwrap_or("./".to_string());
             generate_random_errors(&Ls, &ps, N, &directory);
         }
-        ("decoder_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
+        Some(("decoder_benchmark", matches)) => {
+            let Ls: String = matches.value_of_t("Ls").expect("required");
             let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
+            let ps: String = matches.value_of_t("ps").expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let directory = value_t!(matches, "directory", String).unwrap_or("./".to_string());
-            let qec_decoder = value_t!(matches, "qec_decoder", String).unwrap_or("naive_decoder".to_string());
+            let directory: String = matches.value_of_t("directory").unwrap_or("./".to_string());
+            let qec_decoder: String = matches.value_of_t("qec_decoder").unwrap_or("naive_decoder".to_string());
             decoder_benchmark(&Ls, &ps, &directory, &qec_decoder);
         }
-        ("automatic_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
+        Some(("automatic_benchmark", matches)) => {
+            let Ls: String = matches.value_of_t("Ls").expect("required");
             let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
+            let ps: String = matches.value_of_t("ps").expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(1000);  // default to 1e3
-            let qec_decoder = value_t!(matches, "qec_decoder", String).unwrap_or("naive_decoder".to_string());
+            let max_N: usize = matches.value_of_t("max_N").unwrap_or(100000000);  // default to 1e8
+            let min_error_cases: usize = matches.value_of_t("min_error_cases").unwrap_or(1000);  // default to 1e3
+            let qec_decoder: String = matches.value_of_t("qec_decoder").unwrap_or("naive_decoder".to_string());
             automatic_benchmark(&Ls, &ps, max_N, min_error_cases, &qec_decoder);
         }
-        ("error_rate_MWPM_with_weight", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
+        Some(("error_rate_MWPM_with_weight", matches)) => {
+            let Ls: String = matches.value_of_t("Ls").expect("required");
             let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
+            let ps: String = matches.value_of_t("ps").expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(1000);  // default to 1e3
-            let weights = value_t!(matches, "weights", String).unwrap_or("default_weights".to_string());
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
+            let max_N: usize = matches.value_of_t("max_N").unwrap_or(100000000);  // default to 1e8
+            let min_error_cases: usize = matches.value_of_t("min_error_cases").unwrap_or(1000);  // default to 1e3
+            let weights: String = matches.value_of_t("weights").unwrap_or("default_weights".to_string());
+            let parallel: usize = matches.value_of_t("parallel").unwrap_or(1);  // default to 1
             error_rate_MWPM_with_weight(&Ls, &ps, max_N, min_error_cases, &weights, parallel);
         }
-        ("fault_tolerant_benchmark", Some(matches)) => {
-            let dis = value_t!(matches, "Ls", String).expect("required");
-            let djs = value_t!(matches, "djs", String).unwrap_or(dis.clone());
+        Some(("fault_tolerant_benchmark", matches)) => {
+            let dis: String = matches.value_of_t("Ls").expect("required");
+            let djs: String = matches.value_of_t("djs").unwrap_or(dis.clone());
             let dis: Vec<usize> = serde_json::from_str(&dis).expect("Ls should be [L1,L2,L3,...,Ln]");
             let djs: Vec<usize> = serde_json::from_str(&djs).expect("djs should be [dj1,dj2,dj3,...,djn]");
-            let Ts = value_t!(matches, "Ts", String).expect("required");
+            let Ts: String = matches.value_of_t("Ts").expect("required");
             let Ts: Vec<usize> = serde_json::from_str(&Ts).expect("Ts should be [T1,T2,T3,...,Tn]");
             assert!(Ts.len() == dis.len(), "Ts and dis should be paired");
             assert!(dis.len() == djs.len(), "dis and djs should be paired");
-            let ps = value_t!(matches, "ps", String).expect("required");
+            let ps: String = matches.value_of_t("ps").expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let pes = value_t!(matches, "pes", String);
+            let pes: Option<String> = matches.value_of_t("pes").ok();
             let pes: Vec<f64> = match pes {
-                Ok(pes) => serde_json::from_str(&pes).expect("pes should be [pe1,pe2,pe3,...,pem]"),
-                Err(_) => vec![0.; ps.len()],  // by default no erasure errors
+                Some(pes) => serde_json::from_str(&pes).expect("pes should be [pe1,pe2,pe3,...,pem]"),
+                None => vec![0.; ps.len()],  // by default no erasure errors
             };
-            let mut max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
+            let mut max_N: usize = matches.value_of_t("max_N").unwrap_or(100000000);  // default to 1e8
             if max_N == 0 {
                 max_N = usize::MAX;
             }
-            let mut min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
+            let mut min_error_cases: usize = matches.value_of_t("min_error_cases").unwrap_or(10000);  // default to 1e3
             if min_error_cases == 0 {
                 min_error_cases = usize::MAX;
             }
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("boundary".to_string());
-            let mini_sync_time = value_t!(matches, "mini_sync_time", f64).unwrap_or(0.5);  // default to 0.5s
+            let parallel: usize = matches.value_of_t("parallel").unwrap_or(1);  // default to 1
+            let validate_layer: String = matches.value_of_t("validate_layer").unwrap_or("boundary".to_string());
+            let mini_sync_time: f64 = matches.value_of_t("mini_sync_time").unwrap_or(0.5);  // default to 0.5s
             let autotune = ! matches.is_present("no_autotune");  // default autotune is enabled
             let rotated_planar_code = matches.is_present("rotated_planar_code");  // default use standard planar code
             let ignore_6_neighbors = matches.is_present("ignore_6_neighbors");  // default use 12 neighbors version
-            let extra_measurement_error = value_t!(matches, "extra_measurement_error", f64).unwrap_or(1.);  // default to 1.
+            let extra_measurement_error: f64 = matches.value_of_t("extra_measurement_error").unwrap_or(1.);  // default to 1.
             let bypass_correction = matches.is_present("bypass_correction");
             let independent_px_pz = matches.is_present("independent_px_pz");
             let only_count_logical_x = matches.is_present("only_count_logical_x");
@@ -117,29 +117,29 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let no_y_error = matches.is_present("no_y_error");
             let use_xzzx_code = matches.is_present("use_xzzx_code");
             let use_rotated_tailored_code = matches.is_present("use_rotated_tailored_code");
-            let bias_eta = value_t!(matches, "bias_eta", f64).unwrap_or(0.5);  // default to 0.5
-            let decoder_type = DecoderType::from(value_t!(matches, "decoder", String).unwrap_or("MWPM".to_string()));
-            let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
+            let bias_eta: f64 = matches.value_of_t("bias_eta").unwrap_or(0.5);  // default to 0.5
+            let decoder_type = DecoderType::from(matches.value_of_t::<String>("decoder").unwrap_or("MWPM".to_string()));
+            let max_half_weight: usize = matches.value_of_t("max_half_weight").unwrap_or(1);  // default to 1
             let disable_combined_probability = matches.is_present("disable_combined_probability");
             let disable_autotune_minus_no_error = matches.is_present("disable_autotune_minus_no_error");
-            let error_model = value_t!(matches, "error_model", String).ok().map(|x| ErrorModel::from(x));
-            let error_model_configuration: Option<serde_json::Value> = value_t!(matches, "error_model_configuration", String).ok().and_then(|config| {
+            let error_model: Option<ErrorModel> = matches.value_of_t("error_model").ok().map(|x: String| ErrorModel::from(x));
+            let error_model_configuration: Option<serde_json::Value> = matches.value_of_t::<String>("error_model_configuration").ok().and_then(|config| {
                 Some(serde_json::from_str(config.as_str()).expect("error_model_configuration must be a json object"))
             });
             let no_stop_if_next_model_is_not_prepared = matches.is_present("no_stop_if_next_model_is_not_prepared");
-            let log_runtime_statistics = value_t!(matches, "log_runtime_statistics", String).ok();
+            let log_runtime_statistics: Option<String> = matches.value_of_t("log_runtime_statistics").ok();
             let detailed_runtime_statistics = matches.is_present("detailed_runtime_statistics");
             let log_error_pattern_into_statistics_when_has_logical_error = matches.is_present("log_error_pattern_into_statistics_when_has_logical_error");
-            let time_budget = value_t!(matches, "time_budget", f64).ok();
+            let time_budget: Option<f64> = matches.value_of_t("time_budget").ok();
             let use_fast_benchmark = matches.is_present("use_fast_benchmark");
             let fbench_disable_additional_error = matches.is_present("fbench_disable_additional_error");
             let fbench_use_fake_decoder = matches.is_present("fbench_use_fake_decoder");
             let fbench_use_simple_sum = matches.is_present("fbench_use_simple_sum");
-            let fbench_assignment_sampling_amount = value_t!(matches, "fbench_assignment_sampling_amount", usize).unwrap_or(1);  // default to 1
+            let fbench_assignment_sampling_amount: usize = matches.value_of_t("fbench_assignment_sampling_amount").unwrap_or(1);  // default to 1
             let fbench_weighted_path_sampling = matches.is_present("fbench_weighted_path_sampling");
             let fbench_weighted_assignment_sampling = matches.is_present("fbench_weighted_assignment_sampling");
-            let fbench_target_dev = value_t!(matches, "fbench_target_dev", f64).unwrap_or(0.);  // default to 0
-            let rug_precision = value_t!(matches, "rug_precision", u32).unwrap_or(128);  // default to 128
+            let fbench_target_dev: f64 = matches.value_of_t("fbench_target_dev").unwrap_or(0.);  // default to 0
+            let rug_precision: u32 = matches.value_of_t("rug_precision").unwrap_or(128);  // default to 128
             let disable_optimize_correction_pattern = matches.is_present("disable_optimize_correction_pattern");
             let debug_print_only = matches.is_present("debug_print_only");
             let debug_print_direct_connections = matches.is_present("debug_print_direct_connections");
@@ -148,7 +148,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let debug_print_with_all_possible_error_rates = matches.is_present("debug_print_with_all_possible_error_rates");
             let use_reduced_graph = !matches.is_present("disable_reduced_graph");
             let mut error_model_modifier_str: Option<String> = None;
-            match value_t!(matches, "load_error_model_from_temporary_store", usize) {
+            match matches.value_of_t::<usize>("load_error_model_from_temporary_store") {
                 Ok(error_model_temporary_id) => {
                     match local_get_temporary_store(error_model_temporary_id) {
                         Some(value) => { error_model_modifier_str = Some(value); },
@@ -157,7 +157,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
                 },
                 Err(_) => { },
             }
-            match value_t!(matches, "load_error_model_from_file", String) {
+            match matches.value_of_t::<String>("load_error_model_from_file") {
                 Ok(error_model_filepath) => {
                     match fs::read_to_string(error_model_filepath.clone()) {
                         Ok(value) => { error_model_modifier_str = Some(value); },
@@ -183,94 +183,94 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
                 , debug_print_only, debug_print_direct_connections, debug_print_exhausted_connections, debug_print_error_model, debug_print_with_all_possible_error_rates
                 , use_reduced_graph, error_model_modifier));
         }
-        ("decoder_comparison_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
+        Some(("decoder_comparison_benchmark", matches)) => {
+            let Ls: String = matches.value_of_t("Ls").expect("required");
             let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let Ts = value_t!(matches, "Ts", String).expect("required");
+            let Ts: String = matches.value_of_t("Ts").expect("required");
             let Ts: Vec<usize> = serde_json::from_str(&Ts).expect("Ts should be [T1,T2,T3,...,Tn]");
             assert!(Ts.len() == Ls.len(), "Ts and Ls should be paired");
-            let ps = value_t!(matches, "ps", String).expect("required");
+            let ps: String = matches.value_of_t("ps").expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("boundary".to_string());
-            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
+            let max_N: usize = matches.value_of_t("max_N").unwrap_or(100000000);  // default to 1e8
+            let min_error_cases: usize = matches.value_of_t("min_error_cases").unwrap_or(10000);  // default to 1e3
+            let parallel: usize = matches.value_of_t("parallel").unwrap_or(1);  // default to 1
+            let validate_layer: String = matches.value_of_t("validate_layer").unwrap_or("boundary".to_string());
+            let mini_batch: usize = matches.value_of_t("mini_batch").unwrap_or(1);  // default to 1
             let autotune = ! matches.is_present("no_autotune");  // default autotune is enabled
             let rotated_planar_code = matches.is_present("rotated_planar_code");  // default use standard planar code
             let ignore_6_neighbors = matches.is_present("ignore_6_neighbors");  // default use 12 neighbors version
-            let extra_measurement_error = value_t!(matches, "extra_measurement_error", f64).unwrap_or(1.);  // default to 1.
+            let extra_measurement_error: f64 = matches.value_of_t("extra_measurement_error").unwrap_or(1.);  // default to 1.
             let bypass_correction = matches.is_present("bypass_correction");
             let independent_px_pz = matches.is_present("independent_px_pz");
             let only_count_logical_x = matches.is_present("only_count_logical_x");
             let imperfect_initialization = matches.is_present("imperfect_initialization");
-            let substreams = value_t!(matches, "substreams", usize).unwrap_or(32);  // default to 32.
+            let substreams: usize = matches.value_of_t("substreams").unwrap_or(32);  // default to 32.
             decoder_comparison_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
                 , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, !imperfect_initialization, substreams);
         }
-        ("offer_decoder_standard_planar_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
+        Some(("offer_decoder_standard_planar_benchmark", matches)) => {
+            let Ls: String = matches.value_of_t("Ls").expect("required");
             let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
+            let ps: String = matches.value_of_t("ps").expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
+            let max_N: usize = matches.value_of_t("max_N").unwrap_or(100000000);  // default to 1e8
+            let min_error_cases: usize = matches.value_of_t("min_error_cases").unwrap_or(10000);  // default to 1e3
+            let parallel: usize = matches.value_of_t("parallel").unwrap_or(1);  // default to 1
+            let mini_batch: usize = matches.value_of_t("mini_batch").unwrap_or(1);  // default to 1
             let only_count_logical_x = matches.is_present("only_count_logical_x");
-            let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(usize::MAX);
-            let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(usize::MAX);
+            let max_resend: usize = matches.value_of_t("max_resend").unwrap_or(usize::MAX);
+            let max_cycles: usize = matches.value_of_t("max_cycles").unwrap_or(usize::MAX);
             let disable_probabilistic_accept = matches.is_present("disable_probabilistic_accept");
-            let repeat_experiment_each_error = value_t!(matches, "repeat_experiment_each_error", usize).unwrap_or(1);
+            let repeat_experiment_each_error: usize = matches.value_of_t("repeat_experiment_each_error").unwrap_or(1);
             offer_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, max_resend, max_cycles
                 , disable_probabilistic_accept, repeat_experiment_each_error);
         }
-        ("offer_algorithm_standard_planar_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
+        Some(("offer_algorithm_standard_planar_benchmark", matches)) => {
+            let Ls: String = matches.value_of_t("Ls").expect("required");
             let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
+            let ps: String = matches.value_of_t("ps").expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
+            let max_N: usize = matches.value_of_t("max_N").unwrap_or(100000000);  // default to 1e8
+            let min_error_cases: usize = matches.value_of_t("min_error_cases").unwrap_or(10000);  // default to 1e3
+            let parallel: usize = matches.value_of_t("parallel").unwrap_or(1);  // default to 1
+            let mini_batch: usize = matches.value_of_t("mini_batch").unwrap_or(1);  // default to 1
             let only_count_logical_x = matches.is_present("only_count_logical_x");
-            let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(usize::MAX);
-            let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(usize::MAX);
+            let max_resend: usize = matches.value_of_t("max_resend").unwrap_or(usize::MAX);
+            let max_cycles: usize = matches.value_of_t("max_cycles").unwrap_or(usize::MAX);
             let disable_probabilistic_accept = matches.is_present("disable_probabilistic_accept");
-            let repeat_experiment_each_error = value_t!(matches, "repeat_experiment_each_error", usize).unwrap_or(1);
+            let repeat_experiment_each_error: usize = matches.value_of_t("repeat_experiment_each_error").unwrap_or(1);
             offer_algorithm_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, max_resend, max_cycles
                 , disable_probabilistic_accept, repeat_experiment_each_error);
         }
-        ("union_find_decoder_standard_planar_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
+        Some(("union_find_decoder_standard_planar_benchmark", matches)) => {
+            let Ls: String = matches.value_of_t("Ls").expect("required");
             let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
+            let ps: String = matches.value_of_t("ps").expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
+            let max_N: usize = matches.value_of_t("max_N").unwrap_or(100000000);  // default to 1e8
+            let min_error_cases: usize = matches.value_of_t("min_error_cases").unwrap_or(10000);  // default to 1e3
+            let parallel: usize = matches.value_of_t("parallel").unwrap_or(1);  // default to 1
+            let mini_batch: usize = matches.value_of_t("mini_batch").unwrap_or(1);  // default to 1
             let only_count_logical_x = matches.is_present("only_count_logical_x");
             let no_y_error = matches.is_present("no_y_error");
             let towards_mwpm = matches.is_present("towards_mwpm");
-            let max_half_weight = value_t!(matches, "max_half_weight", usize).unwrap_or(1);  // default to 1
-            let bias_eta = value_t!(matches, "bias_eta", f64).unwrap_or(0.5);  // default to 0.5
+            let max_half_weight: usize = matches.value_of_t("max_half_weight").unwrap_or(1);  // default to 1
+            let bias_eta: f64 = matches.value_of_t("bias_eta").unwrap_or(0.5);  // default to 0.5
             union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, no_y_error, towards_mwpm
                 , max_half_weight, bias_eta);
         }
-        ("distributed_union_find_decoder_standard_planar_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
+        Some(("distributed_union_find_decoder_standard_planar_benchmark", matches)) => {
+            let Ls: String = matches.value_of_t("Ls").expect("required");
             let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
+            let ps: String = matches.value_of_t("ps").expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
+            let max_N: usize = matches.value_of_t("max_N").unwrap_or(100000000);  // default to 1e8
+            let min_error_cases: usize = matches.value_of_t("min_error_cases").unwrap_or(10000);  // default to 1e3
+            let parallel: usize = matches.value_of_t("parallel").unwrap_or(1);  // default to 1
+            let mini_batch: usize = matches.value_of_t("mini_batch").unwrap_or(1);  // default to 1
             let only_count_logical_x = matches.is_present("only_count_logical_x");
             let output_cycle_distribution = matches.is_present("output_cycle_distribution");
-            let fast_channel_interval = value_t!(matches, "fast_channel_interval", usize).unwrap_or(0);  // default to 0
+            let fast_channel_interval: usize = matches.value_of_t("fast_channel_interval").unwrap_or(0);  // default to 0
             let no_y_error = matches.is_present("no_y_error");
             distributed_union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, output_cycle_distribution, fast_channel_interval, no_y_error);
         }

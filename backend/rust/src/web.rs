@@ -116,22 +116,22 @@ pub fn local_put_temporary_store(value: String) -> Option<usize> {
 cfg_if::cfg_if! {
     if #[cfg(not(feature="noserver"))] {
 
-
         pub const TEMPORARY_STORE_SIZE_LIMIT: usize = 10_000_000;  // 10MB, only applicable to web service
 
         pub async fn run_server(port: i32, addr: String, root_url: String) -> std::io::Result<()> {
             HttpServer::new(move || {
                 App::new()
-                    .data(web::JsonConfig::default().limit(1024 * 1024 * 50))
+                    .app_data(web::Data::new(web::JsonConfig::default().limit(1024 * 1024 * 50)))
                     .wrap(actix_cors::Cors::permissive())
                     .service(
-                        web::scope(root_url.as_str())
-                            .route("/hello", web::get().to(|| { HttpResponse::Ok().body("hello world") }))
-                            .route("/naive_decoder", web::post().to(naive_decoder))
-                            .route("/MWPM_decoder", web::post().to(maximum_max_weight_matching_decoder))  // temporarily disabled to remove dependency of python
-                            .route("/view_error_model", web::get().to(view_error_model))
-                            .route("/new_temporary_store", web::post().to(new_temporary_store))
-                            .route("/get_temporary_store/{resource_id}", web::get().to(get_temporary_store))
+                        web::scope(root_url.as_str().trim_end_matches('/'))  // must remove trailing slashes from scope, see https://actix.rs/actix-web/actix_web/struct.Scope.html
+                            .service(web::resource("hello").route(web::get().to(get_hello)))
+                            .service(web::resource("version").route(web::get().to(get_version)))
+                            .service(web::resource("naive_decoder").route(web::post().to(naive_decoder)))
+                            .service(web::resource("MWPM_decoder").route(web::post().to(maximum_max_weight_matching_decoder)))
+                            .service(web::resource("view_error_model").route(web::get().to(view_error_model)))
+                            .service(web::resource("new_temporary_store").route(web::post().to(new_temporary_store)))
+                            .service(web::resource("get_temporary_store/{resource_id}").route(web::get().to(get_temporary_store)))
                     )
                 }).bind(format!("{}:{}", addr, port))?.run().await
         }
@@ -170,6 +170,14 @@ cfg_if::cfg_if! {
                 matrix.push(row);
             }
             json!(matrix)
+        }
+
+        async fn get_hello() -> Result<HttpResponse, Error> {
+            Ok(HttpResponse::Ok().body("hello world"))
+        }
+
+        async fn get_version() -> Result<HttpResponse, Error> {
+            Ok(HttpResponse::Ok().body(env!("CARGO_PKG_VERSION")))
         }
 
         /// Decode a single error pattern using naive_correction
@@ -312,12 +320,12 @@ cfg_if::cfg_if! {
                 }
             });
             // println!("full_command: {:?}", tokens);
-            let matches = match super::create_clap_parser(clap::AppSettings::ColorNever).get_matches_from_safe(tokens) {
+            let matches = match super::create_clap_parser(clap::ColorChoice::Never).try_get_matches_from(tokens) {
                 Ok(matches) => matches,
-                Err(error) => { return Ok(HttpResponse::BadRequest().body(error.message)) }
+                Err(error) => { return Ok(HttpResponse::BadRequest().body(format!("{:?}", error))) }
             };
             let output = match matches.subcommand() {
-                ("tool", Some(matches)) => {
+                Some(("tool", matches)) => {
                     super::tool::run_matched_tool(&matches).expect("fault_tolerant_benchmark always gives output")
                 }
                 _ => unreachable!()

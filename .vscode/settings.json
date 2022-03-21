@@ -20,5 +20,7 @@
             "*.gp",
         ],
     },
-    "pdf-preview.default.scale": "page-fit"
+    "pdf-preview.default.scale": "page-fit",
+    "svgviewer.enableautopreview": true,
+    "svgviewer.previewcolumn": "Active"
 }
