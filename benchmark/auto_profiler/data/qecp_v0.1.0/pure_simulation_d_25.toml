@@ -1,3 +1,6 @@
-create_time = "2022-03-20 23:46:00"
-time_consumption = 25.41815972328186
-stdout = [ "format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>", "0.01 25 25 584 439 0.7517123287671232 25 4.7e-2 0", "writing flamegraph to \"/Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.0/pure_simulation_d_25.svg\"", "",]
+create_time = "2022-03-20 23:59:19"
+time_consumption = 65.77405500411987
+command = [ "sudo", "flamegraph", "-o", "/Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.0/pure_simulation_d_25.svg", "/Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp", "tool", "fault_tolerant_benchmark", "[25]", "[25]", "[0.01]", "--bypass_correction", "--max_N", "0", "--min_error_cases", "0", "--time_budget", "60",]
+command_str = "sudo flamegraph -o /Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.0/pure_simulation_d_25.svg /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [25] [25] [0.01] --bypass_correction --max_N 0 --min_error_cases 0 --time_budget 60"
+name = "pure_simulation_d_25"
+stdout = [ "format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>", "0.01 25 25 1753 1301 0.742156303479749 25 2.8e-2 0", "writing flamegraph to \"/Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.0/pure_simulation_d_25.svg\"", "",]

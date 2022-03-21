@@ -42,6 +42,9 @@ def run_profile_command(name, data_folder, command, verbose=True):
     assert returncode == 0, "command failed..."
     splitted_stdout = [line.strip("\r\n") for line in stdout.split("\n")]
     data["time_consumption"] = time_consumption
+    data["command"] = command
+    data["command_str"] = " ".join(command)
+    data["name"] = name
     data["stdout"] = splitted_stdout
     with open(data_path, "w", encoding="utf8") as f:
         f.write(toml.dumps(data))
