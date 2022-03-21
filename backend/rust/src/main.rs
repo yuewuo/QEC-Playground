@@ -43,7 +43,7 @@ extern crate platform_dirs;
 
 fn create_clap_parser<'a, 'b>(color_setting: clap::AppSettings) -> clap::App<'a, 'b> {
     clap_app!(QECPlayground =>
-        (version: "1.1")
+        (version: env!("CARGO_PKG_VERSION"))
         (author: "Yue Wu (yue.wu@yale.edu), Namitha Liyanage (namitha.liyanage@yale.edu)")
         (setting: clap::AppSettings::VersionlessSubcommands)
         (setting: color_setting)
@@ -137,8 +137,8 @@ fn create_clap_parser<'a, 'b>(color_setting: clap::AppSettings) -> clap::App<'a,
                 (@arg Ts: +required "[T1,T2,T3,...,Tn], must have exactly the same length as `Ls`")
                 (@arg ps: +required "[p1,p2,p3,...,pm] p = px + py + pz")
                 (@arg pes: --pes +takes_value "[pe1,pe2,pe3,...,pem] erasure error rate, default to 0")
-                (@arg max_N: -m --max_N +takes_value "maximum total count, default to 100000000")
-                (@arg min_error_cases: -e --min_error_cases +takes_value "minimum error cases, default to 10000")
+                (@arg max_N: -m --max_N +takes_value "maximum total count, default to 100000000; 0 for infinity")
+                (@arg min_error_cases: -e --min_error_cases +takes_value "minimum error cases, default to 10000; 0 for infinity")
                 (@arg parallel: -p --parallel +takes_value "how many parallel threads to use. 0 will use number of CPUs - 1")
                 (@arg validate_layer: -v --validate_layer +takes_value "validate correction on which layer (all/top/bottom/boundary/<layer>), default to `boundary`")
                 (@arg mini_sync_time: --mini_sync_time +takes_value "minimum sync time, default to 0.5s")
@@ -146,7 +146,7 @@ fn create_clap_parser<'a, 'b>(color_setting: clap::AppSettings) -> clap::App<'a,
                 (@arg rotated_planar_code: -r --rotated_planar_code "use rotated planar code instead of standard planar code")
                 (@arg ignore_6_neighbors: -i --ignore_6_neighbors "ignore 6 neighbors, so that only straight neighbors are kept")
                 (@arg extra_measurement_error: -x --extra_measurement_error +takes_value "the pure measurement error would be p*x, default to 1")
-                (@arg bypass_correction: --bypass_correction "bypass correction procedure to test is logical error rate calculation behaving good")
+                (@arg bypass_correction: --bypass_correction "bypass correction procedure to test is logical error rate calculation behaving good; it's also useful when benchmarking the speed of pure simulation")
                 (@arg independent_px_pz: --independent_px_pz "change the error model to (1-px-pz-pxpz)I + px X + pz Z + pxpz Y")
                 (@arg only_count_logical_x: --only_count_logical_x "only count X logical errors but not all logical error. Alert: only available when validate_layer != all")
                 (@arg only_count_logical_z: --only_count_logical_z "only count Z logical errors but not all logical error. Alert: only available when validate_layer != all")

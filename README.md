@@ -124,9 +124,15 @@ To maximize running speed, run
 RUSTFLAGS="-C target-cpu=native" cargo run --release
 ```
 
+## Change Log
+
+See [CHANGELOG.md](CHANGELOG.md)
+
 ## Contributions
 
-Guojun: design GUI. design and implement machine learning based weight optimized MWPM decoder.
+Yue Wu (yue.wu@yale.edu): implement 3D GUI. design and implement interactive tutorial. propose and implement naïve decoder. implement MWPM decoder. Implement different variants of surface code and different decoders (see change log 2020.11.8 - 2022.3.20). The major developer and maintainer of this repository.
 
-Yue: implement 3D GUI. design and implement interactive tutorial. propose and implement naïve decoder. implement MWPM decoder.
+Guojun Chen: collaborator of CPSC 559 course project: design GUI. design and implement machine learning based weight optimized MWPM decoder.
+
+Namitha Godawatte Liyanage: implement approximate MWPM decoder and FPGA related functionalities.
 

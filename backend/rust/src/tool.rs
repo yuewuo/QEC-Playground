@@ -780,33 +780,38 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                 }
             });
         }
-        let mut fast_benchmark = model.build_graph_fast_benchmark(weight_function, use_fast_benchmark);
-        if use_fast_benchmark {
-            fast_benchmark.as_mut().unwrap().assignment_sampling_amount = fbench_assignment_sampling_amount;
-            fast_benchmark.as_mut().unwrap().use_weighted_path_sampling = fbench_weighted_path_sampling;
-            fast_benchmark.as_mut().unwrap().use_weighted_assignment_sampling = fbench_weighted_assignment_sampling;
-            fast_benchmark.as_mut().unwrap().use_simple_sum = fbench_use_simple_sum;
-            fast_benchmark.as_mut().unwrap().prepare();
-        }
-        if ignore_6_neighbors {
-            model.iterate_snapshot_mut(|t, i, j, node| {
-                if node.edges.len() == 12 {
-                    let mut modified_edges = Vec::new();
-                    for edge in node.edges.drain(..) {
-                        let tc = t != edge.t;
-                        let ic = i != edge.i;
-                        let jc = j != edge.j;
-                        if (tc && !ic && !jc) || (!tc && ic && !jc) || (!tc && !ic && jc) {
-                            modified_edges.push(edge);
+        let fast_benchmark = if !bypass_correction {
+            let mut fast_benchmark = model.build_graph_fast_benchmark(weight_function, use_fast_benchmark);
+            if use_fast_benchmark {
+                fast_benchmark.as_mut().unwrap().assignment_sampling_amount = fbench_assignment_sampling_amount;
+                fast_benchmark.as_mut().unwrap().use_weighted_path_sampling = fbench_weighted_path_sampling;
+                fast_benchmark.as_mut().unwrap().use_weighted_assignment_sampling = fbench_weighted_assignment_sampling;
+                fast_benchmark.as_mut().unwrap().use_simple_sum = fbench_use_simple_sum;
+                fast_benchmark.as_mut().unwrap().prepare();
+            }
+            if ignore_6_neighbors {
+                model.iterate_snapshot_mut(|t, i, j, node| {
+                    if node.edges.len() == 12 {
+                        let mut modified_edges = Vec::new();
+                        for edge in node.edges.drain(..) {
+                            let tc = t != edge.t;
+                            let ic = i != edge.i;
+                            let jc = j != edge.j;
+                            if (tc && !ic && !jc) || (!tc && ic && !jc) || (!tc && !ic && jc) {
+                                modified_edges.push(edge);
+                            }
                         }
+                        assert!(modified_edges.len() <= 6, "we keep only 6 neighbors");
+                        node.edges = modified_edges;
                     }
-                    assert!(modified_edges.len() <= 6, "we keep only 6 neighbors");
-                    node.edges = modified_edges;
-                }
-            });
-        }
+                });
+            }
+            fast_benchmark
+        } else {
+            None
+        };
         let model_error = model.clone();  // avoid copying decoding structure a lot of times
-        if !disable_optimize_correction_pattern {
+        if !bypass_correction && !disable_optimize_correction_pattern {
             model.optimize_correction_pattern();
         }
         if !bypass_correction && !debug_print_error_model {

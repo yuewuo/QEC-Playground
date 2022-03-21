@@ -8,8 +8,9 @@ edition = "2018"
 # # profiling: https://github.com/flamegraph-rs/flamegraph
 # # enable the following debug configuration, and then run `cargo flamegraph -- ...` which is equivalent to `cargo run --release -- ...`
 # # e.g. `cargo flamegraph --root -- tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1 '[0.01]' -p1 --time_budget 3600 --rotated_planar_code`
-# [profile.release]
-# debug = true
+# embed debug symbols, increase the binary from 7MB to 9.3MB which is acceptable
+[profile.release]
+debug = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
