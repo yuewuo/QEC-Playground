@@ -1,9 +1,9 @@
 [package]
 name = "rust_qecp"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Yue Wu <yue.wu@yale.edu>"]
-description = "Quantum Error Correction Playground for BIM'20 course"
-edition = "2018"
+description = "Quantum Error Correction Playground for Surface Code Research"
+edition = "2021"
 
 # # profiling: https://github.com/flamegraph-rs/flamegraph
 # # enable the following debug configuration, and then run `cargo flamegraph -- ...` which is equivalent to `cargo run --release -- ...`
