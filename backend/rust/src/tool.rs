@@ -26,11 +26,45 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
 use super::reproducible_rand::Xoroshiro128StarStar;
-use super::web::local_get_temporary_store;
+use super::util::local_get_temporary_store;
 use std::fs;
+use super::code_builder::*;
+use super::simulator::*;
+use super::clap::{arg, command, ArgEnum, PossibleValue};
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
+        Some(("benchmark", matches)) => {
+            let dis: String = matches.value_of_t("dis").expect("required");
+            let djs: String = matches.value_of_t("djs").unwrap_or(dis.clone());
+            let dis: Vec<usize> = serde_json::from_str(&dis).expect("dis should be [di1,di2,di3,...,din]");
+            let djs: Vec<usize> = serde_json::from_str(&djs).expect("djs should be [dj1,dj2,dj3,...,djn]");
+            let nms: String = matches.value_of_t("nms").expect("required");
+            let nms: Vec<usize> = serde_json::from_str(&nms).expect("nms should be [nm1,nm2,nm3,...,nmn]");
+            assert!(nms.len() == dis.len(), "nms and dis should be paired");
+            assert!(dis.len() == djs.len(), "dis and djs should be paired");
+            let ps: String = matches.value_of_t("ps").expect("required");
+            let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
+            let pes: Option<String> = matches.value_of_t("pes").ok();
+            let pes: Vec<f64> = match pes {
+                Some(pes) => serde_json::from_str(&pes).expect("pes should be [pe1,pe2,pe3,...,pem]"),
+                None => vec![0.; ps.len()],  // by default no erasure errors
+            };
+            let bias_eta: f64 = matches.value_of_t("bias_eta").unwrap();
+            assert_eq!(pes.len(), ps.len(), "pe and p should be paired");
+            let mut max_N: usize = matches.value_of_t("max_N").unwrap();
+            if max_N == 0 {
+                max_N = usize::MAX;
+            }
+            let mut min_error_cases: usize = matches.value_of_t("min_error_cases").unwrap();
+            if min_error_cases == 0 {
+                min_error_cases = usize::MAX;
+            }
+            let parallel: usize = matches.value_of_t("parallel").unwrap_or(1);  // default to 1
+            let code_type: String = matches.value_of_t("code_type").unwrap_or("StandardPlanarCode".to_string());
+            let debug_print = matches.value_of_t::<BenchmarkDebugPrint>("debug_print").ok();
+            return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_N, min_error_cases, parallel, code_type, debug_print));
+        }
         Some(("fault_tolerant_benchmark", matches)) => {
             let dis: String = matches.value_of_t("Ls").expect("required");
             let djs: String = matches.value_of_t("djs").unwrap_or(dis.clone());
@@ -209,6 +243,73 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     None
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
+pub enum BenchmarkDebugPrint {
+    ErrorModel,
+}
+
+impl BenchmarkDebugPrint {
+    pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
+        Self::value_variants().iter().filter_map(ArgEnum::to_possible_value)
+    }
+}
+
+impl std::str::FromStr for BenchmarkDebugPrint {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        for variant in Self::value_variants() {
+            if variant.to_possible_value().unwrap().matches(s, false) {
+                return Ok(*variant);
+            }
+        }
+        Err(format!("Invalid variant: {}", s))
+    }
+}
+
+fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_N: usize, min_error_cases: usize
+        , parallel: usize, code_type: String, debug_print: Option<BenchmarkDebugPrint>) -> String {
+    let mut output = format!("");  // empty output string
+    // if parallel = 0, use all CPU resources
+    let mut parallel = parallel;
+    if parallel == 0 {
+        parallel = num_cpus::get() - 1;
+    }
+    // first list all configurations and validate them at the beginning
+    assert_eq!(pes.len(), ps.len(), "pe and p should be matched");
+    let mut configurations = Vec::new();
+    for (di_idx, &di) in dis.iter().enumerate() {
+        let noisy_measurements = nms[di_idx];
+        let dj = djs[di_idx];
+        for (p_idx, p) in ps.iter().enumerate() {
+            let p = *p;
+            let pe = pes[p_idx];
+            assert!(p >= 0. && p <= 1.0, "invalid probability value");
+            assert!(pe >= 0. && pe <= 1.0, "invalid probability value");
+            configurations.push((di, dj, noisy_measurements, p, pe));
+        }
+    }
+    if debug_print.is_none() {  // debug print only will not run simulations
+        println!("format: <p> <di> <nm> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>");  // compatible with old scripts
+    }
+    // start running simulations
+    for &(di, dj, noisy_measurements, p, pe) in configurations.iter() {
+        // prepare simulator
+        let mut simulator = Simulator::new(CodeType::new(&code_type, noisy_measurements, di, dj));
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = p - 2. * px;
+        simulator.set_error_rates(px, py, pz, pe);
+        // TODO: apply custom error model
+        simulator.error_rate_sanity_check().unwrap();  // sanity check
+
+        // TODO: build model graph
+
+        // TODO: optionally build complete model graph when code size is small and decoder type supports it, to speed up small code decoding
+
+        //
+    }
+    output
+}
 
 /**
 default example:
@@ -404,10 +505,10 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
             model.iterate_snapshot_mut(|_t, _i, _j, node| {
                 if node.connection.is_some() {
                     if node.correlated_error_model.is_none() {
-                        node.correlated_error_model = Some(CorrelatedErrorModel::default_with_probability(0.));
+                        node.correlated_error_model = Some(CorrelatedPauliErrorRates::default_with_probability(0.));
                     }
                     if node.correlated_erasure_error_model.is_none() {
-                        node.correlated_erasure_error_model = Some(CorrelatedErasureErrorModel::default_with_probability(0.));
+                        node.correlated_erasure_error_model = Some(CorrelatedErasureErrorRates::default_with_probability(0.));
                     }
                 }
             });

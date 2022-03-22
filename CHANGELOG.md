@@ -10,8 +10,8 @@ For major updates, please run the [auto profiler](benchmark/auto_profiler/auto_p
 
 ## 0.1.3 (2022.3.21)
 
-- [ ] redesign the simulator for much smaller memory usage for faster simulation (the current bottleneck), use Box for optional fields, for example correlated error rate
-- [ ] split the project into using `workspace`, to improve compile speed by letting different packages be compiled individually
+- [x] remove `mwpm_approx.rs` because we don't need it anymore
+- [ ] redesign the simulator for improved locality and faster simulation (the current bottleneck), use Box for optional fields, for example correlated error rate
 
 ## 0.1.2 (2022.3.21)
 

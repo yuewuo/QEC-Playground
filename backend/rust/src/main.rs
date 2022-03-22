@@ -4,7 +4,6 @@ mod tool;
 mod types;
 mod web;
 mod blossom_v;
-mod mwpm_approx;
 mod ftqec;
 mod offer_decoder;
 mod reproducible_rand;
@@ -13,6 +12,8 @@ mod union_find_decoder;
 mod distributed_uf_decoder;
 mod fpga_generator;
 mod fast_benchmark;
+mod simulator;
+mod code_builder;
 
 extern crate clap;
 #[macro_use] extern crate serde_json;
@@ -102,6 +103,19 @@ fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> 
             .about("tools")
             .subcommand_required(true)
             .arg_required_else_help(true)
+            .subcommand(clap::Command::new("benchmark").about("benchmark surface code decoders")
+                .arg(clap::Arg::new("dis").help("[di1,di2,di3,...,din] code distance of vertical axis").takes_value(true).required(true))
+                .arg(clap::Arg::new("djs").long("djs").help("[dj1,dj2,dj3,...,djn] code distance of horizontal axis, will use `dis` if not provided, otherwise must have exactly the same length as `dis`").takes_value(true))
+                .arg(clap::Arg::new("nms").help("[nm1,nm2,nm3,...,nmn] number of noisy measurement rounds, must have exactly the same length as `dis`; note that a perfect measurement is always capped at the end, so to simulate a single round of perfect measurement you should set this to 0").takes_value(true).required(true))
+                .arg(clap::Arg::new("ps").help("[p1,p2,p3,...,pm] p = px + py + pz unless error model has special interpretation of this value").takes_value(true).required(true))
+                .arg(clap::Arg::new("pes").long("pes").help("[pe1,pe2,pe3,...,pem] erasure error rate, default to all 0").takes_value(true))
+                .arg(clap::Arg::new("bias_eta").long("bias_eta").help("bias_eta = pz / (px + py) and px = py, px + py + pz = p. default to 1/2, which means px = pz = py").takes_value(true).default_value("0.5"))
+                .arg(clap::Arg::new("max_N").short('m').long("max_N").help("maximum total count; 0 for infinity").takes_value(true).default_value("100000000"))
+                .arg(clap::Arg::new("min_error_cases").short('e').long("min_error_cases").help("minimum error cases; 0 for infinity").takes_value(true).default_value("10000"))
+                .arg(clap::Arg::new("parallel").short('p').long("parallel").help("how many parallel threads to use. 0 means using number of CPUs - 1, by default single thread").takes_value(true).default_value("1"))
+                .arg(clap::Arg::new("code_type").short('c').long("code_type").help("code type, see code_builder.rs for more information").possible_values(["StandardPlanarCode", "RotatedPlanarCode", "StandardXZZXCode", "RotatedXZZXCode", "StandardTailoredCode", "RotatedTailoredCode"]).default_value("StandardPlanarCode").takes_value(true))
+                .arg(clap::Arg::new("debug_print").long("debug_print").help("only print requested information without running the benchmark").takes_value(true).possible_values(tool::BenchmarkDebugPrint::possible_values()))
+            )
             .subcommand(clap::Command::new("fault_tolerant_benchmark").about("benchmark fault tolerant algorithm")
                 .arg(clap::Arg::new("Ls").help("[L1,L2,L3,...,Ln] will be code distance of i and j dimension if djs is not provided").takes_value(true).required(true))
                 .arg(clap::Arg::new("djs").long("djs").help("[dj1,dj2,dj3,...,djn], will be [L1,L2,L3,...,Ln] if not provided").takes_value(true))

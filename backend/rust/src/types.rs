@@ -143,25 +143,67 @@ impl std::fmt::Display for CorrelatedErrorType {
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct CorrelatedErrorModel {
+pub struct PauliErrorRates {
+    #[serde(rename = "px")]
+    pub error_rate_X: f64,
+    #[serde(rename = "py")]
+    pub error_rate_Y: f64,
+    #[serde(rename = "pz")]
+    pub error_rate_Z: f64,
+}
+
+impl PauliErrorRates {
+    pub fn default() -> Self {
+        Self::default_with_probability(0.)
+    }
+    pub fn default_with_probability(p: f64) -> Self {
+        Self {
+            error_rate_X: p,
+            error_rate_Z: p,
+            error_rate_Y: p,
+        }
+    }
+    pub fn error_probability(&self) -> f64 {
+        self.error_rate_X + self.error_rate_Z + self.error_rate_Y
+    }
+}
+
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct CorrelatedPauliErrorRates {
+    #[serde(rename = "pix")]
     pub error_rate_IX: f64,
+    #[serde(rename = "piz")]
     pub error_rate_IZ: f64,
+    #[serde(rename = "piy")]
     pub error_rate_IY: f64,
+    #[serde(rename = "pxi")]
     pub error_rate_XI: f64,
+    #[serde(rename = "pxx")]
     pub error_rate_XX: f64,
+    #[serde(rename = "pxz")]
     pub error_rate_XZ: f64,
+    #[serde(rename = "pxy")]
     pub error_rate_XY: f64,
+    #[serde(rename = "pzi")]
     pub error_rate_ZI: f64,
+    #[serde(rename = "pzx")]
     pub error_rate_ZX: f64,
+    #[serde(rename = "pzz")]
     pub error_rate_ZZ: f64,
+    #[serde(rename = "pzy")]
     pub error_rate_ZY: f64,
+    #[serde(rename = "pyi")]
     pub error_rate_YI: f64,
+    #[serde(rename = "pyx")]
     pub error_rate_YX: f64,
+    #[serde(rename = "pyz")]
     pub error_rate_YZ: f64,
+    #[serde(rename = "pyy")]
     pub error_rate_YY: f64,
 }
 
-impl CorrelatedErrorModel {
+impl CorrelatedPauliErrorRates {
     // pub fn default() -> Self {
     //     Self::default_with_probability(0.)
     // }
@@ -281,13 +323,16 @@ impl CorrelatedErasureErrorType {
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct CorrelatedErasureErrorModel {
+pub struct CorrelatedErasureErrorRates {
+    #[serde(rename = "pie")]
     pub error_rate_IE: f64,
+    #[serde(rename = "pei")]
     pub error_rate_EI: f64,
+    #[serde(rename = "pee")]
     pub error_rate_EE: f64,
 }
 
-impl CorrelatedErasureErrorModel {
+impl CorrelatedErasureErrorRates {
     // pub fn default() -> Self {
     //     Self::default_with_probability(0.)
     // }

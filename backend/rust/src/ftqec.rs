@@ -23,9 +23,8 @@ use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
 use super::blossom_v;
-use super::mwpm_approx;
 use std::sync::{Arc};
-use super::types::{QubitType, ErrorType, CorrelatedErrorType, CorrelatedErrorModel, ErrorModel, CorrelatedErasureErrorModel};
+use super::types::{QubitType, ErrorType, CorrelatedErrorType, CorrelatedPauliErrorRates, ErrorModel, CorrelatedErasureErrorRates};
 use super::union_find_decoder;
 use super::either::Either;
 use super::serde_json;
@@ -146,8 +145,8 @@ pub struct Node {
     pub j: usize,
     pub connection: Option<Connection>,
     /// note that correlated error is applied to next time step, without losing generality
-    pub correlated_error_model: Option<CorrelatedErrorModel>,
-    pub correlated_erasure_error_model: Option<CorrelatedErasureErrorModel>,
+    pub correlated_error_model: Option<CorrelatedPauliErrorRates>,
+    pub correlated_erasure_error_model: Option<CorrelatedErasureErrorRates>,
     pub gate_type: GateType,
     pub qubit_type: QubitType,
     #[serde(skip)]
@@ -2399,99 +2398,6 @@ impl PlanarCodeModel {
         (correction, runtime_statistics, edge_matchings, boundary_matchings)
     }
 
-    /// decode based on approximate MWPM
-    pub fn decode_MWPM_approx(&self, measurement: &Measurement, substreams: usize, use_modified: bool) -> Correction {
-        Correction::from(&self.decode_MWPM_approx_sparse_correction(measurement, substreams, use_modified))
-    }
-    pub fn decode_MWPM_approx_sparse_correction(&self, measurement: &Measurement, substreams: usize, use_modified: bool) -> SparseCorrection {
-        // sanity check
-        let shape = measurement.shape();
-        let width_i = 2 * self.di - 1;
-        let width_j = 2 * self.dj - 1;
-        assert_eq!(shape[0], self.MeasurementRounds + 1);
-        assert_eq!(shape[1], width_i);
-        assert_eq!(shape[2], width_j);
-        // generate all the error measurements to be matched
-        let mut to_be_matched = Vec::new();
-        for mt in 0..self.MeasurementRounds + 1 {
-            for mi in 0..width_i {
-                for mj in 0..width_j {
-                    if measurement[[mt, mi, mj]] {  // has a measurement error there
-                        to_be_matched.push(Index::from_measurement_idx(mt, mi, mj));
-                    }
-                }
-            }
-        }
-        // if to_be_matched.len() > 2 {
-        //     println!{"TBM {:?}", to_be_matched};
-        // }
-        
-
-        if to_be_matched.len() != 0 {
-            // then add the edges to the graph
-            let m_len = to_be_matched.len();  // boundary connection to `i` is `i + m_len`
-            let node_num = m_len * 2;
-            // Z (X) stabilizers are fully connected, boundaries are fully connected
-            // stabilizer to boundary is one-to-one connected
-            let mut weighted_edges = Vec::<(usize, usize, f64)>::new();
-            for i in 0..m_len {
-                for j in (i+1)..m_len {
-                    let a = &to_be_matched[i];
-                    let b = &to_be_matched[j];
-                    let path = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_map.get(&self.fhi(*b));
-                    if path.is_some() {
-                        let cost = path.expect("exist").cost;
-                        weighted_edges.push((i, j, cost));
-                        // weighted_edges.push((i + m_len, j + m_len, 0.));
-                        // if to_be_matched.len() > 2 {
-                        //     println!{"{} {} {} ", i, j, cost};
-                        // }
-                    }
-                }
-                let a = &to_be_matched[i];
-                let cost = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist").exhausted_boundary.as_ref().expect("exist").cost;
-                weighted_edges.push((i, i + m_len, cost));
-            }
-
-            let matching = match use_modified {
-                true => mwpm_approx::minimum_weight_perfect_matching_approx_modified(node_num, weighted_edges, substreams),
-                false =>  mwpm_approx::minimum_weight_perfect_matching_approx(node_num, weighted_edges, substreams),
-            };
-
-            // println!("{:?}", to_be_matched);
-            // println!("matching: {:?}", matching);
-            // if to_be_matched.len() > 2 {
-            //     println!("matching: {:?}", matching);
-            // }
-            let mut correction = self.generate_default_sparse_correction();
-            for (i,j,_w) in matching.iter() {
-                if *i < m_len && *j < m_len{
-                    correction.combine(&self.get_correction_two_nodes(&to_be_matched[*i], &to_be_matched[*j]));
-                }
-                else if *i < m_len {
-                    let a = &to_be_matched[*i];
-                    let node = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist");
-                    correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
-                }
-                else if *j < m_len {
-                    let a = &to_be_matched[*j];
-                    let node = self.snapshot[a.t][a.i][a.j].as_ref().expect("exist");
-                    correction.combine(node.exhausted_boundary.as_ref().expect("exist").correction.as_ref().expect("exist"));
-                }
-                else {
-                    println!{"This case cannot occur i,j,m_len {} {} {}",i,j,m_len};
-                }
-            }
-            // if to_be_matched.len() > 2 {
-            //     println!("correction: {:?}", correction);
-            // }
-            correction
-        } else {
-            // no measurement errors found
-            self.generate_default_sparse_correction()
-        }
-    }
-
     /// decode do nothing. This should be the actual baseline
     pub fn decode_do_nothing(&self, _measurement: &Measurement) -> Correction {
         self.generate_default_correction()
@@ -2808,7 +2714,7 @@ impl PlanarCodeModel {
                                 GateType::ControlledPhase => {
                                     if node.qubit_type != QubitType::Data {  // this is ancilla
                                         // better check whether peer is indeed data qubit, but it's hard here due to Rust's borrow check
-                                        let mut correlated_error_model = CorrelatedErrorModel::default_with_probability(p / bias_eta);
+                                        let mut correlated_error_model = CorrelatedPauliErrorRates::default_with_probability(p / bias_eta);
                                         correlated_error_model.error_rate_ZI = p;
                                         correlated_error_model.error_rate_IZ = p;
                                         correlated_error_model.sanity_check();
@@ -2816,7 +2722,7 @@ impl PlanarCodeModel {
                                     }
                                 },
                                 GateType::Control => {  // this is ancilla in XZZX code, see arXiv:2104.09539v1
-                                    let mut correlated_error_model = CorrelatedErrorModel::default_with_probability(p / bias_eta);
+                                    let mut correlated_error_model = CorrelatedPauliErrorRates::default_with_probability(p / bias_eta);
                                     correlated_error_model.error_rate_ZI = p;
                                     match error_model {
                                         ErrorModel::GenericBiasedWithStandardCX => {
@@ -2953,7 +2859,7 @@ impl PlanarCodeModel {
                                     GateType::ControlledPhase => {
                                         if node.qubit_type != QubitType::Data {  // this is ancilla
                                             // better check whether peer is indeed data qubit, but it's hard here due to Rust's borrow check
-                                            let mut correlated_erasure_error_model = CorrelatedErasureErrorModel::default_with_probability(0.);
+                                            let mut correlated_erasure_error_model = CorrelatedErasureErrorRates::default_with_probability(0.);
                                             correlated_erasure_error_model.error_rate_EE = pe;
                                             correlated_erasure_error_model.sanity_check();
                                             node.correlated_erasure_error_model = Some(correlated_erasure_error_model);
@@ -2961,7 +2867,7 @@ impl PlanarCodeModel {
                                         }
                                     },
                                     GateType::Control => {  // this is ancilla
-                                        let mut correlated_erasure_error_model = CorrelatedErasureErrorModel::default_with_probability(0.);
+                                        let mut correlated_erasure_error_model = CorrelatedErasureErrorRates::default_with_probability(0.);
                                         correlated_erasure_error_model.error_rate_EE = pe;
                                         correlated_erasure_error_model.sanity_check();
                                         node.correlated_erasure_error_model = Some(correlated_erasure_error_model);
@@ -2992,7 +2898,7 @@ impl PlanarCodeModel {
                             node.error_rate_y = py;
                             node.error_rate_z = pz;
                             if this_position_use_correlated_pauli {
-                                let correlated_error_model = CorrelatedErrorModel::default_with_probability(p / 15.);  // 15 possible errors equally probable
+                                let correlated_error_model = CorrelatedPauliErrorRates::default_with_probability(p / 15.);  // 15 possible errors equally probable
                                 correlated_error_model.sanity_check();
                                 node.correlated_error_model = Some(correlated_error_model);
                             }
@@ -3067,13 +2973,13 @@ impl PlanarCodeModel {
                                 GateType::ControlledPhase => {
                                     if node.qubit_type != QubitType::Data {  // this is ancilla
                                         // better check whether peer is indeed data qubit, but it's hard here due to Rust's borrow check
-                                        let correlated_error_model = CorrelatedErrorModel::default_with_probability(p / 15.);
+                                        let correlated_error_model = CorrelatedPauliErrorRates::default_with_probability(p / 15.);
                                         correlated_error_model.sanity_check();
                                         node.correlated_error_model = Some(correlated_error_model);
                                     }
                                 },
                                 GateType::Control => {  // this is ancilla in XZZX code, see arXiv:2104.09539v1
-                                    let correlated_error_model = CorrelatedErrorModel::default_with_probability(p / 15.);
+                                    let correlated_error_model = CorrelatedPauliErrorRates::default_with_probability(p / 15.);
                                     correlated_error_model.sanity_check();
                                     node.correlated_error_model = Some(correlated_error_model);
                                 },
