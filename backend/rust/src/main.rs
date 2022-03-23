@@ -14,6 +14,7 @@ mod fpga_generator;
 mod fast_benchmark;
 mod simulator;
 mod code_builder;
+#[macro_use] mod util_macros;
 
 extern crate clap;
 #[macro_use] extern crate serde_json;
@@ -110,7 +111,7 @@ fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> 
                 .arg(clap::Arg::new("ps").help("[p1,p2,p3,...,pm] p = px + py + pz unless error model has special interpretation of this value").takes_value(true).required(true))
                 .arg(clap::Arg::new("pes").long("pes").help("[pe1,pe2,pe3,...,pem] erasure error rate, default to all 0").takes_value(true))
                 .arg(clap::Arg::new("bias_eta").long("bias_eta").help("bias_eta = pz / (px + py) and px = py, px + py + pz = p. default to 1/2, which means px = pz = py").takes_value(true).default_value("0.5"))
-                .arg(clap::Arg::new("max_N").short('m').long("max_N").help("maximum total count; 0 for infinity").takes_value(true).default_value("100000000"))
+                .arg(clap::Arg::new("max_repeats").short('m').long("max_repeats").help("maximum total repeats (previously known as `max_N`); 0 for infinity").takes_value(true).default_value("100000000"))
                 .arg(clap::Arg::new("min_error_cases").short('e').long("min_error_cases").help("minimum error cases; 0 for infinity").takes_value(true).default_value("10000"))
                 .arg(clap::Arg::new("parallel").short('p').long("parallel").help("how many parallel threads to use. 0 means using number of CPUs - 1, by default single thread").takes_value(true).default_value("1"))
                 .arg(clap::Arg::new("code_type").short('c').long("code_type").help("code type, see code_builder.rs for more information").possible_values(["StandardPlanarCode", "RotatedPlanarCode", "StandardXZZXCode", "RotatedXZZXCode", "StandardTailoredCode", "RotatedTailoredCode"]).default_value("StandardPlanarCode").takes_value(true))

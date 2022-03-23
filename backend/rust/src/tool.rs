@@ -30,7 +30,7 @@ use super::util::local_get_temporary_store;
 use std::fs;
 use super::code_builder::*;
 use super::simulator::*;
-use super::clap::{arg, command, ArgEnum, PossibleValue};
+use super::clap::{ArgEnum, PossibleValue};
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -52,9 +52,9 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             };
             let bias_eta: f64 = matches.value_of_t("bias_eta").unwrap();
             assert_eq!(pes.len(), ps.len(), "pe and p should be paired");
-            let mut max_N: usize = matches.value_of_t("max_N").unwrap();
-            if max_N == 0 {
-                max_N = usize::MAX;
+            let mut max_repeats: usize = matches.value_of_t("max_repeats").unwrap();
+            if max_repeats == 0 {
+                max_repeats = usize::MAX;
             }
             let mut min_error_cases: usize = matches.value_of_t("min_error_cases").unwrap();
             if min_error_cases == 0 {
@@ -63,7 +63,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let parallel: usize = matches.value_of_t("parallel").unwrap_or(1);  // default to 1
             let code_type: String = matches.value_of_t("code_type").unwrap_or("StandardPlanarCode".to_string());
             let debug_print = matches.value_of_t::<BenchmarkDebugPrint>("debug_print").ok();
-            return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_N, min_error_cases, parallel, code_type, debug_print));
+            return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_error_cases, parallel, code_type, debug_print));
         }
         Some(("fault_tolerant_benchmark", matches)) => {
             let dis: String = matches.value_of_t("Ls").expect("required");
@@ -246,6 +246,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
 pub enum BenchmarkDebugPrint {
     ErrorModel,
+    FullErrorModel,  // including every possible error rate, but initialize them as 0
 }
 
 impl BenchmarkDebugPrint {
@@ -266,9 +267,19 @@ impl std::str::FromStr for BenchmarkDebugPrint {
     }
 }
 
-fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_N: usize, min_error_cases: usize
+fn build_simulator(di: usize, dj: usize, noisy_measurements: usize, p: f64, pe: f64, bias_eta: f64, code_type: &String) -> Simulator {
+    let mut simulator = Simulator::new(CodeType::new(code_type, noisy_measurements, di, dj));
+    let px = p / (1. + bias_eta) / 2.;
+    let py = px;
+    let pz = p - 2. * px;
+    simulator.set_error_rates(px, py, pz, pe);
+    // TODO: apply custom error model
+    simulator.error_rate_sanity_check().unwrap();  // sanity check
+    simulator
+}
+
+fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_repeats: usize, min_error_cases: usize
         , parallel: usize, code_type: String, debug_print: Option<BenchmarkDebugPrint>) -> String {
-    let mut output = format!("");  // empty output string
     // if parallel = 0, use all CPU resources
     let mut parallel = parallel;
     if parallel == 0 {
@@ -294,13 +305,14 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
     // start running simulations
     for &(di, dj, noisy_measurements, p, pe) in configurations.iter() {
         // prepare simulator
-        let mut simulator = Simulator::new(CodeType::new(&code_type, noisy_measurements, di, dj));
-        let px = p / (1. + bias_eta) / 2.;
-        let py = px;
-        let pz = p - 2. * px;
-        simulator.set_error_rates(px, py, pz, pe);
-        // TODO: apply custom error model
-        simulator.error_rate_sanity_check().unwrap();  // sanity check
+        let mut simulator = build_simulator(di, dj, noisy_measurements, p, pe, bias_eta, &code_type);
+        if matches!(debug_print, Some(BenchmarkDebugPrint::ErrorModel)) {
+            return format!("{}\n", serde_json::to_string(&simulator).expect("serialize should success"));
+        }
+        if matches!(debug_print, Some(BenchmarkDebugPrint::FullErrorModel)) {
+            simulator.expand_error_rates();  // expand all optional error rates
+            return format!("{}\n", serde_json::to_string(&simulator).expect("serialize should success"));
+        }
 
         // TODO: build model graph
 
@@ -308,7 +320,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
 
         //
     }
-    output
+    format!("")
 }
 
 /**

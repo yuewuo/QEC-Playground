@@ -3,7 +3,7 @@
 use serde::{Serialize, Deserialize};
 
 /// Qubit type, corresponds to `QTYPE` in `FaultTolerantView.vue`
-#[derive(Debug, PartialEq, Clone, Serialize, Copy)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, Copy)]
 pub enum QubitType {
     Data,
     StabX,
@@ -25,12 +25,19 @@ impl QubitType {
 }
 
 /// Error type, corresponds to `ETYPE` in `FaultTolerantView.vue`
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub enum ErrorType {
     I,
     X,
     Z,
     Y,
+}
+
+impl Default for ErrorType {
+    fn default() -> Self {
+        ErrorType::I  // default to identity
+    }
 }
 
 impl std::fmt::Display for ErrorType {
@@ -44,11 +51,11 @@ impl std::fmt::Display for ErrorType {
     }
 }
 
-impl serde::Serialize for ErrorType {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
-        serializer.serialize_str(format!("{}", self).as_str())
-    }
-}
+// impl serde::Serialize for ErrorType {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+//         serializer.serialize_str(format!("{}", self).as_str())
+//     }
+// }
 
 impl ErrorType {
     pub fn multiply(&self, err: &Self) -> Self {
@@ -204,9 +211,9 @@ pub struct CorrelatedPauliErrorRates {
 }
 
 impl CorrelatedPauliErrorRates {
-    // pub fn default() -> Self {
-    //     Self::default_with_probability(0.)
-    // }
+    pub fn default() -> Self {
+        Self::default_with_probability(0.)
+    }
     pub fn default_with_probability(p: f64) -> Self {
         Self {
             error_rate_IX: p,
@@ -333,9 +340,9 @@ pub struct CorrelatedErasureErrorRates {
 }
 
 impl CorrelatedErasureErrorRates {
-    // pub fn default() -> Self {
-    //     Self::default_with_probability(0.)
-    // }
+    pub fn default() -> Self {
+        Self::default_with_probability(0.)
+    }
     pub fn default_with_probability(p: f64) -> Self {
         Self {
             error_rate_IE: p,

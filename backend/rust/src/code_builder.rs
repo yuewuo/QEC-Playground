@@ -3,28 +3,57 @@
 //! Given known a `code_type: CodeType` for a simulator, this will build the proper code.
 //! It will ignore `CodeType::Customized` and leave it to user
 //!
+//! TODO: add svg picture to show example of different code types, see <https://docs.rs/embed-doc-image-showcase/latest/embed_doc_image_showcase/>
+//! for how to embed picture in cargo doc
+//! 
 
 use super::simulator::*;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use super::types::*;
+use super::util_macros::*;
 
 
 /// commonly used code type that has built-in functions to automatically build up the simulator.
 /// other type of code type is also feasible, but one needs to implement the generation of code patch.
-#[derive(Debug, Clone, Serialize, Copy)]
+#[derive(Debug, Clone, Serialize, Deserialize, Copy)]
+#[serde(deny_unknown_fields)]
 pub enum CodeType {
     /// noisy measurement rounds (excluding the final perfect measurement cap), vertical code distance, horizontal code distance
-    StandardPlanarCode(usize, usize, usize),
+    StandardPlanarCode {
+        noisy_measurements: usize,
+        di: usize,
+        dj: usize,
+    },
     /// noisy measurement rounds (excluding the final perfect measurement cap), +i+j axis code distance, +i-j axis code distance
-    RotatedPlanarCode(usize, usize, usize),
+    RotatedPlanarCode {
+        noisy_measurements: usize,
+        dp: usize,  // positive code distance, +i+j axis, same logical operator with `di`
+        dn: usize,  // negative code distance, +i-j axis, same logical operator with `dj`
+    },
     /// noisy measurement rounds (excluding the final perfect measurement cap), vertical code distance, horizontal code distance
-    StandardXZZXCode(usize, usize, usize),
+    StandardXZZXCode {
+        noisy_measurements: usize,
+        di: usize,
+        dj: usize,
+    },
     /// noisy measurement rounds (excluding the final perfect measurement cap), +i+j axis code distance, +i-j axis code distance
-    RotatedXZZXCode(usize, usize, usize),
+    RotatedXZZXCode {
+        noisy_measurements: usize,
+        dp: usize,  // positive code distance, +i+j axis, same logical operator with `di`
+        dn: usize,  // negative code distance, +i-j axis, same logical operator with `dj`
+    },
     /// noisy measurement rounds (excluding the final perfect measurement cap), vertical code distance, horizontal code distance
-    StandardTailoredCode(usize, usize, usize),
+    StandardTailoredCode {
+        noisy_measurements: usize,
+        di: usize,
+        dj: usize,
+    },
     /// noisy measurement rounds (excluding the final perfect measurement cap), +i+j axis code distance, +i-j axis code distance
-    RotatedTailoredCode(usize, usize, usize),
+    RotatedTailoredCode {
+        noisy_measurements: usize,
+        dp: usize,  // positive code distance, +i+j axis, same logical operator with `di`
+        dn: usize,  // negative code distance, +i-j axis, same logical operator with `dj`
+    },
     /// unknown code type, user must provide necessary information and build circuit-level implementation
     Customized,
 }
@@ -40,15 +69,15 @@ pub struct BuiltinCodeInformation {
 impl CodeType {
     pub fn new(code_type: &String, noisy_measurements: usize, di: usize, dj: usize) -> Self {
         match code_type.as_str() {
-            "StandardPlanarCode" => Self::StandardPlanarCode(noisy_measurements, di, dj),
+            "StandardPlanarCode" => Self::StandardPlanarCode{ noisy_measurements, di, dj },
             _ => unimplemented!()
         }
     }
     pub fn builtin_code_information(&self) -> Option<BuiltinCodeInformation> {
         match &self {
-            &CodeType::StandardPlanarCode(noisy_measurements, di, dj) | &CodeType::RotatedPlanarCode(noisy_measurements, di, dj) |
-            &CodeType::StandardXZZXCode(noisy_measurements, di, dj) | &CodeType::RotatedXZZXCode(noisy_measurements, di, dj) |
-            &CodeType::StandardTailoredCode(noisy_measurements, di, dj) | &CodeType::RotatedTailoredCode(noisy_measurements, di, dj) => {
+            &CodeType::StandardPlanarCode{ noisy_measurements, di, dj } | &CodeType::RotatedPlanarCode{ noisy_measurements, dp: di, dn: dj } |
+            &CodeType::StandardXZZXCode{ noisy_measurements, di, dj } | &CodeType::RotatedXZZXCode{ noisy_measurements, dp: di, dn: dj } |
+            &CodeType::StandardTailoredCode{ noisy_measurements, di, dj } | &CodeType::RotatedTailoredCode{ noisy_measurements, dp: di, dn: dj } => {
                 Some(BuiltinCodeInformation {
                     noisy_measurements: *noisy_measurements,
                     di: *di,
@@ -64,10 +93,10 @@ impl CodeType {
 pub fn build_code(simulator: &mut Simulator) {
     let code_type = &simulator.code_type;
     match code_type {
-        &CodeType::StandardPlanarCode(noisy_measurements, di, dj) | &CodeType::RotatedPlanarCode(noisy_measurements, di, dj) => {
+        &CodeType::StandardPlanarCode{ noisy_measurements, di, dj } | &CodeType::RotatedPlanarCode{ noisy_measurements, dp: di, dn: dj } => {
             assert!(di > 0, "code distance must be positive integer");
             assert!(dj > 0, "code distance must be positive integer");
-            let is_rotated = matches!(code_type, CodeType::RotatedPlanarCode(_, _, _));
+            let is_rotated = matches!(code_type, CodeType::RotatedPlanarCode { .. });
             if is_rotated {
                 assert!(di % 2 == 1, "code distance must be odd integer, current: di = {}", di);
                 assert!(dj % 2 == 1, "code distance must be odd integer, current: dj = {}", dj);
@@ -215,53 +244,50 @@ pub fn build_code(simulator: &mut Simulator) {
 /// detect common bugs of code building, e.g. peer gate invalid type, is_virtual not correct, etc...
 #[allow(dead_code)]
 pub fn code_builder_sanity_check(simulator: &Simulator) -> Result<(), String> {
-    for position in simulator.position_iter() {
-        if simulator.is_node_exist(&position) {
-            let node = simulator.get_node_unwrap(&position);
-            // println!("{}", node);
-            if node.qubit_type == QubitType::Data {
-                if node.gate_type.is_initialization() {
-                    return Err(format!("data qubit at {} cannot be initialized: gate_type = {:?}", position, node.gate_type))
-                }
-                if node.gate_type.is_measurement() {
-                    return Err(format!("data qubit at {} cannot be initialized: gate_type = {:?}", position, node.gate_type))
-                }
+    simulator_iter!(simulator, position, node, {
+        // println!("{}", node);
+        if node.qubit_type == QubitType::Data {
+            if node.gate_type.is_initialization() {
+                return Err(format!("data qubit at {} cannot be initialized: gate_type = {:?}", position, node.gate_type))
             }
-            match node.gate_peer {
-                Some(peer_position) => {
-                    if node.gate_type.is_single_qubit_gate() {
-                        return Err(format!("{} has single qubit gate {:?} should not have peer", position, node.gate_type))
-                    }
-                    if !simulator.is_node_exist(&peer_position) {
-                        return Err(format!("{}'s peer not exist: {}", position, peer_position))
-                    }
-                    let peer_node = simulator.get_node_unwrap(&peer_position);
-                    match peer_node.gate_peer {
-                        Some(peer_peer_position) => {
-                            if peer_peer_position != position {
-                                return Err(format!("{}, as the peer of {}, doesn't have correct peer but {}", peer_position, position, peer_peer_position))
-                            }
-                            if peer_node.gate_type.is_single_qubit_gate() {
-                                return Err(format!("{}, as the peer of {}, doesn't have two-qubit gate", peer_position, position))
-                            }
-                            if node.gate_type.peer_gate() != peer_node.gate_type {
-                                return Err(format!("{}, as the peer of {}, doesn't have correct peer gate {:?}, the correct one should be {:?}"
-                                    , peer_position, position, node.gate_type.peer_gate(), peer_node.gate_type))
-                            }
-                        },
-                        None => {
-                            return Err(format!("{}, as the peer of {}, doesn't have peer which is invalid", peer_position, position))
+            if node.gate_type.is_measurement() {
+                return Err(format!("data qubit at {} cannot be initialized: gate_type = {:?}", position, node.gate_type))
+            }
+        }
+        match node.gate_peer {
+            Some(peer_position) => {
+                if node.gate_type.is_single_qubit_gate() {
+                    return Err(format!("{} has single qubit gate {:?} should not have peer", position, node.gate_type))
+                }
+                if !simulator.is_node_exist(&peer_position) {
+                    return Err(format!("{}'s peer not exist: {}", position, peer_position))
+                }
+                let peer_node = simulator.get_node_unwrap(&peer_position);
+                match peer_node.gate_peer {
+                    Some(peer_peer_position) => {
+                        if peer_peer_position != position {
+                            return Err(format!("{}, as the peer of {}, doesn't have correct peer but {}", peer_position, position, peer_peer_position))
                         }
+                        if peer_node.gate_type.is_single_qubit_gate() {
+                            return Err(format!("{}, as the peer of {}, doesn't have two-qubit gate", peer_position, position))
+                        }
+                        if node.gate_type.peer_gate() != peer_node.gate_type {
+                            return Err(format!("{}, as the peer of {}, doesn't have correct peer gate {:?}, the correct one should be {:?}"
+                                , peer_position, position, node.gate_type.peer_gate(), peer_node.gate_type))
+                        }
+                    },
+                    None => {
+                        return Err(format!("{}, as the peer of {}, doesn't have peer which is invalid", peer_position, position))
                     }
-                }, 
-                None => {
-                    if !node.gate_type.is_single_qubit_gate() {
-                        return Err(format!("two qubit gate {:?} should have peer", node.gate_type))
-                    }
+                }
+            }, 
+            None => {
+                if !node.gate_type.is_single_qubit_gate() {
+                    return Err(format!("two qubit gate {:?} should have peer", node.gate_type))
                 }
             }
         }
-    }
+    });
     Ok(())
 }
 
@@ -269,28 +295,23 @@ pub fn code_builder_sanity_check(simulator: &Simulator) -> Result<(), String> {
 mod tests {
     use super::*;
 
-    // use `cargo test code_builder_standard_planar_code -- --nocapture` to run specific test
-
     #[test]
     fn code_builder_standard_planar_code() {  // cargo test code_builder_standard_planar_code -- --nocapture
         let di = 7;
         let dj = 5;
         let noisy_measurements = 3;
-        let simulator = Simulator::new(CodeType::StandardPlanarCode(noisy_measurements, di, dj));
+        let simulator = Simulator::new(CodeType::StandardPlanarCode { noisy_measurements, di, dj });
         code_builder_sanity_check(&simulator).unwrap();
         {  // count how many nodes
             let mut nodes_count = 0;
             let mut virtual_nodes_count = 0;
-            for position in simulator.position_iter() {
-                if simulator.is_node_exist(&position) {
-                    let node = simulator.get_node_unwrap(&position);
-                    // println!("{}", node);
-                    nodes_count += 1;
-                    if node.is_virtual {
-                        virtual_nodes_count += 1;
-                    }
+            simulator_iter!(simulator, position, node, {
+                // println!("{}", node);
+                nodes_count += 1;
+                if node.is_virtual {
+                    virtual_nodes_count += 1;
                 }
-            }
+            });
             let each_layer_real_node_count = (2 * di - 1) * (2 * dj - 1);
             let each_layer_virtual_node_count = 2 * (di + dj);
             let layer_count = 6 * (noisy_measurements + 1) + 1;

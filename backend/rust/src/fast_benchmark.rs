@@ -3,7 +3,7 @@
 //! Yue Wu @ 10/17/2021
 //!
 //! Analyzing logical error rate at extremely low physical error rate is exponentially more time consuming.
-//! https://arxiv.org/abs/1208.1334 shows a way to analytically estimate the logical error rate much faster at low error rate.
+//! <https://arxiv.org/abs/1208.1334> shows a way to analytically estimate the logical error rate much faster at low error rate.
 //! Inspired by that, I designed an estimator targeting higher accuracy and even more general.
 //!
 //! ## 1. Generality more than Fitting
