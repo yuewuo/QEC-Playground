@@ -1,20 +1,44 @@
+
+/// instead of using iterator that generates a new `Position` each iteration, here I use macro to generate more efficient code
+/// (increased 10% performance boost)
 #[macro_export]
-macro_rules! simulator_iter_with_filter {
-    ($simulator:ident, $position:ident, $node:ident, $filter:expr, $body:expr) => {
-        for $position in $simulator.position_iter() {
-            if $filter {
-                let $node = $simulator.get_node_unwrap(&$position);
-                $body
+macro_rules! simulator_iter_loop {
+    ($simulator:ident, $position:ident, $node:ident, $filter:expr, $body:expr, $start_t:expr, $end_t:expr, $node_getter:expr) => {
+        if $simulator.height != 0 && $simulator.vertical != 0 && $simulator.horizontal != 0 {
+            let mut $position = Position::new($start_t, 0, 0);
+            loop {
+                {  // immutable scope
+                    let $position = &$position;
+                    if $filter {
+                        let $node = $node_getter;
+                        $body
+                    }
+                }
+                $position.j += 1;
+                if $position.j >= $simulator.horizontal {
+                    $position.j = 0;
+                    $position.i += 1;
+                    if $position.i >= $simulator.vertical {
+                        $position.i = 0;
+                        $position.t += 1;
+                        if $position.t >= $end_t {  // invalid position, stop here
+                            break
+                        }
+                    }
+                }
             }
         }
     };
+}
+#[allow(unused_imports)] pub use simulator_iter_loop;
+
+#[macro_export]
+macro_rules! simulator_iter_with_filter {
+    ($simulator:ident, $position:ident, $node:ident, $filter:expr, $body:expr) => {
+        simulator_iter_loop!($simulator, $position, $node, $filter, $body, 0, $simulator.height, $simulator.get_node_unwrap($position))
+    };
     ($simulator:ident, $position:ident, $node:ident, $filter:expr, t => $t:expr, $body:expr) => {
-        for $position in $simulator.position_iter_t($t) {
-            if $filter {
-                let $node = $simulator.get_node_unwrap(&$position);
-                $body
-            }
-        }
+        simulator_iter_loop!($simulator, $position, $node, $filter, $body, $t, $t+1, $simulator.get_node_unwrap($position))
     };
 }
 #[allow(unused_imports)] pub use simulator_iter_with_filter;
@@ -55,20 +79,10 @@ macro_rules! simulator_iter_virtual {
 #[macro_export]
 macro_rules! simulator_iter_mut_with_filter {
     ($simulator:ident, $position:ident, $node:ident, $filter:expr, $body:expr) => {
-        for $position in $simulator.position_iter() {
-            if $filter {
-                let $node = $simulator.get_node_mut_unwrap(&$position);
-                $body
-            }
-        }
+        simulator_iter_loop!($simulator, $position, $node, $filter, $body, 0, $simulator.height, $simulator.get_node_mut_unwrap($position))
     };
     ($simulator:ident, $position:ident, $node:ident, $filter:expr, t => $t:expr, $body:expr) => {
-        for $position in $simulator.position_iter_t($t) {
-            if $filter {
-                let $node = $simulator.get_node_mut_unwrap(&$position);
-                $body
-            }
-        }
+        simulator_iter_loop!($simulator, $position, $node, $filter, $body, $t, $t+1, $simulator.get_node_mut_unwrap($position))
     };
 }
 #[allow(unused_imports)] pub use simulator_iter_mut_with_filter;

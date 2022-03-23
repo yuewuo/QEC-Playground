@@ -1,6 +1,6 @@
 
 #![allow(unused_imports)]
-#![allow(dead_code)]
+// #![allow(dead_code)]
 
 use super::ndarray;
 use super::petgraph;
@@ -9,7 +9,7 @@ use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
 use super::blossom_v;
 use std::sync::{Arc};
-use super::types::{QubitType, ErrorType, CorrelatedErrorType, ErrorModel, PauliErrorRates, CorrelatedPauliErrorRates, CorrelatedErasureErrorRates};
+use super::types::{QubitType, ErrorType, CorrelatedPauliErrorType, ErrorModel, PauliErrorRates, CorrelatedPauliErrorRates, CorrelatedErasureErrorRates};
 use super::union_find_decoder;
 use super::either::Either;
 use super::serde_json;
@@ -21,10 +21,11 @@ use super::util::simple_hasher::SimpleHasher;
 use super::union_find_decoder::UnionFind;
 use super::code_builder::*;
 use super::util_macros::*;
+use super::reproducible_rand::Xoroshiro128StarStar;
 
 
 /// general simulator for two-dimensional code with circuit-level implementation of stabilizer measurements
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Simulator {
     /// information of the preferred code
@@ -34,6 +35,21 @@ pub struct Simulator {
     pub vertical: usize,
     pub horizontal: usize,
     pub nodes: Vec::< Vec::< Vec::< Option<SimulatorNode> > > >,
+    /// use embedded random number generator
+    pub rng: Xoroshiro128StarStar,
+}
+
+impl Simulator {
+    pub fn clone(&self) -> Self {
+        Self {
+            code_type: self.code_type,
+            height: self.height,
+            vertical: self.vertical,
+            horizontal: self.horizontal,
+            nodes: self.nodes.clone(),
+            rng: Xoroshiro128StarStar::new(),  // do not copy random number generator, otherwise parallel simulation may give same result
+        }
+    }
 }
 
 /// when plotting, t is the time axis; looking at the direction of `t=-∞`, the top-left corner is `i=j=0`;
@@ -67,9 +83,9 @@ pub struct SimulatorNode {
     #[serde(rename = "pe")]
     pub erasure_error_rate: f64,
     #[serde(rename = "corr_pp")]
-    pub correlated_pauli_error_rates: Option<CorrelatedPauliErrorRates>,
+    pub correlated_pauli_error_rates: Option<Box<CorrelatedPauliErrorRates>>,
     #[serde(rename = "corr_pe")]
-    pub correlated_erasure_error_rates: Option<CorrelatedErasureErrorRates>,
+    pub correlated_erasure_error_rates: Option<Box<CorrelatedErasureErrorRates>>,
     /// simulation data
     #[serde(skip)]
     pub error: ErrorType,
@@ -196,25 +212,10 @@ impl Simulator {
             vertical: 0,
             horizontal: 0,
             nodes: Vec::new(),
+            rng: Xoroshiro128StarStar::new(),
         };
         build_code(&mut simulator);
         simulator
-    }
-
-    /// this will generate an **isolated** iterator, not taking the reference of the simulator instance.
-    /// you must check if the position is valid using `is_valid_position`
-    pub fn position_iter(&self) -> SimulatorPositionIterator {
-        SimulatorPositionIterator::new(self.height, self.vertical, self.horizontal)
-    }
-
-    /// iterate every position given specific `t`
-    pub fn position_iter_t(&self, t: usize) -> SimulatorPositionIterator {
-        if t >= self.height {  // null iterator
-            return SimulatorPositionIterator::new(0, 0, 0);
-        }
-        let mut iterator = SimulatorPositionIterator::new(t + 1, self.vertical, self.horizontal);
-        iterator.next_position.t = t;
-        iterator
     }
 
     /// judge if `[t][i][j]` is valid index of `self.nodes`
@@ -324,10 +325,10 @@ impl Simulator {
     pub fn expand_error_rates(&mut self) {
         simulator_iter_mut!(self, position, node, {
             if node.correlated_pauli_error_rates.is_none() {
-                node.correlated_pauli_error_rates = Some(CorrelatedPauliErrorRates::default());
+                node.correlated_pauli_error_rates = Some(Box::new(CorrelatedPauliErrorRates::default()));
             }
             if node.correlated_erasure_error_rates.is_none() {
-                node.correlated_erasure_error_rates = Some(CorrelatedErasureErrorRates::default());
+                node.correlated_erasure_error_rates = Some(Box::new(CorrelatedErasureErrorRates::default()));
             }
         });
     }
@@ -340,60 +341,131 @@ impl Simulator {
                     node.correlated_pauli_error_rates = None;
                 }
             }
-            if node.correlated_erasure_error_rates.is_none() {
+            if node.correlated_erasure_error_rates.is_some() {
                 if node.correlated_erasure_error_rates.as_ref().unwrap().error_probability() == 0. {
                     node.correlated_erasure_error_rates = None;
                 }
             }
         });
     }
-}
 
-/// this iterator removes the lifetime dependency of `Simulator`, offering more flexible iteration over the nodes
-pub struct SimulatorPositionIterator {
-    next_position: Position,
-    height: usize,
-    vertical: usize,
-    horizontal: usize,
-}
-
-impl SimulatorPositionIterator {
-    pub fn new(height: usize, vertical: usize, horizontal: usize) -> Self {
-        let mut ret = Self {
-            next_position: Position::new(0, 0, 0),
-            height: height,
-            vertical: vertical,
-            horizontal: horizontal,
-        };
-        if height == 0 || vertical == 0 || horizontal == 0 {
-            // if no iterations at all, set `next_position` to an invalid height so that it returns `None`
-            ret.next_position = Position::new(height + 1, 0, 0);
+    /// generate random errors according to the given error rates
+    pub fn generate_random_errors(&mut self) -> usize {
+        // this size is small compared to the simulator itself
+        let allocate_size = self.height * self.vertical * self.horizontal;
+        let mut pending_pauli_errors = Vec::<(Position, ErrorType)>::with_capacity(allocate_size);
+        let mut pending_erasure_errors = Vec::<Position>::with_capacity(allocate_size);
+        // let mut pending_pauli_errors = Vec::<(Position, ErrorType)>::new();
+        // let mut pending_erasure_errors = Vec::<Position>::new();
+        let mut rng = self.rng.clone();  // avoid mutable borrow
+        let mut error_count = 0;
+        // first apply single-qubit errors
+        simulator_iter_mut!(self, position, node, {
+            let random_pauli = rng.next_f64();
+            if random_pauli < node.pauli_error_rates.error_rate_X {
+                node.error = ErrorType::X;
+                // println!("X error at {} {} {}",node.i, node.j, node.t);
+            } else if random_pauli < node.pauli_error_rates.error_rate_X + node.pauli_error_rates.error_rate_Z {
+                node.error = ErrorType::Z;
+                // println!("Z error at {} {} {}",node.i, node.j, node.t);
+            } else if random_pauli < node.pauli_error_rates.error_probability() {
+                node.error = ErrorType::Y;
+                // println!("Y error at {} {} {}",node.i, node.j, node.t);
+            } else {
+                node.error = ErrorType::I;
+            }
+            if node.error != ErrorType::I {
+                error_count += 1;
+            }
+            let random_erasure = rng.next_f64();
+            node.has_erasure = false;
+            if random_erasure < node.erasure_error_rate {
+                pending_erasure_errors.push(*position);
+            }
+            match &node.correlated_pauli_error_rates {
+                Some(correlated_pauli_error_rates) => {
+                    let random_pauli = rng.next_f64();
+                    let correlated_pauli_error_type = correlated_pauli_error_rates.generate_random_error(random_pauli);
+                    let my_error = correlated_pauli_error_type.my_error();
+                    if my_error != ErrorType::I {
+                        pending_pauli_errors.push((*position, my_error));
+                    }
+                    let peer_error = correlated_pauli_error_type.peer_error();
+                    if peer_error != ErrorType::I {
+                        let gate_peer = node.gate_peer.as_ref().expect("correlated pauli error must corresponds to a two-qubit gate");
+                        pending_pauli_errors.push((*gate_peer, peer_error));
+                    }
+                },
+                None => { },
+            }
+            match &node.correlated_erasure_error_rates {
+                Some(correlated_erasure_error_rates) => {
+                    let random_erasure = rng.next_f64();
+                    let correlated_erasure_error_type = correlated_erasure_error_rates.generate_random_erasure_error(random_erasure);
+                    let my_error = correlated_erasure_error_type.my_error();
+                    if my_error {
+                        pending_erasure_errors.push(*position);
+                    }
+                    let peer_error = correlated_erasure_error_type.peer_error();
+                    if peer_error {
+                        let gate_peer = node.gate_peer.as_ref().expect("correlated erasure error must corresponds to a two-qubit gate");
+                        pending_erasure_errors.push(*gate_peer);
+                    }
+                },
+                None => { },
+            }
+        });
+        // apply pending pauli errors
+        for (position, peer_error) in pending_pauli_errors.iter() {
+            let mut node = self.get_node_mut_unwrap(&position);
+            if node.error != ErrorType::I {
+                error_count -= 1;
+            }
+            node.error = node.error.multiply(&peer_error);
+            if node.error != ErrorType::I {
+                error_count += 1;
+            }
         }
-        ret
+        // apply pending erasure errors, amd generate random pauli error
+        for position in pending_erasure_errors.iter() {
+            let mut node = self.get_node_mut_unwrap(&position);
+            node.has_erasure = true;
+            if node.error != ErrorType::I {
+                error_count -= 1;
+            }
+            let random_erasure = rng.next_f64();
+            node.error = if random_erasure < 0.25 { ErrorType::X }
+                else if random_erasure < 0.5 { ErrorType::Z }
+                else if random_erasure < 0.75 { ErrorType::Y }
+                else { ErrorType::I };
+            if node.error != ErrorType::I {
+                error_count += 1;
+            }
+        }
+        debug_assert!({  // the above code avoids iterating the code multiple times when error rate is low (~1%), check correctness in debug mode
+            let mut real_error_count = 0;
+            simulator_iter!(self, position, node, {
+                if node.error != ErrorType::I {
+                    real_error_count += 1;
+                }
+            });
+            real_error_count == error_count
+        });
+        self.rng = rng;  // save the random number generator
+        self.propagate_errors();
+        error_count
     }
-}
 
-impl Iterator for SimulatorPositionIterator {
-    // We can refer to this type using Self::Item
-    type Item = Position;
+    /// this will be automatically called after `generate_random_errors`, but if user modified the 
+    pub fn propagate_errors(&mut self) {
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let ret = self.next_position;
-        if ret.t >= self.height {  // invalid position, stop here
-            return None;
-        }
-        // update `next_position`
-        self.next_position.j += 1;
-        if self.next_position.j >= self.horizontal {
-            self.next_position.j = 0;
-            self.next_position.i += 1;
-        }
-        if self.next_position.i >= self.vertical {
-            self.next_position.i = 0;
-            self.next_position.t += 1;
-        }
-        Some(ret)
     }
+
+    /// propagate errors at one point, note that 
+    pub fn propagate_error_at(&mut self) {
+
+    }
+    
 }
 
 impl Default for Position {
@@ -434,7 +506,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn simulator_invalid_position() {  // cargo test simulator_invalid_position -- --nocapture
+    fn simulator_basics() {  // cargo test simulator_basics -- --nocapture
         let di = 5;
         let dj = 5;
         let noisy_measurements = 5;
@@ -444,7 +516,9 @@ mod tests {
         let nonexisting_position = Position::new(0, 0, 0);
         assert!(simulator.is_valid_position(&nonexisting_position), "valid position");
         assert!(!simulator.is_node_exist(&nonexisting_position), "nonexisting position");
-
+        if std::mem::size_of::<SimulatorNode>() > 128 {  // ArmV8 data cache line is 64 bytes
+            panic!("std::mem::size_of::<SimulatorNode>() = {} which is unexpectedly large, check if anything wrong", std::mem::size_of::<SimulatorNode>());
+        }
     }
 
 }

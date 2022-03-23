@@ -9,6 +9,7 @@ use rand_core::le::read_u64_into;
 use rand_core::impls::fill_bytes_via_next;
 use rand_core::{RngCore, SeedableRng};
 use super::serde::{Serialize, Deserialize};
+use super::rand::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Xoroshiro128StarStar {
@@ -28,6 +29,11 @@ impl Xoroshiro128StarStar {
 
     pub fn get_s1_i64(&self) -> i64 {
         i64::from_le_bytes(self.s1.to_le_bytes())
+    }
+
+    pub fn new() -> Self {
+        let mut rng = thread_rng();
+        Self::seed_from_u64(rng.gen::<u64>())
     }
 }
 

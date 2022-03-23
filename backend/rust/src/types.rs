@@ -96,7 +96,7 @@ impl ErrorType {
 /// Correlated error type for two qubit errors
 #[allow(dead_code)]
 #[derive(Debug, PartialEq, Clone, Copy)]
-pub enum CorrelatedErrorType {
+pub enum CorrelatedPauliErrorType {
     II,
     IX,
     IZ,
@@ -115,7 +115,7 @@ pub enum CorrelatedErrorType {
     YY,
 }
 
-impl CorrelatedErrorType {
+impl CorrelatedPauliErrorType {
     pub fn my_error(&self) -> ErrorType {
         match self {
             Self::II | Self::IX | Self::IZ | Self::IY => ErrorType::I,
@@ -138,7 +138,7 @@ impl CorrelatedErrorType {
     }
 }
 
-impl std::fmt::Display for CorrelatedErrorType {
+impl std::fmt::Display for CorrelatedPauliErrorType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", match self {
             Self::II => "II", Self::IX => "IX", Self::IZ => "IZ", Self::IY => "IY",
@@ -170,6 +170,7 @@ impl PauliErrorRates {
             error_rate_Y: p,
         }
     }
+    #[inline]
     pub fn error_probability(&self) -> f64 {
         self.error_rate_X + self.error_rate_Z + self.error_rate_Y
     }
@@ -242,24 +243,24 @@ impl CorrelatedPauliErrorRates {
     pub fn no_error_probability(&self) -> f64 {
         1. - self.error_probability()
     }
-    pub fn error_rate(&self, error_type: &CorrelatedErrorType) -> f64 {
+    pub fn error_rate(&self, error_type: &CorrelatedPauliErrorType) -> f64 {
         match error_type {
-            CorrelatedErrorType::II => self.no_error_probability(),
-            CorrelatedErrorType::IX => self.error_rate_IX,
-            CorrelatedErrorType::IZ => self.error_rate_IZ,
-            CorrelatedErrorType::IY => self.error_rate_IY,
-            CorrelatedErrorType::XI => self.error_rate_XI,
-            CorrelatedErrorType::XX => self.error_rate_XX,
-            CorrelatedErrorType::XZ => self.error_rate_XZ,
-            CorrelatedErrorType::XY => self.error_rate_XY,
-            CorrelatedErrorType::ZI => self.error_rate_ZI,
-            CorrelatedErrorType::ZX => self.error_rate_ZX,
-            CorrelatedErrorType::ZZ => self.error_rate_ZZ,
-            CorrelatedErrorType::ZY => self.error_rate_ZY,
-            CorrelatedErrorType::YI => self.error_rate_YI,
-            CorrelatedErrorType::YX => self.error_rate_YX,
-            CorrelatedErrorType::YZ => self.error_rate_YZ,
-            CorrelatedErrorType::YY => self.error_rate_YY,
+            CorrelatedPauliErrorType::II => self.no_error_probability(),
+            CorrelatedPauliErrorType::IX => self.error_rate_IX,
+            CorrelatedPauliErrorType::IZ => self.error_rate_IZ,
+            CorrelatedPauliErrorType::IY => self.error_rate_IY,
+            CorrelatedPauliErrorType::XI => self.error_rate_XI,
+            CorrelatedPauliErrorType::XX => self.error_rate_XX,
+            CorrelatedPauliErrorType::XZ => self.error_rate_XZ,
+            CorrelatedPauliErrorType::XY => self.error_rate_XY,
+            CorrelatedPauliErrorType::ZI => self.error_rate_ZI,
+            CorrelatedPauliErrorType::ZX => self.error_rate_ZX,
+            CorrelatedPauliErrorType::ZZ => self.error_rate_ZZ,
+            CorrelatedPauliErrorType::ZY => self.error_rate_ZY,
+            CorrelatedPauliErrorType::YI => self.error_rate_YI,
+            CorrelatedPauliErrorType::YX => self.error_rate_YX,
+            CorrelatedPauliErrorType::YZ => self.error_rate_YZ,
+            CorrelatedPauliErrorType::YY => self.error_rate_YY,
         }
     }
     pub fn sanity_check(&self) {
@@ -280,24 +281,24 @@ impl CorrelatedPauliErrorRates {
         assert!(self.error_rate_YZ >= 0., "error rate should be greater than 0");
         assert!(self.error_rate_YY >= 0., "error rate should be greater than 0");
     }
-    pub fn generate_random_error(&self, random_number: f64) -> CorrelatedErrorType {
+    pub fn generate_random_error(&self, random_number: f64) -> CorrelatedPauliErrorType {
         let mut random_number = random_number;
-        if random_number < self.error_rate_IX { return CorrelatedErrorType::IX; } random_number -= self.error_rate_IX;
-        if random_number < self.error_rate_IZ { return CorrelatedErrorType::IZ; } random_number -= self.error_rate_IZ;
-        if random_number < self.error_rate_IY { return CorrelatedErrorType::IY; } random_number -= self.error_rate_IY;
-        if random_number < self.error_rate_XI { return CorrelatedErrorType::XI; } random_number -= self.error_rate_XI;
-        if random_number < self.error_rate_XX { return CorrelatedErrorType::XX; } random_number -= self.error_rate_XX;
-        if random_number < self.error_rate_XZ { return CorrelatedErrorType::XZ; } random_number -= self.error_rate_XZ;
-        if random_number < self.error_rate_XY { return CorrelatedErrorType::XY; } random_number -= self.error_rate_XY;
-        if random_number < self.error_rate_ZI { return CorrelatedErrorType::ZI; } random_number -= self.error_rate_ZI;
-        if random_number < self.error_rate_ZX { return CorrelatedErrorType::ZX; } random_number -= self.error_rate_ZX;
-        if random_number < self.error_rate_ZZ { return CorrelatedErrorType::ZZ; } random_number -= self.error_rate_ZZ;
-        if random_number < self.error_rate_ZY { return CorrelatedErrorType::ZY; } random_number -= self.error_rate_ZY;
-        if random_number < self.error_rate_YI { return CorrelatedErrorType::YI; } random_number -= self.error_rate_YI;
-        if random_number < self.error_rate_YX { return CorrelatedErrorType::YX; } random_number -= self.error_rate_YX;
-        if random_number < self.error_rate_YZ { return CorrelatedErrorType::YZ; } random_number -= self.error_rate_YZ;
-        if random_number < self.error_rate_YY { return CorrelatedErrorType::YY; }
-        CorrelatedErrorType::II
+        if random_number < self.error_rate_IX { return CorrelatedPauliErrorType::IX; } random_number -= self.error_rate_IX;
+        if random_number < self.error_rate_IZ { return CorrelatedPauliErrorType::IZ; } random_number -= self.error_rate_IZ;
+        if random_number < self.error_rate_IY { return CorrelatedPauliErrorType::IY; } random_number -= self.error_rate_IY;
+        if random_number < self.error_rate_XI { return CorrelatedPauliErrorType::XI; } random_number -= self.error_rate_XI;
+        if random_number < self.error_rate_XX { return CorrelatedPauliErrorType::XX; } random_number -= self.error_rate_XX;
+        if random_number < self.error_rate_XZ { return CorrelatedPauliErrorType::XZ; } random_number -= self.error_rate_XZ;
+        if random_number < self.error_rate_XY { return CorrelatedPauliErrorType::XY; } random_number -= self.error_rate_XY;
+        if random_number < self.error_rate_ZI { return CorrelatedPauliErrorType::ZI; } random_number -= self.error_rate_ZI;
+        if random_number < self.error_rate_ZX { return CorrelatedPauliErrorType::ZX; } random_number -= self.error_rate_ZX;
+        if random_number < self.error_rate_ZZ { return CorrelatedPauliErrorType::ZZ; } random_number -= self.error_rate_ZZ;
+        if random_number < self.error_rate_ZY { return CorrelatedPauliErrorType::ZY; } random_number -= self.error_rate_ZY;
+        if random_number < self.error_rate_YI { return CorrelatedPauliErrorType::YI; } random_number -= self.error_rate_YI;
+        if random_number < self.error_rate_YX { return CorrelatedPauliErrorType::YX; } random_number -= self.error_rate_YX;
+        if random_number < self.error_rate_YZ { return CorrelatedPauliErrorType::YZ; } random_number -= self.error_rate_YZ;
+        if random_number < self.error_rate_YY { return CorrelatedPauliErrorType::YY; }
+        CorrelatedPauliErrorType::II
     }
 }
 

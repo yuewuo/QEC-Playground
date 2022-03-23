@@ -263,7 +263,7 @@ pub fn code_builder_sanity_check(simulator: &Simulator) -> Result<(), String> {
                     return Err(format!("{}'s peer not exist: {}", position, peer_position))
                 }
                 let peer_node = simulator.get_node_unwrap(&peer_position);
-                match peer_node.gate_peer {
+                match &peer_node.gate_peer {
                     Some(peer_peer_position) => {
                         if peer_peer_position != position {
                             return Err(format!("{}, as the peer of {}, doesn't have correct peer but {}", peer_position, position, peer_peer_position))

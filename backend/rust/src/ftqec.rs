@@ -24,7 +24,7 @@ use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
 use super::blossom_v;
 use std::sync::{Arc};
-use super::types::{QubitType, ErrorType, CorrelatedErrorType, CorrelatedPauliErrorRates, ErrorModel, CorrelatedErasureErrorRates};
+use super::types::{QubitType, ErrorType, CorrelatedPauliErrorType, CorrelatedPauliErrorRates, ErrorModel, CorrelatedErasureErrorRates};
 use super::union_find_decoder;
 use super::either::Either;
 use super::serde_json;
@@ -1038,7 +1038,7 @@ impl PlanarCodeModel {
         }
     }
 
-    pub fn add_correlated_error_at(&mut self, t: usize, i: usize, j: usize, error: &CorrelatedErrorType) -> Option<(ErrorType, ErrorType)> {
+    pub fn add_correlated_error_at(&mut self, t: usize, i: usize, j: usize, error: &CorrelatedPauliErrorType) -> Option<(ErrorType, ErrorType)> {
         let peer = if let Some(array) = self.snapshot.get_mut(t) {
             if let Some(array) = array.get_mut(i) {
                 if let Some(element) = array.get_mut(j) {
@@ -1403,11 +1403,11 @@ impl PlanarCodeModel {
         if build_fast_benchmark {
             fast_benchmark = Some(FastBenchmark::new(&self));
         }
-        let mut all_possible_errors: Vec<Either<ErrorType, CorrelatedErrorType>> = Vec::new();
+        let mut all_possible_errors: Vec<Either<ErrorType, CorrelatedPauliErrorType>> = Vec::new();
         for error_type in ErrorType::all_possible_errors().drain(..) {
             all_possible_errors.push(Either::Left(error_type));
         }
-        for correlated_error_type in CorrelatedErrorType::all_possible_errors().drain(..) {
+        for correlated_error_type in CorrelatedPauliErrorType::all_possible_errors().drain(..) {
             all_possible_errors.push(Either::Right(correlated_error_type));
         }
         // necessary to clear all errors and propagated errors to run `fast_measurement_given_few_errors`
@@ -3892,5 +3892,11 @@ mod tests {
         //     assert!(validation_ret.is_ok());
         // }
     }
+
+    // #[test]
+    // fn debug_sizeof_node() {  // cargo test debug_sizeof_node -- --nocapture
+    //     println!("std::mem::size_of::<Node>() = {}", std::mem::size_of::<Node>());
+    //     println!("std::mem::size_of::<PlanarCodeModel>() = {}", std::mem::size_of::<PlanarCodeModel>());
+    // }
 
 }

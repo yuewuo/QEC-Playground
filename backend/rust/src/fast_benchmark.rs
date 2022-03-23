@@ -33,7 +33,7 @@
 
 use super::ftqec;
 use ftqec::{GateType, CodeType, Index};
-use super::types::{QubitType, ErrorType, CorrelatedErrorType};
+use super::types::{QubitType, ErrorType, CorrelatedPauliErrorType};
 use std::collections::{BTreeMap, BTreeSet};
 use super::either::Either;
 use super::rand::seq::SliceRandom;
@@ -44,7 +44,7 @@ use super::rug::Complete;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct PossiblePauli {
-    pub pauli_type: Either<ErrorType, CorrelatedErrorType>,
+    pub pauli_type: Either<ErrorType, CorrelatedPauliErrorType>,
     pub pauli_position: (usize, usize, usize),
     pub probability: f64,
 }
@@ -190,7 +190,7 @@ impl FastBenchmark {
     }
 
     pub fn add_possible_boundary(&mut self, t1: usize, i1: usize, j1: usize, p: f64, te: usize, ie: usize, je: usize
-            , pauli_or_erasure: Either<Either<ErrorType, CorrelatedErrorType>, ()>) {
+            , pauli_or_erasure: Either<Either<ErrorType, CorrelatedPauliErrorType>, ()>) {
         let (mt, i, j) = Index::new(t1, i1, j1).to_measurement_idx();
         let mut fb_node = self.fb_nodes[mt][i][j].as_mut().expect("exist");
         assert!(fb_node.boundary_candidate.is_some(), "unrecognized boundary, remember to add to boundary candidate");
@@ -225,7 +225,7 @@ impl FastBenchmark {
     }
 
     pub fn add_possible_match(&mut self, t1: usize, i1: usize, j1: usize, t2: usize, i2: usize, j2: usize, p: f64, te: usize, ie: usize, je: usize
-            , pauli_or_erasure: Either<Either<ErrorType, CorrelatedErrorType>, ()>) {
+            , pauli_or_erasure: Either<Either<ErrorType, CorrelatedPauliErrorType>, ()>) {
         let mt1 = Index::new(t1, i1, j1).to_measurement_idx().0;
         let mt2 = Index::new(t2, i2, j2).to_measurement_idx().0;
         for &(mt, i, j, mtp, ip, jp) in [(mt1, i1, j1, mt2, i2, j2), (mt2, i2, j2, mt1, i1, j1)].iter() {  // p for peer
@@ -417,7 +417,7 @@ impl FastBenchmark {
 
     /// add a single error estimate for each left starting point
     pub fn benchmark_once<F>(&mut self, rng: &mut impl RngCore, mut decode: F)
-            where F: FnMut(Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>, &BTreeSet<(usize, usize, usize)>, usize) -> bool {
+            where F: FnMut(Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedPauliErrorType>, ()>)>, &BTreeSet<(usize, usize, usize)>, usize) -> bool {
             // Vec<(te, ie, je, pauli_or_erasure)>, string_d
         for starting_nodes_idx in 0..self.starting_nodes.len() {
             self.benchmark_starting_node(rng, &mut decode, starting_nodes_idx);
@@ -425,7 +425,7 @@ impl FastBenchmark {
     }
 
     pub fn benchmark_random_starting_node<F>(&mut self, rng: &mut impl RngCore, mut decode: F)
-            where F: FnMut(Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>, &BTreeSet<(usize, usize, usize)>, usize) -> bool {
+            where F: FnMut(Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedPauliErrorType>, ()>)>, &BTreeSet<(usize, usize, usize)>, usize) -> bool {
         let mut smallest_k = None;
         let mut smallest_idx = None;
         for i in 0..self.starting_nodes.len() {
@@ -451,7 +451,7 @@ impl FastBenchmark {
 
     /// run benchmark for a
     pub fn benchmark_starting_node<F>(&mut self, rng: &mut impl RngCore, decode: &mut F, starting_nodes_idx: usize)
-            where F: FnMut(Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>, &BTreeSet<(usize, usize, usize)>, usize) -> bool {
+            where F: FnMut(Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedPauliErrorType>, ()>)>, &BTreeSet<(usize, usize, usize)>, usize) -> bool {
             // Vec<(te, ie, je, pauli_or_erasure)>, string_d
         let (mts, is, js) = self.starting_nodes[starting_nodes_idx];
         let use_weighted_path_sampling = self.use_weighted_path_sampling;
@@ -842,7 +842,7 @@ impl PossibleMatch {
 }
 
 /// fake decoding will always succeed when error is less than half (or more precisely 2s + t < d given s pauli errors and t erasure errors)
-pub fn fake_decoding(errors: Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>
+pub fn fake_decoding(errors: Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedPauliErrorType>, ()>)>
         , _clearance_region: &BTreeSet<(usize, usize, usize)>, string_d: usize) -> bool {
     let mut erasure_count = 0;
     let mut pauli_count = 0;

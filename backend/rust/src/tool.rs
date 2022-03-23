@@ -31,6 +31,7 @@ use std::fs;
 use super::code_builder::*;
 use super::simulator::*;
 use super::clap::{ArgEnum, PossibleValue};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -56,14 +57,15 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             if max_repeats == 0 {
                 max_repeats = usize::MAX;
             }
-            let mut min_error_cases: usize = matches.value_of_t("min_error_cases").unwrap();
-            if min_error_cases == 0 {
-                min_error_cases = usize::MAX;
+            let mut min_failed_cases: usize = matches.value_of_t("min_failed_cases").unwrap();
+            if min_failed_cases == 0 {
+                min_failed_cases = usize::MAX;
             }
             let parallel: usize = matches.value_of_t("parallel").unwrap_or(1);  // default to 1
             let code_type: String = matches.value_of_t("code_type").unwrap_or("StandardPlanarCode".to_string());
             let debug_print = matches.value_of_t::<BenchmarkDebugPrint>("debug_print").ok();
-            return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_error_cases, parallel, code_type, debug_print));
+            let time_budget: Option<f64> = matches.value_of_t("time_budget").ok();
+            return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, debug_print, time_budget));
         }
         Some(("fault_tolerant_benchmark", matches)) => {
             let dis: String = matches.value_of_t("Ls").expect("required");
@@ -278,8 +280,8 @@ fn build_simulator(di: usize, dj: usize, noisy_measurements: usize, p: f64, pe: 
     simulator
 }
 
-fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_repeats: usize, min_error_cases: usize
-        , parallel: usize, code_type: String, debug_print: Option<BenchmarkDebugPrint>) -> String {
+fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_repeats: usize, min_failed_cases: usize
+        , parallel: usize, code_type: String, debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>) -> String {
     // if parallel = 0, use all CPU resources
     let mut parallel = parallel;
     if parallel == 0 {
@@ -299,8 +301,10 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             configurations.push((di, dj, noisy_measurements, p, pe));
         }
     }
+    let mut output = format!("");
     if debug_print.is_none() {  // debug print only will not run simulations
-        println!("format: <p> <di> <nm> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>");  // compatible with old scripts
+        output = format!("format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>");
+        println!("{}", output);  // compatible with old scripts
     }
     // start running simulations
     for &(di, dj, noisy_measurements, p, pe) in configurations.iter() {
@@ -313,14 +317,88 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             simulator.expand_error_rates();  // expand all optional error rates
             return format!("{}\n", serde_json::to_string(&simulator).expect("serialize should success"));
         }
+        simulator.compress_error_rates();  // for better simulation speed
 
         // TODO: build model graph
 
         // TODO: optionally build complete model graph when code size is small and decoder type supports it, to speed up small code decoding
 
-        //
+        // prepare result variables for simulation
+        let total_repeats = Arc::new(AtomicUsize::new(0));
+        let qec_failed = Arc::new(AtomicUsize::new(0));
+        let external_termination = Arc::new(AtomicBool::new(false));
+        // setup progress bar
+        let mut pb = ProgressBar::on(std::io::stderr(), max_repeats as u64);
+        pb.set(0);
+        // spawn threads to do simulation
+        let mut handlers = Vec::new();
+        for _parallel_idx in 0..parallel {
+            let total_repeats = Arc::clone(&total_repeats);
+            let qec_failed = Arc::clone(&qec_failed);
+            let external_termination = Arc::clone(&external_termination);
+            let mut simulator = simulator.clone();
+            handlers.push(std::thread::spawn(move || {
+                while !external_termination.load(Ordering::Relaxed) && total_repeats.load(Ordering::Relaxed) < max_repeats && qec_failed.load(Ordering::Relaxed) < min_failed_cases {
+                    simulator.generate_random_errors();
+                    // TODO: generate measurements
+
+                    // TODO: decode
+                    let is_qec_failed = true;
+                    // update simulation counters
+                    total_repeats.fetch_add(1, Ordering::Relaxed);
+                    qec_failed.fetch_add(if is_qec_failed { 1 } else { 0 }, Ordering::Relaxed);
+                }
+            }));
+        }
+        // monitor results and display them using progress bar
+        let repeat_begin = Instant::now();
+        let  progress_information = || -> String {
+            let total_repeats = total_repeats.load(Ordering::Relaxed);
+            let qec_failed = qec_failed.load(Ordering::Relaxed);
+            // compute simulation results
+            let error_rate = qec_failed as f64 / total_repeats as f64;
+            let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_repeats as f64)).sqrt() / error_rate;
+            format!("{} {} {} {} {} {} {} {:.1e} {} ", p, di, noisy_measurements, total_repeats, qec_failed, error_rate, dj
+                , confidence_interval_95_percent, pe)
+        };
+        loop {
+            match time_budget {
+                Some(time_budget) => {
+                    if repeat_begin.elapsed().as_secs_f64() > time_budget {
+                        external_termination.store(true, Ordering::Relaxed);
+                    }
+                }, _ => { }
+            }
+            // compute simulation results
+            pb.message(progress_information().as_str());
+            // estimate running time cleverer
+            let total_repeats = total_repeats.load(Ordering::Relaxed);
+            let qec_failed = qec_failed.load(Ordering::Relaxed);
+            let ratio_total_rounds = (total_repeats as f64) / (max_repeats as f64);
+            let ratio_qec_failed = (qec_failed as f64) / (min_failed_cases as f64);
+            if ratio_total_rounds > ratio_qec_failed {
+                let progress = total_repeats as u64;
+                pb.total = if max_repeats as u64 > progress { max_repeats as u64 } else { progress };
+                pb.set(progress);
+            } else {
+                let progress = qec_failed as u64;
+                pb.total = if min_failed_cases as u64 > progress { min_failed_cases as u64 } else { progress };
+                pb.set(progress);
+            }
+            if !(!external_termination.load(Ordering::Relaxed) && total_repeats < max_repeats && qec_failed < min_failed_cases) {
+                break
+            }
+            std::thread::sleep(std::time::Duration::from_millis(300));
+        }
+        pb.total = total_repeats.load(Ordering::Relaxed) as u64;
+        pb.finish();
+        for handler in handlers {
+            handler.join().unwrap();
+        }
+        println!("{}", progress_information());
+        output += &format!("\n{}", progress_information());
     }
-    format!("")
+    output
 }
 
 /**
@@ -672,7 +750,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
                         let mini_batch_begin = Instant::now();
                         // run for at least `mini_sync_time` before sync with outside, to avoid frequent lock
                         while mini_batch_begin.elapsed().as_secs_f64() < mini_sync_time {
-                            let mut decode_and_update = |errors: Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedErrorType>, ()>)>
+                            let mut decode_and_update = |errors: Vec<(usize, usize, usize, Either<Either<ErrorType, CorrelatedPauliErrorType>, ()>)>
                                     , clearance_region: &BTreeSet<(usize, usize, usize)>, _: usize| -> bool {
                                 mini_batch += 1;
                                 let error_count = if use_fast_benchmark && !fbench_disable_additional_error {
