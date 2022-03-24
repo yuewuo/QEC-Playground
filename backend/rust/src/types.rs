@@ -51,14 +51,11 @@ impl std::fmt::Display for ErrorType {
     }
 }
 
-// impl serde::Serialize for ErrorType {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
-//         serializer.serialize_str(format!("{}", self).as_str())
-//     }
-// }
-
 impl ErrorType {
+    /// multiply two pauli operator
+    #[inline]
     pub fn multiply(&self, err: &Self) -> Self {
+        // I've checked that the compiler is automatically generating good-quality assembly
         match (self, err) {
             (Self::I, Self::I) => Self::I,
             (Self::I, Self::X) => Self::X,

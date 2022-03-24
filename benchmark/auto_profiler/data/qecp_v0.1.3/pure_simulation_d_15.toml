@@ -1,0 +1,6 @@
+create_time = "2022-03-23 22:28:15"
+time_consumption = 60.188260078430176
+command = [ "sudo", "flamegraph", "-o", "/Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.3/pure_simulation_d_15.svg", "/Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp", "tool", "benchmark", "[15]", "[15]", "[0.01]", "--max_repeats", "0", "--min_failed_cases", "0", "--time_budget", "60",]
+command_str = "sudo flamegraph -o /Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.3/pure_simulation_d_15.svg /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark [15] [15] [0.01] --max_repeats 0 --min_failed_cases 0 --time_budget 60"
+name = "pure_simulation_d_15"
+stdout = [ "format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>", "0.01 15 15 25919 25919 1 15 0.0e0 0 ", "format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>", "0.01 15 15 25919 25919 1 15 0.0e0 0 writing flamegraph to \"/Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.3/pure_simulation_d_15.svg\"", "",]

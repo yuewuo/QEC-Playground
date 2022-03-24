@@ -3,20 +3,22 @@ import qecp_profiler as qp
 time_budget = 60  # seconds for each test
 
 command_prefix = ["tool", "fault_tolerant_benchmark"]
+new_command_prefix = ["tool", "benchmark"]
 
 pm = "\u00B1"
 
 def main():
     profile_pure_simulation()
-    profile_CSS_decoding()
-    profile_XZZX_complex_noise_model_decoding()
+    # profile_CSS_decoding()
+    # profile_XZZX_complex_noise_model_decoding()
     pass
 
 def profile_pure_simulation():
     for d in [5, 15, 25]:
         p = 0.01
         name = f"pure_simulation_d_{d}"
-        qp.run_flamegraph_qecp_profile_command(name, command_prefix + [f"[{d}]", f"[{d}]", f"[{p}]", "--bypass_correction", "--max_N", "0", "--min_error_cases", "0", "--time_budget", f"{time_budget}"])
+        # qp.run_flamegraph_qecp_profile_command(name, command_prefix + [f"[{d}]", f"[{d}]", f"[{p}]", "--bypass_correction", "--max_N", "0", "--min_error_cases", "0", "--time_budget", f"{time_budget}"])
+        qp.run_flamegraph_qecp_profile_command(name, new_command_prefix + [f"[{d}]", f"[{d}]", f"[{p}]", "--max_repeats", "0", "--min_failed_cases", "0", "--time_budget", f"{time_budget}"])
 
         @qp.compare_qecp_profile(name)
         def compare(now, compare):

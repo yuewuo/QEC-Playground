@@ -310,6 +310,13 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
     for &(di, dj, noisy_measurements, p, pe) in configurations.iter() {
         // prepare simulator
         let mut simulator = build_simulator(di, dj, noisy_measurements, p, pe, bias_eta, &code_type);
+        debug_assert!({  // check correctness only in debug mode
+            let sanity_check_result = code_builder_sanity_check(&simulator);
+            if let Err(message) = &sanity_check_result {
+                println!("[error] code_builder_sanity_check: {}", message)
+            }
+            sanity_check_result.is_ok()
+        });
         if matches!(debug_print, Some(BenchmarkDebugPrint::ErrorModel)) {
             return format!("{}\n", serde_json::to_string(&simulator).expect("serialize should success"));
         }
@@ -340,8 +347,8 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             handlers.push(std::thread::spawn(move || {
                 while !external_termination.load(Ordering::Relaxed) && total_repeats.load(Ordering::Relaxed) < max_repeats && qec_failed.load(Ordering::Relaxed) < min_failed_cases {
                     simulator.generate_random_errors();
-                    // TODO: generate measurements
-
+                    // generate measurements
+                    let sparse_measurement = simulator.generate_sparse_measurement();
                     // TODO: decode
                     let is_qec_failed = true;
                     // update simulation counters

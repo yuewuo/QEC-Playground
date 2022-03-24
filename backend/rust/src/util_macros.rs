@@ -119,3 +119,12 @@ macro_rules! simulator_iter_mut_virtual {
     };
 }
 #[allow(unused_imports)] pub use simulator_iter_mut_virtual;
+
+/// faster way creating `Position`
+#[macro_export]
+macro_rules! pos {
+    ($t:expr, $i:expr, $j:expr) => {
+        Position::new($t, $i, $j)
+    };
+}
+#[allow(unused_imports)] pub use pos;

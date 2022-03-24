@@ -1,27 +1,10 @@
-
-#![allow(unused_imports)]
-// #![allow(dead_code)]
-
-use super::ndarray;
-use super::petgraph;
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
-use std::ops::{Deref, DerefMut};
-use super::blossom_v;
-use std::sync::{Arc};
-use super::types::{QubitType, ErrorType, CorrelatedPauliErrorType, ErrorModel, PauliErrorRates, CorrelatedPauliErrorRates, CorrelatedErasureErrorRates};
-use super::union_find_decoder;
-use super::either::Either;
-use super::serde_json;
-use std::time::Instant;
-use super::fast_benchmark::FastBenchmark;
+use super::types::{QubitType, ErrorType, PauliErrorRates, CorrelatedPauliErrorRates, CorrelatedErasureErrorRates};
 use serde::{Serialize, Deserialize};
-use super::util;
-use super::util::simple_hasher::SimpleHasher;
-use super::union_find_decoder::UnionFind;
 use super::code_builder::*;
 use super::util_macros::*;
 use super::reproducible_rand::Xoroshiro128StarStar;
+use ErrorType::*;
 
 
 /// general simulator for two-dimensional code with circuit-level implementation of stabilizer measurements
@@ -147,15 +130,11 @@ impl SimulatorNode {
 }
 
 /// single-qubit and two-qubit gate type
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, Copy)]
 pub enum GateType {
     /// initialize in $|0\rangle$ state which is the eigenstate of $\hat{Z}$
-    /// , also this will randomly apply $\hat{Z}$ which is irrelevant if measuring in the correct basis
-    /// (this will not be exported as error but just an internal behavior)
     InitializeZ,
     /// initialize in $|+\rangle$ state which is the eigenstate of $\hat{X}$
-    /// , also this will randomly apply $\hat{X}$ which is irrelevant if measuring in the correct basis
-    /// (this will not be exported as error but just an internal behavior)
     InitializeX,
     /// CX gate or CNOT gate, the control qubit
     CXGateControl,
@@ -184,8 +163,45 @@ impl GateType {
     pub fn is_measurement(&self) -> bool {
         self == &GateType::MeasureZ || self == &GateType::MeasureX
     }
+    /// given a propagated error, check if stabilizer measurement output is +1 (true) or -1 (false)
+    pub fn stabilizer_measurement(&self, propagated: &ErrorType) -> bool {
+        match self {
+            // not sensitive to Z
+            GateType::MeasureZ => { if matches!(propagated, X | Y) { true } else { false } }
+            // not sensitive to X
+            GateType::MeasureX => { if matches!(propagated, Z | Y) { true } else { false } }
+            _ => { panic!("stabilizer measurement behavior not specified") }
+        }
+    }
+    /// single-qubit gate doesn't have peer, including idle gate
     pub fn is_single_qubit_gate(&self) -> bool {
         self.is_initialization() || self.is_measurement() || self == &GateType::None
+    }
+    /// two-qubit gate must have peer
+    pub fn is_two_qubit_gate(&self) -> bool {
+        !self.is_single_qubit_gate()
+    }
+    /// only two-qubit gate will propagate to peer
+    pub fn propagate_peer(&self, propagated: &ErrorType) -> ErrorType {
+        match self {
+            // cx control not sensitive to Z, propagate as X
+            GateType::CXGateControl => { if matches!(propagated, X | Y) { X } else { ErrorType::I } }
+            // cx target not sensitive to X, propagate as Z
+            GateType::CXGateTarget => { if matches!(propagated, Z | Y) { Z } else { ErrorType::I } }
+            // cy control not sensitive to Z, propagate as Y
+            GateType::CYGateControl => { if matches!(propagated, X | Y) { Y } else { ErrorType::I } }
+            // cy target not sensitive to Y, propagate as Z
+            GateType::CYGateTarget => { if matches!(propagated, Z | X) { Z } else { ErrorType::I } }
+            // cz not sensitive to Z, propagate as Z
+            GateType::CZGate => { if matches!(propagated, X | Y) { Z } else { ErrorType::I } }
+            _ => { panic!("gate propagation behavior not specified") }
+        }
+    }
+    /// check if a measurement gate is corresponding to the initialization
+    pub fn is_corresponding_initialization(&self, other: &GateType) -> bool {
+        if self == &GateType::MeasureX && other == &GateType::InitializeX { return true }
+        if self == &GateType::MeasureZ && other == &GateType::InitializeZ { return true }
+        false
     }
     /// the expected gate type of peer if this is a two-qubit gate, otherwise return `GateType::None`.
     /// for example, the peer gate type of a `GateType::CXGateControl` is `GateType::CXGateTarget`
@@ -350,6 +366,7 @@ impl Simulator {
     }
 
     /// generate random errors according to the given error rates
+    #[inline(never)]
     pub fn generate_random_errors(&mut self) -> usize {
         // this size is small compared to the simulator itself
         let allocate_size = self.height * self.vertical * self.horizontal;
@@ -363,13 +380,13 @@ impl Simulator {
         simulator_iter_mut!(self, position, node, {
             let random_pauli = rng.next_f64();
             if random_pauli < node.pauli_error_rates.error_rate_X {
-                node.error = ErrorType::X;
+                node.error = X;
                 // println!("X error at {} {} {}",node.i, node.j, node.t);
             } else if random_pauli < node.pauli_error_rates.error_rate_X + node.pauli_error_rates.error_rate_Z {
-                node.error = ErrorType::Z;
+                node.error = Z;
                 // println!("Z error at {} {} {}",node.i, node.j, node.t);
             } else if random_pauli < node.pauli_error_rates.error_probability() {
-                node.error = ErrorType::Y;
+                node.error = Y;
                 // println!("Y error at {} {} {}",node.i, node.j, node.t);
             } else {
                 node.error = ErrorType::I;
@@ -434,9 +451,9 @@ impl Simulator {
                 error_count -= 1;
             }
             let random_erasure = rng.next_f64();
-            node.error = if random_erasure < 0.25 { ErrorType::X }
-                else if random_erasure < 0.5 { ErrorType::Z }
-                else if random_erasure < 0.75 { ErrorType::Y }
+            node.error = if random_erasure < 0.25 { X }
+                else if random_erasure < 0.5 { Z }
+                else if random_erasure < 0.75 { Y }
                 else { ErrorType::I };
             if node.error != ErrorType::I {
                 error_count += 1;
@@ -456,14 +473,113 @@ impl Simulator {
         error_count
     }
 
-    /// this will be automatically called after `generate_random_errors`, but if user modified the 
-    pub fn propagate_errors(&mut self) {
-
+    /// clear all pauli and erasure errors and also propagated errors, returning to a clean state
+    #[allow(dead_code)]
+    pub fn clear_all_errors(&mut self) {
+        simulator_iter_mut!(self, position, node, {
+            node.error = ErrorType::I;
+            node.has_erasure = false;
+            node.propagated = ErrorType::I;
+        });
     }
 
-    /// propagate errors at one point, note that 
-    pub fn propagate_error_at(&mut self) {
+    /// must be called before `propagate_errors` to ensure correctness, note that `generate_random_errors` already does this
+    #[allow(dead_code)]
+    pub fn clear_propagate_errors(&mut self) {
+        simulator_iter_mut!(self, position, node, {
+            node.propagated = ErrorType::I;
+        });
+    }
 
+    /// this will be automatically called after `generate_random_errors`, but if user modified the error, they need to call this function again
+    #[inline(never)]
+    pub fn propagate_errors(&mut self) {
+        debug_assert!({
+            let mut propagated_clean = true;
+            simulator_iter!(self, position, node, {
+                if node.propagated != ErrorType::I {
+                    propagated_clean = false;
+                }
+            });
+            if !propagated_clean {
+                println!("[warning] propagate state must be clean before calling `propagate_errors`");
+                println!("    note that `generate_random_errors` automatically cleared it, otherwise you need to manually call `clear_propagate_errors`");
+            }
+            propagated_clean
+        });
+        for t in 0..self.height - 1 {
+            simulator_iter!(self, position, _node, t => t, {
+                self.propagate_error_from(position);
+            });
+        }
+    }
+
+    /// calculate propagated errors at one position. in order to correctly propagate every error, the order of propagation must be ascending in `t`s.
+    /// note that errors are propagated to the next time, i.e. `t + 1`
+    pub fn propagate_error_from(&mut self, position: &Position) -> Option<Position> {
+        let node = self.get_node_unwrap(position);
+        // propagation from virtual to real is forbidden
+        let propagate_to_peer_forbidden = node.is_virtual && !node.is_peer_virtual;
+        // error will propagated to itself at `t+1`, this will initialize `propagated` at `t+1`
+        let node_propagated = node.propagated.clone();
+        let node_gate_peer = node.gate_peer.clone();
+        let propagate_to_next = node.error.multiply(&node_propagated);
+        let gate_type = node.gate_type.clone();
+        let next_position = &mut position.clone();
+        next_position.t += 1;
+        let next_node = self.get_node_mut_unwrap(next_position);
+        next_node.propagated = next_node.propagated.multiply(&propagate_to_next);  // multiply the propagated error
+        if gate_type.is_initialization() {
+            next_node.propagated = ErrorType::I;  // no error after initialization
+        }
+        // propagate error to gate peer
+        if !propagate_to_peer_forbidden && gate_type.is_two_qubit_gate() {
+            let propagate_to_peer = gate_type.propagate_peer(&node_propagated);
+            if propagate_to_peer != ErrorType::I {
+                let mut next_peer_position = node_gate_peer.unwrap();
+                next_peer_position.t += 1;
+                let peer_node = self.get_node_mut_unwrap(&next_peer_position);
+                peer_node.propagated = peer_node.propagated.multiply(&propagate_to_peer);
+                return Some(next_peer_position)
+            }
+        }
+        None
+    }
+
+    /// use sparse measurement to efficiently iterate over non-trivial measurements
+    #[inline(never)]
+    pub fn generate_sparse_measurement(&self) -> SparseMeasurement {
+        let mut sparse_measurement = SparseMeasurement::new();
+        let measurement_cycles = match self.code_type.builtin_code_information() {
+            Some(BuiltinCodeInformation{ measurement_cycles, .. }) => {
+                measurement_cycles
+            },
+            _ => {
+                println!("[warning] generate measurement of unknown code, fall back to slower speed");
+                1
+            }
+        };
+        for t in (measurement_cycles..self.height).step_by(measurement_cycles) {
+            // only iterate over real stabilizers, excluding those non-existing virtual stabilizers
+            simulator_iter_real!(self, position, node, t => t, {
+                if node.gate_type.is_measurement() {
+                    let this_result = node.gate_type.stabilizer_measurement(&node.propagated);
+                    let mut previous_position = position.clone();
+                    loop {  // usually this loop execute only once because the previous measurement is found immediately
+                        previous_position.t -= measurement_cycles;
+                        let previous_node = self.get_node_unwrap(&previous_position);
+                        if previous_node.gate_type.is_measurement() {  // found previous measurement
+                            let previous_result = previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
+                            if this_result != previous_result {
+                                sparse_measurement.insert_nontrivial_measurement(position);
+                            }
+                            break
+                        }
+                    }
+                }
+            });
+        }
+        sparse_measurement
     }
     
 }
@@ -475,6 +591,28 @@ impl Default for Position {
             i: usize::MAX,
             j: usize::MAX,
         }
+    }
+}
+
+impl Ord for Position {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.t.cmp(&other.t) {
+            Ordering::Less => Ordering::Less,
+            Ordering::Greater => Ordering::Greater,
+            Ordering::Equal => {
+                match self.i.cmp(&other.i) {
+                    Ordering::Less => Ordering::Less,
+                    Ordering::Greater => Ordering::Greater,
+                    Ordering::Equal => self.j.cmp(&other.j),
+                }
+            }
+        }
+    }
+}
+
+impl PartialOrd for Position {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -501,6 +639,28 @@ impl std::fmt::Display for SimulatorNode {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SparseMeasurement {
+    pub nontrivial: std::collections::BTreeSet<Position>,
+}
+
+impl SparseMeasurement {
+    pub fn new() -> Self {
+        Self {
+            nontrivial: std::collections::BTreeSet::new(),
+        }
+    }
+    /// return false if this nontrivial measurement is already present
+    pub fn insert_nontrivial_measurement(&mut self, position: &Position) -> bool {
+        self.nontrivial.insert(position.clone())
+    }
+    /// convert to vector in ascending order
+    #[allow(dead_code)]
+    pub fn to_vec(&self) -> Vec<Position> {
+        self.nontrivial.iter().map(|position| *position).collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -511,9 +671,9 @@ mod tests {
         let dj = 5;
         let noisy_measurements = 5;
         let simulator = Simulator::new(CodeType::StandardPlanarCode { noisy_measurements, di, dj });
-        let invalid_position = Position::new(100, 100, 100);
+        let invalid_position = pos!(100, 100, 100);
         assert!(!simulator.is_valid_position(&invalid_position), "invalid position");
-        let nonexisting_position = Position::new(0, 0, 0);
+        let nonexisting_position = pos!(0, 0, 0);
         assert!(simulator.is_valid_position(&nonexisting_position), "valid position");
         assert!(!simulator.is_node_exist(&nonexisting_position), "nonexisting position");
         if std::mem::size_of::<SimulatorNode>() > 128 {  // ArmV8 data cache line is 64 bytes

@@ -160,12 +160,12 @@ pub fn build_code(simulator: &mut Simulator) {
                                     if qubit_type == QubitType::Data {
                                         if i+1 < vertical && is_present(i+1, j) {
                                             gate_type = if j % 2 == 1 { GateType::CXGateTarget } else { GateType::CXGateControl };
-                                            gate_peer = Some(Position::new(t, i+1, j));
+                                            gate_peer = Some(pos!(t, i+1, j));
                                         }
                                     } else {
                                         if i >= 1 && is_present(i-1, j) {
                                             gate_type = if j % 2 == 1 { GateType::CXGateControl } else { GateType::CXGateTarget };
-                                            gate_peer = Some(Position::new(t, i-1, j));
+                                            gate_peer = Some(pos!(t, i-1, j));
                                         }
                                     }
                                 },
@@ -173,12 +173,12 @@ pub fn build_code(simulator: &mut Simulator) {
                                     if j % 2 == 1 {  // operate with right
                                         if is_present(i, j+1) {
                                             gate_type = GateType::CXGateControl;
-                                            gate_peer = Some(Position::new(t, i, j+1));
+                                            gate_peer = Some(pos!(t, i, j+1));
                                         }
                                     } else {  // operate with left
                                         if j >= 1 && is_present(i, j-1) {
                                             gate_type = GateType::CXGateTarget;
-                                            gate_peer = Some(Position::new(t, i, j-1));
+                                            gate_peer = Some(pos!(t, i, j-1));
                                         }
                                     }
                                 },
@@ -186,12 +186,12 @@ pub fn build_code(simulator: &mut Simulator) {
                                     if j % 2 == 1 {  // operate with left
                                         if j >= 1 && is_present(i, j-1) {
                                             gate_type = GateType::CXGateControl;
-                                            gate_peer = Some(Position::new(t, i, j-1));
+                                            gate_peer = Some(pos!(t, i, j-1));
                                         }
                                     } else {  // operate with right
                                         if is_present(i, j+1) {
                                             gate_type = GateType::CXGateTarget;
-                                            gate_peer = Some(Position::new(t, i, j+1));
+                                            gate_peer = Some(pos!(t, i, j+1));
                                         }
                                     }
                                 },
@@ -199,12 +199,12 @@ pub fn build_code(simulator: &mut Simulator) {
                                     if qubit_type == QubitType::Data {
                                         if i >= 1 && is_present(i-1, j) {
                                             gate_type = if j % 2 == 1 { GateType::CXGateTarget } else { GateType::CXGateControl };
-                                            gate_peer = Some(Position::new(t, i-1, j));
+                                            gate_peer = Some(pos!(t, i-1, j));
                                         }
                                     } else {
                                         if i+1 < vertical && is_present(i+1, j) {
                                             gate_type = if j % 2 == 1 { GateType::CXGateControl } else { GateType::CXGateTarget };
-                                            gate_peer = Some(Position::new(t, i+1, j));
+                                            gate_peer = Some(pos!(t, i+1, j));
                                         }
                                     }
                                 },
@@ -217,7 +217,7 @@ pub fn build_code(simulator: &mut Simulator) {
                                 },
                                 _ => unreachable!()
                             }
-                            row_j.push(Some(SimulatorNode::new(Position::new(t, i, j), qubit_type, gate_type, gate_peer).set_virtual(
+                            row_j.push(Some(SimulatorNode::new(pos!(t, i, j), qubit_type, gate_type, gate_peer).set_virtual(
                                 is_virtual(i, j), gate_peer.map_or(false, |peer| is_virtual(peer.i, peer.j)))));
                         } else {
                             row_j.push(None);
@@ -242,7 +242,6 @@ pub fn build_code(simulator: &mut Simulator) {
 }
 
 /// detect common bugs of code building, e.g. peer gate invalid type, is_virtual not correct, etc...
-#[allow(dead_code)]
 pub fn code_builder_sanity_check(simulator: &Simulator) -> Result<(), String> {
     simulator_iter!(simulator, position, node, {
         // println!("{}", node);
@@ -288,19 +287,52 @@ pub fn code_builder_sanity_check(simulator: &Simulator) -> Result<(), String> {
             }
         }
     });
+    simulator_iter!(simulator, base_position, _base_node, t => 0, {
+        // check that initialization and measurement are always in the same basis
+        let mut previous_initialization = GateType::None;
+        for t in 1..simulator.height {
+            let position = &mut base_position.clone();
+            position.t = t;
+            let node = simulator.get_node_unwrap(position);
+            if node.gate_type.is_initialization() {
+                previous_initialization = node.gate_type;
+            }
+            if node.gate_type.is_measurement() {
+                if !node.gate_type.is_corresponding_initialization(&previous_initialization) {
+                    return Err(format!("measurement and initialization not in the same basis: node {} has gate type {:?} but previous initialization is {:?}"
+                        , position, node.gate_type, previous_initialization))
+                }
+            }
+        }
+    });
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ErrorType::*;
+
+    #[macro_export]
+    macro_rules! assert_measurement {
+        ($simulator:ident, $errors:expr, $expected_measurements:expr) => {
+            $simulator.clear_all_errors();
+            for (position, error) in $errors.iter() {
+                let node = $simulator.get_node_mut_unwrap(position);
+                assert_eq!(node.error, ErrorType::I, "do not set the error at a same position twice: {} {}", position, error);
+                node.error = *error;
+            }
+            $simulator.propagate_errors();
+            assert_eq!($simulator.generate_sparse_measurement().to_vec(), $expected_measurements);
+        };
+    }
 
     #[test]
     fn code_builder_standard_planar_code() {  // cargo test code_builder_standard_planar_code -- --nocapture
         let di = 7;
         let dj = 5;
         let noisy_measurements = 3;
-        let simulator = Simulator::new(CodeType::StandardPlanarCode { noisy_measurements, di, dj });
+        let mut simulator = Simulator::new(CodeType::StandardPlanarCode { noisy_measurements, di, dj });
         code_builder_sanity_check(&simulator).unwrap();
         {  // count how many nodes
             let mut nodes_count = 0;
@@ -320,43 +352,43 @@ mod tests {
         }
         {  // check individual qubit type
             {
-                let node = simulator.get_node_unwrap(&Position::new(0, 0, 1));
+                let node = simulator.get_node_unwrap(&pos!(0, 0, 1));
                 assert_eq!(node.qubit_type, QubitType::StabX);
                 assert_eq!(node.gate_type, GateType::MeasureX);
                 assert_eq!(node.is_virtual, true);
             }
             {
-                let node = simulator.get_node_unwrap(&Position::new(0, 0, 2 * dj - 1));
+                let node = simulator.get_node_unwrap(&pos!(0, 0, 2 * dj - 1));
                 assert_eq!(node.qubit_type, QubitType::StabX);
                 assert_eq!(node.gate_type, GateType::MeasureX);
                 assert_eq!(node.is_virtual, true);
             }
             {
-                let node = simulator.get_node_unwrap(&Position::new(0, 1, 0));
+                let node = simulator.get_node_unwrap(&pos!(0, 1, 0));
                 assert_eq!(node.qubit_type, QubitType::StabZ);
                 assert_eq!(node.gate_type, GateType::MeasureZ);
                 assert_eq!(node.is_virtual, true);
             }
             {
-                let node = simulator.get_node_unwrap(&Position::new(0, 2 * di - 1, 0));
+                let node = simulator.get_node_unwrap(&pos!(0, 2 * di - 1, 0));
                 assert_eq!(node.qubit_type, QubitType::StabZ);
                 assert_eq!(node.gate_type, GateType::MeasureZ);
                 assert_eq!(node.is_virtual, true);
             }
             {
-                let node = simulator.get_node_unwrap(&Position::new(0, 1, 1));
+                let node = simulator.get_node_unwrap(&pos!(0, 1, 1));
                 assert_eq!(node.qubit_type, QubitType::Data);
                 assert_eq!(node.gate_type, GateType::None);
                 assert_eq!(node.is_virtual, false);
             }
             {
-                let node = simulator.get_node_unwrap(&Position::new(0, 1, 2));
+                let node = simulator.get_node_unwrap(&pos!(0, 1, 2));
                 assert_eq!(node.qubit_type, QubitType::StabZ);
                 assert_eq!(node.gate_type, GateType::MeasureZ);
                 assert_eq!(node.is_virtual, false);
             }
             {
-                let node = simulator.get_node_unwrap(&Position::new(0, 2, 1));
+                let node = simulator.get_node_unwrap(&pos!(0, 2, 1));
                 assert_eq!(node.qubit_type, QubitType::StabX);
                 assert_eq!(node.gate_type, GateType::MeasureX);
                 assert_eq!(node.is_virtual, false);
@@ -364,26 +396,44 @@ mod tests {
         }
         {  // check gate sequence
             {  // data qubit
-                let node = simulator.get_node_unwrap(&Position::new(1, 1, 1));
+                let node = simulator.get_node_unwrap(&pos!(1, 1, 1));
                 assert_eq!(node.is_peer_virtual, false);
                 assert_eq!(node.gate_type, GateType::None);
-                let node = simulator.get_node_unwrap(&Position::new(2, 1, 1));
+                let node = simulator.get_node_unwrap(&pos!(2, 1, 1));
                 assert_eq!(node.is_peer_virtual, false);
                 assert_eq!(node.gate_type, GateType::CXGateTarget);
-                assert_eq!(node.gate_peer, Some(Position::new(2, 2, 1)));
-                let node = simulator.get_node_unwrap(&Position::new(3, 1, 1));
+                assert_eq!(node.gate_peer, Some(pos!(2, 2, 1)));
+                let node = simulator.get_node_unwrap(&pos!(3, 1, 1));
                 assert_eq!(node.is_peer_virtual, false);
                 assert_eq!(node.gate_type, GateType::CXGateControl);
-                assert_eq!(node.gate_peer, Some(Position::new(3, 1, 2)));
-                let node = simulator.get_node_unwrap(&Position::new(4, 1, 1));
+                assert_eq!(node.gate_peer, Some(pos!(3, 1, 2)));
+                let node = simulator.get_node_unwrap(&pos!(4, 1, 1));
                 assert_eq!(node.is_peer_virtual, true);
                 assert_eq!(node.gate_type, GateType::CXGateControl);
-                assert_eq!(node.gate_peer, Some(Position::new(4, 1, 0)));
-                let node = simulator.get_node_unwrap(&Position::new(5, 1, 1));
+                assert_eq!(node.gate_peer, Some(pos!(4, 1, 0)));
+                let node = simulator.get_node_unwrap(&pos!(5, 1, 1));
                 assert_eq!(node.is_peer_virtual, true);
                 assert_eq!(node.gate_type, GateType::CXGateTarget);
-                assert_eq!(node.gate_peer, Some(Position::new(5, 0, 1)));
+                assert_eq!(node.gate_peer, Some(pos!(5, 0, 1)));
             }
+        }
+        {  // check stabilizer measurements
+            // data qubit at corner
+            assert_measurement!(simulator, [(pos!(0, 1, 1), X)], [pos!(6, 1, 2)]);
+            assert_measurement!(simulator, [(pos!(0, 1, 1), Z)], [pos!(6, 2, 1)]);
+            assert_measurement!(simulator, [(pos!(0, 1, 1), Y)], [pos!(6, 1, 2), pos!(6, 2, 1)]);
+            // data qubit at center
+            assert_measurement!(simulator, [(pos!(0, 2, 2), X)], [pos!(6, 1, 2), pos!(6, 3, 2)]);
+            assert_measurement!(simulator, [(pos!(0, 2, 2), Z)], [pos!(6, 2, 1), pos!(6, 2, 3)]);
+            assert_measurement!(simulator, [(pos!(0, 2, 2), Y)], [pos!(6, 1, 2), pos!(6, 2, 1), pos!(6, 2, 3), pos!(6, 3, 2)]);
+            // Z stabilizer measurement error
+            assert_measurement!(simulator, [(pos!(5, 1, 2), X)], [pos!(6, 1, 2), pos!(12, 1, 2)]);
+            assert_measurement!(simulator, [(pos!(5, 1, 2), Z)], []);  // not sensitive to Z error
+            assert_measurement!(simulator, [(pos!(5, 1, 2), Y)], [pos!(6, 1, 2), pos!(12, 1, 2)]);
+            // X stabilizer measurement error
+            assert_measurement!(simulator, [(pos!(5, 2, 1), X)], []);  // not sensitive to X error
+            assert_measurement!(simulator, [(pos!(5, 2, 1), Z)], [pos!(6, 2, 1), pos!(12, 2, 1)]);
+            assert_measurement!(simulator, [(pos!(5, 2, 1), Y)], [pos!(6, 2, 1), pos!(12, 2, 1)]);
         }
     }
 
