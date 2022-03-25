@@ -407,7 +407,7 @@ impl std::fmt::Display for DecoderType {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum ErrorModel {
+pub enum ErrorModelName {
     GenericBiasedWithBiasedCX,  // arXiv:2104.09539v1 Sec.IV.A
     GenericBiasedWithStandardCX,  // arXiv:2104.09539v1 Sec.IV.A
     ErasureOnlyPhenomenological,  // 100% erasure errors only on the data qubits before the gates happen and on the ancilla qubits after the gates finish
@@ -418,7 +418,7 @@ pub enum ErrorModel {
     TailoredPhenomenological,  // arXiv:1907.02554v2 Biased noise models
 }
 
-impl From<String> for ErrorModel {
+impl From<String> for ErrorModelName {
     fn from(name: String) -> Self {
         match name.as_str() {
             "GenericBiasedWithBiasedCX" => Self::GenericBiasedWithBiasedCX,
@@ -434,7 +434,7 @@ impl From<String> for ErrorModel {
     }
 }
 
-impl std::fmt::Display for ErrorModel {
+impl std::fmt::Display for ErrorModelName {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         fmt.write_str(match self {
             Self::GenericBiasedWithBiasedCX => "GenericBiasedWithBiasedCX",

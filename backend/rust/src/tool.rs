@@ -114,7 +114,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let max_half_weight: usize = matches.value_of_t("max_half_weight").unwrap_or(1);  // default to 1
             let disable_combined_probability = matches.is_present("disable_combined_probability");
             let disable_autotune_minus_no_error = matches.is_present("disable_autotune_minus_no_error");
-            let error_model: Option<ErrorModel> = matches.value_of_t("error_model").ok().map(|x: String| ErrorModel::from(x));
+            let error_model: Option<ErrorModelName> = matches.value_of_t("error_model").ok().map(|x: String| ErrorModelName::from(x));
             let error_model_configuration: Option<serde_json::Value> = matches.value_of_t::<String>("error_model_configuration").ok().and_then(|config| {
                 Some(serde_json::from_str(config.as_str()).expect("error_model_configuration must be a json object"))
             });
@@ -249,7 +249,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
 pub enum BenchmarkDebugPrint {
-    ErrorModel,
+    ErrorModelName,
     FullErrorModel,  // including every possible error rate, but initialize them as 0
 }
 
@@ -301,7 +301,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
     for &(di, dj, noisy_measurements, p, pe) in configurations.iter() {
         // prepare simulator
         let mut simulator = Simulator::new(CodeType::new(&code_type, noisy_measurements, di, dj));
-        let mut error_model = SimulatorErrorModel::new(&simulator);
+        let mut error_model = ErrorModel::new(&simulator);
         let px = p / (1. + bias_eta) / 2.;
         let py = px;
         let pz = p - 2. * px;
@@ -322,7 +322,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             }
             sanity_check_result.is_ok()
         });
-        if matches!(debug_print, Some(BenchmarkDebugPrint::ErrorModel)) {
+        if matches!(debug_print, Some(BenchmarkDebugPrint::ErrorModelName)) {
             return format!("{}\n", serde_json::to_string(&simulator).expect("serialize should success"));
         }
         if matches!(debug_print, Some(BenchmarkDebugPrint::FullErrorModel)) {
@@ -423,7 +423,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         , parallel: usize, validate_layer: String, mini_sync_time: f64, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool
         , extra_measurement_error: f64, bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, only_count_logical_z: bool
         , perfect_initialization: bool, shallow_error_on_bottom: bool, no_y_error: bool, use_xzzx_code: bool, use_rotated_tailored_code: bool, bias_eta: f64, decoder_type: DecoderType
-        , max_half_weight: usize, use_combined_probability: bool, autotune_minus_no_error: bool, error_model: Option<ErrorModel>
+        , max_half_weight: usize, use_combined_probability: bool, autotune_minus_no_error: bool, error_model: Option<ErrorModelName>
         , error_model_configuration: Option<serde_json::Value>, no_stop_if_next_model_is_not_prepared: bool, log_runtime_statistics: Option<String>
         , detailed_runtime_statistics: bool, log_error_pattern_into_statistics_when_has_logical_error: bool, time_budget: Option<f64>, use_fast_benchmark: bool
         , fbench_disable_additional_error: bool, fbench_use_fake_decoder: bool, fbench_use_simple_sum: bool, fbench_assignment_sampling_amount: usize

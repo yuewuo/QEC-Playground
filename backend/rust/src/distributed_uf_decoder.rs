@@ -1294,7 +1294,7 @@ pub fn copy_state_back_to_union_find_decoder(decoder: &mut union_find_decoder::U
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::super::types::{ErrorType, ErrorModel};
+    use super::super::types::{ErrorType, ErrorModelName};
     use super::super::rand::prelude::*;
 
     // use `cargo test distributed_union_find_decoder_test_case_1 -- --nocapture` to run specific test
@@ -1562,7 +1562,7 @@ mod tests {
         let p = 0.006;
         let max_half_weight = 4;
         let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code_rectangle(measurement_rounds, di, dj);
-        model.apply_error_model(&ErrorModel::GenericBiasedWithBiasedCX, None, p, bias_zeta, 0.);
+        model.apply_error_model(&ErrorModelName::GenericBiasedWithBiasedCX, None, p, bias_zeta, 0.);
         model.build_graph(ftqec::weight_autotune);
         // model.optimize_correction_pattern();  // no need if not building corrections
         // model.build_exhausted_path();

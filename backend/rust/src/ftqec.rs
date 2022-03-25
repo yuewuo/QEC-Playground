@@ -24,7 +24,7 @@ use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
 use super::blossom_v;
 use std::sync::{Arc};
-use super::types::{QubitType, ErrorType, CorrelatedPauliErrorType, CorrelatedPauliErrorRates, ErrorModel, CorrelatedErasureErrorRates};
+use super::types::{QubitType, ErrorType, CorrelatedPauliErrorType, CorrelatedPauliErrorRates, ErrorModelName, CorrelatedErasureErrorRates};
 use super::union_find_decoder;
 use super::either::Either;
 use super::serde_json;
@@ -2668,10 +2668,10 @@ impl PlanarCodeModel {
         Ok(())
     }
 
-    pub fn apply_error_model(&mut self, error_model: &ErrorModel, error_model_configuration: Option<&serde_json::Value>, p: f64, bias_eta: f64, pe: f64) {
+    pub fn apply_error_model(&mut self, error_model: &ErrorModelName, error_model_configuration: Option<&serde_json::Value>, p: f64, bias_eta: f64, pe: f64) {
         let mut error_model_configuration_recognized = false;
         match error_model {
-            ErrorModel::GenericBiasedWithBiasedCX | ErrorModel::GenericBiasedWithStandardCX => {
+            ErrorModelName::GenericBiasedWithBiasedCX | ErrorModelName::GenericBiasedWithStandardCX => {
                 let height = self.snapshot.len();
                 let mut initialization_error_rate = p;  // by default initialization error rate is the same as p
                 let mut measurement_error_rate = p;
@@ -2725,13 +2725,13 @@ impl PlanarCodeModel {
                                     let mut correlated_error_model = CorrelatedPauliErrorRates::default_with_probability(p / bias_eta);
                                     correlated_error_model.error_rate_ZI = p;
                                     match error_model {
-                                        ErrorModel::GenericBiasedWithStandardCX => {
+                                        ErrorModelName::GenericBiasedWithStandardCX => {
                                             correlated_error_model.error_rate_IZ = 0.375 * p;
                                             correlated_error_model.error_rate_ZZ = 0.375 * p;
                                             correlated_error_model.error_rate_IY = 0.125 * p;
                                             correlated_error_model.error_rate_ZY = 0.125 * p;
                                         },
-                                        ErrorModel::GenericBiasedWithBiasedCX => {
+                                        ErrorModelName::GenericBiasedWithBiasedCX => {
                                             correlated_error_model.error_rate_IZ = 0.5 * p;
                                             correlated_error_model.error_rate_ZZ = 0.5 * p;
                                         },
@@ -2747,7 +2747,7 @@ impl PlanarCodeModel {
                     }
                 });
             },
-            ErrorModel::ErasureOnlyPhenomenological => {
+            ErrorModelName::ErasureOnlyPhenomenological => {
                 assert_eq!(p, 0., "pauli error should be 0 in this error model");
                 let height = self.snapshot.len();
                 self.iterate_snapshot_mut(|t, _i, _j, node| {
@@ -2772,7 +2772,7 @@ impl PlanarCodeModel {
                     }
                 });
             },
-            ErrorModel::PauliZandErasurePhenomenological => {  // this error model is from https://arxiv.org/pdf/1709.06218v3.pdf
+            ErrorModelName::PauliZandErasurePhenomenological => {  // this error model is from https://arxiv.org/pdf/1709.06218v3.pdf
                 let height = self.snapshot.len();
                 error_model_configuration_recognized = true;
                 let mut also_include_pauli_x = false;
@@ -2813,8 +2813,8 @@ impl PlanarCodeModel {
                     }
                 });
             },
-            ErrorModel::OnlyGateErrorCircuitLevel | ErrorModel::OnlyGateErrorCircuitLevelCorrelatedErasure => {
-                let is_correlated_erasure = error_model == &ErrorModel::OnlyGateErrorCircuitLevelCorrelatedErasure;
+            ErrorModelName::OnlyGateErrorCircuitLevel | ErrorModelName::OnlyGateErrorCircuitLevelCorrelatedErasure => {
+                let is_correlated_erasure = error_model == &ErrorModelName::OnlyGateErrorCircuitLevelCorrelatedErasure;
                 let height = self.snapshot.len();
                 let mut initialization_error_rate = 0.;
                 let mut measurement_error_rate = 0.;
@@ -2907,7 +2907,7 @@ impl PlanarCodeModel {
                     }
                 });
             },
-            ErrorModel::Arxiv200404693 => {
+            ErrorModelName::Arxiv200404693 => {
                 let height = self.snapshot.len();
                 let mut use_nature_initialization_error = false;  // by default use the one defined in the paper (although I believe it's the same with p/3 X,Y,Z pauli errors)
                 let mut use_nature_measurement_error = false;  // I believe they're the same
@@ -2997,7 +2997,7 @@ impl PlanarCodeModel {
                     }
                 });
             },
-            ErrorModel::TailoredPhenomenological => {
+            ErrorModelName::TailoredPhenomenological => {
                 self.enabled_tailored_decoding = true;  // mark it to use tailored decoding
                 let height = self.snapshot.len();
                 let px = p / (1. + bias_eta) / 2.;
@@ -3585,7 +3585,7 @@ mod tests {
         let p = 0.01;  // physical error rate
         let bias_eta = 100.;
         let mut model = PlanarCodeModel::new_rotated_tailored_code(measurement_rounds, d);
-        model.apply_error_model(&ErrorModel::TailoredPhenomenological, None, p, bias_eta, 0.);
+        model.apply_error_model(&ErrorModelName::TailoredPhenomenological, None, p, bias_eta, 0.);
         model.build_graph(weight_autotune);
         let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
         // single X error on the top corner
@@ -3693,7 +3693,7 @@ mod tests {
         let p = 0.01;  // physical error rate
         let bias_eta = 100.;
         let mut model = PlanarCodeModel::new_rotated_tailored_code(measurement_rounds, d);
-        model.apply_error_model(&ErrorModel::TailoredPhenomenological, None, p, bias_eta, 0.);
+        model.apply_error_model(&ErrorModelName::TailoredPhenomenological, None, p, bias_eta, 0.);
         model.build_graph(weight_autotune);
         let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
         // single error at data qubit
@@ -3794,7 +3794,7 @@ mod tests {
         let p = 0.01;  // physical error rate
         let bias_eta = 100.;
         let mut model = PlanarCodeModel::new_rotated_tailored_code(measurement_rounds, d);
-        model.apply_error_model(&ErrorModel::TailoredPhenomenological, None, p, bias_eta, 0.);
+        model.apply_error_model(&ErrorModelName::TailoredPhenomenological, None, p, bias_eta, 0.);
         model.build_graph(weight_autotune);
         model.build_exhausted_path();
         let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17

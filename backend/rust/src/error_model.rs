@@ -13,14 +13,14 @@ use std::sync::Arc;
 
 /// describing an error model, strictly corresponding to an instance of `Simulator`
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SimulatorErrorModel {
+pub struct ErrorModel {
     /// each error model node corresponds to a simulator node, this allows immutable sharing between threads
-    pub nodes: Vec::< Vec::< Vec::< Option<Arc <SimulatorErrorModelNode> > > > >,
+    pub nodes: Vec::< Vec::< Vec::< Option<Arc <ErrorModelNode> > > > >,
 }
 
 /// error model node corresponds to 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SimulatorErrorModelNode {
+pub struct ErrorModelNode {
     /// without losing generality, errors are applied after the gate
     #[serde(rename = "pp")]
     pub pauli_error_rates: PauliErrorRates,
@@ -32,7 +32,7 @@ pub struct SimulatorErrorModelNode {
     pub correlated_erasure_error_rates: Option<CorrelatedErasureErrorRates>,
 }
 
-impl SimulatorErrorModelNode {
+impl ErrorModelNode {
     pub fn new() -> Self {
         Self {
             pauli_error_rates: PauliErrorRates::default(),
@@ -60,10 +60,10 @@ impl SimulatorErrorModelNode {
     }
 }
 
-impl SimulatorErrorModel {
+impl ErrorModel {
     pub fn new(simulator: &Simulator) -> Self {
         assert!(simulator.volume() > 0, "cannot build error model out of zero-sized simulator");
-        let default_error_model_node = Arc::new(SimulatorErrorModelNode::new());
+        let default_error_model_node = Arc::new(ErrorModelNode::new());
         Self {
             nodes: (0..simulator.height).map(|t| {
                 (0..simulator.vertical).map(|i| {
@@ -80,19 +80,19 @@ impl SimulatorErrorModel {
     }
 
     /// get reference `self.nodes[t][i][j]` and then unwrap
-    pub fn get_node_unwrap(&'_ self, position: &Position) -> &'_ SimulatorErrorModelNode {
+    pub fn get_node_unwrap(&'_ self, position: &Position) -> &'_ ErrorModelNode {
         self.nodes[position.t][position.i][position.j].as_ref().unwrap()
     }
 
     /// each node is immutable, but one can assign a new node
-    pub fn set_node(&mut self, position: &Position, node: Option<Arc<SimulatorErrorModelNode>>) {
+    pub fn set_node(&mut self, position: &Position, node: Option<Arc<ErrorModelNode>>) {
         self.nodes[position.t][position.i][position.j] = node;
     }
 }
 
 /// check if error rates are not zero at perfect measurement ranges or at virtual nodes,
 /// also check for error rate constrains on virtual nodes
-pub fn error_model_sanity_check(simulator: &Simulator, error_model: &SimulatorErrorModel) -> Result<(), String> {
+pub fn error_model_sanity_check(simulator: &Simulator, error_model: &ErrorModel) -> Result<(), String> {
     match simulator.code_type.builtin_code_information() {
         Some(BuiltinCodeInformation{ measurement_cycles, noisy_measurements, .. }) => {
             // check that no errors present in the final perfect measurement rounds

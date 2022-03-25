@@ -457,7 +457,7 @@ class QubitErrorModel:
         doc="two-qubit error rate of Pauli EE"
     )
 
-class ErrorModel:
+class ErrorModelName:
     def __init__(self, error_model, di, dj, measurement_rounds, p, pe, configuration):
         self.error_model = error_model
         self.di = di
@@ -543,4 +543,4 @@ def fetch_error_model(di, dj, measurement_rounds, p=0, pe=0, configuration=[]):
         print("[error] failed command:", " ".join(command))
         exit(1)
     json_string = stdout.strip(" \r\n").split("\n")[-1]
-    return ErrorModel(json.loads(json_string), di, dj, measurement_rounds, p, pe, configuration)
+    return ErrorModelName(json.loads(json_string), di, dj, measurement_rounds, p, pe, configuration)

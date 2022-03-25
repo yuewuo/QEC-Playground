@@ -151,7 +151,7 @@ fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> 
                 .arg(clap::Arg::new("disable_combined_probability").long("disable_combined_probability").help("disable combined probability of matching pairs instead of choosing the maximum probability"))
                 // 2022.1.25: change default behavior to use ln((1-p)/p) instead of -ln(p), this will improve threshold (although very slightly) but makes more sense
                 .arg(clap::Arg::new("disable_autotune_minus_no_error").long("disable_autotune_minus_no_error").help("use ln(1/p) as weight instead of the default ln((1-p)/p)"))
-                .arg(clap::Arg::new("error_model").long("error_model").help("possible error models see types::ErrorModel").takes_value(true))
+                .arg(clap::Arg::new("error_model").long("error_model").help("possible error models see types::ErrorModelName").takes_value(true))
                 .arg(clap::Arg::new("error_model_configuration").long("error_model_configuration").help("a json object describing the error model details").takes_value(true))
                 .arg(clap::Arg::new("no_stop_if_next_model_is_not_prepared").short('s').long("no_stop_if_next_model_is_not_prepared").help("in rough experiment (e.g. estimate the threshold by testing multiple (di,dj,T) configurations) you can use this option to avoid wasting CPU time, as it will not stop current experiment if the model of next experiment is not prepared. Note that you should keep #threads + 1 <= #CPU because the additional thread is for computing the next model"))
                 .arg(clap::Arg::new("log_runtime_statistics").long("log_runtime_statistics").help("log the runtime statistical information, given the path of the log file").takes_value(true))

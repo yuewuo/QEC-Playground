@@ -103,7 +103,7 @@ impl SimulatorNode {
 
     /// set error with sanity check
     #[inline]
-    pub fn set_error(&mut self, _error_model: &SimulatorErrorModel, error: &ErrorType) {
+    pub fn set_error(&mut self, _error_model: &ErrorModel, error: &ErrorType) {
         debug_assert!(!self.is_virtual || error == &I, "should not add errors at virtual nodes");
         // TODO: in debug build, check if this error is valid given the error rates
         self.error = *error;
@@ -268,7 +268,7 @@ impl Simulator {
     }
 
     /// check if this node is a virtual node, i.e. non-existing but just work as a virtual boundary
-    pub fn set_error_rates(&mut self, error_model: &mut SimulatorErrorModel, px: f64, py: f64, pz: f64, pe: f64) {
+    pub fn set_error_rates(&mut self, error_model: &mut ErrorModel, px: f64, py: f64, pz: f64, pe: f64) {
         assert!(px + py + pz <= 1. && px >= 0. && py >= 0. && pz >= 0.);
         assert!(pe <= 1. && pe >= 0.);
         let measurement_cycles = match self.code_type.builtin_code_information() {
@@ -280,7 +280,7 @@ impl Simulator {
                 0
             }
         };
-        let mut error_model_node = SimulatorErrorModelNode::new();
+        let mut error_model_node = ErrorModelNode::new();
         error_model_node.pauli_error_rates.error_rate_X = px;
         error_model_node.pauli_error_rates.error_rate_Y = py;
         error_model_node.pauli_error_rates.error_rate_Z = pz;
@@ -294,9 +294,9 @@ impl Simulator {
     }
 
     /// expand the correlated error rates, useful when exporting the data structure for other applications to modify
-    pub fn expand_error_rates(&mut self, error_model: &mut SimulatorErrorModel) {
+    pub fn expand_error_rates(&mut self, error_model: &mut ErrorModel) {
         simulator_iter_mut!(self, position, _node, {
-            let mut error_model_node: SimulatorErrorModelNode = error_model.get_node_unwrap(position).clone();
+            let mut error_model_node: ErrorModelNode = error_model.get_node_unwrap(position).clone();
             if error_model_node.correlated_pauli_error_rates.is_none() {
                 error_model_node.correlated_pauli_error_rates = Some(CorrelatedPauliErrorRates::default());
             }
@@ -309,7 +309,7 @@ impl Simulator {
 
     /// generate random errors according to the given error rates
     #[inline(never)]
-    pub fn generate_random_errors(&mut self, error_model: &SimulatorErrorModel) -> usize {
+    pub fn generate_random_errors(&mut self, error_model: &ErrorModel) -> usize {
         // this size is small compared to the simulator itself
         let allocate_size = self.height * self.vertical * self.horizontal;
         let mut pending_pauli_errors = Vec::<(Position, ErrorType)>::with_capacity(allocate_size);
@@ -622,7 +622,7 @@ mod tests {
         assert!(simulator.is_valid_position(&nonexisting_position), "valid position");
         assert!(!simulator.is_node_exist(&nonexisting_position), "nonexisting position");
         println!("std::mem::size_of::<SimulatorNode>() = {}", std::mem::size_of::<SimulatorNode>());
-        println!("std::mem::size_of::<SimulatorErrorModelNode>() = {}", std::mem::size_of::<SimulatorErrorModelNode>());
+        println!("std::mem::size_of::<ErrorModelNode>() = {}", std::mem::size_of::<ErrorModelNode>());
         if std::mem::size_of::<SimulatorNode>() > 16 {  // ArmV8 data cache line is 64 bytes
             panic!("SimulatorNode which is unexpectedly large, check if anything wrong");
         }
