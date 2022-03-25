@@ -11,11 +11,12 @@ use super::reproducible_rand::Xoroshiro128StarStar;
 use super::error_model::*;
 use ErrorType::*;
 use std::sync::Arc;
+use std::collections::{HashMap, HashSet};
+use super::serde_hashkey;
 
 
 /// general simulator for two-dimensional code with circuit-level implementation of stabilizer measurements
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct Simulator {
     /// information of the preferred code
     pub code_type: CodeType,
@@ -49,7 +50,6 @@ impl Simulator {
 /// `i` is vertical position, which increases when moving from top to bottom;
 /// `j` is horizontal position, which increases when moving from left to right
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct Position {
     // pub index: [usize; 3],
     pub t: usize,
@@ -68,11 +68,8 @@ pub struct SimulatorNode {
     pub gate_type: GateType,
     pub gate_peer: Option<Arc<Position>>,
     /// simulation data
-    #[serde(skip)]
     pub error: ErrorType,
-    #[serde(skip)]
     pub has_erasure: bool,
-    #[serde(skip)]
     pub propagated: ErrorType,
     /// Virtual qubit doesn't physically exist, which means they will never have errors themselves.
     /// Real qubit errors can propagate to virtual qubits, but errors will never propagate to real qubits.
@@ -307,6 +304,36 @@ impl Simulator {
         });
     }
 
+    /// compress error rates by trying to find same error rates and use the same pointer to reduce memory usage and improve memory coherence.
+    /// note that when building error model with rust, one should directly use this optimization, so that this function execute fast.
+    /// when taking error model data from other programs, this function will have to hash every one of them and it might take a while to do so.
+    #[inline(never)]
+    pub fn compress_error_rates(&mut self, error_model: &mut ErrorModel) {
+        let mut arc_set: HashSet<*const ErrorModelNode> = HashSet::new();
+        // since f64 typed error rates are not hashable by default, here I first serialize the them and then use OrderedFloatPolicy for hashing
+        let mut node_map: HashMap<serde_hashkey::Key<serde_hashkey::OrderedFloatPolicy>, Arc<ErrorModelNode>> = HashMap::new();
+        simulator_iter_mut!(self, position, _node, {
+            let node_arc: Arc<ErrorModelNode> = error_model.get_node_unwrap_arc(position);
+            let node_pointer: *const ErrorModelNode = Arc::as_ptr(&node_arc);
+            if arc_set.contains(&node_pointer) {  // already found this pointer, good!
+                continue
+            }
+            // find in hash map
+            let hash_key = serde_hashkey::to_key_with_ordered_float(&node_arc).expect("hash");
+            match node_map.get(&hash_key) {
+                Some(existing_arc) => {
+                    // println!("found same error model node, compressing it...");
+                    error_model.set_node(position, Some(existing_arc.clone()));
+                    continue
+                }, None => { }
+            }
+            // if not found, this is a new value
+            arc_set.insert(node_pointer);
+            node_map.insert(hash_key, node_arc.clone());
+            // println!("found new error model and added");
+        });
+    }
+
     /// generate random errors according to the given error rates
     #[inline(never)]
     pub fn generate_random_errors(&mut self, error_model: &ErrorModel) -> usize {
@@ -525,6 +552,36 @@ impl Simulator {
             });
         }
         sparse_measurement
+    }
+
+    pub fn to_error_model_json(&self, error_model: &ErrorModel) -> serde_json::Value {
+        json!({
+            "code_type": self.code_type,
+            "height": self.height,
+            "vertical": self.vertical,
+            "horizontal": self.horizontal,
+            "nodes": (0..self.height).map(|t| {
+                (0..self.vertical).map(|i| {
+                    (0..self.horizontal).map(|j| {
+                        let position = &pos!(t, i, j);
+                        if self.is_node_exist(position) {
+                            let node = self.get_node_unwrap(position);
+                            let error_model_node = error_model.get_node_unwrap(position);
+                            Some(json!({
+                                "qubit_type": node.qubit_type,
+                                "gate_type": node.gate_type,
+                                "gate_peer": node.gate_peer,
+                                "is_virtual": node.is_virtual,
+                                "is_peer_virtual": node.is_peer_virtual,
+                                "error_model": error_model_node,
+                            }))
+                        } else {
+                            None
+                        }
+                    }).collect::<Vec<Option<serde_json::Value>>>()
+                }).collect::<Vec<Vec<Option<serde_json::Value>>>>()
+            }).collect::<Vec<Vec<Vec<Option<serde_json::Value>>>>>()
+        })
     }
     
 }

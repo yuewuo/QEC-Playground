@@ -249,7 +249,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
 pub enum BenchmarkDebugPrint {
-    ErrorModelName,
+    ErrorModel,
     FullErrorModel,  // including every possible error rate, but initialize them as 0
 }
 
@@ -322,13 +322,14 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             }
             sanity_check_result.is_ok()
         });
-        if matches!(debug_print, Some(BenchmarkDebugPrint::ErrorModelName)) {
-            return format!("{}\n", serde_json::to_string(&simulator).expect("serialize should success"));
+        if matches!(debug_print, Some(BenchmarkDebugPrint::ErrorModel)) {
+            return format!("{}\n", serde_json::to_string(&simulator.to_error_model_json(&error_model)).expect("serialize should success"));
         }
         if matches!(debug_print, Some(BenchmarkDebugPrint::FullErrorModel)) {
             simulator.expand_error_rates(&mut error_model);  // expand all optional error rates
-            return format!("{}\n", serde_json::to_string(&simulator).expect("serialize should success"));
+            return format!("{}\n", serde_json::to_string(&simulator.to_error_model_json(&error_model)).expect("serialize should success"));
         }
+        simulator.compress_error_rates(&mut error_model);
         let error_model = Arc::new(error_model);  // change mutability of error model
         // build model graph which is unshared between threads
         let mut model_graph = ModelGraph::new(&simulator);

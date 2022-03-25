@@ -905,6 +905,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da32515d9f6e6e489d7bc9d84c71b060db7247dc035bbe44eac88cf87486d8d5"
 
 [[package]]
+name = "ordered-float"
+version = "2.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7940cf2ca942593318d07fcf2596cdca60a85c9e7fab408a5e21a4f9dcd40d87"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
 name = "os_str_bytes"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1231,6 +1240,7 @@ dependencies = [
  "rand_core",
  "rug",
  "serde",
+ "serde-hashkey",
  "serde_json",
  "shlex",
  "union-find",
@@ -1270,6 +1280,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce31e24b01e1e524df96f1c2fdd054405f8d7376249a5110886fb4b658484789"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-hashkey"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8522017d4ffbdae83d9aaecc08e9dbff31c6e3044e8137397b4a008b2c37a27"
+dependencies = [
+ "num-traits",
+ "ordered-float",
+ "serde",
 ]
 
 [[package]]

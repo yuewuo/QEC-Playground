@@ -84,6 +84,11 @@ impl ErrorModel {
         self.nodes[position.t][position.i][position.j].as_ref().unwrap()
     }
 
+    /// get reference `self.nodes[t][i][j]` and then unwrap, returning a clone of the arc
+    pub fn get_node_unwrap_arc(&'_ self, position: &Position) -> Arc<ErrorModelNode> {
+        self.nodes[position.t][position.i][position.j].as_ref().unwrap().clone()
+    }
+
     /// each node is immutable, but one can assign a new node
     pub fn set_node(&mut self, position: &Position, node: Option<Arc<ErrorModelNode>>) {
         self.nodes[position.t][position.i][position.j] = node;

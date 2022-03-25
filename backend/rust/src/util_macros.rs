@@ -10,8 +10,10 @@ macro_rules! simulator_iter_loop {
                 {  // immutable scope
                     let $position = &$position;
                     if $filter {
-                        let $node = $node_getter;
-                        $body
+                        for __simulator_iter_loop_internal_variable in 0..1 {
+                            let $node = $node_getter;
+                            $body
+                        }
                     }
                 }
                 $position.j += 1;
