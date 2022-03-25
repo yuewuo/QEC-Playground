@@ -301,10 +301,11 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
     for &(di, dj, noisy_measurements, p, pe) in configurations.iter() {
         // prepare simulator
         let mut simulator = Simulator::new(CodeType::new(&code_type, noisy_measurements, di, dj));
+        let mut error_model = SimulatorErrorModel::new(&simulator);
         let px = p / (1. + bias_eta) / 2.;
         let py = px;
         let pz = p - 2. * px;
-        simulator.set_error_rates(px, py, pz, pe);
+        simulator.set_error_rates(&mut error_model, px, py, pz, pe);
         // TODO: apply custom error model
         debug_assert!({  // check correctness only in debug mode because it's expensive
             let sanity_check_result = code_builder_sanity_check(&simulator);
@@ -315,7 +316,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         });
         // TODO: apply customized error model
         assert!({  // this assertion is cheap, check it in release mode as well
-            let sanity_check_result = error_model_sanity_check(&simulator);
+            let sanity_check_result = error_model_sanity_check(&simulator, &error_model);
             if let Err(message) = &sanity_check_result {
                 println!("[error] error_model_sanity_check: {}", message)
             }
@@ -325,10 +326,11 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             return format!("{}\n", serde_json::to_string(&simulator).expect("serialize should success"));
         }
         if matches!(debug_print, Some(BenchmarkDebugPrint::FullErrorModel)) {
-            simulator.expand_error_rates();  // expand all optional error rates
+            simulator.expand_error_rates(&mut error_model);  // expand all optional error rates
             return format!("{}\n", serde_json::to_string(&simulator).expect("serialize should success"));
         }
-        simulator.compress_error_rates();  // for better simulation speed
+        simulator.compress_error_rates(&mut error_model);  // for better simulation speed
+        let error_model = Arc::new(error_model);  // change mutability of error model
         // build model graph which is unshared between threads
         let mut model_graph = ModelGraph::new(&simulator);
         model_graph.build(&mut simulator);
@@ -348,9 +350,10 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let qec_failed = Arc::clone(&qec_failed);
             let external_termination = Arc::clone(&external_termination);
             let mut simulator = simulator.clone();
+            let error_model = Arc::clone(&error_model);
             handlers.push(std::thread::spawn(move || {
                 while !external_termination.load(Ordering::Relaxed) && total_repeats.load(Ordering::Relaxed) < max_repeats && qec_failed.load(Ordering::Relaxed) < min_failed_cases {
-                    simulator.generate_random_errors();
+                    simulator.generate_random_errors(&error_model);
                     // generate measurements
                     let sparse_measurement = simulator.generate_sparse_measurement();
                     // TODO: decode

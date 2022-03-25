@@ -285,7 +285,7 @@ pub fn code_builder_sanity_check(simulator: &Simulator) -> Result<(), String> {
                 return Err(format!("data qubit at {} cannot be initialized: gate_type = {:?}", position, node.gate_type))
             }
         }
-        match node.gate_peer {
+        match node.gate_peer.as_ref() {
             Some(peer_position) => {
                 if node.gate_type.is_single_qubit_gate() {
                     return Err(format!("{} has single qubit gate {:?} should not have peer", position, node.gate_type))
@@ -296,7 +296,7 @@ pub fn code_builder_sanity_check(simulator: &Simulator) -> Result<(), String> {
                 let peer_node = simulator.get_node_unwrap(&peer_position);
                 match &peer_node.gate_peer {
                     Some(peer_peer_position) => {
-                        if peer_peer_position != position {
+                        if peer_peer_position.as_ref() != position {
                             return Err(format!("{}, as the peer of {}, doesn't have correct peer but {}", peer_position, position, peer_peer_position))
                         }
                         if peer_node.gate_type.is_single_qubit_gate() {
@@ -434,19 +434,19 @@ mod tests {
                 let node = simulator.get_node_unwrap(&pos!(2, 1, 1));
                 assert_eq!(node.is_peer_virtual, false);
                 assert_eq!(node.gate_type, GateType::CXGateTarget);
-                assert_eq!(node.gate_peer, Some(pos!(2, 2, 1)));
+                assert_eq!(node.gate_peer.as_ref().map(|x| **x), Some(pos!(2, 2, 1)));
                 let node = simulator.get_node_unwrap(&pos!(3, 1, 1));
                 assert_eq!(node.is_peer_virtual, false);
                 assert_eq!(node.gate_type, GateType::CXGateControl);
-                assert_eq!(node.gate_peer, Some(pos!(3, 1, 2)));
+                assert_eq!(node.gate_peer.as_ref().map(|x| **x), Some(pos!(3, 1, 2)));
                 let node = simulator.get_node_unwrap(&pos!(4, 1, 1));
                 assert_eq!(node.is_peer_virtual, true);
                 assert_eq!(node.gate_type, GateType::CXGateControl);
-                assert_eq!(node.gate_peer, Some(pos!(4, 1, 0)));
+                assert_eq!(node.gate_peer.as_ref().map(|x| **x), Some(pos!(4, 1, 0)));
                 let node = simulator.get_node_unwrap(&pos!(5, 1, 1));
                 assert_eq!(node.is_peer_virtual, true);
                 assert_eq!(node.gate_type, GateType::CXGateTarget);
-                assert_eq!(node.gate_peer, Some(pos!(5, 0, 1)));
+                assert_eq!(node.gate_peer.as_ref().map(|x| **x), Some(pos!(5, 0, 1)));
             }
         }
         {  // check stabilizer measurements

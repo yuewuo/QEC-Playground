@@ -40,7 +40,12 @@ impl ModelGraph {
         }
     }
 
-    /// get mutable `self.nodes[t][i][j]` and unwrap
+    /// get reference `self.nodes[t][i][j]` and then unwrap
+    pub fn get_node_unwrap(&'_ self, position: &Position) -> &'_ ModelGraphNode {
+        self.nodes[position.t][position.i][position.j].as_ref().unwrap()
+    }
+
+    /// get mutable reference `self.nodes[t][i][j]` and unwrap
     pub fn get_node_mut_unwrap(&'_ mut self, position: &Position) -> &'_ mut ModelGraphNode {
         self.nodes[position.t][position.i][position.j].as_mut().unwrap()
     }
