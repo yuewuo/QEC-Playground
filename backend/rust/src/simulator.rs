@@ -1,3 +1,7 @@
+//! General purpose Pauli group simulator optimized for surface code
+//! 
+
+
 use std::cmp::Ordering;
 use super::types::{QubitType, ErrorType, PauliErrorRates, CorrelatedPauliErrorRates, CorrelatedErasureErrorRates};
 use serde::{Serialize, Deserialize};
@@ -17,7 +21,8 @@ pub struct Simulator {
     pub height: usize,
     pub vertical: usize,
     pub horizontal: usize,
-    pub nodes: Vec::< Vec::< Vec::< Option<SimulatorNode> > > >,
+    /// nodes array, because some rotated code can easily have more than half of the nodes non-existing, existing nodes are stored on heap
+    pub nodes: Vec::< Vec::< Vec::< Option<Box <SimulatorNode> > > > >,
     /// use embedded random number generator
     pub rng: Xoroshiro128StarStar,
 }
@@ -25,13 +30,16 @@ pub struct Simulator {
 impl Simulator {
     pub fn clone(&self) -> Self {
         Self {
-            code_type: self.code_type,
+            code_type: self.code_type.clone(),
             height: self.height,
             vertical: self.vertical,
             horizontal: self.horizontal,
             nodes: self.nodes.clone(),
             rng: Xoroshiro128StarStar::new(),  // do not copy random number generator, otherwise parallel simulation may give same result
         }
+    }
+    pub fn volume(&self) -> usize {
+        self.height * self.vertical * self.horizontal
     }
 }
 
@@ -95,9 +103,9 @@ impl SimulatorNode {
             erasure_error_rate: 0.,
             correlated_pauli_error_rates: None,
             correlated_erasure_error_rates: None,
-            error: ErrorType::I,
+            error: I,
             has_erasure: false,
-            propagated: ErrorType::I,
+            propagated: I,
             is_virtual: false,
             is_peer_virtual: false,
         }
@@ -123,9 +131,12 @@ impl SimulatorNode {
         true
     }
 
-    /// check if this position is physically idle: either no gate or a two-qubit gate with a virtual peer
-    pub fn is_physically_idle(&self) -> bool {
-        self.gate_type == GateType::None || self.is_peer_virtual
+    /// set error with sanity check
+    #[inline]
+    pub fn set_error(&mut self, error: &ErrorType) {
+        debug_assert!(!self.is_virtual || error == &I, "should not add errors at virtual nodes");
+        // TODO: in debug build, check if this error is valid given the error rates
+        self.error = *error;
     }
 }
 
@@ -151,8 +162,7 @@ pub enum GateType {
     /// measurement in $\hat{X}$ basis, only sensitive to $\hat{Z}$ or $\hat{Y}$ errors
     MeasureX,
     /// no gate at this position, or idle. note that if the peer of virtual node, this position is also considered idle
-    /// because the gate with virtual peer is non-existing physically. in order to check if a position is physically idle,
-    /// use [`SimulatorNode::is_physically_idle`].
+    /// because the gate with virtual peer is non-existing physically.
     None,
 }
 
@@ -185,15 +195,15 @@ impl GateType {
     pub fn propagate_peer(&self, propagated: &ErrorType) -> ErrorType {
         match self {
             // cx control not sensitive to Z, propagate as X
-            GateType::CXGateControl => { if matches!(propagated, X | Y) { X } else { ErrorType::I } }
+            GateType::CXGateControl => { if matches!(propagated, X | Y) { X } else { I } }
             // cx target not sensitive to X, propagate as Z
-            GateType::CXGateTarget => { if matches!(propagated, Z | Y) { Z } else { ErrorType::I } }
+            GateType::CXGateTarget => { if matches!(propagated, Z | Y) { Z } else { I } }
             // cy control not sensitive to Z, propagate as Y
-            GateType::CYGateControl => { if matches!(propagated, X | Y) { Y } else { ErrorType::I } }
+            GateType::CYGateControl => { if matches!(propagated, X | Y) { Y } else { I } }
             // cy target not sensitive to Y, propagate as Z
-            GateType::CYGateTarget => { if matches!(propagated, Z | X) { Z } else { ErrorType::I } }
+            GateType::CYGateTarget => { if matches!(propagated, Z | X) { Z } else { I } }
             // cz not sensitive to Z, propagate as Z
-            GateType::CZGate => { if matches!(propagated, X | Y) { Z } else { ErrorType::I } }
+            GateType::CZGate => { if matches!(propagated, X | Y) { Z } else { I } }
             _ => { panic!("gate propagation behavior not specified") }
         }
     }
@@ -245,7 +255,7 @@ impl Simulator {
     }
 
     /// get `self.nodes[t][i][j]` without position check when compiled in release mode
-    pub fn get_node(&'_ self, position: &Position) -> &'_ Option<SimulatorNode> {
+    pub fn get_node(&'_ self, position: &Position) -> &'_ Option<Box<SimulatorNode>> {
         debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
             , position, self.height, self.vertical, self.horizontal);
         &self.nodes[position.t][position.i][position.j]
@@ -261,7 +271,7 @@ impl Simulator {
     }
 
     /// get mutable `self.nodes[t][i][j]` without position check when compiled in release mode
-    pub fn get_node_mut(&'_ mut self, position: &Position) -> &'_ mut Option<SimulatorNode> {
+    pub fn get_node_mut(&'_ mut self, position: &Position) -> &'_ mut Option<Box<SimulatorNode>> {
         debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
             , position, self.height, self.vertical, self.horizontal);
         &mut self.nodes[position.t][position.i][position.j]
@@ -310,33 +320,6 @@ impl Simulator {
         }
     }
 
-    /// check if error rates are not zero at perfect measurement ranges or at virtual nodes
-    pub fn error_rate_sanity_check(&self) -> Result<(), String> {
-        match self.code_type.builtin_code_information() {
-            Some(BuiltinCodeInformation{ measurement_cycles, noisy_measurements, .. }) => {
-                // check that no errors present in the final perfect measurement rounds
-                let expected_height = measurement_cycles * (noisy_measurements + 1) + 1;
-                if self.height != expected_height {
-                    return Err(format!("height {} is not expected {}, don't know where is perfect measurement", self.height, expected_height))
-                }
-                for t in self.height - measurement_cycles .. self.height {
-                    simulator_iter!(self, position, node, t => t, {
-                        if !node.is_noiseless() {
-                            return Err(format!("detected noisy position {} within final perfect measurement", position))
-                        }
-                    });
-                }
-                // check all no error rate at virtual nodes
-                simulator_iter_virtual!(self, position, node, {  // only check for virtual nodes
-                    if !node.is_noiseless() {
-                        return Err(format!("detected noisy position {} which is virtual node", position))
-                    }
-                });
-            }, _ => {println!("[warning] code doesn't provide enough information for sanity check") }
-        }
-        Ok(())
-    }
-
     /// expand the correlated error rates, useful when exporting the data structure for other applications to modify
     pub fn expand_error_rates(&mut self) {
         simulator_iter_mut!(self, position, node, {
@@ -380,22 +363,23 @@ impl Simulator {
         simulator_iter_mut!(self, position, node, {
             let random_pauli = rng.next_f64();
             if random_pauli < node.pauli_error_rates.error_rate_X {
-                node.error = X;
+                node.set_error(&X);
                 // println!("X error at {} {} {}",node.i, node.j, node.t);
             } else if random_pauli < node.pauli_error_rates.error_rate_X + node.pauli_error_rates.error_rate_Z {
-                node.error = Z;
+                node.set_error(&Z);
                 // println!("Z error at {} {} {}",node.i, node.j, node.t);
             } else if random_pauli < node.pauli_error_rates.error_probability() {
-                node.error = Y;
+                node.set_error(&Y);
                 // println!("Y error at {} {} {}",node.i, node.j, node.t);
             } else {
-                node.error = ErrorType::I;
+                node.set_error(&I);
             }
-            if node.error != ErrorType::I {
+            if node.error != I {
                 error_count += 1;
             }
             let random_erasure = rng.next_f64();
             node.has_erasure = false;
+            node.propagated = I;  // clear propagated errors
             if random_erasure < node.erasure_error_rate {
                 pending_erasure_errors.push(*position);
             }
@@ -404,11 +388,11 @@ impl Simulator {
                     let random_pauli = rng.next_f64();
                     let correlated_pauli_error_type = correlated_pauli_error_rates.generate_random_error(random_pauli);
                     let my_error = correlated_pauli_error_type.my_error();
-                    if my_error != ErrorType::I {
+                    if my_error != I {
                         pending_pauli_errors.push((*position, my_error));
                     }
                     let peer_error = correlated_pauli_error_type.peer_error();
-                    if peer_error != ErrorType::I {
+                    if peer_error != I {
                         let gate_peer = node.gate_peer.as_ref().expect("correlated pauli error must corresponds to a two-qubit gate");
                         pending_pauli_errors.push((*gate_peer, peer_error));
                     }
@@ -434,12 +418,12 @@ impl Simulator {
         });
         // apply pending pauli errors
         for (position, peer_error) in pending_pauli_errors.iter() {
-            let mut node = self.get_node_mut_unwrap(&position);
-            if node.error != ErrorType::I {
+            let node = self.get_node_mut_unwrap(&position);
+            if node.error != I {
                 error_count -= 1;
             }
-            node.error = node.error.multiply(&peer_error);
-            if node.error != ErrorType::I {
+            node.set_error(&node.error.multiply(&peer_error));
+            if node.error != I {
                 error_count += 1;
             }
         }
@@ -447,22 +431,23 @@ impl Simulator {
         for position in pending_erasure_errors.iter() {
             let mut node = self.get_node_mut_unwrap(&position);
             node.has_erasure = true;
-            if node.error != ErrorType::I {
+            if node.error != I {
                 error_count -= 1;
             }
             let random_erasure = rng.next_f64();
-            node.error = if random_erasure < 0.25 { X }
+            node.set_error(&(if random_erasure < 0.25 { X }
                 else if random_erasure < 0.5 { Z }
                 else if random_erasure < 0.75 { Y }
-                else { ErrorType::I };
-            if node.error != ErrorType::I {
+                else { I }
+            ));
+            if node.error != I {
                 error_count += 1;
-            }
+            };
         }
         debug_assert!({  // the above code avoids iterating the code multiple times when error rate is low (~1%), check correctness in debug mode
             let mut real_error_count = 0;
             simulator_iter!(self, position, node, {
-                if node.error != ErrorType::I {
+                if node.error != I {
                     real_error_count += 1;
                 }
             });
@@ -477,9 +462,9 @@ impl Simulator {
     #[allow(dead_code)]
     pub fn clear_all_errors(&mut self) {
         simulator_iter_mut!(self, position, node, {
-            node.error = ErrorType::I;
+            node.set_error(&I);
             node.has_erasure = false;
-            node.propagated = ErrorType::I;
+            node.propagated = I;
         });
     }
 
@@ -487,7 +472,7 @@ impl Simulator {
     #[allow(dead_code)]
     pub fn clear_propagate_errors(&mut self) {
         simulator_iter_mut!(self, position, node, {
-            node.propagated = ErrorType::I;
+            node.propagated = I;
         });
     }
 
@@ -497,7 +482,7 @@ impl Simulator {
         debug_assert!({
             let mut propagated_clean = true;
             simulator_iter!(self, position, node, {
-                if node.propagated != ErrorType::I {
+                if node.propagated != I {
                     propagated_clean = false;
                 }
             });
@@ -530,12 +515,12 @@ impl Simulator {
         let next_node = self.get_node_mut_unwrap(next_position);
         next_node.propagated = next_node.propagated.multiply(&propagate_to_next);  // multiply the propagated error
         if gate_type.is_initialization() {
-            next_node.propagated = ErrorType::I;  // no error after initialization
+            next_node.propagated = I;  // no error after initialization
         }
         // propagate error to gate peer
         if !propagate_to_peer_forbidden && gate_type.is_two_qubit_gate() {
             let propagate_to_peer = gate_type.propagate_peer(&node_propagated);
-            if propagate_to_peer != ErrorType::I {
+            if propagate_to_peer != I {
                 let mut next_peer_position = node_gate_peer.unwrap();
                 next_peer_position.t += 1;
                 let peer_node = self.get_node_mut_unwrap(&next_peer_position);

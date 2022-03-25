@@ -15,6 +15,8 @@ mod fast_benchmark;
 mod simulator;
 mod code_builder;
 #[macro_use] mod util_macros;
+mod decoding_graph;
+mod error_model;
 
 extern crate clap;
 #[macro_use] extern crate serde_json;
@@ -114,7 +116,7 @@ fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> 
                 .arg(clap::Arg::new("max_repeats").short('m').long("max_repeats").help("maximum total repeats (previously known as `max_N`); 0 for infinity").takes_value(true).default_value("100000000"))
                 .arg(clap::Arg::new("min_failed_cases").short('e').long("min_failed_cases").help("minimum failed cases; 0 for infinity").takes_value(true).default_value("10000"))
                 .arg(clap::Arg::new("parallel").short('p').long("parallel").help("how many parallel threads to use. 0 means using number of CPUs - 1, by default single thread").takes_value(true).default_value("1"))
-                .arg(clap::Arg::new("code_type").short('c').long("code_type").help("code type, see code_builder.rs for more information").possible_values(["StandardPlanarCode", "RotatedPlanarCode", "StandardXZZXCode", "RotatedXZZXCode", "StandardTailoredCode", "RotatedTailoredCode"]).default_value("StandardPlanarCode").takes_value(true))
+                .arg(clap::Arg::new("code_type").short('c').long("code_type").help("code type, see code_builder.rs for more information").possible_values(code_builder::CodeType::possible_values()).default_value("StandardPlanarCode").takes_value(true))
                 .arg(clap::Arg::new("debug_print").long("debug_print").help("only print requested information without running the benchmark").takes_value(true).possible_values(tool::BenchmarkDebugPrint::possible_values()))
                 .arg(clap::Arg::new("time_budget").long("time_budget").help("for each configuration, give a maximum time to run (in second)").takes_value(true))
             )

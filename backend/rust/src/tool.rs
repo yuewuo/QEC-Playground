@@ -32,6 +32,8 @@ use super::code_builder::*;
 use super::simulator::*;
 use super::clap::{ArgEnum, PossibleValue};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use super::decoding_graph::*;
+use super::error_model::*;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -269,17 +271,6 @@ impl std::str::FromStr for BenchmarkDebugPrint {
     }
 }
 
-fn build_simulator(di: usize, dj: usize, noisy_measurements: usize, p: f64, pe: f64, bias_eta: f64, code_type: &String) -> Simulator {
-    let mut simulator = Simulator::new(CodeType::new(code_type, noisy_measurements, di, dj));
-    let px = p / (1. + bias_eta) / 2.;
-    let py = px;
-    let pz = p - 2. * px;
-    simulator.set_error_rates(px, py, pz, pe);
-    // TODO: apply custom error model
-    simulator.error_rate_sanity_check().unwrap();  // sanity check
-    simulator
-}
-
 fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_repeats: usize, min_failed_cases: usize
         , parallel: usize, code_type: String, debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>) -> String {
     // if parallel = 0, use all CPU resources
@@ -309,11 +300,24 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
     // start running simulations
     for &(di, dj, noisy_measurements, p, pe) in configurations.iter() {
         // prepare simulator
-        let mut simulator = build_simulator(di, dj, noisy_measurements, p, pe, bias_eta, &code_type);
-        debug_assert!({  // check correctness only in debug mode
+        let mut simulator = Simulator::new(CodeType::new(&code_type, noisy_measurements, di, dj));
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = p - 2. * px;
+        simulator.set_error_rates(px, py, pz, pe);
+        // TODO: apply custom error model
+        debug_assert!({  // check correctness only in debug mode because it's expensive
             let sanity_check_result = code_builder_sanity_check(&simulator);
             if let Err(message) = &sanity_check_result {
                 println!("[error] code_builder_sanity_check: {}", message)
+            }
+            sanity_check_result.is_ok()
+        });
+        // TODO: apply customized error model
+        assert!({  // this assertion is cheap, check it in release mode as well
+            let sanity_check_result = error_model_sanity_check(&simulator);
+            if let Err(message) = &sanity_check_result {
+                println!("[error] error_model_sanity_check: {}", message)
             }
             sanity_check_result.is_ok()
         });
@@ -325,9 +329,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             return format!("{}\n", serde_json::to_string(&simulator).expect("serialize should success"));
         }
         simulator.compress_error_rates();  // for better simulation speed
-
-        // TODO: build model graph
-
+        // build model graph which is unshared between threads
+        let mut model_graph = ModelGraph::new(&simulator);
+        model_graph.build(&mut simulator);
         // TODO: optionally build complete model graph when code size is small and decoder type supports it, to speed up small code decoding
 
         // prepare result variables for simulation
@@ -359,7 +363,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         }
         // monitor results and display them using progress bar
         let repeat_begin = Instant::now();
-        let  progress_information = || -> String {
+        let progress_information = || -> String {
             let total_repeats = total_repeats.load(Ordering::Relaxed);
             let qec_failed = qec_failed.load(Ordering::Relaxed);
             // compute simulation results

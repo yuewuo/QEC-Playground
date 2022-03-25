@@ -11,11 +11,12 @@ use super::simulator::*;
 use serde::{Serialize, Deserialize};
 use super::types::*;
 use super::util_macros::*;
+use super::clap::{PossibleValue};
 
 
 /// commonly used code type that has built-in functions to automatically build up the simulator.
 /// other type of code type is also feasible, but one needs to implement the generation of code patch.
-#[derive(Debug, Clone, Serialize, Deserialize, Copy)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum CodeType {
     /// noisy measurement rounds (excluding the final perfect measurement cap), vertical code distance, horizontal code distance
@@ -70,14 +71,21 @@ impl CodeType {
     pub fn new(code_type: &String, noisy_measurements: usize, di: usize, dj: usize) -> Self {
         match code_type.as_str() {
             "StandardPlanarCode" => Self::StandardPlanarCode{ noisy_measurements, di, dj },
+            "RotatedPlanarCode" => Self::RotatedPlanarCode{ noisy_measurements, dp: di, dn: dj },
             _ => unimplemented!()
         }
     }
+    pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
+        static VARIANTS: &'static [&str] = &[
+            "StandardPlanarCode", "RotatedPlanarCode"
+        ];
+        VARIANTS.iter().map(|x| PossibleValue::new(x))
+    }
     pub fn builtin_code_information(&self) -> Option<BuiltinCodeInformation> {
         match &self {
-            &CodeType::StandardPlanarCode{ noisy_measurements, di, dj } | &CodeType::RotatedPlanarCode{ noisy_measurements, dp: di, dn: dj } |
-            &CodeType::StandardXZZXCode{ noisy_measurements, di, dj } | &CodeType::RotatedXZZXCode{ noisy_measurements, dp: di, dn: dj } |
-            &CodeType::StandardTailoredCode{ noisy_measurements, di, dj } | &CodeType::RotatedTailoredCode{ noisy_measurements, dp: di, dn: dj } => {
+            &CodeType::StandardPlanarCode { noisy_measurements, di, dj } | &CodeType::RotatedPlanarCode { noisy_measurements, dp: di, dn: dj } |
+            &CodeType::StandardXZZXCode { noisy_measurements, di, dj } | &CodeType::RotatedXZZXCode { noisy_measurements, dp: di, dn: dj } |
+            &CodeType::StandardTailoredCode { noisy_measurements, di, dj } | &CodeType::RotatedTailoredCode { noisy_measurements, dp: di, dn: dj } => {
                 Some(BuiltinCodeInformation {
                     noisy_measurements: *noisy_measurements,
                     di: *di,
@@ -93,7 +101,7 @@ impl CodeType {
 pub fn build_code(simulator: &mut Simulator) {
     let code_type = &simulator.code_type;
     match code_type {
-        &CodeType::StandardPlanarCode{ noisy_measurements, di, dj } | &CodeType::RotatedPlanarCode{ noisy_measurements, dp: di, dn: dj } => {
+        &CodeType::StandardPlanarCode { noisy_measurements, di, dj } | &CodeType::RotatedPlanarCode { noisy_measurements, dp: di, dn: dj } => {
             assert!(di > 0, "code distance must be positive integer");
             assert!(dj > 0, "code distance must be positive integer");
             let is_rotated = matches!(code_type, CodeType::RotatedPlanarCode { .. });
@@ -112,14 +120,38 @@ pub fn build_code(simulator: &mut Simulator) {
             let mut nodes = Vec::with_capacity(height);
             let is_real = |i: usize, j: usize| -> bool {
                 if is_rotated {
-                    unimplemented!();
+                    let is_real_dj = |pi, pj| { pi + pj < dj || (pi + pj == dj && pi % 2 == 0 && pi > 0) };
+                    let is_real_di = |pi, pj| { pi + pj < di || (pi + pj == di && pj % 2 == 0 && pj > 0) };
+                    if i <= dj && j <= dj {
+                        is_real_dj(dj - i, dj - j)
+                    } else if i >= di && j >= di {
+                        is_real_dj(i - di, j - di)
+                    } else if i >= dj && j <= di {
+                        is_real_di(i - dj, di - j)
+                    } else if i <= di && j >= dj {
+                        is_real_di(di - i, j - dj)
+                    } else {
+                        unreachable!()
+                    }
                 } else {
                     i > 0 && j > 0 && i < vertical - 1 && j < horizontal - 1
                 }
             };
             let is_virtual = |i: usize, j: usize| -> bool {
                 if is_rotated {
-                    unimplemented!();
+                    let is_virtual_dj = |pi, pj| { pi + pj == dj && (pi % 2 == 1 || pi == 0) };
+                    let is_virtual_di = |pi, pj| { pi + pj == di && (pj % 2 == 1 || pj == 0) };
+                    if i <= dj && j <= dj {
+                        is_virtual_dj(dj - i, dj - j)
+                    } else if i >= di && j >= di {
+                        is_virtual_dj(i - di, j - di)
+                    } else if i >= dj && j <= di {
+                        is_virtual_di(i - dj, di - j)
+                    } else if i <= di && j >= dj {
+                        is_virtual_di(di - i, j - dj)
+                    } else {
+                        unreachable!()
+                    }
                 } else {
                     if i == 0 || i == vertical - 1 {
                         j % 2 == 1
@@ -217,8 +249,8 @@ pub fn build_code(simulator: &mut Simulator) {
                                 },
                                 _ => unreachable!()
                             }
-                            row_j.push(Some(SimulatorNode::new(pos!(t, i, j), qubit_type, gate_type, gate_peer).set_virtual(
-                                is_virtual(i, j), gate_peer.map_or(false, |peer| is_virtual(peer.i, peer.j)))));
+                            row_j.push(Some(Box::new(SimulatorNode::new(pos!(t, i, j), qubit_type, gate_type, gate_peer).set_virtual(
+                                is_virtual(i, j), gate_peer.map_or(false, |peer| is_virtual(peer.i, peer.j))))));
                         } else {
                             row_j.push(None);
                         }
