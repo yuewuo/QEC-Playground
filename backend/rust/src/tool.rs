@@ -329,7 +329,6 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             simulator.expand_error_rates(&mut error_model);  // expand all optional error rates
             return format!("{}\n", serde_json::to_string(&simulator).expect("serialize should success"));
         }
-        simulator.compress_error_rates(&mut error_model);  // for better simulation speed
         let error_model = Arc::new(error_model);  // change mutability of error model
         // build model graph which is unshared between threads
         let mut model_graph = ModelGraph::new(&simulator);

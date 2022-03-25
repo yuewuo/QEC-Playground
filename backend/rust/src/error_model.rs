@@ -9,12 +9,13 @@ use super::types::*;
 use serde::{Serialize, Deserialize};
 use super::code_builder::*;
 use super::util_macros::*;
+use std::sync::Arc;
 
 /// describing an error model, strictly corresponding to an instance of `Simulator`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SimulatorErrorModel {
     /// each error model node corresponds to a simulator node, this allows immutable sharing between threads
-    pub nodes: Vec::< Vec::< Vec::< Option<Box <SimulatorErrorModelNode> > > > >,
+    pub nodes: Vec::< Vec::< Vec::< Option<Arc <SimulatorErrorModelNode> > > > >,
 }
 
 /// error model node corresponds to 
@@ -26,9 +27,9 @@ pub struct SimulatorErrorModelNode {
     #[serde(rename = "pe")]
     pub erasure_error_rate: f64,
     #[serde(rename = "corr_pp")]
-    pub correlated_pauli_error_rates: Option<Box<CorrelatedPauliErrorRates>>,
+    pub correlated_pauli_error_rates: Option<CorrelatedPauliErrorRates>,
     #[serde(rename = "corr_pe")]
-    pub correlated_erasure_error_rates: Option<Box<CorrelatedErasureErrorRates>>,
+    pub correlated_erasure_error_rates: Option<CorrelatedErasureErrorRates>,
 }
 
 impl SimulatorErrorModelNode {
@@ -62,12 +63,13 @@ impl SimulatorErrorModelNode {
 impl SimulatorErrorModel {
     pub fn new(simulator: &Simulator) -> Self {
         assert!(simulator.volume() > 0, "cannot build error model out of zero-sized simulator");
+        let default_error_model_node = Arc::new(SimulatorErrorModelNode::new());
         Self {
             nodes: (0..simulator.height).map(|t| {
                 (0..simulator.vertical).map(|i| {
                     (0..simulator.horizontal).map(|j| {
                         if simulator.is_node_exist(&pos!(t, i, j)) {
-                            Some(Box::new(SimulatorErrorModelNode::new()))
+                            Some(default_error_model_node.clone())
                         } else {
                             None
                         }
@@ -82,9 +84,9 @@ impl SimulatorErrorModel {
         self.nodes[position.t][position.i][position.j].as_ref().unwrap()
     }
 
-    /// get mutable reference `self.nodes[t][i][j]` and unwrap
-    pub fn get_node_mut_unwrap(&'_ mut self, position: &Position) -> &'_ mut SimulatorErrorModelNode {
-        self.nodes[position.t][position.i][position.j].as_mut().unwrap()
+    /// each node is immutable, but one can assign a new node
+    pub fn set_node(&mut self, position: &Position, node: Option<Arc<SimulatorErrorModelNode>>) {
+        self.nodes[position.t][position.i][position.j] = node;
     }
 }
 

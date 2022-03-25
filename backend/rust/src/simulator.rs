@@ -280,13 +280,15 @@ impl Simulator {
                 0
             }
         };
+        let mut error_model_node = SimulatorErrorModelNode::new();
+        error_model_node.pauli_error_rates.error_rate_X = px;
+        error_model_node.pauli_error_rates.error_rate_Y = py;
+        error_model_node.pauli_error_rates.error_rate_Z = pz;
+        error_model_node.erasure_error_rate = pe;
+        let error_model_node = Arc::new(error_model_node);
         for t in 0 .. self.height - measurement_cycles {
             simulator_iter_mut_real!(self, position, _node, t => t, {  // only add errors on real node
-                let error_model_node = error_model.get_node_mut_unwrap(position);
-                error_model_node.pauli_error_rates.error_rate_X = px;
-                error_model_node.pauli_error_rates.error_rate_Y = py;
-                error_model_node.pauli_error_rates.error_rate_Z = pz;
-                error_model_node.erasure_error_rate = pe;
+                error_model.set_node(position, Some(error_model_node.clone()));
             });
         }
     }
@@ -294,30 +296,14 @@ impl Simulator {
     /// expand the correlated error rates, useful when exporting the data structure for other applications to modify
     pub fn expand_error_rates(&mut self, error_model: &mut SimulatorErrorModel) {
         simulator_iter_mut!(self, position, _node, {
-            let error_model_node = error_model.get_node_mut_unwrap(position);
+            let mut error_model_node: SimulatorErrorModelNode = error_model.get_node_unwrap(position).clone();
             if error_model_node.correlated_pauli_error_rates.is_none() {
-                error_model_node.correlated_pauli_error_rates = Some(Box::new(CorrelatedPauliErrorRates::default()));
+                error_model_node.correlated_pauli_error_rates = Some(CorrelatedPauliErrorRates::default());
             }
             if error_model_node.correlated_erasure_error_rates.is_none() {
-                error_model_node.correlated_erasure_error_rates = Some(Box::new(CorrelatedErasureErrorRates::default()));
+                error_model_node.correlated_erasure_error_rates = Some(CorrelatedErasureErrorRates::default());
             }
-        });
-    }
-
-    /// compress the correlated error rates, useful when importing modified data structure from other applications
-    pub fn compress_error_rates(&mut self, error_model: &mut SimulatorErrorModel) {
-        simulator_iter_mut!(self, position, _node, {
-            let error_model_node = error_model.get_node_mut_unwrap(position);
-            if error_model_node.correlated_pauli_error_rates.is_some() {
-                if error_model_node.correlated_pauli_error_rates.as_ref().unwrap().error_probability() == 0. {
-                    error_model_node.correlated_pauli_error_rates = None;
-                }
-            }
-            if error_model_node.correlated_erasure_error_rates.is_some() {
-                if error_model_node.correlated_erasure_error_rates.as_ref().unwrap().error_probability() == 0. {
-                    error_model_node.correlated_erasure_error_rates = None;
-                }
-            }
+            error_model.set_node(position, Some(Arc::new(error_model_node)));
         });
     }
 
