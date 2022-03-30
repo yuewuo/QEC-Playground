@@ -5,7 +5,7 @@
 use std::cmp::Ordering;
 use super::types::*;
 use serde::{Serialize, Deserialize, Serializer};
-use serde::ser::SerializeTuple;
+use serde::ser::SerializeMap;
 use super::code_builder::*;
 use super::util_macros::*;
 use super::reproducible_rand::Xoroshiro128StarStar;
@@ -53,7 +53,7 @@ impl Simulator {
 /// when plotting, t is the time axis; looking at the direction of `t=-∞`, the top-left corner is `i=j=0`;
 /// `i` is vertical position, which increases when moving from top to bottom;
 /// `j` is horizontal position, which increases when moving from left to right
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Position {
     // pub index: [usize; 3],
     pub t: usize,
@@ -443,7 +443,7 @@ impl Simulator {
         }
         debug_assert!({  // the above code avoids iterating the code multiple times when error rate is low (~1%), check correctness in debug mode
             let sparse_error_pattern = self.generate_sparse_error_pattern();
-            sparse_error_pattern.errors.len() == error_count
+            sparse_error_pattern.len() == error_count
         });
         self.rng = rng;  // save the random number generator
         self.propagate_errors();
@@ -554,7 +554,7 @@ impl Simulator {
         sparse_measurement
     }
 
-    /// including virtual measurements in the result as an extension to [`generate_sparse_measurement`]
+    /// including virtual measurements in the result as an extension to [`Simulator::generate_sparse_measurement`]
     #[inline(never)]
     pub fn generate_sparse_measurement_virtual(&self) -> SparseMeasurement {
         let mut sparse_measurement_virtual = SparseMeasurement::new();
@@ -585,7 +585,7 @@ impl Simulator {
 
     #[inline(never)]
     pub fn fast_measurement_given_few_errors(&mut self, sparse_errors: &SparseErrorPattern) -> (SparseCorrection, SparseMeasurement, SparseMeasurement) {
-        if sparse_errors.errors.len() == 0 {
+        if sparse_errors.len() == 0 {
             println!("[warning] why calling fast measurement given no error?");
             return (SparseCorrection::new(), SparseMeasurement::new(), SparseMeasurement::new())
         }
@@ -601,7 +601,7 @@ impl Simulator {
         let mut interested_region: BTreeSet<(usize, usize)> = BTreeSet::new();
         let mut min_t = self.height - 1;
         let mut max_t = 0;
-        for (position, error) in sparse_errors.errors.iter() {
+        for (position, error) in sparse_errors.iter() {
             let node = self.get_node_mut_unwrap(position);
             node.error = *error;
             interested_region.insert((position.i, position.j));
@@ -698,7 +698,7 @@ impl Simulator {
         });
         // in debug mode, check the early break indeed works
         debug_assert!({
-            for (position, error) in sparse_errors.errors.iter() {
+            for (position, error) in sparse_errors.iter() {
                 let node = self.get_node_mut_unwrap(position);
                 node.error = *error;
             }
@@ -726,12 +726,12 @@ impl Simulator {
                 }
             }
             // println!("sparse_correction: {:?}, standard_correction: {:?}", sparse_correction, standard_correction);
-            let mut correction_equal = sparse_correction.errors.len() == standard_correction.errors.len();
+            let mut correction_equal = sparse_correction.len() == standard_correction.len();
             if correction_equal {  // further check for each element
-                for (position, error) in standard_correction.errors.iter() {
-                    if sparse_correction.errors.get(position) != Some(error) {
+                for (position, error) in standard_correction.iter() {
+                    if sparse_correction.get(position) != Some(error) {
                         correction_equal = false;
-                        println!("[error] sparse correction not equal at {}, {} != {:?}", position, error, sparse_correction.errors.get(position));
+                        println!("[error] sparse correction not equal at {}, {} != {:?}", position, error, sparse_correction.get(position));
                     }
                 }
             }
@@ -853,6 +853,12 @@ impl std::fmt::Display for Position {
     }
 }
 
+impl Serialize for Position {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer, {
+        serializer.serialize_str(format!("[{}][{}][{}]", self.t, self.i, self.j).as_str())
+    }
+}
+
 impl std::fmt::Display for SimulatorNode {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "SimulatorNode{} {{ qubit_type: {:?}, gate_type: {:?}, gate_peer: {:?} }}"
@@ -893,8 +899,6 @@ pub struct SparseErrorPattern {
     pub errors: BTreeMap<Position, ErrorType>,
 }
 
-pub type SparseCorrection = SparseErrorPattern;
-
 impl SparseErrorPattern {
     /// create an empty error pattern
     pub fn new() -> Self {
@@ -903,8 +907,9 @@ impl SparseErrorPattern {
         }
     }
     /// extend an error pattern using another error pattern
+    #[allow(dead_code)]
     pub fn extend(&mut self, next: &Self) {
-        for (position, error) in next.errors.iter() {
+        for (position, error) in next.iter() {
             self.add(position.clone(), *error);
         }
     }
@@ -916,15 +921,78 @@ impl SparseErrorPattern {
             self.errors.insert(position, error);
         }
     }
+    /// iterator
+    pub fn iter<'a>(&'a self) -> std::collections::btree_map::Iter<'a, Position, ErrorType> {
+        self.errors.iter()
+    }
+    /// length
+    pub fn len(&self) -> usize {
+        self.errors.len()
+    }
+    /// get element
+    pub fn get(&self, key: &Position) -> Option<&ErrorType> {
+        self.errors.get(key)
+    }
 }
 
 impl Serialize for SparseErrorPattern {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer, {
-        let mut tup = serializer.serialize_tuple(self.errors.len())?;  // known length
-        for (position, error) in self.errors.iter() {
-            tup.serialize_element(&json!([position.t, position.i, position.j, error]))?;
+        let mut map = serializer.serialize_map(Some(self.len()))?;  // known length
+        for (position, error) in self.iter() {
+            map.serialize_entry(position, error)?;
         }
-        tup.end()
+        map.end()
+    }
+}
+
+/// share methods with [`SparseErrorPattern`] but records **propagated** errors of **data qubits** on **top layer**
+/// , thus in principle it's incompatible with [`SparseErrorPattern`] which records individual errors
+#[derive(Debug, Clone)]
+pub struct SparseCorrection(SparseErrorPattern);
+
+impl SparseCorrection {
+    /// create an empty correction
+    pub fn new() -> Self {
+        Self(SparseErrorPattern::new())
+    }
+    /// extend an error pattern using another error pattern
+    pub fn extend(&mut self, next: &Self) {
+        for (position, error) in next.0.iter() {
+            self.add(position.clone(), *error);
+        }
+    }
+    /// add an correction Pauli operator at some position, if an error already presents, then multiply them
+    pub fn add(&mut self, position: Position, operator: ErrorType) {
+        debug_assert!({  // check `t` are the same
+            let mut check_passed = true;
+            for (key, _value) in self.0.iter() {
+                if key.t != position.t {
+                    println!("correction should also have the same `t`, violating: {} and {}", key, position);
+                    check_passed = false;
+                }
+                break  // no need to iterate them all, because every call to this function will be checked
+            }
+            check_passed
+        }, "correction must have the same t");
+        self.0.add(position, operator);
+    }
+    /// iterator
+    pub fn iter<'a>(&'a self) -> std::collections::btree_map::Iter<'a, Position, ErrorType> {
+        self.0.iter()
+    }
+    /// length
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    /// get element
+    pub fn get(&self, key: &Position) -> Option<&ErrorType> {
+        self.0.get(key)
+    }
+}
+
+impl Serialize for SparseCorrection {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer, {
+        Serialize::serialize(&self.0, serializer)
     }
 }
 

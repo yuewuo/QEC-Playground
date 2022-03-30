@@ -32,9 +32,10 @@ use super::code_builder::*;
 use super::simulator::*;
 use super::clap::{ArgEnum, PossibleValue};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use super::model_graph::*;
 use super::error_model::*;
-use serde::{Serialize};
+use serde::{Serialize, Deserialize};
+use super::mwpm_decoder::*;
+use super::model_graph::*;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -67,13 +68,14 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let parallel: usize = matches.value_of_t("parallel").unwrap_or(1);  // default to 1
             let code_type: String = matches.value_of_t("code_type").unwrap_or("StandardPlanarCode".to_string());
             let decoder = matches.value_of_t::<BenchmarkDecoder>("decoder").unwrap();
+            let decoder_config = matches.value_of_t::<serde_json::Value>("decoder_config").unwrap();
             let ignore_logical_i = matches.is_present("ignore_logical_i");
             let ignore_logical_j = matches.is_present("ignore_logical_j");
             let debug_print = matches.value_of_t::<BenchmarkDebugPrint>("debug_print").ok();
             let time_budget: Option<f64> = matches.value_of_t("time_budget").ok();
             let log_runtime_statistics: Option<String> = matches.value_of_t("log_runtime_statistics").ok();
             let log_error_pattern_when_logical_error = matches.is_present("log_error_pattern_when_logical_error");
-            return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder
+            return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error));
         }
         Some(("fault_tolerant_benchmark", matches)) => {
@@ -260,6 +262,20 @@ pub enum BenchmarkDebugPrint {
     ErrorModel,
     /// including every possible error rate (correlated ones), but initialize them as 0
     FullErrorModel,
+    /// model graph, reading decoder config `weight_function` or `wf`
+    ModelGraph,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BenchmarkDebugPrintDecoderConfig {
+    /// see [`mwpm_decoder::MWPMDecoderConfig`]
+    #[serde(alias = "pcmgms")]  // abbreviation
+    #[serde(default = "mwpm_default_configs::precompute_complete_model_graph_max_size")]
+    pub precompute_complete_model_graph_max_size: i64,
+    /// see [`mwpm_decoder::weight_function`]
+    #[serde(alias = "wf")]  // abbreviation
+    #[serde(default = "mwpm_default_configs::weight_function")]
+    pub weight_function: WeightFunction,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum, Serialize)]
@@ -271,8 +287,8 @@ pub enum BenchmarkDecoder {
 }
 
 fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_repeats: usize, min_failed_cases: usize
-        , parallel: usize, code_type: String, decoder: BenchmarkDecoder, ignore_logical_i: bool, ignore_logical_j: bool, debug_print: Option<BenchmarkDebugPrint>
-        , time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool) -> String {
+        , parallel: usize, code_type: String, decoder: BenchmarkDecoder, decoder_config: serde_json::Value, ignore_logical_i: bool, ignore_logical_j: bool
+        , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool) -> String {
     // if parallel = 0, use all CPU resources
     let mut parallel = parallel;
     if parallel == 0 {
@@ -293,6 +309,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         "parallel": parallel,
         "code_type": code_type,
         "decoder": decoder,
+        "decoder_config": decoder_config,
         "ignore_logical_i": ignore_logical_i,
         "ignore_logical_j": ignore_logical_j,
         "debug_print": debug_print,
@@ -368,21 +385,31 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             }
             sanity_check_result.is_ok()
         });
-        if matches!(debug_print, Some(BenchmarkDebugPrint::ErrorModel)) {
-            return format!("{}\n", serde_json::to_string(&simulator.to_error_model_json(&error_model)).expect("serialize should success"));
+        simulator.compress_error_rates(&mut error_model);  // by default compress all error rates
+        match debug_print {
+            Some(BenchmarkDebugPrint::ErrorModel) => {
+                return format!("{}\n", serde_json::to_string(&simulator.to_error_model_json(&error_model)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::FullErrorModel) => {
+                simulator.expand_error_rates(&mut error_model);  // expand all optional error rates
+                return format!("{}\n", serde_json::to_string(&simulator.to_error_model_json(&error_model)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::ModelGraph) => {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut model_graph = ModelGraph::new(&simulator);
+                model_graph.build(&mut simulator, &error_model, &config.weight_function);
+                return format!("{}\n", serde_json::to_string(&model_graph.to_model_graph_json(&simulator)).expect("serialize should success"));
+            },
+            _ => { }
         }
-        if matches!(debug_print, Some(BenchmarkDebugPrint::FullErrorModel)) {
-            simulator.expand_error_rates(&mut error_model);  // expand all optional error rates
-            return format!("{}\n", serde_json::to_string(&simulator.to_error_model_json(&error_model)).expect("serialize should success"));
-        }
-        simulator.compress_error_rates(&mut error_model);
         let error_model = Arc::new(error_model);  // change mutability of error model
-        // build model graph which is unshared between threads
-        let mut model_graph = ModelGraph::new(&simulator);
-        model_graph.build(&mut simulator, &error_model);
-        let model_graph = Arc::new(model_graph);  // shared model graph
-        // TODO: optionally build complete model graph when code size is small and decoder type supports it, to speed up small code decoding
-
+        // build decoder precomputed data which is shared between threads
+        if decoder == BenchmarkDecoder::None {
+            assert!(decoder_config.is_object() && decoder_config.as_object().unwrap().len() == 0, "this decoder doesn't support decoder configuration");
+        }
+        let mwpm_decoder = if decoder == BenchmarkDecoder::MWPM {
+            Some(MWPMDecoder::new(&simulator, &error_model, &decoder_config))
+        } else { None };
         // prepare result variables for simulation
         let total_repeats = Arc::new(AtomicUsize::new(0));
         let qec_failed = Arc::new(AtomicUsize::new(0));
@@ -399,6 +426,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let mut simulator = simulator.clone();
             let error_model = Arc::clone(&error_model);
             let log_runtime_statistics_file = log_runtime_statistics_file.clone();
+            let mut mwpm_decoder = mwpm_decoder.clone();
             handlers.push(std::thread::spawn(move || {
                 while !external_termination.load(Ordering::Relaxed) && total_repeats.load(Ordering::Relaxed) < max_repeats && qec_failed.load(Ordering::Relaxed) < min_failed_cases {
                     // generate random errors and the corresponding measurement
@@ -410,11 +438,11 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     let begin = Instant::now();
                     let (correction, mut runtime_statistics) = match decoder {
                         BenchmarkDecoder::None => {
-                            (SparseErrorPattern::new(), json!({}))
+                            (SparseCorrection::new(), json!({}))
                         },
-                        _ => {
-                            unimplemented!("decoder not supported yet");
-                        }
+                        BenchmarkDecoder::MWPM => {
+                            mwpm_decoder.as_mut().unwrap().decode(&sparse_measurement)
+                        },
                     };
                     let decode_elapsed = begin.elapsed().as_secs_f64();
                     // validate correction

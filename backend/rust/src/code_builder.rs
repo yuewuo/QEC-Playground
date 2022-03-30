@@ -343,7 +343,7 @@ pub fn code_builder_sanity_check(simulator: &Simulator) -> Result<(), String> {
 pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &SparseCorrection) -> Option<(bool, bool)> {
     // apply the correction directly to the top layer
     let top_t = simulator.height - 1;
-    for (position, error) in correction.errors.iter() {
+    for (position, error) in correction.iter() {
         assert_eq!(position.t, top_t, "correction pattern must only be at top layer");
         let node = simulator.get_node_mut_unwrap(position);
         node.propagated = node.propagated.multiply(error);
@@ -375,7 +375,7 @@ pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &
         _ => None
     };
     // recover the errors
-    for (position, error) in correction.errors.iter() {
+    for (position, error) in correction.iter() {
         let node = simulator.get_node_mut_unwrap(position);
         node.propagated = node.propagated.multiply(error);
     }

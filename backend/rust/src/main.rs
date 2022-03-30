@@ -18,6 +18,7 @@ mod code_builder;
 mod model_graph;
 mod complete_model_graph;
 mod error_model;
+mod mwpm_decoder;
 
 extern crate clap;
 #[macro_use] extern crate serde_json;
@@ -121,6 +122,7 @@ fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> 
                 .arg(clap::Arg::new("parallel").short('p').long("parallel").help("how many parallel threads to use. 0 means using number of CPUs - 1, by default single thread").takes_value(true).default_value("1"))
                 .arg(clap::Arg::new("code_type").short('c').long("code_type").help("code type, see code_builder.rs for more information").possible_values(code_builder::CodeType::possible_values()).default_value("StandardPlanarCode").takes_value(true))
                 .arg(clap::Arg::new("decoder").long("decoder").help("select the benchmarked decoder").takes_value(true).possible_values(tool::BenchmarkDecoder::possible_values()).default_value("mwpm"))
+                .arg(clap::Arg::new("decoder_config").long("decoder_config").help("decoder configuration json, panic if any field is not recognized").takes_value(true).default_value("{}"))
                 .arg(clap::Arg::new("ignore_logical_i").long("ignore_logical_i").help("ignore the logical error of i axis, e.g. logical Z error in standard CSS surface code"))
                 .arg(clap::Arg::new("ignore_logical_j").long("ignore_logical_j").help("ignore the logical error of j axis, e.g. logical X error in standard CSS surface code"))
                 .arg(clap::Arg::new("debug_print").long("debug_print").help("only print requested information without running the benchmark").takes_value(true).possible_values(tool::BenchmarkDebugPrint::possible_values()))

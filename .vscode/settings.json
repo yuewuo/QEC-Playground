@@ -9,6 +9,7 @@
         "mwpm",
         "num",
         "petgraph",
+        "precompute",
         "qecp",
         "ringbuf",
         "sbatch",

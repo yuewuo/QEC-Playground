@@ -1,6 +1,6 @@
 [package]
 name = "rust_qecp"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Yue Wu <yue.wu@yale.edu>", "Namitha Liyanage (namitha.liyanage@yale.edu)"]
 description = "Quantum Error Correction Playground for Surface Code Research"
 edition = "2021"
