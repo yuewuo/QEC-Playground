@@ -584,10 +584,10 @@ impl Simulator {
     }
 
     #[inline(never)]
-    pub fn fast_measurement_given_few_errors(&mut self, sparse_errors: &SparseErrorPattern) -> (SparseMeasurement, SparseMeasurement) {
+    pub fn fast_measurement_given_few_errors(&mut self, sparse_errors: &SparseErrorPattern) -> (SparseCorrection, SparseMeasurement, SparseMeasurement) {
         if sparse_errors.errors.len() == 0 {
             println!("[warning] why calling fast measurement given no error?");
-            return (SparseMeasurement::new(), SparseMeasurement::new())
+            return (SparseCorrection::new(), SparseMeasurement::new(), SparseMeasurement::new())
         }
         debug_assert!({  // fast measurement requires no errors at first
             let mut dirty = false;
@@ -631,7 +631,9 @@ impl Simulator {
                 interested_region.insert((i, j));
             }
             if t != 0 && t % self.measurement_cycles == 0 {  // it's a layer of measurement
-                accumulated_clean_measurements += 1;
+                if t > max_t {  // accumulate only after the reaching the original max_t
+                    accumulated_clean_measurements += 1;
+                }
                 for &(i, j) in interested_region.iter() {
                     let position = &pos!(t, i, j);
                     let node = self.get_node_unwrap(position);
@@ -667,7 +669,16 @@ impl Simulator {
                 }
             }
         }
-        // println!("min_t: {}, max_t: {}, interested_region: {:?}, sparse_measurement: {:?}", min_t, max_t, interested_region, sparse_measurement);
+        // create sparse correction
+        let mut sparse_correction = SparseCorrection::new();
+        simulator_iter!(self, position, node, t => max_t, {
+            if node.propagated != I && node.qubit_type == QubitType::Data {
+                let mut correction_position = position.clone();
+                correction_position.t = self.height - 1;  // sparse correction always has t = self.height - 1, top layer
+                sparse_correction.add(correction_position, node.propagated);
+            }
+        });
+        // println!("min_t: {}, max_t: {}, interested_region: {:?}, sparse_measurement_real: {:?}", min_t, max_t, interested_region, sparse_measurement_real);
         // clear errors in interested region
         for t in min_t .. max_t + 1 {
             for &(i, j) in interested_region.iter() {
@@ -694,6 +705,7 @@ impl Simulator {
             self.propagate_errors();
             let standard_measurements_real = self.generate_sparse_measurement();
             let standard_measurements_virtual = self.generate_sparse_measurement_virtual();
+            let standard_correction = self.generate_sparse_correction();
             self.clear_all_errors();
             // println!("sparse_measurement_real: {:?}, standard_measurements_real: {:?}", sparse_measurement_real, standard_measurements_real);
             // println!("sparse_measurement_virtual: {:?}, standard_measurements_virtual: {:?}", sparse_measurement_virtual, standard_measurements_virtual);
@@ -703,19 +715,29 @@ impl Simulator {
                 for position in standard_measurements_real.nontrivial.iter() {
                     if !sparse_measurement_real.nontrivial.contains(position) {
                         measurements_equal = false;
-                        println!("nontrivial measurement happens at {} but optimized code doesn't correctly detect it", position);
+                        println!("[error] nontrivial measurement happens at {} but optimized code doesn't correctly detect it", position);
                     }
                 }
                 for position in standard_measurements_virtual.nontrivial.iter() {
                     if !sparse_measurement_virtual.nontrivial.contains(position) {
                         measurements_equal = false;
-                        println!("nontrivial measurement happens at {} but optimized code doesn't correctly detect it", position);
+                        println!("[error] nontrivial measurement happens at {} but optimized code doesn't correctly detect it", position);
                     }
                 }
             }
-            measurements_equal
+            // println!("sparse_correction: {:?}, standard_correction: {:?}", sparse_correction, standard_correction);
+            let mut correction_equal = sparse_correction.errors.len() == standard_correction.errors.len();
+            if correction_equal {  // further check for each element
+                for (position, error) in standard_correction.errors.iter() {
+                    if sparse_correction.errors.get(position) != Some(error) {
+                        correction_equal = false;
+                        println!("[error] sparse correction not equal at {}, {} != {:?}", position, error, sparse_correction.errors.get(position));
+                    }
+                }
+            }
+            measurements_equal && correction_equal
         });
-        (sparse_measurement_real, sparse_measurement_virtual)
+        (sparse_correction, sparse_measurement_real, sparse_measurement_virtual)
     }
 
     /// generate error pattern
@@ -727,6 +749,17 @@ impl Simulator {
             }
         });
         sparse_error_pattern
+    }
+
+    /// generate correction pattern using errors only at the top layer
+    pub fn generate_sparse_correction(&self) -> SparseCorrection {
+        let mut sparse_correction = SparseCorrection::new();
+        simulator_iter!(self, position, node, t => self.height - 1, {
+            if node.propagated != I && node.qubit_type == QubitType::Data {
+                sparse_correction.add(position.clone(), node.propagated);
+            }
+        });
+        sparse_correction
     }
 
     /// create json object for debugging and viewing
@@ -763,7 +796,7 @@ impl Simulator {
 
     /// test if correction successfully recover the logical information
     #[inline(never)]
-    pub fn validate_correction(&mut self, correction: &SparseErrorPattern) -> (bool, bool) {
+    pub fn validate_correction(&mut self, correction: &SparseCorrection) -> (bool, bool) {
         if let Some((logical_i, logical_j)) = code_builder_validate_correction(self, correction) {
             return (logical_i, logical_j)
         }
@@ -859,6 +892,8 @@ pub struct SparseErrorPattern {
     /// error happening at position: Position (t, i, j)
     pub errors: BTreeMap<Position, ErrorType>,
 }
+
+pub type SparseCorrection = SparseErrorPattern;
 
 impl SparseErrorPattern {
     /// create an empty error pattern

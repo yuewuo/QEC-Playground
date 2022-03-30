@@ -8,10 +8,14 @@ For major updates, please run the [auto profiler](benchmark/auto_profiler/auto_p
 
 - [ ] update 3D tool to support visualizing data structure from backend
 
+## 0.1.4 (2022.3.30)
+
+- [ ] implement complete model graph using customized Dijkstra's algorithm
+
 ## 0.1.3 (2022.3.21)
 
 - [x] remove `mwpm_approx.rs` because we don't need it anymore
-- [ ] redesign the simulator for improved locality and faster simulation (the current bottleneck), use Box for optional fields, for example correlated error rate
+- [x] redesign the simulator for improved locality and faster simulation (the current bottleneck), use Box for optional fields, for example correlated error rate
 
 ## 0.1.2 (2022.3.21)
 

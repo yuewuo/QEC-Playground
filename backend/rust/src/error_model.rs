@@ -141,11 +141,18 @@ pub fn error_model_sanity_check(simulator: &Simulator, error_model: &ErrorModel)
                 }
             }
         }
-        // if node.is_peer_virtual {  // no correlated errors if peer position is virtual, because this two-qubit gate doesn't physically exist
-        //     if node.pauli_error_rates.error_probability() > 0. {
-        //         return Err(format!("virtual position at {} have non-zero pauli_error_rates: {:?}", position, node.pauli_error_rates))
-        //     }
-        // }
+        if node.is_peer_virtual {  // no correlated errors if peer position is virtual, because this two-qubit gate doesn't physically exist
+            if let Some(correlated_pauli_error_rates) = &error_model_node.correlated_pauli_error_rates {
+                if correlated_pauli_error_rates.error_probability() > 0. {
+                    return Err(format!("position at {} have virtual peer but non-zero correlated_pauli_error_rates: {:?}", position, correlated_pauli_error_rates))
+                }
+            }
+            if let Some(correlated_erasure_error_rates) = &error_model_node.correlated_erasure_error_rates {
+                if correlated_erasure_error_rates.error_probability() > 0. {
+                    return Err(format!("position at {} have virtual peer but non-zero correlated_erasure_error_rates: {:?}", position, correlated_erasure_error_rates))
+                }
+            }
+        }
     });
     Ok(())
 }

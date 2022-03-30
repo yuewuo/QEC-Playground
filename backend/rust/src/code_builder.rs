@@ -340,50 +340,44 @@ pub fn code_builder_sanity_check(simulator: &Simulator) -> Result<(), String> {
     Ok(())
 }
 
-pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &SparseErrorPattern) -> Option<(bool, bool)> {
-    // apply the correction and simulate again
-    simulator.clear_propagate_errors();
+pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &SparseCorrection) -> Option<(bool, bool)> {
+    // apply the correction directly to the top layer
+    let top_t = simulator.height - 1;
     for (position, error) in correction.errors.iter() {
+        assert_eq!(position.t, top_t, "correction pattern must only be at top layer");
         let node = simulator.get_node_mut_unwrap(position);
-        node.error = node.error.multiply(error);
+        node.propagated = node.propagated.multiply(error);
     }
-    simulator.propagate_errors();
-    let sparse_measurement = simulator.generate_sparse_measurement();
     // validate the result
     let code_type = &simulator.code_type;
-    let result = if sparse_measurement.nontrivial.len() > 0 {
-        // println!("[warning] the correction is invalid, so unknown logical error");
-        Some((true, true))
-    } else {
-        match code_type {
-            &CodeType::StandardPlanarCode { .. } => {
-                // check cardinality of top boundary for logical_i
-                let mut top_cardinality = 0;
-                for j in (1..simulator.horizontal).step_by(2) {
-                    let node = simulator.get_node_unwrap(&pos!(simulator.height - 1, 1, j));
-                    if node.propagated == Z || node.propagated == Y {
-                        top_cardinality += 1;
-                    }
+    let result = match code_type {
+        &CodeType::StandardPlanarCode { .. } => {
+            // check cardinality of top boundary for logical_i
+            let mut top_cardinality = 0;
+            for j in (1..simulator.horizontal).step_by(2) {
+                let node = simulator.get_node_unwrap(&pos!(top_t, 1, j));
+                if node.propagated == Z || node.propagated == Y {
+                    top_cardinality += 1;
                 }
-                let logical_i = top_cardinality % 2 != 0;  // odd cardinality means there is a logical Z error
-                // check cardinality of left boundary for logical_j
-                let mut left_cardinality = 0;
-                for i in (1..simulator.vertical).step_by(2) {
-                    let node = simulator.get_node_unwrap(&pos!(simulator.height - 1, i, 1));
-                    if node.propagated == X || node.propagated == Y {
-                        left_cardinality += 1;
-                    }
+            }
+            let logical_i = top_cardinality % 2 != 0;  // odd cardinality means there is a logical Z error
+            // check cardinality of left boundary for logical_j
+            let mut left_cardinality = 0;
+            for i in (1..simulator.vertical).step_by(2) {
+                let node = simulator.get_node_unwrap(&pos!(top_t, i, 1));
+                if node.propagated == X || node.propagated == Y {
+                    left_cardinality += 1;
                 }
-                let logical_j = left_cardinality % 2 != 0;  // odd cardinality means there is a logical X error
-                Some((logical_i, logical_j))
-            },
-            _ => None
-        }
+            }
+            let logical_j = left_cardinality % 2 != 0;  // odd cardinality means there is a logical X error
+            Some((logical_i, logical_j))
+        },
+        _ => None
     };
     // recover the errors
     for (position, error) in correction.errors.iter() {
         let node = simulator.get_node_mut_unwrap(position);
-        node.error = node.error.multiply(error);
+        node.propagated = node.propagated.multiply(error);
     }
     result
 }

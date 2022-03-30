@@ -16,6 +16,7 @@ mod simulator;
 mod code_builder;
 #[macro_use] mod util_macros;
 mod model_graph;
+mod complete_model_graph;
 mod error_model;
 
 extern crate clap;

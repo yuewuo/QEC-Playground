@@ -37,6 +37,8 @@ pub struct ModelGraphEdge {
     probability: f64,
     /// the error that causes this edge
     error_pattern: Arc<SparseErrorPattern>,
+    /// the correction pattern that can recover this error
+    correction: Arc<SparseCorrection>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -45,6 +47,8 @@ pub struct ModelGraphBoundary {
     probability: f64,
     /// the error that causes this boundary edge
     error_pattern: Arc<SparseErrorPattern>,
+    /// the correction pattern that can recover this error
+    correction: Arc<SparseCorrection>,
     /// if virtual node presents, record it, otherwise the model graph is still constructed successfully
     virtual_node: Option<Position>,
 }
@@ -166,7 +170,8 @@ impl ModelGraph {
                         },
                     }
                     let sparse_errors = Arc::new(sparse_errors);  // make it immutable and shared
-                    let (sparse_measurement_real, sparse_measurement_virtual) = simulator.fast_measurement_given_few_errors(&sparse_errors);
+                    let (sparse_correction, sparse_measurement_real, sparse_measurement_virtual) = simulator.fast_measurement_given_few_errors(&sparse_errors);
+                    let sparse_correction = Arc::new(sparse_correction);  // make it immutable and shared
                     let sparse_measurement_real = sparse_measurement_real.to_vec();
                     let sparse_measurement_virtual = sparse_measurement_virtual.to_vec();
                     if sparse_measurement_real.len() == 0 {  // no way to detect it, ignore
@@ -180,6 +185,7 @@ impl ModelGraph {
                             model_graph_node.all_boundaries.push(ModelGraphBoundary {
                                 probability: p,
                                 error_pattern: sparse_errors.clone(),
+                                correction: sparse_correction.clone(),
                                 virtual_node: if sparse_measurement_virtual.len() == 1 {
                                     Some(sparse_measurement_virtual[0].clone())
                                 } else {
@@ -196,8 +202,8 @@ impl ModelGraph {
                         // edge only happen when qubit type is the same (to isolate X and Z decoding graph in CSS surface code)
                         let is_same_type = node1.qubit_type == node2.qubit_type;
                         if is_same_type && (p > 0. || is_erasure) {
-                            self.add_edge_between(position1, position2, p, sparse_errors.clone());
-                            self.add_edge_between(position2, position1, p, sparse_errors.clone());
+                            self.add_edge_between(position1, position2, p, sparse_errors.clone(), sparse_correction.clone());
+                            self.add_edge_between(position2, position1, p, sparse_errors.clone(), sparse_correction.clone());
                         }
                     }
                 }
@@ -207,7 +213,7 @@ impl ModelGraph {
     }
 
     /// add asymmetric edge from `source` to `target`; in order to create symmetric edge, call this function twice with reversed input
-    pub fn add_edge_between(&mut self, source: &Position, target: &Position, probability: f64, error_pattern: Arc<SparseErrorPattern>) {
+    pub fn add_edge_between(&mut self, source: &Position, target: &Position, probability: f64, error_pattern: Arc<SparseErrorPattern>, correction: Arc<SparseCorrection>) {
         let node = self.get_node_mut_unwrap(source);
         if !node.all_edges.contains_key(target) {
             node.all_edges.insert(target.clone(), Vec::new());
@@ -215,6 +221,7 @@ impl ModelGraph {
         node.all_edges.get_mut(target).unwrap().push(ModelGraphEdge {
             probability: probability,
             error_pattern: error_pattern,
+            correction: correction,
         })
     }
 
@@ -244,6 +251,7 @@ impl ModelGraph {
                     let elected = ModelGraphEdge {
                         probability: elected_probability,
                         error_pattern: edges[elected_idx].error_pattern.clone(),
+                        correction: edges[elected_idx].correction.clone(),
                     };
                     // update elected edge
                     // println!("{} to {} elected probability: {}", position, target, elected.probability);
@@ -270,6 +278,7 @@ impl ModelGraph {
                     let elected = ModelGraphBoundary {
                         probability: elected_probability,
                         error_pattern: model_graph_node.all_boundaries[elected_idx].error_pattern.clone(),
+                        correction: model_graph_node.all_boundaries[elected_idx].correction.clone(),
                         virtual_node: None,
                     };
                     // update elected edge
