@@ -18,7 +18,7 @@ def profile_pure_simulation():
         p = 0.01
         name = f"pure_simulation_d_{d}"
         # qp.run_flamegraph_qecp_profile_command(name, command_prefix + [f"[{d}]", f"[{d}]", f"[{p}]", "--bypass_correction", "--max_N", "0", "--min_error_cases", "0", "--time_budget", f"{time_budget}"])
-        qp.run_flamegraph_qecp_profile_command(name, new_command_prefix + [f"[{d}]", f"[{d}]", f"[{p}]", "--max_repeats", "0", "--min_failed_cases", "0", "--time_budget", f"{time_budget}"])
+        qp.run_flamegraph_qecp_profile_command(name, new_command_prefix + [f"[{d}]", f"[{d}]", f"[{p}]", "--max_repeats", "0", "--min_failed_cases", "0", "--time_budget", f"{time_budget}", "--decoder", "none"])
 
         @qp.compare_qecp_profile(name)
         def compare(now, compare):

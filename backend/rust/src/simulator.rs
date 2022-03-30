@@ -4,7 +4,8 @@
 
 use std::cmp::Ordering;
 use super::types::*;
-use serde::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize, Serializer};
+use serde::ser::SerializeTuple;
 use super::code_builder::*;
 use super::util_macros::*;
 use super::reproducible_rand::Xoroshiro128StarStar;
@@ -16,7 +17,7 @@ use super::serde_hashkey;
 
 
 /// general simulator for two-dimensional code with circuit-level implementation of stabilizer measurements
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize)]
 pub struct Simulator {
     /// information of the preferred code
     pub code_type: CodeType,
@@ -64,7 +65,7 @@ pub struct Position {
 /// we could have single-qubit or two-qubit gate in a node, and errors are added **after applying this gate** (e.g. if the gate is measurement, then 
 /// errors at this node will have no impact on the measurement because errors are applied after the measurement).
 /// we also maintain "virtual nodes" at the boundary of a code, these virtual nodes are missing stabilizers at the boundary of a open-boundary surface code.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct SimulatorNode {
     pub qubit_type: QubitType,
     /// single-qubit or two-qubit gate applied 
@@ -717,6 +718,7 @@ impl Simulator {
         (sparse_measurement_real, sparse_measurement_virtual)
     }
 
+    /// generate error pattern
     pub fn generate_sparse_error_pattern(&self) -> SparseErrorPattern {
         let mut sparse_error_pattern = SparseErrorPattern::new();
         simulator_iter!(self, position, node, {
@@ -727,6 +729,7 @@ impl Simulator {
         sparse_error_pattern
     }
 
+    /// create json object for debugging and viewing
     pub fn to_error_model_json(&self, error_model: &ErrorModel) -> serde_json::Value {
         json!({
             "code_type": self.code_type,
@@ -757,7 +760,16 @@ impl Simulator {
             }).collect::<Vec<Vec<Vec<Option<serde_json::Value>>>>>()
         })
     }
-    
+
+    /// test if correction successfully recover the logical information
+    #[inline(never)]
+    pub fn validate_correction(&mut self, correction: &SparseErrorPattern) -> (bool, bool) {
+        if let Some((logical_i, logical_j)) = code_builder_validate_correction(self, correction) {
+            return (logical_i, logical_j)
+        }
+        unimplemented!("correction validation method not found for this code");
+    }
+
 }
 
 impl Default for Position {
@@ -816,7 +828,7 @@ impl std::fmt::Display for SimulatorNode {
 }
 
 /// in most cases non-trivial measurements are rare, this sparse structure use `BTreeSet` to store them
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct SparseMeasurement {
     pub nontrivial: BTreeSet<Position>,
 }
@@ -842,7 +854,7 @@ impl SparseMeasurement {
 }
 
 /// in most cases errors are rare, this sparse structure use `BTreeMap` to store them
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct SparseErrorPattern {
     /// error happening at position: Position (t, i, j)
     pub errors: BTreeMap<Position, ErrorType>,
@@ -868,6 +880,16 @@ impl SparseErrorPattern {
         } else {
             self.errors.insert(position, error);
         }
+    }
+}
+
+impl Serialize for SparseErrorPattern {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer, {
+        let mut tup = serializer.serialize_tuple(self.errors.len())?;  // known length
+        for (position, error) in self.errors.iter() {
+            tup.serialize_element(&json!([position.t, position.i, position.j, error]))?;
+        }
+        tup.end()
     }
 }
 

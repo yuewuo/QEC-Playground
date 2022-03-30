@@ -34,6 +34,7 @@ use super::clap::{ArgEnum, PossibleValue};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use super::model_graph::*;
 use super::error_model::*;
+use serde::{Serialize};
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -65,9 +66,15 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             }
             let parallel: usize = matches.value_of_t("parallel").unwrap_or(1);  // default to 1
             let code_type: String = matches.value_of_t("code_type").unwrap_or("StandardPlanarCode".to_string());
+            let decoder = matches.value_of_t::<BenchmarkDecoder>("decoder").unwrap();
+            let ignore_logical_i = matches.is_present("ignore_logical_i");
+            let ignore_logical_j = matches.is_present("ignore_logical_j");
             let debug_print = matches.value_of_t::<BenchmarkDebugPrint>("debug_print").ok();
             let time_budget: Option<f64> = matches.value_of_t("time_budget").ok();
-            return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, debug_print, time_budget));
+            let log_runtime_statistics: Option<String> = matches.value_of_t("log_runtime_statistics").ok();
+            let log_error_pattern_when_logical_error = matches.is_present("log_error_pattern_when_logical_error");
+            return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder
+                , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error));
         }
         Some(("fault_tolerant_benchmark", matches)) => {
             let dis: String = matches.value_of_t("Ls").expect("required");
@@ -247,36 +254,59 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     None
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum, Serialize)]
 pub enum BenchmarkDebugPrint {
+    /// the original error model
     ErrorModel,
-    FullErrorModel,  // including every possible error rate, but initialize them as 0
+    /// including every possible error rate (correlated ones), but initialize them as 0
+    FullErrorModel,
 }
 
-impl BenchmarkDebugPrint {
-    pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
-        Self::value_variants().iter().filter_map(ArgEnum::to_possible_value)
-    }
-}
-
-impl std::str::FromStr for BenchmarkDebugPrint {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        for variant in Self::value_variants() {
-            if variant.to_possible_value().unwrap().matches(s, false) {
-                return Ok(*variant);
-            }
-        }
-        Err(format!("Invalid variant: {}", s))
-    }
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum, Serialize)]
+pub enum BenchmarkDecoder {
+    /// no decoder applied, return empty correction
+    None,
+    /// minimum-weight perfect matching decoder
+    MWPM,
 }
 
 fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_repeats: usize, min_failed_cases: usize
-        , parallel: usize, code_type: String, debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>) -> String {
+        , parallel: usize, code_type: String, decoder: BenchmarkDecoder, ignore_logical_i: bool, ignore_logical_j: bool, debug_print: Option<BenchmarkDebugPrint>
+        , time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool) -> String {
     // if parallel = 0, use all CPU resources
     let mut parallel = parallel;
     if parallel == 0 {
         parallel = num_cpus::get() - 1;
+    }
+    // create runtime statistics file object if given file path
+    let log_runtime_statistics_file = log_runtime_statistics.clone().map(|filename| 
+        Arc::new(Mutex::new(File::create(filename.as_str()).expect("cannot create file"))));
+    let fixed_configuration = json!({
+        "dis": dis,
+        "djs": djs,
+        "nms": nms,
+        "ps": ps,
+        "pes": pes,
+        "bias_eta": bias_eta,
+        "max_repeats": max_repeats,
+        "min_failed_cases": min_failed_cases,
+        "parallel": parallel,
+        "code_type": code_type,
+        "decoder": decoder,
+        "ignore_logical_i": ignore_logical_i,
+        "ignore_logical_j": ignore_logical_j,
+        "debug_print": debug_print,
+        "log_runtime_statistics": log_runtime_statistics,
+        "log_error_pattern_when_logical_error": log_error_pattern_when_logical_error,
+    });
+    match &log_runtime_statistics_file {  // append runtime statistics data
+        Some(log_runtime_statistics_file) => {
+            let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
+            log_runtime_statistics_file.write(b"#f ").unwrap();
+            log_runtime_statistics_file.write(fixed_configuration.to_string().as_bytes()).unwrap();
+            log_runtime_statistics_file.write(b"\n").unwrap();
+            log_runtime_statistics_file.sync_data().unwrap();
+        }, _ => { },
     }
     // first list all configurations and validate them at the beginning
     assert_eq!(pes.len(), ps.len(), "pe and p should be matched");
@@ -299,6 +329,22 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
     }
     // start running simulations
     for &(di, dj, noisy_measurements, p, pe) in configurations.iter() {
+        // append runtime statistics data
+        match &log_runtime_statistics_file {
+            Some(log_runtime_statistics_file) => {
+                let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
+                log_runtime_statistics_file.write(b"# ").unwrap();
+                log_runtime_statistics_file.write(json!({
+                    "di": di,
+                    "dj": dj,
+                    "noisy_measurements": noisy_measurements,
+                    "p": p,
+                    "pe": pe,
+                }).to_string().as_bytes()).unwrap();
+                log_runtime_statistics_file.write(b"\n").unwrap();
+                log_runtime_statistics_file.sync_data().unwrap();
+            }, _ => { },
+        }
         // prepare simulator
         let mut simulator = Simulator::new(CodeType::new(&code_type, noisy_measurements, di, dj));
         let mut error_model = ErrorModel::new(&simulator);
@@ -334,6 +380,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         // build model graph which is unshared between threads
         let mut model_graph = ModelGraph::new(&simulator);
         model_graph.build(&mut simulator, &error_model);
+        let model_graph = Arc::new(model_graph);  // shared model graph
         // TODO: optionally build complete model graph when code size is small and decoder type supports it, to speed up small code decoding
 
         // prepare result variables for simulation
@@ -351,16 +398,54 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let external_termination = Arc::clone(&external_termination);
             let mut simulator = simulator.clone();
             let error_model = Arc::clone(&error_model);
+            let log_runtime_statistics_file = log_runtime_statistics_file.clone();
             handlers.push(std::thread::spawn(move || {
                 while !external_termination.load(Ordering::Relaxed) && total_repeats.load(Ordering::Relaxed) < max_repeats && qec_failed.load(Ordering::Relaxed) < min_failed_cases {
+                    // generate random errors and the corresponding measurement
+                    let begin = Instant::now();
                     simulator.generate_random_errors(&error_model);
-                    // generate measurements
                     let sparse_measurement = simulator.generate_sparse_measurement();
-                    // TODO: decode
-                    let is_qec_failed = true;
+                    let prepare_elapsed = begin.elapsed().as_secs_f64();
+                    // decode
+                    let begin = Instant::now();
+                    let (correction, mut runtime_statistics) = match decoder {
+                        BenchmarkDecoder::None => {
+                            (SparseErrorPattern::new(), json!({}))
+                        },
+                        _ => {
+                            unimplemented!("decoder not supported yet");
+                        }
+                    };
+                    let decode_elapsed = begin.elapsed().as_secs_f64();
+                    // validate correction
+                    let begin = Instant::now();
+                    let mut is_qec_failed = false;
+                    let (logical_i, logical_j) = simulator.validate_correction(&correction);
+                    if logical_i && !ignore_logical_i {
+                        is_qec_failed = true;
+                    }
+                    if logical_j && !ignore_logical_j {
+                        is_qec_failed = true;
+                    }
+                    let validate_elapsed = begin.elapsed().as_secs_f64();
                     // update simulation counters
                     total_repeats.fetch_add(1, Ordering::Relaxed);
                     qec_failed.fetch_add(if is_qec_failed { 1 } else { 0 }, Ordering::Relaxed);
+                    // update statistic information
+                    if let Some(log_runtime_statistics_file) = &log_runtime_statistics_file {
+                        runtime_statistics["qec_failed"] = json!(is_qec_failed);
+                        if log_error_pattern_when_logical_error && is_qec_failed {
+                            runtime_statistics["error_pattern"] = json!(simulator.generate_sparse_error_pattern());
+                        }
+                        runtime_statistics["elapsed"] = json!({
+                            "prepare": prepare_elapsed,
+                            "decode": decode_elapsed,
+                            "validate": validate_elapsed,
+                        });
+                        let to_be_written = format!("{}\n", runtime_statistics.to_string());
+                        let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
+                        log_runtime_statistics_file.write(to_be_written.as_bytes()).unwrap();
+                    }
                 }
             }));
         }
@@ -413,6 +498,12 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             if !(!external_termination.load(Ordering::Relaxed) && total_repeats < max_repeats && qec_failed < min_failed_cases) {
                 break
             }
+            // synchronize statistics log file to make sure data is not lost when interrupting
+            if let Some(log_runtime_statistics_file) = &log_runtime_statistics_file {
+                let log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
+                log_runtime_statistics_file.sync_data().unwrap();
+            }
+            // refresh 4 times per second
             std::thread::sleep(std::time::Duration::from_millis(250));
         }
         pb.finish();
@@ -1610,5 +1701,41 @@ fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps:
             let max_cycles_used = *max_cycles_used.lock().unwrap();
             println!("{} {} {} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate, average_cycles, max_cycles_used);
         }
+    }
+}
+
+impl BenchmarkDebugPrint {
+    pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
+        Self::value_variants().iter().filter_map(ArgEnum::to_possible_value)
+    }
+}
+
+impl std::str::FromStr for BenchmarkDebugPrint {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        for variant in Self::value_variants() {
+            if variant.to_possible_value().unwrap().matches(s, false) {
+                return Ok(*variant);
+            }
+        }
+        Err(format!("Invalid variant: {}", s))
+    }
+}
+
+impl BenchmarkDecoder {
+    pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
+        Self::value_variants().iter().filter_map(ArgEnum::to_possible_value)
+    }
+}
+
+impl std::str::FromStr for BenchmarkDecoder {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        for variant in Self::value_variants() {
+            if variant.to_possible_value().unwrap().matches(s, false) {
+                return Ok(*variant);
+            }
+        }
+        Err(format!("Invalid variant: {}", s))
     }
 }
