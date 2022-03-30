@@ -36,6 +36,7 @@ use super::error_model::*;
 use serde::{Serialize, Deserialize};
 use super::mwpm_decoder::*;
 use super::model_graph::*;
+use super::complete_model_graph::*;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -262,17 +263,19 @@ pub enum BenchmarkDebugPrint {
     ErrorModel,
     /// including every possible error rate (correlated ones), but initialize them as 0
     FullErrorModel,
-    /// model graph, reading decoder config `weight_function` or `wf`
+    /// model graph, recognizing decoder config `weight_function` or `wf`
     ModelGraph,
+    /// complete model graph, recognizing decoder config `weight_function` or `wf`, `precompute_complete_model_graph` or `pcmgms`
+    CompleteModelGraph,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BenchmarkDebugPrintDecoderConfig {
     /// see [`mwpm_decoder::MWPMDecoderConfig`]
-    #[serde(alias = "pcmgms")]  // abbreviation
-    #[serde(default = "mwpm_default_configs::precompute_complete_model_graph_max_size")]
-    pub precompute_complete_model_graph_max_size: i64,
-    /// see [`mwpm_decoder::weight_function`]
+    #[serde(alias = "pcmg")]  // abbreviation
+    #[serde(default = "mwpm_default_configs::precompute_complete_model_graph")]
+    pub precompute_complete_model_graph: bool,
+    /// see [`mwpm_decoder::MWPMDecoderConfig`]
     #[serde(alias = "wf")]  // abbreviation
     #[serde(default = "mwpm_default_configs::weight_function")]
     pub weight_function: WeightFunction,
@@ -388,17 +391,25 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         simulator.compress_error_rates(&mut error_model);  // by default compress all error rates
         match debug_print {
             Some(BenchmarkDebugPrint::ErrorModel) => {
-                return format!("{}\n", serde_json::to_string(&simulator.to_error_model_json(&error_model)).expect("serialize should success"));
+                return format!("{}\n", serde_json::to_string(&simulator.to_json(&error_model)).expect("serialize should success"));
             },
             Some(BenchmarkDebugPrint::FullErrorModel) => {
                 simulator.expand_error_rates(&mut error_model);  // expand all optional error rates
-                return format!("{}\n", serde_json::to_string(&simulator.to_error_model_json(&error_model)).expect("serialize should success"));
+                return format!("{}\n", serde_json::to_string(&simulator.to_json(&error_model)).expect("serialize should success"));
             },
             Some(BenchmarkDebugPrint::ModelGraph) => {
                 let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
                 let mut model_graph = ModelGraph::new(&simulator);
                 model_graph.build(&mut simulator, &error_model, &config.weight_function);
-                return format!("{}\n", serde_json::to_string(&model_graph.to_model_graph_json(&simulator)).expect("serialize should success"));
+                return format!("{}\n", serde_json::to_string(&model_graph.to_json(&simulator)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::CompleteModelGraph) => {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut model_graph = ModelGraph::new(&simulator);
+                model_graph.build(&mut simulator, &error_model, &config.weight_function);
+                let mut complete_model_graph = CompleteModelGraph::new(&simulator, &model_graph);
+                complete_model_graph.precompute(&simulator, &model_graph, config.precompute_complete_model_graph);
+                return format!("{}\n", serde_json::to_string(&complete_model_graph.to_json(&simulator)).expect("serialize should success"));
             },
             _ => { }
         }

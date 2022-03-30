@@ -45,6 +45,8 @@ extern crate pyo3;
 extern crate platform_dirs;
 extern crate serde_hashkey;
 extern crate float_cmp;
+extern crate priority_queue;
+extern crate float_ord;
 
 fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> {
     clap::Command::new("QECPlayground")

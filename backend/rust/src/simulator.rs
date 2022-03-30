@@ -53,7 +53,7 @@ impl Simulator {
 /// when plotting, t is the time axis; looking at the direction of `t=-∞`, the top-left corner is `i=j=0`;
 /// `i` is vertical position, which increases when moving from top to bottom;
 /// `j` is horizontal position, which increases when moving from left to right
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct Position {
     // pub index: [usize; 3],
     pub t: usize,
@@ -763,7 +763,7 @@ impl Simulator {
     }
 
     /// create json object for debugging and viewing
-    pub fn to_error_model_json(&self, error_model: &ErrorModel) -> serde_json::Value {
+    pub fn to_json(&self, error_model: &ErrorModel) -> serde_json::Value {
         json!({
             "code_type": self.code_type,
             "height": self.height,
@@ -844,6 +844,9 @@ impl Position {
             i: i,
             j: j,
         }
+    }
+    pub fn distance(&self, other: &Self) -> usize {
+        ((self.t as isize - other.t as isize).abs() + (self.i as isize - other.i as isize).abs() + (self.j as isize - other.j as isize).abs()) as usize
     }
 }
 

@@ -275,70 +275,68 @@ impl ModelGraph {
 
     /// if there are multiple edges connecting two stabilizer measurements, elect the best one
     pub fn elect_edges<F>(&mut self, simulator: &Simulator, use_combined_probability: bool, weight_of: F) where F: Fn(f64) -> f64 + Copy {
-        for t in (simulator.measurement_cycles..simulator.height).step_by(simulator.measurement_cycles) {
-            simulator_iter_real!(simulator, position, node, t => t, if node.gate_type.is_measurement() {
-                let model_graph_node = self.get_node_mut_unwrap(position);
-                // elect normal edges
-                for (target, edges) in model_graph_node.all_edges.iter() {
-                    let mut elected_idx = 0;
-                    let mut elected_probability = edges[0].probability;
-                    for i in 1..edges.len() {
-                        let edge = &edges[i];
-                        // update `elected_probability`
-                        if use_combined_probability {
-                            elected_probability = elected_probability * (1. - edge.probability) + edge.probability * (1. - elected_probability);  // XOR
-                        } else {
-                            elected_probability = elected_probability.max(edge.probability);
-                        }
-                        // update `elected_idx`
-                        let best_edge = &edges[elected_idx];
-                        if edge.probability > best_edge.probability {
-                            elected_idx = i;  // set as best, use its 
-                        }
+        simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if self.is_node_exist(position) {
+            let model_graph_node = self.get_node_mut_unwrap(position);
+            // elect normal edges
+            for (target, edges) in model_graph_node.all_edges.iter() {
+                let mut elected_idx = 0;
+                let mut elected_probability = edges[0].probability;
+                for i in 1..edges.len() {
+                    let edge = &edges[i];
+                    // update `elected_probability`
+                    if use_combined_probability {
+                        elected_probability = elected_probability * (1. - edge.probability) + edge.probability * (1. - elected_probability);  // XOR
+                    } else {
+                        elected_probability = elected_probability.max(edge.probability);
                     }
-                    let elected = ModelGraphEdge {
-                        probability: elected_probability,
-                        weight: weight_of(elected_probability),
-                        error_pattern: edges[elected_idx].error_pattern.clone(),
-                        correction: edges[elected_idx].correction.clone(),
-                    };
-                    // update elected edge
-                    // println!("{} to {} elected probability: {}", position, target, elected.probability);
-                    model_graph_node.edges.insert(target.clone(), elected);
-                }
-                // elect boundary edge
-                if model_graph_node.all_boundaries.len() > 0 {
-                    let mut elected_idx = 0;
-                    let mut elected_probability = model_graph_node.all_boundaries[0].probability;
-                    for i in 1..model_graph_node.all_boundaries.len() {
-                        let edge = &model_graph_node.all_boundaries[i];
-                        // update `elected_probability`
-                        if use_combined_probability {
-                            elected_probability = elected_probability * (1. - edge.probability) + edge.probability * (1. - elected_probability);  // XOR
-                        } else {
-                            elected_probability = elected_probability.max(edge.probability);
-                        }
-                        // update `elected_idx`
-                        let best_edge = &model_graph_node.all_boundaries[elected_idx];
-                        if edge.probability > best_edge.probability {
-                            elected_idx = i;  // set as best, use its 
-                        }
+                    // update `elected_idx`
+                    let best_edge = &edges[elected_idx];
+                    if edge.probability > best_edge.probability {
+                        elected_idx = i;  // set as best, use its 
                     }
-                    let elected = ModelGraphBoundary {
-                        probability: elected_probability,
-                        weight: weight_of(elected_probability),
-                        error_pattern: model_graph_node.all_boundaries[elected_idx].error_pattern.clone(),
-                        correction: model_graph_node.all_boundaries[elected_idx].correction.clone(),
-                        virtual_node: None,
-                    };
-                    // update elected edge
-                    // println!("{} to virtual boundary elected probability: {}", position, elected.probability);
-                    model_graph_node.boundary = Some(elected);
-                } else {
-                    model_graph_node.boundary = None;
                 }
-            });
-        }
+                let elected = ModelGraphEdge {
+                    probability: elected_probability,
+                    weight: weight_of(elected_probability),
+                    error_pattern: edges[elected_idx].error_pattern.clone(),
+                    correction: edges[elected_idx].correction.clone(),
+                };
+                // update elected edge
+                // println!("{} to {} elected probability: {}", position, target, elected.probability);
+                model_graph_node.edges.insert(target.clone(), elected);
+            }
+            // elect boundary edge
+            if model_graph_node.all_boundaries.len() > 0 {
+                let mut elected_idx = 0;
+                let mut elected_probability = model_graph_node.all_boundaries[0].probability;
+                for i in 1..model_graph_node.all_boundaries.len() {
+                    let edge = &model_graph_node.all_boundaries[i];
+                    // update `elected_probability`
+                    if use_combined_probability {
+                        elected_probability = elected_probability * (1. - edge.probability) + edge.probability * (1. - elected_probability);  // XOR
+                    } else {
+                        elected_probability = elected_probability.max(edge.probability);
+                    }
+                    // update `elected_idx`
+                    let best_edge = &model_graph_node.all_boundaries[elected_idx];
+                    if edge.probability > best_edge.probability {
+                        elected_idx = i;  // set as best, use its 
+                    }
+                }
+                let elected = ModelGraphBoundary {
+                    probability: elected_probability,
+                    weight: weight_of(elected_probability),
+                    error_pattern: model_graph_node.all_boundaries[elected_idx].error_pattern.clone(),
+                    correction: model_graph_node.all_boundaries[elected_idx].correction.clone(),
+                    virtual_node: None,
+                };
+                // update elected edge
+                // println!("{} to virtual boundary elected probability: {}", position, elected.probability);
+                model_graph_node.boundary = Some(elected);
+            } else {
+                model_graph_node.boundary = None;
+            }
+        });
         // sanity check, two nodes on one edge have the same edge information, should be a cheap sanity check
         debug_assert!({
             let mut sanity_check_passed = true;
@@ -361,7 +359,7 @@ impl ModelGraph {
     }
 
     /// create json object for debugging and viewing
-    pub fn to_model_graph_json(&self, simulator: &Simulator) -> serde_json::Value {
+    pub fn to_json(&self, simulator: &Simulator) -> serde_json::Value {
         json!({
             "code_type": simulator.code_type,
             "height": simulator.height,
