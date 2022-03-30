@@ -8,7 +8,6 @@ use super::util_macros::*;
 use super::types::*;
 use serde::{Serialize, Deserialize};
 use super::code_builder::*;
-use super::util_macros::*;
 use std::sync::Arc;
 
 /// describing an error model, strictly corresponding to an instance of `Simulator`
@@ -99,13 +98,13 @@ impl ErrorModel {
 /// also check for error rate constrains on virtual nodes
 pub fn error_model_sanity_check(simulator: &Simulator, error_model: &ErrorModel) -> Result<(), String> {
     match simulator.code_type.builtin_code_information() {
-        Some(BuiltinCodeInformation{ measurement_cycles, noisy_measurements, .. }) => {
+        Some(BuiltinCodeInformation{ noisy_measurements, .. }) => {
             // check that no errors present in the final perfect measurement rounds
-            let expected_height = measurement_cycles * (noisy_measurements + 1) + 1;
+            let expected_height = simulator.measurement_cycles * (noisy_measurements + 1) + 1;
             if simulator.height != expected_height {
                 return Err(format!("height {} is not expected {}, don't know where is perfect measurement", simulator.height, expected_height))
             }
-            for t in simulator.height - measurement_cycles .. simulator.height {
+            for t in simulator.height - simulator.measurement_cycles .. simulator.height {
                 simulator_iter!(simulator, position, _node, t => t, {
                     let error_model_node = error_model.get_node_unwrap(position);
                     if !error_model_node.is_noiseless() {

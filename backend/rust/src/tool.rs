@@ -32,7 +32,7 @@ use super::code_builder::*;
 use super::simulator::*;
 use super::clap::{ArgEnum, PossibleValue};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use super::decoding_graph::*;
+use super::model_graph::*;
 use super::error_model::*;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
@@ -333,7 +333,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         let error_model = Arc::new(error_model);  // change mutability of error model
         // build model graph which is unshared between threads
         let mut model_graph = ModelGraph::new(&simulator);
-        model_graph.build(&mut simulator);
+        model_graph.build(&mut simulator, &error_model);
         // TODO: optionally build complete model graph when code size is small and decoder type supports it, to speed up small code decoding
 
         // prepare result variables for simulation
@@ -376,9 +376,10 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                 , confidence_interval_95_percent, pe)
         };
         loop {
+            let time_elapsed = repeat_begin.elapsed().as_secs_f64();
             match time_budget {
                 Some(time_budget) => {
-                    if repeat_begin.elapsed().as_secs_f64() > time_budget {
+                    if time_elapsed > time_budget {
                         external_termination.store(true, Ordering::Relaxed);
                     }
                 }, _ => { }
@@ -390,7 +391,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let qec_failed = qec_failed.load(Ordering::Relaxed);
             let ratio_total_rounds = (total_repeats as f64) / (max_repeats as f64);
             let ratio_qec_failed = (qec_failed as f64) / (min_failed_cases as f64);
-            if ratio_total_rounds > ratio_qec_failed {
+            if ratio_total_rounds >= ratio_qec_failed {
                 let progress = total_repeats as u64;
                 pb.total = if max_repeats as u64 > progress { max_repeats as u64 } else { progress };
                 pb.set(progress);
@@ -399,18 +400,27 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                 pb.total = if min_failed_cases as u64 > progress { min_failed_cases as u64 } else { progress };
                 pb.set(progress);
             }
+            match time_budget {
+                Some(time_budget) => {
+                    let ratio_time = time_elapsed / time_budget;
+                    if ratio_time >= ratio_total_rounds && ratio_time >= ratio_qec_failed {
+                        let progress = total_repeats as u64;
+                        pb.total = ((progress as f64) / ratio_time) as u64;
+                        pb.set(progress);
+                    }
+                }, _ => { }
+            }
             if !(!external_termination.load(Ordering::Relaxed) && total_repeats < max_repeats && qec_failed < min_failed_cases) {
                 break
             }
-            std::thread::sleep(std::time::Duration::from_millis(300));
+            std::thread::sleep(std::time::Duration::from_millis(250));
         }
-        pb.total = total_repeats.load(Ordering::Relaxed) as u64;
         pb.finish();
         for handler in handlers {
             handler.join().unwrap();
         }
         println!("{}", progress_information());
-        output += &format!("\n{}", progress_information());
+        output += &format!("\n{}\n", progress_information());
     }
     output
 }

@@ -11,7 +11,7 @@ use super::reproducible_rand::Xoroshiro128StarStar;
 use super::error_model::*;
 use ErrorType::*;
 use std::sync::Arc;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, BTreeSet, BTreeMap};
 use super::serde_hashkey;
 
 
@@ -28,6 +28,8 @@ pub struct Simulator {
     pub nodes: Vec::< Vec::< Vec::< Option<Box <SimulatorNode> > > > >,
     /// use embedded random number generator
     pub rng: Xoroshiro128StarStar,
+    /// how many cycles is there a round of measurements; default to 1
+    pub measurement_cycles: usize,
 }
 
 impl Simulator {
@@ -39,6 +41,7 @@ impl Simulator {
             horizontal: self.horizontal,
             nodes: self.nodes.clone(),
             rng: Xoroshiro128StarStar::new(),  // do not copy random number generator, otherwise parallel simulation may give same result
+            measurement_cycles: self.measurement_cycles,
         }
     }
     pub fn volume(&self) -> usize {
@@ -49,7 +52,7 @@ impl Simulator {
 /// when plotting, t is the time axis; looking at the direction of `t=-∞`, the top-left corner is `i=j=0`;
 /// `i` is vertical position, which increases when moving from top to bottom;
 /// `j` is horizontal position, which increases when moving from left to right
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct Position {
     // pub index: [usize; 3],
     pub t: usize,
@@ -80,7 +83,8 @@ pub struct SimulatorNode {
 }
 
 impl SimulatorNode {
-    pub fn new(position: Position, qubit_type: QubitType, gate_type: GateType, gate_peer: Option<Position>) -> Self {
+    /// create a new simulator node
+    pub fn new(qubit_type: QubitType, gate_type: GateType, gate_peer: Option<Position>) -> Self {
         Self {
             qubit_type: qubit_type,
             gate_type: gate_type,
@@ -92,13 +96,15 @@ impl SimulatorNode {
             is_peer_virtual: false,
         }
     }
+
+    /// quick initialization function to set virtual bits (if there is any)
     pub fn set_virtual(mut self, is_virtual: bool, is_peer_virtual: bool) -> Self {
         self.is_virtual = is_virtual;
         self.is_peer_virtual = is_peer_virtual;
         self
     }
 
-    /// set error with sanity check
+    /// set error with sanity check only at debug build
     #[inline]
     pub fn set_error(&mut self, _error_model: &ErrorModel, error: &ErrorType) {
         debug_assert!(!self.is_virtual || error == &I, "should not add errors at virtual nodes");
@@ -206,22 +212,26 @@ impl Simulator {
             horizontal: 0,
             nodes: Vec::new(),
             rng: Xoroshiro128StarStar::new(),
+            measurement_cycles: 1,
         };
         build_code(&mut simulator);
         simulator
     }
 
     /// judge if `[t][i][j]` is valid index of `self.nodes`
+    #[inline]
     pub fn is_valid_position(&self, position: &Position) -> bool {
         position.t < self.height && position.i < self.vertical && position.j < self.horizontal
     }
 
     /// judge if `self.nodes[t][i][j]` is `Some(_)`
+    #[inline]
     pub fn is_node_exist(&self, position: &Position) -> bool {
         self.is_valid_position(position) && self.get_node(position).is_some()
     }
 
     /// get `self.nodes[t][i][j]` without position check when compiled in release mode
+    #[inline]
     pub fn get_node(&'_ self, position: &Position) -> &'_ Option<Box<SimulatorNode>> {
         debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
             , position, self.height, self.vertical, self.horizontal);
@@ -229,6 +239,7 @@ impl Simulator {
     }
 
     /// get `self.nodes[t][i][j]` and then unwrap without position check when compiled in release mode
+    #[inline]
     pub fn get_node_unwrap(&'_ self, position: &Position) -> &'_ SimulatorNode {
         debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
             , position, self.height, self.vertical, self.horizontal);
@@ -238,6 +249,7 @@ impl Simulator {
     }
 
     /// get mutable `self.nodes[t][i][j]` without position check when compiled in release mode
+    #[inline]
     pub fn get_node_mut(&'_ mut self, position: &Position) -> &'_ mut Option<Box<SimulatorNode>> {
         debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
             , position, self.height, self.vertical, self.horizontal);
@@ -245,6 +257,7 @@ impl Simulator {
     }
 
     /// get mutable `self.nodes[t][i][j]` and unwrap without position check when compiled in release mode
+    #[inline]
     pub fn get_node_mut_unwrap(&'_ mut self, position: &Position) -> &'_ mut SimulatorNode {
         debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
             , position, self.height, self.vertical, self.horizontal);
@@ -254,12 +267,14 @@ impl Simulator {
     }
 
     /// check if this node is a real node, i.e. physically exist in the simulation
+    #[inline]
     pub fn is_node_real(&self, position: &Position) -> bool {
         self.is_node_exist(position) && self.get_node_unwrap(position).is_virtual == false
     }
 
     /// check if this node is a virtual node, i.e. non-existing but just work as a virtual boundary
     /// (they can be viewed as the missing stabilizers on the boundary)
+    #[inline]
     pub fn is_node_virtual(&self, position: &Position) -> bool {
         self.is_node_exist(position) && self.get_node_unwrap(position).is_virtual == true
     }
@@ -268,22 +283,16 @@ impl Simulator {
     pub fn set_error_rates(&mut self, error_model: &mut ErrorModel, px: f64, py: f64, pz: f64, pe: f64) {
         assert!(px + py + pz <= 1. && px >= 0. && py >= 0. && pz >= 0.);
         assert!(pe <= 1. && pe >= 0.);
-        let measurement_cycles = match self.code_type.builtin_code_information() {
-            Some(BuiltinCodeInformation{ measurement_cycles, .. }) => {
-                measurement_cycles
-            },
-            _ => {
-                println!("[warning] setting error rates of unknown code, no perfect measurement protection is enabled");
-                0
-            }
-        };
+        if self.measurement_cycles == 1 {
+            println!("[warning] setting error rates of unknown code, no perfect measurement protection is enabled");
+        }
         let mut error_model_node = ErrorModelNode::new();
         error_model_node.pauli_error_rates.error_rate_X = px;
         error_model_node.pauli_error_rates.error_rate_Y = py;
         error_model_node.pauli_error_rates.error_rate_Z = pz;
         error_model_node.erasure_error_rate = pe;
         let error_model_node = Arc::new(error_model_node);
-        for t in 0 .. self.height - measurement_cycles {
+        for t in 0 .. self.height - self.measurement_cycles {
             simulator_iter_mut_real!(self, position, _node, t => t, {  // only add errors on real node
                 error_model.set_node(position, Some(error_model_node.clone()));
             });
@@ -368,7 +377,7 @@ impl Simulator {
             node.has_erasure = false;
             node.propagated = I;  // clear propagated errors
             if random_erasure < error_model_node.erasure_error_rate {
-                pending_erasure_errors.push(*position);
+                pending_erasure_errors.push(position.clone());
             }
             match &error_model_node.correlated_pauli_error_rates {
                 Some(correlated_pauli_error_rates) => {
@@ -376,12 +385,12 @@ impl Simulator {
                     let correlated_pauli_error_type = correlated_pauli_error_rates.generate_random_error(random_pauli);
                     let my_error = correlated_pauli_error_type.my_error();
                     if my_error != I {
-                        pending_pauli_errors.push((*position, my_error));
+                        pending_pauli_errors.push((position.clone(), my_error));
                     }
                     let peer_error = correlated_pauli_error_type.peer_error();
                     if peer_error != I {
                         let gate_peer = node.gate_peer.as_ref().expect("correlated pauli error must corresponds to a two-qubit gate");
-                        pending_pauli_errors.push((**gate_peer, peer_error));
+                        pending_pauli_errors.push(((**gate_peer).clone(), peer_error));
                     }
                 },
                 None => { },
@@ -392,12 +401,12 @@ impl Simulator {
                     let correlated_erasure_error_type = correlated_erasure_error_rates.generate_random_erasure_error(random_erasure);
                     let my_error = correlated_erasure_error_type.my_error();
                     if my_error {
-                        pending_erasure_errors.push(*position);
+                        pending_erasure_errors.push(position.clone());
                     }
                     let peer_error = correlated_erasure_error_type.peer_error();
                     if peer_error {
                         let gate_peer = node.gate_peer.as_ref().expect("correlated erasure error must corresponds to a two-qubit gate");
-                        pending_erasure_errors.push(**gate_peer);
+                        pending_erasure_errors.push((**gate_peer).clone());
                     }
                 },
                 None => { },
@@ -432,13 +441,8 @@ impl Simulator {
             };
         }
         debug_assert!({  // the above code avoids iterating the code multiple times when error rate is low (~1%), check correctness in debug mode
-            let mut real_error_count = 0;
-            simulator_iter!(self, position, node, {
-                if node.error != I {
-                    real_error_count += 1;
-                }
-            });
-            real_error_count == error_count
+            let sparse_error_pattern = self.generate_sparse_error_pattern();
+            sparse_error_pattern.errors.len() == error_count
         });
         self.rng = rng;  // save the random number generator
         self.propagate_errors();
@@ -446,7 +450,6 @@ impl Simulator {
     }
 
     /// clear all pauli and erasure errors and also propagated errors, returning to a clean state
-    #[allow(dead_code)]
     pub fn clear_all_errors(&mut self) {
         simulator_iter_mut!(self, position, node, {
             node.error = I;
@@ -487,8 +490,11 @@ impl Simulator {
     }
 
     /// calculate propagated errors at one position. in order to correctly propagate every error, the order of propagation must be ascending in `t`s.
-    /// note that errors are propagated to the next time, i.e. `t + 1`
+    /// note that errors are propagated to the next time, i.e. `t + 1`.
+    /// when a error (other than Identity) propagates to the peer, it returns the position of the peer.
+    #[inline]
     pub fn propagate_error_from(&mut self, position: &Position) -> Option<Position> {
+        debug_assert!(position.t < self.height - 1, "propagate error from final layer is meaningless, because it doesn't have any next layer");
         let node = self.get_node_unwrap(position);
         // propagation from virtual to real is forbidden
         let propagate_to_peer_forbidden = node.is_virtual && !node.is_peer_virtual;
@@ -508,7 +514,7 @@ impl Simulator {
         if !propagate_to_peer_forbidden && gate_type.is_two_qubit_gate() {
             let propagate_to_peer = gate_type.propagate_peer(&node_propagated);
             if propagate_to_peer != I {
-                let mut next_peer_position: Position = *node_gate_peer.unwrap();
+                let mut next_peer_position: Position = (*node_gate_peer.unwrap()).clone();
                 next_peer_position.t += 1;
                 let peer_node = self.get_node_mut_unwrap(&next_peer_position);
                 peer_node.propagated = peer_node.propagated.multiply(&propagate_to_peer);
@@ -522,23 +528,15 @@ impl Simulator {
     #[inline(never)]
     pub fn generate_sparse_measurement(&self) -> SparseMeasurement {
         let mut sparse_measurement = SparseMeasurement::new();
-        let measurement_cycles = match self.code_type.builtin_code_information() {
-            Some(BuiltinCodeInformation{ measurement_cycles, .. }) => {
-                measurement_cycles
-            },
-            _ => {
-                println!("[warning] generate measurement of unknown code, fall back to slower speed");
-                1
-            }
-        };
-        for t in (measurement_cycles..self.height).step_by(measurement_cycles) {
+        for t in (self.measurement_cycles..self.height).step_by(self.measurement_cycles) {
             // only iterate over real stabilizers, excluding those non-existing virtual stabilizers
             simulator_iter_real!(self, position, node, t => t, {
                 if node.gate_type.is_measurement() {
                     let this_result = node.gate_type.stabilizer_measurement(&node.propagated);
                     let mut previous_position = position.clone();
                     loop {  // usually this loop execute only once because the previous measurement is found immediately
-                        previous_position.t -= measurement_cycles;
+                        debug_assert!(previous_position.t >= self.measurement_cycles, "cannot find the previous measurement cycle");
+                        previous_position.t -= self.measurement_cycles;
                         let previous_node = self.get_node_unwrap(&previous_position);
                         if previous_node.gate_type.is_measurement() {  // found previous measurement
                             let previous_result = previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
@@ -547,11 +545,186 @@ impl Simulator {
                             }
                             break
                         }
+                        println!("[warning] no measurement found in previous round, continue searching...")
                     }
                 }
             });
         }
         sparse_measurement
+    }
+
+    /// including virtual measurements in the result as an extension to [`generate_sparse_measurement`]
+    #[inline(never)]
+    pub fn generate_sparse_measurement_virtual(&self) -> SparseMeasurement {
+        let mut sparse_measurement_virtual = SparseMeasurement::new();
+        for t in (self.measurement_cycles..self.height).step_by(self.measurement_cycles) {
+            // only iterate over virtual stabilizers, excluding those real stabilizers
+            simulator_iter_virtual!(self, position, node, t => t, {
+                if node.gate_type.is_measurement() {
+                    let this_result = node.gate_type.stabilizer_measurement(&node.propagated);
+                    let mut previous_position = position.clone();
+                    loop {  // usually this loop execute only once because the previous measurement is found immediately
+                        debug_assert!(previous_position.t >= self.measurement_cycles, "cannot find the previous measurement cycle");
+                        previous_position.t -= self.measurement_cycles;
+                        let previous_node = self.get_node_unwrap(&previous_position);
+                        if previous_node.gate_type.is_measurement() {  // found previous measurement
+                            let previous_result = previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
+                            if this_result != previous_result {
+                                sparse_measurement_virtual.insert_nontrivial_measurement(position);
+                            }
+                            break
+                        }
+                        println!("[warning] no measurement found in previous round, continue searching...")
+                    }
+                }
+            });
+        }
+        sparse_measurement_virtual
+    }
+
+    #[inline(never)]
+    pub fn fast_measurement_given_few_errors(&mut self, sparse_errors: &SparseErrorPattern) -> (SparseMeasurement, SparseMeasurement) {
+        if sparse_errors.errors.len() == 0 {
+            println!("[warning] why calling fast measurement given no error?");
+            return (SparseMeasurement::new(), SparseMeasurement::new())
+        }
+        debug_assert!({  // fast measurement requires no errors at first
+            let mut dirty = false;
+            simulator_iter!(self, position, node, {
+                if node.error != I || node.propagated != I || node.has_erasure {
+                    dirty = true;
+                }
+            });
+            !dirty
+        });
+        let mut interested_region: BTreeSet<(usize, usize)> = BTreeSet::new();
+        let mut min_t = self.height - 1;
+        let mut max_t = 0;
+        for (position, error) in sparse_errors.errors.iter() {
+            let node = self.get_node_mut_unwrap(position);
+            node.error = *error;
+            interested_region.insert((position.i, position.j));
+            if position.t < min_t {
+                min_t = position.t;
+            }
+            if position.t > max_t {
+                max_t = position.t;
+            }
+        }
+        // println!("min_t: {}, max_t: {}, interested_region: {:?}", min_t, max_t, interested_region);
+        // propagate error if until no measurement errors are observed
+        let mut sparse_measurement_real = SparseMeasurement::new();
+        let mut sparse_measurement_virtual = SparseMeasurement::new();
+        let mut accumulated_clean_measurements = 0;
+        let early_break_accumulated_clean_measurements = 2;  // 1 is not enough, consider increasing this if still not enough
+        for t in min_t + 1 .. self.height {
+            let mut pending_interested_region = Vec::new();
+            for &(i, j) in interested_region.iter() {
+                let propagated_neighbor = self.propagate_error_from(&pos!(t - 1, i, j));
+                match propagated_neighbor {
+                    Some(peer) => pending_interested_region.push((peer.i, peer.j)),
+                    None => { },
+                }
+            }
+            for (i, j) in pending_interested_region.drain(..) {
+                interested_region.insert((i, j));
+            }
+            if t != 0 && t % self.measurement_cycles == 0 {  // it's a layer of measurement
+                accumulated_clean_measurements += 1;
+                for &(i, j) in interested_region.iter() {
+                    let position = &pos!(t, i, j);
+                    let node = self.get_node_unwrap(position);
+                    if node.gate_type.is_measurement() {
+                        let this_result = node.gate_type.stabilizer_measurement(&node.propagated);
+                        let mut previous_position = position.clone();
+                        loop {  // usually this loop execute only once because the previous measurement is found immediately
+                            debug_assert!(previous_position.t >= self.measurement_cycles, "cannot find the previous measurement cycle");
+                            previous_position.t -= self.measurement_cycles;
+                            let previous_node = self.get_node_unwrap(&previous_position);
+                            if previous_node.gate_type.is_measurement() {  // found previous measurement
+                                let previous_result = previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
+                                if this_result != previous_result {
+                                    if node.is_virtual {
+                                        sparse_measurement_virtual.insert_nontrivial_measurement(position);
+                                    } else {
+                                        sparse_measurement_real.insert_nontrivial_measurement(position);
+                                    }
+                                    accumulated_clean_measurements = 0;
+                                }
+                                break
+                            }
+                            println!("[warning] no measurement found in previous round, continue searching...")
+                        }
+                    }
+                }
+            }
+            if t > max_t {
+                max_t = t;
+                // if no more non-trivial measurements, break early
+                if accumulated_clean_measurements >= early_break_accumulated_clean_measurements {
+                    break
+                }
+            }
+        }
+        // println!("min_t: {}, max_t: {}, interested_region: {:?}, sparse_measurement: {:?}", min_t, max_t, interested_region, sparse_measurement);
+        // clear errors in interested region
+        for t in min_t .. max_t + 1 {
+            for &(i, j) in interested_region.iter() {
+                let node = self.get_node_mut_unwrap(&pos!(t, i, j));
+                node.error = ErrorType::I;
+                node.propagated = ErrorType::I;
+            }
+        }
+        debug_assert!({  // fast measurement should recover the errors before return
+            let mut dirty = false;
+            simulator_iter!(self, position, node, {
+                if node.error != I || node.propagated != I || node.has_erasure {
+                    dirty = true;
+                }
+            });
+            !dirty
+        });
+        // in debug mode, check the early break indeed works
+        debug_assert!({
+            for (position, error) in sparse_errors.errors.iter() {
+                let node = self.get_node_mut_unwrap(position);
+                node.error = *error;
+            }
+            self.propagate_errors();
+            let standard_measurements_real = self.generate_sparse_measurement();
+            let standard_measurements_virtual = self.generate_sparse_measurement_virtual();
+            self.clear_all_errors();
+            // println!("sparse_measurement_real: {:?}, standard_measurements_real: {:?}", sparse_measurement_real, standard_measurements_real);
+            // println!("sparse_measurement_virtual: {:?}, standard_measurements_virtual: {:?}", sparse_measurement_virtual, standard_measurements_virtual);
+            let mut measurements_equal = sparse_measurement_real.nontrivial.len() == standard_measurements_real.nontrivial.len()
+                && sparse_measurement_virtual.nontrivial.len() == standard_measurements_virtual.nontrivial.len();
+            if measurements_equal {  // further check for each element
+                for position in standard_measurements_real.nontrivial.iter() {
+                    if !sparse_measurement_real.nontrivial.contains(position) {
+                        measurements_equal = false;
+                        println!("nontrivial measurement happens at {} but optimized code doesn't correctly detect it", position);
+                    }
+                }
+                for position in standard_measurements_virtual.nontrivial.iter() {
+                    if !sparse_measurement_virtual.nontrivial.contains(position) {
+                        measurements_equal = false;
+                        println!("nontrivial measurement happens at {} but optimized code doesn't correctly detect it", position);
+                    }
+                }
+            }
+            measurements_equal
+        });
+        (sparse_measurement_real, sparse_measurement_virtual)
+    }
+
+    pub fn generate_sparse_error_pattern(&self) -> SparseErrorPattern {
+        let mut sparse_error_pattern = SparseErrorPattern::new();
+        simulator_iter!(self, position, node, {
+            if node.error != I {
+                sparse_error_pattern.add(position.clone(), node.error);
+            }
+        });
+        sparse_error_pattern
     }
 
     pub fn to_error_model_json(&self, error_model: &ErrorModel) -> serde_json::Value {
@@ -568,6 +741,7 @@ impl Simulator {
                             let node = self.get_node_unwrap(position);
                             let error_model_node = error_model.get_node_unwrap(position);
                             Some(json!({
+                                "position": position,
                                 "qubit_type": node.qubit_type,
                                 "gate_type": node.gate_type,
                                 "gate_peer": node.gate_peer,
@@ -641,25 +815,59 @@ impl std::fmt::Display for SimulatorNode {
     }
 }
 
+/// in most cases non-trivial measurements are rare, this sparse structure use `BTreeSet` to store them
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SparseMeasurement {
-    pub nontrivial: std::collections::BTreeSet<Position>,
+    pub nontrivial: BTreeSet<Position>,
 }
 
 impl SparseMeasurement {
+    /// create a new clean measurement without nontrivial measurements
     pub fn new() -> Self {
         Self {
-            nontrivial: std::collections::BTreeSet::new(),
+            nontrivial: BTreeSet::new(),
         }
     }
     /// return false if this nontrivial measurement is already present
+    #[inline]
     pub fn insert_nontrivial_measurement(&mut self, position: &Position) -> bool {
         self.nontrivial.insert(position.clone())
     }
     /// convert to vector in ascending order
     #[allow(dead_code)]
+    #[inline]
     pub fn to_vec(&self) -> Vec<Position> {
-        self.nontrivial.iter().map(|position| *position).collect()
+        self.nontrivial.iter().map(|position| (*position).clone()).collect()
+    }
+}
+
+/// in most cases errors are rare, this sparse structure use `BTreeMap` to store them
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SparseErrorPattern {
+    /// error happening at position: Position (t, i, j)
+    pub errors: BTreeMap<Position, ErrorType>,
+}
+
+impl SparseErrorPattern {
+    /// create an empty error pattern
+    pub fn new() -> Self {
+        Self {
+            errors: BTreeMap::new(),
+        }
+    }
+    /// extend an error pattern using another error pattern
+    pub fn extend(&mut self, next: &Self) {
+        for (position, error) in next.errors.iter() {
+            self.add(position.clone(), *error);
+        }
+    }
+    /// add an error at some position, if an error already presents, then multiply them
+    pub fn add(&mut self, position: Position, error: ErrorType) {
+        if let Some(node_error) = self.errors.get_mut(&position) {
+            *node_error = node_error.multiply(&error);
+        } else {
+            self.errors.insert(position, error);
+        }
     }
 }
 

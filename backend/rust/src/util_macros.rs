@@ -3,7 +3,7 @@
 /// (increased 10% performance boost)
 #[macro_export]
 macro_rules! simulator_iter_loop {
-    ($simulator:ident, $position:ident, $node:ident, $filter:expr, $body:expr, $start_t:expr, $end_t:expr, $node_getter:expr) => {
+    ($simulator:ident, $position:ident, $node:ident, $filter:expr, $body:expr, $start_t:expr, $end_t:expr, $delta_t:expr, $node_getter:expr) => {
         if $simulator.height != 0 && $simulator.vertical != 0 && $simulator.horizontal != 0 {
             let mut $position = Position::new($start_t, 0, 0);
             loop {
@@ -22,7 +22,7 @@ macro_rules! simulator_iter_loop {
                     $position.i += 1;
                     if $position.i >= $simulator.vertical {
                         $position.i = 0;
-                        $position.t += 1;
+                        $position.t += $delta_t;
                         if $position.t >= $end_t {  // invalid position, stop here
                             break
                         }
@@ -36,17 +36,23 @@ macro_rules! simulator_iter_loop {
 
 #[macro_export]
 macro_rules! simulator_iter_with_filter {
+    ($simulator:ident, $position:ident, $filter:expr, $body:expr) => {
+        simulator_iter_loop!($simulator, $position, __unused_node, $filter, $body, 0, $simulator.height, 1, Option::<bool>::None)
+    };
     ($simulator:ident, $position:ident, $node:ident, $filter:expr, $body:expr) => {
-        simulator_iter_loop!($simulator, $position, $node, $filter, $body, 0, $simulator.height, $simulator.get_node_unwrap($position))
+        simulator_iter_loop!($simulator, $position, $node, $filter, $body, 0, $simulator.height, 1, $simulator.get_node_unwrap($position))
     };
     ($simulator:ident, $position:ident, $node:ident, $filter:expr, t => $t:expr, $body:expr) => {
-        simulator_iter_loop!($simulator, $position, $node, $filter, $body, $t, $t+1, $simulator.get_node_unwrap($position))
+        simulator_iter_loop!($simulator, $position, $node, $filter, $body, $t, $t+1, 1, $simulator.get_node_unwrap($position))
     };
 }
 #[allow(unused_imports)] pub use simulator_iter_with_filter;
 
 #[macro_export]
 macro_rules! simulator_iter {
+    ($simulator:ident, $position:ident, $body:expr) => {
+        simulator_iter_with_filter!($simulator, $position, $simulator.is_node_exist(&$position), $body)
+    };
     ($simulator:ident, $position:ident, $node:ident, $body:expr) => {
         simulator_iter_with_filter!($simulator, $position, $node, $simulator.is_node_exist(&$position), $body)
     };
@@ -81,10 +87,10 @@ macro_rules! simulator_iter_virtual {
 #[macro_export]
 macro_rules! simulator_iter_mut_with_filter {
     ($simulator:ident, $position:ident, $node:ident, $filter:expr, $body:expr) => {
-        simulator_iter_loop!($simulator, $position, $node, $filter, $body, 0, $simulator.height, $simulator.get_node_mut_unwrap($position))
+        simulator_iter_loop!($simulator, $position, $node, $filter, $body, 0, $simulator.height, 1, $simulator.get_node_mut_unwrap($position))
     };
     ($simulator:ident, $position:ident, $node:ident, $filter:expr, t => $t:expr, $body:expr) => {
-        simulator_iter_loop!($simulator, $position, $node, $filter, $body, $t, $t+1, $simulator.get_node_mut_unwrap($position))
+        simulator_iter_loop!($simulator, $position, $node, $filter, $body, $t, $t+1, 1, $simulator.get_node_mut_unwrap($position))
     };
 }
 #[allow(unused_imports)] pub use simulator_iter_mut_with_filter;

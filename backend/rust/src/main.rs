@@ -15,7 +15,7 @@ mod fast_benchmark;
 mod simulator;
 mod code_builder;
 #[macro_use] mod util_macros;
-mod decoding_graph;
+mod model_graph;
 mod error_model;
 
 extern crate clap;
@@ -42,6 +42,7 @@ extern crate cfg_if;
 extern crate pyo3;
 extern crate platform_dirs;
 extern crate serde_hashkey;
+extern crate float_cmp;
 
 fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> {
     clap::Command::new("QECPlayground")

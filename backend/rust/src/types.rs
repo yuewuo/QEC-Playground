@@ -171,6 +171,17 @@ impl PauliErrorRates {
     pub fn error_probability(&self) -> f64 {
         self.error_rate_X + self.error_rate_Z + self.error_rate_Y
     }
+    pub fn no_error_probability(&self) -> f64 {
+        1. - self.error_probability()
+    }
+    pub fn error_rate(&self, error_type: &ErrorType) -> f64 {
+        match error_type {
+            ErrorType::I => self.no_error_probability(),
+            ErrorType::X => self.error_rate_X,
+            ErrorType::Z => self.error_rate_Z,
+            ErrorType::Y => self.error_rate_Y,
+        }
+    }
 }
 
 

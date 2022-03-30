@@ -64,7 +64,6 @@ pub struct BuiltinCodeInformation {
     pub noisy_measurements: usize,
     pub di: usize,
     pub dj: usize,
-    pub measurement_cycles: usize,
 }
 
 impl CodeType {
@@ -90,7 +89,6 @@ impl CodeType {
                     noisy_measurements: *noisy_measurements,
                     di: *di,
                     dj: *dj,
-                    measurement_cycles: 6,
                 })
             },
             _ => None
@@ -102,6 +100,7 @@ pub fn build_code(simulator: &mut Simulator) {
     let code_type = &simulator.code_type;
     match code_type {
         &CodeType::StandardPlanarCode { noisy_measurements, di, dj } | &CodeType::RotatedPlanarCode { noisy_measurements, dp: di, dn: dj } => {
+            simulator.measurement_cycles = 6;
             assert!(di > 0, "code distance must be positive integer");
             assert!(dj > 0, "code distance must be positive integer");
             let is_rotated = matches!(code_type, CodeType::RotatedPlanarCode { .. });
@@ -115,7 +114,7 @@ pub fn build_code(simulator: &mut Simulator) {
             } else {
                 (2 * di + 1, 2 * dj + 1)
             };
-            let height = 6 * (noisy_measurements + 1) + 1;
+            let height = simulator.measurement_cycles * (noisy_measurements + 1) + 1;
             // each measurement takes 6 time steps
             let mut nodes = Vec::with_capacity(height);
             let is_real = |i: usize, j: usize| -> bool {
@@ -180,7 +179,7 @@ pub fn build_code(simulator: &mut Simulator) {
                             } else { if i % 2 == 1 { QubitType::StabZ } else { QubitType::StabX } };
                             let mut gate_type = GateType::None;
                             let mut gate_peer = None;
-                            match t % 6 {
+                            match t % simulator.measurement_cycles {
                                 1 => {  // initialization
                                     match qubit_type {
                                         QubitType::StabZ => { gate_type = GateType::InitializeZ; }
@@ -249,7 +248,7 @@ pub fn build_code(simulator: &mut Simulator) {
                                 },
                                 _ => unreachable!()
                             }
-                            row_j.push(Some(Box::new(SimulatorNode::new(pos!(t, i, j), qubit_type, gate_type, gate_peer).set_virtual(
+                            row_j.push(Some(Box::new(SimulatorNode::new(qubit_type, gate_type, gate_peer.clone()).set_virtual(
                                 is_virtual(i, j), gate_peer.map_or(false, |peer| is_virtual(peer.i, peer.j))))));
                         } else {
                             row_j.push(None);
