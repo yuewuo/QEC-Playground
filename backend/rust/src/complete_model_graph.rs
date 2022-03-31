@@ -362,9 +362,9 @@ impl CompleteModelGraph {
 }
 
 #[derive(Eq, Debug)]
-struct PriorityElement {
-    weight: FloatOrd<f64>,
-    next: Position,
+pub struct PriorityElement {
+    pub weight: FloatOrd<f64>,
+    pub next: Position,
 }
 
 impl std::cmp::PartialEq for PriorityElement {
@@ -389,7 +389,7 @@ impl std::cmp::Ord for PriorityElement {
 }
 
 impl PriorityElement {
-    fn new(weight: f64, next: Position) -> Self {
+    pub fn new(weight: f64, next: Position) -> Self {
         Self {
             weight: FloatOrd::<f64>(weight),
             next: next,

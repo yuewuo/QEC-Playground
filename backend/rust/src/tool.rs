@@ -38,6 +38,8 @@ use super::mwpm_decoder::*;
 use super::model_graph::*;
 use super::complete_model_graph::*;
 use super::tailored_mwpm_decoder::*;
+use super::tailored_model_graph::*;
+use super::tailored_complete_model_graph::*;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -264,10 +266,14 @@ pub enum BenchmarkDebugPrint {
     ErrorModel,
     /// including every possible error rate (correlated ones), but initialize them as 0
     FullErrorModel,
-    /// model graph, recognizing decoder config `weight_function` or `wf`
+    /// model graph, supporting decoder config `weight_function` or `wf`
     ModelGraph,
-    /// complete model graph, recognizing decoder config `weight_function` or `wf`, `precompute_complete_model_graph` or `pcmgms`
+    /// complete model graph, supporting decoder config `weight_function` or `wf`, `precompute_complete_model_graph` or `pcmg`
     CompleteModelGraph,
+    /// tailored model graph, supporting decoder config `weight_function` or `wf`
+    TailoredModelGraph,
+    /// tailored complete model graph, supporting decoder config `weight_function` or `wf`, `precompute_complete_model_graph` or `pcmg`
+    TailoredCompleteModelGraph,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -413,6 +419,20 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                 let mut complete_model_graph = CompleteModelGraph::new(&simulator, &model_graph);
                 complete_model_graph.precompute(&simulator, &model_graph, config.precompute_complete_model_graph);
                 return format!("{}\n", serde_json::to_string(&complete_model_graph.to_json(&simulator)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::TailoredModelGraph) => {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
+                tailored_model_graph.build(&mut simulator, &error_model, &config.weight_function);
+                return format!("{}\n", serde_json::to_string(&tailored_model_graph.to_json(&simulator)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::TailoredCompleteModelGraph) => {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
+                tailored_model_graph.build(&mut simulator, &error_model, &config.weight_function);
+                let mut complete_tailored_model_graph = CompleteTailoredModelGraph::new(&simulator, &tailored_model_graph);
+                complete_tailored_model_graph.precompute(&simulator, &tailored_model_graph, config.precompute_complete_model_graph);
+                return format!("{}\n", serde_json::to_string(&complete_tailored_model_graph.to_json(&simulator)).expect("serialize should success"));
             },
             _ => { }
         }
