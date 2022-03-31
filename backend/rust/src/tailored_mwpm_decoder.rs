@@ -13,6 +13,7 @@ use super::mwpm_decoder::*;
 use std::time::Instant;
 use super::blossom_v;
 use super::union_find_decoder::UnionFind;
+use super::types::*;
 
 /// MWPM decoder, initialized and cloned for multiple threads
 #[derive(Debug, Clone, Serialize)]
@@ -77,6 +78,8 @@ impl TailoredMWPMDecoder {
         let mut time_tailored_prepare_graph = 0.;
         let mut time_tailored_blossom_v = 0.;
         let mut time_tailored_union = 0.;
+        let mut time_neutral_prepare_graph = 0.;
+        let mut time_neutral_blossom_v = 0.;
         let mut time_residual_prepare_graph = 0.;
         let mut time_residual_blossom_v = 0.;
         let mut time_build_correction = 0.;
@@ -135,7 +138,7 @@ impl TailoredMWPMDecoder {
             for i in 0..tailored_len {  // set `cardinality` to 1 if the position is a StabY
                 let position = &tailored_to_be_matched[i];
                 let node = self.simulator.get_node_unwrap(position);
-                if node.is_virtual {
+                if node.qubit_type == QubitType::StabY {
                     tailored_clusters.payload[i].as_mut().unwrap().cardinality = 1;
                 }
             }
@@ -149,26 +152,98 @@ impl TailoredMWPMDecoder {
                 }
             }
             time_tailored_union += begin.elapsed().as_secs_f64();
-            // do residual decoding, filtering out those same position matched ones
+            // do neutral decoding, only consider neutral clusters
             let begin = Instant::now();
-            let mut residual_to_be_matched = to_be_matched.clone();
-            let mut residual_to_tailored_mapping: Vec<usize> = (0..real_len).collect();
+            let mut neutral_to_be_matched = Vec::new();
+            let mut neutral_to_tailored_mapping = Vec::new();
+            for i in 0..tailored_len {
+                // filtering out positions matched with itself
+                if tailored_clusters.get(i).set_size > 1 {
+                    // only care about neutral clusters
+                    if tailored_clusters.get(i).cardinality % 2 == 0 {
+                        neutral_to_tailored_mapping.push(i);
+                        neutral_to_be_matched.push(tailored_to_be_matched[i].clone());
+                    }
+                }
+            }
+            let neutral_len = neutral_to_be_matched.len();
+            // construct edges
+            let mut neutral_weighted_edges = Vec::<(usize, usize, f64)>::new();
+            for i in 0..neutral_len {
+                let edges = self.tailored_complete_model_graph.get_neutral_matching_edges(i, &neutral_to_be_matched, &neutral_to_tailored_mapping, &mut tailored_clusters);
+                for &(j, weight) in edges.iter() {
+                    neutral_weighted_edges.push((i, j, weight));
+                    // println!{"neutral edge {} {} {} ", neutral_to_be_matched[i], neutral_to_be_matched[j], weight};
+                }
+            }
+            time_neutral_prepare_graph += begin.elapsed().as_secs_f64();
+            // match neutral graph
+            let begin = Instant::now();
+            debug_assert!({  // sanity check: edges are valid
+                let mut all_edges_valid = true;
+                for &(i, j, weight) in neutral_weighted_edges.iter() {
+                    if i >= neutral_len || j >= neutral_len {
+                        eprintln!("[error] invalid edge {} {} weight = {}", neutral_to_be_matched[i], neutral_to_be_matched[j], weight);
+                        all_edges_valid = false;
+                    }
+                }
+                all_edges_valid
+            });
+            debug_assert!({  // sanity check: each vertex has at least one edge
+                let mut edges_count: Vec<usize> = (0..neutral_len).map(|_| 0).collect();
+                for &(i, j, _weight) in neutral_weighted_edges.iter() {
+                    edges_count[i] += 1;
+                    edges_count[j] += 1;
+                }
+                let mut all_vertices_have_edge = true;
+                for i in 0..neutral_len {
+                    if edges_count[i] == 0 {
+                        eprintln!("[error] vertex {} has no edge", neutral_to_be_matched[i]);
+                        all_vertices_have_edge = false;
+                    }
+                }
+                all_vertices_have_edge
+            });
+            let neutral_matching = blossom_v::safe_minimum_weight_perfect_matching(neutral_len, neutral_weighted_edges);
+            time_neutral_blossom_v += begin.elapsed().as_secs_f64();
+            // do residual decoding, filtering out those neutral clusters and only decode charged clusters
+            let begin = Instant::now();
+            let mut residual_to_be_matched = Vec::new();
+            let mut residual_to_tailored_mapping = Vec::new();
             for i in real_len..tailored_len {
                 // if matched with itself, it should be excluded from residual matching
                 if tailored_clusters.get(i).set_size > 1 {
-                    residual_to_tailored_mapping.push(i);
-                    residual_to_be_matched.push(tailored_to_be_matched[i].clone());
+                    // only care about charged clusters
+                    if tailored_clusters.get(i).cardinality % 1 == 1 {
+                        residual_to_tailored_mapping.push(i);
+                        residual_to_be_matched.push(tailored_to_be_matched[i].clone());
+                    }
                 }
             }
-            // println!("residual_to_be_matched: {:?}", residual_to_be_matched);
+            assert!(residual_to_be_matched.len() % 2 == 0);
+            let need_additional_two_nodes = (residual_to_be_matched.len() / 2) % 2 == 1;  // odd number of charged clusters
             let residual_len = residual_to_be_matched.len();
+            let true_residual_len = residual_len + if need_additional_two_nodes { 2 } else { 0 };
+            // println!("residual_to_be_matched: {:?}", residual_to_be_matched);
             // construct edges
             let mut residual_weighted_edges = Vec::<(usize, usize, f64)>::new();
             for i in 0..residual_len {
-                let edges = self.tailored_complete_model_graph.get_residual_matching_edges(i, &residual_to_be_matched, &residual_to_tailored_mapping, &mut tailored_clusters);
+                let position = &residual_to_be_matched[i];
+                let edges = self.tailored_complete_model_graph.get_residual_matching_edges(position, &residual_to_be_matched);
                 for &(j, weight) in edges.iter() {
                     residual_weighted_edges.push((i, j, weight));
                     // println!{"residual edge {} {} {} ", residual_to_be_matched[i], residual_to_be_matched[j], weight};
+                }
+            }
+            if need_additional_two_nodes {
+                for i in 0..residual_len {
+                    let position = &residual_to_be_matched[i];
+                    let node = self.simulator.get_node_unwrap(position);
+                    if node.qubit_type == QubitType::StabY {
+                        residual_weighted_edges.push((i, residual_len, 0.));
+                    } else if node.qubit_type == QubitType::StabX {
+                        residual_weighted_edges.push((i, residual_len + 1, 0.));
+                    }
                 }
             }
             time_residual_prepare_graph += begin.elapsed().as_secs_f64();
@@ -185,7 +260,7 @@ impl TailoredMWPMDecoder {
                 all_edges_valid
             });
             debug_assert!({  // sanity check: each vertex has at least one edge
-                let mut edges_count: Vec<usize> = (0..residual_len).collect();
+                let mut edges_count: Vec<usize> = (0..residual_len).map(|_| 0).collect();
                 for &(i, j, _weight) in residual_weighted_edges.iter() {
                     edges_count[i] += 1;
                     edges_count[j] += 1;
@@ -199,17 +274,27 @@ impl TailoredMWPMDecoder {
                 }
                 all_vertices_have_edge
             });
-            let residual_matching = blossom_v::safe_minimum_weight_perfect_matching(residual_len, residual_weighted_edges);
+            let residual_matching = blossom_v::safe_minimum_weight_perfect_matching(true_residual_len, residual_weighted_edges);
             time_residual_blossom_v += begin.elapsed().as_secs_f64();
             // build correction based on the residual matching
             let begin = Instant::now();
-            for i in 0..residual_len {
+            for i in 0..neutral_len {
+                let j = neutral_matching[i];
+                let a = &neutral_to_be_matched[i];
+                if j < i {  // only add correction if j < i, so that the same correction is not applied twice
+                    // println!("neutral match peer {:?} {:?}", neutral_to_be_matched[i], neutral_to_be_matched[j]);
+                    let b = &neutral_to_be_matched[j];
+                    let matching_correction = self.tailored_complete_model_graph.build_correction_neutral_matching(a, b, &self.tailored_model_graph);
+                    correction.extend(&matching_correction);
+                }
+            }
+            for i in 0..residual_len {  // not iterating to `true_residual_len` deliberately, because those two vertices (if exists) doesn't contribute to correction
                 let j = residual_matching[i];
                 let a = &residual_to_be_matched[i];
                 if j < i {  // only add correction if j < i, so that the same correction is not applied twice
-                    println!("match peer {:?} {:?}", residual_to_be_matched[i], residual_to_be_matched[j]);
+                    // println!("match peer {:?} {:?}", residual_to_be_matched[i], residual_to_be_matched[j]);
                     let b = &residual_to_be_matched[j];
-                    let matching_correction = self.tailored_complete_model_graph.build_correction_residual_matching(a, b, &self.tailored_model_graph);
+                    let matching_correction = self.tailored_complete_model_graph.build_correction_neutral_matching(a, b, &self.tailored_model_graph);
                     correction.extend(&matching_correction);
                 }
             }
@@ -220,6 +305,8 @@ impl TailoredMWPMDecoder {
             "time_tailored_prepare_graph": time_tailored_prepare_graph,
             "time_tailored_blossom_v": time_tailored_blossom_v,
             "time_tailored_union": time_tailored_union,
+            "time_neutral_prepare_graph": time_neutral_prepare_graph,
+            "time_neutral_blossom_v": time_neutral_blossom_v,
             "time_residual_prepare_graph": time_residual_prepare_graph,
             "time_residual_blossom_v": time_residual_blossom_v,
             "time_build_correction": time_build_correction,
@@ -264,7 +351,6 @@ mod tests {
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
-            unreachable!();
         }
         {  // debug 4
             simulator.clear_all_errors();
