@@ -887,11 +887,13 @@ impl SparseMeasurement {
     pub fn insert_nontrivial_measurement(&mut self, position: &Position) -> bool {
         self.nontrivial.insert(position.clone())
     }
+    /// iterator
+    pub fn iter<'a>(&'a self) -> std::collections::btree_set::Iter<'a, Position> {
+        self.nontrivial.iter()
+    }
     /// convert to vector in ascending order
-    #[allow(dead_code)]
-    #[inline]
     pub fn to_vec(&self) -> Vec<Position> {
-        self.nontrivial.iter().map(|position| (*position).clone()).collect()
+        self.iter().map(|position| (*position).clone()).collect()
     }
 }
 

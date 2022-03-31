@@ -8,8 +8,8 @@ new_command_prefix = ["tool", "benchmark"]
 pm = "\u00B1"
 
 def main():
-    profile_pure_simulation()
-    # profile_CSS_decoding()
+    # profile_pure_simulation()
+    profile_CSS_decoding()
     # profile_XZZX_complex_noise_model_decoding()
     pass
 
@@ -34,13 +34,15 @@ def profile_pure_simulation():
             print(f"now speed: {now_speed:.2f}/s, compare speed: {compare_speed:.2f}/s, relative different: {diff_speed * 100:.2f}%")
 
 def profile_CSS_decoding():
-    for decoder in ["MWPM", "UF"]:
+    # for decoder in ["MWPM", "UF"]:
+    for decoder in ["mwpm"]:
         for p in [0.005, 0.002]:
             for d in [5, 9, 13]:
                 name = f"CSS_decoding_{decoder}_d_{d}_p_{p}"
-                command = command_prefix + [f"[{d}]", f"[{d}]", f"[{p}]", "--max_N", "0", "--min_error_cases", "0", "--decoder", f"{decoder}", "--time_budget", f"{time_budget}"]
-                if decoder == "UF":
-                    command += ["--max_half_weight", "10"]
+                # command = command_prefix + [f"[{d}]", f"[{d}]", f"[{p}]", "--max_N", "0", "--min_error_cases", "0", "--decoder", f"{decoder}", "--time_budget", f"{time_budget}"]
+                command = new_command_prefix + [f"[{d}]", f"[{d}]", f"[{p}]", "--max_repeats", "0", "--min_failed_cases", "0", "--decoder", f"{decoder}", "--time_budget", f"{time_budget}"]
+                if decoder == "mwpm":
+                    command += ["--decoder_config", '{"precompute_complete_model_graph":true}']
                 qp.run_flamegraph_qecp_profile_command(name, command)
 
                 @qp.compare_qecp_profile(name)

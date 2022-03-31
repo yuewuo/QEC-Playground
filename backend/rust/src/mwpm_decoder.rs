@@ -8,6 +8,8 @@ use super::model_graph::*;
 use super::complete_model_graph::*;
 use super::serde_json;
 use std::sync::{Arc};
+use std::time::Instant;
+use super::blossom_v;
 
 /// MWPM decoder, initialized and cloned for multiple threads
 #[derive(Debug, Clone, Serialize)]
@@ -57,7 +59,69 @@ impl MWPMDecoder {
     }
 
     pub fn decode(&mut self, sparse_measurement: &SparseMeasurement) -> (SparseCorrection, serde_json::Value) {
-        (SparseCorrection::new(), json!({}))
+        let mut correction = SparseCorrection::new();
+        // list nontrivial measurements to be matched
+        let to_be_matched = sparse_measurement.to_vec();
+        let mut time_prepare_graph = 0.;
+        let mut time_blossom_v = 0.;
+        let mut time_build_correction = 0.;
+        if to_be_matched.len() > 0 {
+            // println!{"to_be_matched: {:?}", to_be_matched};
+            let begin = Instant::now();
+            // add the edges to the graph
+            let m_len = to_be_matched.len();  // virtual boundary of `i` is `i + m_len`
+            let node_num = m_len * 2;
+            // Z (X) stabilizers are (fully) connected, boundaries are fully connected
+            // stabilizer to boundary is one-to-one connected
+            let mut weighted_edges = Vec::<(usize, usize, f64)>::new();
+            // invalidate previous cache to save memory
+            self.complete_model_graph.invalidate_previous_dijkstra();
+            for i in 0..m_len {
+                let position = &to_be_matched[i];
+                let (edges, boundary) = self.complete_model_graph.get_edges(position, &to_be_matched);
+                match boundary {
+                    Some(weight) => {
+                        weighted_edges.push((i, i + m_len, weight));
+                    }, None => { }
+                }
+                for &(j, weight) in edges.iter() {
+                    weighted_edges.push((i, j, weight));
+                    // println!{"edge {} {} {} ", i, j, cost};
+                }
+                for j in (i+1)..m_len {
+                    // virtual boundaries are always fully connected
+                    weighted_edges.push((i + m_len, j + m_len, 0.));
+                }
+            }
+            time_prepare_graph += begin.elapsed().as_secs_f64();
+            // run the Blossom algorithm
+            let begin = Instant::now();
+            let matching = blossom_v::safe_minimum_weight_perfect_matching(node_num, weighted_edges);
+            time_blossom_v += begin.elapsed().as_secs_f64();
+            // build correction based on the matching
+            let begin = Instant::now();
+            for i in 0..m_len {
+                let j = matching[i];
+                let a = &to_be_matched[i];
+                if j < i {  // only add correction if j < i, so that the same correction is not applied twice
+                    // println!("match peer {:?} {:?}", to_be_matched[i], to_be_matched[j]);
+                    let b = &to_be_matched[j];
+                    let matching_correction = self.complete_model_graph.build_correction_matching(a, b, &self.model_graph);
+                    correction.extend(&matching_correction);
+                } else if j >= m_len {  // matched with boundary
+                    // println!("match boundary {:?}", to_be_matched[i]);
+                    let boundary_correction = self.complete_model_graph.build_correction_boundary(a, &self.model_graph);
+                    correction.extend(&boundary_correction);
+                }
+            }
+            time_build_correction += begin.elapsed().as_secs_f64();
+        }
+        (correction, json!({
+            "to_be_matched": to_be_matched.len(),
+            "time_prepare_graph": time_prepare_graph,
+            "time_blossom_v": time_blossom_v,
+            "time_build_correction": time_build_correction,
+        }))
     }
 
 }

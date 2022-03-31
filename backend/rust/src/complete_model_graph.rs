@@ -27,6 +27,8 @@ pub struct CompleteModelGraphNode {
     pub precomputed: Option<Arc<PrecomputedData>>,
     /// timestamp for Dijkstra's algorithm
     pub timestamp: usize,
+    /// cache all edges currently needed to reconstruct path between interested pairs, will be cleared if timestamp is updated
+    pub cache: BTreeMap<Position, CompleteModelGraphEdge>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -59,6 +61,7 @@ impl CompleteModelGraph {
                             return Some(Box::new(CompleteModelGraphNode {
                                 precomputed: None,
                                 timestamp: 0,
+                                cache: BTreeMap::new(),
                             }))
                         }
                         None
@@ -90,13 +93,21 @@ impl CompleteModelGraph {
     }
 
     /// invalidate Dijkstra's algorithm state from previous call
-    pub fn invalidate_previous_dijkstra(&mut self, simulator: &Simulator) -> usize {
+    pub fn invalidate_previous_dijkstra(&mut self) -> usize {
         if self.active_timestamp == usize::MAX {  // rarely happens
             self.active_timestamp = 0;
-            simulator_iter!(simulator, position, if self.is_node_exist(position) {
-                let node = self.get_node_mut_unwrap(position);
-                node.timestamp = 0;  // refresh all timestamps to avoid conflicts
-            });
+            for array in self.nodes.iter_mut() {
+                for array in array.iter_mut() {
+                    for element in array.iter_mut() {
+                        match element {
+                            Some(ref mut node) => {
+                                node.timestamp = 0;  // refresh all timestamps to avoid conflicts
+                            }
+                            None => { }
+                        }
+                    }
+                }
+            }
         }
         self.active_timestamp += 1;  // implicitly invalidate all nodes
         self.active_timestamp
@@ -121,9 +132,82 @@ impl CompleteModelGraph {
         Some(node1.precomputed.as_ref().unwrap().boundary.as_ref().unwrap().weight + node2.precomputed.as_ref().unwrap().boundary.as_ref().unwrap().weight)
     }
 
+    /// get edges in a batch manner to improve speed if need to run Dijkstra's algorithm on the fly;
+    /// this function will clear any out-of-date cache
+    pub fn get_edges(&mut self, position: &Position, targets: &Vec<Position>) -> (Vec<(usize, f64)>, Option<f64>) {
+        if self.precompute_complete_model_graph {
+            let mut edges = Vec::new();
+            let node = self.get_node_unwrap(position);
+            let precomputed = node.precomputed.as_ref().unwrap();
+
+            for (index, target) in targets.iter().enumerate() {
+                if let Some(edge) = precomputed.edges.get(target) {
+                    edges.push((index, edge.weight));
+                }
+            }
+            (edges, precomputed.boundary.as_ref().map(|boundary| boundary.weight))
+        } else {
+            unimplemented!();
+        }
+    }
+
+    /// build correction with matching, requires [`get_edges`] to be run before to cache the edges
+    pub fn build_correction_matching(&self, source: &Position, target: &Position, model_graph: &ModelGraph) -> SparseCorrection {
+        if self.precompute_complete_model_graph {
+            let mut correction = SparseCorrection::new();
+            let mut source = source.clone();
+            while &source != target {
+                let node = self.get_node_unwrap(&source);
+                let precomputed = node.precomputed.as_ref().unwrap();
+                let target_edge = precomputed.edges.get(target);
+                let edge = target_edge.as_ref().unwrap();
+                let next = &edge.next;
+                let model_graph_node = model_graph.get_node_unwrap(&source);
+                let next_edge = model_graph_node.edges.get(next);
+                let next_correction = &next_edge.as_ref().unwrap().correction;
+                correction.extend(next_correction);
+                source = next.clone();
+            }
+            correction
+        } else {
+            // only read from cache, to improve efficiency
+            unimplemented!();
+        }
+    }
+
+    /// build correction with boundary, requires [`get_edges`] to be run before to cache the edges
+    pub fn build_correction_boundary(&self, position: &Position, model_graph: &ModelGraph) -> SparseCorrection {
+        if self.precompute_complete_model_graph {
+            let mut correction = SparseCorrection::new();
+            let mut position = position.clone();
+            loop {
+                let node = self.get_node_unwrap(&position);
+                let precomputed = node.precomputed.as_ref().unwrap();
+                let boundary = precomputed.boundary.as_ref().unwrap();
+                let next = &boundary.next;
+                let model_graph_node = model_graph.get_node_unwrap(&position);
+                if next == &position {
+                    // this is the boundary
+                    let boundary_correction = &model_graph_node.boundary.as_ref().unwrap().correction;
+                    correction.extend(boundary_correction);
+                    break
+                } else {
+                    let next_edge = model_graph_node.edges.get(next);
+                    let next_correction = &next_edge.as_ref().unwrap().correction;
+                    correction.extend(next_correction);
+                    position = next.clone();
+                }
+            }
+            correction
+        } else {
+            // only read from cache, to improve efficiency
+            unimplemented!();
+        }
+    }
+
     /// run full Dijkstra's algorithm and identify the active region, running [`find_shortest_boundary_paths`] required before this function
-    pub fn precompute_dijkstra(&mut self, position: &Position, simulator: &Simulator, model_graph: &ModelGraph) {
-        let active_timestamp = self.invalidate_previous_dijkstra(simulator);
+    pub fn precompute_dijkstra(&mut self, position: &Position, model_graph: &ModelGraph) {
+        let active_timestamp = self.invalidate_previous_dijkstra();
         let mut pq = PriorityQueue::<Position, PriorityElement>::new();
         pq.push(position.clone(), PriorityElement::new(0., position.clone()));
         loop {  // until no more elements
@@ -243,7 +327,7 @@ impl CompleteModelGraph {
         if precompute_complete_model_graph {
             // iterate over each node to cache nearest nodes up to `precompute_complete_model_graph`
             simulator_iter!(simulator, position, if self.is_node_exist(position) {
-                self.precompute_dijkstra(position, simulator, model_graph);
+                self.precompute_dijkstra(position, model_graph);
             });
         }
     }
