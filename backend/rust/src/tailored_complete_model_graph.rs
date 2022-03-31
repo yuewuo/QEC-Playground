@@ -9,14 +9,15 @@ use super::complete_model_graph::*;
 use super::priority_queue::PriorityQueue;
 use super::float_ord::FloatOrd;
 use std::sync::{Arc};
+use super::union_find_decoder::UnionFind;
 
 #[derive(Debug, Clone, Serialize)]
-pub struct CompleteTailoredModelGraph {
+pub struct TailoredCompleteModelGraph {
     /// precomputed edges and active region helps to reduce the runtime complexity by caching complete graph
     /// , but need to be disabled when the probability of edges in model graph can change on the fly
     pub precompute_complete_model_graph: bool,
     /// each thread maintains a copy of this data structure to run Dijkstra's algorithm
-    pub nodes: Vec::< Vec::< Vec::< Option< Box< DoubleCompleteTailoredModelGraphNode > > > > >,
+    pub nodes: Vec::< Vec::< Vec::< Option< Box< TripleCompleteTailoredModelGraphNode > > > > >,
     /// timestamp to invalidate all nodes without iterating them; only invalidating all nodes individually when active_timestamp is usize::MAX
     pub active_timestamp: usize,
 }
@@ -32,7 +33,7 @@ pub struct CompleteTailoredModelGraphNode {
     pub cache: BTreeMap<Position, CompleteTailoredModelGraphEdge>,
 }
 
-pub type DoubleCompleteTailoredModelGraphNode = [CompleteTailoredModelGraphNode; 2];
+pub type TripleCompleteTailoredModelGraphNode = [CompleteTailoredModelGraphNode; 3];
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CompleteTailoredModelGraphEdge {
@@ -51,7 +52,7 @@ pub struct PrecomputedData {
     pub boundary: Option<CompleteTailoredModelGraphEdge>,
 }
 
-impl CompleteTailoredModelGraph {
+impl TailoredCompleteModelGraph {
     pub fn new(simulator: &Simulator, model_graph: &TailoredModelGraph) -> Self {
         assert!(simulator.volume() > 0, "cannot build graph out of zero-sized simulator");
         Self {
@@ -62,6 +63,10 @@ impl CompleteTailoredModelGraph {
                         let position = &pos!(t, i, j);
                         if model_graph.is_node_exist(position) {
                             return Some(Box::new([CompleteTailoredModelGraphNode {
+                                precomputed: None,
+                                timestamp: 0,
+                                cache: BTreeMap::new(),
+                            }, CompleteTailoredModelGraphNode {
                                 precomputed: None,
                                 timestamp: 0,
                                 cache: BTreeMap::new(),
@@ -80,7 +85,7 @@ impl CompleteTailoredModelGraph {
     }
 
     /// any valid position of the simulator is a valid position in model graph, but only some of these positions corresponds a valid node in model graph
-    pub fn get_node(&'_ self, position: &Position) -> &'_ Option<Box<DoubleCompleteTailoredModelGraphNode>> {
+    pub fn get_node(&'_ self, position: &Position) -> &'_ Option<Box<TripleCompleteTailoredModelGraphNode>> {
         &self.nodes[position.t][position.i][position.j]
     }
 
@@ -90,12 +95,12 @@ impl CompleteTailoredModelGraph {
     }
 
     /// get reference `self.nodes[t][i][j]` and then unwrap
-    pub fn get_node_unwrap(&'_ self, position: &Position) -> &'_ DoubleCompleteTailoredModelGraphNode {
+    pub fn get_node_unwrap(&'_ self, position: &Position) -> &'_ TripleCompleteTailoredModelGraphNode {
         self.get_node(position).as_ref().unwrap()
     }
 
     /// get mutable reference `self.nodes[t][i][j]` and unwrap
-    pub fn get_node_mut_unwrap(&'_ mut self, position: &Position) -> &'_ mut DoubleCompleteTailoredModelGraphNode {
+    pub fn get_node_mut_unwrap(&'_ mut self, position: &Position) -> &'_ mut TripleCompleteTailoredModelGraphNode {
         self.nodes[position.t][position.i][position.j].as_mut().unwrap()
     }
 
@@ -122,11 +127,10 @@ impl CompleteTailoredModelGraph {
         self.active_timestamp
     }
 
-    /// get edges in a batch manner to improve speed if need to run Dijkstra's algorithm on the fly;
-    /// this function will clear any out-of-date cache
-    pub fn get_edges(&mut self, position: &Position, targets: &Vec<Position>) -> [Vec<(usize, f64)>; 2] {
+    /// get tailored matching edges in a batch manner to improve speed if need to run Dijkstra's algorithm on the fly;
+    pub fn get_tailored_matching_edges(&mut self, position: &Position, targets: &Vec<Position>) -> [Vec<(usize, f64)>; 2] {
         if self.precompute_complete_model_graph {
-            let [positive_node, negative_node] = self.get_node_unwrap(position);
+            let [positive_node, negative_node, _neutral_node] = self.get_node_unwrap(position);
             // compute positive edges
             let mut positive_edges = Vec::new();
             let positive_precomputed = positive_node.precomputed.as_ref().unwrap();
@@ -149,10 +153,69 @@ impl CompleteTailoredModelGraph {
         }
     }
 
+    /// get residual matching edges in a batch manner to improve speed if need to run Dijkstra's algorithm on the fly;
+    /// this function will clear any out-of-date cache
+    pub fn get_residual_matching_edges(&mut self, position_index: usize, targets: &Vec<Position>, residual_to_tailored_mapping: &Vec<usize>
+            , tailored_clusters: &mut UnionFind) -> Vec<(usize, f64)> {
+        // query union-find data structure to remove edges across different clusters unless they're charged
+        let position = &targets[position_index];
+        if self.precompute_complete_model_graph {
+            let [_positive_node, _negative_node, neutral_node] = self.get_node_unwrap(position);
+            // compute neutral edges
+            let mut neutral_edges = Vec::new();
+            let neutral_precomputed = neutral_node.precomputed.as_ref().unwrap();
+            for (index, target) in targets.iter().enumerate() {
+                if let Some(edge) = neutral_precomputed.edges.get(target) {
+                    let mut has_edge = false;
+                    // edges exist within a cluster
+                    if tailored_clusters.find(residual_to_tailored_mapping[position_index]) == tailored_clusters.find(residual_to_tailored_mapping[index]) {
+                        has_edge = true;
+                    }
+                    // edges exist if both cluster is charged
+                    let charged_1 = tailored_clusters.get(residual_to_tailored_mapping[position_index]).cardinality % 2 == 1;
+                    let charged_2 = tailored_clusters.get(residual_to_tailored_mapping[index]).cardinality % 2 == 1;
+                    if charged_1 && charged_2 {
+                        has_edge = true;
+                    }
+                    if has_edge {
+                        neutral_edges.push((index, edge.weight));
+                    }
+                }
+            }
+            neutral_edges
+        } else {
+            unimplemented!();
+        }
+    }
+
+    /// build correction with residual matching, requires [`get_residual_matching_edges`] to be run before to cache the edges
+    pub fn build_correction_residual_matching(&self, source: &Position, target: &Position, tailored_model_graph: &TailoredModelGraph) -> SparseCorrection {
+        if self.precompute_complete_model_graph {
+            let mut correction = SparseCorrection::new();
+            let mut source = source.clone();
+            while &source != target {
+                let [_, _, node] = self.get_node_unwrap(&source);
+                let precomputed = node.precomputed.as_ref().unwrap();
+                let target_edge = precomputed.edges.get(target);
+                let edge = target_edge.as_ref().unwrap();
+                let next = &edge.next;
+                let [_, _, model_graph_node] = tailored_model_graph.get_node_unwrap(&source);
+                let next_edge = model_graph_node.edges.get(next);
+                let next_correction = &next_edge.as_ref().unwrap().correction;
+                correction.extend(next_correction);
+                source = next.clone();
+            }
+            correction
+        } else {
+            // only read from cache, to improve efficiency
+            unimplemented!();
+        }
+    }
+
     /// run full Dijkstra's algorithm and identify the active region, running [`find_shortest_boundary_paths`] required before this function
     pub fn precompute_dijkstra(&mut self, position: &Position, model_graph: &TailoredModelGraph) {
         let active_timestamp = self.invalidate_previous_dijkstra();
-        for idx in 0..2 {
+        for idx in 0..3 {
             let mut pq = PriorityQueue::<Position, PriorityElement>::new();
             pq.push(position.clone(), PriorityElement::new(0., position.clone()));
             loop {  // until no more elements
@@ -216,7 +279,7 @@ impl CompleteTailoredModelGraph {
         // clear existing state
         simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if self.is_node_exist(position) {
             let double_node = self.get_node_mut_unwrap(position);
-            for idx in 0..2 {
+            for idx in 0..3 {
                 double_node[idx].precomputed = Some(Arc::new(PrecomputedData {
                     edges: BTreeMap::new(),
                     boundary: None,
@@ -244,13 +307,15 @@ impl CompleteTailoredModelGraph {
                     (0..simulator.horizontal).map(|j| {
                         let position = &pos!(t, i, j);
                         if self.is_node_exist(position) {
-                            let [positive_node, negative_node] = self.get_node_unwrap(position);
+                            let [positive_node, negative_node, neutral_node] = self.get_node_unwrap(position);
                             Some(json!({
                                 "position": position,
                                 "positive_precomputed": positive_node.precomputed,
                                 "positive_timestamp": positive_node.timestamp,  // internal variable, export only when debug
                                 "negative_precomputed": negative_node.precomputed,
                                 "negative_timestamp": negative_node.timestamp,  // internal variable, export only when debug
+                                "neutral_precomputed": neutral_node.precomputed,
+                                "neutral_timestamp": neutral_node.timestamp,  // internal variable, export only when debug
                             }))
                         } else {
                             None

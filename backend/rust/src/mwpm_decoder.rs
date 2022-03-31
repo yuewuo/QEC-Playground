@@ -86,7 +86,7 @@ impl MWPMDecoder {
                 }
                 for &(j, weight) in edges.iter() {
                     weighted_edges.push((i, j, weight));
-                    // println!{"edge {} {} {} ", i, j, cost};
+                    // println!{"edge {} {} {} ", i, j, weight};
                 }
                 for j in (i+1)..m_len {
                     // virtual boundaries are always fully connected

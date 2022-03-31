@@ -1061,11 +1061,11 @@ pub fn suboptimal_matching_by_union_find_given_measurement(model: &ftqec::Planar
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UnionFind {
     /// tree structure, each node has a parent
-    link_parent: Vec<usize>,
+    pub link_parent: Vec<usize>,
     /// the node information, has the same length as `link_parent`
-    payload: Vec<Option<UnionNode>>,
+    pub payload: Vec<Option<UnionNode>>,
     /// internal cache of parent list when calling `find`
-    find_parent_list: Vec<usize>,
+    pub find_parent_list: Vec<usize>,
 }
 
 #[derive(Copy, Debug, Serialize, Deserialize, Clone)]

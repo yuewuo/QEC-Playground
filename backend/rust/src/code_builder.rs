@@ -618,7 +618,6 @@ pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ErrorType::*;
 
     #[macro_export]
     macro_rules! assert_measurement {

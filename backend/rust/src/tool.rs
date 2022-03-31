@@ -274,6 +274,8 @@ pub enum BenchmarkDebugPrint {
     TailoredModelGraph,
     /// tailored complete model graph, supporting decoder config `weight_function` or `wf`, `precompute_complete_model_graph` or `pcmg`
     TailoredCompleteModelGraph,
+    /// print all error patterns immediately after generating random errors, typically useful to pinpoint how program assertion fail
+    AllErrorPattern,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -430,12 +432,13 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                 let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
                 let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
                 tailored_model_graph.build(&mut simulator, &error_model, &config.weight_function);
-                let mut complete_tailored_model_graph = CompleteTailoredModelGraph::new(&simulator, &tailored_model_graph);
+                let mut complete_tailored_model_graph = TailoredCompleteModelGraph::new(&simulator, &tailored_model_graph);
                 complete_tailored_model_graph.precompute(&simulator, &tailored_model_graph, config.precompute_complete_model_graph);
                 return format!("{}\n", serde_json::to_string(&complete_tailored_model_graph.to_json(&simulator)).expect("serialize should success"));
             },
             _ => { }
         }
+        let debug_print = Arc::new(debug_print);  // share it across threads
         let error_model = Arc::new(error_model);  // change mutability of error model
         // build decoder precomputed data which is shared between threads
         if decoder == BenchmarkDecoder::None {
@@ -460,8 +463,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let total_repeats = Arc::clone(&total_repeats);
             let qec_failed = Arc::clone(&qec_failed);
             let external_termination = Arc::clone(&external_termination);
-            let mut simulator = simulator.clone();
+            let mut simulator: Simulator = simulator.clone();
             let error_model = Arc::clone(&error_model);
+            let debug_print = Arc::clone(&debug_print);
             let log_runtime_statistics_file = log_runtime_statistics_file.clone();
             let mut mwpm_decoder = mwpm_decoder.clone();
             let mut tailored_mwpm_decoder = tailored_mwpm_decoder.clone();
@@ -470,6 +474,10 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     // generate random errors and the corresponding measurement
                     let begin = Instant::now();
                     simulator.generate_random_errors(&error_model);
+                    if matches!(*debug_print, Some(BenchmarkDebugPrint::AllErrorPattern)) {
+                        let sparse_error_pattern = simulator.generate_sparse_error_pattern();
+                        eprintln!("{}", serde_json::to_string(&sparse_error_pattern).expect("serialize should success"));
+                    }
                     let sparse_measurement = simulator.generate_sparse_measurement();
                     let prepare_elapsed = begin.elapsed().as_secs_f64();
                     // decode
