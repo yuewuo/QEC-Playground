@@ -11,7 +11,8 @@ For major updates, please run the [auto profiler](benchmark/auto_profiler/auto_p
 ## 0.1.4 (2022.3.30)
 
 - [x] build complete model graph using customized Dijkstra's algorithm
-- [ ] mwpm decoder
+- [x] mwpm decoder
+- [ ] tailored mwpm decoder
 
 ## 0.1.3 (2022.3.21)
 

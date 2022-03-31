@@ -37,6 +37,7 @@ use serde::{Serialize, Deserialize};
 use super::mwpm_decoder::*;
 use super::model_graph::*;
 use super::complete_model_graph::*;
+use super::tailored_mwpm_decoder::*;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -287,6 +288,8 @@ pub enum BenchmarkDecoder {
     None,
     /// minimum-weight perfect matching decoder
     MWPM,
+    /// tailored surface code MWPM decoder
+    TailoredMWPM,
 }
 
 fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_repeats: usize, min_failed_cases: usize
@@ -421,6 +424,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         let mwpm_decoder = if decoder == BenchmarkDecoder::MWPM {
             Some(MWPMDecoder::new(&simulator, &error_model, &decoder_config))
         } else { None };
+        let tailored_mwpm_decoder = if decoder == BenchmarkDecoder::TailoredMWPM {
+            Some(TailoredMWPMDecoder::new(&simulator, &error_model, &decoder_config))
+        } else { None };
         // prepare result variables for simulation
         let total_repeats = Arc::new(AtomicUsize::new(0));
         let qec_failed = Arc::new(AtomicUsize::new(0));
@@ -438,6 +444,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let error_model = Arc::clone(&error_model);
             let log_runtime_statistics_file = log_runtime_statistics_file.clone();
             let mut mwpm_decoder = mwpm_decoder.clone();
+            let mut tailored_mwpm_decoder = tailored_mwpm_decoder.clone();
             handlers.push(std::thread::spawn(move || {
                 while !external_termination.load(Ordering::Relaxed) && total_repeats.load(Ordering::Relaxed) < max_repeats && qec_failed.load(Ordering::Relaxed) < min_failed_cases {
                     // generate random errors and the corresponding measurement
@@ -453,6 +460,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                         },
                         BenchmarkDecoder::MWPM => {
                             mwpm_decoder.as_mut().unwrap().decode(&sparse_measurement)
+                        },
+                        BenchmarkDecoder::TailoredMWPM => {
+                            tailored_mwpm_decoder.as_mut().unwrap().decode(&sparse_measurement)
                         },
                     };
                     let decode_elapsed = begin.elapsed().as_secs_f64();

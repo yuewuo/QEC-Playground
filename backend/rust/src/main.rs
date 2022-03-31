@@ -19,6 +19,7 @@ mod model_graph;
 mod complete_model_graph;
 mod error_model;
 mod mwpm_decoder;
+mod tailored_mwpm_decoder;
 
 extern crate clap;
 #[macro_use] extern crate serde_json;
