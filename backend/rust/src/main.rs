@@ -22,6 +22,7 @@ mod mwpm_decoder;
 mod tailored_mwpm_decoder;
 mod tailored_model_graph;
 mod tailored_complete_model_graph;
+mod error_model_builder;
 
 extern crate clap;
 #[macro_use] extern crate serde_json;
@@ -134,6 +135,8 @@ fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> 
                 .arg(clap::Arg::new("time_budget").long("time_budget").help("for each configuration, give a maximum time to run (in second)").takes_value(true))
                 .arg(clap::Arg::new("log_runtime_statistics").long("log_runtime_statistics").help("log the runtime statistical information, given the path of the statistics log file").takes_value(true))
                 .arg(clap::Arg::new("log_error_pattern_when_logical_error").long("log_error_pattern_when_logical_error").help("log the error pattern in the statistics log file, which is useful when debugging rare cases but it can make the log file much larger"))
+                .arg(clap::Arg::new("error_model").long("error_model").help("possible error models see error_model_builder.rs").possible_values(error_model_builder::ErrorModelBuilder::possible_values()).takes_value(true))
+                .arg(clap::Arg::new("error_model_configuration").long("error_model_configuration").help("a json object describing the error model details").takes_value(true).default_value("{}"))
             )
             .subcommand(clap::Command::new("fault_tolerant_benchmark").about("benchmark fault tolerant algorithm")
                 .arg(clap::Arg::new("Ls").help("[L1,L2,L3,...,Ln] will be code distance of i and j dimension if djs is not provided").takes_value(true).required(true))

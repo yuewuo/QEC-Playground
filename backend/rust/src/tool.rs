@@ -40,6 +40,7 @@ use super::complete_model_graph::*;
 use super::tailored_mwpm_decoder::*;
 use super::tailored_model_graph::*;
 use super::tailored_complete_model_graph::*;
+use super::error_model_builder::*;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -79,8 +80,11 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let time_budget: Option<f64> = matches.value_of_t("time_budget").ok();
             let log_runtime_statistics: Option<String> = matches.value_of_t("log_runtime_statistics").ok();
             let log_error_pattern_when_logical_error = matches.is_present("log_error_pattern_when_logical_error");
+            let error_model_builder = matches.value_of_t::<ErrorModelBuilder>("error_model").ok();
+            let error_model_configuration = matches.value_of_t::<serde_json::Value>("error_model_configuration").unwrap();
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
-                , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error));
+                , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
+                , error_model_builder, error_model_configuration));
         }
         Some(("fault_tolerant_benchmark", matches)) => {
             let dis: String = matches.value_of_t("Ls").expect("required");
@@ -302,7 +306,8 @@ pub enum BenchmarkDecoder {
 
 fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_repeats: usize, min_failed_cases: usize
         , parallel: usize, code_type: String, decoder: BenchmarkDecoder, decoder_config: serde_json::Value, ignore_logical_i: bool, ignore_logical_j: bool
-        , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool) -> String {
+        , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
+        , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value) -> String {
     // if parallel = 0, use all CPU resources
     let mut parallel = parallel;
     if parallel == 0 {
@@ -383,7 +388,6 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         let py = px;
         let pz = p - 2. * px;
         simulator.set_error_rates(&mut error_model, px, py, pz, pe);
-        // TODO: apply custom error model
         debug_assert!({  // check correctness only in debug mode because it's expensive
             let sanity_check_result = code_builder_sanity_check(&simulator);
             if let Err(message) = &sanity_check_result {
@@ -391,7 +395,10 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             }
             sanity_check_result.is_ok()
         });
-        // TODO: apply customized error model
+        // apply customized error model
+        if let Some(error_model_builder) = &error_model_builder {
+            error_model_builder.apply(&simulator, &mut error_model, &error_model_configuration, p, bias_eta, pe);
+        }
         assert!({  // this assertion is cheap, check it in release mode as well
             let sanity_check_result = error_model_sanity_check(&simulator, &error_model);
             if let Err(message) = &sanity_check_result {
