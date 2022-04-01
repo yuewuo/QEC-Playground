@@ -94,6 +94,17 @@ def qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command(p_vec, di_ve
         command += ["--time_budget", f"{time_budget}"]
     return command
 
+def qec_playground_benchmark_simulator_runner_vec_command(p_vec, di_vec, dj_vec, T_vec, parameters, max_N=100000, min_error_cases=3000, rust_dir=rust_dir, time_budget=None):
+    p_str = "[" + ",".join([f"{e:.8e}" for e in p_vec]) + "]"
+    di_str = "[" + ",".join([str(e) for e in di_vec]) + "]"
+    dj_str = "[" + ",".join([str(e) for e in dj_vec]) + "]"
+    T_str = "[" + ",".join([str(e) for e in T_vec]) + "]"
+    qecp_path = os.path.join(rust_dir, "target", "release", "rust_qecp")
+    command = [qecp_path, "tool", "benchmark", di_str, "--djs", dj_str, T_str, f"-m{max_N}", f"-e{min_error_cases}", p_str] + parameters
+    if time_budget is not None:
+        command += ["--time_budget", f"{time_budget}"]
+    return command
+
 def qec_playground_fault_tolerant_MWPM_simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_runner=False, max_N=100000, min_error_cases=3000):
     di, dj, T = pair_one
     min_error_cases = min_error_cases if is_rough_test else max_N
