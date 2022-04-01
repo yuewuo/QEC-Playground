@@ -5,11 +5,11 @@ use serde::{Serialize, Deserialize};
 use super::simulator::*;
 use super::error_model::*;
 use super::model_graph::*;
+use super::mwpm_decoder::*;
 use super::tailored_model_graph::*;
 use super::tailored_complete_model_graph::*;
 use super::serde_json;
 use std::sync::{Arc};
-use super::mwpm_decoder::*;
 use std::time::Instant;
 use super::blossom_v;
 use super::union_find_decoder::UnionFind;
@@ -22,6 +22,8 @@ pub struct TailoredMWPMDecoder {
     pub tailored_model_graph: Arc<TailoredModelGraph>,
     /// complete model graph each thread maintain its own precomputed data
     pub tailored_complete_model_graph: TailoredCompleteModelGraph,
+    /// normal MWPM decoder to handle residual decoding
+    pub mwpm_decoder: MWPMDecoder,
     /// virtual nodes for correction
     pub virtual_nodes: Arc<Vec<Position>>,
     /// base simulator, which is immutable but can be used to check code information
@@ -63,9 +65,12 @@ impl TailoredMWPMDecoder {
                 virtual_nodes.push(position.clone());
             }
         });
+        // build MWPM decoder
+        let mwpm_decoder = MWPMDecoder::new(&simulator, error_model, decoder_configuration);
         Self {
             tailored_model_graph: Arc::new(tailored_model_graph),
             tailored_complete_model_graph: tailored_complete_model_graph,
+            mwpm_decoder: mwpm_decoder,
             virtual_nodes: Arc::new(virtual_nodes),
             simulator: Arc::new(simulator),
         }
@@ -80,8 +85,7 @@ impl TailoredMWPMDecoder {
         let mut time_tailored_union = 0.;
         let mut time_neutral_prepare_graph = 0.;
         let mut time_neutral_blossom_v = 0.;
-        let mut time_residual_prepare_graph = 0.;
-        let mut time_residual_blossom_v = 0.;
+        let mut time_residual_decoding = 0.;
         let mut time_build_correction = 0.;
         if to_be_matched.len() > 0 {
             let begin = Instant::now();
@@ -156,17 +160,27 @@ impl TailoredMWPMDecoder {
             let begin = Instant::now();
             let mut neutral_to_be_matched = Vec::new();
             let mut neutral_to_tailored_mapping = Vec::new();
+            let mut residual_to_be_matched = Vec::new();
             for i in 0..tailored_len {
                 // filtering out positions matched with itself
                 if tailored_clusters.get(i).set_size > 1 {
                     // only care about neutral clusters
+                    // eprintln!("cluster {}: cardinality: {}", i, tailored_clusters.get(i).cardinality);
                     if tailored_clusters.get(i).cardinality % 2 == 0 {
                         neutral_to_tailored_mapping.push(i);
                         neutral_to_be_matched.push(tailored_to_be_matched[i].clone());
+                    } else {
+                        // residual must be real node
+                        let position = tailored_to_be_matched[i].clone();
+                        let node = self.simulator.get_node_unwrap(&position);
+                        if !node.is_virtual {
+                            residual_to_be_matched.push(position);
+                        }
                     }
                 }
             }
             let neutral_len = neutral_to_be_matched.len();
+            // println!("neutral_to_be_matched: {:?}", neutral_to_be_matched);
             // construct edges
             let mut neutral_weighted_edges = Vec::<(usize, usize, f64)>::new();
             for i in 0..neutral_len {
@@ -206,76 +220,15 @@ impl TailoredMWPMDecoder {
             });
             let neutral_matching = blossom_v::safe_minimum_weight_perfect_matching(neutral_len, neutral_weighted_edges);
             time_neutral_blossom_v += begin.elapsed().as_secs_f64();
-            // do residual decoding, filtering out those neutral clusters and only decode charged clusters
+            // do residual decoding, instead of using the confusing method in the paper, I just match them together using normal graph
             let begin = Instant::now();
-            let mut residual_to_be_matched = Vec::new();
-            let mut residual_to_tailored_mapping = Vec::new();
-            for i in real_len..tailored_len {
-                // if matched with itself, it should be excluded from residual matching
-                if tailored_clusters.get(i).set_size > 1 {
-                    // only care about charged clusters
-                    if tailored_clusters.get(i).cardinality % 1 == 1 {
-                        residual_to_tailored_mapping.push(i);
-                        residual_to_be_matched.push(tailored_to_be_matched[i].clone());
-                    }
-                }
-            }
-            assert!(residual_to_be_matched.len() % 2 == 0);
-            let need_additional_two_nodes = (residual_to_be_matched.len() / 2) % 2 == 1;  // odd number of charged clusters
-            let residual_len = residual_to_be_matched.len();
-            let true_residual_len = residual_len + if need_additional_two_nodes { 2 } else { 0 };
-            // println!("residual_to_be_matched: {:?}", residual_to_be_matched);
-            // construct edges
-            let mut residual_weighted_edges = Vec::<(usize, usize, f64)>::new();
-            for i in 0..residual_len {
-                let position = &residual_to_be_matched[i];
-                let edges = self.tailored_complete_model_graph.get_residual_matching_edges(position, &residual_to_be_matched);
-                for &(j, weight) in edges.iter() {
-                    residual_weighted_edges.push((i, j, weight));
-                    // println!{"residual edge {} {} {} ", residual_to_be_matched[i], residual_to_be_matched[j], weight};
-                }
-            }
-            if need_additional_two_nodes {
-                for i in 0..residual_len {
-                    let position = &residual_to_be_matched[i];
-                    let node = self.simulator.get_node_unwrap(position);
-                    if node.qubit_type == QubitType::StabY {
-                        residual_weighted_edges.push((i, residual_len, 0.));
-                    } else if node.qubit_type == QubitType::StabX {
-                        residual_weighted_edges.push((i, residual_len + 1, 0.));
-                    }
-                }
-            }
-            time_residual_prepare_graph += begin.elapsed().as_secs_f64();
-            // match residual graph
-            let begin = Instant::now();
-            debug_assert!({  // sanity check: edges are valid
-                let mut all_edges_valid = true;
-                for &(i, j, weight) in residual_weighted_edges.iter() {
-                    if i >= residual_len || j >= residual_len {
-                        eprintln!("[error] invalid edge {} {} weight = {}", residual_to_be_matched[i], residual_to_be_matched[j], weight);
-                        all_edges_valid = false;
-                    }
-                }
-                all_edges_valid
-            });
-            debug_assert!({  // sanity check: each vertex has at least one edge
-                let mut edges_count: Vec<usize> = (0..residual_len).map(|_| 0).collect();
-                for &(i, j, _weight) in residual_weighted_edges.iter() {
-                    edges_count[i] += 1;
-                    edges_count[j] += 1;
-                }
-                let mut all_vertices_have_edge = true;
-                for i in 0..residual_len {
-                    if edges_count[i] == 0 {
-                        eprintln!("[error] vertex {} has no edge", residual_to_be_matched[i]);
-                        all_vertices_have_edge = false;
-                    }
-                }
-                all_vertices_have_edge
-            });
-            let residual_matching = blossom_v::safe_minimum_weight_perfect_matching(true_residual_len, residual_weighted_edges);
-            time_residual_blossom_v += begin.elapsed().as_secs_f64();
+            let residual_correction = if residual_to_be_matched.len() > 0 {
+                let (correction, _) = self.mwpm_decoder.decode(&SparseMeasurement::from_vec(&residual_to_be_matched));
+                correction
+            } else {
+                SparseCorrection::new()
+            };
+            time_residual_decoding += begin.elapsed().as_secs_f64();
             // build correction based on the residual matching
             let begin = Instant::now();
             for i in 0..neutral_len {
@@ -288,16 +241,7 @@ impl TailoredMWPMDecoder {
                     correction.extend(&matching_correction);
                 }
             }
-            for i in 0..residual_len {  // not iterating to `true_residual_len` deliberately, because those two vertices (if exists) doesn't contribute to correction
-                let j = residual_matching[i];
-                let a = &residual_to_be_matched[i];
-                if j < i {  // only add correction if j < i, so that the same correction is not applied twice
-                    // println!("match peer {:?} {:?}", residual_to_be_matched[i], residual_to_be_matched[j]);
-                    let b = &residual_to_be_matched[j];
-                    let matching_correction = self.tailored_complete_model_graph.build_correction_neutral_matching(a, b, &self.tailored_model_graph);
-                    correction.extend(&matching_correction);
-                }
-            }
+            correction.extend(&residual_correction);
             time_build_correction += begin.elapsed().as_secs_f64();
         }
         (correction, json!({
@@ -307,8 +251,7 @@ impl TailoredMWPMDecoder {
             "time_tailored_union": time_tailored_union,
             "time_neutral_prepare_graph": time_neutral_prepare_graph,
             "time_neutral_blossom_v": time_neutral_blossom_v,
-            "time_residual_prepare_graph": time_residual_prepare_graph,
-            "time_residual_blossom_v": time_residual_blossom_v,
+            "time_residual_decoding": time_residual_decoding,
             "time_build_correction": time_build_correction,
         }))
     }
@@ -349,6 +292,8 @@ mod tests {
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
+            // println!("{:?}", correction);
+            code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
@@ -361,6 +306,8 @@ mod tests {
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
+            // println!("{:?}", correction);
+            code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
@@ -372,6 +319,8 @@ mod tests {
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
+            // println!("{:?}", correction);
+            code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
@@ -384,6 +333,8 @@ mod tests {
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
+            // println!("{:?}", correction);
+            code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
@@ -396,6 +347,8 @@ mod tests {
             let sparse_measurement = simulator.generate_sparse_measurement();
             assert_eq!(sparse_measurement.to_vec(), vec![pos!(6, 5, 6), pos!(6, 5, 8), pos!(6, 6, 5), pos!(6, 7, 8), pos!(6, 8, 5), pos!(6, 9, 6)]);
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
+            // println!("{:?}", correction);
+            code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
@@ -407,6 +360,8 @@ mod tests {
             let sparse_measurement = simulator.generate_sparse_measurement();
             assert_eq!(sparse_measurement.to_vec(), vec![pos!(6, 3, 4), pos!(6, 4, 5), pos!(6, 5, 2), pos!(6, 6, 3)]);
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
+            // println!("{:?}", correction);
+            code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }

@@ -188,25 +188,6 @@ impl TailoredCompleteModelGraph {
         }
     }
 
-    /// get residual matching edges in a batch manner to improve speed if need to run Dijkstra's algorithm on the fly;
-    /// this function will clear any out-of-date cache
-    pub fn get_residual_matching_edges(&mut self, position: &Position, targets: &Vec<Position>) -> Vec<(usize, f64)> {
-        if self.precompute_complete_model_graph {
-            let [_positive_node, _negative_node, neutral_node] = self.get_node_unwrap(position);
-            // compute neutral edges
-            let mut neutral_edges = Vec::new();
-            let neutral_precomputed = neutral_node.precomputed.as_ref().unwrap();
-            for (index, target) in targets.iter().enumerate() {
-                if let Some(edge) = neutral_precomputed.edges.get(target) {
-                    neutral_edges.push((index, edge.weight));
-                }
-            }
-            neutral_edges
-        } else {
-            unimplemented!();
-        }
-    }
-
     /// build correction with neutral matching, requires [`get_neutral_matching_edges`] to be run before to cache the edges
     pub fn build_correction_neutral_matching(&self, source: &Position, target: &Position, tailored_model_graph: &TailoredModelGraph) -> SparseCorrection {
         if self.precompute_complete_model_graph {

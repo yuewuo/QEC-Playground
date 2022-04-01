@@ -615,6 +615,46 @@ pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &
     result
 }
 
+/// check if correction indeed recover all stabilizer measurements (this is expensive for runtime)
+#[allow(dead_code)]
+pub fn code_builder_sanity_check_correction(simulator: &mut Simulator, correction: &SparseCorrection) -> Result<(), Vec<Position>> {
+    // apply the correction directly to the top layer
+    let top_t = simulator.height - 1;
+    for (position, error) in correction.iter() {
+        assert_eq!(position.t, top_t, "correction pattern must only be at top layer");
+        let mut position = position.clone();
+        position.t -= simulator.measurement_cycles;  // apply it before the final perfect measurement
+        let node = simulator.get_node_mut_unwrap(&position);
+        node.error = node.error.multiply(error);
+    }
+    simulator.clear_propagate_errors();
+    simulator.propagate_errors();
+    // check if all stabilizers at the final measurement round don't detect errors
+    let mut violating_positions = Vec::new();
+    simulator_iter_real!(simulator, position, node, t => top_t, {
+        if node.gate_type.is_measurement() {
+            let minus_one = node.gate_type.stabilizer_measurement(&node.propagated);
+            if minus_one {
+                violating_positions.push(position.clone());
+            }
+        }
+    });
+    // recover the errors
+    for (position, error) in correction.iter() {
+        let mut position = position.clone();
+        position.t -= simulator.measurement_cycles;  // apply it before the final perfect measurement
+        let node = simulator.get_node_mut_unwrap(&position);
+        node.error = node.error.multiply(error);
+    }
+    simulator.clear_propagate_errors();
+    simulator.propagate_errors();
+    if violating_positions.len() > 0 {
+        Err(violating_positions)
+    } else {
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -895,6 +895,15 @@ impl SparseMeasurement {
     pub fn to_vec(&self) -> Vec<Position> {
         self.iter().map(|position| (*position).clone()).collect()
     }
+    /// convert vector to sparse measurement
+    pub fn from_vec(nontrivial: &Vec<Position>) -> Self {
+        let mut sparse_measurement = Self::new();
+        for position in nontrivial.iter() {
+            debug_assert!(!sparse_measurement.nontrivial.contains(position), "duplicate nontrivial measurement forbidden");
+            sparse_measurement.insert_nontrivial_measurement(position);
+        }
+        sparse_measurement
+    }
 }
 
 /// in most cases errors are rare, this sparse structure use `BTreeMap` to store them
