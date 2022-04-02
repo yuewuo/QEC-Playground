@@ -18,7 +18,7 @@ max_N = 100000000
 
 slurm_distribute.SLURM_DISTRIBUTE_TIME = "12:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '16G'  # it took 8G memory at 8x24x24 on my laptop, set higher RAM in HPC
-slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 16  # for more usuable machines, use `SLURM_USE_SCAVENGE_PARTITION=1` flag
+slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # for more usuable machines, use `SLURM_USE_SCAVENGE_PARTITION=1` flag
 parameters = f"-p{STO(0)} --time_budget {3600} --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config {{\"pcmg\":true}} --error_model phenomenological".split(" ")
 
 compile_code_if_necessary()

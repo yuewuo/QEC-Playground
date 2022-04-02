@@ -137,6 +137,7 @@ fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> 
                 .arg(clap::Arg::new("log_error_pattern_when_logical_error").long("log_error_pattern_when_logical_error").help("log the error pattern in the statistics log file, which is useful when debugging rare cases but it can make the log file much larger"))
                 .arg(clap::Arg::new("error_model").long("error_model").help("possible error models see error_model_builder.rs").possible_values(error_model_builder::ErrorModelBuilder::possible_values()).takes_value(true))
                 .arg(clap::Arg::new("error_model_configuration").long("error_model_configuration").help("a json object describing the error model details").takes_value(true).default_value("{}"))
+                .arg(clap::Arg::new("thread_timeout").long("thread_timeout").help("wait for some time for threads to end, otherwise print out the unstopped threads and detach them; useful when debugging rare deadlock cases; if set to negative value, no timeout and no thread debug information recording for maximum performance").takes_value(true).default_value("60"))
             )
             .subcommand(clap::Command::new("fault_tolerant_benchmark").about("benchmark fault tolerant algorithm")
                 .arg(clap::Arg::new("Ls").help("[L1,L2,L3,...,Ln] will be code distance of i and j dimension if djs is not provided").takes_value(true).required(true))

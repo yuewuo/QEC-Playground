@@ -4,7 +4,8 @@
 
 use std::cmp::Ordering;
 use super::types::*;
-use serde::{Serialize, Deserialize, Serializer};
+use serde::{Serialize, Deserialize, Serializer, Deserializer};
+use serde::de::{Visitor, MapAccess};
 use serde::ser::SerializeMap;
 use super::code_builder::*;
 use super::util_macros::*;
@@ -751,6 +752,23 @@ impl Simulator {
         sparse_error_pattern
     }
 
+    /// load an error pattern
+    #[allow(dead_code)]
+    pub fn load_sparse_error_pattern(&mut self, sparse_error_pattern: &SparseErrorPattern) -> Result<(), String> {
+        for (position, _error) in sparse_error_pattern.iter() {
+            if !self.is_node_exist(position) {
+                return Err(format!("invalid error at position {}", position))
+            }
+        }
+        simulator_iter_mut!(self, position, node, {
+            node.error = I;
+            if let Some(error) = sparse_error_pattern.get(position) {
+                node.error = *error;
+            }
+        });
+        Ok(())
+    }
+
     /// generate correction pattern using errors only at the top layer
     pub fn generate_sparse_correction(&self) -> SparseCorrection {
         let mut sparse_correction = SparseCorrection::new();
@@ -862,6 +880,47 @@ impl Serialize for Position {
     }
 }
 
+impl<'de> Visitor<'de> for Position {
+    type Value = Position;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "{}", r#"position should look like "[0][10][13]""#)
+    }
+
+    fn visit_str<E>(self, s: &str) -> Result<Self::Value, E> where E: serde::de::Error, {
+        if s.get(0..1) != Some("[") {
+            return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self))
+        }
+        if s.get(s.len()-1..s.len()) != Some("]") {
+            return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self))
+        }
+        let splitted = s.get(1..s.len()-1).unwrap().split("][").collect::<Vec<&str>>();
+        if splitted.len() != 3 {
+            return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self))
+        }
+        let t = match splitted[0].to_string().parse::<usize>() {
+            Ok(t) => t,
+            Err(_) => { return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self)) }
+        };
+        let i = match splitted[1].to_string().parse::<usize>() {
+            Ok(t) => t,
+            Err(_) => { return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self)) }
+        };
+        let j = match splitted[2].to_string().parse::<usize>() {
+            Ok(t) => t,
+            Err(_) => { return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self)) }
+        };
+        Ok(Position::new(t, i, j))
+    }
+}
+
+impl<'de> Deserialize<'de> for Position {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>, {
+        // the new-ed position just works like a helper type that implements Visitor trait, not optimized for efficiency
+        deserializer.deserialize_str(Position::new(usize::MAX, usize::MAX, usize::MAX))
+    }
+}
+
 impl std::fmt::Display for SimulatorNode {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "SimulatorNode{} {{ qubit_type: {:?}, gate_type: {:?}, gate_peer: {:?} }}"
@@ -956,6 +1015,29 @@ impl Serialize for SparseErrorPattern {
             map.serialize_entry(position, error)?;
         }
         map.end()
+    }
+}
+
+impl<'de> Visitor<'de> for SparseErrorPattern {
+    type Value = SparseErrorPattern;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "{}", r#"sparse error pattern like {"[0][10][13]":"Z","[0][10][7]":"X","[0][10][8]":"Y"}"#)
+    }
+
+    fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error> where M: MapAccess<'de>, {
+        let mut error_pattern = SparseErrorPattern::new();
+        while let Some((key, value)) = access.next_entry()? {
+            error_pattern.add(key, value);
+        }
+        Ok(error_pattern)
+    }
+}
+
+impl<'de> Deserialize<'de> for SparseErrorPattern {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>, {
+        // the new-ed error pattern just works like a helper type that implements Visitor trait, not optimized for efficiency
+        deserializer.deserialize_map(SparseErrorPattern::new())
     }
 }
 

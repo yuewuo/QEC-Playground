@@ -31,7 +31,7 @@ use std::fs;
 use super::code_builder::*;
 use super::simulator::*;
 use super::clap::{ArgEnum, PossibleValue};
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use super::error_model::*;
 use serde::{Serialize, Deserialize};
 use super::mwpm_decoder::*;
@@ -70,7 +70,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             if min_failed_cases == 0 {
                 min_failed_cases = usize::MAX;
             }
-            let parallel: usize = matches.value_of_t("parallel").unwrap_or(1);  // default to 1
+            let parallel: usize = matches.value_of_t("parallel").unwrap();
             let code_type: String = matches.value_of_t("code_type").unwrap_or("StandardPlanarCode".to_string());
             let decoder = matches.value_of_t::<BenchmarkDecoder>("decoder").unwrap();
             let decoder_config = matches.value_of_t::<serde_json::Value>("decoder_config").unwrap();
@@ -82,9 +82,10 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let log_error_pattern_when_logical_error = matches.is_present("log_error_pattern_when_logical_error");
             let error_model_builder = matches.value_of_t::<ErrorModelBuilder>("error_model").ok();
             let error_model_configuration = matches.value_of_t::<serde_json::Value>("error_model_configuration").unwrap();
+            let thread_timeout: f64 = matches.value_of_t("thread_timeout").unwrap();
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
-                , error_model_builder, error_model_configuration));
+                , error_model_builder, error_model_configuration, thread_timeout));
         }
         Some(("fault_tolerant_benchmark", matches)) => {
             let dis: String = matches.value_of_t("Ls").expect("required");
@@ -304,10 +305,68 @@ pub enum BenchmarkDecoder {
     TailoredMWPM,
 }
 
+/// progress variable shared between threads to update information
+#[derive(Clone, Debug, Serialize)]
+struct BenchmarkControl {
+    total_repeats: usize,
+    qec_failed: usize,
+    external_termination: bool,
+}
+
+impl BenchmarkControl {
+    fn new() -> Self {
+        Self {
+            total_repeats: 0,
+            qec_failed: 0,
+            external_termination: false,
+        }
+    }
+    fn update_data_should_terminate(&mut self, is_qec_failed: bool, max_repeats: usize, min_failed_cases: usize) -> bool {
+        self.total_repeats += 1;
+        if is_qec_failed {
+            self.qec_failed += 1;
+        }
+        self.should_terminate(max_repeats, min_failed_cases)
+    }
+    fn should_terminate(&self, max_repeats: usize, min_failed_cases: usize) -> bool {
+        self.external_termination || self.total_repeats >= max_repeats || self.qec_failed >= min_failed_cases
+    }
+    fn set_external_terminate(&mut self) {
+        self.external_termination = true;
+    }
+}
+
+/// decoder might suffer from rare deadlock, and this controller will record the necessary information for debugging with low runtime overhead
+#[derive(Clone, Debug, Serialize)]
+struct BenchmarkThreadDebugger {
+    thread_counter: usize,
+    error_pattern: Option<SparseErrorPattern>,
+    measurement: Option<SparseMeasurement>,
+    correction: Option<SparseCorrection>,
+}
+
+impl BenchmarkThreadDebugger {
+    fn new() -> Self {
+        Self {
+            thread_counter: 0,
+            error_pattern: None,
+            measurement: None,
+            correction: None,
+        }
+    }
+    fn update_thread_counter(&mut self, thread_counter: usize) -> &mut Self {
+        self.thread_counter = thread_counter;
+        self.error_pattern = None;
+        self.measurement = None;
+        self.correction = None;
+        self
+    }
+}
+
 fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_repeats: usize, min_failed_cases: usize
         , parallel: usize, code_type: String, decoder: BenchmarkDecoder, decoder_config: serde_json::Value, ignore_logical_i: bool, ignore_logical_j: bool
         , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
-        , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value) -> String {
+        , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value, thread_timeout: f64) -> String {
     // if parallel = 0, use all CPU resources
     let mut parallel = parallel;
     if parallel == 0 {
@@ -361,7 +420,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
     let mut output = format!("");
     if debug_print.is_none() {  // debug print only will not run simulations
         output = format!("format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>");
-        println!("{}", output);  // compatible with old scripts
+        eprintln!("{}", output);  // compatible with old scripts
     }
     // start running simulations
     for &(di, dj, noisy_measurements, p, pe) in configurations.iter() {
@@ -458,34 +517,39 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             Some(TailoredMWPMDecoder::new(&simulator, &error_model, &decoder_config))
         } else { None };
         // prepare result variables for simulation
-        let total_repeats = Arc::new(AtomicUsize::new(0));
-        let qec_failed = Arc::new(AtomicUsize::new(0));
-        let external_termination = Arc::new(AtomicBool::new(false));
+        let benchmark_control = Arc::new(Mutex::new(BenchmarkControl::new()));
         // setup progress bar
         let mut pb = ProgressBar::on(std::io::stderr(), max_repeats as u64);
         pb.set(0);
         // spawn threads to do simulation
         let mut handlers = Vec::new();
+        let mut threads_debugger: Vec<Arc<Mutex<BenchmarkThreadDebugger>>> = Vec::new();
+        let mut threads_ended = Vec::new();  // keep updating progress bar until all threads ends
         for _parallel_idx in 0..parallel {
-            let total_repeats = Arc::clone(&total_repeats);
-            let qec_failed = Arc::clone(&qec_failed);
-            let external_termination = Arc::clone(&external_termination);
+            let benchmark_control = Arc::clone(&benchmark_control);
             let mut simulator: Simulator = simulator.clone();
             let error_model = Arc::clone(&error_model);
             let debug_print = Arc::clone(&debug_print);
             let log_runtime_statistics_file = log_runtime_statistics_file.clone();
             let mut mwpm_decoder = mwpm_decoder.clone();
             let mut tailored_mwpm_decoder = tailored_mwpm_decoder.clone();
+            let thread_ended = Arc::new(AtomicBool::new(false));
+            threads_ended.push(Arc::clone(&thread_ended));
+            let thread_debugger = Arc::new(Mutex::new(BenchmarkThreadDebugger::new()));
+            threads_debugger.push(thread_debugger.clone());
             handlers.push(std::thread::spawn(move || {
-                while !external_termination.load(Ordering::Relaxed) && total_repeats.load(Ordering::Relaxed) < max_repeats && qec_failed.load(Ordering::Relaxed) < min_failed_cases {
+                for thread_counter in 0..usize::MAX {
+                    if thread_timeout >= 0. { thread_debugger.lock().unwrap().update_thread_counter(thread_counter); }
                     // generate random errors and the corresponding measurement
                     let begin = Instant::now();
                     simulator.generate_random_errors(&error_model);
+                    if thread_timeout >= 0. { thread_debugger.lock().unwrap().error_pattern = Some(simulator.generate_sparse_error_pattern()); }  // runtime debug: find deadlock cases
                     if matches!(*debug_print, Some(BenchmarkDebugPrint::AllErrorPattern)) {
                         let sparse_error_pattern = simulator.generate_sparse_error_pattern();
                         eprintln!("{}", serde_json::to_string(&sparse_error_pattern).expect("serialize should success"));
                     }
                     let sparse_measurement = simulator.generate_sparse_measurement();
+                    if thread_timeout >= 0. { thread_debugger.lock().unwrap().measurement = Some(sparse_measurement.clone()); }  // runtime debug: find deadlock cases
                     let prepare_elapsed = begin.elapsed().as_secs_f64();
                     // decode
                     let begin = Instant::now();
@@ -500,6 +564,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                             tailored_mwpm_decoder.as_mut().unwrap().decode(&sparse_measurement)
                         },
                     };
+                    if thread_timeout >= 0. { thread_debugger.lock().unwrap().correction = Some(correction.clone()); }  // runtime debug: find deadlock cases
                     let decode_elapsed = begin.elapsed().as_secs_f64();
                     // validate correction
                     let begin = Instant::now();
@@ -512,9 +577,6 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                         is_qec_failed = true;
                     }
                     let validate_elapsed = begin.elapsed().as_secs_f64();
-                    // update simulation counters
-                    total_repeats.fetch_add(1, Ordering::Relaxed);
-                    qec_failed.fetch_add(if is_qec_failed { 1 } else { 0 }, Ordering::Relaxed);
                     // update statistic information
                     if let Some(log_runtime_statistics_file) = &log_runtime_statistics_file {
                         runtime_statistics["qec_failed"] = json!(is_qec_failed);
@@ -530,14 +592,20 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                         let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
                         log_runtime_statistics_file.write(to_be_written.as_bytes()).unwrap();
                     }
+                    // update simulation counters, then break the loop if benchmark should terminate
+                    if benchmark_control.lock().unwrap().update_data_should_terminate(is_qec_failed, max_repeats, min_failed_cases) {
+                        break
+                    }
                 }
+                thread_ended.store(true, Ordering::SeqCst);
             }));
         }
         // monitor results and display them using progress bar
         let repeat_begin = Instant::now();
         let progress_information = || -> String {
-            let total_repeats = total_repeats.load(Ordering::Relaxed);
-            let qec_failed = qec_failed.load(Ordering::Relaxed);
+            let benchmark_control = benchmark_control.lock().unwrap().clone();
+            let total_repeats = benchmark_control.total_repeats;
+            let qec_failed = benchmark_control.qec_failed;
             // compute simulation results
             let error_rate = qec_failed as f64 / total_repeats as f64;
             let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_repeats as f64)).sqrt() / error_rate;
@@ -549,52 +617,89 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             match time_budget {
                 Some(time_budget) => {
                     if time_elapsed > time_budget {
-                        external_termination.store(true, Ordering::Relaxed);
+                        benchmark_control.lock().unwrap().set_external_terminate();
                     }
                 }, _ => { }
             }
             // compute simulation results
             pb.message(progress_information().as_str());
-            // estimate running time cleverer
-            let total_repeats = total_repeats.load(Ordering::Relaxed);
-            let qec_failed = qec_failed.load(Ordering::Relaxed);
-            let ratio_total_rounds = (total_repeats as f64) / (max_repeats as f64);
-            let ratio_qec_failed = (qec_failed as f64) / (min_failed_cases as f64);
-            if ratio_total_rounds >= ratio_qec_failed {
-                let progress = total_repeats as u64;
-                pb.total = if max_repeats as u64 > progress { max_repeats as u64 } else { progress };
-                pb.set(progress);
-            } else {
-                let progress = qec_failed as u64;
-                pb.total = if min_failed_cases as u64 > progress { min_failed_cases as u64 } else { progress };
-                pb.set(progress);
-            }
-            match time_budget {
-                Some(time_budget) => {
-                    let ratio_time = time_elapsed / time_budget;
-                    if ratio_time >= ratio_total_rounds && ratio_time >= ratio_qec_failed {
-                        let progress = total_repeats as u64;
-                        pb.total = ((progress as f64) / ratio_time) as u64;
-                        pb.set(progress);
-                    }
-                }, _ => { }
-            }
-            if !(!external_termination.load(Ordering::Relaxed) && total_repeats < max_repeats && qec_failed < min_failed_cases) {
-                break
+            {  // estimate running time cleverer
+                let benchmark_control = benchmark_control.lock().unwrap().clone();
+                let total_repeats = benchmark_control.total_repeats;
+                let qec_failed = benchmark_control.qec_failed;
+                let ratio_total_rounds = (total_repeats as f64) / (max_repeats as f64);
+                let ratio_qec_failed = (qec_failed as f64) / (min_failed_cases as f64);
+                let (mut pb_total, mut set_progress) = 
+                if ratio_total_rounds >= ratio_qec_failed {
+                    let progress = total_repeats as u64;
+                    (if max_repeats as u64 > progress { max_repeats as u64 } else { progress }, progress)
+                } else {
+                    let progress = qec_failed as u64;
+                    (if min_failed_cases as u64 > progress { min_failed_cases as u64 } else { progress }, progress)
+                };
+                match time_budget {
+                    Some(time_budget) => {
+                        let ratio_time = time_elapsed / time_budget;
+                        if ratio_time >= ratio_total_rounds && ratio_time >= ratio_qec_failed {
+                            let progress = total_repeats as u64;
+                            pb_total = ((progress as f64) / ratio_time) as u64;
+                            set_progress = progress;
+                        }
+                    }, _ => { }
+                }
+                // update progress bar only once, to avoid misleading outputs in stderr (although not visible for human when running it, it will be included in stderr file)
+                pb.total = pb_total;
+                pb.set(set_progress);
             }
             // synchronize statistics log file to make sure data is not lost when interrupting
             if let Some(log_runtime_statistics_file) = &log_runtime_statistics_file {
                 let log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
                 log_runtime_statistics_file.sync_data().unwrap();
             }
+            if benchmark_control.lock().unwrap().should_terminate(max_repeats, min_failed_cases) {
+                break
+            }
             // refresh 4 times per second
             std::thread::sleep(std::time::Duration::from_millis(250));
         }
-        pb.finish();
-        for handler in handlers {
-            handler.join().unwrap();
+        // wait for all threads to terminate until timeout
+        let begin = Instant::now();
+        loop {
+            let time_elapsed = begin.elapsed().as_secs_f64();
+            if thread_timeout >= 0. && time_elapsed >= thread_timeout {  // abnormal break because of timeout
+                eprintln!("[error] some threads don't terminate properly within timeout, here are the details:");
+                for parallel_idx in (0..parallel).rev() {
+                    let thread_ended = threads_ended.swap_remove(parallel_idx);
+                    let handler = handlers.swap_remove(parallel_idx);
+                    let thread_debugger = threads_debugger.swap_remove(parallel_idx);
+                    if !thread_ended.load(Ordering::SeqCst) {
+                        eprintln!("[error] thread {} doesn't terminate within timeout", parallel_idx);
+                        eprintln!("{}", json!(thread_debugger.lock().unwrap().clone()));
+                    } else {  // still join normal threads
+                        eprintln!("[info] thread {} normally exit", parallel_idx);
+                        handler.join().unwrap();
+                    }
+                }
+                break
+            }
+            // check if all threads ended before break the loop
+            let mut all_threads_ended = true;
+            for thread_ended in threads_ended.iter() {
+                if !thread_ended.load(Ordering::SeqCst) {
+                    all_threads_ended = false;
+                }
+            }
+            if all_threads_ended {  // only when all threads ended normally will it joina
+                for handler in handlers.drain(..) {
+                    handler.join().unwrap();
+                }
+                break
+            }
+            eprintln!("[info] waiting for all threads to end, time elapsed: {:.3}s", time_elapsed);
+            std::thread::sleep(std::time::Duration::from_millis(1000));
         }
-        println!("{}", progress_information());
+        pb.finish();
+        eprintln!("{}", progress_information());
         output += &format!("\n{}\n", progress_information());
     }
     output

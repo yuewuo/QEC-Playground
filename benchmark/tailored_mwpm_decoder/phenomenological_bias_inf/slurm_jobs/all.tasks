@@ -1,0 +1,10 @@
+JobID    JobName      User  Partition        NodeList    Elapsed      State ExitCode     MaxRSS                        AllocTRES 
+         54859166_63 QEC-Playg+     yw729   scavenge       p09r09n10   00:43:29  COMPLETED      0:0             billing=1,cpu=12,mem=16G,node=1 
+         54859166_65 QEC-Playg+     yw729   scavenge          c35n12   00:47:56  COMPLETED      0:0             billing=1,cpu=12,mem=16G,node=1 
+         54859166_66 QEC-Playg+     yw729   scavenge          c28n01   00:59:47  COMPLETED      0:0             billing=1,cpu=12,mem=16G,node=1 
+         54859166_84 QEC-Playg+     yw729   scavenge          c28n01   01:01:12  COMPLETED      0:0             billing=1,cpu=12,mem=16G,node=1 
+         54859166_87 QEC-Playg+     yw729   scavenge       p08r06n33   01:01:08  COMPLETED      0:0             billing=1,cpu=12,mem=16G,node=1 
+        54859166_106 QEC-Playg+     yw729   scavenge       p08r01n05   01:01:19  COMPLETED      0:0             billing=1,cpu=12,mem=16G,node=1 
+        54859166_109 QEC-Playg+     yw729   scavenge       p08r02n38   01:01:18  COMPLETED      0:0             billing=1,cpu=12,mem=16G,node=1 
+         54859166_85 QEC-Playg+     yw729   scavenge       p08r06n36   01:01:08  COMPLETED      0:0             billing=1,cpu=12,mem=16G,node=1 
+         54859166_64 QEC-Playg+     yw729   scavenge          c36n03   00:50:05  COMPLETED      0:0             billing=1,cpu=12,mem=16G,node=1 

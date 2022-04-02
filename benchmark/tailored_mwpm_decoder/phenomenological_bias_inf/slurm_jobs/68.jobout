@@ -1,0 +1,4 @@
+format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.05 9 9 548733 18 0.00003280283853896157 9 4.6e-1 0 
+format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.05 9 9 548733 18 0.00003280283853896157 9 4.6e-1 0 

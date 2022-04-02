@@ -14,7 +14,7 @@ set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder
 
-set output "phenomenological_bias100.eps"
+set output "phenomenological_bias_inf.eps"
 
 set title "Tailored Phenomenological"
 
@@ -31,14 +31,14 @@ plot "d_3_3.txt" using 1:6 with linespoints lt rgb "red" linewidth 4 pointtype 2
     "d_13_13.txt" using 1:6 with linespoints lt rgb "black" linewidth 4 pointtype 2 pointsize 1 notitle "d = 13",\
     "" using 1:6:($6*(1-$8)):($6*(1+$8)) with errorbars lt rgb "black" linewidth 4 pointtype 2 pointsize 1 notitle
 
-system("ps2pdf -dEPSCrop phenomenological_bias100.eps phenomenological_bias100.pdf")
+system("ps2pdf -dEPSCrop phenomenological_bias_inf.eps phenomenological_bias_inf.pdf")
 
 # set size 1,0.75
-# set output "phenomenological_bias100_w.eps"
+# set output "phenomenological_bias_inf_w.eps"
 # replot
-# system("ps2pdf -dEPSCrop phenomenological_bias100_w.eps phenomenological_bias100_w.pdf")
+# system("ps2pdf -dEPSCrop phenomenological_bias_inf_w.eps phenomenological_bias_inf_w.pdf")
 
 # set size 1,0.6
-# set output "phenomenological_bias100_w_w.eps"
+# set output "phenomenological_bias_inf_w_w.eps"
 # replot
-# system("ps2pdf -dEPSCrop phenomenological_bias100_w_w.eps phenomenological_bias100_w_w.pdf")
+# system("ps2pdf -dEPSCrop phenomenological_bias_inf_w_w.eps phenomenological_bias_inf_w_w.pdf")

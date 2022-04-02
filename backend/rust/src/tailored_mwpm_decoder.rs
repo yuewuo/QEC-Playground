@@ -14,6 +14,7 @@ use std::time::Instant;
 use super::blossom_v;
 use super::union_find_decoder::UnionFind;
 use super::types::*;
+use std::collections::{BTreeSet};
 
 /// MWPM decoder, initialized and cloned for multiple threads
 #[derive(Debug, Clone, Serialize)]
@@ -109,12 +110,16 @@ impl TailoredMWPMDecoder {
                 let position = &tailored_to_be_matched[i];
                 let [positive_edges, negative_edges] = self.tailored_complete_model_graph.get_tailored_matching_edges(position, &tailored_to_be_matched);
                 for &(j, weight) in positive_edges.iter() {
-                    tailored_weighted_edges.push((i, j, weight));
-                    // println!{"positive edge {} {} {} ", tailored_to_be_matched[i], tailored_to_be_matched[j], weight};
+                    if i < j {  // remove duplicate edges in undirected graph
+                        tailored_weighted_edges.push((i, j, weight));
+                        // println!{"positive edge {} {} {} ", tailored_to_be_matched[i], tailored_to_be_matched[j], weight};
+                    }
                 }
                 for &(j, weight) in negative_edges.iter() {
-                    tailored_weighted_edges.push((tailored_len + i, tailored_len + j, weight));
-                    // println!{"negative edge {} {} {} ", tailored_to_be_matched[i], tailored_to_be_matched[j], weight};
+                    if i < j {  // remove duplicate edges in undirected graph
+                        tailored_weighted_edges.push((tailored_len + i, tailored_len + j, weight));
+                        // println!{"negative edge {} {} {} ", tailored_to_be_matched[i], tailored_to_be_matched[j], weight};
+                    }
                 }
                 // virtual nodes are connected with 0 weight
                 if i >= real_len {
@@ -156,11 +161,19 @@ impl TailoredMWPMDecoder {
                 }
             }
             time_tailored_union += begin.elapsed().as_secs_f64();
+            // create clusters
+            let mut tailored_cluster_roots: BTreeSet<usize> = BTreeSet::new();
+            for i in 0..tailored_len {
+                // filtering out positions matched with itself
+                if tailored_clusters.get(i).set_size > 1 {
+                    let root_i = tailored_clusters.find(i);
+                    tailored_cluster_roots.insert(root_i);
+                }
+            }
             // do neutral decoding, only consider neutral clusters
             let begin = Instant::now();
             let mut neutral_to_be_matched = Vec::new();
             let mut neutral_to_tailored_mapping = Vec::new();
-            let mut residual_to_be_matched = Vec::new();
             for i in 0..tailored_len {
                 // filtering out positions matched with itself
                 if tailored_clusters.get(i).set_size > 1 {
@@ -169,13 +182,6 @@ impl TailoredMWPMDecoder {
                     if tailored_clusters.get(i).cardinality % 2 == 0 {
                         neutral_to_tailored_mapping.push(i);
                         neutral_to_be_matched.push(tailored_to_be_matched[i].clone());
-                    } else {
-                        // residual must be real node
-                        let position = tailored_to_be_matched[i].clone();
-                        let node = self.simulator.get_node_unwrap(&position);
-                        if !node.is_virtual {
-                            residual_to_be_matched.push(position);
-                        }
                     }
                 }
             }
@@ -186,8 +192,13 @@ impl TailoredMWPMDecoder {
             for i in 0..neutral_len {
                 let edges = self.tailored_complete_model_graph.get_neutral_matching_edges(i, &neutral_to_be_matched, &neutral_to_tailored_mapping, &mut tailored_clusters);
                 for &(j, weight) in edges.iter() {
-                    neutral_weighted_edges.push((i, j, weight));
-                    // println!{"neutral edge {} {} {} ", neutral_to_be_matched[i], neutral_to_be_matched[j], weight};
+                    // only add edges for single direction (otherwise `tailored_mwpm_decoder_code_capacity_deadlock_1` will deadlock)
+                    // 2022.4.2 this bug happens rarely, e.g. only fails 3 times in 2e7 cases
+                    // the reason is confusing: we have two edges between a pair of vertices which should be fine in an undirected graph......
+                    if i < j {
+                        neutral_weighted_edges.push((i, j, weight));
+                        // println!{"neutral edge {} {} {} ", neutral_to_be_matched[i], neutral_to_be_matched[j], weight};
+                    }
                 }
             }
             time_neutral_prepare_graph += begin.elapsed().as_secs_f64();
@@ -218,10 +229,29 @@ impl TailoredMWPMDecoder {
                 }
                 all_vertices_have_edge
             });
-            let neutral_matching = blossom_v::safe_minimum_weight_perfect_matching(neutral_len, neutral_weighted_edges);
+            eprintln!("neutral matching problem size: {} vertices, {} edges", neutral_len, neutral_weighted_edges.len());
+            eprintln!("{:?}", neutral_weighted_edges);
             time_neutral_blossom_v += begin.elapsed().as_secs_f64();
+            let neutral_matching = blossom_v::safe_minimum_weight_perfect_matching(neutral_len, neutral_weighted_edges);
             // do residual decoding, instead of using the confusing method in the paper, I just match them together using normal graph
             let begin = Instant::now();
+            let mut residual_to_be_matched = Vec::new();
+            for i in 0..tailored_len {
+                // filtering out positions matched with itself
+                if tailored_clusters.get(i).set_size > 1 {
+                    // only care about neutral clusters
+                    // eprintln!("cluster {}: cardinality: {}", i, tailored_clusters.get(i).cardinality);
+                    if tailored_clusters.get(i).cardinality % 2 == 1 {
+                        // residual must be real node
+                        let position = tailored_to_be_matched[i].clone();
+                        let node = self.simulator.get_node_unwrap(&position);
+                        if !node.is_virtual {
+                            residual_to_be_matched.push(position);
+                        }
+                    }
+                }
+            }
+            // eprintln!("residual_to_be_matched: {:?}", residual_to_be_matched);
             let residual_correction = if residual_to_be_matched.len() > 0 {
                 let (correction, _) = self.mwpm_decoder.decode(&SparseMeasurement::from_vec(&residual_to_be_matched));
                 correction
@@ -231,7 +261,7 @@ impl TailoredMWPMDecoder {
             time_residual_decoding += begin.elapsed().as_secs_f64();
             // build correction based on the residual matching
             let begin = Instant::now();
-            for i in 0..neutral_len {
+            for i in 0..neutral_to_be_matched.len() {
                 let j = neutral_matching[i];
                 let a = &neutral_to_be_matched[i];
                 if j < i {  // only add correction if j < i, so that the same correction is not applied twice
@@ -365,6 +395,41 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
+    }
+
+    #[test]
+    fn tailored_mwpm_decoder_code_capacity_deadlock_1() {  // cargo test tailored_mwpm_decoder_code_capacity_deadlock_1 -- --nocapture
+        let d = 11;
+        let noisy_measurements = 0;  // perfect measurement
+        let p = 1.99053585e-01;
+        let bias_eta = 1e200;
+        // build simulator
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode{ noisy_measurements, dp: d, dn: d });
+        code_builder_sanity_check(&simulator).unwrap();
+        // build error model
+        let mut error_model = ErrorModel::new(&simulator);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = p - 2. * px;
+        simulator.set_error_rates(&mut error_model, px, py, pz, 0.);
+        simulator.compress_error_rates(&mut error_model);
+        error_model_sanity_check(&simulator, &error_model).unwrap();
+        // build decoder
+        let decoder_config = json!({
+            "precompute_complete_model_graph": true,
+        });
+        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config);
+        // let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[0][10][13]":"Z","[0][10][7]":"Z","[0][10][8]":"Z","[0][11][11]":"Z","[0][11][1]":"Z","[0][11][5]":"Z","[0][11][7]":"Z","[0][11][9]":"Z","[0][12][12]":"Z","[0][12][14]":"Z","[0][12][5]":"Z","[0][13][20]":"Z","[0][14][11]":"Z","[0][14][12]":"Z","[0][14][14]":"Z","[0][14][17]":"Z","[0][15][10]":"Z","[0][15][14]":"Z","[0][15][15]":"Z","[0][15][7]":"Z","[0][16][16]":"Z","[0][16][5]":"Z","[0][17][11]":"Z","[0][17][14]":"Z","[0][17][15]":"Z","[0][18][11]":"Z","[0][18][8]":"Z","[0][19][10]":"Z","[0][19][12]":"Z","[0][4][8]":"Z","[0][5][12]":"Z","[0][5][13]":"Z","[0][5][14]":"Z","[0][6][13]":"Z","[0][6][14]":"Z","[0][6][6]":"Z","[0][6][8]":"Z","[0][6][9]":"Z","[0][7][11]":"Z","[0][7][15]":"Z","[0][8][15]":"Z","[0][8][17]":"Z","[0][8][6]":"Z","[0][8][7]":"Z","[0][9][12]":"Z","[0][9][15]":"Z","[0][9][16]":"Z","[0][9][17]":"Z","[0][9][18]":"Z","[0][9][2]":"Z","[0][9][3]":"Z","[0][9][5]":"Z","[0][9][6]":"Z"}"#).unwrap();
+        let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[0][10][17]":"Z","[0][10][9]":"Z","[0][11][13]":"Z","[0][11][15]":"Z","[0][11][16]":"Z","[0][11][3]":"Z","[0][12][12]":"Z","[0][12][16]":"Z","[0][12][18]":"Z","[0][12][9]":"Z","[0][13][10]":"Z","[0][13][11]":"Z","[0][13][20]":"Z","[0][13][7]":"Z","[0][13][9]":"Z","[0][14][10]":"Z","[0][14][14]":"Z","[0][14][18]":"Z","[0][14][4]":"Z","[0][14][6]":"Z","[0][14][7]":"Z","[0][15][10]":"Z","[0][15][11]":"Z","[0][15][15]":"Z","[0][15][18]":"Z","[0][15][6]":"Z","[0][16][10]":"Z","[0][16][14]":"Z","[0][16][15]":"Z","[0][17][11]":"Z","[0][17][14]":"Z","[0][17][8]":"Z","[0][17][9]":"Z","[0][19][10]":"Z","[0][1][10]":"Z","[0][1][11]":"Z","[0][20][12]":"Z","[0][21][11]":"Z","[0][21][12]":"Z","[0][4][10]":"Z","[0][5][12]":"Z","[0][6][12]":"Z","[0][6][15]":"Z","[0][7][15]":"Z","[0][7][4]":"Z","[0][7][9]":"Z","[0][8][11]":"Z","[0][8][12]":"Z","[0][8][15]":"Z","[0][9][10]":"Z","[0][9][14]":"Z","[0][9][15]":"Z","[0][9][16]":"Z"}"#).unwrap();
+        // println!("{:?}", error_pattern);
+        simulator.load_sparse_error_pattern(&error_pattern).unwrap();
+        simulator.propagate_errors();
+        let sparse_measurement = simulator.generate_sparse_measurement();
+        let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
+        // println!("{:?}", correction);
+        code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
+        let (logical_i, logical_j) = simulator.validate_correction(&correction);
+        assert!(!logical_i && !logical_j);
     }
 
 }

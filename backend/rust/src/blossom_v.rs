@@ -1,5 +1,6 @@
 use super::libc;
 use libc::{c_ulonglong, c_double, c_int};
+use std::collections::BTreeSet;
 
 #[link(name = "test")]
 extern {
@@ -31,8 +32,27 @@ pub fn safe_minimum_weight_perfect_matching(node_num: usize, input_weighted_edge
     let edge_num = weighted_edges.len();
     let mut edges = Vec::with_capacity(2 * edge_num);
     let mut weights = Vec::with_capacity(edge_num);
-    for i in 0..edge_num {
-        let (i, j, weight) = weighted_edges[i];
+    debug_assert!({
+        let mut existing_edges = BTreeSet::new();
+        let mut sanity_check_passed = true;
+        for idx in 0..edge_num {
+            let (i, j, _weight) = weighted_edges[idx];
+            if i == j {
+                eprintln!("invalid edge between the same vertex {}", i);
+                sanity_check_passed = false;
+            }
+            let left: usize = if i < j { i } else { j };
+            let right: usize = if i < j { j } else { i };
+            if existing_edges.contains(&(left, right)) {
+                eprintln!("duplicate edge between the vertices {} and {}", i, j);
+                sanity_check_passed = false;
+            }
+            existing_edges.insert((left, right));
+        }
+        sanity_check_passed
+    });
+    for idx in 0..edge_num {
+        let (i, j, weight) = weighted_edges[idx];
         edges.push(i as c_int);
         edges.push(j as c_int);
         assert!(i < node_num && j < node_num);

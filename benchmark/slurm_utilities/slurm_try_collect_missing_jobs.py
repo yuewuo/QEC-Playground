@@ -15,8 +15,13 @@ def try_collect_missing_jobs(sbatch_file_path):
         job_out_filepath = os.path.join(sbatch_file_folder, f"{idx}.jobout")
         if os.path.exists(job_out_filepath):
             with open(job_out_filepath, "r", encoding="utf8") as f:
-                if f.read() == "":
+                content = f.read()
+                if content == "":
                     missing_or_empty_indices.append(idx)
+                else:
+                    lines = content.split("\n")
+                    if lines[0].startswith("format:") and (len(lines) < 1 or lines[1] == ""):
+                        missing_or_empty_indices.append(idx)
         else:
             missing_indices.append(idx)
             missing_or_empty_indices.append(idx)
