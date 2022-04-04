@@ -151,7 +151,7 @@ impl CompleteModelGraph {
         }
     }
 
-    /// build correction with matching, requires [`get_edges`] to be run before to cache the edges
+    /// build correction with matching, requires [`Self::get_edges`] to be run before to cache the edges
     pub fn build_correction_matching(&self, source: &Position, target: &Position, model_graph: &ModelGraph) -> SparseCorrection {
         if self.precompute_complete_model_graph {
             let mut correction = SparseCorrection::new();
@@ -175,7 +175,7 @@ impl CompleteModelGraph {
         }
     }
 
-    /// build correction with boundary, requires [`get_edges`] to be run before to cache the edges
+    /// build correction with boundary, requires [`Self::get_edges`] to be run before to cache the edges
     pub fn build_correction_boundary(&self, position: &Position, model_graph: &ModelGraph) -> SparseCorrection {
         if self.precompute_complete_model_graph {
             let mut correction = SparseCorrection::new();
@@ -205,7 +205,7 @@ impl CompleteModelGraph {
         }
     }
 
-    /// run full Dijkstra's algorithm and identify the active region, running [`find_shortest_boundary_paths`] required before this function
+    /// run full Dijkstra's algorithm and identify the active region, running [`Self::find_shortest_boundary_paths`] required before this function
     pub fn precompute_dijkstra(&mut self, position: &Position, model_graph: &ModelGraph) {
         let active_timestamp = self.invalidate_previous_dijkstra();
         let mut pq = PriorityQueue::<Position, PriorityElement>::new();

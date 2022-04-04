@@ -188,7 +188,7 @@ impl TailoredCompleteModelGraph {
         }
     }
 
-    /// build correction with neutral matching, requires [`get_neutral_matching_edges`] to be run before to cache the edges
+    /// build correction with neutral matching, requires [`Self::get_neutral_matching_edges`] to be run before to cache the edges
     pub fn build_correction_neutral_matching(&self, source: &Position, target: &Position, tailored_model_graph: &TailoredModelGraph) -> SparseCorrection {
         if self.precompute_complete_model_graph {
             let mut correction = SparseCorrection::new();
@@ -212,7 +212,7 @@ impl TailoredCompleteModelGraph {
         }
     }
 
-    /// run full Dijkstra's algorithm and identify the active region, running [`find_shortest_boundary_paths`] required before this function
+    /// run full Dijkstra's algorithm and identify the active region
     pub fn precompute_dijkstra(&mut self, position: &Position, model_graph: &TailoredModelGraph) {
         let active_timestamp = self.invalidate_previous_dijkstra();
         for idx in 0..3 {

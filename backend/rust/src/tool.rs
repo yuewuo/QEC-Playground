@@ -34,10 +34,10 @@ use super::clap::{ArgEnum, PossibleValue};
 use std::sync::atomic::{AtomicBool, Ordering};
 use super::error_model::*;
 use serde::{Serialize, Deserialize};
-use super::mwpm_decoder::*;
+use super::decoder_mwpm::*;
 use super::model_graph::*;
 use super::complete_model_graph::*;
-use super::tailored_mwpm_decoder::*;
+use super::decoder_tailored_mwpm::*;
 use super::tailored_model_graph::*;
 use super::tailored_complete_model_graph::*;
 use super::error_model_builder::*;
@@ -285,11 +285,11 @@ pub enum BenchmarkDebugPrint {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BenchmarkDebugPrintDecoderConfig {
-    /// see [`mwpm_decoder::MWPMDecoderConfig`]
+    /// see [`MWPMDecoderConfig`]
     #[serde(alias = "pcmg")]  // abbreviation
     #[serde(default = "mwpm_default_configs::precompute_complete_model_graph")]
     pub precompute_complete_model_graph: bool,
-    /// see [`mwpm_decoder::MWPMDecoderConfig`]
+    /// see [`MWPMDecoderConfig`]
     #[serde(alias = "wf")]  // abbreviation
     #[serde(default = "mwpm_default_configs::weight_function")]
     pub weight_function: WeightFunction,
