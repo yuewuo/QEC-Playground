@@ -9,7 +9,6 @@ use super::complete_model_graph::*;
 use super::priority_queue::PriorityQueue;
 use super::float_ord::FloatOrd;
 use std::sync::{Arc};
-use super::union_find_decoder::UnionFind;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct TailoredCompleteModelGraph {
@@ -148,41 +147,6 @@ impl TailoredCompleteModelGraph {
                 }
             }
             [positive_edges, negative_edges]
-        } else {
-            unimplemented!();
-        }
-    }
-
-    /// get neutral matching edges in a batch manner to improve speed if need to run Dijkstra's algorithm on the fly;
-    /// this function will clear any out-of-date cache
-    pub fn get_neutral_matching_edges(&mut self, position_index: usize, targets: &Vec<Position>, residual_to_tailored_mapping: &Vec<usize>
-            , tailored_clusters: &mut UnionFind) -> Vec<(usize, f64)> {
-        // query union-find data structure to remove edges across different clusters unless they're charged
-        let position = &targets[position_index];
-        if self.precompute_complete_model_graph {
-            let [_positive_node, _negative_node, neutral_node] = self.get_node_unwrap(position);
-            // compute neutral edges
-            let mut neutral_edges = Vec::new();
-            let neutral_precomputed = neutral_node.precomputed.as_ref().unwrap();
-            for (index, target) in targets.iter().enumerate() {
-                if let Some(edge) = neutral_precomputed.edges.get(target) {
-                    let mut has_edge = false;
-                    // edges exist within a cluster
-                    if tailored_clusters.find(residual_to_tailored_mapping[position_index]) == tailored_clusters.find(residual_to_tailored_mapping[index]) {
-                        has_edge = true;
-                    }
-                    // edges exist if both cluster is charged
-                    let charged_1 = tailored_clusters.get(residual_to_tailored_mapping[position_index]).cardinality % 2 == 1;
-                    let charged_2 = tailored_clusters.get(residual_to_tailored_mapping[index]).cardinality % 2 == 1;
-                    if charged_1 && charged_2 {
-                        has_edge = true;
-                    }
-                    if has_edge {
-                        neutral_edges.push((index, edge.weight));
-                    }
-                }
-            }
-            neutral_edges
         } else {
             unimplemented!();
         }

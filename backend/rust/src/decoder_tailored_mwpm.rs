@@ -46,14 +46,10 @@ pub struct TailoredMWPMDecoderConfig {
     #[serde(alias = "wf")]  // abbreviation
     #[serde(default = "mwpm_default_configs::weight_function")]
     pub weight_function: WeightFunction,
-    /// use original neutral correction, without MWPM running inside each neutral cluster
-    #[serde(alias = "uonc")]  // abbreviation
-    #[serde(default = "tailored_mwpm_default_configs::use_original_neutral_correction")]
-    pub use_original_neutral_correction: bool,
 }
 
 pub mod tailored_mwpm_default_configs {
-    pub fn use_original_neutral_correction() -> bool { false }
+
 }
 
 impl TailoredMWPMDecoder {
@@ -99,7 +95,6 @@ impl TailoredMWPMDecoder {
         let mut time_tailored_blossom_v = 0.;
         let mut time_tailored_union = 0.;
         let mut time_neutral_prepare_graph = 0.;
-        let mut time_neutral_blossom_v = 0.;
         let mut time_residual_decoding = 0.;
         let mut time_build_correction = 0.;
         if to_be_matched.len() > 0 {
@@ -186,144 +181,66 @@ impl TailoredMWPMDecoder {
             }
             // eprintln!("tailored_cluster_roots: {:?}", tailored_cluster_roots);
             // do neutral decoding, only consider neutral clusters
-            if self.config.use_original_neutral_correction {
-                // original correction just build cluster as a cycle, and then build corrections out of it
-                for &root_i in tailored_cluster_roots.iter() {
-                    if tailored_clusters.get(root_i).cardinality % 2 == 0 {
-                        let begin = Instant::now();
-                        let mut neutral_cluster = Vec::new();  // neutral cluster is a cycle of even number of StabY and even number of StabX
-                        let root_i_positive = root_i % tailored_len;
-                        let mut negative_2 = root_i_positive;  // make sure this enters loop at least once
-                        while negative_2 != root_i_positive + tailored_len {
-                            let positive_1 = negative_2 % tailored_len;
-                            let positive_2 = tailored_matching[positive_1];
-                            let negative_1 = positive_2 + tailored_len;
-                            negative_2 = tailored_matching[negative_1];
-                            neutral_cluster.push(positive_1);
-                            neutral_cluster.push(positive_2);
-                            // eprintln!("{} {} {}", positive_1, positive_2, negative_2);
-                        }
-                        debug_assert!({  // sanity check: indeed even number of StabY and even number of StabX
-                            let mut stab_y_count = 0;
-                            let mut stab_x_count = 0;
-                            for &i in neutral_cluster.iter() {
-                                let position = &tailored_to_be_matched[i];
-                                let node = self.simulator.get_node_unwrap(position);
-                                if node.qubit_type == QubitType::StabY {
-                                    stab_y_count += 1;
-                                }
-                                if node.qubit_type == QubitType::StabX {
-                                    stab_x_count += 1;
-                                }
-                            }
-                            stab_y_count % 2 == 0 && stab_x_count % 2 == 0
-                        });
-                        // eprintln!("neutral_cluster: {:?}", neutral_cluster);
-                        time_neutral_prepare_graph += begin.elapsed().as_secs_f64();
-                        // build correction directly
-                        let mut last_y = None;
-                        let mut last_x = None;
+            for &root_i in tailored_cluster_roots.iter() {
+                if tailored_clusters.get(root_i).cardinality % 2 == 0 {
+                    let begin = Instant::now();
+                    let mut neutral_cluster = Vec::new();  // neutral cluster is a cycle of even number of StabY and even number of StabX
+                    let root_i_positive = root_i % tailored_len;
+                    let mut negative_2 = root_i_positive;  // make sure this enters loop at least once
+                    while negative_2 != root_i_positive + tailored_len {
+                        let positive_1 = negative_2 % tailored_len;
+                        let positive_2 = tailored_matching[positive_1];
+                        let negative_1 = positive_2 + tailored_len;
+                        negative_2 = tailored_matching[negative_1];
+                        neutral_cluster.push(positive_1);
+                        neutral_cluster.push(positive_2);
+                        // eprintln!("{} {} {}", positive_1, positive_2, negative_2);
+                    }
+                    debug_assert!({  // sanity check: indeed even number of StabY and even number of StabX
+                        let mut stab_y_count = 0;
+                        let mut stab_x_count = 0;
                         for &i in neutral_cluster.iter() {
                             let position = &tailored_to_be_matched[i];
                             let node = self.simulator.get_node_unwrap(position);
                             if node.qubit_type == QubitType::StabY {
-                                if last_y.is_none() {
-                                    last_y = Some(position.clone());
-                                } else {
-                                    let matching_correction = self.tailored_complete_model_graph.build_correction_neutral_matching(last_y.as_ref().unwrap(), position, &self.tailored_model_graph);
-                                    correction.extend(&matching_correction);
-                                    last_y = None;
-                                }
+                                stab_y_count += 1;
                             }
                             if node.qubit_type == QubitType::StabX {
-                                if last_x.is_none() {
-                                    last_x = Some(position.clone());
-                                } else {
-                                    let matching_correction = self.tailored_complete_model_graph.build_correction_neutral_matching(last_x.as_ref().unwrap(), position, &self.tailored_model_graph);
-                                    correction.extend(&matching_correction);
-                                    last_x = None;
-                                }
+                                stab_x_count += 1;
+                            }
+                        }
+                        stab_y_count % 2 == 0 && stab_x_count % 2 == 0
+                    });
+                    // eprintln!("neutral_cluster: {:?}", neutral_cluster);
+                    time_neutral_prepare_graph += begin.elapsed().as_secs_f64();
+                    // build correction directly
+                    let begin = Instant::now();
+                    let mut last_y = None;
+                    let mut last_x = None;
+                    for &i in neutral_cluster.iter() {
+                        let position = &tailored_to_be_matched[i];
+                        let node = self.simulator.get_node_unwrap(position);
+                        if node.qubit_type == QubitType::StabY {
+                            if last_y.is_none() {
+                                last_y = Some(position.clone());
+                            } else {
+                                let matching_correction = self.tailored_complete_model_graph.build_correction_neutral_matching(last_y.as_ref().unwrap(), position, &self.tailored_model_graph);
+                                correction.extend(&matching_correction);
+                                last_y = None;
+                            }
+                        }
+                        if node.qubit_type == QubitType::StabX {
+                            if last_x.is_none() {
+                                last_x = Some(position.clone());
+                            } else {
+                                let matching_correction = self.tailored_complete_model_graph.build_correction_neutral_matching(last_x.as_ref().unwrap(), position, &self.tailored_model_graph);
+                                correction.extend(&matching_correction);
+                                last_x = None;
                             }
                         }
                     }
+                    time_build_correction += begin.elapsed().as_secs_f64();
                 }
-            } else {
-                // my understanding is I could run MWPM inside each cluster and build correction out of it
-                let begin = Instant::now();
-                let mut neutral_to_be_matched = Vec::new();
-                let mut neutral_to_tailored_mapping = Vec::new();
-                for i in 0..tailored_len {
-                    // filtering out positions matched with itself
-                    if tailored_clusters.get(i).set_size > 1 {
-                        // only care about neutral clusters
-                        // eprintln!("cluster {}: cardinality: {}", i, tailored_clusters.get(i).cardinality);
-                        if tailored_clusters.get(i).cardinality % 2 == 0 {
-                            neutral_to_tailored_mapping.push(i);
-                            neutral_to_be_matched.push(tailored_to_be_matched[i].clone());
-                        }
-                    }
-                }
-                let neutral_len = neutral_to_be_matched.len();
-                // println!("neutral_to_be_matched: {:?}", neutral_to_be_matched);
-                // construct edges
-                let mut neutral_weighted_edges = Vec::<(usize, usize, f64)>::new();
-                for i in 0..neutral_len {
-                    let edges = self.tailored_complete_model_graph.get_neutral_matching_edges(i, &neutral_to_be_matched, &neutral_to_tailored_mapping, &mut tailored_clusters);
-                    for &(j, weight) in edges.iter() {
-                        // only add edges for single direction (otherwise `tailored_mwpm_decoder_code_capacity_deadlock_1` will deadlock)
-                        // 2022.4.2 this bug happens rarely, e.g. only fails 3 times in 2e7 cases
-                        // the reason is confusing: we have two edges between a pair of vertices which should be fine in an undirected graph......
-                        if i < j {
-                            neutral_weighted_edges.push((i, j, weight));
-                            // println!{"neutral edge {} {} {} ", neutral_to_be_matched[i], neutral_to_be_matched[j], weight};
-                        }
-                    }
-                }
-                time_neutral_prepare_graph += begin.elapsed().as_secs_f64();
-                // match neutral graph
-                let begin = Instant::now();
-                debug_assert!({  // sanity check: edges are valid
-                    let mut all_edges_valid = true;
-                    for &(i, j, weight) in neutral_weighted_edges.iter() {
-                        if i >= neutral_len || j >= neutral_len {
-                            eprintln!("[error] invalid edge {} {} weight = {}", neutral_to_be_matched[i], neutral_to_be_matched[j], weight);
-                            all_edges_valid = false;
-                        }
-                    }
-                    all_edges_valid
-                });
-                debug_assert!({  // sanity check: each vertex has at least one edge
-                    let mut edges_count: Vec<usize> = (0..neutral_len).map(|_| 0).collect();
-                    for &(i, j, _weight) in neutral_weighted_edges.iter() {
-                        edges_count[i] += 1;
-                        edges_count[j] += 1;
-                    }
-                    let mut all_vertices_have_edge = true;
-                    for i in 0..neutral_len {
-                        if edges_count[i] == 0 {
-                            eprintln!("[error] vertex {} has no edge", neutral_to_be_matched[i]);
-                            all_vertices_have_edge = false;
-                        }
-                    }
-                    all_vertices_have_edge
-                });
-                // eprintln!("neutral matching problem size: {} vertices, {} edges", neutral_len, neutral_weighted_edges.len());
-                // eprintln!("{:?}", neutral_weighted_edges);
-                time_neutral_blossom_v += begin.elapsed().as_secs_f64();
-                let neutral_matching = blossom_v::safe_minimum_weight_perfect_matching(neutral_len, neutral_weighted_edges);
-                // build correction based on the residual matching
-                let begin = Instant::now();
-                for i in 0..neutral_to_be_matched.len() {
-                    let j = neutral_matching[i];
-                    let a = &neutral_to_be_matched[i];
-                    if j < i {  // only add correction if j < i, so that the same correction is not applied twice
-                        // println!("neutral match peer {:?} {:?}", neutral_to_be_matched[i], neutral_to_be_matched[j]);
-                        let b = &neutral_to_be_matched[j];
-                        let matching_correction = self.tailored_complete_model_graph.build_correction_neutral_matching(a, b, &self.tailored_model_graph);
-                        correction.extend(&matching_correction);
-                    }
-                }
-                time_build_correction += begin.elapsed().as_secs_f64();
             }
             // do residual decoding, instead of using the confusing method in the paper, I just match them together using normal graph
             let begin = Instant::now();
@@ -361,7 +278,6 @@ impl TailoredMWPMDecoder {
             "time_tailored_blossom_v": time_tailored_blossom_v,
             "time_tailored_union": time_tailored_union,
             "time_neutral_prepare_graph": time_neutral_prepare_graph,
-            "time_neutral_blossom_v": time_neutral_blossom_v,
             "time_residual_decoding": time_residual_decoding,
             "time_build_correction": time_build_correction,
         }))
@@ -511,6 +427,44 @@ mod tests {
         code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
         let (logical_i, logical_j) = simulator.validate_correction(&correction);
         assert!(!logical_i && !logical_j);
+    }
+
+    #[test]
+    fn tailored_mwpm_decoder_periodic_code_capacity() {  // cargo test tailored_mwpm_decoder_periodic_code_capacity -- --nocapture
+        let d = 5;
+        let noisy_measurements = 0;  // perfect measurement
+        let p = 0.005;
+        let bias_eta = 1e6;
+        // build simulator
+        let mut simulator = Simulator::new(CodeType::PeriodicRotatedTailoredCode{ noisy_measurements, dp: d+1, dn: d+1 });
+        code_builder_sanity_check(&simulator).unwrap();
+        // build error model
+        let mut error_model = ErrorModel::new(&simulator);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = p - 2. * px;
+        simulator.set_error_rates(&mut error_model, px, py, pz, 0.);
+        simulator.compress_error_rates(&mut error_model);
+        error_model_sanity_check(&simulator, &error_model).unwrap();
+        // build decoder
+        let decoder_config = json!({
+            "precompute_complete_model_graph": true,
+        });
+        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config);
+        {
+            simulator.clear_all_errors();
+            simulator.get_node_mut_unwrap(&pos!(0, 7, 7)).set_error(&error_model, &Z);
+            simulator.get_node_mut_unwrap(&pos!(0, 6, 6)).set_error(&error_model, &Z);
+            simulator.get_node_mut_unwrap(&pos!(0, 5, 5)).set_error(&error_model, &Z);
+            // simulator.get_node_mut_unwrap(&pos!(0, 4, 4)).set_error(&error_model, &Z);
+            simulator.propagate_errors();
+            let sparse_measurement = simulator.generate_sparse_measurement();
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
+            // println!("{:?}", correction);
+            code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
+            let (logical_i, logical_j) = simulator.validate_correction(&correction);
+            assert!(!logical_i && !logical_j);
+        }
     }
 
 }
