@@ -456,7 +456,7 @@ mod tests {
             simulator.get_node_mut_unwrap(&pos!(0, 7, 7)).set_error(&error_model, &Z);
             simulator.get_node_mut_unwrap(&pos!(0, 6, 6)).set_error(&error_model, &Z);
             simulator.get_node_mut_unwrap(&pos!(0, 5, 5)).set_error(&error_model, &Z);
-            // simulator.get_node_mut_unwrap(&pos!(0, 4, 4)).set_error(&error_model, &Z);
+            simulator.get_node_mut_unwrap(&pos!(0, 4, 4)).set_error(&error_model, &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);

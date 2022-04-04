@@ -86,7 +86,7 @@ impl CodeType {
     }
     pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
         static VARIANTS: &'static [&str] = &[
-            "StandardPlanarCode", "RotatedPlanarCode", "StandardTailoredCode", "RotatedTailoredCode"
+            "StandardPlanarCode", "RotatedPlanarCode", "StandardTailoredCode", "RotatedTailoredCode", "PeriodicRotatedTailoredCode"
         ];
         VARIANTS.iter().map(|x| PossibleValue::new(x))
     }
