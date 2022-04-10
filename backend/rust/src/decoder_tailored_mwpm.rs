@@ -12,7 +12,7 @@ use super::serde_json;
 use std::sync::{Arc};
 use std::time::Instant;
 use super::blossom_v;
-use super::union_find_decoder::UnionFind;
+use super::union_find::UnionFind;
 use super::types::*;
 use std::collections::{BTreeSet};
 

@@ -33,7 +33,7 @@ use super::fast_benchmark::FastBenchmark;
 use serde::Serialize;
 use super::util;
 use super::util::simple_hasher::SimpleHasher;
-use super::union_find_decoder::UnionFind;
+use super::union_find::UnionFind;
 
 /// uniquely index a node
 /// update 2022.3.13: remove hash support for index; if use hash, change to FastHashIndex

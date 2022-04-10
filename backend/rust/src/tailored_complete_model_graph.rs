@@ -152,7 +152,7 @@ impl TailoredCompleteModelGraph {
         }
     }
 
-    /// build correction with neutral matching, requires [`Self::get_neutral_matching_edges`] to be run before to cache the edges
+    /// build correction with neutral matching
     pub fn build_correction_neutral_matching(&self, source: &Position, target: &Position, tailored_model_graph: &TailoredModelGraph) -> SparseCorrection {
         if self.precompute_complete_model_graph {
             let mut correction = SparseCorrection::new();

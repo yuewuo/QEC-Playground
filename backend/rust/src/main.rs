@@ -23,6 +23,7 @@ mod decoder_tailored_mwpm;
 mod tailored_model_graph;
 mod tailored_complete_model_graph;
 mod error_model_builder;
+mod union_find;
 
 extern crate clap;
 #[macro_use] extern crate serde_json;
@@ -37,7 +38,6 @@ extern crate petgraph;
 extern crate pbr;
 extern crate rand_core;
 #[macro_use] extern crate derivative;
-extern crate union_find;
 extern crate derive_more;
 extern crate lazy_static;
 extern crate either;
