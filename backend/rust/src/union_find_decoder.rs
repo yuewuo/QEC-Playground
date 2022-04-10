@@ -25,7 +25,7 @@ use super::util::simple_hasher::SimpleHasher;
 use super::union_find::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct UnionFindDecoder<U: std::fmt::Debug> {
+pub struct DeprecatedUnionFindDecoder<U: std::fmt::Debug> {
     /// each node corresponds to a stabilizer
     pub nodes: Vec<DecoderNode<U>>,
     /// union find solver
@@ -66,7 +66,7 @@ pub struct InputNode<U: std::fmt::Debug> {
     /// whether this stabilizer has detected a error
     pub is_error_syndrome: bool,
     /// if this node has a direct path to boundary, then set to `Some(cost)` given the integer cost of matching to boundary, otherwise `None`.
-    /// This attribute can be modified later, by calling `TODO` in `UnionFindDecoder`
+    /// This attribute can be modified later, by calling `TODO` in `DeprecatedUnionFindDecoder`
     pub boundary_cost: Option<usize>,
 }
 
@@ -147,7 +147,7 @@ impl NeighborEdge {
     }
 }
 
-impl<U: std::fmt::Debug> UnionFindDecoder<U> {
+impl<U: std::fmt::Debug> DeprecatedUnionFindDecoder<U> {
     pub fn new(nodes: Vec<InputNode<U>>, mut neighbors: Vec<NeighborEdge>) -> Self {
         let mut nodes: Vec<_> = nodes.into_iter().map(|node| {
             DecoderNode {
@@ -502,7 +502,7 @@ pub fn make_standard_planar_code_2d_nodes_only_x_stabilizers(d: usize) -> (Vec<I
 }
 
 pub fn get_standard_planar_code_2d_left_boundary_cardinality(d: usize, position_to_index: &HashMap<(usize, usize), usize>
-        , decoder: &UnionFindDecoder<(usize, usize)>, get_top_boundary_instead: bool, enable_toward_mwpm: bool) -> usize {
+        , decoder: &DeprecatedUnionFindDecoder<(usize, usize)>, get_top_boundary_instead: bool, enable_toward_mwpm: bool) -> usize {
     let mut boundary_cardinality = 0;
     let mut peer_boundary_has = HashSet::new();
     if enable_toward_mwpm {
@@ -547,7 +547,7 @@ pub fn get_standard_planar_code_2d_left_boundary_cardinality(d: usize, position_
 }
 
 pub fn get_standard_planar_code_3d_left_boundary_cardinality(d: usize, measurement_rounds: usize, position_to_index: &HashMap<(usize, usize, usize), usize>
-        , decoder: &UnionFindDecoder<(usize, usize, usize)>, get_top_boundary_instead: bool, enable_toward_mwpm: bool) -> usize {
+        , decoder: &DeprecatedUnionFindDecoder<(usize, usize, usize)>, get_top_boundary_instead: bool, enable_toward_mwpm: bool) -> usize {
     let mut boundary_cardinality = 0;
     let mut peer_boundary_has = HashSet::new();
     if enable_toward_mwpm {
@@ -609,7 +609,7 @@ pub fn run_given_offer_decoder_instance(decoder: &mut offer_decoder::OfferDecode
             }
         }
     }
-    let mut uf_decoder = UnionFindDecoder::new(nodes, neighbors);
+    let mut uf_decoder = DeprecatedUnionFindDecoder::new(nodes, neighbors);
     uf_decoder.run_to_stable();
     let left_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, false, towards_mwpm)
         + decoder.origin_error_left_boundary_cardinality();
@@ -623,7 +623,7 @@ pub fn run_given_offer_decoder_instance(decoder: &mut offer_decoder::OfferDecode
             }
         }
     }
-    let mut uf_decoder = UnionFindDecoder::new(nodes, neighbors);
+    let mut uf_decoder = DeprecatedUnionFindDecoder::new(nodes, neighbors);
     uf_decoder.run_to_stable();
     let top_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, true, towards_mwpm)
         + decoder.origin_error_top_boundary_cardinality();
@@ -757,14 +757,14 @@ pub fn run_given_mwpm_decoder_instance_weighted(model: &ftqec::PlanarCodeModel, 
     let z_error_qubit_type = if use_xzzx_code { QubitType::StabXZZXLogicalZ } else { QubitType::StabX };
     // decode X errors
     let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, x_error_qubit_type, max_half_weight);
-    let mut uf_decoder = UnionFindDecoder::new(nodes, neighbors);
+    let mut uf_decoder = DeprecatedUnionFindDecoder::new(nodes, neighbors);
     uf_decoder.run_to_stable();
     let left_boundary_cardinality = get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &uf_decoder
         , use_xzzx_code, towards_mwpm) + x_error_count;
     let has_x_logical_error = left_boundary_cardinality % 2 == 1;
     // decode Z errors
     let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, z_error_qubit_type, max_half_weight);
-    let mut uf_decoder = UnionFindDecoder::new(nodes, neighbors);
+    let mut uf_decoder = DeprecatedUnionFindDecoder::new(nodes, neighbors);
     uf_decoder.run_to_stable();
     let top_boundary_cardinality = get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &uf_decoder
         , !use_xzzx_code, towards_mwpm) + z_error_count;
@@ -774,7 +774,7 @@ pub fn run_given_mwpm_decoder_instance_weighted(model: &ftqec::PlanarCodeModel, 
 
 pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model: &ftqec::PlanarCodeModel, measurement: &Measurement
         , detected_erasures: &DetectedErasures, max_half_weight: usize)
-        -> Vec<UnionFindDecoder<(usize, usize, usize)>> {
+        -> Vec<DeprecatedUnionFindDecoder<(usize, usize, usize)>> {
     let di = model.di;
     let dj = model.dj;
     let fhi = |index: Index| -> FastHashIndex {
@@ -928,7 +928,7 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
             }
         }
         // build union find decoder
-        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        let mut decoder = DeprecatedUnionFindDecoder::new(nodes, neighbors);
         // set boundary edge already grown for erasure errors
         if detected_erasures.has_erasures() {
             for node in decoder.nodes.iter_mut() {
@@ -944,7 +944,7 @@ pub fn suboptimal_matching_by_union_find_given_measurement_build_decoders(model:
     decoders
 }
 
-pub fn suboptimal_matching_by_union_find_given_measurement_generate_suboptimal_matching(decoder: &UnionFindDecoder<(usize, usize, usize)>)
+pub fn suboptimal_matching_by_union_find_given_measurement_generate_suboptimal_matching(decoder: &DeprecatedUnionFindDecoder<(usize, usize, usize)>)
         -> (Vec<((usize, usize, usize), (usize, usize, usize))>, Vec<(usize, usize, usize)>) {
     let mut edge_matchings = Vec::new();
     let mut boundary_matchings = Vec::new();
@@ -1110,7 +1110,7 @@ mod tests {
         // add duplicate neighbor edge
         neighbors.push(NeighborEdge::new(position_to_index[&(0, 1)], position_to_index[&(0, 3)], 1000, 1000));
         // should then panic
-        UnionFindDecoder::new(nodes, neighbors);
+        DeprecatedUnionFindDecoder::new(nodes, neighbors);
     }
     
     #[test]
@@ -1118,7 +1118,7 @@ mod tests {
         let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_only_x_stabilizers(3);
         nodes[position_to_index[&(2, 1)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
-        let decoder = UnionFindDecoder::new(nodes, neighbors);
+        let decoder = DeprecatedUnionFindDecoder::new(nodes, neighbors);
         println!("decoder.odd_clusters: {:?}", decoder.odd_clusters);
     }
     
@@ -1141,7 +1141,7 @@ mod tests {
         assert_eq!(neighbors.len(), 7, "d=3 should have 7 direct neighbor connections");
         nodes[position_to_index[&(2, 1)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
-        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        let mut decoder = DeprecatedUnionFindDecoder::new(nodes, neighbors);
         decoder.detailed_print_run_to_stable();
         // decoder.run_to_stable();
         // pretty_print_standard_planar_code(&decoder);
@@ -1157,7 +1157,7 @@ mod tests {
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 5)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 7)]].is_error_syndrome = true;
-        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        let mut decoder = DeprecatedUnionFindDecoder::new(nodes, neighbors);
         decoder.detailed_print_run_to_stable();
         // decoder.run_to_stable();
         // pretty_print_standard_planar_code(&decoder);
@@ -1174,7 +1174,7 @@ mod tests {
         nodes[position_to_index[&(0, 5)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 5)]].is_error_syndrome = true;
-        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        let mut decoder = DeprecatedUnionFindDecoder::new(nodes, neighbors);
         decoder.detailed_print_run_to_stable();
         // decoder.run_to_stable();
         // pretty_print_standard_planar_code(&decoder);
@@ -1197,7 +1197,7 @@ mod tests {
         let (nodes, _position_to_index, neighbors) = make_decoder_given_ftqec_model(&model, QubitType::StabZ);
         assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
         assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
-        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        let mut decoder = DeprecatedUnionFindDecoder::new(nodes, neighbors);
         decoder.detailed_print_run_to_stable();
     }
 
@@ -1226,7 +1226,7 @@ mod tests {
         let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, QubitType::StabXZZXLogicalZ, 4);
         assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
         assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
-        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        let mut decoder = DeprecatedUnionFindDecoder::new(nodes, neighbors);
         decoder.detailed_print_run_to_stable();
         assert_eq!(0, get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &decoder, false, false)
             , "cardinality of one side of boundary determines if there is logical error");
@@ -1258,7 +1258,7 @@ mod tests {
         let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, QubitType::StabXZZXLogicalZ, 4);
         assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
         assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
-        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        let mut decoder = DeprecatedUnionFindDecoder::new(nodes, neighbors);
         decoder.detailed_print_run_to_stable();
         assert_eq!(1, get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &decoder, false, false)
             , "cardinality of one side of boundary determines if there is logical error");
@@ -1289,7 +1289,7 @@ mod tests {
         let (nodes, position_to_index, neighbors) = make_decoder_given_ftqec_model_weighted(&model, QubitType::StabXZZXLogicalZ, 4);
         assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
         assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
-        let mut decoder = UnionFindDecoder::new(nodes, neighbors);
+        let mut decoder = DeprecatedUnionFindDecoder::new(nodes, neighbors);
         decoder.detailed_print_run_to_stable();
         assert_eq!(1, get_standard_planar_code_3d_left_boundary_cardinality(d, measurement_rounds, &position_to_index, &decoder, false, false)
             , "cardinality of one side of boundary determines if there is logical error");

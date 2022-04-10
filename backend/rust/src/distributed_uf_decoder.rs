@@ -1224,7 +1224,7 @@ pub fn compare_standard_planar_code_3d_nodes(a: &(usize, usize, usize), b: &(usi
     }
 }
 
-pub fn build_distributed_union_find_given_uf_decoder_3d<>(decoder: &union_find_decoder::UnionFindDecoder<(usize, usize, usize)>) ->
+pub fn build_distributed_union_find_given_uf_decoder_3d<>(decoder: &union_find_decoder::DeprecatedUnionFindDecoder<(usize, usize, usize)>) ->
         (DistributedUnionFind<(usize, usize, usize)>, HashMap<(usize, usize, usize), usize>) {
     let mut nodes = Vec::new();
     let mut position_to_index = HashMap::new();
@@ -1252,7 +1252,7 @@ pub fn build_distributed_union_find_given_uf_decoder_3d<>(decoder: &union_find_d
     (duf_decoder, position_to_index)
 }
 
-pub fn copy_state_back_to_union_find_decoder(decoder: &mut union_find_decoder::UnionFindDecoder<(usize, usize, usize)>, 
+pub fn copy_state_back_to_union_find_decoder(decoder: &mut union_find_decoder::DeprecatedUnionFindDecoder<(usize, usize, usize)>, 
         duf_decoder: &DistributedUnionFind<(usize, usize, usize)>) {
     // copy root, but the root might be changed internally by UnionFind library
     assert_eq!(decoder.nodes.len(), duf_decoder.nodes.len(), "they should have the same number of nodes");

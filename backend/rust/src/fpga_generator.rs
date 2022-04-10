@@ -196,7 +196,7 @@ impl DufNode for DufNode3d {
 }
 
 impl DistributedUnionFind<DufNode2d> {
-    pub fn from_union_find_decoder(decoder: &union_find_decoder::UnionFindDecoder<(usize, usize)>) -> Self {
+    pub fn from_union_find_decoder(decoder: &union_find_decoder::DeprecatedUnionFindDecoder<(usize, usize)>) -> Self {
         let mut coordinates_parity = None;
         let mut nodes: Vec<_> = decoder.nodes.iter().map(|node| {
             let origin = node.node.user_data;
@@ -322,7 +322,7 @@ default example:
 **/
 fn perfect_measurement_distributed_union_find(d: usize) {
     let (nodes, _position_to_index, neighbors) = union_find_decoder::make_standard_planar_code_2d_nodes_only_x_stabilizers(d);
-    let decoder = union_find_decoder::UnionFindDecoder::new(nodes, neighbors);
+    let decoder = union_find_decoder::DeprecatedUnionFindDecoder::new(nodes, neighbors);
     let duf = DistributedUnionFind::<DufNode2d>::from_union_find_decoder(&decoder);
     println!("{}", duf.generate_code());
 }
