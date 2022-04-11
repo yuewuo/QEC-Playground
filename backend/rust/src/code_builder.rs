@@ -105,6 +105,122 @@ impl CodeType {
             _ => None
         }
     }
+
+    /// get position on the left of (i, j), note that this position may be invalid for open-boundary code if it doesn't exist
+    pub fn get_left(&self, i: usize, j: usize) -> (usize, usize) {
+        match self {
+            &CodeType::RotatedTailoredCode { .. } => {
+                if j > 0 {
+                    (i, j - 1)
+                } else {
+                    (i, usize::MAX)
+                }
+            },
+            &CodeType::PeriodicRotatedTailoredCode { dp, dn, .. } => {
+                let (di, dj) = (dp-1, dn-1);
+                if i + j == dj {
+                    (i + (di + 1), j + di)
+                } else if i == j + dj + 1 {
+                    (i - (dj + 1), j + dj)
+                } else {
+                    (i, j - 1)
+                }
+            },
+            _ => unimplemented!("left position not implemented for this code type, please fill the implementation")
+        }
+    }
+
+    /// get position up the position (i, j), note that this position may be invalid for open-boundary code if it doesn't exist
+    pub fn get_up(&self, i: usize, j: usize) -> (usize, usize) {
+        match self {
+            &CodeType::RotatedTailoredCode { .. } => {
+                if i > 0 {
+                    (i - 1, j)
+                } else {
+                    (usize::MAX, j)
+                }
+            },
+            &CodeType::PeriodicRotatedTailoredCode { dp, dn, .. } => {
+                let (di, dj) = (dp-1, dn-1);
+                if i == 0 && j == dj {
+                    (di + dj + 1, di)
+                } else if i + j == dj {
+                    (i + di, j + (di + 1))
+                } else if j == i + dj {
+                    (i + dj, j - (dj + 1))
+                } else {
+                    (i - 1, j)
+                }
+            },
+            _ => unimplemented!("left position not implemented for this code type, please fill the implementation")
+        }
+    }
+
+    /// get position on the right of (i, j), note that this position may be invalid for open-boundary code if it doesn't exist
+    pub fn get_right(&self, i: usize, j: usize) -> (usize, usize) {
+        match self {
+            &CodeType::RotatedTailoredCode { .. } => {
+                (i, j + 1)
+            },
+            &CodeType::PeriodicRotatedTailoredCode { dp, dn, .. } => {
+                let (di, dj) = (dp-1, dn-1);
+                if i + j == 2 * di + dj + 1 {
+                    (i - (di + 1), j - di)
+                } else if j == i + dj {
+                    (i + (dj + 1), j - dj)
+                } else {
+                    (i, j + 1)
+                }
+            },
+            _ => unimplemented!("left position not implemented for this code type, please fill the implementation")
+        }
+    }
+
+    /// get position down the position (i, j), note that this position may be invalid for open-boundary code if it doesn't exist
+    pub fn get_down(&self, i: usize, j: usize) -> (usize, usize) {
+        match self {
+            &CodeType::RotatedTailoredCode { .. } => {
+                (i + 1, j)
+            },
+            &CodeType::PeriodicRotatedTailoredCode { dp, dn, .. } => {
+                let (di, dj) = (dp-1, dn-1);
+                if i == di + dj + 1 && j == di {
+                    (0, dj)
+                } else if i + j == 2 * di + dj + 1 {
+                    (i - di, j - (di + 1))
+                } else if i == j + dj + 1 {
+                    (i - dj, j + (dj + 1))
+                } else {
+                    (i + 1, j)
+                }
+            },
+            _ => unimplemented!("left position not implemented for this code type, please fill the implementation")
+        }
+    }
+
+    /// convenient call to get diagonal neighbor on the left up
+    pub fn get_left_up(&self, i: usize, j: usize) -> (usize, usize) {
+        let (i, j) = self.get_left(i, j);
+        self.get_up(i, j)
+    }
+
+    /// convenient call to get diagonal neighbor on the left down
+    pub fn get_left_down(&self, i: usize, j: usize) -> (usize, usize) {
+        let (i, j) = self.get_left(i, j);
+        self.get_down(i, j)
+    }
+
+    /// convenient call to get diagonal neighbor on the right up
+    pub fn get_right_up(&self, i: usize, j: usize) -> (usize, usize) {
+        let (i, j) = self.get_right(i, j);
+        self.get_up(i, j)
+    }
+
+    /// convenient call to get diagonal neighbor on the left down
+    pub fn get_right_down(&self, i: usize, j: usize) -> (usize, usize) {
+        let (i, j) = self.get_right(i, j);
+        self.get_down(i, j)
+    }
 }
 
 pub fn build_code(simulator: &mut Simulator) {
@@ -471,46 +587,6 @@ pub fn build_code(simulator: &mut Simulator) {
                 };
                 presented || i == j + dj + 1 || i + j == 2 * di + dj + 1
             };
-            let left = |i: usize, j: usize| -> (usize, usize) {
-                if i + j == dj {
-                    (i + (di + 1), j + di)
-                } else if i == j + dj + 1 {
-                    (i - (dj + 1), j + dj)
-                } else {
-                    (i, j - 1)
-                }
-            };
-            let right = |i: usize, j: usize| -> (usize, usize) {
-                if i + j == 2 * di + dj + 1 {
-                    (i - (di + 1), j - di)
-                } else if j == i + dj {
-                    (i + (dj + 1), j - dj)
-                } else {
-                    (i, j + 1)
-                }
-            };
-            let up = |i: usize, j: usize| -> (usize, usize) {
-                if i == 0 && j == dj {
-                    (di + dj + 1, di)
-                } else if i + j == dj {
-                    (i + di, j + (di + 1))
-                } else if j == i + dj {
-                    (i + dj, j - (dj + 1))
-                } else {
-                    (i - 1, j)
-                }
-            };
-            let down = |i: usize, j: usize| -> (usize, usize) {
-                if i == di + dj + 1 && j == di {
-                    (0, dj)
-                } else if i + j == 2 * di + dj + 1 {
-                    (i - di, j - (di + 1))
-                } else if i == j + dj + 1 {
-                    (i - dj, j + (dj + 1))
-                } else {
-                    (i + 1, j)
-                }
-            };
             for t in 0..height {
                 let mut row_i = Vec::with_capacity(vertical);
                 for i in 0..vertical {
@@ -531,44 +607,44 @@ pub fn build_code(simulator: &mut Simulator) {
                                 },
                                 2 => {  // gate 1
                                     if qubit_type == QubitType::Data {
-                                        let (pi, pj) = down(i, j);
+                                        let (pi, pj) = code_type.get_down(i, j);
                                         gate_type = if j % 2 == 1 { GateType::CXGateTarget } else { GateType::CYGateTarget };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     } else {
-                                        let (pi, pj) = up(i, j);
+                                        let (pi, pj) = code_type.get_up(i, j);
                                         gate_type = if j % 2 == 1 { GateType::CXGateControl } else { GateType::CYGateControl };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     }
                                 },
                                 3 => {  // gate 2
                                     if j % 2 == 1 {  // operate with right
-                                        let (pi, pj) = right(i, j);
+                                        let (pi, pj) = code_type.get_right(i, j);
                                         gate_type = if qubit_type == QubitType::Data { GateType::CYGateTarget } else { GateType::CXGateControl };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     } else {  // operate with left
-                                        let (pi, pj) = left(i, j);
+                                        let (pi, pj) = code_type.get_left(i, j);
                                         gate_type = if qubit_type == QubitType::Data { GateType::CXGateTarget } else { GateType::CYGateControl };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     }
                                 },
                                 4 => {  // gate 3
                                     if j % 2 == 1 {  // operate with left
-                                        let (pi, pj) = left(i, j);
+                                        let (pi, pj) = code_type.get_left(i, j);
                                         gate_type = if qubit_type == QubitType::Data { GateType::CYGateTarget } else { GateType::CXGateControl };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     } else {  // operate with right
-                                        let (pi, pj) = right(i, j);
+                                        let (pi, pj) = code_type.get_right(i, j);
                                         gate_type = if qubit_type == QubitType::Data { GateType::CXGateTarget } else { GateType::CYGateControl };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     }
                                 },
                                 5 => {  // gate 4
                                     if qubit_type == QubitType::Data {
-                                        let (pi, pj) = up(i, j);
+                                        let (pi, pj) = code_type.get_up(i, j);
                                         gate_type = if j % 2 == 1 { GateType::CXGateTarget } else { GateType::CYGateTarget };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     } else {
-                                        let (pi, pj) = down(i, j);
+                                        let (pi, pj) = code_type.get_down(i, j);
                                         gate_type = if j % 2 == 1 { GateType::CXGateControl } else { GateType::CYGateControl };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     }
@@ -770,23 +846,32 @@ pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &
         },
         &CodeType::PeriodicRotatedTailoredCode { dp, dn, .. } => {
             // check cardinality of top boundary for logical_i
-            let mut top_cardinality = 0;
+            let mut top_cardinality_y = 0;
+            let mut top_cardinality_x = 0;
             for delta in 0..dn {
                 let node = simulator.get_node_unwrap(&pos!(top_t, dn-delta, delta));
                 if node.propagated == Y || node.propagated == Z {
-                    top_cardinality += 1;
+                    top_cardinality_y += 1;
+                }
+                if node.propagated == X || node.propagated == Z {
+                    top_cardinality_x += 1;
                 }
             }
-            let logical_p = top_cardinality % 2 != 0;  // odd cardinality means there is a logical Z error
             // check cardinality of left boundary for logical_j
-            let mut left_cardinality = 0;
+            let mut left_cardinality_y = 0;
+            let mut left_cardinality_x = 0;
             for delta in 0..dp {
                 let node = simulator.get_node_unwrap(&pos!(top_t, dn+delta, delta));
+                if node.propagated == Y || node.propagated == Z {
+                    left_cardinality_y += 1;
+                }
                 if node.propagated == X || node.propagated == Z {
-                    left_cardinality += 1;
+                    left_cardinality_x += 1;
                 }
             }
-            let logical_n = left_cardinality % 2 != 0;  // odd cardinality means there is a logical X error
+            // odd cardinality means there is a logical error; there are two logical qubits so either error
+            let logical_p = top_cardinality_y % 2 != 0 || left_cardinality_y % 2 != 0;
+            let logical_n = top_cardinality_x % 2 != 0 || left_cardinality_x % 2 != 0;
             Some((logical_p, logical_n))
         },
         _ => None

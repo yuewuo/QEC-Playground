@@ -430,7 +430,7 @@ mod tests {
     }
 
     #[test]
-    fn tailored_mwpm_decoder_periodic_code_capacity() {  // cargo test tailored_mwpm_decoder_periodic_code_capacity -- --nocapture
+    fn tailored_mwpm_decoder_periodic_code_capacity_d5() {  // cargo test tailored_mwpm_decoder_periodic_code_capacity_d5 -- --nocapture
         let d = 5;
         let noisy_measurements = 0;  // perfect measurement
         let p = 0.005;
@@ -455,8 +455,44 @@ mod tests {
             simulator.clear_all_errors();
             simulator.get_node_mut_unwrap(&pos!(0, 7, 7)).set_error(&error_model, &Z);
             simulator.get_node_mut_unwrap(&pos!(0, 6, 6)).set_error(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 5, 5)).set_error(&error_model, &Z);
+            // simulator.get_node_mut_unwrap(&pos!(0, 5, 5)).set_error(&error_model, &Z);
+            // simulator.get_node_mut_unwrap(&pos!(0, 4, 4)).set_error(&error_model, &Z);
+            simulator.propagate_errors();
+            let sparse_measurement = simulator.generate_sparse_measurement();
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
+            // println!("{:?}", correction);
+            code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
+            let (logical_i, logical_j) = simulator.validate_correction(&correction);
+            assert!(!logical_i && !logical_j);
+        }
+    }
+
+    #[test]
+    fn tailored_mwpm_decoder_periodic_code_capacity_d7() {  // cargo test tailored_mwpm_decoder_periodic_code_capacity_d7 -- --nocapture
+        let d = 7;
+        let noisy_measurements = 0;  // perfect measurement
+        let p = 0.001;
+        let bias_eta = 1e200;
+        // build simulator
+        let mut simulator = Simulator::new(CodeType::PeriodicRotatedTailoredCode{ noisy_measurements, dp: d+1, dn: d+1 });
+        code_builder_sanity_check(&simulator).unwrap();
+        // build error model
+        let mut error_model = ErrorModel::new(&simulator);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = p - 2. * px;
+        simulator.set_error_rates(&mut error_model, px, py, pz, 0.);
+        simulator.compress_error_rates(&mut error_model);
+        error_model_sanity_check(&simulator, &error_model).unwrap();
+        // build decoder
+        let decoder_config = json!({
+            "precompute_complete_model_graph": true,
+        });
+        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config);
+        {  // debug: why 2 Z errors can cause logical error?
+            simulator.clear_all_errors();
             simulator.get_node_mut_unwrap(&pos!(0, 4, 4)).set_error(&error_model, &Z);
+            simulator.get_node_mut_unwrap(&pos!(0, 8, 0)).set_error(&error_model, &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);

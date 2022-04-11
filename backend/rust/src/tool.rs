@@ -281,6 +281,8 @@ pub enum BenchmarkDebugPrint {
     TailoredCompleteModelGraph,
     /// print all error patterns immediately after generating random errors, typically useful to pinpoint how program assertion fail
     AllErrorPattern,
+    /// print failed error patterns that causes logical errors, typically useful to pinpoint how decoder fails to decode a likely error
+    FailedErrorPattern,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -577,6 +579,10 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                         is_qec_failed = true;
                     }
                     let validate_elapsed = begin.elapsed().as_secs_f64();
+                    if is_qec_failed && matches!(*debug_print, Some(BenchmarkDebugPrint::FailedErrorPattern)) {
+                        let sparse_error_pattern = simulator.generate_sparse_error_pattern();
+                        eprintln!("{}", serde_json::to_string(&sparse_error_pattern).expect("serialize should success"));
+                    }
                     // update statistic information
                     if let Some(log_runtime_statistics_file) = &log_runtime_statistics_file {
                         runtime_statistics["qec_failed"] = json!(is_qec_failed);

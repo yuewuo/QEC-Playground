@@ -20,6 +20,7 @@ mod complete_model_graph;
 mod error_model;
 mod decoder_mwpm;
 mod decoder_tailored_mwpm;
+// mod decoder_union_find;
 mod tailored_model_graph;
 mod tailored_complete_model_graph;
 mod error_model_builder;
