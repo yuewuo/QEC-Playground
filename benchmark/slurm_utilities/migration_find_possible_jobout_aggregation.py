@@ -30,7 +30,7 @@ we can reduce the number of files in this git repo by more than 80%!
 """
 
 for folder in possible_aggregation_folders:
-    print("SLURM_USE_EXISTING_DATA=1 python3", os.path.join(qec_playground_root_dir, folder, "..", "run_experiment.py"))
+    print("SLURM_USE_EXISTING_DATA=1 python3", os.path.join(qec_playground_root_dir, folder, "..", "run_experiment.py"), ">/dev/null")
 
 
 # SLURM_USE_EXISTING_DATA=1 python3 ...

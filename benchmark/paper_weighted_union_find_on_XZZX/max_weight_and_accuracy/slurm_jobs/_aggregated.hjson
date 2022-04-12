@@ -1,0 +1,1118 @@
+[
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3394234 402515 0.11858787579171029 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 1 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 2005583 400907 0.19989549173482224 5 2.8e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 2 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 2516683 400729 0.1592290328181976 5 2.8e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 3 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 2840032 400565 0.14104242487408591 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 4 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3015067 400656 0.13288460919773923 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 5 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3059242 400569 0.13093733676512026 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 6 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3036560 400555 0.13191078062017547 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 7 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3147586 400540 0.12725307584923812 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 8 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3090821 400466 0.1295662220490931 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 9 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3143720 400426 0.12737330296591298 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 10 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3230060 400468 0.12398159786505514 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 12 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3207035 400494 0.12487983448886589 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 14 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3213904 400478 0.12460795344229324 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 16 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3223376 400528 0.12425730042042876 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 18 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3240599 400454 0.12357406763379239 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 20 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3222805 400523 0.12427776424574245 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 22 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3182797 400512 0.1258364891006244 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 24 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3188579 400539 0.12561677160892046 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 26 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3179632 400493 0.12595577098230235 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 28 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3169889 400466 0.12633439215063996 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 30 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3255335 400465 0.12301806112120565 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 32 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3250363 400375 0.12317854959584514 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 34 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3224437 400435 0.12418757134966507 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 36 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3235048 400483 0.12379507197420254 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 38 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3232364 400389 0.12386878457995448 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 40 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3238003 400389 0.12365306641161235 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 42 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3235825 400322 0.12371559030540898 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 44 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3229701 400253 0.1239288095089917 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 46 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3220490 400326 0.12430592860092719 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 48 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3221070 400303 0.12427640504552835 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 10 --max_half_weight 50 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 3238535 400292 0.12360280188418529 5 2.9e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 21557313 400349 0.018571377610929526 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 1 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 7520631 400276 0.05322372550920262 5 3.0e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 2 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 15761715 400132 0.025386323759819283 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 3 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 14459095 400128 0.027673101255645666 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 4 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 15813299 400118 0.025302626605618474 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 5 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 19302807 400095 0.02072729629426435 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 6 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 18488869 400098 0.02163993914392492 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 7 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 19727688 400100 0.02028113988826263 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 8 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 19447970 400102 0.020572944117046663 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 9 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 19779259 400080 0.020227249160345188 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 10 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 19840215 400111 0.020166666540659968 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 12 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 19224994 400100 0.020811449928150823 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 14 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 19688892 400100 0.020321102883798643 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 16 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 20900315 400103 0.01914339568566311 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 18 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 20942583 400095 0.01910437695292887 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 20 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 19475325 400065 0.020542147563647847 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 22 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 19799144 400088 0.020207338256643823 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 24 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 19799367 400058 0.020205595461713497 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 26 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 21290147 400064 0.0187910398176208 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 28 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 21322143 400067 0.01876298268893516 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 30 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 21449390 400088 0.018652651660490113 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 32 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 21453965 400070 0.018647835027231562 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 34 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 19714864 400072 0.020292911987625173 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 36 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 21009919 400100 0.019043386126333946 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 38 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 21212120 400057 0.01885983107770463 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 40 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 21176075 400064 0.01889226402909888 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 42 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 21175583 400062 0.018892608529361386 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 44 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 21182961 400090 0.01888735007348595 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 46 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 20911378 400056 0.019131020442555245 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 48 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 21137608 400081 0.018927449122909272 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --max_half_weight 50 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 21158705 400084 0.018908718657403654 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 34638762 400325 0.011557139368895459 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 1 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 9087002 400242 0.04404554989643449 5 3.0e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 2 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 22469947 400087 0.017805426955390682 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 3 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 24124269 400072 0.01658379783445459 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 4 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 21620799 400069 0.0185038952538248 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 5 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 24637200 400063 0.016238168298345592 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 6 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 30416013 400073 0.013153367602782127 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 7 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 30384915 400062 0.01316646763698368 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 8 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 29910730 400062 0.013375200137208287 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 9 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 30616696 400055 0.013066563420167873 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 10 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 30368294 400059 0.013173575045078266 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 12 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 30786117 400067 0.012995045786384817 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 14 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 32420117 400060 0.01233986910041071 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 16 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 31396411 400057 0.012742125206604029 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 18 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 31490587 400054 0.012703923239030126 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 20 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 33246068 400049 0.012032971838955513 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 22 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 31516051 400059 0.012693817509052768 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 24 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 31673286 400051 0.012630549290023144 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 26 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 33293802 400069 0.01201632063529422 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 28 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 33486401 400051 0.01194667053052372 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 30 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 31629817 400071 0.012648539825570284 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 32 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 34286847 400062 0.011668089515492632 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 34 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 33292463 400039 0.01201590281860492 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 36 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 31538337 400051 0.012684593991116272 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 38 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 34261987 400055 0.011676351403670779 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 40 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 34291126 400051 0.011666312736420496 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 42 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 34312684 400039 0.01165863329140909 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 44 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 34366914 400056 0.011640730965835337 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 46 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 34281906 400051 0.01166945035086439 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 48 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 34145531 400056 0.011716203798382868 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 1000 --max_half_weight 50 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 34104496 400056 0.011730300896397941 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 38140636 400343 0.010496495129236965 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 1 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 26281667 400071 0.015222436232831045 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 2 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 24409847 400084 0.01639027069690359 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 3 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 33146277 400065 0.01206968130991001 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 4 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 33304751 400061 0.012012130041146383 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 5 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 35502879 400073 0.011268748092232182 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 6 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 33846092 400062 0.011820035234791656 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 7 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 33831776 400062 0.011825036912043873 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 8 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 33924278 400051 0.01179246909838435 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 9 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 36310976 400055 0.01101746755581563 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 10 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 33984708 400059 0.011771735687709896 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 12 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 36971935 400040 0.010820099083264104 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 14 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 34534859 400060 0.011584237248514609 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 16 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37534504 400040 0.01065792690373636 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 18 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 34561583 400053 0.0115750774494328 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 20 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37483159 400047 0.010672713044276765 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 22 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37470045 400050 0.010676528410894623 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 24 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37474168 400037 0.01067500684738351 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 26 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37361856 400042 0.010707230390267549 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 28 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37458542 400046 0.010679700240335035 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 30 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37396950 400055 0.010697530146175022 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 32 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37425863 400041 0.010688891796563248 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 34 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37372142 400043 0.010704310178421135 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 36 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37299165 400060 0.010725709275261256 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 38 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37331100 400056 0.010716426786245249 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 40 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37392860 400059 0.010698807205439755 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 42 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37358137 400039 0.010708215990535074 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 44 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37367627 400048 0.010705737348534335 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 46 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37400794 400038 0.010695976133554812 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 48 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37319999 400037 0.010719105324734869 5 3.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e400000 '[5.00000000e-03]' -p12 --time_budget 21600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta inf --max_half_weight 50 --decoder UF
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 37470241 400043 0.01067628574900279 5 3.1e-3 0
+
+      '''
+  ]
+]

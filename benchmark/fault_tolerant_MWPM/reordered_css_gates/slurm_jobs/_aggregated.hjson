@@ -1,0 +1,947 @@
+[
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[5.00000000e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.5 3 3 61697 46231 0.7493233058333468 3 4.6e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[3.15478672e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 3 3 64841 48748 0.7518082694591385 3 4.4e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[1.99053585e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 3 3 74678 56171 0.7521760089986341 3 4.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[1.25594322e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 3 3 65071 48879 0.75116411304575 3 4.4e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[7.92446596e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 3 3 77317 57965 0.7497057568193283 3 4.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[5.00000000e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 3 3 74334 54322 0.7307826835633762 3 4.4e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[3.15478672e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 3 3 81827 52827 0.645593752673323 3 5.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[1.99053585e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 3 3 86370 41284 0.4779900428389487 3 7.0e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[1.25594322e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 3 3 121289 36021 0.29698488733520767 3 8.7e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[7.92446596e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 3 3 149638 23575 0.15754687980325854 3 1.2e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[5.00000000e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 3 3 139946 10404 0.0743429608563303 3 1.8e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[3.15478672e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 3 3 156617 5340 0.03409591551364156 3 2.6e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[1.99053585e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 3 3 291842 4210 0.014425613859554142 3 3.0e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[1.25594322e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 3 3 374679 2301 0.006141256915920028 3 4.1e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[7.92446596e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 3 3 664377 1639 0.0024669728181439155 3 4.8e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[5.00000000e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 3 3 1235682 1274 0.0010310095963200888 3 5.5e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[3.15478672e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 3 3 2976369 1125 0.00037797732740799274 3 5.8e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[1.99053585e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 3 3 6644295 1039 0.00015637475458269088 3 6.1e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[1.25594322e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 3 3 15736550 1022 0.00006494434930146696 3 6.1e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[7.92446596e-05]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 3 3 37896513 1008 0.00002659875329426747 3 6.2e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[5.00000000e-05]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 3 3 94667089 1006 0.00001062671315476913 3 6.2e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[5.00000000e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.5 5 5 8059 6091 0.7558009678620177 5 1.2e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[3.15478672e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 5 5 7367 5488 0.7449436677073435 5 1.3e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[1.99053585e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 5 5 8985 6722 0.7481357818586533 5 1.2e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[1.25594322e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 5 5 13127 9990 0.7610268911403977 5 9.6e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[7.92446596e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 5 5 13915 10392 0.7468199784405318 5 9.7e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[5.00000000e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 5 5 15782 11808 0.7481941452287416 5 9.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[3.15478672e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 5 5 15580 11648 0.7476251604621309 5 9.1e-3 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[1.99053585e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 5 5 17174 11616 0.6763712588797018 5 1.0e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[1.25594322e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 5 5 17591 8289 0.4712068671479734 5 1.6e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[7.92446596e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 5 5 36963 8553 0.23139355571788003 5 1.9e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[5.00000000e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 5 53346 4596 0.08615453829715443 5 2.8e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[3.15478672e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 5 5 92657 2529 0.027294214144640987 5 3.8e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[1.99053585e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 5 5 201811 1481 0.0073385494348672765 5 5.1e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[1.25594322e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 5 5 575696 1150 0.001997582057196854 5 5.8e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[7.92446596e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 5 5 1969487 1041 0.0005285640372340615 5 6.1e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[5.00000000e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 5 5 7152799 1020 0.00014260151865025145 5 6.1e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[3.15478672e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 5 5 28666347 1004 0.000035023646368335666 5 6.2e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[1.99053585e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 5 5 100106682 920 0.00000919019571540689 5 6.5e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[1.25594322e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 5 5 100103468 215 0.0000021477777373307384 5 1.3e-1 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[7.92446596e-05]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 5 5 100124842 63 0.0000006292144760637924 5 2.5e-1 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[5.00000000e-05]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 5 5 100126072 8 0.00000007989926939309075 5 6.9e-1 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[5.00000000e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.5 7 7 2277 1717 0.754062362758015 7 2.3e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[3.15478672e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 7 7 2457 1837 0.7476597476597476 7 2.3e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[1.99053585e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 7 7 2435 1814 0.7449691991786448 7 2.3e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[1.25594322e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 7 7 2696 2009 0.7451780415430267 7 2.2e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[7.92446596e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 7 7 2793 2069 0.74078052273541 7 2.2e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[5.00000000e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 7 7 3106 2335 0.7517707662588539 7 2.0e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[3.15478672e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 7 7 3901 2900 0.743399128428608 7 1.8e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[1.99053585e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 7 7 5235 3871 0.7394460362941738 7 1.6e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[1.25594322e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 7 7 6706 3984 0.5940948404413957 7 2.0e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[7.92446596e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 7 7 10394 3074 0.2957475466615355 7 3.0e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[5.00000000e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 7 7 22316 1933 0.08661946585409572 7 4.3e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[3.15478672e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 7 7 70974 1267 0.01785160763096345 7 5.5e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[1.99053585e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 7 7 321560 1053 0.0032746610274909816 7 6.0e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[1.25594322e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 7 7 1799301 1016 0.0005646637221898949 7 6.1e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[7.92446596e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 7 7 10876534 1000 0.00009194105401592088 7 6.2e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[5.00000000e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 7 7 64825448 1000 0.000015426040711666197 7 6.2e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[3.15478672e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 7 7 100017955 232 0.0000023195835187792033 7 1.3e-1 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[1.99053585e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 7 7 100018842 38 0.0000003799284138882552 7 3.2e-1 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[1.25594322e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 7 7 100026082 1 0.000000009997392480093342 7 2.0e0 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[7.92446596e-05]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 7 7 100017038 0 0 7 NaN 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[5.00000000e-05]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 7 7 100029739 0 0 7 NaN 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[5.00000000e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.5 9 9 1375 1042 0.7578181818181818 9 3.0e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[3.15478672e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 9 9 1492 1116 0.7479892761394102 9 2.9e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[1.99053585e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 9 9 1458 1115 0.7647462277091907 9 2.8e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[1.25594322e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 9 9 1489 1127 0.7568838146406984 9 2.9e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[7.92446596e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 9 9 1588 1182 0.7443324937027708 9 2.9e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[5.00000000e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 9 9 1633 1229 0.7526025719534599 9 2.8e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[3.15478672e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 9 9 1806 1351 0.748062015503876 9 2.7e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[1.99053585e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 9 9 2041 1484 0.7270945614894659 9 2.7e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[1.25594322e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 9 9 2774 1930 0.695746214852199 9 2.5e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[7.92446596e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 9 9 4839 1668 0.3446993180409175 9 3.9e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[5.00000000e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 9 9 16379 1320 0.08059100067159167 9 5.2e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[3.15478672e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 9 9 95352 1036 0.010865005453477641 9 6.1e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[1.99053585e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 9 9 833232 1010 0.0012121473971234901 9 6.2e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[1.25594322e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 9 9 7235366 1002 0.00013848642902100598 9 6.2e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[7.92446596e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 9 9 22845960 356 0.00001558262379869351 9 1.0e-1 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[5.00000000e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 9 9 33156449 44 0.0000013270419881212248 9 3.0e-1 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[3.15478672e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 9 9 25143818 7 0.00000027839845165917125 9 7.4e-1 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[1.99053585e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 9 9 37629972 0 0 9 NaN 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[1.25594322e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 9 9 28872909 0 0 9 NaN 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[7.92446596e-05]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 9 9 44144691 0 0 9 NaN 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[5.00000000e-05]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 9 9 44857236 0 0 9 NaN 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[5.00000000e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.5 11 11 1358 1012 0.7452135493372607 11 3.1e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[3.15478672e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 11 11 1319 1012 0.7672479150871873 11 3.0e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[1.99053585e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 11 11 1357 1020 0.7516580692704495 11 3.1e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[1.25594322e-01]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 11 11 1384 1025 0.740606936416185 11 3.1e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[7.92446596e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 11 11 1359 1024 0.753495217071376 11 3.0e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[5.00000000e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 11 11 1358 1037 0.7636229749631811 11 3.0e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[3.15478672e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 11 11 1416 1053 0.7436440677966102 11 3.1e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[1.99053585e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 11 11 1465 1106 0.7549488054607508 11 2.9e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[1.25594322e-02]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 11 11 1646 1186 0.7205346294046172 11 3.0e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[7.92446596e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 11 11 3048 1210 0.3969816272965879 11 4.4e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[5.00000000e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 11 11 14742 1088 0.07380274046940713 11 5.7e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[3.15478672e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 11 11 150837 1014 0.00672248851409137 11 6.1e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[1.99053585e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 11 11 2185470 1000 0.0004575674797640782 11 6.2e-2 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[1.25594322e-03]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 11 11 10763126 341 0.00003168224547403793 11 1.1e-1 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[7.92446596e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 11 11 12864022 18 0.000001399251338345037 11 4.6e-1 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[5.00000000e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 11 11 8913271 1 0.00000011219225803860334 11 2.0e0 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[3.15478672e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 11 11 12908733 0 0 11 NaN 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[1.99053585e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 11 11 13132960 0 0 11 NaN 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[1.25594322e-04]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 11 11 15101664 0 0 11 NaN 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[7.92446596e-05]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 11 11 12983226 0 0 11 NaN 0
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[5.00000000e-05]' -p12 --time_budget 3600 --rotated_planar_code
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 11 11 15657646 0 0 11 NaN 0
+
+      '''
+  ]
+]

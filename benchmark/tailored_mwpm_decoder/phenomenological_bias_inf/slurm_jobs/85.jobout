@@ -1,3 +1,0 @@
-[error] some threads don't terminate properly within timeout, here are the details:
-format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-0.315478672 11 11 34487 17343 0.5028851451271493 11 1.0e-2 0 

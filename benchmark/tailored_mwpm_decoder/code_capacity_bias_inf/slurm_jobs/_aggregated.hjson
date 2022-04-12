@@ -1,0 +1,1383 @@
+[
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.4 3 0 140022 40002 0.28568367827912755 3 8.3e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.4 3 0 140022 40002 0.28568367827912755 3 8.3e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 3 0 247026 40001 0.1619303231238817 3 9.0e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 3 0 247026 40001 0.1619303231238817 3 9.0e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 3 0 1208974 40000 0.03308590590037503 3 9.6e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 3 0 1208974 40000 0.03308590590037503 3 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 3 0 5741449 40000 0.00696688240198598 3 9.8e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 3 0 5741449 40000 0.00696688240198598 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 3 0 40484248 40000 0.000988038607015746 3 9.8e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 3 0 40484248 40000 0.000988038607015746 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 3 0 100000010 18785 0.00018784998121500188 3 1.4e-2 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 3 0 100000010 18785 0.00018784998121500188 3 1.4e-2 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 3 0 100000011 2713 0.00002712999701570033 3 3.8e-2 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 3 0 100000011 2713 0.00002712999701570033 3 3.8e-2 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 3 0 100000011 452 0.000004519999502800055 3 9.2e-2 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 3 0 100000011 452 0.000004519999502800055 3 9.2e-2 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 3 0 100000010 74 0.0000007399999260000074 3 2.3e-1 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 3 0 100000010 74 0.0000007399999260000074 3 2.3e-1 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 3 0 100000009 9 0.00000008999999190000073 3 6.5e-1 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 3 0 100000009 9 0.00000008999999190000073 3 6.5e-1 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 3 0 100000011 3 0.000000029999996700000365 3 1.1e0 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 3 0 100000011 3 0.000000029999996700000365 3 1.1e0 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 3 0 100000011 1 0.00000000999999890000012 3 2.0e0 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 3 0 100000011 1 0.00000000999999890000012 3 2.0e0 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 3 0 100000011 0 0 3 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 3 0 100000011 0 0 3 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 3 0 100000010 0 0 3 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 3 0 100000010 0 0 3 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 3 0 100000011 0 0 3 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 3 0 100000011 0 0 3 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 3 0 100000011 1 0.00000000999999890000012 3 2.0e0 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 3 0 100000011 1 0.00000000999999890000012 3 2.0e0 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 3 0 100000011 0 0 3 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 3 0 100000011 0 0 3 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 3 0 100000009 0 0 3 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 3 0 100000009 0 0 3 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 3 0 100000008 0 0 3 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 3 0 100000008 0 0 3 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 3 0 100000011 0 0 3 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 3 0 100000011 0 0 3 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 3 0 100000010 0 0 3 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 3 0 100000010 0 0 3 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.4 5 0 179809 40003 0.2224749595404012 5 8.6e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.4 5 0 179809 40003 0.2224749595404012 5 8.6e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 5 0 503837 40003 0.0793967096501448 5 9.4e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 5 0 503837 40003 0.0793967096501448 5 9.4e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 5 0 7058307 40000 0.005667081355344844 5 9.8e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 5 0 7058307 40000 0.005667081355344844 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 5 0 87384774 40000 0.0004577456480004171 5 9.8e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 5 0 87384774 40000 0.0004577456480004171 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 5 0 100000011 1573 0.00001572999826970019 5 4.9e-2 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 5 0 100000011 1573 0.00001572999826970019 5 4.9e-2 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 5 0 100000011 110 0.0000010999998790000133 5 1.9e-1 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 5 0 100000011 110 0.0000010999998790000133 5 1.9e-1 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 5 0 100000011 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 5 0 100000011 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 5 0 100000011 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 5 0 100000011 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 0 100000011 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 5 0 100000011 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 5 0 100000008 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 5 0 100000008 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 5 0 100000010 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 5 0 100000010 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 5 0 100000011 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 5 0 100000011 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 5 0 100000011 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 5 0 100000011 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 5 0 100000008 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 5 0 100000008 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 5 0 100000010 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 5 0 100000010 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 5 0 100000008 0 0 5 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 5 0 100000008 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.4 7 0 231839 40002 0.17254215209692933 7 8.9e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.4 7 0 231839 40002 0.17254215209692933 7 8.9e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 7 0 1008743 40000 0.03965331110104357 7 9.6e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 7 0 1008743 40000 0.03965331110104357 7 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 7 0 44138883 40000 0.0009062304544498782 7 9.8e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 7 0 44138883 40000 0.0009062304544498782 7 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 7 0 100000011 1682 0.000016819998149800202 7 4.8e-2 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 7 0 100000011 1682 0.000016819998149800202 7 4.8e-2 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 7 0 100000011 18 0.0000001799999802000022 7 4.6e-1 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 7 0 100000011 18 0.0000001799999802000022 7 4.6e-1 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 7 0 100000011 1 0.00000000999999890000012 7 2.0e0 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 7 0 100000011 1 0.00000000999999890000012 7 2.0e0 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 7 0 100000011 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 7 0 100000011 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 7 0 100000011 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 7 0 100000011 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 7 0 100000011 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 7 0 100000011 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 7 0 100000011 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 7 0 100000011 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 7 0 100000011 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 7 0 100000011 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 7 0 100000011 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 7 0 100000011 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 7 0 100000011 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 7 0 100000011 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 7 0 100000010 0 0 7 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 7 0 100000010 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.4 9 0 292459 40000 0.13677130811498364 9 9.1e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.4 9 0 292459 40000 0.13677130811498364 9 9.1e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 9 0 2029660 40000 0.019707734300326164 9 9.7e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 9 0 2029660 40000 0.019707734300326164 9 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 9 0 35757955 5105 0.00014276543499201785 9 2.7e-2 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 9 0 35757955 5105 0.00014276543499201785 9 2.7e-2 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 9 0 71151892 45 0.0000006324498018970458 9 2.9e-1 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 9 0 71151892 45 0.0000006324498018970458 9 2.9e-1 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 9 0 99262839 1 0.000000010074263541867868 9 2.0e0 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 9 0 99262839 1 0.000000010074263541867868 9 2.0e0 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 9 0 100000011 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 9 0 100000010 0 0 9 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 9 0 100000010 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.4 11 0 366039 40001 0.10928070506148252 11 9.2e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.4 11 0 366039 40001 0.10928070506148252 11 9.2e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 11 0 3916137 40000 0.010214147257871724 11 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      [error] some threads don't terminate properly within timeout, here are the details:
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 11 0 26562016 588 0.00002213687394812201 11 8.1e-2 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 11 0 41916731 1 0.000000023856822231676414 11 2.0e0 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 11 0 41916731 1 0.000000023856822231676414 11 2.0e0 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 11 0 63112047 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 11 0 63112047 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 11 0 78723998 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 11 0 78723998 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 11 0 100000011 0 0 11 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.4 13 0 453355 40000 0.08823107719116366 13 9.4e-3 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.4 13 0 453355 40000 0.08823107719116366 13 9.4e-3 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      [error] some threads don't terminate properly within timeout, here are the details:
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.315478672 13 0 2321955 12341 0.005314917817098092 13 1.8e-2 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      [error] some threads don't terminate properly within timeout, here are the details:
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.199053585 13 0 15267900 54 0.0000035368321773131865 13 2.7e-1 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 13 0 22508075 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.125594322 13 0 22508075 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 13 0 31253328 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0792446596 13 0 31253328 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 13 0 49541850 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.05 13 0 49541850 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 13 0 77423975 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0315478672 13 0 77423975 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 13 0 95993869 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0199053585 13 0 95993869 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 13 0 100000011 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0125594322 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 13 0 100000011 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00792446596 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 13 0 100000011 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 13 0 100000011 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00315478672 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 13 0 100000011 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00199053585 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 13 0 100000011 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00125594322 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 13 0 100000011 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000792446596 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 13 0 100000011 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0005 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 13 0 100000011 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000315478672 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 13 0 100000011 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000199053585 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 13 0 100000011 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.000125594322 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 13 0 100000011 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0000792446596 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --time_budget 3600 --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 13 0 100000011 0 0 13 NaN 0 
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.00005 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+]
