@@ -85,7 +85,7 @@ class SlurmDistributeVec(list):
                     confirm_or_die(f"You're using `-p0` option in slurm enabled environment, which may create more threads than allocated to you; please use `slurm_threads_or` to access the allocated number of threads in this case")
         self.append(command)
 
-def slurm_distribute_wrap(program):
+def slurm_distribute_wrap(program, filefolder):
     def wrapper():
         if ONLY_PRINT_COMMANDS or SLURM_DISTRIBUTE_ENABLED:
             # first gether all commands
@@ -105,7 +105,7 @@ def slurm_distribute_wrap(program):
             if ONLY_PRINT_COMMANDS:
                 return None  # terminate the program
 
-        slurm_jobs_folder = os.path.join(os.path.abspath(os.getcwd()), "slurm_jobs")
+        slurm_jobs_folder = os.path.join(os.path.abspath(filefolder), "slurm_jobs")
         job_script_sbatch_path = os.path.join(slurm_jobs_folder, f"job_script.sbatch")
         if SLURM_DISTRIBUTE_ENABLED and SLURM_USE_PREVIOUS_DATA_IF_POSSIBLE:
             previous_job_commands = read_job_commands_from_sbatch(job_script_sbatch_path)
@@ -246,9 +246,15 @@ def slurm_distribute_wrap(program):
 
     return wrapper
 
-def slurm_distribute_run(program):
-    wrapper = slurm_distribute_wrap(program)
+def slurm_distribute_run_with_folder(program, filefolder):
+    wrapper = slurm_distribute_wrap(program, filefolder)
     wrapper()
+    return wrapper
+
+def slurm_distribute_run(filefolder):
+    assert isinstance(filefolder, str), "please specify folder, e.g. os.path.dirname(__file__)"
+    def wrapper(program):
+        slurm_distribute_run_with_folder(program, filefolder)
     return wrapper
 
 def slurm_run_sbatch_wait(job_script_sbatch_path, job_indices, use_interactive_partition=False, slurm_commands_vec=None, original_sbatch_file_path=None):

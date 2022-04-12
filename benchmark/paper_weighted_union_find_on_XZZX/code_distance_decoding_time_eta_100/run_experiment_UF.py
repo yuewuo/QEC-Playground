@@ -1,6 +1,7 @@
 import os, sys
 from process_data import process_file
-qec_playground_root_dir = os.popen("git rev-parse --show-toplevel").read().strip(" \r\n")
+import subprocess, sys
+qec_playground_root_dir = subprocess.run("git rev-parse --show-toplevel", cwd=os.path.dirname(__file__), shell=True, check=True, capture_output=True).stdout.decode(sys.stdout.encoding).strip(" \r\n")
 rust_dir = os.path.join(qec_playground_root_dir, "backend", "rust")
 fault_toleran_MWPM_dir = os.path.join(qec_playground_root_dir, "benchmark", "fault_tolerant_MWPM")
 sys.path.insert(0, fault_toleran_MWPM_dir)

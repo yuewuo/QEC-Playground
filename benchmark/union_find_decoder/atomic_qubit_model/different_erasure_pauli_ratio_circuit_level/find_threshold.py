@@ -1,5 +1,6 @@
 import os, sys
-qec_playground_root_dir = os.popen("git rev-parse --show-toplevel").read().strip(" \r\n")
+import subprocess, sys
+qec_playground_root_dir = subprocess.run("git rev-parse --show-toplevel", cwd=os.path.dirname(__file__), shell=True, check=True, capture_output=True).stdout.decode(sys.stdout.encoding).strip(" \r\n")
 rust_dir = os.path.join(qec_playground_root_dir, "backend", "rust")
 fault_toleran_MWPM_dir = os.path.join(qec_playground_root_dir, "benchmark", "fault_tolerant_MWPM")
 sys.path.insert(0, fault_toleran_MWPM_dir)
@@ -71,7 +72,7 @@ if run_specific_pauli_ratio is not None:
 print("pauli_ratio_strs:", pauli_ratio_strs)
 
 compile_code_if_necessary()
-@slurm_distribute.slurm_distribute_run
+@slurm_distribute.slurm_distribute_run(os.path.dirname(__file__))
 def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playground_command_get_stdout):
     for pauli_ratio_str in pauli_ratio_strs:
         command = ["python3", os.path.abspath(__file__), pauli_ratio_str]

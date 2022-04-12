@@ -1,7 +1,8 @@
 import os, sys, subprocess
 
 
-qec_playground_root_dir = os.popen("git rev-parse --show-toplevel").read().strip(" \r\n")
+import subprocess, sys
+qec_playground_root_dir = subprocess.run("git rev-parse --show-toplevel", cwd=os.path.dirname(__file__), shell=True, check=True, capture_output=True).stdout.decode(sys.stdout.encoding).strip(" \r\n")
 process = subprocess.run(["git", "ls-files"], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=qec_playground_root_dir)
 output = process.stdout
 files = output.split("\n")
@@ -29,12 +30,13 @@ we can reduce the number of files in this git repo by more than 80%!
 """
 
 for folder in possible_aggregation_folders:
-    print(os.path.join(qec_playground_root_dir, folder), possible_aggregation_folders[folder])
+    print("SLURM_USE_EXISTING_DATA=1 python3", os.path.join(qec_playground_root_dir, folder, "..", "run_experiment.py"))
 
 
 # SLURM_USE_EXISTING_DATA=1 python3 ...
 
 for folder in possible_aggregation_folders:
-    if os.path.exists(os.path.join(qec_playground_root_dir, folder, "_aggregated"))
+    if os.path.exists(os.path.join(qec_playground_root_dir, folder, "_aggregated.hjson")):
+        print("git rm --cached -r", os.path.join(qec_playground_root_dir, folder))
 
 
