@@ -16,7 +16,7 @@ set style fill transparent solid 0.2 noborder
 
 set output "code_capacity_bias_inf_periodic.eps"
 
-set title "Tailored Code Capacity"
+set title "Tailored Code Capacity (Periodic)"
 
 plot "d_4.txt" using 1:6 with linespoints lt rgb "red" linewidth 4 pointtype 2 pointsize 1 notitle "d = 4",\
     "" using 1:6:($6*(1-$8)):($6*(1+$8)) with errorbars lt rgb "red" linewidth 4 pointtype 2 pointsize 1 notitle,\
