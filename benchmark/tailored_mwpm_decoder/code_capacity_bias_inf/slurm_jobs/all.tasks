@@ -1,4 +1,0 @@
-JobID    JobName      User  Partition        NodeList    Elapsed      State ExitCode     MaxRSS                        AllocTRES 
-         54859160_86 QEC-Playg+     yw729   scavenge       p08r02n19   01:01:03  COMPLETED      0:0              billing=2,cpu=24,mem=8G,node=1 
-        54859160_106 QEC-Playg+     yw729   scavenge          c15n09   01:01:00  COMPLETED      0:0              billing=1,cpu=12,mem=8G,node=1 
-        54859160_107 QEC-Playg+     yw729   scavenge       p08r05n23   01:01:01  COMPLETED      0:0              billing=1,cpu=12,mem=8G,node=1 

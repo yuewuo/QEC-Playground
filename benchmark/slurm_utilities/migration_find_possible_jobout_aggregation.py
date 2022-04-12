@@ -13,7 +13,7 @@ possible_aggregation_number = 0
 for filename in files:
     if filename[-7:] == ".jobout":
         folder = "/".join(filename.split("/")[:-1])
-        print(filename)
+        # print(filename)
         if folder in possible_aggregation_folders:
             possible_aggregation_folders[folder] += 1
         else:
@@ -48,3 +48,17 @@ number of files that can be reduced by this aggregation: 0
 
 number of files is greatly reduced, yet no information is lost (one can safely delete all jobout, joberror files if they want)
 """
+
+
+# clean tasks and sbatch from git repo, since those are not necessary for version control and for completeness of result
+to_be_cleaned_folders = dict()
+for filename in files:
+    if filename[-7:] == ".sbatch":
+        folder = "/".join(filename.split("/")[:-1])
+        # print(filename)
+        if folder in to_be_cleaned_folders:
+            to_be_cleaned_folders[folder] += 1
+        else:
+            to_be_cleaned_folders[folder] = 1
+for folder in to_be_cleaned_folders:
+    print("git rm --cached -r", os.path.join(qec_playground_root_dir, folder))

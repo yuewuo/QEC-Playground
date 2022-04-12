@@ -1,9 +1,0 @@
-JobID    JobName      User  Partition        NodeList    Elapsed      State ExitCode     MaxRSS                        AllocTRES 
-         40898196_13 QEC-Playg+     yw729        day       p09r14n01   00:06:22  COMPLETED      0:0             billing=36,cpu=36,mem=4G,node=1 
-         40898196_14 QEC-Playg+     yw729        day       p09r09n02   00:05:53  COMPLETED      0:0             billing=36,cpu=36,mem=4G,node=1 
-         40898196_15 QEC-Playg+     yw729        day       p09r14n06   00:05:26  COMPLETED      0:0             billing=36,cpu=36,mem=4G,node=1 
-         40898196_16 QEC-Playg+     yw729        day       p09r18n35   00:05:21  COMPLETED      0:0             billing=36,cpu=36,mem=4G,node=1 
-         40898196_28 QEC-Playg+     yw729        day       p09r09n04   00:04:58  COMPLETED      0:0             billing=36,cpu=36,mem=4G,node=1 
-         40898196_30 QEC-Playg+     yw729        day       p09r14n08   00:06:20  COMPLETED      0:0             billing=36,cpu=36,mem=4G,node=1 
-         40898196_32 QEC-Playg+     yw729        day       p08r05n13   00:05:22  COMPLETED      0:0             billing=36,cpu=36,mem=4G,node=1 
-         40898196_34 QEC-Playg+     yw729        day       p09r09n04   00:04:52  COMPLETED      0:0             billing=36,cpu=36,mem=4G,node=1 

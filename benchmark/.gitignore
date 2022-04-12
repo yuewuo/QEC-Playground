@@ -9,3 +9,6 @@ slurm-*.out
 slurm-*.err
 unfinished.tasks
 python_interface/example.json
+# slurm job scripts are not needed, _aggregated.hjson is enough to record all results
+job_script.sbatch
+all.tasks
