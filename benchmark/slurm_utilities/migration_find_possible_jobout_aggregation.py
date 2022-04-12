@@ -13,6 +13,7 @@ possible_aggregation_number = 0
 for filename in files:
     if filename[-7:] == ".jobout":
         folder = "/".join(filename.split("/")[:-1])
+        print(filename)
         if folder in possible_aggregation_folders:
             possible_aggregation_folders[folder] += 1
         else:
@@ -40,4 +41,10 @@ for folder in possible_aggregation_folders:
     if os.path.exists(os.path.join(qec_playground_root_dir, folder, "_aggregated.hjson")):
         print("git rm --cached -r", os.path.join(qec_playground_root_dir, folder))
 
+"""
+2022/4/12
+number of files in the git repo: 1469
+number of files that can be reduced by this aggregation: 0
 
+number of files is greatly reduced, yet no information is lost (one can safely delete all jobout, joberror files if they want)
+"""
