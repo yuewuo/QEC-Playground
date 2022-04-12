@@ -53,7 +53,7 @@ number of files is greatly reduced, yet no information is lost (one can safely d
 # clean tasks and sbatch from git repo, since those are not necessary for version control and for completeness of result
 to_be_cleaned_folders = dict()
 for filename in files:
-    if filename[-7:] == ".sbatch":
+    if filename[-7:] == ".sbatch" or filename.split("/")[-1][:6] == "rerun-":
         folder = "/".join(filename.split("/")[:-1])
         # print(filename)
         if folder in to_be_cleaned_folders:
