@@ -3,6 +3,7 @@
 
 # this is the realtime output of slurm jobs
 *.joberror
+*.jobout
 # also ignore the slurm outputs, typically empty files
 slurm-*.out
 slurm-*.err

@@ -1,4 +1,4 @@
-import os, sys, subprocess, shutil, shlex, time, stat
+import os, sys, subprocess, shutil, shlex, time, stat, hjson
 from datetime import datetime
 import slurm_rerun_failed
 import multiprocessing
@@ -212,12 +212,28 @@ def slurm_distribute_wrap(program):
 
             # gather the data with feeding results
             results = {}
+            aggregated_results = [None] * len(slurm_commands_vec)
+            if not SLURM_DISTRIBUTE_DO_NOT_CHECK_JOBOUT and os.path.exists(os.path.join(slurm_jobs_folder, f"_aggregated.hjson")):
+                with open(os.path.join(slurm_jobs_folder, f"_aggregated.hjson"), "r", encoding="utf8") as f:
+                    aggregated_results = hjson.loads(f.read())
+                    if len(aggregated_results) != len(slurm_commands_vec):
+                        confirm_or_die(f"reading from aggregated result, but it only has {len(aggregated_results)} entries instead of {len(slurm_commands_vec)} as requests, continue?")
+                    for idx, (command, result) in enumerate(aggregated_results):
+                        results[command] = result
             for idx, command in enumerate(slurm_commands_vec):
                 if SLURM_DISTRIBUTE_DO_NOT_CHECK_JOBOUT:
                     results[stringify_commands[idx]] = "SLURM_DISTRIBUTE_DO_NOT_CHECK_JOBOUT"
                 else:
-                    with open(os.path.join(slurm_jobs_folder, f"{idx}.jobout"), "r", encoding="utf8") as f:
-                        results[stringify_commands[idx]] = f.read()
+                    # cover the result if jobout file exist
+                    if os.path.exists(os.path.join(slurm_jobs_folder, f"{idx}.jobout")):
+                        with open(os.path.join(slurm_jobs_folder, f"{idx}.jobout"), "r", encoding="utf8") as f:
+                            results[stringify_commands[idx]] = f.read()
+                            aggregated_results[idx] = (stringify_commands[idx], results[stringify_commands[idx]])
+            
+            # record the data into a single file, to reduce the number of files committed to git
+            if not SLURM_DISTRIBUTE_DO_NOT_CHECK_JOBOUT:
+                with open(os.path.join(slurm_jobs_folder, f"_aggregated.hjson"), "w", encoding="utf8") as f:
+                    f.write(hjson.dumps(aggregated_results))
 
             # rerun the simulation feeding the results
             def feeding_output(command):
