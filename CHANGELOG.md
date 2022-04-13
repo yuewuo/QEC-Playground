@@ -10,7 +10,8 @@ For major updates, please run the [auto profiler](benchmark/auto_profiler/auto_p
 
 ## 0.1.5 (2022.4.12)
 
-- [ ] real-weighted union-find decoder
+- [x] real-weighted union-find decoder
+- [x] make union-find algorithm generic typed to enable advanced information to be computed efficiently
 
 ## 0.1.4 (2022.3.30)
 

@@ -1,16 +1,19 @@
 use std::iter::FromIterator;
 use super::serde::{Serialize, Deserialize};
+use super::either::Either;
 
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct UnionFind {
+pub struct UnionFindGeneric<NodeType: UnionNodeTrait> {
     /// tree structure, each node has a parent
     pub link_parent: Vec<usize>,
     /// the node information, has the same length as `link_parent`
-    pub payload: Vec<Option<UnionNode>>,
+    pub payload: Vec<Option<NodeType>>,
     /// internal cache of parent list when calling `find`
     find_parent_list: Vec<usize>,
 }
+
+pub type UnionFind = UnionFindGeneric<UnionNode>;
 
 #[derive(Copy, Debug, Serialize, Deserialize, Clone)]
 pub struct UnionNode {
@@ -25,28 +28,29 @@ pub enum UnionResult {
     Right(UnionNode),
 }
 
-impl UnionNode {
+pub trait UnionNodeTrait {
+    type Payload;
+    fn union(left: &Self::Payload, right: &Self::Payload) -> Either<Self::Payload, Self::Payload>;
+}
+
+impl UnionNodeTrait for UnionNode {
+    type Payload = Self;
+
     #[inline]
-    pub fn union(left: &Self, right: &Self) -> UnionResult {
-        let lsize = left.size();
-        let rsize = right.size();
+    fn union(left: &Self, right: &Self) -> Either<Self, Self> {
+        let lsize = left.set_size;
+        let rsize = right.set_size;
         let result = UnionNode {
             set_size: lsize + rsize,
             cardinality: left.cardinality + right.cardinality,
             is_touching_boundary: left.is_touching_boundary || right.is_touching_boundary,
         };
         if lsize >= rsize {
-            UnionResult::Left(result)
+            Either::Left(result)
         } else {
-            UnionResult::Right(result)
+            Either::Right(result)
         }
     }
-
-    #[inline]
-    pub fn size(&self) -> usize {
-        self.set_size
-    }
-
 }
 
 impl Default for UnionNode {
@@ -118,8 +122,8 @@ impl UnionFind {
         }
 
         let (parent, child, val) = match UnionNode::union(self.payload[k0].as_ref().unwrap(), self.payload[k1].as_ref().unwrap()) {
-            UnionResult::Left(val) => (k0, k1, val),
-            UnionResult::Right(val) => (k1, k0, val),
+            Either::Left(val) => (k0, k1, val),
+            Either::Right(val) => (k1, k0, val),
         };
         self.payload[parent] = Some(val);
         self.link_parent[child] = parent;
@@ -195,8 +199,8 @@ mod tests {
     fn union_find_decoder_test_basic_algorithm() {  // cargo test union_find_decoder_test_basic_algorithm -- --nocapture
         let mut uf = UnionFind::new(100);
         // test from https://github.com/gifnksm/union-find-rs/blob/master/src/tests.rs
-        assert_eq!(1, uf.get(0).size());
-        assert_eq!(1, uf.get(1).size());
+        assert_eq!(1, uf.get(0).set_size);
+        assert_eq!(1, uf.get(1).set_size);
         assert!(uf.find(0) != uf.find(1));
         assert!(uf.immutable_find(0) != uf.immutable_find(1));
         assert!(uf.find(1) != uf.find(2));
@@ -204,17 +208,17 @@ mod tests {
         assert!(uf.union(0, 1));
         assert!(uf.find(0) == uf.find(1));
         assert!(uf.immutable_find(0) == uf.immutable_find(1));
-        assert_eq!(2, uf.get(0).size());
-        assert_eq!(2, uf.get(1).size());
-        assert_eq!(1, uf.get(2).size());
+        assert_eq!(2, uf.get(0).set_size);
+        assert_eq!(2, uf.get(1).set_size);
+        assert_eq!(1, uf.get(2).set_size);
         assert!(!uf.union(0, 1));
-        assert_eq!(2, uf.get(0).size());
-        assert_eq!(2, uf.get(1).size());
-        assert_eq!(1, uf.get(2).size());
+        assert_eq!(2, uf.get(0).set_size);
+        assert_eq!(2, uf.get(1).set_size);
+        assert_eq!(1, uf.get(2).set_size);
         assert!(uf.union(1, 2));
-        assert_eq!(3, uf.get(0).size());
-        assert_eq!(3, uf.get(1).size());
-        assert_eq!(3, uf.get(2).size());
+        assert_eq!(3, uf.get(0).set_size);
+        assert_eq!(3, uf.get(1).set_size);
+        assert_eq!(3, uf.get(2).set_size);
         assert!(uf.immutable_find(0) == uf.immutable_find(1));
         assert!(uf.find(0) == uf.find(1));
         assert!(uf.immutable_find(2) == uf.immutable_find(1));
@@ -222,7 +226,7 @@ mod tests {
         let k100 = uf.insert(UnionNode::default());
         assert_eq!(k100, 100);
         let _ = uf.union(k100, 0);
-        assert_eq!(4, uf.get(100).size());
+        assert_eq!(4, uf.get(100).set_size);
         assert_eq!(101, uf.size());
     }
     
