@@ -8,11 +8,16 @@ For major updates, please run the [auto profiler](benchmark/auto_profiler/auto_p
 
 - [ ] update 3D tool to support visualizing data structure from backend
 
+## 0.1.5 (2022.4.12)
+
+- [ ] real-weighted union-find decoder
+
 ## 0.1.4 (2022.3.30)
 
 - [x] build complete model graph using customized Dijkstra's algorithm
 - [x] mwpm decoder
-- [ ] tailored mwpm decoder
+- [x] tailored mwpm decoder
+- [x] remove all unnecessary .jobout, .joberror, sbatch files and clean up the git repo
 
 ## 0.1.3 (2022.3.21)
 

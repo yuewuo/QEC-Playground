@@ -27,7 +27,7 @@ pub struct ModelGraphNode {
     pub edges: BTreeMap<Position, ModelGraphEdge>,
     /// all boundary edges defined by a single qubit error generating only one nontrivial measurement.
     pub all_boundaries: Vec<ModelGraphBoundary>,
-    /// the elected boundary out of all, note that `virtual_node` here is always set to None
+    /// the elected boundary out of all, note that `virtual_node` not necessarily present
     pub boundary: Option<ModelGraphBoundary>,
 }
 
@@ -330,7 +330,7 @@ impl ModelGraph {
                     weight: weight_of(elected_probability),
                     error_pattern: model_graph_node.all_boundaries[elected_idx].error_pattern.clone(),
                     correction: model_graph_node.all_boundaries[elected_idx].correction.clone(),
-                    virtual_node: None,
+                    virtual_node: model_graph_node.all_boundaries[elected_idx].virtual_node.clone(),
                 };
                 // update elected edge
                 // println!("{} to virtual boundary elected probability: {}", position, elected.probability);

@@ -18,6 +18,8 @@ pub struct CompleteModelGraph {
     pub nodes: Vec::< Vec::< Vec::< Option< Box< CompleteModelGraphNode > > > > >,
     /// timestamp to invalidate all nodes without iterating them; only invalidating all nodes individually when active_timestamp is usize::MAX
     pub active_timestamp: usize,
+    /// optimization flag to remove edge if sum of boundary weights is greater than the path weight
+    pub optimize_weight_greater_than_sum_boundary: bool,
 }
 
 /// precomputed data can help reduce runtime complexity, at the cost of more memory usage
@@ -69,6 +71,7 @@ impl CompleteModelGraph {
                 }).collect()
             }).collect(),
             active_timestamp: 0,
+            optimize_weight_greater_than_sum_boundary: true,
         }
     }
 
@@ -139,7 +142,6 @@ impl CompleteModelGraph {
             let mut edges = Vec::new();
             let node = self.get_node_unwrap(position);
             let precomputed = node.precomputed.as_ref().unwrap();
-
             for (index, target) in targets.iter().enumerate() {
                 if let Some(edge) = precomputed.edges.get(target) {
                     edges.push((index, edge.weight));
@@ -228,7 +230,11 @@ impl CompleteModelGraph {
             node.timestamp = active_timestamp;  // mark as visited
             if &target != position {
                 let boundary_sum = self.get_boundary_sum(position, &target);
-                if boundary_sum.is_none() || boundary_sum.unwrap() >= weight {
+                let mut add_entry = true;
+                if self.optimize_weight_greater_than_sum_boundary {
+                    add_entry = boundary_sum.is_none() || boundary_sum.unwrap() >= weight;
+                }
+                if add_entry {
                     let node = self.get_node_mut_unwrap(position);
                     Arc::get_mut(node.precomputed.as_mut().unwrap()).unwrap().edges.insert(target.clone(), CompleteModelGraphEdge {
                         next: next.clone(),

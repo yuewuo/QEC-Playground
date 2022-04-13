@@ -1,5 +1,4 @@
 use std::iter::FromIterator;
-use std::mem;
 use super::serde::{Serialize, Deserialize};
 
 
@@ -10,7 +9,7 @@ pub struct UnionFind {
     /// the node information, has the same length as `link_parent`
     pub payload: Vec<Option<UnionNode>>,
     /// internal cache of parent list when calling `find`
-    pub find_parent_list: Vec<usize>,
+    find_parent_list: Vec<usize>,
 }
 
 #[derive(Copy, Debug, Serialize, Deserialize, Clone)]
@@ -28,7 +27,7 @@ pub enum UnionResult {
 
 impl UnionNode {
     #[inline]
-    pub fn union(left: Self, right: Self) -> UnionResult {
+    pub fn union(left: &Self, right: &Self) -> UnionResult {
         let lsize = left.size();
         let rsize = right.size();
         let result = UnionNode {
@@ -118,11 +117,7 @@ impl UnionFind {
             return false;
         }
 
-        // Temporary replace with dummy to move out the elements of the vector.
-        let v0 = mem::replace(&mut self.payload[k0], None).unwrap();
-        let v1 = mem::replace(&mut self.payload[k1], None).unwrap();
-
-        let (parent, child, val) = match UnionNode::union(v0, v1) {
+        let (parent, child, val) = match UnionNode::union(self.payload[k0].as_ref().unwrap(), self.payload[k1].as_ref().unwrap()) {
             UnionResult::Left(val) => (k0, k1, val),
             UnionResult::Right(val) => (k1, k0, val),
         };
@@ -178,4 +173,57 @@ impl UnionFind {
         self.payload[root_key].as_mut().unwrap()
     }
 
+    pub fn clear(&mut self) {
+        debug_assert!(self.payload.len() == self.link_parent.len());
+        for i in 0..self.link_parent.len() {
+            self.link_parent[i] = i;
+            let node = self.payload[i].as_mut().unwrap();
+            node.set_size = 1;
+            node.cardinality = 0;
+            node.is_touching_boundary = false;
+        }
+    }
+
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn union_find_decoder_test_basic_algorithm() {  // cargo test union_find_decoder_test_basic_algorithm -- --nocapture
+        let mut uf = UnionFind::new(100);
+        // test from https://github.com/gifnksm/union-find-rs/blob/master/src/tests.rs
+        assert_eq!(1, uf.get(0).size());
+        assert_eq!(1, uf.get(1).size());
+        assert!(uf.find(0) != uf.find(1));
+        assert!(uf.immutable_find(0) != uf.immutable_find(1));
+        assert!(uf.find(1) != uf.find(2));
+        assert!(uf.immutable_find(1) != uf.immutable_find(2));
+        assert!(uf.union(0, 1));
+        assert!(uf.find(0) == uf.find(1));
+        assert!(uf.immutable_find(0) == uf.immutable_find(1));
+        assert_eq!(2, uf.get(0).size());
+        assert_eq!(2, uf.get(1).size());
+        assert_eq!(1, uf.get(2).size());
+        assert!(!uf.union(0, 1));
+        assert_eq!(2, uf.get(0).size());
+        assert_eq!(2, uf.get(1).size());
+        assert_eq!(1, uf.get(2).size());
+        assert!(uf.union(1, 2));
+        assert_eq!(3, uf.get(0).size());
+        assert_eq!(3, uf.get(1).size());
+        assert_eq!(3, uf.get(2).size());
+        assert!(uf.immutable_find(0) == uf.immutable_find(1));
+        assert!(uf.find(0) == uf.find(1));
+        assert!(uf.immutable_find(2) == uf.immutable_find(1));
+        assert!(uf.find(2) == uf.find(1));
+        let k100 = uf.insert(UnionNode::default());
+        assert_eq!(k100, 100);
+        let _ = uf.union(k100, 0);
+        assert_eq!(4, uf.get(100).size());
+        assert_eq!(101, uf.size());
+    }
+    
 }

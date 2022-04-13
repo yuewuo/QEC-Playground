@@ -41,6 +41,7 @@ use super::decoder_tailored_mwpm::*;
 use super::tailored_model_graph::*;
 use super::tailored_complete_model_graph::*;
 use super::error_model_builder::*;
+use super::decoder_union_find::*;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -305,6 +306,8 @@ pub enum BenchmarkDecoder {
     MWPM,
     /// tailored surface code MWPM decoder
     TailoredMWPM,
+    /// union-find decoder
+    UnionFind,
 }
 
 /// progress variable shared between threads to update information
@@ -518,6 +521,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         let tailored_mwpm_decoder = if decoder == BenchmarkDecoder::TailoredMWPM {
             Some(TailoredMWPMDecoder::new(&simulator, &error_model, &decoder_config))
         } else { None };
+        let union_find_decoder = if decoder == BenchmarkDecoder::UnionFind {
+            Some(UnionFindDecoder::new(&simulator, &error_model, &decoder_config))
+        } else { None };
         // prepare result variables for simulation
         let benchmark_control = Arc::new(Mutex::new(BenchmarkControl::new()));
         // setup progress bar
@@ -535,6 +541,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let log_runtime_statistics_file = log_runtime_statistics_file.clone();
             let mut mwpm_decoder = mwpm_decoder.clone();
             let mut tailored_mwpm_decoder = tailored_mwpm_decoder.clone();
+            let mut union_find_decoder = union_find_decoder.clone();
             let thread_ended = Arc::new(AtomicBool::new(false));
             threads_ended.push(Arc::clone(&thread_ended));
             let thread_debugger = Arc::new(Mutex::new(BenchmarkThreadDebugger::new()));
@@ -565,6 +572,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                         BenchmarkDecoder::TailoredMWPM => {
                             tailored_mwpm_decoder.as_mut().unwrap().decode(&sparse_measurement)
                         },
+                        BenchmarkDecoder::UnionFind => {
+                            union_find_decoder.as_mut().unwrap().decode(&sparse_measurement)
+                        }
                     };
                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().correction = Some(correction.clone()); }  // runtime debug: find deadlock cases
                     let decode_elapsed = begin.elapsed().as_secs_f64();

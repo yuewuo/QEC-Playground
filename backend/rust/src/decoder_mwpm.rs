@@ -58,6 +58,7 @@ impl MWPMDecoder {
         }
     }
 
+    /// decode given measurement results
     pub fn decode(&mut self, sparse_measurement: &SparseMeasurement) -> (SparseCorrection, serde_json::Value) {
         let mut correction = SparseCorrection::new();
         // list nontrivial measurements to be matched

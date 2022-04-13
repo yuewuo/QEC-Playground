@@ -1063,42 +1063,7 @@ mod tests {
     use super::*;
     use super::super::types::ErrorType;
 
-    // use `cargo test union_find_decoder_test_case_1 -- --nocapture` to run specific test
-
-    #[test]
-    fn union_find_decoder_test_basic_algorithm() {
-        let mut uf = UnionFind::new(100);
-        // test from https://github.com/gifnksm/union-find-rs/blob/master/src/tests.rs
-        assert_eq!(1, uf.get(0).size());
-        assert_eq!(1, uf.get(1).size());
-        assert!(uf.find(0) != uf.find(1));
-        assert!(uf.immutable_find(0) != uf.immutable_find(1));
-        assert!(uf.find(1) != uf.find(2));
-        assert!(uf.immutable_find(1) != uf.immutable_find(2));
-        assert!(uf.union(0, 1));
-        assert!(uf.find(0) == uf.find(1));
-        assert!(uf.immutable_find(0) == uf.immutable_find(1));
-        assert_eq!(2, uf.get(0).size());
-        assert_eq!(2, uf.get(1).size());
-        assert_eq!(1, uf.get(2).size());
-        assert!(!uf.union(0, 1));
-        assert_eq!(2, uf.get(0).size());
-        assert_eq!(2, uf.get(1).size());
-        assert_eq!(1, uf.get(2).size());
-        assert!(uf.union(1, 2));
-        assert_eq!(3, uf.get(0).size());
-        assert_eq!(3, uf.get(1).size());
-        assert_eq!(3, uf.get(2).size());
-        assert!(uf.immutable_find(0) == uf.immutable_find(1));
-        assert!(uf.find(0) == uf.find(1));
-        assert!(uf.immutable_find(2) == uf.immutable_find(1));
-        assert!(uf.find(2) == uf.find(1));
-        let k100 = uf.insert(UnionNode::default());
-        assert_eq!(k100, 100);
-        let _ = uf.union(k100, 0);
-        assert_eq!(4, uf.get(100).size());
-        assert_eq!(101, uf.size());
-    }
+    // use `cargo test union_find_decoder_sanity_check_1 -- --nocapture` to run specific test
     
     #[test]
     #[should_panic]

@@ -42,6 +42,9 @@ macro_rules! simulator_iter_with_filter {
     ($simulator:ident, $position:ident, $filter:expr, delta_t => $delta_t:expr, $body:expr) => {
         simulator_iter_loop!($simulator, $position, __unused_node, $filter, $body, 0, $simulator.height, $delta_t, Option::<bool>::None)
     };
+    ($simulator:ident, $position:ident, $node:ident, $filter:expr, delta_t => $delta_t:expr, $body:expr) => {
+        simulator_iter_loop!($simulator, $position, $node, $filter, $body, 0, $simulator.height, $delta_t, $simulator.get_node_unwrap($position))
+    };
     ($simulator:ident, $position:ident, $node:ident, $filter:expr, $body:expr) => {
         simulator_iter_loop!($simulator, $position, $node, $filter, $body, 0, $simulator.height, 1, $simulator.get_node_unwrap($position))
     };
@@ -58,6 +61,9 @@ macro_rules! simulator_iter {
     };
     ($simulator:ident, $position:ident, delta_t => $delta_t:expr, $body:expr) => {
         simulator_iter_with_filter!($simulator, $position, $simulator.is_node_exist(&$position), delta_t => $delta_t, $body)
+    };
+    ($simulator:ident, $position:ident, $node:ident, delta_t => $delta_t:expr, $body:expr) => {
+        simulator_iter_with_filter!($simulator, $position, $node, $simulator.is_node_exist(&$position), delta_t => $delta_t, $body)
     };
     ($simulator:ident, $position:ident, $node:ident, $body:expr) => {
         simulator_iter_with_filter!($simulator, $position, $node, $simulator.is_node_exist(&$position), $body)
