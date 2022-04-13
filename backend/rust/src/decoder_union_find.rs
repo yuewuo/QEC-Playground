@@ -411,6 +411,52 @@ impl UnionFindDecoder {
         // cache fusion_list in the decoder state, so that the allocated memory is never returned back, reduce the memory allocation costs
         let fusion_list = &mut self.fusion_list;
         fusion_list.clear();
+        let grow_step = if !self.config.use_real_weighted {
+            1
+        } else {
+            // compute the maximum safe length to growth
+            let mut maximum_safe_length = usize::MAX;
+            for &odd_cluster in self.odd_clusters.iter() {
+                let (boundaries_vec, _boundaries) = self.cluster_boundaries.get(&odd_cluster).unwrap();
+                for &boundary in boundaries_vec.iter() {
+                    let neighbor_len = self.nodes[boundary].neighbors.len();
+                    for i in 0..neighbor_len {
+                        let partial_edge = &mut self.nodes[boundary].neighbors[i];
+                        let increased = partial_edge.increased;
+                        let neighbor_index = partial_edge.neighbor;
+                        let neighbor = &mut self.nodes[neighbor_index];
+                        let reverse_index = neighbor.index_to_neighbor[&boundary];
+                        let neighbor_partial_edge = &mut neighbor.neighbors[reverse_index];
+                        if neighbor_partial_edge.increased + increased < neighbor_partial_edge.length {  // not fully grown yet
+                            let mut safe_length = neighbor_partial_edge.length - (neighbor_partial_edge.increased + increased);
+                            // judge if peer needs to grow as well, if so, the safe length is halved
+                            let neighbor_root = self.union_find.find(neighbor_index);
+                            if self.odd_clusters_set.contains(&neighbor_root) {
+                                safe_length /= 2;
+                            }
+                            if safe_length < maximum_safe_length {
+                                maximum_safe_length = safe_length;
+                            }
+                        }
+                    }
+                    // grow to the code boundary if it has
+                    match self.nodes[boundary].boundary_length {
+                        Some(boundary_length) => {
+                            let boundary_increased = &mut self.nodes[boundary].boundary_increased;
+                            if *boundary_increased < boundary_length {
+                                let safe_length = boundary_length - *boundary_increased;
+                                if safe_length < maximum_safe_length {
+                                    maximum_safe_length = safe_length;
+                                }
+                            }
+                        },
+                        None => { }  // do nothing
+                    }
+                }
+            }
+            // grow step cannot be 0
+            if maximum_safe_length != 0 { maximum_safe_length } else { 1 }
+        };
         // grow and update cluster boundaries
         let begin = Instant::now();
         for &odd_cluster in self.odd_clusters.iter() {
@@ -420,7 +466,7 @@ impl UnionFindDecoder {
                 let neighbor_len = self.nodes[boundary].neighbors.len();
                 for i in 0..neighbor_len {
                     let partial_edge = &mut self.nodes[boundary].neighbors[i];
-                    partial_edge.increased += 1;  // may over-grown, but ok as long as weight is much smaller than usize::MAX
+                    partial_edge.increased += grow_step;  // may over-grown, but ok as long as weight is much smaller than usize::MAX
                     let increased = partial_edge.increased;
                     let neighbor_index = partial_edge.neighbor;
                     let neighbor = &mut self.nodes[neighbor_index];
@@ -438,7 +484,7 @@ impl UnionFindDecoder {
                     Some(boundary_length) => {
                         let boundary_increased = &mut self.nodes[boundary].boundary_increased;
                         if *boundary_increased < boundary_length {
-                            *boundary_increased += 1;
+                            *boundary_increased += grow_step;
                             if *boundary_increased >= boundary_length {
                                 self.union_find.get_mut(boundary).is_touching_boundary = true;  // this set is touching the boundary
                             }
