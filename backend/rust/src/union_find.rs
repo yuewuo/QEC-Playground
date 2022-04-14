@@ -29,12 +29,12 @@ pub enum UnionResult {
 }
 
 pub trait UnionNodeTrait {
-    type Payload;
-    fn union(left: &Self::Payload, right: &Self::Payload) -> Either<Self::Payload, Self::Payload>;
+    type SelfType;  // to solve the compilation error to use `Self` directly: size not known at compile time
+    fn union(left: &Self::SelfType, right: &Self::SelfType) -> Either<Self::SelfType, Self::SelfType>;
 }
 
 impl UnionNodeTrait for UnionNode {
-    type Payload = Self;
+    type SelfType = Self;
 
     #[inline]
     fn union(left: &Self, right: &Self) -> Either<Self, Self> {
