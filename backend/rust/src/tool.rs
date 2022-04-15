@@ -452,6 +452,10 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         let py = px;
         let pz = p - 2. * px;
         simulator.set_error_rates(&mut error_model, px, py, pz, pe);
+        // apply customized error model
+        if let Some(error_model_builder) = &error_model_builder {
+            error_model_builder.apply(&mut simulator, &mut error_model, &error_model_configuration, p, bias_eta, pe);
+        }
         debug_assert!({  // check correctness only in debug mode because it's expensive
             let sanity_check_result = code_builder_sanity_check(&simulator);
             if let Err(message) = &sanity_check_result {
@@ -459,10 +463,6 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             }
             sanity_check_result.is_ok()
         });
-        // apply customized error model
-        if let Some(error_model_builder) = &error_model_builder {
-            error_model_builder.apply(&simulator, &mut error_model, &error_model_configuration, p, bias_eta, pe);
-        }
         assert!({  // this assertion is cheap, check it in release mode as well
             let sanity_check_result = error_model_sanity_check(&simulator, &error_model);
             if let Err(message) = &sanity_check_result {

@@ -2,7 +2,7 @@ import os, sys, subprocess
 
 
 import subprocess, sys
-qec_playground_root_dir = subprocess.run("git rev-parse --show-toplevel", cwd=os.path.dirname(__file__), shell=True, check=True, capture_output=True).stdout.decode(sys.stdout.encoding).strip(" \r\n")
+qec_playground_root_dir = subprocess.run("git rev-parse --show-toplevel", cwd=os.path.dirname(os.path.abspath(__file__)), shell=True, check=True, capture_output=True).stdout.decode(sys.stdout.encoding).strip(" \r\n")
 process = subprocess.run(["git", "ls-files"], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=qec_playground_root_dir)
 output = process.stdout
 files = output.split("\n")

@@ -94,7 +94,7 @@ impl ErrorModel {
     }
 }
 
-/// check if error rates are not zero at perfect measurement ranges or at virtual nodes,
+/// check if error rates are not zero at perfect measurement ranges or at (always) virtual nodes,
 /// also check for error rate constrains on virtual nodes
 pub fn error_model_sanity_check(simulator: &Simulator, error_model: &ErrorModel) -> Result<(), String> {
     match simulator.code_type.builtin_code_information() {

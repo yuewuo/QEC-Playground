@@ -18,20 +18,20 @@ min_error_cases = 40000
 max_N = 100000000
 
 slurm_distribute.SLURM_DISTRIBUTE_TIME = "12:20:00"
-slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '16G'  # it took 8G memory at 8x24x24 on my laptop, set higher RAM in HPC
+slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '8G'
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # for more usuable machines, use `SLURM_USE_SCAVENGE_PARTITION=1` flag
-parameters = f"-p{STO(0)} --time_budget {3600} --code_type RotatedTailoredCode --bias_eta 100 --decoder tailored-mwpm --decoder_config {{\"pcmg\":true}} --error_model phenomenological".split(" ")
+parameters = f"-p{STO(0)} --time_budget {3600} --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config {{\"pcmg\":true}} --error_model tailored-sc-bell-init-phenomenological".split(" ")
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run(os.path.dirname(__file__))
 def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playground_command_get_stdout):
 
     for di in di_vec:
-        filename = os.path.join(os.path.dirname(__file__), f"d_{di}_{di}.txt")
+        filename = os.path.join(os.path.dirname(__file__), f"d_{di}.txt")
 
         results = []
         for p in p_vec:
-            command = qec_playground_benchmark_simulator_runner_vec_command([p], [di], [di], [di], parameters, max_N=max_N, min_error_cases=min_error_cases)
+            command = qec_playground_benchmark_simulator_runner_vec_command([p], [di], [di], [0+1], parameters, max_N=max_N, min_error_cases=min_error_cases)
             if slurm_commands_vec is not None:
                 slurm_commands_vec.sanity_checked_append(command)
                 continue

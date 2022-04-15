@@ -16,7 +16,7 @@ If some other default features exist, you must also manually enable them to comp
 
 import os, sys
 import subprocess, sys
-qec_playground_root_dir = subprocess.run("git rev-parse --show-toplevel", cwd=os.path.dirname(__file__), shell=True, check=True, capture_output=True).stdout.decode(sys.stdout.encoding).strip(" \r\n")
+qec_playground_root_dir = subprocess.run("git rev-parse --show-toplevel", cwd=os.path.dirname(os.path.abspath(__file__)), shell=True, check=True, capture_output=True).stdout.decode(sys.stdout.encoding).strip(" \r\n")
 rust_dir = os.path.join(qec_playground_root_dir, "backend", "rust")
 fault_toleran_MWPM_dir = os.path.join(qec_playground_root_dir, "benchmark", "fault_tolerant_MWPM")
 sys.path.insert(0, fault_toleran_MWPM_dir)
