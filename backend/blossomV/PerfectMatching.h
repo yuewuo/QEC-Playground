@@ -37,7 +37,7 @@
 
 
 // if defined, edge costs are of type 'double', otherwise 'int'
-#define PERFECT_MATCHING_DOUBLE
+// #define PERFECT_MATCHING_DOUBLE
 
 // Note: with floating point numbers polynomial complexity is not guaranteed;
 // the code may even get stuck due to rounding errors. If the code terminates,

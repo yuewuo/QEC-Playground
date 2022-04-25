@@ -1,0 +1,6 @@
+create_time = "2022-04-25 16:44:47"
+time_consumption = 61.34369087219238
+command = [ "sudo", "flamegraph", "-o", "/Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.5/CSS_decoding_mwpm_d_5_p_0.005.svg", "/Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp", "tool", "benchmark", "[5]", "[5]", "[0.005]", "--max_repeats", "0", "--min_failed_cases", "0", "--decoder", "mwpm", "--time_budget", "60", "--decoder_config", "{\"precompute_complete_model_graph\":true}",]
+command_str = "sudo flamegraph -o /Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.5/CSS_decoding_mwpm_d_5_p_0.005.svg /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark [5] [5] [0.005] --max_repeats 0 --min_failed_cases 0 --decoder mwpm --time_budget 60 --decoder_config {\"precompute_complete_model_graph\":true}"
+name = "CSS_decoding_mwpm_d_5_p_0.005"
+stdout = [ "format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>", "0.005 5 5 654840 53853 0.08223840938244456 5 8.1e-3 0 ", "writing flamegraph to \"/Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.5/CSS_decoding_mwpm_d_5_p_0.005.svg\"", "",]

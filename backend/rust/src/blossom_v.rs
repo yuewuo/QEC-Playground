@@ -24,10 +24,10 @@ pub fn safe_square_all(input: Vec<f64>) -> Vec<f64> {
 
 #[link(name = "blossomV")]
 extern {
-    fn minimum_weight_perfect_matching(node_num: c_int, edge_num: c_int, edges: *const c_int, weights: *const c_double, matched: *mut c_int);
+    fn minimum_weight_perfect_matching(node_num: c_int, edge_num: c_int, edges: *const c_int, weights: *const c_int, matched: *mut c_int);
 }
 
-pub fn safe_minimum_weight_perfect_matching(node_num: usize, input_weighted_edges: Vec<(usize, usize, f64)>) -> Vec<usize> {
+pub fn safe_minimum_weight_perfect_matching_integer_weights(node_num: usize, input_weighted_edges: Vec<(usize, usize, c_int)>) -> Vec<usize> {
     let weighted_edges = input_weighted_edges;
     let edge_num = weighted_edges.len();
     let mut edges = Vec::with_capacity(2 * edge_num);
@@ -65,6 +65,22 @@ pub fn safe_minimum_weight_perfect_matching(node_num: usize, input_weighted_edge
     }
     let output: Vec<usize> = output.iter().map(|x| *x as usize).collect();
     output
+}
+
+pub fn safe_minimum_weight_perfect_matching(node_num: usize, input_weighted_edges: Vec<(usize, usize, f64)>) -> Vec<usize> {
+    // scale all edges to integer values
+    let mut maximum_weight = 0.;
+    for (_, _, weight) in input_weighted_edges.iter() {
+        if weight > &maximum_weight {
+            maximum_weight = *weight;
+        }
+    }
+    let scale: f64 = (c_int::MAX as f64) / 10. / ((node_num + 1) as f64) / maximum_weight;
+    let mut integer_weighted_edges = Vec::<(usize, usize, c_int)>::with_capacity(input_weighted_edges.len());
+    for (i, j, weight) in input_weighted_edges.into_iter() {
+        integer_weighted_edges.push((i, j, (weight * scale).ceil() as c_int));
+    }
+    safe_minimum_weight_perfect_matching_integer_weights(node_num, integer_weighted_edges)
 }
 
 // important: only takes non-positive inputs

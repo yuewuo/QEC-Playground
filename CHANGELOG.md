@@ -12,6 +12,7 @@ For major updates, please run the [auto profiler](benchmark/auto_profiler/auto_p
 
 - [x] real-weighted union-find decoder
 - [x] make union-find algorithm generic typed to enable advanced information to be computed efficiently
+- [x] change blossom V library to use integer matching, because floating-point matching sometimes enter deadlock
 
 ## 0.1.4 (2022.3.30)
 

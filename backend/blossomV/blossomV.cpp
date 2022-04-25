@@ -3,16 +3,17 @@
 #include "PerfectMatching.h"
 
 extern "C" {
-    void minimum_weight_perfect_matching(int node_num, int edge_num, int* edges, double* weights, int* match);
+    void minimum_weight_perfect_matching(int node_num, int edge_num, int* edges, int* weights, int* match);
 }
 
-void minimum_weight_perfect_matching(int node_num, int edge_num, int* edges, double* weights, int* match) {
+void minimum_weight_perfect_matching(int node_num, int edge_num, int* edges, int* weights, int* match) {
     PerfectMatching *pm = new PerfectMatching(node_num, edge_num);
     for (int e=0; e<edge_num; e++) {
         pm->AddEdge(edges[2*e], edges[2*e+1], weights[e]);
     }
     struct PerfectMatching::Options options;  // use default option
     options.verbose = false;
+	options.fractional_jumpstart = true;
     pm->options = options;
     pm->Solve();
     for (int i=0; i<node_num; i++) {
