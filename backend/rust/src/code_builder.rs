@@ -472,6 +472,32 @@ pub fn build_code(simulator: &mut Simulator) {
                             } else { if i % 2 == 1 { QubitType::StabY } else { QubitType::StabX } };
                             let mut gate_type = GateType::None;
                             let mut gate_peer = None;
+                            // see residual decoding of https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.124.130501
+                            let (is_corner, peer_corner): (bool, Option<Position>) = if is_rotated {
+                                if i == 0 && j == dj {
+                                    (true, Some(pos!(t, 1, dj+1)))
+                                } else if j == 0 && i == dj {
+                                    (true, Some(pos!(t, dj-1, 1)))
+                                } else if i == vertical-1 && j == di {
+                                    (true, Some(pos!(t, vertical-2, di-1)))
+                                } else if i == di && j == vertical-1 {
+                                    (true, Some(pos!(t, di+1, vertical-2)))
+                                } else {
+                                    (false, None)
+                                }
+                            } else {
+                                if i == 0 && j == 1 {
+                                    (true, Some(pos!(t, 1, 0)))
+                                } else if i == 1 && j == horizontal-1 {
+                                    (true, Some(pos!(t, 0, horizontal-2)))
+                                } else if i == vertical-2 && j == 0 {
+                                    (true, Some(pos!(t, vertical-1, 1)))
+                                } else if i == vertical-1 && j == horizontal-2 {
+                                    (true, Some(pos!(t, vertical-2, horizontal-1)))
+                                } else {
+                                    (false, None)
+                                }
+                            };
                             match t % simulator.measurement_cycles {
                                 1 => {  // initialization
                                     match qubit_type {
@@ -543,8 +569,9 @@ pub fn build_code(simulator: &mut Simulator) {
                                 },
                                 _ => unreachable!()
                             }
-                            row_j.push(Some(Box::new(SimulatorNode::new(qubit_type, gate_type, gate_peer.clone()).set_virtual(
-                                is_virtual(i, j), gate_peer.map_or(false, |peer| is_virtual(peer.i, peer.j))))));
+                            row_j.push(Some(Box::new(SimulatorNode::new(qubit_type, gate_type, gate_peer.clone())
+                                .set_virtual(is_virtual(i, j), gate_peer.map_or(false, |peer| is_virtual(peer.i, peer.j)))
+                                .with_miscellaneous(if is_corner { Some(json!({ "is_corner": true, "peer_corner": peer_corner.unwrap() })) } else { None }))));
                         } else {
                             row_j.push(None);
                         }

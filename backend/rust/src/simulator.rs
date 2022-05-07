@@ -82,6 +82,8 @@ pub struct SimulatorNode {
     /// They're useful in tailored surface code decoding, and also to represent virtual boundaries
     pub is_virtual: bool,
     pub is_peer_virtual: bool,
+    /// miscellaneous information, should be static, e.g. decoding assistance information
+    pub miscellaneous: Option<Arc<serde_json::Value>>,
 }
 
 impl SimulatorNode {
@@ -96,6 +98,7 @@ impl SimulatorNode {
             propagated: I,
             is_virtual: false,
             is_peer_virtual: false,
+            miscellaneous: None,
         }
     }
 
@@ -103,6 +106,12 @@ impl SimulatorNode {
     pub fn set_virtual(mut self, is_virtual: bool, is_peer_virtual: bool) -> Self {
         self.is_virtual = is_virtual;
         self.is_peer_virtual = is_peer_virtual;
+        self
+    }
+
+    /// quick initialization to set miscellaneous information
+    pub fn with_miscellaneous(mut self, miscellaneous: Option<serde_json::Value>) -> Self {
+        self.miscellaneous = miscellaneous.map(|x| Arc::new(x));
         self
     }
 
