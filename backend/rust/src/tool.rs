@@ -680,6 +680,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         }
         // wait for all threads to terminate until timeout
         let begin = Instant::now();
+        std::thread::sleep(std::time::Duration::from_millis(500));
         loop {
             let time_elapsed = begin.elapsed().as_secs_f64();
             if thread_timeout >= 0. && time_elapsed >= thread_timeout {  // abnormal break because of timeout
