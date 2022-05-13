@@ -7,6 +7,8 @@ See [this](https://keepachangelog.com/en/1.0.0/) for format of writing change lo
 For major updates, please run the [auto profiler](benchmark/auto_profiler/auto_profiler.md) to test performance and verify correctness
 
 - [ ] update 3D tool to support visualizing data structure from backend
+- [ ] add SQLite support to cache intermediate results, to allow broken-point continuous simulation with a random or specified UUID
+- [ ] add more advanced threshold evaluation script
 
 ## 0.1.5 (2022.4.12)
 

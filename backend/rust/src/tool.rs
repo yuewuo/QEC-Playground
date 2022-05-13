@@ -56,10 +56,20 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             assert!(dis.len() == djs.len(), "dis and djs should be paired");
             let ps: String = matches.value_of_t("ps").expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
+            let ps_graph: Option<String> = matches.value_of_t("ps_graph").ok();
+            let ps_graph: Vec<f64> = match ps_graph {
+                Some(ps_graph) => serde_json::from_str(&ps_graph).expect("ps_graph should be [p1,p2,p3,...,pm]"),
+                None => ps.clone(),
+            };
             let pes: Option<String> = matches.value_of_t("pes").ok();
             let pes: Vec<f64> = match pes {
                 Some(pes) => serde_json::from_str(&pes).expect("pes should be [pe1,pe2,pe3,...,pem]"),
                 None => vec![0.; ps.len()],  // by default no erasure errors
+            };
+            let pes_graph: Option<String> = matches.value_of_t("pes_graph").ok();
+            let pes_graph: Vec<f64> = match pes_graph {
+                Some(pes_graph) => serde_json::from_str(&pes_graph).expect("pes_graph should be [pe1,pe2,pe3,...,pem]"),
+                None => pes.clone(),
             };
             let bias_eta: f64 = matches.value_of_t("bias_eta").unwrap();
             assert_eq!(pes.len(), ps.len(), "pe and p should be paired");
@@ -86,7 +96,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let thread_timeout: f64 = matches.value_of_t("thread_timeout").unwrap();
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
-                , error_model_builder, error_model_configuration, thread_timeout));
+                , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph));
         }
         Some(("fault_tolerant_benchmark", matches)) => {
             let dis: String = matches.value_of_t("Ls").expect("required");
@@ -371,7 +381,8 @@ impl BenchmarkThreadDebugger {
 fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_repeats: usize, min_failed_cases: usize
         , parallel: usize, code_type: String, decoder: BenchmarkDecoder, decoder_config: serde_json::Value, ignore_logical_i: bool, ignore_logical_j: bool
         , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
-        , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value, thread_timeout: f64) -> String {
+        , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
+        , pes_graph: &Vec<f64>) -> String {
     // if parallel = 0, use all CPU resources
     let mut parallel = parallel;
     if parallel == 0 {
@@ -386,6 +397,8 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         "nms": nms,
         "ps": ps,
         "pes": pes,
+        "ps_graph": ps_graph,  // used to build decoding graph
+        "pes_graph": pes_graph,  // used to build decoding graph
         "bias_eta": bias_eta,
         "max_repeats": max_repeats,
         "min_failed_cases": min_failed_cases,
@@ -410,6 +423,8 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
     }
     // first list all configurations and validate them at the beginning
     assert_eq!(pes.len(), ps.len(), "pe and p should be matched");
+    assert_eq!(ps_graph.len(), ps.len(), "ps_graph and p should be matched");
+    assert_eq!(pes_graph.len(), ps.len(), "pes_graph and p should be matched");
     let mut configurations = Vec::new();
     for (di_idx, &di) in dis.iter().enumerate() {
         let noisy_measurements = nms[di_idx];
@@ -417,9 +432,13 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         for (p_idx, p) in ps.iter().enumerate() {
             let p = *p;
             let pe = pes[p_idx];
+            let p_graph = ps_graph[p_idx];
+            let pe_graph = pes_graph[p_idx];
             assert!(p >= 0. && p <= 1.0, "invalid probability value");
+            assert!(p_graph >= 0. && p_graph <= 1.0, "invalid probability value");
             assert!(pe >= 0. && pe <= 1.0, "invalid probability value");
-            configurations.push((di, dj, noisy_measurements, p, pe));
+            assert!(pe_graph >= 0. && pe_graph <= 1.0, "invalid probability value");
+            configurations.push((di, dj, noisy_measurements, p, pe, p_graph, pe_graph));
         }
     }
     let mut output = format!("");
@@ -428,7 +447,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         eprintln!("{}", output);  // compatible with old scripts
     }
     // start running simulations
-    for &(di, dj, noisy_measurements, p, pe) in configurations.iter() {
+    for &(di, dj, noisy_measurements, p, pe, p_graph, pe_graph) in configurations.iter() {
         // append runtime statistics data
         match &log_runtime_statistics_file {
             Some(log_runtime_statistics_file) => {
@@ -440,6 +459,8 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     "noisy_measurements": noisy_measurements,
                     "p": p,
                     "pe": pe,
+                    "p_graph": p_graph,
+                    "pe_graph": pe_graph,
                 }).to_string().as_bytes()).unwrap();
                 log_runtime_statistics_file.write(b"\n").unwrap();
                 log_runtime_statistics_file.sync_data().unwrap();
@@ -447,6 +468,85 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         }
         // prepare simulator
         let mut simulator = Simulator::new(CodeType::new(&code_type, noisy_measurements, di, dj));
+        let mut error_model_graph = ErrorModel::new(&simulator);
+        // first use p_graph and pe_graph to build decoder graph, then revert back to real error model
+        let px_graph = p_graph / (1. + bias_eta) / 2.;
+        let py_graph = px_graph;
+        let pz_graph = p_graph - 2. * px_graph;
+        simulator.set_error_rates(&mut error_model_graph, px_graph, py_graph, pz_graph, pe_graph);
+        // apply customized error model
+        if let Some(error_model_builder) = &error_model_builder {
+            error_model_builder.apply(&mut simulator, &mut error_model_graph, &error_model_configuration, p_graph, bias_eta, pe_graph);
+        }
+        debug_assert!({  // check correctness only in debug mode because it's expensive
+            let sanity_check_result = code_builder_sanity_check(&simulator);
+            if let Err(message) = &sanity_check_result {
+                println!("[error] code_builder_sanity_check: {}", message)
+            }
+            sanity_check_result.is_ok()
+        });
+        assert!({  // this assertion is cheap, check it in release mode as well
+            let sanity_check_result = error_model_sanity_check(&simulator, &error_model_graph);
+            if let Err(message) = &sanity_check_result {
+                println!("[error] error_model_sanity_check: {}", message)
+            }
+            sanity_check_result.is_ok()
+        });
+        simulator.compress_error_rates(&mut error_model_graph);  // by default compress all error rates
+        match debug_print {
+            Some(BenchmarkDebugPrint::ErrorModel) => {
+                return format!("{}\n", serde_json::to_string(&simulator.to_json(&error_model_graph)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::FullErrorModel) => {
+                simulator.expand_error_rates(&mut error_model_graph);  // expand all optional error rates
+                return format!("{}\n", serde_json::to_string(&simulator.to_json(&error_model_graph)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::ModelGraph) => {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut model_graph = ModelGraph::new(&simulator);
+                model_graph.build(&mut simulator, &error_model_graph, &config.weight_function);
+                return format!("{}\n", serde_json::to_string(&model_graph.to_json(&simulator)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::CompleteModelGraph) => {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut model_graph = ModelGraph::new(&simulator);
+                model_graph.build(&mut simulator, &error_model_graph, &config.weight_function);
+                let mut complete_model_graph = CompleteModelGraph::new(&simulator, &model_graph);
+                complete_model_graph.precompute(&simulator, &model_graph, config.precompute_complete_model_graph);
+                return format!("{}\n", serde_json::to_string(&complete_model_graph.to_json(&simulator)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::TailoredModelGraph) => {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
+                tailored_model_graph.build(&mut simulator, &error_model_graph, &config.weight_function);
+                return format!("{}\n", serde_json::to_string(&tailored_model_graph.to_json(&simulator)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::TailoredCompleteModelGraph) => {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
+                tailored_model_graph.build(&mut simulator, &error_model_graph, &config.weight_function);
+                let mut complete_tailored_model_graph = TailoredCompleteModelGraph::new(&simulator, &tailored_model_graph);
+                complete_tailored_model_graph.precompute(&simulator, &tailored_model_graph, config.precompute_complete_model_graph);
+                return format!("{}\n", serde_json::to_string(&complete_tailored_model_graph.to_json(&simulator)).expect("serialize should success"));
+            },
+            _ => { }
+        }
+        let debug_print = Arc::new(debug_print);  // share it across threads
+        let error_model_graph = Arc::new(error_model_graph);  // change mutability of error model
+        // build decoder precomputed data which is shared between threads
+        if decoder == BenchmarkDecoder::None {
+            assert!(decoder_config.is_object() && decoder_config.as_object().unwrap().len() == 0, "this decoder doesn't support decoder configuration");
+        }
+        let mwpm_decoder = if decoder == BenchmarkDecoder::MWPM {
+            Some(MWPMDecoder::new(&simulator, &error_model_graph, &decoder_config))
+        } else { None };
+        let tailored_mwpm_decoder = if decoder == BenchmarkDecoder::TailoredMWPM {
+            Some(TailoredMWPMDecoder::new(&simulator, &error_model_graph, &decoder_config))
+        } else { None };
+        let union_find_decoder = if decoder == BenchmarkDecoder::UnionFind {
+            Some(UnionFindDecoder::new(&simulator, &error_model_graph, &decoder_config))
+        } else { None };
+        // then prepare the real error model
         let mut error_model = ErrorModel::new(&simulator);
         let px = p / (1. + bias_eta) / 2.;
         let py = px;
@@ -471,59 +571,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             sanity_check_result.is_ok()
         });
         simulator.compress_error_rates(&mut error_model);  // by default compress all error rates
-        match debug_print {
-            Some(BenchmarkDebugPrint::ErrorModel) => {
-                return format!("{}\n", serde_json::to_string(&simulator.to_json(&error_model)).expect("serialize should success"));
-            },
-            Some(BenchmarkDebugPrint::FullErrorModel) => {
-                simulator.expand_error_rates(&mut error_model);  // expand all optional error rates
-                return format!("{}\n", serde_json::to_string(&simulator.to_json(&error_model)).expect("serialize should success"));
-            },
-            Some(BenchmarkDebugPrint::ModelGraph) => {
-                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
-                let mut model_graph = ModelGraph::new(&simulator);
-                model_graph.build(&mut simulator, &error_model, &config.weight_function);
-                return format!("{}\n", serde_json::to_string(&model_graph.to_json(&simulator)).expect("serialize should success"));
-            },
-            Some(BenchmarkDebugPrint::CompleteModelGraph) => {
-                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
-                let mut model_graph = ModelGraph::new(&simulator);
-                model_graph.build(&mut simulator, &error_model, &config.weight_function);
-                let mut complete_model_graph = CompleteModelGraph::new(&simulator, &model_graph);
-                complete_model_graph.precompute(&simulator, &model_graph, config.precompute_complete_model_graph);
-                return format!("{}\n", serde_json::to_string(&complete_model_graph.to_json(&simulator)).expect("serialize should success"));
-            },
-            Some(BenchmarkDebugPrint::TailoredModelGraph) => {
-                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
-                let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
-                tailored_model_graph.build(&mut simulator, &error_model, &config.weight_function);
-                return format!("{}\n", serde_json::to_string(&tailored_model_graph.to_json(&simulator)).expect("serialize should success"));
-            },
-            Some(BenchmarkDebugPrint::TailoredCompleteModelGraph) => {
-                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
-                let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
-                tailored_model_graph.build(&mut simulator, &error_model, &config.weight_function);
-                let mut complete_tailored_model_graph = TailoredCompleteModelGraph::new(&simulator, &tailored_model_graph);
-                complete_tailored_model_graph.precompute(&simulator, &tailored_model_graph, config.precompute_complete_model_graph);
-                return format!("{}\n", serde_json::to_string(&complete_tailored_model_graph.to_json(&simulator)).expect("serialize should success"));
-            },
-            _ => { }
-        }
-        let debug_print = Arc::new(debug_print);  // share it across threads
         let error_model = Arc::new(error_model);  // change mutability of error model
-        // build decoder precomputed data which is shared between threads
-        if decoder == BenchmarkDecoder::None {
-            assert!(decoder_config.is_object() && decoder_config.as_object().unwrap().len() == 0, "this decoder doesn't support decoder configuration");
-        }
-        let mwpm_decoder = if decoder == BenchmarkDecoder::MWPM {
-            Some(MWPMDecoder::new(&simulator, &error_model, &decoder_config))
-        } else { None };
-        let tailored_mwpm_decoder = if decoder == BenchmarkDecoder::TailoredMWPM {
-            Some(TailoredMWPMDecoder::new(&simulator, &error_model, &decoder_config))
-        } else { None };
-        let union_find_decoder = if decoder == BenchmarkDecoder::UnionFind {
-            Some(UnionFindDecoder::new(&simulator, &error_model, &decoder_config))
-        } else { None };
         // prepare result variables for simulation
         let benchmark_control = Arc::new(Mutex::new(BenchmarkControl::new()));
         // setup progress bar
