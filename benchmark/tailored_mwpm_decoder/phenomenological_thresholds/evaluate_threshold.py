@@ -10,7 +10,7 @@ from threshold_analyzer import run_qecp_command_get_stdout, compile_code_if_nece
 from threshold_analyzer import ThresholdAnalyzer
 
 rough_code_distances = [5,7]
-rough_runtime_budgets = [(6000, 60), (6000, 600)]
+rough_runtime_budgets = [(6000, 600), (6000, 2400)]
 rough_init_search_start_p = 0.15  # already know all possible threshold is below 15%
 code_distances = [7,9,11,13,15]
 runtime_budgets = [(180000, 7200)] * len(code_distances)  # each given one hour
@@ -56,15 +56,15 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qecp_comman
 
     for bias_eta in bias_eta_vec:
         print(f"bias_eta: {bias_eta}")
-        
+
         parameters = generate_parameters(bias_eta)
-        def generate_command(p, d, runtime_budget):
+        def generate_command(p, d, runtime_budget, p_center=None):
             min_error_case, time_budget = runtime_budget
-            command = qecp_benchmark_simulate_func_command_vec(p, d, d, d, parameters, min_error_cases=min_error_case, time_budget=time_budget)
+            command = qecp_benchmark_simulate_func_command_vec(p, d, d, d, parameters, min_error_cases=min_error_case, time_budget=time_budget, p_graph=p_center)
             return command
 
-        def simulate_func(p, d, runtime_budget):
-            command = generate_command(p, d, runtime_budget)
+        def simulate_func(p, d, runtime_budget, p_graph=None):
+            command = generate_command(p, d, runtime_budget, p_graph)
             stdout, returncode = run_command_get_stdout(command)
             assert returncode == 0, "command fails..."
             full_result = stdout.strip(" \r\n").split("\n")[-1]
@@ -110,8 +110,8 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qecp_comman
         if slurm_commands_vec is not None:
             collected_parameters, p_list = threshold_analyzer.precise_estimate_parameters(rough_popt)
             for collected_parameters_row in collected_parameters:
-                for (p, d, runtime_budget) in collected_parameters_row:
-                    command = generate_command(p, d, runtime_budget)
+                for (p, d, runtime_budget, p_center) in collected_parameters_row:
+                    command = generate_command(p, d, runtime_budget, p_center)
                     slurm_commands_vec.sanity_checked_append(command)
             continue  # skip handling results
     

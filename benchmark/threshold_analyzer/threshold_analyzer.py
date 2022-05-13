@@ -22,7 +22,8 @@ rust_dir = os.path.join(qec_playground_root_dir, "backend", "rust")
 
 example_default_rough_runtime_budget = (3000, 60)  # runtime_budget can be any format, here example is (min error case, max time)
 example_default_runtime_budget = (18000, 3600)  # 1 hours or 18000 samples
-def example_simulate_func(p, d, runtime_budget):
+# p_graph is used to build the decoding graph: to have a better accuracy when evaluating threshold, we need to fix the decoding graph
+def example_simulate_func(p, d, runtime_budget, p_graph=None):
     min_error_case, time_budget = runtime_budget
     A = 0.3  # logical error rate at threshold is 30%
     B = 1  # does not scale
@@ -54,6 +55,7 @@ def compile_code_if_necessary(additional_build_parameters=None):
         QEC_PLAYGROUND_COMPILATION_DONE = True
 
 def run_qecp_command_get_stdout(command, no_stdout=False, use_tmp_out=False, stderr_to_stdout=False):
+    print("\n[command]", command)
     compile_code_if_necessary()
     env = os.environ.copy()
     env["RUST_BACKTRACE"] = "full"
@@ -74,7 +76,7 @@ def run_qecp_command_get_stdout(command, no_stdout=False, use_tmp_out=False, std
         os.remove(out_filename)
     return stdout, process.returncode
 
-def qecp_benchmark_simulate_func_command_vec(p, di, dj, T, parameters, max_repeats=1000000000, min_error_cases=3000, rust_dir=rust_dir, time_budget=None):
+def qecp_benchmark_simulate_func_command_vec(p, di, dj, T, parameters, max_repeats=1000000000, min_error_cases=3000, rust_dir=rust_dir, time_budget=None, p_graph=None):
     p_str = f"[{p:.8e}]"
     di_str = f"[{str(di)}]"
     dj_str = f"[{str(dj)}]"
@@ -83,13 +85,15 @@ def qecp_benchmark_simulate_func_command_vec(p, di, dj, T, parameters, max_repea
     command = [qecp_path, "tool", "benchmark", di_str, "--djs", dj_str, T_str, f"-m{max_repeats}", f"-e{min_error_cases}", p_str] + parameters
     if time_budget is not None:
         command += ["--time_budget", f"{time_budget}"]
+    if p_graph is not None:
+        command += ["--ps_graph", f"[{p_graph:.8e}]"]
     return command
 
 # example of how to wrap qecp_benchmark_simulate_func_basic: CSS surface code with single round of perfect measurement
-def example_qecp_benchmark_simulate_func(p, d, runtime_budget):
+def example_qecp_benchmark_simulate_func(p, d, runtime_budget, p_graph=None):
     min_error_case, time_budget = runtime_budget
     parameters = f"-p0 --decoder mwpm --decoder_config {{\"pcmg\":true}}".split(" ")
-    command = qecp_benchmark_simulate_func_command_vec(p, d, d, 0, parameters, min_error_cases=min_error_case, time_budget=time_budget)
+    command = qecp_benchmark_simulate_func_command_vec(p, d, d, 0, parameters, min_error_cases=min_error_case, time_budget=time_budget, p_graph=p_graph)
     stdout, returncode = run_qecp_command_get_stdout(command)
     assert returncode == 0, "command fails..."
     full_result = stdout.strip(" \r\n").split("\n")[-1]
@@ -258,7 +262,7 @@ class ThresholdAnalyzer:
         for i, d in enumerate(self.rough_code_distances):
             collected_data_row = []
             for p in p_list:
-                pl, dev = self.simulate_func(p, d, self.rough_runtime_budgets[i])
+                pl, dev = self.simulate_func(p, d, self.rough_runtime_budgets[i], p_graph=init_center)  # use this center point to build decoding graph
                 collected_data_row.append((pl, dev))
             collected_data.append(collected_data_row)
         self.collected_data_list.append((self.rough_code_distances, p_list, collected_data))
@@ -283,18 +287,20 @@ class ThresholdAnalyzer:
         for i, d in enumerate(self.code_distances):
             collected_parameters_row = []
             for p in p_list:
-                collected_parameters_row.append((p, d, self.runtime_budgets[i]))
+                collected_parameters_row.append((p, d, self.runtime_budgets[i], p_center))  # use this center point to build decoding graph
             collected_parameters.append(collected_parameters_row)
         return collected_parameters, p_list
 
     def precise_estimate(self, rough_popt):
+        if self.verbose:
+            print(f"[info] precise estimate given rough starting point: {rough_popt[3]}")
         # collect all data from simulation
         collected_parameters, p_list = self.precise_estimate_parameters(rough_popt)
         collected_data = []
         for i, collected_parameters_row in enumerate(collected_parameters):
             collected_data_row = []
-            for j, (p, d, runtime_budget) in enumerate(collected_parameters_row):
-                pl, dev = self.simulate_func(p, d, runtime_budget)
+            for j, (p, d, runtime_budget, p_center) in enumerate(collected_parameters_row):
+                pl, dev = self.simulate_func(p, d, runtime_budget, p_center)
                 collected_data_row.append((pl, dev))
             collected_data.append(collected_data_row)
         self.collected_data_list.append((self.code_distances, p_list, collected_data))
