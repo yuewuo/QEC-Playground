@@ -107,8 +107,11 @@ def slurm_distribute_wrap(program, filefolder):
 
         slurm_jobs_folder = os.path.join(os.path.abspath(filefolder), "slurm_jobs")
         job_script_sbatch_path = os.path.join(slurm_jobs_folder, f"job_script.sbatch")
+        # sbatch: error: Batch job submission failed: Pathname of a file, directory or other parameter too long
+        # Yue 2022.5.13: in order to fix the above issue, I need to put the commands outside of sbatch file...
+        job_script_sh_path = os.path.join(slurm_jobs_folder, f"job_script.sh")
         if SLURM_DISTRIBUTE_ENABLED and SLURM_USE_PREVIOUS_DATA_IF_POSSIBLE:
-            previous_job_commands = read_job_commands_from_sbatch(job_script_sbatch_path)
+            previous_job_commands = read_job_commands_from_sbatch(job_script_sbatch_path, job_script_sh_path)
             existing_jobouts = [None for e in stringify_commands]
             def command_equal(cmd1, cmd2):
                 # don't care the parameter (usually binary path) before the first space character
@@ -173,7 +176,8 @@ def slurm_distribute_wrap(program, filefolder):
                 job_script_sbatch_content += f"#!/bin/bash\n"
                 for parameter in parameters:
                     job_script_sbatch_content += f"#SBATCH {parameter}\n"
-                job_script_sbatch_content += "\n"
+                job_script_sbatch_content += f"\nsource {job_script_sh_path}\n\n"
+                job_script_sh_content = "#!/bin/bash\n\n"
                 ERRCODE = 91
                 stringify_command_set = {}
                 for idx, command in enumerate(slurm_commands_vec):
@@ -183,15 +187,19 @@ def slurm_distribute_wrap(program, filefolder):
                         confirm_or_die(f"duplicate command from {stringify_command_set[stringify_command]} and {idx}: {stringify_command}")
                     stringify_command_set[stringify_command] = idx
                 if DEBUG_USING_INTERACTIVE_PARTITION:
-                    job_script_sbatch_content += f'if [ "$SLURM_ARRAY_TASK_ID" == "0" ];\n'
-                    job_script_sbatch_content += f'then\n'
+                    job_script_sh_content += f'if [ "$SLURM_ARRAY_TASK_ID" == "0" ];\n'
+                    job_script_sh_content += f'then\n'
                     for idx, command in enumerate(slurm_commands_vec):
-                        job_script_sbatch_content += f'    {stringify_commands[idx]} || exit {ERRCODE};\n'
-                    job_script_sbatch_content += f'fi\n'
+                        job_script_sh_content += f'    {stringify_commands[idx]} || exit {ERRCODE};\n'
+                    job_script_sh_content += f'fi\n'
                 else:
                     for idx, command in enumerate(slurm_commands_vec):
-                        job_script_sbatch_content += f'if [ "$SLURM_ARRAY_TASK_ID" == "{idx}" ]; then {stringify_commands[idx]} || exit {ERRCODE}; fi\n'
-                job_script_sbatch_content += "\n"
+                        job_script_sh_content += f'if [ "$SLURM_ARRAY_TASK_ID" == "{idx}" ]; then {stringify_commands[idx]} || exit {ERRCODE}; fi\n'
+                job_script_sh_content += "\n"
+                with open(job_script_sh_path, "w", encoding="utf8") as f:
+                    f.write(job_script_sh_content)
+                print(f"{job_script_sh_path}:\n")
+                print(job_script_sh_content, end='')
                 with open(job_script_sbatch_path, "w", encoding="utf8") as f:
                     f.write(job_script_sbatch_content)
                 print(f"{job_script_sbatch_path}:\n")
@@ -378,15 +386,16 @@ def get_job_count_from_sbatch(sbatch_file_path):
                 job_count = int(line[len("#SBATCH --array=0-"):]) + 1
     return job_count
 
-def read_job_commands_from_sbatch(sbatch_file_path):
+def read_job_commands_from_sbatch(sbatch_file_path, job_script_sh_path):
     job_commands = []
-    with open(sbatch_file_path, "r", encoding="utf8") as f:
-        for line in f.readlines():
-            if line.startswith('if [ "$SLURM_ARRAY_TASK_ID" == '):
-                line = "".join(line.split("]; then ")[1:])
-                line = "".join(line.split(" || exit")[:-1])
-                # print(line)
-                job_commands.append(line)
+    for filepath in [sbatch_file_path, job_script_sh_path]:
+        with open(filepath, "r", encoding="utf8") as f:
+            for line in f.readlines():
+                if line.startswith('if [ "$SLURM_ARRAY_TASK_ID" == '):
+                    line = "".join(line.split("]; then ")[1:])
+                    line = "".join(line.split(" || exit")[:-1])
+                    # print(line)
+                    job_commands.append(line)
     return job_commands
 
 if __name__ == "__main__":

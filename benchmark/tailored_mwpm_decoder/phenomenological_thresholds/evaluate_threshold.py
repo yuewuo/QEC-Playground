@@ -12,11 +12,11 @@ from threshold_analyzer import ThresholdAnalyzer
 rough_code_distances = [5,7]
 rough_runtime_budgets = [(6000, 600), (6000, 2400)]
 rough_init_search_start_p = 0.15  # already know all possible threshold is below 15%
-code_distances = [7,9,11,13,15]
-runtime_budgets = [(180000, 7200)] * len(code_distances)  # each given one hour
+code_distances = [7,9,11,13]
+runtime_budgets = [(180000, 3600 * 4)] * len(code_distances)  # each given one hour
 bias_eta_vec = [0.5, 1, 3, 10, 30, 100, 300, 1000, 1e200]  # only one bias
 
-slurm_distribute.SLURM_DISTRIBUTE_TIME = "2:20:00"
+slurm_distribute.SLURM_DISTRIBUTE_TIME = "4:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '16G'
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # for more usuable machines, use `SLURM_USE_SCAVENGE_PARTITION=1` flag
 def generate_parameters(bias_eta):
