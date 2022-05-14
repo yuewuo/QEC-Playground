@@ -1118,7 +1118,7 @@ mod tests {
         assert!(!simulator.is_node_exist(&nonexisting_position), "nonexisting position");
         println!("std::mem::size_of::<SimulatorNode>() = {}", std::mem::size_of::<SimulatorNode>());
         println!("std::mem::size_of::<ErrorModelNode>() = {}", std::mem::size_of::<ErrorModelNode>());
-        if std::mem::size_of::<SimulatorNode>() > 16 {  // ArmV8 data cache line is 64 bytes
+        if std::mem::size_of::<SimulatorNode>() > 24 {  // ArmV8 data cache line is 64 bytes
             panic!("SimulatorNode which is unexpectedly large, check if anything wrong");
         }
     }

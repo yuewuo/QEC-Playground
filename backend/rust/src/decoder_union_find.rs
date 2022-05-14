@@ -612,7 +612,7 @@ mod tests {
             "precompute_complete_model_graph": true,
         });
         let enable_all = true;
-        let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config);
+        let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config, 1);
         if true || enable_all {  // debug 5
             simulator.clear_all_errors();
             // {"[0][4][6]":"Z","[0][5][8]":"Z","[0][5][9]":"Z","[0][7][1]":"Z","[0][9][1]":"Z"}

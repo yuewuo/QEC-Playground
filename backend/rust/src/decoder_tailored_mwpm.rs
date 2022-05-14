@@ -584,7 +584,7 @@ mod tests {
         let decoder_config = json!({
             "precompute_complete_model_graph": true,
         });
-        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config);
+        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config, 1);
         {  // debug 7: residual decoding
             simulator.clear_all_errors();
             simulator.get_node_mut_unwrap(&pos!(0, 7, 5)).set_error(&error_model, &Z);
@@ -700,7 +700,7 @@ mod tests {
         let decoder_config = json!({
             "precompute_complete_model_graph": true,
         });
-        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config);
+        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config, 1);
         {  // debug 9: failing case: {"[0][7][5]":"Y","[0][8][4]":"Z"}
             simulator.clear_all_errors();
             simulator.get_node_mut_unwrap(&pos!(0, 7, 5)).set_error(&error_model, &Y);
@@ -752,7 +752,7 @@ mod tests {
         let decoder_config = json!({
             "precompute_complete_model_graph": true,
         });
-        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config);
+        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config, 1);
         {  // debug 10: infinite loop case
             simulator.clear_all_errors();
             simulator.get_node_mut_unwrap(&pos!(0, 6, 4)).set_error(&error_model, &Z);
@@ -792,7 +792,7 @@ mod tests {
         let decoder_config = json!({
             "precompute_complete_model_graph": true,
         });
-        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config);
+        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config, 1);
         // let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[0][10][13]":"Z","[0][10][7]":"Z","[0][10][8]":"Z","[0][11][11]":"Z","[0][11][1]":"Z","[0][11][5]":"Z","[0][11][7]":"Z","[0][11][9]":"Z","[0][12][12]":"Z","[0][12][14]":"Z","[0][12][5]":"Z","[0][13][20]":"Z","[0][14][11]":"Z","[0][14][12]":"Z","[0][14][14]":"Z","[0][14][17]":"Z","[0][15][10]":"Z","[0][15][14]":"Z","[0][15][15]":"Z","[0][15][7]":"Z","[0][16][16]":"Z","[0][16][5]":"Z","[0][17][11]":"Z","[0][17][14]":"Z","[0][17][15]":"Z","[0][18][11]":"Z","[0][18][8]":"Z","[0][19][10]":"Z","[0][19][12]":"Z","[0][4][8]":"Z","[0][5][12]":"Z","[0][5][13]":"Z","[0][5][14]":"Z","[0][6][13]":"Z","[0][6][14]":"Z","[0][6][6]":"Z","[0][6][8]":"Z","[0][6][9]":"Z","[0][7][11]":"Z","[0][7][15]":"Z","[0][8][15]":"Z","[0][8][17]":"Z","[0][8][6]":"Z","[0][8][7]":"Z","[0][9][12]":"Z","[0][9][15]":"Z","[0][9][16]":"Z","[0][9][17]":"Z","[0][9][18]":"Z","[0][9][2]":"Z","[0][9][3]":"Z","[0][9][5]":"Z","[0][9][6]":"Z"}"#).unwrap();
         let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[0][10][17]":"Z","[0][10][9]":"Z","[0][11][13]":"Z","[0][11][15]":"Z","[0][11][16]":"Z","[0][11][3]":"Z","[0][12][12]":"Z","[0][12][16]":"Z","[0][12][18]":"Z","[0][12][9]":"Z","[0][13][10]":"Z","[0][13][11]":"Z","[0][13][20]":"Z","[0][13][7]":"Z","[0][13][9]":"Z","[0][14][10]":"Z","[0][14][14]":"Z","[0][14][18]":"Z","[0][14][4]":"Z","[0][14][6]":"Z","[0][14][7]":"Z","[0][15][10]":"Z","[0][15][11]":"Z","[0][15][15]":"Z","[0][15][18]":"Z","[0][15][6]":"Z","[0][16][10]":"Z","[0][16][14]":"Z","[0][16][15]":"Z","[0][17][11]":"Z","[0][17][14]":"Z","[0][17][8]":"Z","[0][17][9]":"Z","[0][19][10]":"Z","[0][1][10]":"Z","[0][1][11]":"Z","[0][20][12]":"Z","[0][21][11]":"Z","[0][21][12]":"Z","[0][4][10]":"Z","[0][5][12]":"Z","[0][6][12]":"Z","[0][6][15]":"Z","[0][7][15]":"Z","[0][7][4]":"Z","[0][7][9]":"Z","[0][8][11]":"Z","[0][8][12]":"Z","[0][8][15]":"Z","[0][9][10]":"Z","[0][9][14]":"Z","[0][9][15]":"Z","[0][9][16]":"Z"}"#).unwrap();
         // println!("{:?}", error_pattern);
@@ -827,7 +827,7 @@ mod tests {
         let decoder_config = json!({
             "precompute_complete_model_graph": true,
         });
-        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config);
+        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config, 1);
         {
             simulator.clear_all_errors();
             simulator.get_node_mut_unwrap(&pos!(0, 7, 7)).set_error(&error_model, &Z);
@@ -865,7 +865,7 @@ mod tests {
         let decoder_config = json!({
             "precompute_complete_model_graph": true,
         });
-        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config);
+        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config, 1);
         {  // debug: why 2 Z errors can cause logical error?
             simulator.clear_all_errors();
             simulator.get_node_mut_unwrap(&pos!(0, 4, 4)).set_error(&error_model, &Z);

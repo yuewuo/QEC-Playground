@@ -332,7 +332,7 @@ impl TailoredCompleteModelGraph {
             }
         });
         if precompute_complete_model_graph {
-            if parallel == 1 {
+            if parallel <= 1 {
                 simulator_iter!(simulator, position, if self.is_node_exist(position) {
                     self.precompute_dijkstra(position);
                 });
