@@ -8,7 +8,7 @@ use super::tailored_model_graph::*;
 use super::complete_model_graph::*;
 use super::priority_queue::PriorityQueue;
 use super::float_ord::FloatOrd;
-use std::sync::{Arc};
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct TailoredCompleteModelGraph {
@@ -320,7 +320,7 @@ impl TailoredCompleteModelGraph {
 
     /// precompute complete model graph if `precompute_complete_model_graph` is set
     #[inline(never)]
-    pub fn precompute(&mut self, simulator: &Simulator, precompute_complete_model_graph: bool) {
+    pub fn precompute(&mut self, simulator: &Simulator, precompute_complete_model_graph: bool, parallel: usize) {
         self.precompute_complete_model_graph = precompute_complete_model_graph;
         // clear existing state
         simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if self.is_node_exist(position) {
@@ -332,9 +332,47 @@ impl TailoredCompleteModelGraph {
             }
         });
         if precompute_complete_model_graph {
-            simulator_iter!(simulator, position, if self.is_node_exist(position) {
-                self.precompute_dijkstra(position);
-            });
+            if parallel == 1 {
+                simulator_iter!(simulator, position, if self.is_node_exist(position) {
+                    self.precompute_dijkstra(position);
+                });
+            } else {
+                // spawn `parallel` threads to compute in parallel
+                let mut handlers = Vec::new();
+                let mut instances = Vec::new();
+                let shared_simulator = Arc::new(simulator.clone());
+                for parallel_idx in 0..parallel {
+                    let instance = Arc::new(Mutex::new(self.clone()));
+                    let simulator = Arc::clone(&shared_simulator);
+                    let thread_idx = parallel_idx;
+                    instances.push(Arc::clone(&instance));
+                    handlers.push(std::thread::spawn(move || {
+                        let mut counter = 0;
+                        let mut instance = instance.lock().unwrap();
+                        simulator_iter!(simulator, position, if instance.is_node_exist(position) {
+                            if counter % parallel == thread_idx {  // only compute my part of share
+                                instance.precompute_dijkstra(position);
+                            }
+                            counter += 1;
+                        });
+                    }));
+                }
+                for handler in handlers.drain(..) {
+                    handler.join().unwrap();
+                }
+                // move the data from instances (without additional large memory allocation)
+                let mut counter = 0;
+                simulator_iter!(simulator, position, if self.is_node_exist(position) {
+                    let instance = &instances[counter % parallel];
+                    let mut instance = instance.lock().unwrap();
+                    let node = self.get_node_mut_unwrap(&position);
+                    let instance_node = instance.get_node_mut_unwrap(&position);
+                    for idx in 0..3 {
+                        node[idx].precomputed = instance_node[idx].precomputed.clone();
+                    }
+                    counter += 1;
+                });
+            }
             // it's safe to disable copying all complete graph edges
             for array in self.nodes.iter_mut() {
                 for array in array.iter_mut() {

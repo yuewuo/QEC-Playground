@@ -70,7 +70,7 @@ impl TailoredMWPMDecoder {
         let tailored_model_graph = Arc::new(tailored_model_graph);
         // build complete model graph
         let mut tailored_complete_model_graph = TailoredCompleteModelGraph::new(&simulator, Arc::clone(&tailored_model_graph));
-        tailored_complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph);
+        tailored_complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph, parallel);
         // build virtual nodes for decoding use
         let mut virtual_nodes = Vec::new();
         simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if tailored_model_graph.is_node_exist(position) {
