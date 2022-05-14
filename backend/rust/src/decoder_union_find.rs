@@ -113,10 +113,11 @@ impl UnionFindDecoder {
         let mut simulator = simulator.clone();
         let mut model_graph = ModelGraph::new(&simulator);
         model_graph.build(&mut simulator, &error_model, &config.weight_function);
+        let model_graph = Arc::new(model_graph);
         // build complete model graph
-        let mut complete_model_graph = CompleteModelGraph::new(&simulator, &model_graph);
+        let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
         complete_model_graph.optimize_weight_greater_than_sum_boundary = false;  // disable this optimization for any matching pair to exist
-        complete_model_graph.precompute(&simulator, &model_graph, config.precompute_complete_model_graph);
+        complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph);
         // build union-find graph
         let mut index_to_position = Vec::<Position>::new();
         let mut position_to_index = BTreeMap::<Position, usize>::new();
@@ -198,7 +199,7 @@ impl UnionFindDecoder {
         }
         let union_find = UnionFind::new(nodes.len());
         Self {
-            model_graph: Arc::new(model_graph),
+            model_graph: Arc::clone(&model_graph),
             complete_model_graph: complete_model_graph,
             index_to_position: Arc::new(index_to_position),
             position_to_index: Arc::new(position_to_index),

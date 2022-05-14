@@ -20,17 +20,40 @@ pub struct CompleteModelGraph {
     pub active_timestamp: usize,
     /// optimization flag to remove edge if sum of boundary weights is greater than the path weight
     pub optimize_weight_greater_than_sum_boundary: bool,
+    /// the model graph to build this complete model graph
+    pub model_graph: Arc<ModelGraph>,
 }
 
 /// precomputed data can help reduce runtime complexity, at the cost of more memory usage
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct CompleteModelGraphNode {
+    /// flag to duplicate [`PrecomputedData`] inside [`Self::precomputed`]
+    duplicate_on_clone: bool,
     /// precomputed data can help reduce runtime complexity, at the cost of more memory usage
     pub precomputed: Option<Arc<PrecomputedData>>,
     /// timestamp for Dijkstra's algorithm
     pub timestamp: usize,
-    /// cache all edges currently needed to reconstruct path between interested pairs, will be cleared if timestamp is updated
-    pub cache: BTreeMap<Position, CompleteModelGraphEdge>,
+    /// previous value, invalidated along timestamp
+    pub previous: Option<Arc<Position>>,
+}
+
+/// clone works a little bit different to copy PrecomputedData accordingly
+impl Clone for CompleteModelGraphNode {
+    fn clone(&self) -> Self {
+        let mut result = Self {
+            duplicate_on_clone: self.duplicate_on_clone,
+            precomputed: self.precomputed.clone(),
+            timestamp: self.timestamp,
+            previous: None,
+        };
+        if self.duplicate_on_clone {
+            if self.precomputed.is_some() {
+                // allocate new memory to copy the precomputed data
+                result.precomputed = Some(Arc::new((**self.precomputed.as_ref().unwrap()).clone()));
+            }
+        }
+        result
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -50,8 +73,15 @@ pub struct PrecomputedData {
     pub boundary: Option<CompleteModelGraphEdge>,
 }
 
+impl PrecomputedData {
+    /// clear existing data for edges, to save memory
+    pub fn clear_edges(&mut self) {
+        self.edges.clear();
+    }
+}
+
 impl CompleteModelGraph {
-    pub fn new(simulator: &Simulator, model_graph: &ModelGraph) -> Self {
+    pub fn new(simulator: &Simulator, model_graph: Arc<ModelGraph>) -> Self {
         assert!(simulator.volume() > 0, "cannot build graph out of zero-sized simulator");
         Self {
             precompute_complete_model_graph: false,
@@ -61,9 +91,10 @@ impl CompleteModelGraph {
                         let position = &pos!(t, i, j);
                         if model_graph.is_node_exist(position) {
                             return Some(Box::new(CompleteModelGraphNode {
+                                duplicate_on_clone: true,  // default behavior, just clone for safe
                                 precomputed: None,
                                 timestamp: 0,
-                                cache: BTreeMap::new(),
+                                previous: None,
                             }))
                         }
                         None
@@ -72,6 +103,7 @@ impl CompleteModelGraph {
             }).collect(),
             active_timestamp: 0,
             optimize_weight_greater_than_sum_boundary: true,
+            model_graph: model_graph,
         }
     }
 
@@ -136,9 +168,11 @@ impl CompleteModelGraph {
     }
 
     /// get edges in a batch manner to improve speed if need to run Dijkstra's algorithm on the fly;
-    /// this function will clear any out-of-date cache
     pub fn get_edges(&mut self, position: &Position, targets: &Vec<Position>) -> (Vec<(usize, f64)>, Option<f64>) {
-        if self.precompute_complete_model_graph {
+        if !self.precompute_complete_model_graph {
+            self.precompute_dijkstra(position);
+        }
+        let (edges, boundary) = {
             let mut edges = Vec::new();
             let node = self.get_node_unwrap(position);
             let precomputed = node.precomputed.as_ref().unwrap();
@@ -148,16 +182,18 @@ impl CompleteModelGraph {
                 }
             }
             (edges, precomputed.boundary.as_ref().map(|boundary| boundary.weight))
-        } else {
-            unimplemented!();
+        };
+        if !self.precompute_complete_model_graph {
+            Arc::get_mut(self.get_node_mut_unwrap(position).precomputed.as_mut().unwrap()).unwrap().clear_edges();  // free memory immediately
         }
+        (edges, boundary)
     }
 
-    /// build correction with matching, requires [`Self::get_edges`] to be run before to cache the edges
-    pub fn build_correction_matching(&self, source: &Position, target: &Position, model_graph: &ModelGraph) -> SparseCorrection {
+    /// build correction with matching
+    pub fn build_correction_matching(&mut self, source: &Position, target: &Position, model_graph: &ModelGraph) -> SparseCorrection {
+        let mut correction = SparseCorrection::new();
+        let mut source = source.clone();
         if self.precompute_complete_model_graph {
-            let mut correction = SparseCorrection::new();
-            let mut source = source.clone();
             while &source != target {
                 let node = self.get_node_unwrap(&source);
                 let precomputed = node.precomputed.as_ref().unwrap();
@@ -172,43 +208,51 @@ impl CompleteModelGraph {
             }
             correction
         } else {
-            // only read from cache, to improve efficiency
-            unimplemented!();
+            self.precompute_dijkstra(target);
+            // logic is different from what's happening if `precompute_complete_model_graph` is set
+            while &source != target {
+                let node = self.get_node_unwrap(&source);
+                assert_eq!(node.timestamp, self.active_timestamp, "after running `precompute_dijkstra`, this node must be visited");
+                let next: Position = (**(node.previous.as_ref().expect("must exist a path"))).clone();
+                let model_graph_node = model_graph.get_node_unwrap(&source);
+                let next_edge = model_graph_node.edges.get(&next);
+                let next_correction = &next_edge.as_ref().unwrap().correction;
+                correction.extend(next_correction);
+                source = next;
+            }
+            Arc::get_mut(self.get_node_mut_unwrap(target).precomputed.as_mut().unwrap()).unwrap().clear_edges();  // free memory immediately
+            correction
         }
     }
 
-    /// build correction with boundary, requires [`Self::get_edges`] to be run before to cache the edges
-    pub fn build_correction_boundary(&self, position: &Position, model_graph: &ModelGraph) -> SparseCorrection {
-        if self.precompute_complete_model_graph {
-            let mut correction = SparseCorrection::new();
-            let mut position = position.clone();
-            loop {
-                let node = self.get_node_unwrap(&position);
-                let precomputed = node.precomputed.as_ref().unwrap();
-                let boundary = precomputed.boundary.as_ref().unwrap();
-                let next = &boundary.next;
-                let model_graph_node = model_graph.get_node_unwrap(&position);
-                if next == &position {
-                    // this is the boundary
-                    let boundary_correction = &model_graph_node.boundary.as_ref().unwrap().correction;
-                    correction.extend(boundary_correction);
-                    break
-                } else {
-                    let next_edge = model_graph_node.edges.get(next);
-                    let next_correction = &next_edge.as_ref().unwrap().correction;
-                    correction.extend(next_correction);
-                    position = next.clone();
-                }
+    /// build correction with boundary
+    pub fn build_correction_boundary(&mut self, position: &Position, model_graph: &ModelGraph) -> SparseCorrection {
+        let mut correction = SparseCorrection::new();
+        let mut position = position.clone();
+        loop {
+            let node = self.get_node_unwrap(&position);
+            let precomputed = node.precomputed.as_ref().unwrap();
+            let boundary = precomputed.boundary.as_ref().unwrap();
+            let next = &boundary.next;
+            let model_graph_node = model_graph.get_node_unwrap(&position);
+            if next == &position {
+                // this is the boundary
+                let boundary_correction = &model_graph_node.boundary.as_ref().unwrap().correction;
+                correction.extend(boundary_correction);
+                break
+            } else {
+                let next_edge = model_graph_node.edges.get(next);
+                let next_correction = &next_edge.as_ref().unwrap().correction;
+                correction.extend(next_correction);
+                position = next.clone();
             }
-            correction
-        } else {
-            // only read from cache, to improve efficiency
-            unimplemented!();
         }
+        correction
     }
 
     /// run full Dijkstra's algorithm and identify the active region, running [`Self::find_shortest_boundary_paths`] required before this function
-    pub fn precompute_dijkstra(&mut self, position: &Position, model_graph: &ModelGraph) {
+    pub fn precompute_dijkstra(&mut self, position: &Position) {
+        let model_graph = Arc::clone(&self.model_graph);
         let active_timestamp = self.invalidate_previous_dijkstra();
         let mut pq = PriorityQueue::<Position, PriorityElement>::new();
         pq.push(position.clone(), PriorityElement::new(0., position.clone()));
@@ -259,11 +303,19 @@ impl CompleteModelGraph {
                         }
                     }
                     if update {
+                        if !self.precompute_complete_model_graph {  // need to record `previous`
+                            self.get_node_mut_unwrap(neighbor).previous = Some(Arc::new(target.clone()));
+                            // eprintln!("position:{}, neighbor: {}, target: {}", position, neighbor, target);
+                        }
                         pq.change_priority(neighbor, PriorityElement::new(edge_weight, next.clone()));
                     }
                 } else {  // insert new entry only if neighbor has not been visited
                     let neighbor_node = self.get_node_unwrap(neighbor);
                     if neighbor_node.timestamp != active_timestamp {
+                        if !self.precompute_complete_model_graph {  // need to record `previous`
+                            self.get_node_mut_unwrap(neighbor).previous = Some(Arc::new(target.clone()));
+                            // eprintln!("position:{}, neighbor: {}, target: {}", position, neighbor, target);
+                        }
                         pq.push(neighbor.clone(), PriorityElement::new(edge_weight, next.clone()));
                     }
                 }
@@ -273,7 +325,8 @@ impl CompleteModelGraph {
     }
 
     /// update shortest boundary path to so that edges finding can terminate early
-    pub fn find_shortest_boundary_paths(&mut self, simulator: &Simulator, model_graph: &ModelGraph) {
+    pub fn find_shortest_boundary_paths(&mut self, simulator: &Simulator) {
+        let model_graph = Arc::clone(&self.model_graph);
         let mut pq = PriorityQueue::<Position, PriorityElement>::new();
         // create initial priority queue
         simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if self.is_node_exist(position) {
@@ -318,8 +371,23 @@ impl CompleteModelGraph {
 
     /// precompute complete model graph if `precompute_complete_model_graph` is set
     #[inline(never)]
-    pub fn precompute(&mut self, simulator: &Simulator, model_graph: &ModelGraph, precompute_complete_model_graph: bool) {
+    pub fn precompute(&mut self, simulator: &Simulator, precompute_complete_model_graph: bool) {
         self.precompute_complete_model_graph = precompute_complete_model_graph;
+        if precompute_complete_model_graph {
+            // it's safe to disable copying all complete graph edges
+            for array in self.nodes.iter_mut() {
+                for array in array.iter_mut() {
+                    for element in array.iter_mut() {
+                        match element {
+                            Some(ref mut node) => {
+                                node.duplicate_on_clone = false;
+                            }
+                            None => { }
+                        }
+                    }
+                }
+            }
+        }
         // clear existing state
         simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if self.is_node_exist(position) {
             let node = self.get_node_mut_unwrap(position);
@@ -329,11 +397,11 @@ impl CompleteModelGraph {
             }));
         });
         // find the shortest path to boundaries, this will help reduce the number of steps later
-        self.find_shortest_boundary_paths(simulator, model_graph);
+        self.find_shortest_boundary_paths(simulator);
         if precompute_complete_model_graph {
             // iterate over each node to cache nearest nodes up to `precompute_complete_model_graph`
             simulator_iter!(simulator, position, if self.is_node_exist(position) {
-                self.precompute_dijkstra(position, model_graph);
+                self.precompute_dijkstra(position);
             });
         }
     }

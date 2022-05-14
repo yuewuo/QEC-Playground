@@ -49,11 +49,12 @@ impl MWPMDecoder {
         let mut simulator = simulator.clone();
         let mut model_graph = ModelGraph::new(&simulator);
         model_graph.build(&mut simulator, &error_model, &config.weight_function);
+        let model_graph = Arc::new(model_graph);
         // build complete model graph
-        let mut complete_model_graph = CompleteModelGraph::new(&simulator, &model_graph);
-        complete_model_graph.precompute(&simulator, &model_graph, config.precompute_complete_model_graph);
+        let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
+        complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph);
         Self {
-            model_graph: Arc::new(model_graph),
+            model_graph: model_graph,
             complete_model_graph: complete_model_graph,
         }
     }
