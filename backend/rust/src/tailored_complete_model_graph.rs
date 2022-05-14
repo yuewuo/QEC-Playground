@@ -19,24 +19,46 @@ pub struct TailoredCompleteModelGraph {
     pub nodes: Vec::< Vec::< Vec::< Option< Box< TripleCompleteTailoredModelGraphNode > > > > >,
     /// timestamp to invalidate all nodes without iterating them; only invalidating all nodes individually when active_timestamp is usize::MAX
     pub active_timestamp: usize,
+    /// the tailored model graph to build this complete tailored model graph
+    pub tailored_model_graph: Arc<TailoredModelGraph>,
 }
 
 /// precomputed data can help reduce runtime complexity, at the cost of more memory usage
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct CompleteTailoredModelGraphNode {
+    /// flag to duplicate [`PrecomputedData`] inside [`Self::precomputed`]
+    duplicate_on_clone: bool,
     /// precomputed data can help reduce runtime complexity, at the cost of more memory usage
     pub precomputed: Option<Arc<PrecomputedData>>,
     /// timestamp for Dijkstra's algorithm
     pub timestamp: usize,
-    /// cache all edges currently needed to reconstruct path between interested pairs, will be cleared if timestamp is updated
-    pub cache: BTreeMap<Position, CompleteTailoredModelGraphEdge>,
+    /// previous value, invalidated along timestamp
+    pub previous: Option<Arc<Position>>,
+}
+
+impl Clone for CompleteTailoredModelGraphNode {
+    fn clone(&self) -> Self {
+        let mut result = Self {
+            duplicate_on_clone: self.duplicate_on_clone,
+            precomputed: self.precomputed.clone(),
+            timestamp: self.timestamp,
+            previous: None,
+        };
+        if self.duplicate_on_clone {
+            if self.precomputed.is_some() {
+                // allocate new memory to copy the precomputed data
+                result.precomputed = Some(Arc::new((**self.precomputed.as_ref().unwrap()).clone()));
+            }
+        }
+        result
+    }
 }
 
 pub type TripleCompleteTailoredModelGraphNode = [CompleteTailoredModelGraphNode; 3];
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CompleteTailoredModelGraphEdge {
-    /// the next node to source back, it can also be itself, in which case this is the adjacent to boundary
+    /// the next node to source back
     pub next: Position,
     /// the weight of this edge
     /// , note that we don't keep `possibility` here because it might overflow given small `p` and long path
@@ -47,12 +69,17 @@ pub struct CompleteTailoredModelGraphEdge {
 pub struct PrecomputedData {
     /// precomputed complete graph edges, if all edges are found and recorded, then no need to run Dijkstra's algorithm on the fly
     pub edges: BTreeMap<Position, CompleteTailoredModelGraphEdge>,
-    /// precomputed complete graph edge to boundary
-    pub boundary: Option<CompleteTailoredModelGraphEdge>,
+}
+
+impl PrecomputedData {
+    /// clear existing data for edges, to save memory
+    pub fn clear_edges(&mut self) {
+        self.edges.clear();
+    }
 }
 
 impl TailoredCompleteModelGraph {
-    pub fn new(simulator: &Simulator, model_graph: &TailoredModelGraph) -> Self {
+    pub fn new(simulator: &Simulator, tailored_model_graph: Arc<TailoredModelGraph>) -> Self {
         assert!(simulator.volume() > 0, "cannot build graph out of zero-sized simulator");
         Self {
             precompute_complete_model_graph: false,
@@ -60,26 +87,21 @@ impl TailoredCompleteModelGraph {
                 (0..simulator.vertical).map(|i| {
                     (0..simulator.horizontal).map(|j| {
                         let position = &pos!(t, i, j);
-                        if model_graph.is_node_exist(position) {
-                            return Some(Box::new([CompleteTailoredModelGraphNode {
+                        if tailored_model_graph.is_node_exist(position) {
+                            let node = CompleteTailoredModelGraphNode {
+                                duplicate_on_clone: true,  // default behavior, just clone for safe
                                 precomputed: None,
                                 timestamp: 0,
-                                cache: BTreeMap::new(),
-                            }, CompleteTailoredModelGraphNode {
-                                precomputed: None,
-                                timestamp: 0,
-                                cache: BTreeMap::new(),
-                            }, CompleteTailoredModelGraphNode {
-                                precomputed: None,
-                                timestamp: 0,
-                                cache: BTreeMap::new(),
-                            }]))
+                                previous: None,
+                            };
+                            return Some(Box::new([node.clone(), node.clone(), node.clone()]))
                         }
                         None
                     }).collect()
                 }).collect()
             }).collect(),
             active_timestamp: 0,
+            tailored_model_graph: tailored_model_graph,
         }
     }
 
@@ -128,58 +150,67 @@ impl TailoredCompleteModelGraph {
 
     /// get tailored matching edges in a batch manner to improve speed if need to run Dijkstra's algorithm on the fly;
     pub fn get_tailored_matching_edges(&mut self, position: &Position, targets: &Vec<Position>) -> [Vec<(usize, f64)>; 2] {
-        if self.precompute_complete_model_graph {
-            let [positive_node, negative_node, _neutral_node] = self.get_node_unwrap(position);
-            // compute positive edges
-            let mut positive_edges = Vec::new();
-            let positive_precomputed = positive_node.precomputed.as_ref().unwrap();
-            for (index, target) in targets.iter().enumerate() {
-                if let Some(edge) = positive_precomputed.edges.get(target) {
-                    positive_edges.push((index, edge.weight));
-                }
-            }
-            // compute negative edges
-            let mut negative_edges = Vec::new();
-            let negative_precomputed = negative_node.precomputed.as_ref().unwrap();
-            for (index, target) in targets.iter().enumerate() {
-                if let Some(edge) = negative_precomputed.edges.get(target) {
-                    negative_edges.push((index, edge.weight));
-                }
-            }
-            [positive_edges, negative_edges]
-        } else {
-            unimplemented!();
+        if !self.precompute_complete_model_graph {
+            self.precompute_dijkstra_subset(position, &mut [0,1].into_iter());
         }
+        let [positive_node, negative_node, _neutral_node] = self.get_node_unwrap(position);
+        // compute positive edges
+        let mut positive_edges = Vec::new();
+        let positive_precomputed = positive_node.precomputed.as_ref().unwrap();
+        for (index, target) in targets.iter().enumerate() {
+            if let Some(edge) = positive_precomputed.edges.get(target) {
+                positive_edges.push((index, edge.weight));
+            }
+        }
+        // compute negative edges
+        let mut negative_edges = Vec::new();
+        let negative_precomputed = negative_node.precomputed.as_ref().unwrap();
+        for (index, target) in targets.iter().enumerate() {
+            if let Some(edge) = negative_precomputed.edges.get(target) {
+                negative_edges.push((index, edge.weight));
+            }
+        }
+        if !self.precompute_complete_model_graph {
+            for node in self.get_node_mut_unwrap(position) {
+                Arc::get_mut(node.precomputed.as_mut().unwrap()).unwrap().clear_edges();  // free memory immediately
+            }
+        }
+        [positive_edges, negative_edges]
     }
 
     /// get neutral matching edges in a batch manner to improve speed if need to run Dijkstra's algorithm on the fly;
     /// note that this will also include zero weight edges
     pub fn get_neutral_matching_edges(&mut self, position: &Position, targets: &Vec<Position>) -> Vec<(usize, f64)> {
-        if self.precompute_complete_model_graph {
-            let [_positive_node, _negative_node, neutral_node] = self.get_node_unwrap(position);
-            // compute neutral edges
-            let mut neutral_edges = Vec::new();
-            let positive_precomputed = neutral_node.precomputed.as_ref().unwrap();
-            for (index, target) in targets.iter().enumerate() {
-                if let Some(edge) = positive_precomputed.edges.get(target) {
-                    neutral_edges.push((index, edge.weight));
-                } else {
-                    if target == position {
-                        neutral_edges.push((index, 0.));
-                    }
+        if !self.precompute_complete_model_graph {
+            self.precompute_dijkstra_subset(position, &mut [2].into_iter());
+        }
+        let [_positive_node, _negative_node, neutral_node] = self.get_node_unwrap(position);
+        // compute neutral edges
+        let mut neutral_edges = Vec::new();
+        let positive_precomputed = neutral_node.precomputed.as_ref().unwrap();
+        for (index, target) in targets.iter().enumerate() {
+            if let Some(edge) = positive_precomputed.edges.get(target) {
+                neutral_edges.push((index, edge.weight));
+            } else {
+                if target == position {
+                    neutral_edges.push((index, 0.));
                 }
             }
-            neutral_edges
-        } else {
-            unimplemented!();
         }
+        if !self.precompute_complete_model_graph {
+            for node in self.get_node_mut_unwrap(position) {
+                Arc::get_mut(node.precomputed.as_mut().unwrap()).unwrap().clear_edges();  // free memory immediately
+            }
+        }
+        neutral_edges
     }
 
     /// build correction with neutral matching
-    pub fn build_correction_neutral_matching(&self, source: &Position, target: &Position, tailored_model_graph: &TailoredModelGraph) -> SparseCorrection {
+    pub fn build_correction_neutral_matching(&mut self, source: &Position, target: &Position) -> SparseCorrection {
+        let tailored_model_graph = Arc::clone(&self.tailored_model_graph);
+        let mut correction = SparseCorrection::new();
+        let mut source = source.clone();
         if self.precompute_complete_model_graph {
-            let mut correction = SparseCorrection::new();
-            let mut source = source.clone();
             while &source != target {
                 let [_, _, node] = self.get_node_unwrap(&source);
                 let precomputed = node.precomputed.as_ref().unwrap();
@@ -194,15 +225,33 @@ impl TailoredCompleteModelGraph {
             }
             correction
         } else {
-            // only read from cache, to improve efficiency
-            unimplemented!();
+            self.precompute_dijkstra_subset(target, &mut [2].into_iter());
+            // logic is different from what's happening if `precompute_complete_model_graph` is set
+            while &source != target {
+                let [_, _, node] = self.get_node_unwrap(&source);
+                assert_eq!(node.timestamp, self.active_timestamp, "after running `precompute_dijkstra`, this node must be visited");
+                let next: Position = (**(node.previous.as_ref().expect("must exist a path"))).clone();
+                let [_, _, model_graph_node] = tailored_model_graph.get_node_unwrap(&source);
+                let next_edge = model_graph_node.edges.get(&next);
+                let next_correction = &next_edge.as_ref().unwrap().correction;
+                correction.extend(next_correction);
+                source = next;
+            }
+            Arc::get_mut(self.get_node_mut_unwrap(target)[2].precomputed.as_mut().unwrap()).unwrap().clear_edges();  // free memory immediately
+            correction
         }
     }
 
     /// run full Dijkstra's algorithm and identify the active region
-    pub fn precompute_dijkstra(&mut self, position: &Position, model_graph: &TailoredModelGraph) {
+    pub fn precompute_dijkstra(&mut self, position: &Position) {
+        self.precompute_dijkstra_subset(position, &mut [0,1,2].into_iter())
+    }
+
+    /// run full Dijkstra's algorithm and identify the active region
+    pub fn precompute_dijkstra_subset(&mut self, position: &Position, indices: &mut dyn Iterator<Item = usize>) {
+        let tailored_model_graph = Arc::clone(&self.tailored_model_graph);
         let active_timestamp = self.invalidate_previous_dijkstra();
-        for idx in 0..3 {
+        for idx in indices {
             let mut pq = PriorityQueue::<Position, PriorityElement>::new();
             pq.push(position.clone(), PriorityElement::new(0., position.clone()));
             loop {  // until no more elements
@@ -229,8 +278,8 @@ impl TailoredCompleteModelGraph {
                     });
                 }
                 // add its neighbors to priority queue
-                let model_graph_node = &model_graph.get_node_unwrap(&target)[idx];
-                for (neighbor, edge) in model_graph_node.edges.iter() {
+                let tailored_model_graph_node = &tailored_model_graph.get_node_unwrap(&target)[idx];
+                for (neighbor, edge) in tailored_model_graph_node.edges.iter() {
                     let edge_weight = weight + edge.weight;
                     if let Some(PriorityElement { weight: FloatOrd(existing_weight), next: existing_next }) = pq.get_priority(neighbor) {
                         // update the priority if weight is smaller or weight is equal but distance is smaller
@@ -245,11 +294,21 @@ impl TailoredCompleteModelGraph {
                             }
                         }
                         if update {
+                            if !self.precompute_complete_model_graph {  // need to record `previous`
+                                let node = &mut self.get_node_mut_unwrap(&neighbor)[idx];
+                                node.previous = Some(Arc::new(target.clone()));
+                                // eprintln!("position:{}, neighbor: {}, target: {}", position, neighbor, target);
+                            }
                             pq.change_priority(neighbor, PriorityElement::new(edge_weight, next.clone()));
                         }
                     } else {  // insert new entry only if neighbor has not been visited
                         let neighbor_node = &self.get_node_unwrap(neighbor)[idx];
                         if neighbor_node.timestamp != active_timestamp {
+                            if !self.precompute_complete_model_graph {  // need to record `previous`
+                                let node = &mut self.get_node_mut_unwrap(&neighbor)[idx];
+                                node.previous = Some(Arc::new(target.clone()));
+                                // eprintln!("position:{}, neighbor: {}, target: {}", position, neighbor, target);
+                            }
                             pq.push(neighbor.clone(), PriorityElement::new(edge_weight, next.clone()));
                         }
                     }
@@ -261,7 +320,7 @@ impl TailoredCompleteModelGraph {
 
     /// precompute complete model graph if `precompute_complete_model_graph` is set
     #[inline(never)]
-    pub fn precompute(&mut self, simulator: &Simulator, model_graph: &TailoredModelGraph, precompute_complete_model_graph: bool) {
+    pub fn precompute(&mut self, simulator: &Simulator, precompute_complete_model_graph: bool) {
         self.precompute_complete_model_graph = precompute_complete_model_graph;
         // clear existing state
         simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if self.is_node_exist(position) {
@@ -269,15 +328,28 @@ impl TailoredCompleteModelGraph {
             for idx in 0..3 {
                 double_node[idx].precomputed = Some(Arc::new(PrecomputedData {
                     edges: BTreeMap::new(),
-                    boundary: None,
                 }));
             }
         });
         if precompute_complete_model_graph {
-            // iterate over each node to cache nearest nodes up to `precompute_complete_model_graph`
             simulator_iter!(simulator, position, if self.is_node_exist(position) {
-                self.precompute_dijkstra(position, model_graph);
+                self.precompute_dijkstra(position);
             });
+            // it's safe to disable copying all complete graph edges
+            for array in self.nodes.iter_mut() {
+                for array in array.iter_mut() {
+                    for element in array.iter_mut() {
+                        match element {
+                            Some(ref mut tri_nodes) => {
+                                for idx in 0..3 {
+                                    tri_nodes[idx].duplicate_on_clone = false;
+                                }
+                            }
+                            None => { }
+                        }
+                    }
+                }
+            }
         }
     }
 

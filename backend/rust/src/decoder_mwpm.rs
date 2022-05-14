@@ -110,11 +110,11 @@ impl MWPMDecoder {
                 if j < i {  // only add correction if j < i, so that the same correction is not applied twice
                     // println!("match peer {:?} {:?}", to_be_matched[i], to_be_matched[j]);
                     let b = &to_be_matched[j];
-                    let matching_correction = self.complete_model_graph.build_correction_matching(a, b, &self.model_graph);
+                    let matching_correction = self.complete_model_graph.build_correction_matching(a, b);
                     correction.extend(&matching_correction);
                 } else if j >= m_len {  // matched with boundary
                     // println!("match boundary {:?}", to_be_matched[i]);
-                    let boundary_correction = self.complete_model_graph.build_correction_boundary(a, &self.model_graph);
+                    let boundary_correction = self.complete_model_graph.build_correction_boundary(a);
                     correction.extend(&boundary_correction);
                 }
             }

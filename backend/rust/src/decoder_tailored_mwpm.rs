@@ -67,9 +67,10 @@ impl TailoredMWPMDecoder {
         let mut simulator = simulator.clone();
         let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
         tailored_model_graph.build(&mut simulator, &error_model, &config.weight_function);
+        let tailored_model_graph = Arc::new(tailored_model_graph);
         // build complete model graph
-        let mut tailored_complete_model_graph = TailoredCompleteModelGraph::new(&simulator, &tailored_model_graph);
-        tailored_complete_model_graph.precompute(&simulator, &tailored_model_graph, config.precompute_complete_model_graph);
+        let mut tailored_complete_model_graph = TailoredCompleteModelGraph::new(&simulator, Arc::clone(&tailored_model_graph));
+        tailored_complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph);
         // build virtual nodes for decoding use
         let mut virtual_nodes = Vec::new();
         simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if tailored_model_graph.is_node_exist(position) {
@@ -100,7 +101,7 @@ impl TailoredMWPMDecoder {
             "weight_function": config.weight_function,
         }), parallel);
         Self {
-            tailored_model_graph: Arc::new(tailored_model_graph),
+            tailored_model_graph: tailored_model_graph,
             tailored_complete_model_graph: tailored_complete_model_graph,
             mwpm_decoder: mwpm_decoder,
             virtual_nodes: Arc::new(virtual_nodes),
@@ -268,7 +269,7 @@ impl TailoredMWPMDecoder {
                             if last_y.is_none() {
                                 last_y = Some(position.clone());
                             } else {
-                                let matching_correction = self.tailored_complete_model_graph.build_correction_neutral_matching(last_y.as_ref().unwrap(), position, &self.tailored_model_graph);
+                                let matching_correction = self.tailored_complete_model_graph.build_correction_neutral_matching(last_y.as_ref().unwrap(), position);
                                 correction.extend(&matching_correction);
                                 last_y = None;
                             }
@@ -277,7 +278,7 @@ impl TailoredMWPMDecoder {
                             if last_x.is_none() {
                                 last_x = Some(position.clone());
                             } else {
-                                let matching_correction = self.tailored_complete_model_graph.build_correction_neutral_matching(last_x.as_ref().unwrap(), position, &self.tailored_model_graph);
+                                let matching_correction = self.tailored_complete_model_graph.build_correction_neutral_matching(last_x.as_ref().unwrap(), position);
                                 correction.extend(&matching_correction);
                                 last_x = None;
                             }
@@ -427,7 +428,7 @@ impl TailoredMWPMDecoder {
                     // eprintln!("residual_matching: {:?}", residual_matching);
                     // foreach cluster pair in matching do
                     let mut neutralized_charged_cluster = BTreeSet::<usize>::new();  // index in `residual_matching`
-                    let apply_correction_with_merged_cluster = |correction: &mut SparseCorrection, cluster_1: Vec::<Position>, cluster_2: Vec::<Position>| {
+                    let apply_correction_with_merged_cluster = |mut_self: &mut TailoredMWPMDecoder, correction: &mut SparseCorrection, cluster_1: Vec::<Position>, cluster_2: Vec::<Position>| {
                         let mut merged_to_be_matched = Vec::<Position>::with_capacity(cluster_1.len() + cluster_2.len());
                         merged_to_be_matched.extend(cluster_1.into_iter());
                         merged_to_be_matched.extend(cluster_2.into_iter());
@@ -437,7 +438,7 @@ impl TailoredMWPMDecoder {
                         let mut stab_x_positions = Vec::<Position>::new();
                         let mut stab_y_positions = Vec::<Position>::new();
                         for position in merged_to_be_matched.iter() {
-                            let node = self.simulator.get_node_unwrap(position);
+                            let node = mut_self.simulator.get_node_unwrap(position);
                             if node.qubit_type == QubitType::StabX {
                                 stab_x_positions.push(position.clone());
                             } else {
@@ -450,7 +451,7 @@ impl TailoredMWPMDecoder {
                             for i in (0..positions.len()).step_by(2) {
                                 let position_1 = &positions[i];
                                 let position_2 = &positions[i + 1];
-                                let matching_correction = self.tailored_complete_model_graph.build_correction_neutral_matching(position_1, position_2, &self.tailored_model_graph);
+                                let matching_correction = mut_self.tailored_complete_model_graph.build_correction_neutral_matching(position_1, position_2);
                                 correction.extend(&matching_correction);
                             }
                         }
@@ -477,7 +478,7 @@ impl TailoredMWPMDecoder {
                                     // eprintln!("residual match {} to charged cluster {}", i, j);
                                     let cluster_j = &all_clusters[&root_j];
                                     // merge them into a single one cluster
-                                    apply_correction_with_merged_cluster(&mut correction, cluster_i.iter().map(|i| tailored_to_be_matched[*i].clone()).collect()
+                                    apply_correction_with_merged_cluster(self, &mut correction, cluster_i.iter().map(|i| tailored_to_be_matched[*i].clone()).collect()
                                         , cluster_j.iter().map(|i| tailored_to_be_matched[*i].clone()).collect());
                                 } else {  // have to do it in a chain... until peer becomes virtual or charged
                                     let mut charged_i: Vec<usize> = all_clusters[&root_i].clone();  // index of `tailored_to_be_matched`
@@ -499,7 +500,7 @@ impl TailoredMWPMDecoder {
                                         }
                                         assert!(charged_j.len() == 2, "neutral clusters here must contain at least one X and one Y");
                                         // add shortest path of Y (X) operators to recovery between selected X-type (Y-type) defects from each cluster in pair
-                                        apply_correction_with_merged_cluster(&mut correction, charged_i.iter().map(|i| tailored_to_be_matched[*i].clone()).collect()
+                                        apply_correction_with_merged_cluster(self, &mut correction, charged_i.iter().map(|i| tailored_to_be_matched[*i].clone()).collect()
                                             , charged_j.iter().map(|i| tailored_to_be_matched[*i].clone()).collect());
                                         // break if k is no longer neutral cluster, otherwise keep loop
                                         let j2 = residual_index_peer_neutral_copied[&j1];
@@ -508,7 +509,7 @@ impl TailoredMWPMDecoder {
                                             // match `charged_j` with this virtual cluster
                                             let ck = k - residual_real_cluster_len;
                                             let (pos1, pos2) = self.corner_virtual_nodes[ck].clone();
-                                            apply_correction_with_merged_cluster(&mut correction, charged_j.iter().map(|i| tailored_to_be_matched[*i].clone()).collect()
+                                            apply_correction_with_merged_cluster(self, &mut correction, charged_j.iter().map(|i| tailored_to_be_matched[*i].clone()).collect()
                                                 , vec![pos1, pos2]);
                                             break
                                         }
@@ -519,7 +520,7 @@ impl TailoredMWPMDecoder {
                                             neutralized_charged_cluster.insert(k);
                                             // match `charged_j` with the charged cluster `root_k`
                                             let cluster_k = &all_clusters[&root_k];
-                                            apply_correction_with_merged_cluster(&mut correction, charged_j.iter().map(|i| tailored_to_be_matched[*i].clone()).collect()
+                                            apply_correction_with_merged_cluster(self, &mut correction, charged_j.iter().map(|i| tailored_to_be_matched[*i].clone()).collect()
                                                 , cluster_k.iter().map(|i| tailored_to_be_matched[*i].clone()).collect());
                                             break
                                         }
@@ -531,7 +532,7 @@ impl TailoredMWPMDecoder {
                                 // eprintln!("residual match {} to virtual {}", i, j);
                                 let cj = j - residual_real_cluster_len;
                                 let (pos1, pos2) = self.corner_virtual_nodes[cj].clone();
-                                apply_correction_with_merged_cluster(&mut correction, cluster_i.iter().map(|i| tailored_to_be_matched[*i].clone()).collect()
+                                apply_correction_with_merged_cluster(self, &mut correction, cluster_i.iter().map(|i| tailored_to_be_matched[*i].clone()).collect()
                                     , vec![pos1, pos2]);
                             }
                         }

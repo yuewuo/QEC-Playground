@@ -190,7 +190,8 @@ impl CompleteModelGraph {
     }
 
     /// build correction with matching
-    pub fn build_correction_matching(&mut self, source: &Position, target: &Position, model_graph: &ModelGraph) -> SparseCorrection {
+    pub fn build_correction_matching(&mut self, source: &Position, target: &Position) -> SparseCorrection {
+        let model_graph = Arc::clone(&self.model_graph);
         let mut correction = SparseCorrection::new();
         let mut source = source.clone();
         if self.precompute_complete_model_graph {
@@ -226,7 +227,8 @@ impl CompleteModelGraph {
     }
 
     /// build correction with boundary
-    pub fn build_correction_boundary(&mut self, position: &Position, model_graph: &ModelGraph) -> SparseCorrection {
+    pub fn build_correction_boundary(&mut self, position: &Position) -> SparseCorrection {
+        let model_graph = Arc::clone(&self.model_graph);
         let mut correction = SparseCorrection::new();
         let mut position = position.clone();
         loop {

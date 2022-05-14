@@ -299,7 +299,7 @@ impl UnionFindDecoder {
                 error_syndromes.push(cluster_boundary_index);  // let it match with others
                 let cluster_boundary_position = &self.index_to_position[cluster_boundary_index];
                 // println!("match boundary {:?}", cluster_boundary_position);
-                let boundary_correction = self.complete_model_graph.build_correction_boundary(cluster_boundary_position, &self.model_graph);
+                let boundary_correction = self.complete_model_graph.build_correction_boundary(cluster_boundary_position);
                 correction.extend(&boundary_correction);
             }
             assert_eq!(error_syndromes.len() % 2, 0);
@@ -311,7 +311,7 @@ impl UnionFindDecoder {
                     let position1 = &self.index_to_position[index1];
                     let position2 = &self.index_to_position[index2];
                     // println!("match peer {:?} {:?}", position1, position2);
-                    let matching_correction = self.complete_model_graph.build_correction_matching(position1, position2, &self.model_graph);
+                    let matching_correction = self.complete_model_graph.build_correction_matching(position1, position2);
                     correction.extend(&matching_correction);
                 }
             }

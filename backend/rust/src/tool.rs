@@ -526,8 +526,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                 let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
                 let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
                 tailored_model_graph.build(&mut simulator, &error_model_graph, &config.weight_function);
-                let mut complete_tailored_model_graph = TailoredCompleteModelGraph::new(&simulator, &tailored_model_graph);
-                complete_tailored_model_graph.precompute(&simulator, &tailored_model_graph, config.precompute_complete_model_graph);
+                let tailored_model_graph = Arc::new(tailored_model_graph);
+                let mut complete_tailored_model_graph = TailoredCompleteModelGraph::new(&simulator, Arc::clone(&tailored_model_graph));
+                complete_tailored_model_graph.precompute(&simulator, config.precompute_complete_model_graph);
                 return format!("{}\n", serde_json::to_string(&complete_tailored_model_graph.to_json(&simulator)).expect("serialize should success"));
             },
             _ => { }
