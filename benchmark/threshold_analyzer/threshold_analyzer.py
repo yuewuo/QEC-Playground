@@ -330,6 +330,7 @@ class ThresholdAnalyzer:
         plt.title(f"Threshold = {popt[3]:.5g} \u00B1 {perr[3]:.2g}")
         # plt.show()
         plt.savefig(image_path)
+        fig.clear()
 
     # first call rough estimate then precise estimate
     def estimate(self, target_relative_accuracy=0.01, save_image=None, retry=True):

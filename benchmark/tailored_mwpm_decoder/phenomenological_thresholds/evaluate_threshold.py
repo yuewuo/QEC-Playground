@@ -22,16 +22,18 @@ slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # for more usuable machine
 def generate_parameters(bias_eta):
     return f"-p{STO(0)} --code_type RotatedTailoredCode --bias_eta {bias_eta} --decoder tailored-mwpm --decoder_config {{\"pcmg\":true}} --error_model phenomenological".split(" ")
 
+PRECISE_RESULT_FILE = os.path.join(os.path.dirname(__file__), f"precise_result.hjson")
 RESULT_FILE = os.path.join(os.path.dirname(__file__), f"result.hjson")
 HISTORY_FILE = os.path.join(os.path.dirname(__file__), f"history.tmp")  # to avoid deleting important result
 def time_str():
     now = datetime.datetime.now()
     return now.strftime("%Y-%m-%d %H:%M:%S.%f")\
 
-if not os.path.exists(RESULT_FILE):
-    with open(RESULT_FILE, "w", encoding="utf8") as f:
-        f.write(hjson.dumps({}, sort_keys=True))
-        f.flush()
+for result_file in [RESULT_FILE, PRECISE_RESULT_FILE]:
+    if not os.path.exists(result_file):
+        with open(result_file, "w", encoding="utf8") as f:
+            f.write(hjson.dumps({}, sort_keys=True))
+            f.flush()
 
 def truncate_write_file(f, content):
     f.seek(0)
@@ -117,7 +119,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qecp_comman
     
         # at this point, if in slurm, all results have been cached
         popt, perr = threshold_analyzer.precise_estimate(rough_popt)
-        with open(RESULT_FILE, "r+", encoding="utf8") as f:
+        with open(PRECISE_RESULT_FILE, "r+", encoding="utf8") as f:
             log_obj = hjson.loads(f.read())
             log_obj[f"bias_eta_{bias_eta}"] = [popt, perr]
             truncate_write_file(f, hjson.dumps(log_obj, sort_keys=True))

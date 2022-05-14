@@ -85,6 +85,13 @@ class SlurmDistributeVec(list):
                     confirm_or_die(f"You're using `-p0` option in slurm enabled environment, which may create more threads than allocated to you; please use `slurm_threads_or` to access the allocated number of threads in this case")
         self.append(command)
 
+QECP_IDENT = "backend/rust/target/release/rust_qecp"
+def command_parse_qecp(command):  # used when match command
+    command_lst = command.split(" ")
+    if command_lst[0][-len(QECP_IDENT):] == QECP_IDENT:
+        command_lst[0] = QECP_IDENT
+    return "".join(command_lst).strip("\r\n ")
+
 def slurm_distribute_wrap(program, filefolder):
     def wrapper():
         if ONLY_PRINT_COMMANDS or SLURM_DISTRIBUTE_ENABLED:
@@ -115,9 +122,7 @@ def slurm_distribute_wrap(program, filefolder):
             existing_jobouts = [None for e in stringify_commands]
             def command_equal(cmd1, cmd2):
                 # don't care the parameter (usually binary path) before the first space character
-                parameters1 = "".join(cmd1.split(" ")[1:]).strip("\r\n ")
-                parameters2 = "".join(cmd2.split(" ")[1:]).strip("\r\n ")
-                return parameters1 == parameters2
+                return command_parse_qecp(cmd1) == command_parse_qecp(cmd2)
             reusable_count = 0
             for new_i, stringify_command in enumerate(stringify_commands):
                 for prev_i, previous_job_command in enumerate(previous_job_commands):
@@ -244,12 +249,17 @@ def slurm_distribute_wrap(program, filefolder):
                     f.write(hjson.dumps(aggregated_results))
 
             # rerun the simulation feeding the results
+            parsed_results = {}
+            for key in results:
+                parsed_results[command_parse_qecp(key)] = results[key]
+            print(parsed_results)
             def feeding_output(command):
                 stringify_command = run_stringify_command(command)
-                if stringify_command not in results:
+                parsed_command = command_parse_qecp(stringify_command)
+                if parsed_command not in parsed_results:
                     print(f"couldn't find results for command '{stringify_command}'")
                     raise "result not found"
-                return results[stringify_command], 0
+                return parsed_results[parsed_command], 0
             return program(slurm_commands_vec=None, run_command_get_stdout=feeding_output)
 
     return wrapper
@@ -307,7 +317,7 @@ def slurm_run_sbatch_wait(job_script_sbatch_path, job_indices, use_interactive_p
         print(f"\rjobs remaining: [{len(active_jobs)}/{len(job_indices)}]", end="")
         if len(active_jobs) == 0:
             break
-        time.sleep(5)  # sleep first because it takes some time to be observed in squeue command output
+        time.sleep(60)
     print()
 
     # check all states
