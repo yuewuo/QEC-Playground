@@ -10,8 +10,6 @@ use super::priority_queue::PriorityQueue;
 use super::float_ord::FloatOrd;
 use std::sync::{Arc, Mutex};
 
-type NodeIndex = usize;
-
 #[derive(Debug, Clone, Serialize)]
 pub struct TailoredCompleteModelGraph {
     /// precomputed edges and active region helps to reduce the runtime complexity by caching complete graph
@@ -23,10 +21,6 @@ pub struct TailoredCompleteModelGraph {
     pub active_timestamp: usize,
     /// the tailored model graph to build this complete tailored model graph
     pub tailored_model_graph: Arc<TailoredModelGraph>,
-    /// this map between Position and usize can reduce memory by roughly 3x
-    position_to_index: BTreeMap<Position, NodeIndex>,
-    /// this map between Position and usize can reduce memory by roughly 3x
-    index_to_position: Vec<Position>,
 }
 
 /// precomputed data can help reduce runtime complexity, at the cost of more memory usage
@@ -65,7 +59,7 @@ pub type TripleCompleteTailoredModelGraphNode = [CompleteTailoredModelGraphNode;
 #[derive(Debug, Clone, Serialize)]
 pub struct CompleteTailoredModelGraphEdge {
     /// the next node to source back
-    pub next: NodeIndex,
+    pub next: Position,
     /// the weight of this edge
     /// , note that we don't keep `possibility` here because it might overflow given small `p` and long path
     pub weight: f64,
@@ -74,7 +68,7 @@ pub struct CompleteTailoredModelGraphEdge {
 #[derive(Debug, Clone, Serialize)]
 pub struct PrecomputedData {
     /// precomputed complete graph edges, if all edges are found and recorded, then no need to run Dijkstra's algorithm on the fly
-    pub edges: BTreeMap<NodeIndex, CompleteTailoredModelGraphEdge>,
+    pub edges: BTreeMap<Position, CompleteTailoredModelGraphEdge>,
 }
 
 impl PrecomputedData {
@@ -108,20 +102,6 @@ impl TailoredCompleteModelGraph {
             }).collect(),
             active_timestamp: 0,
             tailored_model_graph: tailored_model_graph,
-            position_to_index: BTreeMap::new(),
-            index_to_position: Vec::new(),
-        }
-    }
-
-    /// get the index of a position, if not found then register it
-    pub fn get_index(&mut self, position: &Position) -> usize {
-        if self.position_to_index.contains_key(position) {
-            *self.position_to_index.get(position).unwrap()
-        } else {
-            let index = self.index_to_position.len();
-            self.position_to_index.insert(position.clone(), index);
-            self.index_to_position.push(position.clone());
-            index
         }
     }
 
@@ -173,21 +153,20 @@ impl TailoredCompleteModelGraph {
         if !self.precompute_complete_model_graph {
             self.precompute_dijkstra_subset(position, &mut [0,1].into_iter());
         }
-        let (positive_precomputed, negative_precomputed) = {
-            let [positive_node, negative_node, _neutral_node] = self.get_node_unwrap(position);
-            (Arc::clone(positive_node.precomputed.as_ref().unwrap()), Arc::clone(negative_node.precomputed.as_ref().unwrap()))
-        };
+        let [positive_node, negative_node, _neutral_node] = self.get_node_unwrap(position);
         // compute positive edges
         let mut positive_edges = Vec::new();
+        let positive_precomputed = positive_node.precomputed.as_ref().unwrap();
         for (index, target) in targets.iter().enumerate() {
-            if let Some(edge) = positive_precomputed.edges.get(&self.get_index(target)) {
+            if let Some(edge) = positive_precomputed.edges.get(target) {
                 positive_edges.push((index, edge.weight));
             }
         }
         // compute negative edges
         let mut negative_edges = Vec::new();
+        let negative_precomputed = negative_node.precomputed.as_ref().unwrap();
         for (index, target) in targets.iter().enumerate() {
-            if let Some(edge) = negative_precomputed.edges.get(&self.get_index(target)) {
+            if let Some(edge) = negative_precomputed.edges.get(target) {
                 negative_edges.push((index, edge.weight));
             }
         }
@@ -205,14 +184,12 @@ impl TailoredCompleteModelGraph {
         if !self.precompute_complete_model_graph {
             self.precompute_dijkstra_subset(position, &mut [2].into_iter());
         }
-        let neutral_precomputed = {
-            let [_positive_node, _negative_node, neutral_node] = self.get_node_unwrap(position);
-            Arc::clone(neutral_node.precomputed.as_ref().unwrap())
-        };
+        let [_positive_node, _negative_node, neutral_node] = self.get_node_unwrap(position);
         // compute neutral edges
         let mut neutral_edges = Vec::new();
+        let positive_precomputed = neutral_node.precomputed.as_ref().unwrap();
         for (index, target) in targets.iter().enumerate() {
-            if let Some(edge) = neutral_precomputed.edges.get(&self.get_index(target)) {
+            if let Some(edge) = positive_precomputed.edges.get(target) {
                 neutral_edges.push((index, edge.weight));
             } else {
                 if target == position {
@@ -235,12 +212,11 @@ impl TailoredCompleteModelGraph {
         let mut source = source.clone();
         if self.precompute_complete_model_graph {
             while &source != target {
-                let target_index = self.get_index(target);
                 let [_, _, node] = self.get_node_unwrap(&source);
                 let precomputed = node.precomputed.as_ref().unwrap();
-                let target_edge = precomputed.edges.get(&target_index);
+                let target_edge = precomputed.edges.get(target);
                 let edge = target_edge.as_ref().unwrap();
-                let next = &self.index_to_position[edge.next];
+                let next = &edge.next;
                 let [_, _, model_graph_node] = tailored_model_graph.get_node_unwrap(&source);
                 let next_edge = model_graph_node.edges.get(next);
                 let next_correction = &next_edge.as_ref().unwrap().correction;
@@ -288,19 +264,16 @@ impl TailoredCompleteModelGraph {
                 }
                 // eprintln!("target: {}, weight: {}, next: {}", target, weight, next);
                 debug_assert!({
-                    let target_index = self.get_index(&target);
                     let node = &self.get_node_unwrap(position)[idx];
-                    !node.precomputed.as_ref().unwrap().edges.contains_key(&target_index)  // this entry shouldn't have been set
+                    !node.precomputed.as_ref().unwrap().edges.contains_key(&target)  // this entry shouldn't have been set
                 });
                 // update entry if size permits
                 let node = &mut self.get_node_mut_unwrap(&target)[idx];
                 node.timestamp = active_timestamp;  // mark as visited
                 if &target != position {
-                    let target_index = self.get_index(&target);
-                    let next_index = self.get_index(&next);
                     let node = &mut self.get_node_mut_unwrap(position)[idx];
-                    Arc::get_mut(node.precomputed.as_mut().unwrap()).unwrap().edges.insert(target_index, CompleteTailoredModelGraphEdge {
-                        next: next_index,
+                    Arc::get_mut(node.precomputed.as_mut().unwrap()).unwrap().edges.insert(target.clone(), CompleteTailoredModelGraphEdge {
+                        next: next.clone(),
                         weight: weight,
                     });
                 }
@@ -357,8 +330,6 @@ impl TailoredCompleteModelGraph {
                     edges: BTreeMap::new(),
                 }));
             }
-            // make sure each position has been assigned an index before precompute it (potentially multithreaded)
-            self.get_index(position);
         });
         if precompute_complete_model_graph {
             if parallel <= 1 {

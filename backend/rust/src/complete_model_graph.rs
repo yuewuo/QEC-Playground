@@ -9,8 +9,6 @@ use super::priority_queue::PriorityQueue;
 use super::float_ord::FloatOrd;
 use std::sync::{Arc, Mutex};
 
-type NodeIndex = usize;
-
 #[derive(Debug, Clone, Serialize)]
 pub struct CompleteModelGraph {
     /// precomputed edges and active region helps to reduce the runtime complexity by caching complete graph
@@ -24,10 +22,6 @@ pub struct CompleteModelGraph {
     pub optimize_weight_greater_than_sum_boundary: bool,
     /// the model graph to build this complete model graph
     pub model_graph: Arc<ModelGraph>,
-    /// this map between Position and usize can reduce memory by roughly 3x
-    position_to_index: BTreeMap<Position, NodeIndex>,
-    /// this map between Position and usize can reduce memory by roughly 3x
-    index_to_position: Vec<Position>,
 }
 
 /// precomputed data can help reduce runtime complexity, at the cost of more memory usage
@@ -65,7 +59,7 @@ impl Clone for CompleteModelGraphNode {
 #[derive(Debug, Clone, Serialize)]
 pub struct CompleteModelGraphEdge {
     /// the next node to source back, it can also be itself, in which case this is the adjacent to boundary
-    pub next: NodeIndex,
+    pub next: Position,
     /// the weight of this edge
     /// , note that we don't keep `possibility` here because it might overflow given small `p` and long path
     pub weight: f64,
@@ -74,7 +68,7 @@ pub struct CompleteModelGraphEdge {
 #[derive(Debug, Clone, Serialize)]
 pub struct PrecomputedData {
     /// precomputed complete graph edges, if all edges are found and recorded, then no need to run Dijkstra's algorithm on the fly
-    pub edges: BTreeMap<NodeIndex, CompleteModelGraphEdge>,
+    pub edges: BTreeMap<Position, CompleteModelGraphEdge>,
     /// precomputed complete graph edge to boundary
     pub boundary: Option<CompleteModelGraphEdge>,
 }
@@ -110,20 +104,6 @@ impl CompleteModelGraph {
             active_timestamp: 0,
             optimize_weight_greater_than_sum_boundary: true,
             model_graph: model_graph,
-            position_to_index: BTreeMap::new(),
-            index_to_position: Vec::new(),
-        }
-    }
-
-    /// get the index of a position, if not found then register it
-    pub fn get_index(&mut self, position: &Position) -> usize {
-        if self.position_to_index.contains_key(position) {
-            *self.position_to_index.get(position).unwrap()
-        } else {
-            let index = self.index_to_position.len();
-            self.position_to_index.insert(position.clone(), index);
-            self.index_to_position.push(position.clone());
-            index
         }
     }
 
@@ -194,12 +174,10 @@ impl CompleteModelGraph {
         }
         let (edges, boundary) = {
             let mut edges = Vec::new();
-            let precomputed = {
-                let node = self.get_node_unwrap(position);
-                Arc::clone(node.precomputed.as_ref().unwrap())
-            };
+            let node = self.get_node_unwrap(position);
+            let precomputed = node.precomputed.as_ref().unwrap();
             for (index, target) in targets.iter().enumerate() {
-                if let Some(edge) = precomputed.edges.get(&self.get_index(target)) {
+                if let Some(edge) = precomputed.edges.get(target) {
                     edges.push((index, edge.weight));
                 }
             }
@@ -218,12 +196,11 @@ impl CompleteModelGraph {
         let mut source = source.clone();
         if self.precompute_complete_model_graph {
             while &source != target {
-                let target_index = self.get_index(target);
                 let node = self.get_node_unwrap(&source);
                 let precomputed = node.precomputed.as_ref().unwrap();
-                let target_edge = precomputed.edges.get(&target_index);
+                let target_edge = precomputed.edges.get(target);
                 let edge = target_edge.as_ref().unwrap();
-                let next = &self.index_to_position[edge.next];
+                let next = &edge.next;
                 let model_graph_node = model_graph.get_node_unwrap(&source);
                 let next_edge = model_graph_node.edges.get(next);
                 let next_correction = &next_edge.as_ref().unwrap().correction;
@@ -258,7 +235,7 @@ impl CompleteModelGraph {
             let node = self.get_node_unwrap(&position);
             let precomputed = node.precomputed.as_ref().unwrap();
             let boundary = precomputed.boundary.as_ref().unwrap();
-            let next = &self.index_to_position[boundary.next];
+            let next = &boundary.next;
             let model_graph_node = model_graph.get_node_unwrap(&position);
             if next == &position {
                 // this is the boundary
@@ -291,9 +268,8 @@ impl CompleteModelGraph {
             }
             // eprintln!("target: {}, weight: {}, next: {}", target, weight, next);
             debug_assert!({
-                let target_index = self.get_index(&target);
                 let node = self.get_node_unwrap(position);
-                !node.precomputed.as_ref().unwrap().edges.contains_key(&target_index)  // this entry shouldn't have been set
+                !node.precomputed.as_ref().unwrap().edges.contains_key(&target)  // this entry shouldn't have been set
             });
             // update entry if size permits
             let node = self.get_node_mut_unwrap(&target);
@@ -305,11 +281,9 @@ impl CompleteModelGraph {
                     add_entry = boundary_sum.is_none() || boundary_sum.unwrap() >= weight;
                 }
                 if add_entry {
-                    let target_index = self.get_index(&target);
-                    let next_index = self.get_index(&next);
                     let node = self.get_node_mut_unwrap(position);
-                    Arc::get_mut(node.precomputed.as_mut().unwrap()).unwrap().edges.insert(target_index, CompleteModelGraphEdge {
-                        next: next_index,
+                    Arc::get_mut(node.precomputed.as_mut().unwrap()).unwrap().edges.insert(target.clone(), CompleteModelGraphEdge {
+                        next: next.clone(),
                         weight: weight,
                     });
                 }
@@ -374,10 +348,9 @@ impl CompleteModelGraph {
                 node.precomputed.as_ref().unwrap().boundary.is_none()  // this place shouldn't have been set
             });
             // update boundary
-            let next_index = self.get_index(&next);
             let node = self.get_node_mut_unwrap(&position);
             Arc::get_mut(node.precomputed.as_mut().unwrap()).unwrap().boundary = Some(CompleteModelGraphEdge {
-                next: next_index,
+                next: next,
                 weight: weight,
             });
             // add its neighbors to priority queue
@@ -409,8 +382,6 @@ impl CompleteModelGraph {
                 edges: BTreeMap::new(),
                 boundary: None,
             }));
-            // make sure each position has been assigned an index before precompute it (potentially multithreaded)
-            self.get_index(position);
         });
         // find the shortest path to boundaries, this will help reduce the number of steps later
         self.find_shortest_boundary_paths(simulator);
