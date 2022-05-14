@@ -9,8 +9,10 @@ from threshold_analyzer import qecp_benchmark_simulate_func_command_vec
 from threshold_analyzer import run_qecp_command_get_stdout, compile_code_if_necessary
 from threshold_analyzer import ThresholdAnalyzer
 
-rough_code_distances = [5,7]
-rough_runtime_budgets = [(6000, 600), (6000, 2400)]
+def rough_code_distances(bias_eta):
+    return [5,7] if bias_eta < 1000 else [9, 11] # larger code distance is necessary for high code distance
+def rough_runtime_budgets(bias_eta):
+    return [(6000, 600), (6000, 2400)] if bias_eta < 1000 else [(6000, 3600), (6000, 3600)]
 rough_init_search_start_p = 0.15  # already know all possible threshold is below 15%
 code_distances = [7,9,11,13]
 runtime_budgets = [(180000, 3600 * 4)] * len(code_distances)  # each given one hour
@@ -75,9 +77,9 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qecp_comman
             confidence_interval = float(lst[7])
             return (error_rate, confidence_interval)
         threshold_analyzer = ThresholdAnalyzer(code_distances, simulate_func)
-        threshold_analyzer.rough_code_distances = rough_code_distances
+        threshold_analyzer.rough_code_distances = rough_code_distances(bias_eta)
         threshold_analyzer.verbose = True
-        threshold_analyzer.rough_runtime_budgets = rough_runtime_budgets
+        threshold_analyzer.rough_runtime_budgets = rough_runtime_budgets(bias_eta)
         threshold_analyzer.rough_init_search_start_p = rough_init_search_start_p
         threshold_analyzer.code_distances = code_distances
         threshold_analyzer.runtime_budgets = runtime_budgets

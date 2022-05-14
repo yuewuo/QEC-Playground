@@ -42,7 +42,7 @@ pub mod mwpm_default_configs {
 
 impl MWPMDecoder {
     /// create a new MWPM decoder with decoder configuration
-    pub fn new(simulator: &Simulator, error_model: &ErrorModel, decoder_configuration: &serde_json::Value) -> Self {
+    pub fn new(simulator: &Simulator, error_model: &ErrorModel, decoder_configuration: &serde_json::Value, parallel: usize) -> Self {
         // read attribute of decoder configuration
         let config: MWPMDecoderConfig = serde_json::from_value(decoder_configuration.clone()).unwrap();
         // build model graph
@@ -52,7 +52,7 @@ impl MWPMDecoder {
         let model_graph = Arc::new(model_graph);
         // build complete model graph
         let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
-        complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph);
+        complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph, parallel);
         Self {
             model_graph: model_graph,
             complete_model_graph: complete_model_graph,

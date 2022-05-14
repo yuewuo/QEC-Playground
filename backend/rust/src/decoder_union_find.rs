@@ -106,7 +106,7 @@ pub mod union_find_default_configs {
 
 impl UnionFindDecoder {
     /// create a new MWPM decoder with decoder configuration
-    pub fn new(simulator: &Simulator, error_model: &ErrorModel, decoder_configuration: &serde_json::Value) -> Self {
+    pub fn new(simulator: &Simulator, error_model: &ErrorModel, decoder_configuration: &serde_json::Value, parallel: usize) -> Self {
         // read attribute of decoder configuration
         let config: UnionFindDecoderConfig = serde_json::from_value(decoder_configuration.clone()).unwrap();
         // build model graph
@@ -117,7 +117,7 @@ impl UnionFindDecoder {
         // build complete model graph
         let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
         complete_model_graph.optimize_weight_greater_than_sum_boundary = false;  // disable this optimization for any matching pair to exist
-        complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph);
+        complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph, parallel);
         // build union-find graph
         let mut index_to_position = Vec::<Position>::new();
         let mut position_to_index = BTreeMap::<Position, usize>::new();

@@ -513,7 +513,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                 model_graph.build(&mut simulator, &error_model_graph, &config.weight_function);
                 let model_graph = Arc::new(model_graph);
                 let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
-                complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph);
+                complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph, parallel);
                 return format!("{}\n", serde_json::to_string(&complete_model_graph.to_json(&simulator)).expect("serialize should success"));
             },
             Some(BenchmarkDebugPrint::TailoredModelGraph) => {
@@ -539,13 +539,13 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             assert!(decoder_config.is_object() && decoder_config.as_object().unwrap().len() == 0, "this decoder doesn't support decoder configuration");
         }
         let mwpm_decoder = if decoder == BenchmarkDecoder::MWPM {
-            Some(MWPMDecoder::new(&simulator, &error_model_graph, &decoder_config))
+            Some(MWPMDecoder::new(&simulator, &error_model_graph, &decoder_config, parallel))
         } else { None };
         let tailored_mwpm_decoder = if decoder == BenchmarkDecoder::TailoredMWPM {
-            Some(TailoredMWPMDecoder::new(&simulator, &error_model_graph, &decoder_config))
+            Some(TailoredMWPMDecoder::new(&simulator, &error_model_graph, &decoder_config, parallel))
         } else { None };
         let union_find_decoder = if decoder == BenchmarkDecoder::UnionFind {
-            Some(UnionFindDecoder::new(&simulator, &error_model_graph, &decoder_config))
+            Some(UnionFindDecoder::new(&simulator, &error_model_graph, &decoder_config, parallel))
         } else { None };
         // then prepare the real error model
         let mut error_model = ErrorModel::new(&simulator);
