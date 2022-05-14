@@ -11,6 +11,7 @@ unfinished.tasks
 python_interface/example.json
 # slurm job scripts are not needed, _aggregated.hjson is enough to record all results
 job_script.sbatch
+rerun-job_script.sbatch
 job_script.sh
 all.tasks
 rerun-*.sh

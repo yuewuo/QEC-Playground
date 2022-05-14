@@ -972,326 +972,326 @@
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[4.65427171e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[4.57209665e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0465427171 7 7 1274188 180002 0.14126800754676705 7 4.3e-3 0 
+      0.0457209665 7 7 1355539 180001 0.13278924472110357 7 4.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[4.72892887e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[4.59849740e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0472892887 7 7 1200275 180004 0.14996896544541877 7 4.3e-3 0 
+      0.045984974 7 7 1329346 180001 0.13540568068809775 7 4.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[4.80358603e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[4.62489815e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0480358603 7 7 1132493 180002 0.15894314578544858 7 4.2e-3 0 
+      0.0462489815 7 7 1303175 180000 0.13812419667350892 7 4.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[4.87824319e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[4.65129890e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0487824319 7 7 1071439 180000 0.1679983648159158 7 4.2e-3 0 
+      0.046512989 7 7 1267672 180004 0.14199572129068086 7 4.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[4.95290035e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[4.67769966e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0495290035 7 7 1013313 180002 0.17763711706057259 7 4.2e-3 0 
+      0.0467769966 7 7 1250948 180002 0.14389247194927368 7 4.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[5.02755751e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[4.70410041e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0502755751 7 7 962349 180000 0.1870423307968315 7 4.2e-3 0 
+      0.0470410041 7 7 1222112 180002 0.14728764630410307 7 4.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[5.10221467e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[4.73050116e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0510221467 7 7 908096 180005 0.19822243463246175 7 4.1e-3 0 
+      0.0473050116 7 7 1197965 180000 0.15025480711039138 7 4.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[5.17687183e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[4.75690192e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0517687183 7 7 868231 180003 0.2073215538261131 7 4.1e-3 0 
+      0.0475690192 7 7 1170934 180003 0.15372599992826239 7 4.2e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[5.25152899e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[7]' '[7]' -m1000000000 -e180000 '[4.78330267e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0525152899 7 7 828423 180004 0.21728513090534665 7 4.1e-3 0 
+      0.0478330267 7 7 1145730 180002 0.1571068227243766 7 4.2e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[4.65427171e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[4.57209665e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0465427171 9 9 1293617 180002 0.13914628518332706 9 4.3e-3 0 
+      0.0457209665 9 9 1413044 180001 0.1273852760423596 9 4.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[4.72892887e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[4.59849740e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0472892887 9 9 1201632 180000 0.14979627706319407 9 4.3e-3 0 
+      0.045984974 9 9 1375404 180003 0.1308728199132764 9 4.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[4.80358603e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[4.62489815e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0480358603 9 9 1112249 180001 0.16183516460792502 9 4.2e-3 0 
+      0.0462489815 9 9 1333559 180001 0.1349779049895805 9 4.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[4.87824319e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[4.65129890e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0487824319 9 9 1030999 180001 0.17458891812698168 9 4.2e-3 0 
+      0.046512989 9 9 1297834 180002 0.1386941627357582 9 4.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[4.95290035e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[4.67769966e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0495290035 9 9 961454 180002 0.18721852527526017 9 4.2e-3 0 
+      0.0467769966 9 9 1264035 180000 0.14240112022214574 9 4.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[5.02755751e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[4.70410041e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0502755751 9 9 895735 180004 0.20095675618346945 9 4.1e-3 0 
+      0.0470410041 9 9 1225871 180001 0.14683518902070447 9 4.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[5.10221467e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[4.73050116e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0510221467 9 9 838640 180001 0.2146344080892874 9 4.1e-3 0 
+      0.0473050116 9 9 1188598 180001 0.15143976348605667 9 4.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[5.17687183e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[4.75690192e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0517687183 9 9 786759 180003 0.2287905190789047 9 4.1e-3 0 
+      0.0475690192 9 9 1161321 180000 0.15499590552482906 9 4.2e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[5.25152899e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[9]' --djs '[9]' '[9]' -m1000000000 -e180000 '[4.78330267e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0525152899 9 9 739879 180004 0.24328842959456884 9 4.0e-3 0 
+      0.0478330267 9 9 1130662 180001 0.15919965471555603 9 4.2e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[4.65427171e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[4.57209665e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0465427171 11 11 979035 136419 0.13934026873400848 11 4.9e-3 0 
+      0.0457209665 11 11 1004758 125607 0.12501219199050917 11 5.2e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[4.72892887e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[4.59849740e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0472892887 11 11 1004975 154126 0.15336301898057167 11 4.6e-3 0 
+      0.045984974 11 11 990787 128736 0.12993307340528287 11 5.1e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[4.80358603e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[4.62489815e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0480358603 11 11 958033 161030 0.1680839804056854 11 4.5e-3 0 
+      0.0462489815 11 11 1005528 135502 0.13475706295597933 11 5.0e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[4.87824319e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[4.65129890e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0487824319 11 11 923901 170431 0.1844688987239975 11 4.3e-3 0 
+      0.046512989 11 11 940379 131260 0.13958201958997382 11 5.0e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[4.95290035e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[4.67769966e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0495290035 11 11 891340 180003 0.20194650750555343 11 4.1e-3 0 
+      0.0467769966 11 11 978860 141115 0.14416259730707148 11 4.8e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[5.02755751e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[4.70410041e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0502755751 11 11 821959 180002 0.2189914582114193 11 4.1e-3 0 
+      0.0470410041 11 11 930684 138610 0.14893347258575412 11 4.9e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[5.10221467e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[4.73050116e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0510221467 11 11 754118 180002 0.23869208797562186 11 4.0e-3 0 
+      0.0473050116 11 11 968163 150089 0.15502451549997262 11 4.7e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[5.17687183e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[4.75690192e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0517687183 11 11 699892 180003 0.25718682310985125 11 4.0e-3 0 
+      0.0475690192 11 11 942913 150750 0.15987689214169282 11 4.6e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[5.25152899e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[11]' --djs '[11]' '[11]' -m1000000000 -e180000 '[4.78330267e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0525152899 11 11 652094 180003 0.27603842390820954 11 3.9e-3 0 
+      0.0478330267 11 11 928871 153261 0.16499707709681968 11 4.6e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[4.65427171e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[4.57209665e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0465427171 13 13 358141 50794 0.14182682239676553 13 8.1e-3 0 
+      0.0457209665 13 13 351600 43791 0.12454778156996588 13 8.8e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[4.72892887e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[4.59849740e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0472892887 13 13 383484 61396 0.16010055178312524 13 7.2e-3 0 
+      0.045984974 13 13 356691 46691 0.13090041520531775 13 8.5e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[4.80358603e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[4.62489815e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0480358603 13 13 369096 66011 0.17884507011725947 13 6.9e-3 0 
+      0.0462489815 13 13 358575 49253 0.13735759603988007 13 8.2e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[4.87824319e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[4.65129890e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0487824319 13 13 333268 66526 0.19961712495649148 13 6.8e-3 0 
+      0.046512989 13 13 312065 44356 0.14213705478025412 13 8.6e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[4.95290035e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[4.67769966e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0495290035 13 13 305977 67906 0.2219317138216271 13 6.6e-3 0 
+      0.0467769966 13 13 292162 43301 0.14820887042120467 13 8.7e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[5.02755751e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[4.70410041e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0502755751 13 13 297677 72722 0.24429835022524415 13 6.3e-3 0 
+      0.0470410041 13 13 399723 61615 0.15414424488958603 13 7.3e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[5.10221467e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[4.73050116e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0510221467 13 13 320652 86231 0.268923942467223 13 5.7e-3 0 
+      0.0473050116 13 13 329897 53554 0.16233551684313588 13 7.8e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[5.17687183e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[4.75690192e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0517687183 13 13 322153 94359 0.29290119911967294 13 5.4e-3 0 
+      0.0475690192 13 13 288595 48485 0.16800360366603717 13 8.1e-3 0 
 
       '''
   ]
   [
-    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[5.25152899e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.95290035e-02]'
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[13]' --djs '[13]' '[13]' -m1000000000 -e180000 '[4.78330267e-02]' -p12 --code_type RotatedTailoredCode --bias_eta 10 --decoder tailored-mwpm --decoder_config '{"pcmg":true}' --error_model phenomenological --time_budget 14400 --ps_graph '[4.67769966e-02]'
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0525152899 13 13 323330 102527 0.31709708347508736 13 5.1e-3 0 
+      0.0478330267 13 13 314347 55009 0.17499451243371178 13 7.6e-3 0 
 
       '''
   ]
