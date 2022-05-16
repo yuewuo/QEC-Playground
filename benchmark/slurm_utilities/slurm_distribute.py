@@ -61,6 +61,8 @@ if SLURM_DISTRIBUTE_ENABLED:
 def slurm_threads_or(default_threads):
     if SLURM_DISTRIBUTE_ENABLED:
         return SLURM_DISTRIBUTE_CPUS_PER_TASK
+    if 'STO_THREAD_LIMIT' in os.environ and os.environ["STO_THREAD_LIMIT"] != "":
+        return int(os.environ["STO_THREAD_LIMIT"])
     return default_threads
 
 def cpu_hours(target_cpu_hours):
