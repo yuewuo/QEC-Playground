@@ -5,7 +5,7 @@ qec_playground_root_dir = subprocess.run("git rev-parse --show-toplevel", cwd=os
 rust_dir = os.path.join(qec_playground_root_dir, "backend", "rust")
 fault_toleran_MWPM_dir = os.path.join(qec_playground_root_dir, "benchmark", "fault_tolerant_MWPM")
 sys.path.insert(0, fault_toleran_MWPM_dir)
-from automated_threshold_evaluation import qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command
+from automated_threshold_evaluation import qec_playground_benchmark_simulator_runner_vec_command
 from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 
 pairs = [ (3, 9, 9), (4, 12, 12), (5, 15, 15), (6, 18, 18), (7, 21, 21), (8, 24, 24) ]  # (di, dj, T)
@@ -34,7 +34,7 @@ num_threads = os.cpu_count() - 2 if ENABLE_MULTITHREADING else 1
 print(num_threads)
 
 MWPM_parameters = f"-p{num_threads} --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100".split(" ")
-MWPM_command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command(p_vec, di_vec, dj_vec, T_vec, MWPM_parameters + ["--log_runtime_statistics", log_filepath], max_N=max_N, min_error_cases=min_error_cases)
+MWPM_command = qec_playground_benchmark_simulator_runner_vec_command(p_vec, di_vec, dj_vec, T_vec, MWPM_parameters + ["--log_runtime_statistics", log_filepath], max_N=max_N, min_error_cases=min_error_cases)
 print(" ".join(MWPM_command))
 
 # MWPM

@@ -209,7 +209,7 @@ impl CompleteModelGraph {
             }
             correction
         } else {
-            self.precompute_dijkstra(target);
+            self.precompute_dijkstra_with_end_position(target, &source);
             // logic is different from what's happening if `precompute_complete_model_graph` is set
             while &source != target {
                 let node = self.get_node_unwrap(&source);
@@ -252,8 +252,14 @@ impl CompleteModelGraph {
         correction
     }
 
-    /// run full Dijkstra's algorithm and identify the active region, running [`Self::find_shortest_boundary_paths`] required before this function
+    /// run full Dijkstra's algorithm and identify the active region
     pub fn precompute_dijkstra(&mut self, position: &Position) {
+        self.precompute_dijkstra_with_end_position(position, &pos!(usize::MAX, usize::MAX, usize::MAX))
+    }
+
+    /// run full Dijkstra's algorithm and identify the active region, running [`Self::find_shortest_boundary_paths`] required before this function;
+    /// terminate early if `end_position` is found
+    pub fn precompute_dijkstra_with_end_position(&mut self, position: &Position, end_position: &Position) {
         let model_graph = Arc::clone(&self.model_graph);
         let active_timestamp = self.invalidate_previous_dijkstra();
         let mut pq = PriorityQueue::<Position, PriorityElement>::new();
@@ -286,6 +292,9 @@ impl CompleteModelGraph {
                         next: next.clone(),
                         weight: weight,
                     });
+                    if &target == end_position {
+                        return  // early terminate
+                    }
                 }
             }
             // add its neighbors to priority queue

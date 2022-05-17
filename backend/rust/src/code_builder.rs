@@ -81,12 +81,14 @@ impl CodeType {
             "StandardTailoredCode" => Self::StandardTailoredCode{ noisy_measurements, di, dj },
             "RotatedTailoredCode" => Self::RotatedTailoredCode{ noisy_measurements, dp: di, dn: dj },
             "PeriodicRotatedTailoredCode" => Self::PeriodicRotatedTailoredCode{ noisy_measurements, dp: di, dn: dj },
+            "StandardXZZXCode" => Self::StandardXZZXCode{ noisy_measurements, di, dj },
+            "RotatedXZZXCode" => Self::RotatedXZZXCode{ noisy_measurements, dp: di, dn: dj },
             _ => unimplemented!()
         }
     }
     pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
         static VARIANTS: &'static [&str] = &[
-            "StandardPlanarCode", "RotatedPlanarCode", "StandardTailoredCode", "RotatedTailoredCode", "PeriodicRotatedTailoredCode"
+            "StandardPlanarCode", "RotatedPlanarCode", "StandardTailoredCode", "RotatedTailoredCode", "PeriodicRotatedTailoredCode", "StandardXZZXCode", "RotatedXZZXCode"
         ];
         VARIANTS.iter().map(|x| PossibleValue::new(x))
     }
@@ -703,8 +705,171 @@ pub fn build_code(simulator: &mut Simulator) {
         CodeType::Customized => {
             // skip user customized code
         },
-        _ => {
-            unimplemented!("code type not supported yet");
+        &CodeType::StandardXZZXCode { noisy_measurements, di, dj } | &CodeType::RotatedXZZXCode { noisy_measurements, dp: di, dn: dj } => {
+            simulator.measurement_cycles = 6;
+            assert!(di > 0, "code distance must be positive integer");
+            assert!(dj > 0, "code distance must be positive integer");
+            let is_rotated = matches!(code_type, CodeType::RotatedPlanarCode { .. });
+            if is_rotated {
+                assert!(di % 2 == 1, "code distance must be odd integer, current: di = {}", di);
+                assert!(dj % 2 == 1, "code distance must be odd integer, current: dj = {}", dj);
+            }
+            // println!("noisy_measurements: {}, di: {}, dj: {}, is_rotated: {}", noisy_measurements, di, dj, is_rotated);
+            let (vertical, horizontal) = if is_rotated {
+                (di + dj + 1, di + dj + 1)
+            } else {
+                (2 * di + 1, 2 * dj + 1)
+            };
+            let height = simulator.measurement_cycles * (noisy_measurements + 1) + 1;
+            // each measurement takes 6 time steps
+            let mut nodes = Vec::with_capacity(height);
+            let is_real = |i: usize, j: usize| -> bool {
+                if is_rotated {
+                    let is_real_dj = |pi, pj| { pi + pj < dj || (pi + pj == dj && pi % 2 == 0 && pi > 0) };
+                    let is_real_di = |pi, pj| { pi + pj < di || (pi + pj == di && pj % 2 == 0 && pj > 0) };
+                    if i <= dj && j <= dj {
+                        is_real_dj(dj - i, dj - j)
+                    } else if i >= di && j >= di {
+                        is_real_dj(i - di, j - di)
+                    } else if i >= dj && j <= di {
+                        is_real_di(i - dj, di - j)
+                    } else if i <= di && j >= dj {
+                        is_real_di(di - i, j - dj)
+                    } else {
+                        unreachable!()
+                    }
+                } else {
+                    i > 0 && j > 0 && i < vertical - 1 && j < horizontal - 1
+                }
+            };
+            let is_virtual = |i: usize, j: usize| -> bool {
+                if is_rotated {
+                    let is_virtual_dj = |pi, pj| { pi + pj == dj && (pi % 2 == 1 || pi == 0) };
+                    let is_virtual_di = |pi, pj| { pi + pj == di && (pj % 2 == 1 || pj == 0) };
+                    if i <= dj && j <= dj {
+                        is_virtual_dj(dj - i, dj - j)
+                    } else if i >= di && j >= di {
+                        is_virtual_dj(i - di, j - di)
+                    } else if i >= dj && j <= di {
+                        is_virtual_di(i - dj, di - j)
+                    } else if i <= di && j >= dj {
+                        is_virtual_di(di - i, j - dj)
+                    } else {
+                        unreachable!()
+                    }
+                } else {
+                    if i == 0 || i == vertical - 1 {
+                        j % 2 == 1
+                    } else if j == 0 || j == horizontal - 1 {
+                        i % 2 == 1
+                    } else {
+                        false
+                    }
+                }
+            };
+            let is_present = |i: usize, j: usize| -> bool {
+                let is_this_real = is_real(i, j);
+                let is_this_virtual = is_virtual(i, j);
+                assert!(!(is_this_real && is_this_virtual), "a position cannot be both real and virtual");
+                is_this_real || is_this_virtual
+            };
+            for t in 0..height {
+                let mut row_i = Vec::with_capacity(vertical);
+                for i in 0..vertical {
+                    let mut row_j = Vec::with_capacity(horizontal);
+                    for j in 0..horizontal {
+                        if is_present(i, j) {
+                            let qubit_type = if (i + j) % 2 == 0 {
+                                assert!(is_real(i, j), "data qubits should not be virtual");
+                                QubitType::Data
+                            } else { if i % 2 == 1 { QubitType::StabXZZXLogicalZ } else { QubitType::StabXZZXLogicalX } };
+                            let mut gate_type = GateType::None;
+                            let mut gate_peer = None;
+                            match t % simulator.measurement_cycles {
+                                1 => {  // initialization
+                                    match qubit_type {
+                                        QubitType::StabXZZXLogicalZ => { gate_type = GateType::InitializeX; }
+                                        QubitType::StabXZZXLogicalX => { gate_type = GateType::InitializeX; }
+                                        QubitType::Data => { }
+                                        _ => { unreachable!() }
+                                    }
+                                },
+                                2 => {  // gate 1
+                                    if qubit_type == QubitType::Data {
+                                        if i+1 < vertical && is_present(i+1, j) {
+                                            gate_type = GateType::CZGate;
+                                            gate_peer = Some(pos!(t, i+1, j));
+                                        }
+                                    } else {
+                                        if i >= 1 && is_present(i-1, j) {
+                                            gate_type = GateType::CZGate;
+                                            gate_peer = Some(pos!(t, i-1, j));
+                                        }
+                                    }
+                                },
+                                3 => {  // gate 2
+                                    if qubit_type == QubitType::Data {
+                                        if j+1 < horizontal && is_present(i, j+1) {
+                                            gate_type = GateType::CXGateTarget;
+                                            gate_peer = Some(pos!(t, i, j+1));
+                                        }
+                                    } else {
+                                        if j >= 1 && is_present(i, j-1) {
+                                            gate_type = GateType::CXGateControl;
+                                            gate_peer = Some(pos!(t, i, j-1));
+                                        }
+                                    }
+                                },
+                                4 => {  // gate 3
+                                    if qubit_type == QubitType::Data {
+                                        if j >= 1 && is_present(i, j-1) {
+                                            gate_type = GateType::CXGateTarget;
+                                            gate_peer = Some(pos!(t, i, j-1));
+                                        }
+                                    } else {
+                                        if j+1 < horizontal && is_present(i, j+1) {
+                                            gate_type = GateType::CXGateControl;
+                                            gate_peer = Some(pos!(t, i, j+1));
+                                        }
+                                    }
+                                },
+                                5 => {  // gate 4
+                                    if qubit_type == QubitType::Data {
+                                        if i >= 1 && is_present(i-1, j) {
+                                            gate_type = GateType::CZGate;
+                                            gate_peer = Some(pos!(t, i-1, j));
+                                        }
+                                    } else {
+                                        if i+1 < vertical && is_present(i+1, j) {
+                                            gate_type = GateType::CZGate;
+                                            gate_peer = Some(pos!(t, i+1, j));
+                                        }
+                                    }
+                                },
+                                0 => {  // measurement
+                                    match qubit_type {
+                                        QubitType::StabXZZXLogicalZ => { gate_type = GateType::MeasureX; }
+                                        QubitType::StabXZZXLogicalX => { gate_type = GateType::MeasureX; }
+                                        QubitType::Data => { }
+                                        _ => { unreachable!() }
+                                    }
+                                },
+                                _ => unreachable!()
+                            }
+                            row_j.push(Some(Box::new(SimulatorNode::new(qubit_type, gate_type, gate_peer.clone()).set_virtual(
+                                is_virtual(i, j), gate_peer.map_or(false, |peer| is_virtual(peer.i, peer.j))))));
+                        } else {
+                            row_j.push(None);
+                        }
+                    }
+                    row_i.push(row_j);
+                }
+                nodes.push(row_i)
+            }
+            simulator.vertical = vertical;
+            simulator.horizontal = horizontal;
+            simulator.height = height;
+            simulator.nodes = nodes;
         },
     }
 }
@@ -899,6 +1064,48 @@ pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &
             // odd cardinality means there is a logical error; there are two logical qubits so either error
             let logical_p = top_cardinality_y % 2 != 0 || left_cardinality_y % 2 != 0;
             let logical_n = top_cardinality_x % 2 != 0 || left_cardinality_x % 2 != 0;
+            Some((logical_p, logical_n))
+        },
+        &CodeType::StandardXZZXCode { .. } => {
+            // check cardinality of top boundary for logical_i
+            let mut top_cardinality = 0;
+            for j in (1..simulator.horizontal).step_by(2) {
+                let node = simulator.get_node_unwrap(&pos!(top_t, 1, j));
+                if node.propagated == X || node.propagated == Y {
+                    top_cardinality += 1;
+                }
+            }
+            let logical_i = top_cardinality % 2 != 0;  // odd cardinality means there is a logical Z error
+            // check cardinality of left boundary for logical_j
+            let mut left_cardinality = 0;
+            for i in (1..simulator.vertical).step_by(2) {
+                let node = simulator.get_node_unwrap(&pos!(top_t, i, 1));
+                if node.propagated == Z || node.propagated == Y {
+                    left_cardinality += 1;
+                }
+            }
+            let logical_j = left_cardinality % 2 != 0;  // odd cardinality means there is a logical X error
+            Some((logical_i, logical_j))
+        },
+        &CodeType::RotatedXZZXCode { dp, dn, .. } => {
+            // check cardinality of top boundary for logical_i
+            let mut top_cardinality = 0;
+            for delta in 0..dn {
+                let node = simulator.get_node_unwrap(&pos!(top_t, dn-delta, 1+delta));
+                if node.propagated == X || node.propagated == Y {
+                    top_cardinality += 1;
+                }
+            }
+            let logical_p = top_cardinality % 2 != 0;  // odd cardinality means there is a logical Z error
+            // check cardinality of left boundary for logical_j
+            let mut left_cardinality = 0;
+            for delta in 0..dp {
+                let node = simulator.get_node_unwrap(&pos!(top_t, dn+delta, 1+delta));
+                if node.propagated == Z || node.propagated == Y {
+                    left_cardinality += 1;
+                }
+            }
+            let logical_n = left_cardinality % 2 != 0;  // odd cardinality means there is a logical X error
             Some((logical_p, logical_n))
         },
         _ => None

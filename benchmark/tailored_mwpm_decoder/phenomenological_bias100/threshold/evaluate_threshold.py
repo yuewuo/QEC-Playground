@@ -14,13 +14,14 @@ rough_runtime_budgets = [(30000, 30000, 3600), (30000, 30000, 3600)]  # (max_rep
 rough_init_search_start_p = 0.06
 code_distances = [13, 15, 17, 19, 21]
 runtime_budgets = [(30000, 30000, 3600 * 10)] * len(code_distances)  # each given 10 hours
-target_relative_diff = 0.25
+target_relative_diff = 0.5
 fit_samples = 7
 bias_eta = 100
 
-slurm_distribute.SLURM_DISTRIBUTE_TIME = "4:20:00"
-slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '16G'
-slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # for more usuable machines, use `SLURM_USE_SCAVENGE_PARTITION=1` flag
+slurm_distribute.SLURM_DISTRIBUTE_TIME = "10:20:00"
+# slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '10G'
+slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '70G'  # necessary only for large code distances like 19 and 21
+slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 20
 def generate_parameters(bias_eta):
     return f"-p{STO(0)} --code_type RotatedTailoredCode --bias_eta {bias_eta} --decoder tailored-mwpm --decoder_config {{\"pcmg\":true}} --error_model phenomenological".split(" ")
 

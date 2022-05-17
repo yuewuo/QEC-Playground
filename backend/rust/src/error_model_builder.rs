@@ -17,6 +17,10 @@ pub enum ErrorModelBuilder {
     Phenomenological,
     /// tailored surface code with Bell state initialization (logical |+> state) to fix 3/4 of all stabilizers
     TailoredScBellInitPhenomenological,
+    /// arXiv:2104.09539v1 Sec.IV.A
+    GenericBiasedWithBiasedCX,
+    /// arXiv:2104.09539v1 Sec.IV.A
+    GenericBiasedWithStandardCX,
 }
 
 impl ErrorModelBuilder {
@@ -111,6 +115,89 @@ impl ErrorModelBuilder {
                                 error_model.set_node(position, Some(pure_measurement_node.clone()));
                             }
                         }
+                    }
+                });
+            },
+            ErrorModelBuilder::GenericBiasedWithBiasedCX | ErrorModelBuilder::GenericBiasedWithStandardCX => {
+                let mut initialization_error_rate = p;  // by default initialization error rate is the same as p
+                let mut measurement_error_rate = p;
+                let mut config_cloned = error_model_configuration.clone();
+                let config = config_cloned.as_object_mut().expect("error_model_configuration must be JSON object");
+                config.remove("initialization_error_rate").map(|value| initialization_error_rate = value.as_f64().expect("f64"));
+                config.remove("measurement_error_rate").map(|value| measurement_error_rate = value.as_f64().expect("f64"));
+                if !config.is_empty() { panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>()); }
+                // normal biased node
+                let mut normal_biased_node = ErrorModelNode::new();
+                normal_biased_node.pauli_error_rates.error_rate_X = initialization_error_rate / bias_eta;
+                normal_biased_node.pauli_error_rates.error_rate_Z = initialization_error_rate;
+                normal_biased_node.pauli_error_rates.error_rate_Y = initialization_error_rate / bias_eta;
+                let normal_biased_node = Arc::new(normal_biased_node);
+                // CZ gate node
+                let mut cphase_node = ErrorModelNode::new();
+                cphase_node.correlated_pauli_error_rates = Some(CorrelatedPauliErrorRates::default_with_probability(p / bias_eta));
+                cphase_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZI = p;
+                cphase_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IZ = p;
+                let cphase_node = Arc::new(cphase_node);
+                // CZ gate with measurement error
+                let mut cphase_measurement_error_node: ErrorModelNode = (*cphase_node).clone();
+                cphase_measurement_error_node.pauli_error_rates.error_rate_X = initialization_error_rate / bias_eta;
+                cphase_measurement_error_node.pauli_error_rates.error_rate_Z = initialization_error_rate;
+                cphase_measurement_error_node.pauli_error_rates.error_rate_Y = initialization_error_rate / bias_eta;
+                let cphase_measurement_error_node = Arc::new(cphase_measurement_error_node);
+                // CX gate node
+                let mut cx_node = ErrorModelNode::new();
+                cx_node.correlated_pauli_error_rates = Some(CorrelatedPauliErrorRates::default_with_probability(p / bias_eta));
+                cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZI = p;
+                match self {
+                    ErrorModelBuilder::GenericBiasedWithStandardCX => {
+                        cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IZ = 0.375 * p;
+                        cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZZ = 0.375 * p;
+                        cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IY = 0.125 * p;
+                        cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZY = 0.125 * p;
+                    },
+                    ErrorModelBuilder::GenericBiasedWithBiasedCX => {
+                        cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IZ = 0.5 * p;
+                        cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZZ = 0.5 * p;
+                    },
+                    _ => { }
+                }
+                let cx_node = Arc::new(cx_node);
+                // CX gate with measurement error
+                let mut cx_measurement_error_node: ErrorModelNode = (*cphase_node).clone();
+                cx_measurement_error_node.pauli_error_rates.error_rate_X = initialization_error_rate / bias_eta;
+                cx_measurement_error_node.pauli_error_rates.error_rate_Z = initialization_error_rate;
+                cx_measurement_error_node.pauli_error_rates.error_rate_Y = initialization_error_rate / bias_eta;
+                let cx_measurement_error_node = Arc::new(cx_measurement_error_node);
+                // iterate over all nodes
+                simulator_iter_real!(simulator, position, node, {
+                    // first clear error rate
+                    error_model.set_node(position, Some(noiseless_node.clone()));
+                    if position.t >= simulator.height - simulator.measurement_cycles {  // no error on the top, as a perfect measurement round
+                        return
+                    }
+                    // do different things for each stage
+                    match position.t % simulator.measurement_cycles {
+                        1 => {  // initialization
+                            error_model.set_node(position, Some(normal_biased_node.clone()));
+                        },
+                        0 => {  // measurement
+                            // do nothing
+                        },
+                        _ => {
+                            let has_measurement_error = position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1 && node.qubit_type != QubitType::Data;
+                            match node.gate_type {
+                                GateType::CZGate => {
+                                    if node.qubit_type != QubitType::Data {  // this is ancilla
+                                        // better check whether peer is indeed data qubit, but it's hard here due to Rust's borrow check
+                                        error_model.set_node(position, Some(if has_measurement_error { cphase_measurement_error_node.clone() } else { cphase_node.clone() } ));
+                                    }
+                                },
+                                GateType::CXGateControl => {  // this is ancilla in XZZX code, see arXiv:2104.09539v1
+                                    error_model.set_node(position, Some(if has_measurement_error { cx_measurement_error_node.clone() } else { cx_node.clone() } ));
+                                },
+                                _ => { }
+                            }
+                        },
                     }
                 });
             },
