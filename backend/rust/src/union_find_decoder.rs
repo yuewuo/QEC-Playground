@@ -29,7 +29,7 @@ pub struct DeprecatedUnionFindDecoder<U: std::fmt::Debug> {
     /// each node corresponds to a stabilizer
     pub nodes: Vec<DecoderNode<U>>,
     /// union find solver
-    pub union_find: UnionFind,
+    pub union_find: DefaultUnionFind,
     /// all odd clusters that need to update in each turn, clusters are named under the root
     pub odd_clusters: Vec<usize>,  // to reduce complexity of iterating over odd_clusters
     pub odd_clusters_set: HashSet<usize>,  // for ease of query
@@ -167,8 +167,8 @@ impl<U: std::fmt::Debug> DeprecatedUnionFindDecoder<U> {
             (idx, (vec![idx], vec![idx].into_iter().collect::<HashSet<usize>>()))
         }).collect();  // only roots of these odd clusters are boundaries in the initial state
         // union find solver
-        let union_find = UnionFind::from_iter(nodes.iter().map(|node| {
-            UnionNode {
+        let union_find = DefaultUnionFind::from_iter(nodes.iter().map(|node| {
+            DefaultUnionNode {
                 set_size: 1,
                 cardinality: if node.node.is_error_syndrome { 1 } else { 0 },
                 is_touching_boundary: false,  // the set is never touching the boundary at the beginning

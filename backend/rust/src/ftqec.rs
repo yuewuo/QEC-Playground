@@ -33,7 +33,7 @@ use super::fast_benchmark::FastBenchmark;
 use serde::Serialize;
 use super::util;
 use super::util::simple_hasher::SimpleHasher;
-use super::union_find::UnionFind;
+use super::union_find::DefaultUnionFind;
 
 /// uniquely index a node
 /// update 2022.3.13: remove hash support for index; if use hash, change to FastHashIndex
@@ -2216,7 +2216,7 @@ impl PlanarCodeModel {
             let m_len = to_be_matched.len();  // boundary connection to `i` is `i + m_len`
             let node_num = m_len * 2;
             // prepare union-find structures
-            let mut tailored_union = UnionFind::new(if self.enabled_tailored_decoding { m_len * 3 } else { 0 } );
+            let mut tailored_union = DefaultUnionFind::new(if self.enabled_tailored_decoding { m_len * 3 } else { 0 } );
             // note: tailored_union needs to keep track of boundary connections as well, so the length is `m_len * 3`
             //     this is because it needs to distinguish the positive boundary and negative boundary
             if self.enabled_tailored_decoding {

@@ -12,6 +12,7 @@ use super::union_find::*;
 use std::sync::{Arc};
 use std::time::Instant;
 use std::collections::{BTreeSet, BTreeMap};
+use super::either::Either;
 
 /// MWPM decoder, initialized and cloned for multiple threads
 #[derive(Debug, Clone, Serialize)]
@@ -35,12 +36,13 @@ pub struct UnionFindDecoder {
     /// record the boundary nodes as an optimization, see <https://arxiv.org/pdf/1709.06218.pdf> Section "Boundary representation".
     /// even clusters should not be key in HashMap, and only real boundary should be in the `HashSet` value;
     /// those nodes without error syndrome also have entries in this HashMap, with the value of { itself }
-    pub cluster_boundaries: BTreeMap<usize, (Vec<usize>, BTreeSet<usize>)>,
+    pub cluster_boundaries: Vec<Vec<usize>>,
     /// trace: study the time consumption of each step
     pub time_uf_grow: f64,
     pub time_uf_merge: f64,
     pub time_uf_update: f64,
     pub time_uf_remove: f64,
+    pub count_node_visited: usize,
     /// save configuration for later usage
     pub config: UnionFindDecoderConfig,
     /// internal cache used by iteration
@@ -61,6 +63,8 @@ pub struct UnionFindDecoderNode {
     pub boundary_length: Option<usize>,
     /// increased region towards boundary, only valid when `node.boundary_length` is `Some(_)`
     pub boundary_increased: usize,
+    /// whether visited ever in the algorithm, recorded as statistics
+    pub node_visited: bool,
 }
 
 /// each edge consists of two partial edges, one from each vertex; the sum of their [`NeighborPartialEdge::increased`] is the growing progress of this edge
@@ -131,6 +135,7 @@ impl UnionFindDecoder {
                 index_to_neighbor: BTreeMap::new(),  // updated later
                 boundary_length: None,  // updated later
                 boundary_increased: 0,
+                node_visited: false,
             };
             position_to_index.insert(position.clone(), index);
             index_to_position.push(position.clone());
@@ -171,6 +176,7 @@ impl UnionFindDecoder {
             }
         };
         // fill in neighbors
+        let mut cluster_boundaries = Vec::with_capacity(nodes.len());
         for index in 0..nodes.len() {
             let position = index_to_position.get(index).unwrap();
             let node = nodes.get_mut(index).unwrap();
@@ -196,6 +202,7 @@ impl UnionFindDecoder {
                 },
                 None => { }
             }
+            cluster_boundaries.push(vec![index]);
         }
         let union_find = UnionFind::new(nodes.len());
         Self {
@@ -207,11 +214,12 @@ impl UnionFindDecoder {
             union_find: union_find,
             odd_clusters: Vec::new(),
             odd_clusters_set: BTreeSet::new(),
-            cluster_boundaries: BTreeMap::new(),
+            cluster_boundaries: cluster_boundaries,  // Yue 2022.5.17: previously I use BTreeMap, but it has O(d^2.6) scaling rather than O(d^2)
             time_uf_grow: 0.,
             time_uf_merge: 0.,
             time_uf_update: 0.,
             time_uf_remove: 0.,
+            count_node_visited: 0,
             config: config,
             // internal caches
             fusion_list: Vec::new(),
@@ -229,8 +237,9 @@ impl UnionFindDecoder {
                 neighbor_partial_edge.grown = false;
             }
             node.boundary_increased = 0;
+            node.node_visited = false;
             // overwrite the odd value
-            self.cluster_boundaries.insert(index, (vec![index], [index].into_iter().collect::<BTreeSet<usize>>()));
+            self.cluster_boundaries[index] = vec![index];
             // TODO: copy length and boundary_length as well, since erasure error decoding requires modifying them on the fly
         }
         self.odd_clusters.clear();
@@ -239,6 +248,7 @@ impl UnionFindDecoder {
         self.time_uf_merge = 0.;
         self.time_uf_update = 0.;
         self.time_uf_remove = 0.;
+        self.count_node_visited = 0;
     }
 
     /// decode given measurement results
@@ -252,6 +262,10 @@ impl UnionFindDecoder {
             self.odd_clusters_set.insert(index);
             self.nodes[index].is_error_syndrome = true;
             self.union_find.payload[index].as_mut().unwrap().cardinality = 1;  // odd
+            if !self.nodes[index].node_visited {
+                self.nodes[index].node_visited = true;
+                self.count_node_visited += 1;
+            }
         }
         let time_prepare_decoders = begin.elapsed().as_secs_f64();
         // decode
@@ -265,37 +279,27 @@ impl UnionFindDecoder {
         // build correction based on the matching
         let begin = Instant::now();
         let mut correction = SparseCorrection::new();
-        let mut counted_sets = BTreeSet::new();
         // invalidate previous cache to save memory
         self.complete_model_graph.invalidate_previous_dijkstra();
+        // in order to build correction, first collect the nodes for each cluster
+        let mut cluster_nodes = BTreeMap::<usize, Vec<usize>>::new();
         for position in sparse_measurement.iter() {
             let index = self.position_to_index[position];
             let root = self.union_find.find(index);
-            if counted_sets.contains(&root) {  // every set should only be counted once
-                continue
+            if !cluster_nodes.contains_key(&root) {
+                cluster_nodes.insert(root, vec![]);
             }
+            cluster_nodes.get_mut(&root).unwrap().push(index);
+        }
+        // then build correction based on each correction
+        for (root, mut error_syndromes) in cluster_nodes.into_iter() {
             let root_node_cardinality = self.union_find.get(root).cardinality;
+            let cluster_boundary_index = self.union_find.get(root).touching_boundary_index;
             debug_assert!(root_node_cardinality > 0, "each nontrivial measurement must be in a non-empty cluster");
-            counted_sets.insert(root);
-            // find all errors in this cluster
-            let mut error_syndromes = Vec::new();
-            let mut cluster_boundary = None;
-            for index2 in 0..self.nodes.len() {
-                let root2 = self.union_find.find(index2);
-                if root2 == root {
-                    let node2 = &self.nodes[index2];
-                    if node2.boundary_length.is_some() && node2.boundary_increased >= node2.boundary_length.unwrap() {
-                        cluster_boundary = Some(index2);
-                    }
-                    if node2.is_error_syndrome {
-                        error_syndromes.push(index2);
-                    }
-                }
-            }
             assert_eq!(error_syndromes.len(), root_node_cardinality);
             if root_node_cardinality % 2 == 1 {
+                assert!(cluster_boundary_index != usize::MAX, "boundary of odd cluster must exists");
                 // connect to a boundary and others internally
-                let cluster_boundary_index = cluster_boundary.expect("odd cluster should at least have 1 boundary");
                 error_syndromes.push(cluster_boundary_index);  // let it match with others
                 let cluster_boundary_position = &self.index_to_position[cluster_boundary_index];
                 // println!("match boundary {:?}", cluster_boundary_position);
@@ -325,6 +329,7 @@ impl UnionFindDecoder {
             "time_uf_update": self.time_uf_update,
             "time_uf_remove": self.time_uf_remove,
             "time_build_correction": time_build_correction,
+            "count_node_visited": self.count_node_visited,
         }))
     }
 
@@ -393,7 +398,7 @@ impl UnionFindDecoder {
     /// only print those `cluster_boundaries` != vec!\[itself\]
     #[allow(dead_code)]
     pub fn debug_print_cluster_boundaries(&self) {
-        for (&cluster, (boundaries_vec, _boundaries)) in self.cluster_boundaries.iter() {
+        for (cluster, boundaries_vec) in self.cluster_boundaries.iter().enumerate() {
             if boundaries_vec.len() == 1 && self.odd_clusters_set.get(&cluster).is_none() {
                 continue  // ignore printing this one
             }
@@ -418,7 +423,7 @@ impl UnionFindDecoder {
             // compute the maximum safe length to growth
             let mut maximum_safe_length = usize::MAX;
             for &odd_cluster in self.odd_clusters.iter() {
-                let (boundaries_vec, _boundaries) = self.cluster_boundaries.get(&odd_cluster).unwrap();
+                let boundaries_vec = &self.cluster_boundaries[odd_cluster];
                 for &boundary in boundaries_vec.iter() {
                     let neighbor_len = self.nodes[boundary].neighbors.len();
                     for i in 0..neighbor_len {
@@ -461,7 +466,7 @@ impl UnionFindDecoder {
         // grow and update cluster boundaries
         let begin = Instant::now();
         for &odd_cluster in self.odd_clusters.iter() {
-            let (boundaries_vec, _boundaries) = self.cluster_boundaries.get(&odd_cluster).unwrap();
+            let boundaries_vec = &self.cluster_boundaries[odd_cluster];
             for &boundary in boundaries_vec.iter() {
                 // grow this boundary and check for grown edge at the same time
                 let neighbor_len = self.nodes[boundary].neighbors.len();
@@ -478,6 +483,10 @@ impl UnionFindDecoder {
                         neighbor_partial_edge.grown = true;
                         let partial_edge = &mut self.nodes[boundary].neighbors[i];
                         partial_edge.grown = true;
+                        if !self.nodes[neighbor_index].node_visited {
+                            self.nodes[neighbor_index].node_visited = true;
+                            self.count_node_visited += 1;
+                        }
                     }
                 }
                 // grow to the code boundary if it has
@@ -488,6 +497,7 @@ impl UnionFindDecoder {
                             *boundary_increased += grow_step;
                             if *boundary_increased >= boundary_length {
                                 self.union_find.get_mut(boundary).is_touching_boundary = true;  // this set is touching the boundary
+                                self.union_find.get_mut(boundary).touching_boundary_index = boundary;
                             }
                         }
                     },
@@ -512,11 +522,10 @@ impl UnionFindDecoder {
                 let to_be_appended = self.union_find.find(a);  // or self.union_find.find(r_b) equivalently
                 assert!(to_be_appended == a || to_be_appended == b, "`to_be_appended` should be either `a` or `b`");
                 let appending = if to_be_appended == a { b } else { a };  // the other one
-                let (appending_boundaries_vec, appending_boundaries) = self.cluster_boundaries.remove(&appending).unwrap();
-                let (to_be_appended_boundaries_vec, to_be_appended_boundaries) = self.cluster_boundaries.get_mut(&to_be_appended).unwrap();
+                let appending_boundaries_vec = self.cluster_boundaries[appending].clone();
+                let to_be_appended_boundaries_vec = &mut self.cluster_boundaries[to_be_appended];
                 // append the boundary
-                to_be_appended_boundaries_vec.extend(&appending_boundaries_vec);
-                to_be_appended_boundaries.extend(&appending_boundaries);
+                to_be_appended_boundaries_vec.extend(appending_boundaries_vec.iter());
             }
         }
         self.time_uf_merge += begin.elapsed().as_secs_f64();
@@ -530,7 +539,8 @@ impl UnionFindDecoder {
                 continue
             }
             visited_cluster.insert(cluster);  // to prevent the same cluster to calculate twice; this boundary updating is expensive
-            let (boundaries_vec, boundaries) = self.cluster_boundaries.get_mut(&cluster).unwrap();
+            let boundaries_vec = &mut self.cluster_boundaries[cluster];
+            let boundaries = boundaries_vec.clone();
             // `cluster_boundaries` should only contain root ones now
             // shrink the boundary by checking if this is real boundary (neighbor are not all in the same set)
             let mut shrunk_boundaries = BTreeSet::<usize>::new();
@@ -562,8 +572,6 @@ impl UnionFindDecoder {
                     }
                 }
             }
-            // replace the boundary list
-            *boundaries = shrunk_boundaries;
         }
         self.time_uf_update += begin.elapsed().as_secs_f64();
         // remove the even clusters (includes those already touched the code boundary) from `odd_clusters`
@@ -587,6 +595,56 @@ impl UnionFindDecoder {
 
 }
 
+pub type UnionFind = UnionFindGeneric<UnionNode>;
+
+#[derive(Copy, Debug, Serialize, Deserialize, Clone)]
+pub struct UnionNode {
+    pub set_size: usize,
+    pub cardinality: usize,
+    pub is_touching_boundary: bool,
+    pub touching_boundary_index: usize,
+}
+
+impl UnionNodeTrait for UnionNode {
+
+    #[inline]
+    fn union(left: &Self, right: &Self) -> Either<Self, Self> {
+        let lsize = left.set_size;
+        let rsize = right.set_size;
+        let result = Self {
+            set_size: lsize + rsize,
+            cardinality: left.cardinality + right.cardinality,
+            is_touching_boundary: left.is_touching_boundary || right.is_touching_boundary,
+            touching_boundary_index: std::cmp::min(left.touching_boundary_index, right.touching_boundary_index),
+        };
+        if lsize >= rsize {
+            Either::Left(result)
+        } else {
+            Either::Right(result)
+        }
+    }
+
+    #[inline]
+    fn clear(&mut self) {
+        self.set_size = 1;
+        self.cardinality = 0;
+        self.is_touching_boundary = false;
+        self.touching_boundary_index = usize::MAX;
+    }
+
+}
+
+impl Default for UnionNode {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            set_size: 1,
+            cardinality: 0,  // by default the cardinality is 0, set to 1 if needed
+            is_touching_boundary: false,  // is already touching the boundary
+            touching_boundary_index: usize::MAX,
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

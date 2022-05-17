@@ -12,7 +12,7 @@ use super::serde_json;
 use std::sync::{Arc};
 use std::time::Instant;
 use super::blossom_v;
-use super::union_find::UnionFind;
+use super::union_find::DefaultUnionFind;
 use super::types::*;
 use std::collections::{BTreeSet, BTreeMap};
 
@@ -177,7 +177,7 @@ impl TailoredMWPMDecoder {
             time_tailored_blossom_v += begin.elapsed().as_secs_f64();
             // union-find tailored clusters
             let begin = Instant::now();
-            let mut tailored_clusters = UnionFind::new(tailored_len);
+            let mut tailored_clusters = DefaultUnionFind::new(tailored_len);
             for i in 0..tailored_len {  // set `cardinality` to 1 if the position is a StabY
                 let position = &tailored_to_be_matched[i];
                 let node = self.simulator.get_node_unwrap(position);

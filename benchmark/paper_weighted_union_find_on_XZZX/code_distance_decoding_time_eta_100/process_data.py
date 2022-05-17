@@ -2,10 +2,10 @@ import json
 import numpy as np
 import math, random, scipy.stats
 
-print_title = f"<di> <dj> <T> <percent_0_tol> <percent_10_tol> <percent_50_tol> <percent_100_tol> <sample_cnt> <error_cnt> <avr_all> <std_all> <max_all> <avr_err> <std_err> <max_err>"
+print_title = f"<di> <dj> <T> <sample_cnt> <avr_all> <std_all> <max_all>"
 
 def generate_print(di, dj, T, data, time_field_name):
-    time_vec = np.sort([e[time_field_name] for e in data])
+    time_vec = np.sort([time_field_name(e) for e in data])
     sample_cnt = len(time_vec)
     # time regardless of error
     avr_all = np.average(time_vec)

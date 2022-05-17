@@ -12,7 +12,8 @@ print("[warning] requiring at least 10GB memory to run because of too large code
 
 T = 100
 pairs = [ (d, 3*d, T) for d in range(3, 22) ]  # (di, dj, T)
-p_vec = [0.0001, 0.0003, 0.001, 0.003]
+# p_vec = [0.0001, 0.0003, 0.001, 0.003]
+p_vec = [0.0001]
 
 di_vec = [e[0] for e in pairs]
 dj_vec = [e[1] for e in pairs]
@@ -20,12 +21,21 @@ T_vec = [e[2] for e in pairs]
 
 max_N = 1000
 
+# time_field_name = lambda e: e["time_run_to_stable"]  # 2.6
+# time_field_name = lambda e: e["time_build_correction"]  # 3.8
+# time_field_name = lambda e: e["time_prepare_decoders"]  # 2.0
+time_field_name = lambda e: e["time_uf_grow"]  # 2.7
+# time_field_name = lambda e: e["time_uf_merge"]  # 2.2
+# time_field_name = lambda e: e["time_uf_remove"]  # 2.0
+# time_field_name = lambda e: e["time_uf_update"]  # 2.6
+# time_field_name = lambda e: e["count_node_visited"]
+
 for p in p_vec:
 
     log_filepath = os.path.join(os.path.dirname(__file__), f"runtime_statistics_UF_{p}.txt")
 
     if 'ONLY_PROCESS_DATA' in os.environ and os.environ["ONLY_PROCESS_DATA"] == "TRUE":
-        content = process_file(log_filepath, pairs, "time_run_to_stable", starting_d=8)
+        content = process_file(log_filepath, pairs, time_field_name, starting_d=6)
         print(content, end="")
         with open(os.path.join(os.path.dirname(__file__), f"processed_UF_{p}.txt"), "w", encoding="utf8") as f:
             f.write(content)

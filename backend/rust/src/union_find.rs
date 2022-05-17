@@ -13,34 +13,29 @@ pub struct UnionFindGeneric<NodeType: UnionNodeTrait> {
     find_parent_list: Vec<usize>,
 }
 
-pub type UnionFind = UnionFindGeneric<UnionNode>;
+pub trait UnionNodeTrait {
+    fn union(left: &Self, right: &Self) -> Either<Self, Self> where Self: Sized;
+    fn clear(&mut self);
+}
+
+/* copy this part and modify as you like */
+
+pub type DefaultUnionFind = UnionFindGeneric<DefaultUnionNode>;
 
 #[derive(Copy, Debug, Serialize, Deserialize, Clone)]
-pub struct UnionNode {
+pub struct DefaultUnionNode {
     pub set_size: usize,
     pub cardinality: usize,
     pub is_touching_boundary: bool,
 }
 
-#[derive(Copy, Debug, Serialize, Deserialize, Clone)]
-pub enum UnionResult {
-    Left(UnionNode),
-    Right(UnionNode),
-}
-
-pub trait UnionNodeTrait {
-    type SelfType;  // to solve the compilation error to use `Self` directly: size not known at compile time
-    fn union(left: &Self::SelfType, right: &Self::SelfType) -> Either<Self::SelfType, Self::SelfType>;
-}
-
-impl UnionNodeTrait for UnionNode {
-    type SelfType = Self;
+impl UnionNodeTrait for DefaultUnionNode {
 
     #[inline]
     fn union(left: &Self, right: &Self) -> Either<Self, Self> {
         let lsize = left.set_size;
         let rsize = right.set_size;
-        let result = UnionNode {
+        let result = Self {
             set_size: lsize + rsize,
             cardinality: left.cardinality + right.cardinality,
             is_touching_boundary: left.is_touching_boundary || right.is_touching_boundary,
@@ -51,12 +46,20 @@ impl UnionNodeTrait for UnionNode {
             Either::Right(result)
         }
     }
+
+    #[inline]
+    fn clear(&mut self) {
+        self.set_size = 1;
+        self.cardinality = 0;
+        self.is_touching_boundary = false;
+    }
+
 }
 
-impl Default for UnionNode {
+impl Default for DefaultUnionNode {
     #[inline]
-    fn default() -> UnionNode {
-        UnionNode {
+    fn default() -> Self {
+        Self {
             set_size: 1,
             cardinality: 0,  // by default the cardinality is 0, set to 1 if needed
             is_touching_boundary: false,  // is already touching the boundary
@@ -64,10 +67,12 @@ impl Default for UnionNode {
     }
 }
 
-impl FromIterator<UnionNode> for UnionFind {
+/* copy the above and modify as you like */
+
+impl<U: UnionNodeTrait> FromIterator<U> for UnionFindGeneric<U> {
     #[inline]
-    fn from_iter<T: IntoIterator<Item = UnionNode>>(iterator: T) -> UnionFind {
-        let mut uf = UnionFind {
+    fn from_iter<T: IntoIterator<Item = U>>(iterator: T) -> UnionFindGeneric<U> {
+        let mut uf = UnionFindGeneric::<U> {
             link_parent: vec![],
             payload: vec![],
             find_parent_list: Vec::new(),
@@ -77,9 +82,9 @@ impl FromIterator<UnionNode> for UnionFind {
     }
 }
 
-impl Extend<UnionNode> for UnionFind {
+impl<U: UnionNodeTrait> Extend<U> for UnionFindGeneric<U> {
     #[inline]
-    fn extend<T: IntoIterator<Item = UnionNode>>(&mut self, iterable: T) {
+    fn extend<T: IntoIterator<Item = U>>(&mut self, iterable: T) {
         let len = self.payload.len();
         let payload = iterable.into_iter().map(Some);
         self.payload.extend(payload);
@@ -91,13 +96,15 @@ impl Extend<UnionNode> for UnionFind {
     }
 }
 
-impl UnionFind {
+impl<U: UnionNodeTrait + Default> UnionFindGeneric<U> {
     #[inline]
     #[allow(dead_code)]
     pub fn new(len: usize) -> Self {
         Self::from_iter((0..len).map(|_| Default::default()))
     }
+}
 
+impl<U: UnionNodeTrait> UnionFindGeneric<U> {
     #[inline]
     #[allow(dead_code)]
     pub fn size(&self) -> usize {
@@ -106,7 +113,7 @@ impl UnionFind {
 
     #[inline]
     #[allow(dead_code)]
-    pub fn insert(&mut self, data: UnionNode) -> usize {
+    pub fn insert(&mut self, data: U) -> usize {
         let key = self.payload.len();
         self.link_parent.push(key);
         self.payload.push(Some(data));
@@ -121,7 +128,7 @@ impl UnionFind {
             return false;
         }
 
-        let (parent, child, val) = match UnionNode::union(self.payload[k0].as_ref().unwrap(), self.payload[k1].as_ref().unwrap()) {
+        let (parent, child, val) = match U::union(self.payload[k0].as_ref().unwrap(), self.payload[k1].as_ref().unwrap()) {
             Either::Left(val) => (k0, k1, val),
             Either::Right(val) => (k1, k0, val),
         };
@@ -160,19 +167,19 @@ impl UnionFind {
     }
 
     #[inline]
-    pub fn get(&mut self, key: usize) -> &UnionNode {
+    pub fn get(&mut self, key: usize) -> &U {
         let root_key = self.find(key);
         self.payload[root_key].as_ref().unwrap()
     }
 
     #[inline]
-    pub fn immutable_get(&self, key: usize) -> &UnionNode {
+    pub fn immutable_get(&self, key: usize) -> &U {
         let root_key = self.immutable_find(key);
         self.payload[root_key].as_ref().unwrap()
     }
 
     #[inline]
-    pub fn get_mut(&mut self, key: usize) -> &mut UnionNode {
+    pub fn get_mut(&mut self, key: usize) -> &mut U {
         let root_key = self.find(key);
         self.payload[root_key].as_mut().unwrap()
     }
@@ -182,9 +189,7 @@ impl UnionFind {
         for i in 0..self.link_parent.len() {
             self.link_parent[i] = i;
             let node = self.payload[i].as_mut().unwrap();
-            node.set_size = 1;
-            node.cardinality = 0;
-            node.is_touching_boundary = false;
+            node.clear();
         }
     }
 
@@ -197,7 +202,7 @@ mod tests {
 
     #[test]
     fn union_find_decoder_test_basic_algorithm() {  // cargo test union_find_decoder_test_basic_algorithm -- --nocapture
-        let mut uf = UnionFind::new(100);
+        let mut uf = DefaultUnionFind::new(100);
         // test from https://github.com/gifnksm/union-find-rs/blob/master/src/tests.rs
         assert_eq!(1, uf.get(0).set_size);
         assert_eq!(1, uf.get(1).set_size);
@@ -223,7 +228,7 @@ mod tests {
         assert!(uf.find(0) == uf.find(1));
         assert!(uf.immutable_find(2) == uf.immutable_find(1));
         assert!(uf.find(2) == uf.find(1));
-        let k100 = uf.insert(UnionNode::default());
+        let k100 = uf.insert(DefaultUnionNode::default());
         assert_eq!(k100, 100);
         let _ = uf.union(k100, 0);
         assert_eq!(4, uf.get(100).set_size);
