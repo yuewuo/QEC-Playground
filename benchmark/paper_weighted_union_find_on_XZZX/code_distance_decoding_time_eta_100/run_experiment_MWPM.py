@@ -9,11 +9,11 @@ from automated_threshold_evaluation import qec_playground_benchmark_simulator_ru
 from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 
 T = 100
-# pairs = [ (d, 3*d, T) for d in [3, 4, 5, 6, 7, 8, 9, 10] ]  # (di, dj, T)
-pairs = [ (d, 3*d, T) for d in [3, 4, 5, 6, 7, 8] ]  # (di, dj, T)
-# p_vec = [0.0001, 0.0003, 0.001]
+pairs = [ (d, 3*d, T) for d in [3, 4, 5, 6, 7, 8, 9, 10] ]  # (di, dj, T)
+# pairs = [ (d, 3*d, T) for d in [3, 4, 5, 6, 7, 8] ]  # (di, dj, T)
+p_vec = [0.0001, 0.0003, 0.001, 0.003]
 # p_vec = [0.0001]
-p_vec = [0.003]
+# p_vec = [0.003]
 
 di_vec = [e[0] for e in pairs]
 dj_vec = [e[1] for e in pairs]

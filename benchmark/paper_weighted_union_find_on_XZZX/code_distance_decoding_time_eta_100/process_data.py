@@ -2,16 +2,18 @@ import json
 import numpy as np
 import math, random, scipy.stats
 
-print_title = f"<di> <dj> <T> <sample_cnt> <avr_all> <std_all> <max_all>"
+USE_MEDIAN_INSTEAD = False
+
+print_title = f"<di> <dj> <T> <sample_cnt> <avr_all> <std_all> <mid_all>"
 
 def generate_print(di, dj, T, data, time_field_name):
     time_vec = np.sort([time_field_name(e) for e in data])
     sample_cnt = len(time_vec)
     # time regardless of error
     avr_all = np.average(time_vec)
-    max_all = np.amax(time_vec)
+    mid_all = np.median(time_vec)
     std_all = np.std(time_vec)
-    return f"{di} {dj} {T} {sample_cnt} {avr_all} {std_all} {max_all}"
+    return f"{di} {dj} {T} {sample_cnt} {avr_all} {std_all} {mid_all}"
 
 def fit(content, starting_d):
     X = []
@@ -24,7 +26,10 @@ def fit(content, starting_d):
             continue
         spt = line.split(" ")
         d = int(spt[0])
-        t = float(spt[4])
+        if USE_MEDIAN_INSTEAD:
+            t = float(spt[6])
+        else:
+            t = float(spt[4])
         tavr = float(spt[5])
         if d < starting_d:
             continue
@@ -33,9 +38,9 @@ def fit(content, starting_d):
         Yavr.append(tavr)
     # print(X)
     # print(Y)
-    slope, _, _, _, _ = scipy.stats.linregress([math.log(d) for d in X], [math.log(t) for t in Y])
+    slope, intercept, _, _, _ = scipy.stats.linregress([math.log(d) for d in X], [math.log(t) for t in Y])
     slope_avr, _, _, _, _ = scipy.stats.linregress([math.log(d) for d in X], [math.log(t) for t in Yavr])
-    return slope, slope_avr
+    return slope, slope_avr, intercept
 
 
 def process_file(log_filepath, pairs, time_field_name, starting_d=0):
@@ -71,7 +76,8 @@ def process_file(log_filepath, pairs, time_field_name, starting_d=0):
         data = data_vec[i]
         content += generate_print(di, dj, T, data, time_field_name) + "\n"
     
-    slope, slope_avr = fit(content, starting_d)
-    content += f"\n# slope = {slope}, slope_avr = {slope_avr}\n"
+    slope, slope_avr, intercept = fit(content, starting_d)
+    content += f"\n# slope = {slope}, slope_avr = {slope_avr}, intercept = {intercept}\n"
+    content += f"# fit(x) = exp({slope} * log(x) + ({intercept}))\n\n"
 
     return content

@@ -114,6 +114,9 @@ impl UnionFindDecoder {
     pub fn new(simulator: &Simulator, error_model: &ErrorModel, decoder_configuration: &serde_json::Value, parallel: usize) -> Self {
         // read attribute of decoder configuration
         let config: UnionFindDecoderConfig = serde_json::from_value(decoder_configuration.clone()).unwrap();
+        if config.use_real_weighted {
+            assert!(decoder_configuration.as_object().unwrap().contains_key("max_half_weight"), "`use_real_weighted` must come with `max_half_weight`; should be sufficiently large instead of the default 1");
+        }
         // build model graph
         let mut simulator = simulator.clone();
         let mut model_graph = ModelGraph::new(&simulator);
