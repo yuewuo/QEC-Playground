@@ -82,6 +82,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
                 min_failed_cases = usize::MAX;
             }
             let parallel: usize = matches.value_of_t("parallel").unwrap();
+            let parallel_init: usize = matches.value_of_t("parallel_init").unwrap_or(parallel);
             let code_type: String = matches.value_of_t("code_type").unwrap_or("StandardPlanarCode".to_string());
             let decoder = matches.value_of_t::<BenchmarkDecoder>("decoder").unwrap();
             let decoder_config = matches.value_of_t::<serde_json::Value>("decoder_config").unwrap();
@@ -96,7 +97,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let thread_timeout: f64 = matches.value_of_t("thread_timeout").unwrap();
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
-                , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph));
+                , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init));
         }
         Some(("fault_tolerant_benchmark", matches)) => {
             let dis: String = matches.value_of_t("Ls").expect("required");
@@ -382,12 +383,10 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         , parallel: usize, code_type: String, decoder: BenchmarkDecoder, decoder_config: serde_json::Value, ignore_logical_i: bool, ignore_logical_j: bool
         , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
         , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
-        , pes_graph: &Vec<f64>) -> String {
+        , pes_graph: &Vec<f64>, parallel_init: usize) -> String {
     // if parallel = 0, use all CPU resources
-    let mut parallel = parallel;
-    if parallel == 0 {
-        parallel = num_cpus::get() - 1;
-    }
+    let parallel = if parallel == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel };
+    let parallel_init = if parallel_init == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel_init };
     // create runtime statistics file object if given file path
     let log_runtime_statistics_file = log_runtime_statistics.clone().map(|filename| 
         Arc::new(Mutex::new(File::create(filename.as_str()).expect("cannot create file"))));
@@ -403,6 +402,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         "max_repeats": max_repeats,
         "min_failed_cases": min_failed_cases,
         "parallel": parallel,
+        "parallel_init": parallel_init,
         "code_type": code_type,
         "decoder": decoder,
         "decoder_config": decoder_config,
@@ -540,13 +540,13 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             assert!(decoder_config.is_object() && decoder_config.as_object().unwrap().len() == 0, "this decoder doesn't support decoder configuration");
         }
         let mwpm_decoder = if decoder == BenchmarkDecoder::MWPM {
-            Some(MWPMDecoder::new(&simulator, &error_model_graph, &decoder_config, parallel))
+            Some(MWPMDecoder::new(&simulator, &error_model_graph, &decoder_config, parallel_init))
         } else { None };
         let tailored_mwpm_decoder = if decoder == BenchmarkDecoder::TailoredMWPM {
-            Some(TailoredMWPMDecoder::new(&simulator, &error_model_graph, &decoder_config, parallel))
+            Some(TailoredMWPMDecoder::new(&simulator, &error_model_graph, &decoder_config, parallel_init))
         } else { None };
         let union_find_decoder = if decoder == BenchmarkDecoder::UnionFind {
-            Some(UnionFindDecoder::new(&simulator, &error_model_graph, &decoder_config, parallel))
+            Some(UnionFindDecoder::new(&simulator, &error_model_graph, &decoder_config, parallel_init))
         } else { None };
         // then prepare the real error model
         let mut error_model = ErrorModel::new(&simulator);

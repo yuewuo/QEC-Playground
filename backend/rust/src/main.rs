@@ -129,6 +129,7 @@ fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> 
                 .arg(clap::Arg::new("max_repeats").short('m').long("max_repeats").help("maximum total repeats (previously known as `max_N`); 0 for infinity").takes_value(true).default_value("100000000"))
                 .arg(clap::Arg::new("min_failed_cases").short('e').long("min_failed_cases").help("minimum failed cases; 0 for infinity").takes_value(true).default_value("10000"))
                 .arg(clap::Arg::new("parallel").short('p').long("parallel").help("how many parallel threads to use. 0 means using number of CPUs - 1, by default single thread").takes_value(true).default_value("1"))
+                .arg(clap::Arg::new("parallel_init").long("parallel_init").help("how many parallel threads to use when initializing decoders, default to be the same with `parallel`").takes_value(true))
                 .arg(clap::Arg::new("code_type").short('c').long("code_type").help("code type, see code_builder.rs for more information").possible_values(code_builder::CodeType::possible_values()).default_value("StandardPlanarCode").takes_value(true))
                 .arg(clap::Arg::new("decoder").long("decoder").help("select the benchmarked decoder").takes_value(true).possible_values(tool::BenchmarkDecoder::possible_values()).default_value("mwpm"))
                 .arg(clap::Arg::new("decoder_config").long("decoder_config").help("decoder configuration json, panic if any field is not recognized").takes_value(true).default_value("{}"))

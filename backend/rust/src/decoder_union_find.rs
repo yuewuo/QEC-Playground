@@ -39,6 +39,7 @@ pub struct UnionFindDecoder {
     pub cluster_boundaries: Vec<Vec<usize>>,
     /// trace: study the time consumption of each step
     pub time_uf_grow: f64,
+    pub count_uf_grow: usize,
     pub time_uf_merge: f64,
     pub time_uf_update: f64,
     pub time_uf_remove: f64,
@@ -216,6 +217,7 @@ impl UnionFindDecoder {
             odd_clusters_set: BTreeSet::new(),
             cluster_boundaries: cluster_boundaries,  // Yue 2022.5.17: previously I use BTreeMap, but it has O(d^2.6) scaling rather than O(d^2)
             time_uf_grow: 0.,
+            count_uf_grow: 0,
             time_uf_merge: 0.,
             time_uf_update: 0.,
             time_uf_remove: 0.,
@@ -245,6 +247,7 @@ impl UnionFindDecoder {
         self.odd_clusters.clear();
         self.odd_clusters_set.clear();
         self.time_uf_grow = 0.;
+        self.count_uf_grow = 0;
         self.time_uf_merge = 0.;
         self.time_uf_update = 0.;
         self.time_uf_remove = 0.;
@@ -325,6 +328,7 @@ impl UnionFindDecoder {
             "time_run_to_stable": time_run_to_stable,
             "time_prepare_decoders": time_prepare_decoders,
             "time_uf_grow": self.time_uf_grow,
+            "count_uf_grow": self.count_uf_grow,
             "time_uf_merge": self.time_uf_merge,
             "time_uf_update": self.time_uf_update,
             "time_uf_remove": self.time_uf_remove,
@@ -427,21 +431,23 @@ impl UnionFindDecoder {
                 for &boundary in boundaries_vec.iter() {
                     let neighbor_len = self.nodes[boundary].neighbors.len();
                     for i in 0..neighbor_len {
-                        let partial_edge = &mut self.nodes[boundary].neighbors[i];
-                        let increased = partial_edge.increased;
-                        let neighbor_index = partial_edge.neighbor;
-                        let neighbor = &mut self.nodes[neighbor_index];
-                        let reverse_index = neighbor.index_to_neighbor[&boundary];
-                        let neighbor_partial_edge = &mut neighbor.neighbors[reverse_index];
-                        if neighbor_partial_edge.increased + increased < neighbor_partial_edge.length {  // not fully grown yet
-                            let mut safe_length = neighbor_partial_edge.length - (neighbor_partial_edge.increased + increased);
-                            // judge if peer needs to grow as well, if so, the safe length is halved
-                            let neighbor_root = self.union_find.find(neighbor_index);
-                            if self.odd_clusters_set.contains(&neighbor_root) {
-                                safe_length /= 2;
-                            }
-                            if safe_length < maximum_safe_length {
-                                maximum_safe_length = safe_length;
+                        if !self.nodes[boundary].neighbors[i].grown {
+                            let partial_edge = &mut self.nodes[boundary].neighbors[i];
+                            let increased = partial_edge.increased;
+                            let neighbor_index = partial_edge.neighbor;
+                            let neighbor = &mut self.nodes[neighbor_index];
+                            let reverse_index = neighbor.index_to_neighbor[&boundary];
+                            let neighbor_partial_edge = &mut neighbor.neighbors[reverse_index];
+                            if neighbor_partial_edge.increased + increased < neighbor_partial_edge.length {  // not fully grown yet
+                                let mut safe_length = neighbor_partial_edge.length - (neighbor_partial_edge.increased + increased);
+                                // judge if peer needs to grow as well, if so, the safe length is halved
+                                let neighbor_root = self.union_find.find(neighbor_index);
+                                if self.odd_clusters_set.contains(&neighbor_root) {
+                                    safe_length /= 2;
+                                }
+                                if safe_length < maximum_safe_length {
+                                    maximum_safe_length = safe_length;
+                                }
                             }
                         }
                     }
@@ -461,6 +467,7 @@ impl UnionFindDecoder {
                 }
             }
             // grow step cannot be 0
+            assert_ne!(maximum_safe_length, usize::MAX, "should find at least one un-grown edge");
             if maximum_safe_length != 0 { maximum_safe_length } else { 1 }
         };
         // grow and update cluster boundaries
@@ -468,24 +475,31 @@ impl UnionFindDecoder {
         for &odd_cluster in self.odd_clusters.iter() {
             let boundaries_vec = &self.cluster_boundaries[odd_cluster];
             for &boundary in boundaries_vec.iter() {
+                self.count_uf_grow += 1;
                 // grow this boundary and check for grown edge at the same time
                 let neighbor_len = self.nodes[boundary].neighbors.len();
                 for i in 0..neighbor_len {
-                    let partial_edge = &mut self.nodes[boundary].neighbors[i];
-                    partial_edge.increased += grow_step;  // may over-grown, but ok as long as weight is much smaller than usize::MAX
-                    let increased = partial_edge.increased;
-                    let neighbor_index = partial_edge.neighbor;
-                    let neighbor = &mut self.nodes[neighbor_index];
-                    let reverse_index = neighbor.index_to_neighbor[&boundary];
-                    let neighbor_partial_edge = &mut neighbor.neighbors[reverse_index];
-                    if neighbor_partial_edge.increased + increased >= neighbor_partial_edge.length {  // found grown edge
-                        fusion_list.push((boundary, neighbor_index));
-                        neighbor_partial_edge.grown = true;
+                    let (neighbor_index, grown) = {
+                        let partial_edge = &self.nodes[boundary].neighbors[i];
+                        (partial_edge.neighbor, partial_edge.grown)
+                    };
+                    if !grown || self.union_find.find(boundary) != self.union_find.find(neighbor_index) {
                         let partial_edge = &mut self.nodes[boundary].neighbors[i];
-                        partial_edge.grown = true;
-                        if !self.nodes[neighbor_index].node_visited {
-                            self.nodes[neighbor_index].node_visited = true;
-                            self.count_node_visited += 1;
+                        partial_edge.increased += grow_step;  // may over-grown, but ok as long as weight is much smaller than usize::MAX
+                        let neighbor_index = partial_edge.neighbor;
+                        let increased = partial_edge.increased;
+                        let neighbor = &mut self.nodes[neighbor_index];
+                        let reverse_index = neighbor.index_to_neighbor[&boundary];
+                        let neighbor_partial_edge = &mut neighbor.neighbors[reverse_index];
+                        if neighbor_partial_edge.increased + increased >= neighbor_partial_edge.length {  // found grown edge
+                            neighbor_partial_edge.grown = true;
+                            let partial_edge = &mut self.nodes[boundary].neighbors[i];
+                            partial_edge.grown = true;
+                            fusion_list.push((boundary, neighbor_index));
+                            if !self.nodes[neighbor_index].node_visited {
+                                self.nodes[neighbor_index].node_visited = true;
+                                self.count_node_visited += 1;
+                            }
                         }
                     }
                 }
