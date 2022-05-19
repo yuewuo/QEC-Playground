@@ -32,15 +32,15 @@ fit2(x) = exp(2.446655656145592 * log(x) + (-10.895459524433363))
 # slope = 2.374166520482226, slope_avr = 1.3077680697194967, intercept = -9.58705092892534
 fit1(x) = exp(2.374166520482226 * log(x) + (-9.58705092892534))
 
-plot "processed_UF_0.003.txt" using 1:($5/100) with linespoints lt rgb "red" linewidth 3 pointtype 11 pointsize 1 title "UF 0.003",\
+plot "processed_UF_0.0002.txt" using 1:($5/100) with linespoints lt rgb "red" linewidth 3 pointtype 11 pointsize 1 title "UF 0.003",\
     "" using 1:($5/100):(($5-$6)/100):(($5+$6)/100) with errorbars lt rgb "red" linewidth 3 pointtype 11 pointsize 1 notitle,\
-    fit1(x)/100 notitle with lines linestyle 2,\
-    "processed_UF_0.001.txt" using 1:($5/100) with linespoints lt rgb "blue" linewidth 3 pointtype 11 pointsize 1 title "UF 0.001",\
-    "" using 1:($5/100):(($5-$6)/100):(($5+$6)/100) with errorbars lt rgb "blue" linewidth 3 pointtype 11 pointsize 1 notitle,\
-    fit2(x)/100 notitle with lines linestyle 2,\
-    "processed_UF_0.0003.txt" using 1:($5/100) with linespoints lt rgb "green" linewidth 3 pointtype 11 pointsize 1 title "UF 0.0003",\
-    "" using 1:($5/100):(($5-$6)/100):(($5+$6)/100) with errorbars lt rgb "green" linewidth 3 pointtype 11 pointsize 1 notitle,\
-    fit3(x)/100 notitle with lines linestyle 2
+    fit1(x)/100 notitle with lines linestyle 2
+    # "processed_UF_0.001.txt" using 1:($5/100) with linespoints lt rgb "blue" linewidth 3 pointtype 11 pointsize 1 title "UF 0.001",\
+    # "" using 1:($5/100):(($5-$6)/100):(($5+$6)/100) with errorbars lt rgb "blue" linewidth 3 pointtype 11 pointsize 1 notitle,\
+    # fit2(x)/100 notitle with lines linestyle 2,\
+    # "processed_UF_0.0003.txt" using 1:($5/100) with linespoints lt rgb "green" linewidth 3 pointtype 11 pointsize 1 title "UF 0.0003",\
+    # "" using 1:($5/100):(($5-$6)/100):(($5+$6)/100) with errorbars lt rgb "green" linewidth 3 pointtype 11 pointsize 1 notitle,\
+    # fit3(x)/100 notitle with lines linestyle 2
 
 system("ps2pdf -dEPSCrop code_distance_decoding_time_eta_100.eps code_distance_decoding_time_eta_100.pdf")
 

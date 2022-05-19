@@ -3,8 +3,9 @@ import numpy as np
 import math, random, scipy.stats
 
 USE_MEDIAN_INSTEAD = False
+USE_MAX_INSTEAD = False
 
-print_title = f"<di> <dj> <T> <sample_cnt> <avr_all> <std_all> <mid_all>"
+print_title = f"<di> <dj> <T> <sample_cnt> <avr_all> <std_all> <mid_all> <max_all>"
 
 def generate_print(di, dj, T, data, time_field_name):
     time_vec = np.sort([time_field_name(e) for e in data])
@@ -13,7 +14,8 @@ def generate_print(di, dj, T, data, time_field_name):
     avr_all = np.average(time_vec)
     mid_all = np.median(time_vec)
     std_all = np.std(time_vec)
-    return f"{di} {dj} {T} {sample_cnt} {avr_all} {std_all} {mid_all}"
+    max_all = np.amax(time_vec)
+    return f"{di} {dj} {T} {sample_cnt} {avr_all} {std_all} {mid_all} {max_all}"
 
 def fit(content, starting_d):
     X = []
@@ -28,6 +30,8 @@ def fit(content, starting_d):
         d = int(spt[0])
         if USE_MEDIAN_INSTEAD:
             t = float(spt[6])
+        elif USE_MAX_INSTEAD:
+            t = float(spt[7])
         else:
             t = float(spt[4])
         tavr = float(spt[5])

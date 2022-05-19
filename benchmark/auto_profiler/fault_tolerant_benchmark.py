@@ -34,8 +34,8 @@ def profile_pure_simulation():
             print(f"now speed: {now_speed:.2f}/s, compare speed: {compare_speed:.2f}/s, relative different: {diff_speed * 100:.2f}%")
 
 def profile_CSS_decoding():
-    # for decoder in ["MWPM", "UF"]:
-    for decoder in ["mwpm"]:
+    # for decoder in ["mwpm"]:
+    for decoder in ["union-find"]:
         for p in [0.005, 0.002]:
             for d in [5, 9, 13]:
                 name = f"CSS_decoding_{decoder}_d_{d}_p_{p}"
