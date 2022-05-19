@@ -182,7 +182,7 @@ impl TailoredMWPMDecoder {
                 let position = &tailored_to_be_matched[i];
                 let node = self.simulator.get_node_unwrap(position);
                 if node.qubit_type == QubitType::StabY {
-                    tailored_clusters.payload[i].as_mut().unwrap().cardinality = 1;
+                    tailored_clusters.payload[i].cardinality = 1;
                 }
             }
             for i in 0..2*tailored_len {

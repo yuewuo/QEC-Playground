@@ -15,3 +15,7 @@ rerun-job_script.sbatch
 job_script.sh
 all.tasks
 rerun-*.sh
+
+cargo-flamegraph.stacks
+tmp.svg
+tmp.txt

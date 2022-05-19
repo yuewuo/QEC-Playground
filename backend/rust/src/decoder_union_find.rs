@@ -13,6 +13,8 @@ use std::sync::{Arc};
 use std::time::Instant;
 use std::collections::{HashMap, BTreeMap};
 use super::either::Either;
+use crate::rand::thread_rng;
+use crate::rand::seq::SliceRandom;
 
 /// MWPM decoder, initialized and cloned for multiple threads
 #[derive(Debug, Clone, Serialize)]
@@ -47,6 +49,7 @@ pub struct UnionFindDecoder {
     pub time_uf_update: f64,
     pub time_uf_remove: f64,
     pub count_node_visited: usize,
+    pub count_iteration: usize,
     /// save configuration for later usage
     pub config: UnionFindDecoderConfig,
     /// internal cache used by iteration
@@ -170,10 +173,18 @@ impl UnionFindDecoder {
                 odd_clusters_set_timestamp: 0,
                 shrunk_boundaries_timestamp: 0,
             };
-            position_to_index.insert(position.clone(), index);
             index_to_position.push(position.clone());
             nodes.push(node);
         });
+        if false {
+            // shuffle the order of nodes to reduce the effect of cache
+            index_to_position.shuffle(&mut thread_rng());
+            // eprintln!("index_to_position: {:?}", index_to_position);
+        }
+        for index in 0..nodes.len() {
+            let position = index_to_position[index].clone();
+            position_to_index.insert(position, index);
+        }
         // calculate scaling factor of edges
         let mut maximum_weight = 0.;
         for index in 0..nodes.len() {
@@ -204,7 +215,7 @@ impl UnionFindDecoder {
                 if half_weight < 1 {
                     half_weight = 1;
                 }
-                // println!("half_weight = {}, minimum_probability = {}, probability = {}", half_weight, minimum_probability, probability);
+                // println!("half_weight = {}, maximum_weight = {}, weight = {}", half_weight, maximum_weight, weight);
                 2 * half_weight
             }
         };
@@ -257,6 +268,7 @@ impl UnionFindDecoder {
             time_uf_update: 0.,
             time_uf_remove: 0.,
             count_node_visited: 0,
+            count_iteration: 0,
             config: config,
             // internal caches
             fusion_list: Vec::new(),
@@ -355,12 +367,13 @@ impl UnionFindDecoder {
             self.odd_clusters.push(index);
             self.insert_odd_clusters_set(index);
             self.nodes[index].is_error_syndrome = true;
-            self.union_find.payload[index].as_mut().unwrap().cardinality = 1;  // odd
+            self.union_find.payload[index].cardinality = 1;  // odd
             if !self.nodes[index].node_visited {
                 self.nodes[index].node_visited = true;
                 self.count_node_visited += 1;
             }
         }
+        // eprintln!("self.odd_clusters: {:?}", self.odd_clusters);
         let time_prepare_decoders = begin.elapsed().as_secs_f64();
         // decode
         let begin = Instant::now();
@@ -428,19 +441,23 @@ impl UnionFindDecoder {
             "time_uf_remove": self.time_uf_remove,
             "time_build_correction": time_build_correction,
             "count_node_visited": self.count_node_visited,
+            "count_iteration": self.count_iteration,
         }))
     }
 
     /// run single iterations until no non-terminating (odd and not yet touching boundary) clusters exist
     pub fn run_to_stable(&mut self) {
+        self.count_iteration = 0;
         while !self.odd_clusters.is_empty() {
-            self.run_single_iteration()
+            self.run_single_iteration();
+            self.count_iteration += 1;
         }
     }
 
     /// debug function where a limited iterations can be run
     #[allow(dead_code)]
     pub fn detailed_print_run_to_stable(&mut self) {
+        self.count_iteration = 0;
         // let mut max_steps = 20usize;
         let mut max_steps = usize::MAX;
         while !self.odd_clusters.is_empty() && max_steps > 0 {
@@ -449,7 +466,8 @@ impl UnionFindDecoder {
             self.debug_print_clusters();
             println!("cluster boundaries:");
             self.debug_print_cluster_boundaries();
-            self.run_single_iteration()
+            self.run_single_iteration();
+            self.count_iteration += 1;
         }
         println!("[info] reached stable state");
         assert!(max_steps > 0, "run to stable terminated because of ");
@@ -512,7 +530,6 @@ impl UnionFindDecoder {
 
     #[inline(never)]
     fn run_single_iteration_get_grow_step(&mut self) -> usize {
-        let begin = Instant::now();
         let grow_step = if !self.config.use_real_weighted {
             1
         } else {
@@ -562,7 +579,6 @@ impl UnionFindDecoder {
             assert_ne!(maximum_safe_length, usize::MAX, "should find at least one un-grown edge");
             if maximum_safe_length != 0 { maximum_safe_length } else { 1 }
         };
-        self.time_uf_grow_step += begin.elapsed().as_secs_f64();
         grow_step
     }
 
@@ -571,7 +587,6 @@ impl UnionFindDecoder {
     fn run_single_iteration_uf_grow(&mut self, grow_step: usize) {
         let fusion_list = &mut self.fusion_list;
         fusion_list.clear();
-        let begin = Instant::now();
         for &odd_cluster in self.odd_clusters.iter() {
             let boundaries_vec = &self.cluster_boundaries[odd_cluster];
             for &boundary in boundaries_vec.iter() {
@@ -582,7 +597,7 @@ impl UnionFindDecoder {
                         let partial_edge = &self.nodes[boundary].neighbors[i];
                         (partial_edge.neighbor, partial_edge.grown)
                     };
-                    if !grown || self.union_find.find(boundary) != self.union_find.find(neighbor_index) {
+                    if !grown {
                         self.count_uf_grow += 1;
                         let partial_edge = &mut self.nodes[boundary].neighbors[i];
                         partial_edge.increased += grow_step;  // may over-grown, but ok as long as weight is much smaller than usize::MAX
@@ -593,7 +608,7 @@ impl UnionFindDecoder {
                         let neighbor_partial_edge = &mut neighbor.neighbors[reverse_index];
                         if neighbor_partial_edge.increased + increased >= neighbor_partial_edge.length {  // found grown edge
                             neighbor_partial_edge.grown = true;
-                            let partial_edge = &mut self.nodes[boundary].neighbors[i];
+                            let partial_edge = &mut self.nodes[boundary].neighbors[i];  // no mem access, just to pass Rust's borrow checker
                             partial_edge.grown = true;
                             fusion_list.push((boundary, neighbor_index));
                             if !self.nodes[neighbor_index].node_visited {
@@ -611,8 +626,9 @@ impl UnionFindDecoder {
                             self.count_uf_grow += 1;
                             *boundary_increased += grow_step;
                             if *boundary_increased >= boundary_length {
-                                self.union_find.get_mut(boundary).is_touching_boundary = true;  // this set is touching the boundary
-                                self.union_find.get_mut(boundary).touching_boundary_index = boundary;
+                                let union_find_node = self.union_find.get_mut(boundary);
+                                union_find_node.is_touching_boundary = true;  // this set is touching the boundary
+                                union_find_node.touching_boundary_index = boundary;
                             }
                         }
                     },
@@ -626,14 +642,12 @@ impl UnionFindDecoder {
         //         println!("    {} {}", self.index_to_position[*a], self.index_to_position[*b]);
         //     }
         // }
-        self.time_uf_grow += begin.elapsed().as_secs_f64();
     }
 
     /// merge the clusters given `fusion_list` and also update the boundary list
     #[inline(never)]
     fn run_single_iteration_uf_merge(&mut self) {
         let fusion_list = &mut self.fusion_list;
-        let begin = Instant::now();
         for &(a, b) in fusion_list.iter() {
             let a = self.union_find.find(a);  // update to its root
             let b = self.union_find.find(b);  // update to its root
@@ -648,13 +662,11 @@ impl UnionFindDecoder {
                 to_be_appended_boundaries_vec.extend(appending_boundaries_vec.iter());
             }
         }
-        self.time_uf_merge += begin.elapsed().as_secs_f64();
     }
 
     /// update the boundary vertices
     #[inline(never)]
     fn run_single_iteration_uf_update(&mut self) {
-        let begin = Instant::now();
         self.clear_odd_clusters_set();  // used as `visited_cluster`
         for &cluster in self.odd_clusters.iter() {  // TODO: odd_clusters here might be duplicated, use odd_clusters_set instead
             // replace `odd_clusters` by the root, so that querying `cluster_boundaries` will be valid
@@ -709,13 +721,11 @@ impl UnionFindDecoder {
             }
             std::mem::swap(&mut self.idle_cluster_boundaries[cluster], &mut self.cluster_boundaries[cluster]);
         }
-        self.time_uf_update += begin.elapsed().as_secs_f64();
     }
 
     /// remove the even clusters (includes those already touched the code boundary) from `odd_clusters`
     #[inline(never)]
     fn run_single_iteration_uf_remove(&mut self) {
-        let begin = Instant::now();
         self.clear_odd_clusters_set();
         self.idle_odd_clusters.clear();
         for &odd_cluster in self.odd_clusters.iter() {
@@ -733,17 +743,37 @@ impl UnionFindDecoder {
             }
         }
         std::mem::swap(&mut self.idle_odd_clusters, &mut self.odd_clusters);
-        self.time_uf_remove += begin.elapsed().as_secs_f64();
     }
 
     /// run a single iteration
     #[inline(never)]
     fn run_single_iteration(&mut self) {
-        let grow_step = self.run_single_iteration_get_grow_step();
-        self.run_single_iteration_uf_grow(grow_step);
-        self.run_single_iteration_uf_merge();
-        self.run_single_iteration_uf_update();
-        self.run_single_iteration_uf_remove();
+        let grow_step = {
+            let begin = Instant::now();
+            let grow_step = self.run_single_iteration_get_grow_step();
+            self.time_uf_grow_step += begin.elapsed().as_secs_f64();
+            grow_step
+        };
+        {
+            let begin = Instant::now();
+            self.run_single_iteration_uf_grow(grow_step);
+            self.time_uf_grow += begin.elapsed().as_secs_f64();
+        }
+        {
+            let begin = Instant::now();
+            self.run_single_iteration_uf_merge();
+            self.time_uf_merge += begin.elapsed().as_secs_f64();
+        }
+        {
+            let begin = Instant::now();
+            self.run_single_iteration_uf_update();
+            self.time_uf_update += begin.elapsed().as_secs_f64();
+        }
+        {
+            let begin = Instant::now();
+            self.run_single_iteration_uf_remove();
+            self.time_uf_remove += begin.elapsed().as_secs_f64();
+        }
     }
 
 }

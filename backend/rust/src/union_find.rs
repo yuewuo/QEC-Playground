@@ -8,7 +8,7 @@ pub struct UnionFindGeneric<NodeType: UnionNodeTrait> {
     /// tree structure, each node has a parent
     pub link_parent: Vec<usize>,
     /// the node information, has the same length as `link_parent`
-    pub payload: Vec<Option<NodeType>>,
+    pub payload: Vec<NodeType>,
     /// internal cache of parent list when calling `find`
     find_parent_list: Vec<usize>,
 }
@@ -86,7 +86,7 @@ impl<U: UnionNodeTrait> Extend<U> for UnionFindGeneric<U> {
     #[inline]
     fn extend<T: IntoIterator<Item = U>>(&mut self, iterable: T) {
         let len = self.payload.len();
-        let payload = iterable.into_iter().map(Some);
+        let payload = iterable.into_iter();
         self.payload.extend(payload);
 
         let new_len = self.payload.len();
@@ -116,7 +116,7 @@ impl<U: UnionNodeTrait> UnionFindGeneric<U> {
     pub fn insert(&mut self, data: U) -> usize {
         let key = self.payload.len();
         self.link_parent.push(key);
-        self.payload.push(Some(data));
+        self.payload.push(data);
         key
     }
 
@@ -128,11 +128,11 @@ impl<U: UnionNodeTrait> UnionFindGeneric<U> {
             return false;
         }
 
-        let (parent, child, val) = match U::union(self.payload[k0].as_ref().unwrap(), self.payload[k1].as_ref().unwrap()) {
+        let (parent, child, val) = match U::union(&self.payload[k0], &self.payload[k1]) {
             Either::Left(val) => (k0, k1, val),
             Either::Right(val) => (k1, k0, val),
         };
-        self.payload[parent] = Some(val);
+        self.payload[parent] = val;
         self.link_parent[child] = parent;
 
         true
@@ -169,26 +169,26 @@ impl<U: UnionNodeTrait> UnionFindGeneric<U> {
     #[inline]
     pub fn get(&mut self, key: usize) -> &U {
         let root_key = self.find(key);
-        self.payload[root_key].as_ref().unwrap()
+        &self.payload[root_key]
     }
 
     #[inline]
     pub fn immutable_get(&self, key: usize) -> &U {
         let root_key = self.immutable_find(key);
-        self.payload[root_key].as_ref().unwrap()
+        &self.payload[root_key]
     }
 
     #[inline]
     pub fn get_mut(&mut self, key: usize) -> &mut U {
         let root_key = self.find(key);
-        self.payload[root_key].as_mut().unwrap()
+        &mut self.payload[root_key]
     }
 
     pub fn clear(&mut self) {
         debug_assert!(self.payload.len() == self.link_parent.len());
         for i in 0..self.link_parent.len() {
             self.link_parent[i] = i;
-            let node = self.payload[i].as_mut().unwrap();
+            let node = &mut self.payload[i];
             node.clear();
         }
     }

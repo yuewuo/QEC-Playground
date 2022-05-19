@@ -15,11 +15,12 @@ print("[warning] requiring at least 10GB memory to run because of too large code
 T = 100
 pairs = [ (d, d, T) for d in [3, 4, 5,   6, 8, 10,   12, 16, 20,  ] ]  # (di, dj, T)
 # p_vec = [0.0002, 0.0005, 0.001, 0.002, 0.004, 0.008]
-p_vec = [0.0005]
-# p_vec = [0.004]
+# p_vec = [0.0005]
+p_vec = [0.005]
 # p_vec = [0.05]
 
-max_half_weight = 1  # should be perfect O(N)
+# max_half_weight = 1  # should be perfect O(N)
+max_half_weight = 100
 
 di_vec = [e[0] for e in pairs]
 dj_vec = [e[1] for e in pairs]
@@ -27,7 +28,7 @@ T_vec = [e[2] for e in pairs]
 
 max_N = 1000
 
-# time_field_name = lambda e: e["time_run_to_stable"]  # 2.6
+time_field_name = lambda e: e["time_run_to_stable"]  # 2.6
 # time_field_name = lambda e: e["time_build_correction"]  # 2.9
 # time_field_name = lambda e: e["time_prepare_decoders"]  # 2.0
 # time_field_name = lambda e: e["time_uf_grow"]  # 2.7
@@ -35,7 +36,8 @@ max_N = 1000
 # time_field_name = lambda e: e["time_uf_remove"]  # 2.0
 # time_field_name = lambda e: e["time_uf_update"]  # 2.6
 # time_field_name = lambda e: e["count_node_visited"]
-time_field_name = lambda e: e["count_uf_grow"]
+# time_field_name = lambda e: e["count_uf_grow"]
+# time_field_name = lambda e: e["count_iteration"]
 
 # time_field_name = lambda e: e["elapsed"]["decode"]
 # time_field_name = lambda e: e["elapsed"]["decode"] - e["time_prepare_decoders"]
@@ -61,7 +63,7 @@ for p in p_vec:
     # UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model generic-biased-with-biased-cx --bias_eta 100 --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
     # UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model phenomenological --bias_eta 100 --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
     # UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model phenomenological --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
-    UF_parameters = f"-p{num_threads} --error_model phenomenological --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
+    UF_parameters = f"-p{num_threads} --error_model phenomenological --bias_eta +inf --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
     UF_command = qec_playground_benchmark_simulator_runner_vec_command([p], di_vec, dj_vec, T_vec, UF_parameters + ["--log_runtime_statistics", log_filepath], max_N=max_N, min_error_cases=max_N)
     print(" ".join(UF_command))
 
