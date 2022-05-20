@@ -52,10 +52,18 @@ pub struct TailoredMWPMDecoderConfig {
     #[serde(alias = "nrd")]  // abbreviation
     #[serde(default = "tailored_mwpm_default_configs::naive_residual_decoding")]
     pub naive_residual_decoding: bool,
+    /// whether use the original residual decoding weighting in https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.124.130501
+    #[serde(default = "tailored_mwpm_default_configs::original_residual_weighting")]
+    pub original_residual_weighting: bool,
+    /// whether use the original residual decoding weighting of corner clusters: use the Manhattan distance
+    #[serde(default = "tailored_mwpm_default_configs::original_residual_corner_weights")]
+    pub original_residual_corner_weights: bool,
 }
 
 pub mod tailored_mwpm_default_configs {
     pub fn naive_residual_decoding() -> bool { false }
+    pub fn original_residual_weighting() -> bool { false }
+    pub fn original_residual_corner_weights() -> bool { false }
 }
 
 impl TailoredMWPMDecoder {
@@ -371,7 +379,10 @@ impl TailoredMWPMDecoder {
                             vec![pos1, pos2]
                         }
                     };
-                    for i in 0..residual_real_cluster_len {
+                    for i in 0..residual_to_be_matched_cluster_root.len() {
+                        if !self.config.original_residual_corner_weights && i >= residual_real_cluster_len {
+                            continue
+                        }
                         let cluster_positions_i = get_cluster_positions(i);
                         for j in i+1..residual_to_be_matched_cluster_root.len() {
                             if i < residual_real_cluster_len && j < residual_real_cluster_len && residual_to_be_matched_cluster_root[i] == residual_to_be_matched_cluster_root[j] {
@@ -402,16 +413,27 @@ impl TailoredMWPMDecoder {
                             assert!(stab_x_min_weight != f64::MAX, "there should be at least one neutral edge between two clusters we're considering");
                             assert!(stab_y_min_weight != f64::MAX, "there should be at least one neutral edge between two clusters we're considering");
                             // take the bigger one as the final weight (this should benefit)
-                            let min_weight = stab_x_min_weight + stab_y_min_weight;
+                            let min_weight = if self.config.original_residual_weighting {
+                                // "weighted by minimum Manhattan distance between any pairing of defects drawn one from each cluster;
+                                if stab_x_min_weight < stab_y_min_weight {
+                                    stab_x_min_weight
+                                } else {
+                                    stab_y_min_weight
+                                }
+                            } else {
+                                stab_x_min_weight + stab_y_min_weight
+                            };
                             // let min_weight = if stab_x_min_weight < stab_y_min_weight { stab_x_min_weight } else { stab_y_min_weight };
                             // let min_weight = if stab_x_min_weight > stab_y_min_weight { stab_x_min_weight } else { stab_y_min_weight };
                             residual_weighted_edges.push((i, j, min_weight));
                         }
                     }
                     // those corner clusters should be connected with zero weight: this is not in the paper but otherwise they'll mess up the weights
-                    for i in 0..self.corner_virtual_nodes.len() {
-                        for j in i+1..self.corner_virtual_nodes.len() {
-                            residual_weighted_edges.push((residual_real_cluster_len + i, residual_real_cluster_len + j, 0.));
+                    if !self.config.original_residual_corner_weights {  // edges already added if enable original residual corner weights
+                        for i in 0..self.corner_virtual_nodes.len() {
+                            for j in i+1..self.corner_virtual_nodes.len() {
+                                residual_weighted_edges.push((residual_real_cluster_len + i, residual_real_cluster_len + j, 0.));
+                            }
                         }
                     }
                     // if odd number of charged clusters
