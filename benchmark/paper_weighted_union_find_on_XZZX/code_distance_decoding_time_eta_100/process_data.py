@@ -24,7 +24,7 @@ def generate_print(di, dj, T, data, time_field_name):
         result += f" {avr_all} {std_all} {mid_all} {max_all}"
     return result
 
-def fit(content, starting_d):
+def fit(content, starting_d, ending_d):
     X = []
     Ys = []
     Yavrs = []
@@ -43,6 +43,8 @@ def fit(content, starting_d):
                 Yavrs.append([])
         d = int(spt[0])
         if d < starting_d:
+            continue
+        if d >= ending_d:
             continue
         X.append(d)
         for i in range(groups):
@@ -66,7 +68,8 @@ def fit(content, starting_d):
     return results
 
 
-def process_file(log_filepath, pairs, time_field_name, starting_d=0):
+# target slope will be used to calculate another intercept, where the value at `starting_d` remains the same
+def process_file(log_filepath, pairs, time_field_name, starting_d=0, ending_d=1000, target_slope=3):
     content = ""
 
     configurations = []
@@ -100,9 +103,11 @@ def process_file(log_filepath, pairs, time_field_name, starting_d=0):
         content += generate_print(di, dj, T, data, time_field_name) + "\n"
     
     content += "\n"
-    results = fit(content, starting_d)
+    results = fit(content, starting_d, ending_d)
     for slope, slope_avr, intercept in results:
-        content += f"# {slope} {intercept} {slope_avr}  # slope, intercept, slope_avr\n"
+        target_value = slope * math.log(starting_d) + intercept
+        intercept_refined = target_value - target_slope * math.log(starting_d)
+        content += f"# {slope} {intercept} {slope_avr} {target_slope} {intercept_refined}  # slope, intercept, slope_avr, target_slope, intercept_refined\n"
         # content += f"# slope = {slope}, slope_avr = {slope_avr}, intercept = {intercept}\n"
         # content += f"# fit(x) = exp({slope} * log(x) + ({intercept}))\n"
 
