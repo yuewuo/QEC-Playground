@@ -16,6 +16,7 @@ use super::either::Either;
 use crate::rand::thread_rng;
 use crate::rand::seq::SliceRandom;
 use crate::parking_lot::RwLock;
+use crate::derive_more::{Deref, DerefMut};
 
 /// MWPM decoder, initialized and cloned for multiple threads
 #[derive(Debug, Clone, Serialize)]
@@ -29,7 +30,7 @@ pub struct UnionFindDecoder {
     /// position to index mapping (immutable shared)
     pub position_to_index: Arc<HashMap<Position, usize>>,
     /// decoder nodes, each corresponds to a node in the model graph; each instance needs to modify node information and thus not shared
-    pub nodes: Vec<UnionFindDecoderNode>,
+    pub nodes: NodeVec,
     /// union-find algorithm
     pub union_find: UnionFind,
     /// recording the list of odd clusters to reduce iteration complexity
@@ -60,6 +61,34 @@ pub struct UnionFindDecoder {
     odd_clusters_set_active_timestamp: usize,
     /// internal variable that works like `shrunk_boundaries: BTreeSet<usize>` but with constant performance
     shrunk_boundaries_active_timestamp: usize,
+}
+
+#[derive(Deref, DerefMut, Debug, Serialize)]
+pub struct NodeVec(Vec<UnionFindDecoderNode>);
+
+impl Clone for NodeVec {
+    /// need to create new edges, should not use the original edges
+    fn clone(&self) -> Self {
+        let mut nodes = self.0.clone();
+        // allocating new edges and link them properly
+        for index in 0..nodes.len() {
+            let mut neighbors = Vec::new();
+            for (neighbor_index, edge_ptr) in nodes[index].neighbors.iter() {
+                assert_ne!(*neighbor_index, index, "neighbor could not be myself");
+                let new_edge_ptr = if &index < neighbor_index {  // create new edge
+                    let new_edge: NeighborEdge = edge_ptr.read_recursive().clone();
+                    Arc::new(RwLock::new(new_edge))
+                } else {
+                    let neighbor_node = &nodes[*neighbor_index];
+                    let reverse_index = neighbor_node.index_to_neighbor(&index).expect("exist");
+                    Arc::clone(&neighbor_node.neighbors[reverse_index].1)  // already cloned before
+                };
+                neighbors.push((*neighbor_index, new_edge_ptr));
+            }
+            std::mem::swap(&mut neighbors, &mut nodes[index].neighbors);
+        }
+        Self(nodes)
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -263,7 +292,7 @@ impl UnionFindDecoder {
             complete_model_graph: complete_model_graph,
             index_to_position: Arc::new(index_to_position),
             position_to_index: Arc::new(position_to_index),
-            nodes: nodes,
+            nodes: NodeVec(nodes),
             union_find: union_find,
             odd_clusters: Vec::new(),
             idle_odd_clusters: Vec::new(),
@@ -911,12 +940,13 @@ mod tests {
         simulator.set_error_rates(&mut error_model, p, p, p, 0.);
         simulator.compress_error_rates(&mut error_model);
         error_model_sanity_check(&simulator, &error_model).unwrap();
+        let error_model = Arc::new(error_model);
         // build decoder
         let decoder_config = json!({
             "precompute_complete_model_graph": true,
         });
         let enable_all = true;
-        let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), &error_model, &decoder_config, 1);
+        let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1);
         if true || enable_all {  // debug 5
             simulator.clear_all_errors();
             // {"[0][4][6]":"Z","[0][5][8]":"Z","[0][5][9]":"Z","[0][7][1]":"Z","[0][9][1]":"Z"}

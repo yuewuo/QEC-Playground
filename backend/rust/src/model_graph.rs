@@ -142,7 +142,6 @@ impl ModelGraph {
 
     /// single-thread computation with region
     fn build_with_weight_function_region<F>(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_of: F, t_start: usize, t_end: usize) where F: Fn(f64) -> f64 + Copy {
-        eprintln!("t_start: {}, t_end: {}", t_start, t_end);
         // calculate all possible errors to be iterated
         let mut all_possible_errors: Vec<Either<ErrorType, CorrelatedPauliErrorType>> = Vec::new();
         for error_type in ErrorType::all_possible_errors().drain(..) {
