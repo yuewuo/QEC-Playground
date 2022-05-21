@@ -7,7 +7,7 @@ use std::collections::{BTreeMap};
 use super::either::Either;
 use super::types::*;
 use super::error_model::*;
-use std::sync::{Arc};
+use std::sync::{Arc, Mutex};
 use serde::{Serialize, Deserialize};
 use super::float_cmp;
 
@@ -132,32 +132,17 @@ impl ModelGraph {
     }
 
     /// build model graph given the simulator
-    pub fn build(&mut self, simulator: &mut Simulator, error_model: &ErrorModel, weight_function: &WeightFunction) {
+    pub fn build(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_function: &WeightFunction, parallel: usize) {
         match weight_function {
-            WeightFunction::Autotune => self.build_with_weight_function(simulator, error_model, weight_function::autotune),
-            WeightFunction::AutotuneImproved => self.build_with_weight_function(simulator, error_model, weight_function::autotune_improved),
-            WeightFunction::Unweighted => self.build_with_weight_function(simulator, error_model, weight_function::unweighted),
+            WeightFunction::Autotune => self.build_with_weight_function(simulator, error_model, weight_function::autotune, parallel),
+            WeightFunction::AutotuneImproved => self.build_with_weight_function(simulator, error_model, weight_function::autotune_improved, parallel),
+            WeightFunction::Unweighted => self.build_with_weight_function(simulator, error_model, weight_function::unweighted, parallel),
         }
     }
 
-    /// build model graph given the simulator with customized weight function
-    pub fn build_with_weight_function<F>(&mut self, simulator: &mut Simulator, error_model: &ErrorModel, weight_of: F) where F: Fn(f64) -> f64 + Copy {
-        debug_assert!({
-            let mut state_clean = true;
-            simulator_iter!(simulator, position, node, {
-                // here I omitted the condition `t % measurement_cycles == 0` for a stricter check
-                if position.t != 0 && node.gate_type.is_measurement() && simulator.is_node_real(position) {
-                    let model_graph_node = self.get_node_unwrap(position);
-                    if model_graph_node.all_edges.len() > 0 || model_graph_node.edges.len() > 0 {
-                        state_clean = false;
-                    }
-                }
-            });
-            if !state_clean {
-                println!("[warning] state must be clean before calling `build`, please make sure you don't call this function twice");
-            }
-            state_clean
-        });
+    /// single-thread computation with region
+    fn build_with_weight_function_region<F>(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_of: F, t_start: usize, t_end: usize) where F: Fn(f64) -> f64 + Copy {
+        eprintln!("t_start: {}, t_end: {}", t_start, t_end);
         // calculate all possible errors to be iterated
         let mut all_possible_errors: Vec<Either<ErrorType, CorrelatedPauliErrorType>> = Vec::new();
         for error_type in ErrorType::all_possible_errors().drain(..) {
@@ -170,6 +155,9 @@ impl ModelGraph {
         simulator.clear_all_errors();
         // iterate over all possible errors at all possible positions
         simulator_iter!(simulator, position, {
+            if position.t < t_start || position.t >= t_end {
+                continue
+            }
             let error_model_node = error_model.get_node_unwrap(position);
             // whether it's possible to have erasure error at this node
             let possible_erasure_error = error_model_node.erasure_error_rate > 0. || error_model_node.correlated_erasure_error_rates.is_some() || {
@@ -250,6 +238,74 @@ impl ModelGraph {
                 }
             }
         });
+    }
+
+    /// build model graph given the simulator with customized weight function
+    pub fn build_with_weight_function<F>(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_of: F, parallel: usize) where F: Fn(f64) -> f64 + Copy + Send + Sync + 'static {
+        debug_assert!({
+            let mut state_clean = true;
+            simulator_iter!(simulator, position, node, {
+                // here I omitted the condition `t % measurement_cycles == 0` for a stricter check
+                if position.t != 0 && node.gate_type.is_measurement() && simulator.is_node_real(position) {
+                    let model_graph_node = self.get_node_unwrap(position);
+                    if model_graph_node.all_edges.len() > 0 || model_graph_node.edges.len() > 0 {
+                        state_clean = false;
+                    }
+                }
+            });
+            if !state_clean {
+                println!("[warning] state must be clean before calling `build`, please make sure you don't call this function twice");
+            }
+            state_clean
+        });
+        if parallel <= 1 {
+            self.build_with_weight_function_region(simulator, error_model, weight_of, 0, simulator.height);
+        } else {
+            // spawn `parallel` threads to compute in parallel
+            let mut handlers = Vec::new();
+            let mut instances = Vec::new();
+            let interval = simulator.height / parallel;
+            for parallel_idx in 0..parallel {
+                let instance = Arc::new(Mutex::new(self.clone()));
+                let mut simulator = simulator.clone();
+                instances.push(Arc::clone(&instance));
+                let t_start = parallel_idx * interval;  // included
+                let mut t_end = (parallel_idx + 1) * interval;  // excluded
+                if parallel_idx == parallel - 1 {
+                    t_end = simulator.height;  // to make sure every part is included
+                }
+                let error_model = Arc::clone(&error_model);
+                handlers.push(std::thread::spawn(move || {
+                    let mut instance = instance.lock().unwrap();
+                    instance.build_with_weight_function_region(&mut simulator, error_model, weight_of, t_start, t_end);
+                }));
+            }
+            for handler in handlers.drain(..) {
+                handler.join().unwrap();
+            }
+            // move the data from instances (without additional large memory allocation)
+            for parallel_idx in 0..parallel {
+                let mut instance = instances[parallel_idx].lock().unwrap();
+                simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if instance.is_node_exist(position) {
+                    let instance_model_graph_node = instance.get_node_mut_unwrap(position);
+                    let model_graph_node = self.get_node_mut_unwrap(position);
+                    for boundary in instance_model_graph_node.all_boundaries.drain(..) {
+                        model_graph_node.all_boundaries.push(boundary);
+                    }
+                    let mut all_edges = BTreeMap::new();
+                    std::mem::swap(&mut all_edges, &mut instance_model_graph_node.all_edges);
+                    for (target, mut edges) in all_edges.into_iter() {
+                        if !model_graph_node.all_edges.contains_key(&target) {
+                            model_graph_node.all_edges.insert(target.clone(), Vec::new());
+                        }
+                        let node_edges = model_graph_node.all_edges.get_mut(&target).unwrap();
+                        for edge in edges.drain(..) {
+                            node_edges.push(edge);
+                        }
+                    }
+                });
+            }
+        }
         self.elect_edges(simulator, true, weight_of);  // by default use combined probability
     }
 

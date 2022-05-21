@@ -52,6 +52,7 @@ extern crate serde_hashkey;
 extern crate float_cmp;
 extern crate priority_queue;
 extern crate float_ord;
+extern crate parking_lot;
 
 fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> {
     clap::Command::new("QECPlayground")

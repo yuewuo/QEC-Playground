@@ -1259,6 +1259,7 @@ dependencies = [
  "libc",
  "ndarray",
  "num_cpus",
+ "parking_lot 0.12.0",
  "pbr",
  "petgraph",
  "platform-dirs",

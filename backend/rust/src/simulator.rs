@@ -972,6 +972,10 @@ impl SparseMeasurement {
         }
         sparse_measurement
     }
+    /// the length of non-trivial measurements
+    pub fn len(&self) -> usize {
+        self.nontrivial.len()
+    }
 }
 
 /// in most cases errors are rare, this sparse structure use `BTreeMap` to store them

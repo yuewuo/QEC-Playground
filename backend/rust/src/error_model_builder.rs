@@ -173,7 +173,7 @@ impl ErrorModelBuilder {
                     // first clear error rate
                     error_model.set_node(position, Some(noiseless_node.clone()));
                     if position.t >= simulator.height - simulator.measurement_cycles {  // no error on the top, as a perfect measurement round
-                        return
+                        continue
                     }
                     // do different things for each stage
                     match position.t % simulator.measurement_cycles {

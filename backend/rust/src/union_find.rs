@@ -120,7 +120,7 @@ impl<U: UnionNodeTrait> UnionFindGeneric<U> {
         key
     }
 
-    #[inline]
+    #[inline(never)]
     pub fn union(&mut self, key0: usize, key1: usize) -> bool {
         let k0 = self.find(key0);
         let k1 = self.find(key1);
@@ -138,7 +138,7 @@ impl<U: UnionNodeTrait> UnionFindGeneric<U> {
         true
     }
 
-    #[inline]
+    #[inline(never)]
     pub fn find(&mut self, key: usize) -> usize {
         let mut k = key;
         let mut p = self.link_parent[k];
@@ -155,7 +155,7 @@ impl<U: UnionNodeTrait> UnionFindGeneric<U> {
         root
     }
 
-    #[inline]
+    #[inline(never)]
     pub fn immutable_find(&self, key: usize) -> usize {
         let mut k = key;
         let mut p = self.link_parent[k];
@@ -166,19 +166,19 @@ impl<U: UnionNodeTrait> UnionFindGeneric<U> {
         k
     }
 
-    #[inline]
+    #[inline(never)]
     pub fn get(&mut self, key: usize) -> &U {
         let root_key = self.find(key);
         &self.payload[root_key]
     }
 
-    #[inline]
+    #[inline(never)]
     pub fn immutable_get(&self, key: usize) -> &U {
         let root_key = self.immutable_find(key);
         &self.payload[root_key]
     }
 
-    #[inline]
+    #[inline(never)]
     pub fn get_mut(&mut self, key: usize) -> &mut U {
         let root_key = self.find(key);
         &mut self.payload[root_key]

@@ -68,13 +68,13 @@ pub mod tailored_mwpm_default_configs {
 
 impl TailoredMWPMDecoder {
     /// create a new MWPM decoder with decoder configuration
-    pub fn new(simulator: &Simulator, error_model: &ErrorModel, decoder_configuration: &serde_json::Value, parallel: usize) -> Self {
+    pub fn new(simulator: &Simulator, error_model: Arc<ErrorModel>, decoder_configuration: &serde_json::Value, parallel: usize) -> Self {
         // read attribute of decoder configuration
         let config: TailoredMWPMDecoderConfig = serde_json::from_value(decoder_configuration.clone()).unwrap();
         // build model graph
         let mut simulator = simulator.clone();
         let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
-        tailored_model_graph.build(&mut simulator, &error_model, &config.weight_function);
+        tailored_model_graph.build(&mut simulator, error_model.as_ref(), &config.weight_function);
         let tailored_model_graph = Arc::new(tailored_model_graph);
         // build complete model graph
         let mut tailored_complete_model_graph = TailoredCompleteModelGraph::new(&simulator, Arc::clone(&tailored_model_graph));
