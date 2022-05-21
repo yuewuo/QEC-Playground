@@ -12,15 +12,15 @@ print("[warning] requiring at least 10GB memory to run because of too large code
 
 # evaluated on i9-9820X CPU with 32GB memory
 
-T = 100
-pairs = [ (d, d, T) for d in [3, 4, 5,   6, 8, 10,   12, 16, 20,  ] ]  # (di, dj, T)
-# p_vec = [0.0002, 0.0005, 0.001, 0.002, 0.004, 0.008]
+pairs = [ (d, d, d) for d in [3, 4, 5,   6, 8, 10,   12, 16, 20] ]  # (di, dj, T)
+p_vec = [0.0002, 0.0005, 0.001, 0.002, 0.004, 0.008]
 # p_vec = [0.0005]
-p_vec = [0.005]
+# p_vec = [0.005]
 # p_vec = [0.05]
 
 # max_half_weight = 1  # should be perfect O(N)
-max_half_weight = 100
+# max_half_weight = 10
+max_half_weight = 1000
 
 di_vec = [e[0] for e in pairs]
 dj_vec = [e[1] for e in pairs]
@@ -57,13 +57,15 @@ for p in p_vec:
         continue
 
     ENABLE_MULTITHREADING = False
-    num_threads = os.cpu_count() / 2 if ENABLE_MULTITHREADING else 1
+    num_threads = os.cpu_count() // 2 if ENABLE_MULTITHREADING else 1
     print(num_threads)
 
-    # UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model generic-biased-with-biased-cx --bias_eta 100 --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
+    parallel_init = os.cpu_count() - 2  # initialization step can take full advantage of multiple cores
+
+    UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model generic-biased-with-biased-cx --bias_eta 100 --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}} --parallel_init {parallel_init}".split(" ")
     # UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model phenomenological --bias_eta 100 --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
     # UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model phenomenological --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
-    UF_parameters = f"-p{num_threads} --error_model phenomenological --bias_eta +inf --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
+    # UF_parameters = f"-p{num_threads} --error_model phenomenological --bias_eta +inf --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
     UF_command = qec_playground_benchmark_simulator_runner_vec_command([p], di_vec, dj_vec, T_vec, UF_parameters + ["--log_runtime_statistics", log_filepath], max_N=max_N, min_error_cases=max_N)
     print(" ".join(UF_command))
 

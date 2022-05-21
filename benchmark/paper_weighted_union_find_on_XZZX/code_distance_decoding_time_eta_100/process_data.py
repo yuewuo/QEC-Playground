@@ -40,8 +40,8 @@ def fit(content, starting_d):
         X.append(d)
         Y.append(t)
         Yavr.append(tavr)
-    # print(X)
-    # print(Y)
+    print(X)
+    print(Y)
     slope, intercept, _, _, _ = scipy.stats.linregress([math.log(d) for d in X], [math.log(t) for t in Y])
     slope_avr, _, _, _, _ = scipy.stats.linregress([math.log(d) for d in X], [math.log(t) for t in Yavr])
     return slope, slope_avr, intercept
