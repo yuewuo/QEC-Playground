@@ -5,46 +5,65 @@ import math, random, scipy.stats
 USE_MEDIAN_INSTEAD = False
 USE_MAX_INSTEAD = False
 
-print_title = f"<di> <dj> <T> <sample_cnt> <avr_all> <std_all> <mid_all> <max_all>"
+print_title = f"<di> <dj> <T> <sample_cnt> [<avr_all> <std_all> <mid_all> <max_all>]..."
 
 def generate_print(di, dj, T, data, time_field_name):
-    time_vec = np.sort([time_field_name(e) for e in data])
-    sample_cnt = len(time_vec)
-    # time regardless of error
-    avr_all = np.average(time_vec)
-    mid_all = np.median(time_vec)
-    std_all = np.std(time_vec)
-    max_all = np.amax(time_vec)
-    return f"{di} {dj} {T} {sample_cnt} {avr_all} {std_all} {mid_all} {max_all}"
+    time_field_data = [time_field_name(e) for e in data]
+    if not isinstance(time_field_data[0], list):
+        time_field_data = [[e] for e in time_field_data]
+    data_vec_len = len(time_field_data[0])
+    sample_cnt = len(time_field_data)
+    result = f"{di} {dj} {T} {sample_cnt}"
+    for i in range(data_vec_len):
+        time_vec = np.sort([e[i] for e in time_field_data])
+        # time regardless of error
+        avr_all = np.average(time_vec)
+        mid_all = np.median(time_vec)
+        std_all = np.std(time_vec)
+        max_all = np.amax(time_vec)
+        result += f" {avr_all} {std_all} {mid_all} {max_all}"
+    return result
 
 def fit(content, starting_d):
     X = []
-    Y = []
-    Yavr = []
+    Ys = []
+    Yavrs = []
+    groups = None
     lines = content.split("\n")
     for line in lines[1:]:
         line = line.strip("\r\n ")
         if line == "":
             continue
         spt = line.split(" ")
+        if groups == None:
+            assert (len(spt) - 4) % 4 == 0, "data must be groups of 4"
+            groups = (len(spt) - 4) // 4
+            for _ in range(groups):
+                Ys.append([])
+                Yavrs.append([])
         d = int(spt[0])
-        if USE_MEDIAN_INSTEAD:
-            t = float(spt[6])
-        elif USE_MAX_INSTEAD:
-            t = float(spt[7])
-        else:
-            t = float(spt[4])
-        tavr = float(spt[5])
         if d < starting_d:
             continue
         X.append(d)
-        Y.append(t)
-        Yavr.append(tavr)
+        for i in range(groups):
+            bias = 4 + 4 * i
+            if USE_MEDIAN_INSTEAD:
+                t = float(spt[bias+2])
+            elif USE_MAX_INSTEAD:
+                t = float(spt[bias+3])
+            else:
+                t = float(spt[bias])
+            tavr = float(spt[bias+1])
+            Ys[i].append(t)
+            Yavrs[i].append(tavr)
     print(X)
-    print(Y)
-    slope, intercept, _, _, _ = scipy.stats.linregress([math.log(d) for d in X], [math.log(t) for t in Y])
-    slope_avr, _, _, _, _ = scipy.stats.linregress([math.log(d) for d in X], [math.log(t) for t in Yavr])
-    return slope, slope_avr, intercept
+    print(Ys)
+    results = []
+    for i in range(groups):
+        slope, intercept, _, _, _ = scipy.stats.linregress([math.log(d) for d in X], [math.log(t) for t in Ys[i]])
+        slope_avr, _, _, _, _ = scipy.stats.linregress([math.log(d) for d in X], [math.log(t) for t in Yavrs[i]])
+        results.append((slope, slope_avr, intercept))
+    return results
 
 
 def process_file(log_filepath, pairs, time_field_name, starting_d=0):
@@ -80,8 +99,11 @@ def process_file(log_filepath, pairs, time_field_name, starting_d=0):
         data = data_vec[i]
         content += generate_print(di, dj, T, data, time_field_name) + "\n"
     
-    slope, slope_avr, intercept = fit(content, starting_d)
-    content += f"\n# slope = {slope}, slope_avr = {slope_avr}, intercept = {intercept}\n"
-    content += f"# fit(x) = exp({slope} * log(x) + ({intercept}))\n\n"
+    content += "\n"
+    results = fit(content, starting_d)
+    for slope, slope_avr, intercept in results:
+        content += f"# {slope} {intercept} {slope_avr}  # slope, intercept, slope_avr\n"
+        # content += f"# slope = {slope}, slope_avr = {slope_avr}, intercept = {intercept}\n"
+        # content += f"# fit(x) = exp({slope} * log(x) + ({intercept}))\n"
 
     return content

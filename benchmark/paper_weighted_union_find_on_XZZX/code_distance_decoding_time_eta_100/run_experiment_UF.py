@@ -26,7 +26,7 @@ T_vec = [e[2] for e in pairs]
 
 max_N = 1000
 
-time_field_name = lambda e: e["time_run_to_stable"]  # 2.6
+# time_field_name = lambda e: e["time_run_to_stable"]  # 2.6
 # time_field_name = lambda e: e["time_build_correction"]  # 2.9
 # time_field_name = lambda e: e["time_prepare_decoders"]  # 2.0
 # time_field_name = lambda e: e["time_uf_grow"]  # 2.7
@@ -43,13 +43,15 @@ time_field_name = lambda e: e["time_run_to_stable"]  # 2.6
 # remove prepare decoder because that's just initializing UF decoder, which can be efficiently done by deliberately design the paging and use copy-on-write scheme
 # this time can be subtracted from overall time, because it's always O(N) and since p can be very small, including this part may shallow other parts
 
+time_field_name = lambda e: [e["time_run_to_stable"], e["count_memory_access"]]
+
 for p in p_vec:
 
     log_filepath = os.path.join(os.path.dirname(__file__), f"runtime_statistics_UF_{p}.txt")
 
     if 'ONLY_PROCESS_DATA' in os.environ and os.environ["ONLY_PROCESS_DATA"] == "TRUE":
         content = process_file(log_filepath, pairs, time_field_name, starting_d=8)
-        print(content, end="")
+        print(content)
         with open(os.path.join(os.path.dirname(__file__), f"processed_UF_{p}.txt"), "w", encoding="utf8") as f:
             f.write(content)
         continue
