@@ -132,11 +132,11 @@ impl ModelGraph {
     }
 
     /// build model graph given the simulator
-    pub fn build(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_function: &WeightFunction, parallel: usize) {
+    pub fn build(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_function: &WeightFunction, parallel: usize, use_combined_probability: bool) {
         match weight_function {
-            WeightFunction::Autotune => self.build_with_weight_function(simulator, error_model, weight_function::autotune, parallel),
-            WeightFunction::AutotuneImproved => self.build_with_weight_function(simulator, error_model, weight_function::autotune_improved, parallel),
-            WeightFunction::Unweighted => self.build_with_weight_function(simulator, error_model, weight_function::unweighted, parallel),
+            WeightFunction::Autotune => self.build_with_weight_function(simulator, error_model, weight_function::autotune, parallel, use_combined_probability),
+            WeightFunction::AutotuneImproved => self.build_with_weight_function(simulator, error_model, weight_function::autotune_improved, parallel, use_combined_probability),
+            WeightFunction::Unweighted => self.build_with_weight_function(simulator, error_model, weight_function::unweighted, parallel, use_combined_probability),
         }
     }
 
@@ -240,7 +240,7 @@ impl ModelGraph {
     }
 
     /// build model graph given the simulator with customized weight function
-    pub fn build_with_weight_function<F>(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_of: F, parallel: usize) where F: Fn(f64) -> f64 + Copy + Send + Sync + 'static {
+    pub fn build_with_weight_function<F>(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_of: F, parallel: usize, use_combined_probability: bool) where F: Fn(f64) -> f64 + Copy + Send + Sync + 'static {
         debug_assert!({
             let mut state_clean = true;
             simulator_iter!(simulator, position, node, {
@@ -305,7 +305,7 @@ impl ModelGraph {
                 });
             }
         }
-        self.elect_edges(simulator, true, weight_of);  // by default use combined probability
+        self.elect_edges(simulator, use_combined_probability, weight_of);  // by default use combined probability
     }
 
     /// add asymmetric edge from `source` to `target`; in order to create symmetric edge, call this function twice with reversed input

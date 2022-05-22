@@ -65,7 +65,7 @@ for p in p_vec:
 
     parallel_init = os.cpu_count() - 2  # initialization step can take full advantage of multiple cores
 
-    UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model generic-biased-with-biased-cx --bias_eta 100 --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}} --parallel_init {parallel_init}".split(" ")
+    UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model generic-biased-with-biased-cx --bias_eta 100 --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true,\"use_combined_probability\":false}} --parallel_init {parallel_init}".split(" ")
     # UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model phenomenological --bias_eta 100 --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
     # UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model phenomenological --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
     # UF_parameters = f"-p{num_threads} --error_model phenomenological --bias_eta +inf --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")

@@ -307,6 +307,10 @@ pub struct BenchmarkDebugPrintDecoderConfig {
     #[serde(alias = "wf")]  // abbreviation
     #[serde(default = "mwpm_default_configs::weight_function")]
     pub weight_function: WeightFunction,
+    /// combined probability can improve accuracy, but will cause probabilities differ a lot even in the case of i.i.d. error model
+    #[serde(alias = "ucp")]  // abbreviation
+    #[serde(default = "mwpm_default_configs::use_combined_probability")]
+    pub use_combined_probability: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum, Serialize)]
@@ -505,14 +509,14 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                 let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
                 let mut model_graph = ModelGraph::new(&simulator);
                 let error_model_graph = Arc::new(error_model_graph);
-                model_graph.build(&mut simulator, error_model_graph, &config.weight_function, parallel_init);
+                model_graph.build(&mut simulator, error_model_graph, &config.weight_function, parallel_init, config.use_combined_probability);
                 return format!("{}\n", serde_json::to_string(&model_graph.to_json(&simulator)).expect("serialize should success"));
             },
             Some(BenchmarkDebugPrint::CompleteModelGraph) => {
                 let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
                 let mut model_graph = ModelGraph::new(&simulator);
                 let error_model_graph = Arc::new(error_model_graph);
-                model_graph.build(&mut simulator, error_model_graph, &config.weight_function, parallel_init);
+                model_graph.build(&mut simulator, error_model_graph, &config.weight_function, parallel_init, config.use_combined_probability);
                 let model_graph = Arc::new(model_graph);
                 let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
                 complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph, parallel_init);

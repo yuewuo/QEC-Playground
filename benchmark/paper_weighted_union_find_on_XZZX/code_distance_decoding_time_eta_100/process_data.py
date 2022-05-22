@@ -15,7 +15,9 @@ def generate_print(di, dj, T, data, time_field_name):
     sample_cnt = len(time_field_data)
     result = f"{di} {dj} {T} {sample_cnt}"
     for i in range(data_vec_len):
-        time_vec = np.sort([e[i] for e in time_field_data])
+        # time_vec = np.sort([e[i] for e in time_field_data])
+        time_vec = [e[i] for e in time_field_data]
+        # print(time_vec)
         # time regardless of error
         avr_all = np.average(time_vec)
         mid_all = np.median(time_vec)

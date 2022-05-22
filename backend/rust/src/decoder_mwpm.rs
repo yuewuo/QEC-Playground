@@ -32,12 +32,17 @@ pub struct MWPMDecoderConfig {
     #[serde(alias = "wf")]  // abbreviation
     #[serde(default = "mwpm_default_configs::weight_function")]
     pub weight_function: WeightFunction,
+    /// combined probability can improve accuracy, but will cause probabilities differ a lot even in the case of i.i.d. error model
+    #[serde(alias = "ucp")]  // abbreviation
+    #[serde(default = "mwpm_default_configs::use_combined_probability")]
+    pub use_combined_probability: bool,
 }
 
 pub mod mwpm_default_configs {
     use super::*;
     pub fn precompute_complete_model_graph() -> bool { false }  // save for erasure error model and also large code distance
     pub fn weight_function() -> WeightFunction { WeightFunction::AutotuneImproved }
+    pub fn use_combined_probability() -> bool { true }  // default use combined probability for better accuracy
 }
 
 impl MWPMDecoder {
@@ -48,7 +53,7 @@ impl MWPMDecoder {
         // build model graph
         let mut simulator = simulator.clone();
         let mut model_graph = ModelGraph::new(&simulator);
-        model_graph.build(&mut simulator, error_model, &config.weight_function, parallel);
+        model_graph.build(&mut simulator, error_model, &config.weight_function, parallel, config.use_combined_probability);
         let model_graph = Arc::new(model_graph);
         // build complete model graph
         let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));

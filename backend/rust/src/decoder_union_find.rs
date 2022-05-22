@@ -147,6 +147,10 @@ pub struct UnionFindDecoderConfig {
     #[serde(alias = "wf")]  // abbreviation
     #[serde(default = "mwpm_default_configs::weight_function")]
     pub weight_function: WeightFunction,
+    /// combined probability can improve accuracy, but will cause probabilities differ a lot even in the case of i.i.d. error model
+    #[serde(alias = "ucp")]  // abbreviation
+    #[serde(default = "mwpm_default_configs::use_combined_probability")]
+    pub use_combined_probability: bool,
     /// maximum weight will be 2 * max_half_weight, so that each time an edge can grow 1; by default is 1: unweighted union-find decoder
     #[serde(alias = "mhw")]  // abbreviation
     #[serde(default = "union_find_default_configs::max_half_weight")]
@@ -179,7 +183,7 @@ impl UnionFindDecoder {
         // build model graph
         let mut simulator = simulator.clone();
         let mut model_graph = ModelGraph::new(&simulator);
-        model_graph.build(&mut simulator, error_model, &config.weight_function, parallel);
+        model_graph.build(&mut simulator, error_model, &config.weight_function, parallel, config.use_combined_probability);
         let model_graph = Arc::new(model_graph);
         // build complete model graph
         let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
@@ -394,6 +398,7 @@ impl UnionFindDecoder {
         self.time_uf_remove = 0.;
         self.count_node_visited = 0;
         self.count_iteration = 0;
+        self.count_memory_access = 0;
     }
 
     /// decode given measurement results
@@ -595,7 +600,7 @@ impl UnionFindDecoder {
                             self.count_memory_access += 1;
                             if self.has_odd_clusters_set(neighbor_root) {
                                 self.count_memory_access += 1;
-                                safe_length /= 2;
+                                safe_length = (safe_length + 1) / 2;  // at least fully grown, to avoid another growth of 1
                             }
                             if safe_length < maximum_safe_length {
                                 maximum_safe_length = safe_length;
@@ -623,6 +628,7 @@ impl UnionFindDecoder {
             assert_ne!(maximum_safe_length, usize::MAX, "should find at least one un-grown edge");
             if maximum_safe_length != 0 { maximum_safe_length } else { 1 }
         };
+        // eprintln!("grow_step: {}", grow_step);
         grow_step
     }
 
@@ -738,7 +744,7 @@ impl UnionFindDecoder {
     fn run_single_iteration_uf_update(&mut self) {
         self.clear_odd_clusters_set();  // used as `visited_cluster`
         self.count_memory_access += 1;
-        for &cluster in self.odd_clusters.iter() {  // TODO: odd_clusters here might be duplicated, use odd_clusters_set instead
+        for &cluster in self.odd_clusters.iter() {
             self.count_memory_access += 1;
             // replace `odd_clusters` by the root, so that querying `cluster_boundaries` will be valid
             let cluster = self.union_find.find(cluster);
@@ -762,14 +768,15 @@ impl UnionFindDecoder {
             self.idle_cluster_boundaries[cluster].clear();
             self.count_memory_access += 1;
             for &boundary in self.cluster_boundaries[cluster].iter() {
-                let mut has_foreign = false;
+                let mut all_grown = true;
                 let neighbor_len = self.nodes[boundary].neighbors.len();
                 for i in 0..neighbor_len {
-                    let (neighbor_index, _edge_ptr) = &self.nodes[boundary].neighbors[i];
+                    let (_neighbor_index, edge_ptr) = &self.nodes[boundary].neighbors[i];
                     self.count_memory_access += 1;
                     self.count_memory_access += 1;
-                    if cluster != self.union_find.find(*neighbor_index) {
-                        has_foreign = true;
+                    let edge = edge_ptr.read_recursive();
+                    if edge.increased < edge.length {  // not grown
+                        all_grown = false;
                         break
                     }
                 }
@@ -779,12 +786,12 @@ impl UnionFindDecoder {
                     Some(boundary_length) => {
                         self.count_memory_access += 1;
                         if boundary_node.boundary_increased < boundary_length {
-                            has_foreign = true;
+                            all_grown = false;
                         }
                     },
                     None => { },  // do nothing
                 }
-                if has_foreign {
+                if !all_grown {
                     let not_present = {  // borrow checker workaround
                         // !self.has_shrunk_boundaries(boundary);
                         self.count_memory_access += 1;

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+gnuplot code_distance_decoding_time_eta_100.gp
+gnuplot code_distance_decoding_time_eta_100_integer.gp
+gnuplot code_distance_memory_access_eta_100.gp
+gnuplot code_distance_memory_access_eta_100_integer.gp
