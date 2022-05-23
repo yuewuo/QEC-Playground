@@ -1,17 +1,17 @@
 set terminal postscript eps color "Arial, 24"
 set xlabel "Code distance" font "Arial, 24"
-set ylabel "Average Memory Access" font "Arial, 24"
+set ylabel "Average Memory Access Per Measurement" font "Arial, 24"
 set grid ytics
 set size 1,1.1
 
 set logscale x
-set xrange [2.9:21]
+set xrange [2.9:50]
 # print(", ".join([f"'{i}' {i}" for i in range(3,13)]))
-set xtics ('3' 3, '4' 4, '5' 5, '6' 6, '8' 8, '10' 10, '12' 12, '16' 16, '20' 20)
+set xtics ('3' 3, '4' 4, '5' 5, '6' 6, '8' 8, '10' 10, '12' 12, '16' 16, '20' 20, '24' 24, '32' 32, '40' 40, '48' 48)
 set logscale y
-# print(", ".join([f"'1e{i}' 1e{i}" for i in range(1, 9)]))
-set ytics ('1' 1, '10' 1e1, '1e2' 1e2, '1e3' 1e3, '1e4' 1e4, '1e5' 1e5, '1e6' 1e6, '1e7' 1e7)
-set yrange [0.99:1e7]
+# print(", ".join([f"'1e{i}' 1e{i}" for i in range(4, 11)]))
+set ytics ('1' 1, '10' 1e1, '1e2' 1e2, '1e3' 1e3, '1e4' 1e4, '1e5' 1e5, '1e6' 1e6, '1e7' 1e7, '1e8' 1e8)
+set yrange [0.99:1e8]
 set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder

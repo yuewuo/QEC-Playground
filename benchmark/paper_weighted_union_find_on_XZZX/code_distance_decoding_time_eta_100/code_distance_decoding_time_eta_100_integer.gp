@@ -5,13 +5,13 @@ set grid ytics
 set size 1,1.1
 
 set logscale x
-set xrange [2.9:21]
+set xrange [2.9:50]
 # print(", ".join([f"'{i}' {i}" for i in range(3,13)]))
-set xtics ('3' 3, '4' 4, '5' 5, '6' 6, '8' 8, '10' 10, '12' 12, '16' 16, '20' 20)
+set xtics ('3' 3, '4' 4, '5' 5, '6' 6, '8' 8, '10' 10, '12' 12, '16' 16, '20' 20, '24' 24, '32' 32, '40' 40, '48' 48)
 set logscale y
 # print(", ".join([f"'1e{i}' 1e{i}" for i in range(-4, 2)]))
-set ytics ('1e-8' 1e-8, '1e-7' 1e-7, '1e-6' 1e-6, '1e-5' 1e-5, '1e-4' 1e-4, '1e-3' 1e-3, '1e-2' 1e-2, '0.1' 1e-1)
-set yrange [1e-8:0.1]
+set ytics ('1e-8' 1e-8, '1e-7' 1e-7, '1e-6' 1e-6, '1e-5' 1e-5, '1e-4' 1e-4, '1e-3' 1e-3, '1e-2' 1e-2, '0.1' 1e-1, '1' 1)
+set yrange [1e-8:1]
 set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder

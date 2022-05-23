@@ -12,7 +12,7 @@ print("[warning] requiring at least 10GB memory to run because of too large code
 
 # evaluated on i9-9820X CPU with 32GB memory
 
-pairs = [ (d, d, d) for d in [3, 4, 5,   6, 8, 10,   12, 16, 20] ]  # (di, dj, T)
+pairs = [ (d, d, d) for d in [3, 4, 5,   6, 8, 10,   12, 16, 20,   24, 32, 40,   48] ]  # (di, dj, T)
 p_vec = [0.0002, 0.0005, 0.001, 0.002, 0.004, 0.008]
 # p_vec = [0.0005]
 # p_vec = [0.005]
@@ -53,7 +53,7 @@ for p in p_vec:
     log_filepath = os.path.join(os.path.dirname(__file__), f"runtime_statistics_UF_integer_{p}.txt")
 
     if 'ONLY_PROCESS_DATA' in os.environ and os.environ["ONLY_PROCESS_DATA"] == "TRUE":
-        content = process_file(log_filepath, pairs, time_field_name, starting_d=8)
+        content = process_file(log_filepath, pairs, time_field_name, starting_d=24)
         print(content)
         with open(os.path.join(os.path.dirname(__file__), f"processed_UF_integer_{p}.txt"), "w", encoding="utf8") as f:
             f.write(content)

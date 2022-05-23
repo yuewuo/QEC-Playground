@@ -19,3 +19,4 @@ rerun-*.sh
 cargo-flamegraph.stacks
 tmp.svg
 tmp.txt
+archived_results
