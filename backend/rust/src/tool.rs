@@ -95,9 +95,10 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let error_model_builder = matches.value_of_t::<ErrorModelBuilder>("error_model").ok();
             let error_model_configuration = matches.value_of_t::<serde_json::Value>("error_model_configuration").unwrap();
             let thread_timeout: f64 = matches.value_of_t("thread_timeout").unwrap();
+            let use_brief_edge = matches.is_present("use_brief_edge");
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
-                , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init));
+                , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge));
         }
         Some(("fault_tolerant_benchmark", matches)) => {
             let dis: String = matches.value_of_t("Ls").expect("required");
@@ -387,7 +388,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         , parallel: usize, code_type: String, decoder: BenchmarkDecoder, decoder_config: serde_json::Value, ignore_logical_i: bool, ignore_logical_j: bool
         , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
         , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
-        , pes_graph: &Vec<f64>, parallel_init: usize) -> String {
+        , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool) -> String {
     // if parallel = 0, use all CPU resources
     let parallel = if parallel == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel };
     let parallel_init = if parallel_init == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel_init };
@@ -509,14 +510,14 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                 let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
                 let mut model_graph = ModelGraph::new(&simulator);
                 let error_model_graph = Arc::new(error_model_graph);
-                model_graph.build(&mut simulator, error_model_graph, &config.weight_function, parallel_init, config.use_combined_probability);
+                model_graph.build(&mut simulator, error_model_graph, &config.weight_function, parallel_init, config.use_combined_probability, use_brief_edge);
                 return format!("{}\n", serde_json::to_string(&model_graph.to_json(&simulator)).expect("serialize should success"));
             },
             Some(BenchmarkDebugPrint::CompleteModelGraph) => {
                 let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
                 let mut model_graph = ModelGraph::new(&simulator);
                 let error_model_graph = Arc::new(error_model_graph);
-                model_graph.build(&mut simulator, error_model_graph, &config.weight_function, parallel_init, config.use_combined_probability);
+                model_graph.build(&mut simulator, error_model_graph, &config.weight_function, parallel_init, config.use_combined_probability, use_brief_edge);
                 let model_graph = Arc::new(model_graph);
                 let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
                 complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph, parallel_init);
@@ -546,13 +547,13 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             assert!(decoder_config.is_object() && decoder_config.as_object().unwrap().len() == 0, "this decoder doesn't support decoder configuration");
         }
         let mwpm_decoder = if decoder == BenchmarkDecoder::MWPM {
-            Some(MWPMDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init))
+            Some(MWPMDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init, use_brief_edge))
         } else { None };
         let tailored_mwpm_decoder = if decoder == BenchmarkDecoder::TailoredMWPM {
-            Some(TailoredMWPMDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init))
+            Some(TailoredMWPMDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init, use_brief_edge))
         } else { None };
         let union_find_decoder = if decoder == BenchmarkDecoder::UnionFind {
-            Some(UnionFindDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init))
+            Some(UnionFindDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init, use_brief_edge))
         } else { None };
         // then prepare the real error model
         let mut error_model = ErrorModel::new(&simulator);

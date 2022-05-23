@@ -174,7 +174,7 @@ pub mod union_find_default_configs {
 
 impl UnionFindDecoder {
     /// create a new MWPM decoder with decoder configuration
-    pub fn new(simulator: &Simulator, error_model: Arc<ErrorModel>, decoder_configuration: &serde_json::Value, parallel: usize) -> Self {
+    pub fn new(simulator: &Simulator, error_model: Arc<ErrorModel>, decoder_configuration: &serde_json::Value, parallel: usize, use_brief_edge: bool) -> Self {
         // read attribute of decoder configuration
         let config: UnionFindDecoderConfig = serde_json::from_value(decoder_configuration.clone()).unwrap();
         if config.use_real_weighted {
@@ -183,7 +183,7 @@ impl UnionFindDecoder {
         // build model graph
         let mut simulator = simulator.clone();
         let mut model_graph = ModelGraph::new(&simulator);
-        model_graph.build(&mut simulator, error_model, &config.weight_function, parallel, config.use_combined_probability);
+        model_graph.build(&mut simulator, error_model, &config.weight_function, parallel, config.use_combined_probability, use_brief_edge);
         let model_graph = Arc::new(model_graph);
         // build complete model graph
         let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
@@ -953,7 +953,7 @@ mod tests {
             "precompute_complete_model_graph": true,
         });
         let enable_all = true;
-        let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1);
+        let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
         if true || enable_all {  // debug 5
             simulator.clear_all_errors();
             // {"[0][4][6]":"Z","[0][5][8]":"Z","[0][5][9]":"Z","[0][7][1]":"Z","[0][9][1]":"Z"}

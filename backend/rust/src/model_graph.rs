@@ -22,13 +22,22 @@ pub struct ModelGraph {
 pub struct ModelGraphNode {
     /// used when building the graph, record all possible edges that connect the two measurement syndromes.
     /// (this might be dropped to save memory usage after election)
-    pub all_edges: BTreeMap<Position, Vec<ModelGraphEdge>>,
+    pub all_edges: BTreeMap<Position, (Vec<ModelGraphEdge>, Vec<BriefModelGraphEdge>)>,
     /// the elected edges, to make sure each pair of nodes only have one edge
     pub edges: BTreeMap<Position, ModelGraphEdge>,
     /// all boundary edges defined by a single qubit error generating only one nontrivial measurement.
     pub all_boundaries: Vec<ModelGraphBoundary>,
     /// the elected boundary out of all, note that `virtual_node` not necessarily present
-    pub boundary: Option<ModelGraphBoundary>,
+    pub boundary: Option<Box<ModelGraphBoundary>>,
+}
+
+/// without concrete correction, can be used to save memory but not all error pattern will be recorded
+#[derive(Debug, Clone, Serialize)]
+pub struct BriefModelGraphEdge {
+    /// the probability of this edge to happen
+    pub probability: f64,
+    /// the weight of this edge computed by the (combined) probability, e.g. ln((1-p)/p)
+    pub weight: f64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -99,7 +108,7 @@ impl ModelGraph {
                                 return Some(Box::new(ModelGraphNode {
                                     all_edges: BTreeMap::new(),
                                     edges: BTreeMap::new(),
-                                    all_boundaries: Vec::new(),
+                                    all_boundaries: Vec::with_capacity(0),  // only a few nodes have boundary, so no need to have initial capacity
                                     boundary: None,
                                 }))
                             }
@@ -132,16 +141,16 @@ impl ModelGraph {
     }
 
     /// build model graph given the simulator
-    pub fn build(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_function: &WeightFunction, parallel: usize, use_combined_probability: bool) {
+    pub fn build(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_function: &WeightFunction, parallel: usize, use_combined_probability: bool, use_brief_edge: bool) {
         match weight_function {
-            WeightFunction::Autotune => self.build_with_weight_function(simulator, error_model, weight_function::autotune, parallel, use_combined_probability),
-            WeightFunction::AutotuneImproved => self.build_with_weight_function(simulator, error_model, weight_function::autotune_improved, parallel, use_combined_probability),
-            WeightFunction::Unweighted => self.build_with_weight_function(simulator, error_model, weight_function::unweighted, parallel, use_combined_probability),
+            WeightFunction::Autotune => self.build_with_weight_function(simulator, error_model, weight_function::autotune, parallel, use_combined_probability, use_brief_edge),
+            WeightFunction::AutotuneImproved => self.build_with_weight_function(simulator, error_model, weight_function::autotune_improved, parallel, use_combined_probability, use_brief_edge),
+            WeightFunction::Unweighted => self.build_with_weight_function(simulator, error_model, weight_function::unweighted, parallel, use_combined_probability, use_brief_edge),
         }
     }
 
     /// single-thread computation with region
-    fn build_with_weight_function_region<F>(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_of: F, t_start: usize, t_end: usize) where F: Fn(f64) -> f64 + Copy {
+    fn build_with_weight_function_region<F>(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_of: F, t_start: usize, t_end: usize, use_brief_edge: bool) where F: Fn(f64) -> f64 + Copy {
         // calculate all possible errors to be iterated
         let mut all_possible_errors: Vec<Either<ErrorType, CorrelatedPauliErrorType>> = Vec::new();
         for error_type in ErrorType::all_possible_errors().drain(..) {
@@ -231,7 +240,7 @@ impl ModelGraph {
                         // edge only happen when qubit type is the same (to isolate X and Z decoding graph in CSS surface code)
                         let is_same_type = node1.qubit_type == node2.qubit_type;
                         if is_same_type && (p > 0. || is_erasure) {
-                            self.add_edge_between(position1, position2, p, weight_of(p), sparse_errors.clone(), sparse_correction.clone());
+                            self.add_edge_between(position1, position2, p, weight_of(p), sparse_errors.clone(), sparse_correction.clone(), use_brief_edge);
                         }
                     }
                 }
@@ -239,8 +248,9 @@ impl ModelGraph {
         });
     }
 
-    /// build model graph given the simulator with customized weight function
-    pub fn build_with_weight_function<F>(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_of: F, parallel: usize, use_combined_probability: bool) where F: Fn(f64) -> f64 + Copy + Send + Sync + 'static {
+    /// build model graph given the simulator with customized weight function;
+    /// if `optimize_memory_usage` is set to True, then not all edges are recorded but only the optimal one
+    pub fn build_with_weight_function<F>(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_of: F, parallel: usize, use_combined_probability: bool, use_brief_edge: bool) where F: Fn(f64) -> f64 + Copy + Send + Sync + 'static {
         debug_assert!({
             let mut state_clean = true;
             simulator_iter!(simulator, position, node, {
@@ -258,7 +268,7 @@ impl ModelGraph {
             state_clean
         });
         if parallel <= 1 {
-            self.build_with_weight_function_region(simulator, error_model, weight_of, 0, simulator.height);
+            self.build_with_weight_function_region(simulator, error_model, weight_of, 0, simulator.height, use_brief_edge);
         } else {
             // spawn `parallel` threads to compute in parallel
             let mut handlers = Vec::new();
@@ -276,7 +286,7 @@ impl ModelGraph {
                 let error_model = Arc::clone(&error_model);
                 handlers.push(std::thread::spawn(move || {
                     let mut instance = instance.lock().unwrap();
-                    instance.build_with_weight_function_region(&mut simulator, error_model, weight_of, t_start, t_end);
+                    instance.build_with_weight_function_region(&mut simulator, error_model, weight_of, t_start, t_end, use_brief_edge);
                 }));
             }
             for handler in handlers.drain(..) {
@@ -293,13 +303,16 @@ impl ModelGraph {
                     }
                     let mut all_edges = BTreeMap::new();
                     std::mem::swap(&mut all_edges, &mut instance_model_graph_node.all_edges);
-                    for (target, mut edges) in all_edges.into_iter() {
+                    for (target, (mut edges, mut brief_edges)) in all_edges.into_iter() {
                         if !model_graph_node.all_edges.contains_key(&target) {
-                            model_graph_node.all_edges.insert(target.clone(), Vec::new());
+                            model_graph_node.all_edges.insert(target.clone(), (Vec::new(), Vec::new()));
                         }
-                        let node_edges = model_graph_node.all_edges.get_mut(&target).unwrap();
+                        let (node_edges, node_brief_edges) = model_graph_node.all_edges.get_mut(&target).unwrap();
                         for edge in edges.drain(..) {
                             node_edges.push(edge);
+                        }
+                        for brief_edge in brief_edges.drain(..) {
+                            node_brief_edges.push(brief_edge);
                         }
                     }
                 });
@@ -310,24 +323,56 @@ impl ModelGraph {
 
     /// add asymmetric edge from `source` to `target`; in order to create symmetric edge, call this function twice with reversed input
     pub fn add_edge(&mut self, source: &Position, target: &Position, probability: f64, weight: f64, error_pattern: Arc<SparseErrorPattern>
-            , correction: Arc<SparseCorrection>) {
+            , correction: Arc<SparseCorrection>, use_brief_edge: bool) {
         let node = self.get_node_mut_unwrap(source);
         if !node.all_edges.contains_key(target) {
-            node.all_edges.insert(target.clone(), Vec::new());
+            node.all_edges.insert(target.clone(), (Vec::new(), Vec::new()));
         }
-        node.all_edges.get_mut(target).unwrap().push(ModelGraphEdge {
-            probability: probability,
-            weight: weight,
-            error_pattern: error_pattern,
-            correction: correction,
-        })
+        let (node_edges, node_brief_edges) = node.all_edges.get_mut(target).unwrap();
+        if use_brief_edge {
+            if node_edges.len() < 1 {
+                node_edges.push(ModelGraphEdge {
+                    probability: probability,
+                    weight: weight,
+                    error_pattern: error_pattern,
+                    correction: correction,
+                });
+            } else {
+                if probability > node_edges[0].probability {
+                    // replace it
+                    node_brief_edges.push(BriefModelGraphEdge {
+                        probability: node_edges[0].probability,
+                        weight: node_edges[0].weight,
+                    });
+                    node_edges.push(ModelGraphEdge {
+                        probability: probability,
+                        weight: weight,
+                        error_pattern: error_pattern,
+                        correction: correction,
+                    });
+                } else {
+                    // put it into brief node
+                    node_brief_edges.push(BriefModelGraphEdge {
+                        probability: probability,
+                        weight: weight,
+                    });
+                }
+            }
+        } else {
+            node_edges.push(ModelGraphEdge {
+                probability: probability,
+                weight: weight,
+                error_pattern: error_pattern,
+                correction: correction,
+            });
+        }
     }
 
     /// add symmetric edge between `source` and `target`
     pub fn add_edge_between(&mut self, position1: &Position, position2: &Position, probability: f64, weight: f64, error_pattern: Arc<SparseErrorPattern>
-            , correction: Arc<SparseCorrection>) {
-        self.add_edge(position1, position2, probability, weight, error_pattern.clone(), correction.clone());
-        self.add_edge(position2, position1, probability, weight, error_pattern.clone(), correction.clone());
+            , correction: Arc<SparseCorrection>, use_brief_edge: bool) {
+        self.add_edge(position1, position2, probability, weight, error_pattern.clone(), correction.clone(), use_brief_edge);
+        self.add_edge(position2, position1, probability, weight, error_pattern.clone(), correction.clone(), use_brief_edge);
     }
 
     /// if there are multiple edges connecting two stabilizer measurements, elect the best one
@@ -335,7 +380,7 @@ impl ModelGraph {
         simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if self.is_node_exist(position) {
             let model_graph_node = self.get_node_mut_unwrap(position);
             // elect normal edges
-            for (target, edges) in model_graph_node.all_edges.iter() {
+            for (target, (edges, brief_edges)) in model_graph_node.all_edges.iter() {
                 let mut elected_idx = 0;
                 let mut elected_probability = edges[0].probability;
                 for i in 1..edges.len() {
@@ -350,6 +395,12 @@ impl ModelGraph {
                     let best_edge = &edges[elected_idx];
                     if edge.probability > best_edge.probability {
                         elected_idx = i;  // set as best, use its 
+                    }
+                }
+                for i in 0..brief_edges.len() {
+                    let brief_edge = &brief_edges[i];
+                    if use_combined_probability {
+                        elected_probability = elected_probability * (1. - brief_edge.probability) + brief_edge.probability * (1. - elected_probability);  // XOR
                     }
                 }
                 let elected = ModelGraphEdge {
@@ -389,7 +440,7 @@ impl ModelGraph {
                 };
                 // update elected edge
                 // println!("{} to virtual boundary elected probability: {}", position, elected.probability);
-                model_graph_node.boundary = Some(elected);
+                model_graph_node.boundary = Some(Box::new(elected));
             } else {
                 model_graph_node.boundary = None;
             }
@@ -443,4 +494,21 @@ impl ModelGraph {
             }).collect::<Vec<Vec<Vec<Option<serde_json::Value>>>>>()
         })
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn model_graph_basics() {  // cargo test model_graph_basics -- --nocapture
+        println!("std::mem::size_of::<ModelGraphNode>() = {}", std::mem::size_of::<ModelGraphNode>());
+        println!("std::mem::size_of::<ModelGraphEdge>() = {}", std::mem::size_of::<ModelGraphEdge>());
+        println!("std::mem::size_of::<ModelGraphBoundary>() = {}", std::mem::size_of::<ModelGraphBoundary>());
+        println!("std::mem::size_of::<BriefModelGraphEdge>() = {}", std::mem::size_of::<BriefModelGraphEdge>());
+        if std::mem::size_of::<ModelGraphNode>() > 80 {  // too expensive
+            panic!("ModelGraphNode which is unexpectedly large, check if anything wrong");
+        }
+    }
+
 }

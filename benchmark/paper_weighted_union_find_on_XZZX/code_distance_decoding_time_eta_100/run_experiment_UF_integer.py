@@ -12,7 +12,8 @@ print("[warning] requiring at least 10GB memory to run because of too large code
 
 # evaluated on i9-9820X CPU with 32GB memory
 
-pairs = [ (d, d, d) for d in [3, 4, 5,   6, 8, 10,   12, 16, 20,   24, 32, 40,   48] ]  # (di, dj, T)
+T = 150
+pairs = [ (d, d, T) for d in [3, 4, 5,   6, 8, 10,   12, 16, 20,   24, 32, 40,   48] ]  # (di, dj, T)
 p_vec = [0.0002, 0.0005, 0.001, 0.002, 0.004, 0.008]
 # p_vec = [0.0005]
 # p_vec = [0.005]
@@ -26,7 +27,7 @@ di_vec = [e[0] for e in pairs]
 dj_vec = [e[1] for e in pairs]
 T_vec = [e[2] for e in pairs]
 
-max_N = 1000
+max_N = 30000 // T  # so that there are 30000 measurement rounds
 
 # time_field_name = lambda e: e["time_run_to_stable"]  # 2.6
 # time_field_name = lambda e: e["time_build_correction"]  # 2.9
@@ -65,7 +66,7 @@ for p in p_vec:
 
     parallel_init = os.cpu_count() - 2  # initialization step can take full advantage of multiple cores
 
-    UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model generic-biased-with-biased-cx --bias_eta 100 --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true,\"use_combined_probability\":false}} --parallel_init {parallel_init}".split(" ")
+    UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model generic-biased-with-biased-cx --bias_eta 100 --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true,\"use_combined_probability\":false}} --parallel_init {parallel_init} --use_brief_edge".split(" ")
     # UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model phenomenological --bias_eta 100 --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
     # UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model phenomenological --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
     # UF_parameters = f"-p{num_threads} --error_model phenomenological --bias_eta +inf --decoder union-find --decoder_config {{\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true}}".split(" ")
