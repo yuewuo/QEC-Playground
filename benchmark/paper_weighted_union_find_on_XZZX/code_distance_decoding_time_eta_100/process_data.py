@@ -71,7 +71,7 @@ def fit(content, starting_d, ending_d):
 
 
 # target slope will be used to calculate another intercept, where the value at `starting_d` remains the same
-def process_file(log_filepath, pairs, time_field_name, starting_d=0, ending_d=1000, target_slope=3):
+def process_file(log_filepath, pairs, time_field_name, starting_d=0, ending_d=1000, target_slope=2):
     content = ""
 
     configurations = []

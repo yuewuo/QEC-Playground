@@ -21,7 +21,7 @@ set key samplen 4
 
 set output "code_distance_decoding_time_eta_100_integer.eps"
 
-# plot "processed_MWPM.txt" using 1:($5/($1+1)) with linespoints lt rgb "red" linewidth 3 pointtype 7 pointsize 1 title "MWPM 1.1x",\
+# plot "processed_MWPM.txt" using 1:($5/150) with linespoints lt rgb "red" linewidth 3 pointtype 7 pointsize 1 title "MWPM 1.1x",\
 #     "" using 1:7 with linespoints lt rgb "blue" linewidth 3 pointtype 7 pointsize 1 title "MWPM 2x",\
 #     "" using 1:10 with linespoints lt rgb "green" linewidth 3 pointtype 7 pointsize 1 title "MWPM Average",\
 
@@ -36,18 +36,18 @@ intercept008 = "`tail -n2 processed_UF_integer_0.008.txt | awk '{print $6}' | he
 
 # "" using 1:($5):($5-$6):($5+$6) with errorbars lt rgb "red" linewidth 3 pointtype 11 pointsize 1 notitle,\
 
-plot exp(3 * log(x) + intercept0002)/(x+1) notitle with lines dashtype 2 lt rgb "#e41a1c" linewidth 3,\
-    exp(3 * log(x) + intercept0005)/(x+1) notitle with lines dashtype 2 lt rgb "#377eb8" linewidth 3,\
-    exp(3 * log(x) + intercept001)/(x+1) notitle with lines dashtype 2 lt rgb "#4daf4a" linewidth 3,\
-    exp(3 * log(x) + intercept002)/(x+1) notitle with lines dashtype 2 lt rgb "#ff7f00" linewidth 3,\
-    exp(3 * log(x) + intercept004)/(x+1) notitle with lines dashtype 2 lt rgb "#984ea3" linewidth 3,\
-    exp(3 * log(x) + intercept008)/(x+1) notitle with lines dashtype 2 lt rgb "black" linewidth 3,\
-    "processed_UF_integer_0.0002.txt" using 1:($5/($1+1)) with linespoints lt rgb "#e41a1c" linewidth 3 pointtype 7 pointsize 1.3 title "0.0002",\
-    "processed_UF_integer_0.0005.txt" using 1:($5/($1+1)) with linespoints lt rgb "#377eb8" linewidth 3 pointtype 9 pointsize 1.3 title "0.0005",\
-    "processed_UF_integer_0.001.txt" using 1:($5/($1+1)) with linespoints lt rgb "#4daf4a" linewidth 3 pointtype 11 pointsize 1.3 title "0.001",\
-    "processed_UF_integer_0.002.txt" using 1:($5/($1+1)) with linespoints lt rgb "#ff7f00" linewidth 3 pointtype 5 pointsize 1.3 title "0.002",\
-    "processed_UF_integer_0.004.txt" using 1:($5/($1+1)) with linespoints lt rgb "#984ea3" linewidth 3 pointtype 13 pointsize 1.3 title "0.004",\
-    "processed_UF_integer_0.008.txt" using 1:($5/($1+1)) with linespoints lt rgb "black" linewidth 3 pointtype 7 pointsize 1.3 title "0.008"
+plot exp(2 * log(x) + intercept0002)/150 notitle with lines dashtype 2 lt rgb "#e41a1c" linewidth 3,\
+    exp(2 * log(x) + intercept0005)/150 notitle with lines dashtype 2 lt rgb "#377eb8" linewidth 3,\
+    exp(2 * log(x) + intercept001)/150 notitle with lines dashtype 2 lt rgb "#4daf4a" linewidth 3,\
+    exp(2 * log(x) + intercept002)/150 notitle with lines dashtype 2 lt rgb "#ff7f00" linewidth 3,\
+    exp(2 * log(x) + intercept004)/150 notitle with lines dashtype 2 lt rgb "#984ea3" linewidth 3,\
+    exp(2 * log(x) + intercept008)/150 notitle with lines dashtype 2 lt rgb "black" linewidth 3,\
+    "processed_UF_integer_0.0002.txt" using 1:($5/150) with linespoints lt rgb "#e41a1c" linewidth 3 pointtype 7 pointsize 1.3 title "0.0002",\
+    "processed_UF_integer_0.0005.txt" using 1:($5/150) with linespoints lt rgb "#377eb8" linewidth 3 pointtype 9 pointsize 1.3 title "0.0005",\
+    "processed_UF_integer_0.001.txt" using 1:($5/150) with linespoints lt rgb "#4daf4a" linewidth 3 pointtype 11 pointsize 1.3 title "0.001",\
+    "processed_UF_integer_0.002.txt" using 1:($5/150) with linespoints lt rgb "#ff7f00" linewidth 3 pointtype 5 pointsize 1.3 title "0.002",\
+    "processed_UF_integer_0.004.txt" using 1:($5/150) with linespoints lt rgb "#984ea3" linewidth 3 pointtype 13 pointsize 1.3 title "0.004",\
+    "processed_UF_integer_0.008.txt" using 1:($5/150) with linespoints lt rgb "black" linewidth 3 pointtype 7 pointsize 1.3 title "0.008"
 
 system("ps2pdf -dEPSCrop code_distance_decoding_time_eta_100_integer.eps code_distance_decoding_time_eta_100_integer.pdf")
 
