@@ -416,6 +416,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         "debug_print": debug_print,
         "log_runtime_statistics": log_runtime_statistics,
         "log_error_pattern_when_logical_error": log_error_pattern_when_logical_error,
+        "use_brief_edge": use_brief_edge,
     });
     match &log_runtime_statistics_file {  // append runtime statistics data
         Some(log_runtime_statistics_file) => {

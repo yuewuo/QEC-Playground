@@ -9,9 +9,9 @@ set xrange [1:1100]
 # print(", ".join([f"'{i}' {i}" for i in range(3,13)]))
 set xtics ('1' 1, '2' 2, '4' 4, '8' 8, '16' 16, '32' 32, '64' 64, '128' 128, '256' 256, '512' 512, '1024' 1024)
 set logscale y
-# print(", ".join([f"'1e{i}' 1e{i}" for i in range(1, 9)]))
-set ytics ('1' 1, '10' 1e1, '1e2' 1e2, '1e3' 1e3, '1e4' 1e4, '1e5' 1e5, '1e6' 1e6, '1e7' 1e7)
-set yrange [0.0001:0.1]
+# print(", ".join([f"'1e{i}' 1e{i}" for i in range(-4, 0)]))
+set ytics ('1e-4' 1e-4, '1e-3' 1e-3, '1e-2' 1e-2, '0.1' 1e-1)
+set yrange [0.0000999:0.1]
 set key outside horizontal top center font "Arial, 24"
 
 set style fill transparent solid 0.2 noborder
