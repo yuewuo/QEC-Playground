@@ -136,6 +136,28 @@ def random_non_negative(error_rate, confidence_interval_95):
         random_error_rate = random.gauss(error_rate, stddev)
     return random_error_rate
 
+def combine_full_result(result1, result2):
+    if result1 is None:
+        return result2
+    if result2 is None:
+        return result1
+    lst1 = result1.split(" ")
+    lst2 = result2.split(" ")
+    assert len(lst1) == len(lst2), "length must be equal"
+    if len(lst1) == 9:
+        assert lst1[0] == lst2[0], "p must be equal"
+        assert lst1[1] == lst2[1], "di must be equal"
+        assert lst1[2] == lst2[2], "nm must be equal"
+        total_repeats = int(lst1[3]) + int(lst2[3])
+        qec_failed = int(lst1[4]) + int(lst2[4])
+        error_rate = qec_failed / total_repeats
+        confidence_interval_95_percent = math.sqrt(1.96 * (error_rate * (1. - error_rate) / total_repeats)) / error_rate
+        # error_rate
+        assert lst1[6] == lst2[6], "di must be equal"
+        # confidence_interval_95_percent
+        assert lst1[8] == lst2[8], "pe must be equal"
+        return f"{lst1[0]} {lst1[1]} {lst1[2]} {total_repeats} {qec_failed} {str(error_rate)} {lst1[6]} {str(confidence_interval_95_percent)} {lst1[8]}"
+
 class AutomatedThresholdEvaluator:
     def __init__(self, pair, parameters=[], simulator_runner=qec_playground_fault_tolerant_MWPM_simulator_runner):
         assert (isinstance(pair, list) or isinstance(pair, tuple)) and len(pair) == 2, "pair should be a list of 2"

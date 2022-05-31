@@ -14,12 +14,6 @@ set encoding utf8
 # standard CX
 # RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6,7,8] --djs [12,15,18,21,24] [12,15,18,21,24] [0.0050,0.0055,0.0060,0.0065,0.0070,0.0075,0.0080,0.0085,0.0090,0.0095,0.0100,0.0105,0.0110]-p0 -m100000 -e100000 --use_xzzx_code --bias_eta 100 --decoder UF --max_half_weight 10 --error_model GenericBiasedWithStandardCX
 
-threshold1 = 0.008
-threshold2 = 0.009
-set arrow from threshold1, graph 0.4 to threshold1, graph 1 nohead linewidth 4 dashtype (5,2) lc "grey"
-set arrow from threshold1, graph 0 to threshold1, graph 0.03 nohead linewidth 4 dashtype (5,2) lc "grey"
-set arrow from threshold2, graph 0.4 to threshold2, graph 1 nohead linewidth 4 dashtype (5,2) lc "grey"
-set arrow from threshold2, graph 0 to threshold2, graph 0.03 nohead linewidth 4 dashtype (5,2) lc "grey"
 
 set xrange [0.0045:0.0115]
 # labels
@@ -40,9 +34,9 @@ set key outside horizontal top center font "Arial, 22"
 
 set style fill transparent solid 0.2 noborder
 
-# set title "Generaic Biased Noise Model (MWPM Decoder)"
+# set title "Generaic Biased Noise Model (UnionFind Decoder)"
 
-set output "circuit_level_noise_model_MWPM.eps"
+set output "circuit_level_noise_model_2.eps"
 
 # plot legends just like Fig.7 in arXiv2104.09539v1
 set key at graph 0.6, 0.3
@@ -51,7 +45,7 @@ set key samplen 3
 set key maxrows 5
 set label "Standard" at graph 0.46, 0.35
 set label "Bias-Preserving" at graph 0.67, 0.35
-set object 1 rect from graph 0.44,0.4 to graph 0.965,0.03 lw 1.5 fc rgb "white" fillstyle solid 1.0
+set object 1 rect from graph 0.44,0.4 to graph 0.965,0.03 lw 1.5
 
 plot \
     NaN with linespoints lt rgb "#e41a1c" linewidth 4 dashtype (1,1) pointtype 6 pointsize 1.5 title " ",\
@@ -85,14 +79,14 @@ plot \
     "standard_8.txt" using 1:6 with linespoints lt rgb "#984ea3" linewidth 4 dashtype (1,1) pointtype 12 pointsize 1 notitle "standard 8,24,24",\
     "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#984ea3" linewidth 4 dashtype (1,1) pointtype 12 pointsize 1 notitle
 
-system("ps2pdf -dEPSCrop circuit_level_noise_model_MWPM.eps circuit_level_noise_model_MWPM.pdf")
+system("ps2pdf -dEPSCrop circuit_level_noise_model_2.eps circuit_level_noise_model_2.pdf")
 
 # set size 1,0.75
-# set output "circuit_level_noise_model_MWPM_w.eps"
+# set output "circuit_level_noise_model_2_w.eps"
 # replot
-# system("ps2pdf -dEPSCrop circuit_level_noise_model_MWPM_w.eps circuit_level_noise_model_MWPM_w.pdf")
+# system("ps2pdf -dEPSCrop circuit_level_noise_model_2_w.eps circuit_level_noise_model_2_w.pdf")
 
 # set size 1,0.6
-# set output "circuit_level_noise_model_MWPM_w_w.eps"
+# set output "circuit_level_noise_model_2_w_w.eps"
 # replot
-# system("ps2pdf -dEPSCrop circuit_level_noise_model_MWPM_w_w.eps circuit_level_noise_model_MWPM_w_w.pdf")
+# system("ps2pdf -dEPSCrop circuit_level_noise_model_2_w_w.eps circuit_level_noise_model_2_w_w.pdf")

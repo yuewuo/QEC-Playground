@@ -144,6 +144,7 @@ fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> 
                 .arg(clap::Arg::new("error_model_configuration").long("error_model_configuration").help("a json object describing the error model details").takes_value(true).default_value("{}"))
                 .arg(clap::Arg::new("thread_timeout").long("thread_timeout").help("wait for some time for threads to end, otherwise print out the unstopped threads and detach them; useful when debugging rare deadlock cases; if set to negative value, no timeout and no thread debug information recording for maximum performance").takes_value(true).default_value("60"))
                 .arg(clap::Arg::new("use_brief_edge").long("use_brief_edge").help("use brief edges in model graph to save memories; it will drop the error pattern and correction as long as another one is more probable"))
+                .arg(clap::Arg::new("label").long("label").help("arbitrary label information").takes_value(true))
             )
             .subcommand(clap::Command::new("fault_tolerant_benchmark").about("benchmark fault tolerant algorithm")
                 .arg(clap::Arg::new("Ls").help("[L1,L2,L3,...,Ln] will be code distance of i and j dimension if djs is not provided").takes_value(true).required(true))

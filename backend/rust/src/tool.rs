@@ -96,9 +96,10 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let error_model_configuration = matches.value_of_t::<serde_json::Value>("error_model_configuration").unwrap();
             let thread_timeout: f64 = matches.value_of_t("thread_timeout").unwrap();
             let use_brief_edge = matches.is_present("use_brief_edge");
+            let label: String = matches.value_of_t("label").unwrap();
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
-                , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge));
+                , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge, label));
         }
         Some(("fault_tolerant_benchmark", matches)) => {
             let dis: String = matches.value_of_t("Ls").expect("required");
@@ -388,7 +389,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         , parallel: usize, code_type: String, decoder: BenchmarkDecoder, decoder_config: serde_json::Value, ignore_logical_i: bool, ignore_logical_j: bool
         , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
         , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
-        , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool) -> String {
+        , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String) -> String {
     // if parallel = 0, use all CPU resources
     let parallel = if parallel == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel };
     let parallel_init = if parallel_init == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel_init };
@@ -417,6 +418,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         "log_runtime_statistics": log_runtime_statistics,
         "log_error_pattern_when_logical_error": log_error_pattern_when_logical_error,
         "use_brief_edge": use_brief_edge,
+        "label": label,
     });
     match &log_runtime_statistics_file {  // append runtime statistics data
         Some(log_runtime_statistics_file) => {

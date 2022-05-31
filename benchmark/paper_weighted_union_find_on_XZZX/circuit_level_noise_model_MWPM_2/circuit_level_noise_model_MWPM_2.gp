@@ -42,7 +42,7 @@ set style fill transparent solid 0.2 noborder
 
 # set title "Generaic Biased Noise Model (MWPM Decoder)"
 
-set output "circuit_level_noise_model_MWPM.eps"
+set output "circuit_level_noise_model_MWPM_2.eps"
 
 # plot legends just like Fig.7 in arXiv2104.09539v1
 set key at graph 0.6, 0.3
@@ -85,14 +85,14 @@ plot \
     "standard_8.txt" using 1:6 with linespoints lt rgb "#984ea3" linewidth 4 dashtype (1,1) pointtype 12 pointsize 1 notitle "standard 8,24,24",\
     "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#984ea3" linewidth 4 dashtype (1,1) pointtype 12 pointsize 1 notitle
 
-system("ps2pdf -dEPSCrop circuit_level_noise_model_MWPM.eps circuit_level_noise_model_MWPM.pdf")
+system("ps2pdf -dEPSCrop circuit_level_noise_model_MWPM_2.eps circuit_level_noise_model_MWPM_2.pdf")
 
 # set size 1,0.75
-# set output "circuit_level_noise_model_MWPM_w.eps"
+# set output "circuit_level_noise_model_MWPM_2_w.eps"
 # replot
-# system("ps2pdf -dEPSCrop circuit_level_noise_model_MWPM_w.eps circuit_level_noise_model_MWPM_w.pdf")
+# system("ps2pdf -dEPSCrop circuit_level_noise_model_MWPM_2_w.eps circuit_level_noise_model_MWPM_2_w.pdf")
 
 # set size 1,0.6
-# set output "circuit_level_noise_model_MWPM_w_w.eps"
+# set output "circuit_level_noise_model_MWPM_2_w_w.eps"
 # replot
-# system("ps2pdf -dEPSCrop circuit_level_noise_model_MWPM_w_w.eps circuit_level_noise_model_MWPM_w_w.pdf")
+# system("ps2pdf -dEPSCrop circuit_level_noise_model_MWPM_2_w_w.eps circuit_level_noise_model_MWPM_2_w_w.pdf")
