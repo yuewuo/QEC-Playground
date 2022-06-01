@@ -163,7 +163,7 @@ impl ErrorModelBuilder {
                 }
                 let cx_node = Arc::new(cx_node);
                 // CX gate with measurement error
-                let mut cx_measurement_error_node: ErrorModelNode = (*cphase_node).clone();
+                let mut cx_measurement_error_node: ErrorModelNode = (*cx_node).clone();
                 cx_measurement_error_node.pauli_error_rates.error_rate_X = initialization_error_rate / bias_eta;
                 cx_measurement_error_node.pauli_error_rates.error_rate_Z = initialization_error_rate;
                 cx_measurement_error_node.pauli_error_rates.error_rate_Y = initialization_error_rate / bias_eta;
