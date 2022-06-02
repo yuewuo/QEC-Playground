@@ -4,7 +4,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.005 4 12 400011 2941 0.007352297811810175 12 3.6e-2 0 
+      0.005 4 12 400011 2970 0.007424795818115002 12 3.6e-2 0 
 
       '''
   ]
@@ -13,7 +13,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0055 4 12 400011 4214 0.010534710295466874 12 3.0e-2 0 
+      0.0055 4 12 400011 4156 0.010389714282857222 12 3.0e-2 0 
 
       '''
   ]
@@ -22,7 +22,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.006 4 12 400011 5598 0.013994615148083428 12 2.6e-2 0 
+      0.006 4 12 400011 5655 0.01413711122944119 12 2.6e-2 0 
 
       '''
   ]
@@ -31,7 +31,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0065 4 12 400011 7647 0.019116974283207213 12 2.2e-2 0 
+      0.0065 4 12 400011 7593 0.01898197799560512 12 2.2e-2 0 
 
       '''
   ]
@@ -40,7 +40,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.007 4 12 400011 9822 0.02455432475606921 12 2.0e-2 0 
+      0.007 4 12 400011 10120 0.0252993042691326 12 1.9e-2 0 
 
       '''
   ]
@@ -49,7 +49,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0075 4 12 400011 12934 0.03233411081195267 12 1.7e-2 0 
+      0.0075 4 12 400011 12894 0.03223411356187705 12 1.7e-2 0 
 
       '''
   ]
@@ -58,7 +58,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.008 4 12 400011 16590 0.04147385946886461 12 1.5e-2 0 
+      0.008 4 12 400011 16373 0.04093137438720435 12 1.5e-2 0 
 
       '''
   ]
@@ -67,7 +67,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0085 4 12 400011 21256 0.05313853869018602 12 1.3e-2 0 
+      0.0085 4 12 400011 20854 0.052133566326926006 12 1.3e-2 0 
 
       '''
   ]
@@ -76,7 +76,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.009 4 12 400011 26187 0.06546569969325844 12 1.2e-2 0 
+      0.009 4 12 400011 26440 0.06609818229998675 12 1.2e-2 0 
 
       '''
   ]
@@ -85,7 +85,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0095 4 12 400011 32683 0.0817052531055396 12 1.0e-2 0 
+      0.0095 4 12 400011 32500 0.08124776568644362 12 1.0e-2 0 
 
       '''
   ]
@@ -94,7 +94,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.01 4 12 400011 38538 0.09634235058535891 12 9.5e-3 0 
+      0.01 4 12 400011 38396 0.09598736034759044 12 9.5e-3 0 
 
       '''
   ]
@@ -103,7 +103,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0105 4 12 400011 45778 0.11444185284904665 12 8.6e-3 0 
+      0.0105 4 12 400011 46101 0.11524933064340731 12 8.6e-3 0 
 
       '''
   ]
@@ -112,7 +112,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.011 4 12 400011 55065 0.1376587143853544 12 7.8e-3 0 
+      0.011 4 12 400011 54539 0.13634375054685996 12 7.8e-3 0 
 
       '''
   ]
@@ -121,7 +121,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.005 5 15 400011 1225 0.003062415783565952 15 5.6e-2 0 
+      0.005 5 15 400011 1220 0.0030499161273064993 15 5.6e-2 0 
 
       '''
   ]
@@ -130,7 +130,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0055 5 15 400011 2016 0.005039861403811395 15 4.4e-2 0 
+      0.0055 5 15 400011 1993 0.004982362985017912 15 4.4e-2 0 
 
       '''
   ]
@@ -139,7 +139,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.006 5 15 400011 3182 0.007954781243515804 15 3.5e-2 0 
+      0.006 5 15 400011 3102 0.007754786743364558 15 3.5e-2 0 
 
       '''
   ]
@@ -148,7 +148,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0065 5 15 400011 4782 0.01195467124654072 15 2.8e-2 0 
+      0.0065 5 15 400011 4750 0.011874673446480221 15 2.8e-2 0 
 
       '''
   ]
@@ -157,7 +157,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.007 5 15 400011 6951 0.017377022131891372 15 2.3e-2 0 
+      0.007 5 15 400011 6944 0.017359522613128137 15 2.3e-2 0 
 
       '''
   ]
@@ -166,7 +166,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0075 5 15 400011 10200 0.025499298769283845 15 1.9e-2 0 
+      0.0075 5 15 400011 10271 0.025676793888168074 15 1.9e-2 0 
 
       '''
   ]
@@ -175,7 +175,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.008 5 15 400011 14201 0.035501523708098025 15 1.6e-2 0 
+      0.008 5 15 400011 14224 0.035559022126891514 15 1.6e-2 0 
 
       '''
   ]
@@ -184,7 +184,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0085 5 15 400011 19630 0.04907365047461195 15 1.4e-2 0 
+      0.0085 5 15 400011 19372 0.04842866821162418 15 1.4e-2 0 
 
       '''
   ]
@@ -193,7 +193,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.009 5 15 400011 26271 0.06567569391841724 15 1.2e-2 0 
+      0.009 5 15 400011 26800 0.06699815755066736 15 1.2e-2 0 
 
       '''
   ]
@@ -202,7 +202,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0095 5 15 400011 35189 0.08797008082277738 15 1.0e-2 0 
+      0.0095 5 15 400011 34997 0.08749009402241438 15 1.0e-2 0 
 
       '''
   ]
@@ -211,7 +211,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.01 5 15 400011 41884 0.10470712055418475 15 9.1e-3 0 
+      0.01 5 15 400011 41569 0.10391964220983924 15 9.1e-3 0 
 
       '''
   ]
@@ -220,7 +220,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0105 5 15 400011 53077 0.13268885105659595 15 7.9e-3 0 
+      0.0105 5 15 400011 53465 0.13365882438232948 15 7.9e-3 0 
 
       '''
   ]
@@ -229,7 +229,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.011 5 15 400011 65977 0.16493796420598433 15 7.0e-3 0 
+      0.011 5 15 400011 65956 0.16488546564969464 15 7.0e-3 0 
 
       '''
   ]
@@ -238,7 +238,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.005 6 18 400011 652 0.0016299551762326537 18 7.7e-2 0 
+      0.005 6 18 400011 626 0.0015649569636834986 18 7.8e-2 0 
 
       '''
   ]
@@ -247,7 +247,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0055 6 18 400011 1094 0.0027349247895682867 18 5.9e-2 0 
+      0.0055 6 18 400011 1174 0.002934919289719533 18 5.7e-2 0 
 
       '''
   ]
@@ -256,7 +256,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.006 6 18 400011 1875 0.004687371097294824 18 4.5e-2 0 
+      0.006 6 18 400011 2013 0.005032361610055724 18 4.4e-2 0 
 
       '''
   ]
@@ -265,7 +265,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0065 6 18 400011 3325 0.008312271412536156 18 3.4e-2 0 
+      0.0065 6 18 400011 3377 0.008442267837634465 18 3.4e-2 0 
 
       '''
   ]
@@ -274,7 +274,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.007 6 18 400011 5251 0.013127139003677398 18 2.7e-2 0 
+      0.007 6 18 400011 5097 0.012742149590886251 18 2.7e-2 0 
 
       '''
   ]
@@ -283,7 +283,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0075 6 18 400011 8200 0.0204994362655027 18 2.1e-2 0 
+      0.0075 6 18 400011 8151 0.02037693963416006 18 2.1e-2 0 
 
       '''
   ]
@@ -292,7 +292,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.008 6 18 400011 12577 0.03144163535502774 18 1.7e-2 0 
+      0.008 6 18 400011 12534 0.03133413831119644 18 1.7e-2 0 
 
       '''
   ]
@@ -301,7 +301,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0085 6 18 400011 18696 0.046738714685346155 18 1.4e-2 0 
+      0.0085 6 18 400011 18599 0.046496221353912764 18 1.4e-2 0 
 
       '''
   ]
@@ -310,7 +310,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.009 6 18 400011 26908 0.06726815012587153 18 1.2e-2 0 
+      0.009 6 18 400011 27116 0.06778813582626478 18 1.1e-2 0 
 
       '''
   ]
@@ -319,7 +319,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0095 6 18 400011 37856 0.09463739747156953 18 9.6e-3 0 
+      0.0095 6 18 400011 37935 0.09483489204046888 18 9.6e-3 0 
 
       '''
   ]
@@ -328,7 +328,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.01 6 18 400011 47967 0.11991420235943512 18 8.4e-3 0 
+      0.01 6 18 400011 48190 0.12047168702860671 18 8.4e-3 0 
 
       '''
   ]
@@ -337,7 +337,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0105 6 18 400011 63703 0.15925312053918517 18 7.1e-3 0 
+      0.0105 6 18 400011 63513 0.15877813360132598 18 7.1e-3 0 
 
       '''
   ]
@@ -346,7 +346,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.011 6 18 400011 81557 0.20388689311043948 18 6.1e-3 0 
+      0.011 6 18 400011 81357 0.20338690686006136 18 6.1e-3 0 
 
       '''
   ]
@@ -355,7 +355,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.005 7 21 400011 299 0.0007474794443152813 21 1.1e-1 0 
+      0.005 7 21 400011 270 0.0006749814380104547 21 1.2e-1 0 
 
       '''
   ]
@@ -364,7 +364,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0055 7 21 400011 631 0.0015774566199429517 21 7.8e-2 0 
+      0.0055 7 21 400011 607 0.0015174582698975778 21 7.9e-2 0 
 
       '''
   ]
@@ -373,7 +373,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.006 7 21 400011 1074 0.0026849261645304754 21 6.0e-2 0 
+      0.006 7 21 400011 1071 0.0026774263707748038 21 6.0e-2 0 
 
       '''
   ]
@@ -382,7 +382,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0065 7 21 400011 2049 0.0051223591351237845 21 4.3e-2 0 
+      0.0065 7 21 400011 2105 0.0052623552852296565 21 4.3e-2 0 
 
       '''
   ]
@@ -391,7 +391,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.007 7 21 400011 3754 0.009384741919597211 21 3.2e-2 0 
+      0.007 7 21 400011 3797 0.009492238963428505 21 3.2e-2 0 
 
       '''
   ]
@@ -400,7 +400,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0075 7 21 400011 6592 0.016479546812462657 21 2.4e-2 0 
+      0.0075 7 21 400011 6432 0.016079557812160167 21 2.4e-2 0 
 
       '''
   ]
@@ -409,7 +409,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.008 7 21 400011 10847 0.027116754289257045 21 1.9e-2 0 
+      0.008 7 21 400011 10827 0.027066755664219233 21 1.9e-2 0 
 
       '''
   ]
@@ -418,7 +418,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0085 7 21 400011 17299 0.043246310726455024 21 1.5e-2 0 
+      0.0085 7 21 400011 17278 0.04319381217016532 21 1.5e-2 0 
 
       '''
   ]
@@ -427,7 +427,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.009 7 21 400011 27066 0.06766313926367025 21 1.2e-2 0 
+      0.009 7 21 400011 26730 0.06682316236303501 21 1.2e-2 0 
 
       '''
   ]
@@ -436,7 +436,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0095 7 21 400011 39808 0.09951726327525993 21 9.3e-3 0 
+      0.0095 7 21 400011 39882 0.09970225818789984 21 9.3e-3 0 
 
       '''
   ]
@@ -445,7 +445,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.01 7 21 400011 53723 0.13430380664531724 21 7.9e-3 0 
+      0.01 7 21 400011 53171 0.13292384459427367 21 7.9e-3 0 
 
       '''
   ]
@@ -454,7 +454,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0105 7 21 400011 73126 0.18280997272575003 21 6.6e-3 0 
+      0.0105 7 21 400011 73350 0.18336995732617353 21 6.5e-3 0 
 
       '''
   ]
@@ -463,7 +463,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.011 7 21 400011 96281 0.24069588086327626 21 5.5e-3 0 
+      0.011 7 21 400011 96385 0.24095587371347288 21 5.5e-3 0 
 
       '''
   ]
@@ -472,7 +472,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.005 8 24 400011 130 0.0003249910627457745 24 1.7e-1 0 
+      0.005 8 24 400011 146 0.00036498996277602364 24 1.6e-1 0 
 
       '''
   ]
@@ -481,7 +481,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0055 8 24 400011 330 0.0008249773131238891 24 1.1e-1 0 
+      0.0055 8 24 400011 308 0.0007699788255822965 24 1.1e-1 0 
 
       '''
   ]
@@ -490,7 +490,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.006 8 24 400011 688 0.0017199527013007142 24 7.5e-2 0 
+      0.006 8 24 400011 658 0.001644954763743997 24 7.6e-2 0 
 
       '''
   ]
@@ -499,7 +499,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0065 8 24 400011 1337 0.003342408083777696 24 5.4e-2 0 
+      0.0065 8 24 400011 1362 0.0034049063650749604 24 5.3e-2 0 
 
       '''
   ]
@@ -508,7 +508,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.007 8 24 400011 2608 0.006519820704930615 24 3.8e-2 0 
+      0.007 8 24 400011 2669 0.006672316511295939 24 3.8e-2 0 
 
       '''
   ]
@@ -517,7 +517,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0075 8 24 400011 5065 0.012662151790825752 24 2.7e-2 0 
+      0.0075 8 24 400011 5101 0.012752149315893814 24 2.7e-2 0 
 
       '''
   ]
@@ -526,7 +526,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.008 8 24 400011 9089 0.022721875148433417 24 2.0e-2 0 
+      0.008 8 24 400011 9313 0.023281859748856906 24 2.0e-2 0 
 
       '''
   ]
@@ -535,7 +535,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0085 8 24 400011 16145 0.0403613900617733 24 1.5e-2 0 
+      0.0085 8 24 400011 16128 0.04031889123049116 24 1.5e-2 0 
 
       '''
   ]
@@ -544,7 +544,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.009 8 24 400011 26581 0.06645067260650332 24 1.2e-2 0 
+      0.009 8 24 400011 26244 0.0656081957746162 24 1.2e-2 0 
 
       '''
   ]
@@ -553,7 +553,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0095 8 24 400011 41957 0.10488961553557277 24 9.1e-3 0 
+      0.0095 8 24 400011 41801 0.10449962626027784 24 9.1e-3 0 
 
       '''
   ]
@@ -562,7 +562,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.01 8 24 400011 59224 0.1480559284619673 24 7.4e-3 0 
+      0.01 8 24 400011 59076 0.1476859386366875 24 7.4e-3 0 
 
       '''
   ]
@@ -571,7 +571,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0105 8 24 400011 84150 0.2103692148465917 24 6.0e-3 0 
+      0.0105 8 24 400011 84010 0.21001922447132704 24 6.0e-3 0 
 
       '''
   ]
@@ -580,7 +580,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.011 8 24 356021 100001 0.28088511632740765 24 5.3e-3 0 
+      0.011 8 24 353936 100005 0.2825510826816148 24 5.2e-3 0 
 
       '''
   ]
@@ -589,7 +589,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.005 4 12 400011 16426 0.041063870743554554 12 1.5e-2 0 
+      0.005 4 12 400011 16353 0.04088137576216654 12 1.5e-2 0 
 
       '''
   ]
@@ -598,7 +598,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0055 4 12 400011 21517 0.05379102074692946 12 1.3e-2 0 
+      0.0055 4 12 400011 21637 0.05409101249715633 12 1.3e-2 0 
 
       '''
   ]
@@ -607,7 +607,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.006 4 12 400011 27444 0.06860811327688489 12 1.1e-2 0 
+      0.006 4 12 400011 27434 0.06858311396436598 12 1.1e-2 0 
 
       '''
   ]
@@ -616,7 +616,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0065 4 12 400011 34425 0.08606013334633297 12 1.0e-2 0 
+      0.0065 4 12 400011 34156 0.0853876518395744 12 1.0e-2 0 
 
       '''
   ]
@@ -625,7 +625,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.007 4 12 400011 41993 0.10497961306064084 12 9.0e-3 0 
+      0.007 4 12 400011 42383 0.10595458624887816 12 9.0e-3 0 
 
       '''
   ]
@@ -634,7 +634,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0075 4 12 400011 51308 0.12826647267200153 12 8.1e-3 0 
+      0.0075 4 12 400011 51204 0.1280064798218049 12 8.1e-3 0 
 
       '''
   ]
@@ -643,7 +643,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.008 4 12 400011 61175 0.1529332943344058 12 7.3e-3 0 
+      0.008 4 12 400011 61205 0.15300829227196253 12 7.3e-3 0 
 
       '''
   ]
@@ -652,7 +652,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0085 4 12 400011 71675 0.1791825724792568 12 6.6e-3 0 
+      0.0085 4 12 400011 72054 0.18013004642372335 12 6.6e-3 0 
 
       '''
   ]
@@ -661,7 +661,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.009 4 12 400011 83643 0.2091017497018832 12 6.0e-3 0 
+      0.009 4 12 400011 83802 0.2094992387709338 12 6.0e-3 0 
 
       '''
   ]
@@ -670,7 +670,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0095 4 12 400011 95879 0.23969090850001626 12 5.5e-3 0 
+      0.0095 4 12 400011 96051 0.24012089667534142 12 5.5e-3 0 
 
       '''
   ]
@@ -679,7 +679,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.01 4 12 363101 100001 0.2754082197515292 12 5.3e-3 0 
+      0.01 4 12 361570 100004 0.276582681085267 12 5.3e-3 0 
 
       '''
   ]
@@ -688,7 +688,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0105 4 12 323569 100004 0.3090654543544035 12 5.2e-3 0 
+      0.0105 4 12 322570 100004 0.31002263074681463 12 5.1e-3 0 
 
       '''
   ]
@@ -697,7 +697,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.011 4 12 292522 100005 0.34187172246873737 12 5.0e-3 0 
+      0.011 4 12 292244 100004 0.3421935095331298 12 5.0e-3 0 
 
       '''
   ]
@@ -706,7 +706,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.005 5 15 400011 9535 0.023836844486776615 15 2.0e-2 0 
+      0.005 5 15 400011 9517 0.023791845724242585 15 2.0e-2 0 
 
       '''
   ]
@@ -715,7 +715,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0055 5 15 400011 14256 0.03563901992695201 15 1.6e-2 0 
+      0.0055 5 15 400011 14216 0.035539022676876385 15 1.6e-2 0 
 
       '''
   ]
@@ -724,7 +724,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.006 5 15 400011 20391 0.05097609815730068 15 1.3e-2 0 
+      0.006 5 15 400011 20262 0.05065360702580679 15 1.3e-2 0 
 
       '''
   ]
@@ -733,7 +733,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0065 5 15 400011 28071 0.07017557017182027 15 1.1e-2 0 
+      0.0065 5 15 400011 28070 0.07017307024056839 15 1.1e-2 0 
 
       '''
   ]
@@ -742,7 +742,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.007 5 15 400011 37549 0.09386991857723913 15 9.6e-3 0 
+      0.007 5 15 400011 37537 0.09383991940221643 15 9.6e-3 0 
 
       '''
   ]
@@ -751,7 +751,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0075 5 15 400011 49052 0.12262662776773639 15 8.3e-3 0 
+      0.0075 5 15 400011 48915 0.12228413718622738 15 8.3e-3 0 
 
       '''
   ]
@@ -760,7 +760,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.008 5 15 400011 62816 0.15703568151875824 15 7.2e-3 0 
+      0.008 5 15 400011 62376 0.1559357117679264 15 7.2e-3 0 
 
       '''
   ]
@@ -769,7 +769,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0085 5 15 400011 77706 0.19425965785940888 15 6.3e-3 0 
+      0.0085 5 15 400011 77583 0.19395216631542633 15 6.3e-3 0 
 
       '''
   ]
@@ -778,7 +778,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.009 5 15 400011 94195 0.2354810242718325 15 5.6e-3 0 
+      0.009 5 15 400011 94160 0.23539352667801636 15 5.6e-3 0 
 
       '''
   ]
@@ -787,7 +787,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0095 5 15 357208 100003 0.27995733578195336 15 5.3e-3 0 
+      0.0095 5 15 356378 100004 0.2806121589997138 15 5.3e-3 0 
 
       '''
   ]
@@ -796,7 +796,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.01 5 15 306862 100006 0.32589893828496197 15 5.1e-3 0 
+      0.01 5 15 306085 100005 0.3267229691098878 15 5.1e-3 0 
 
       '''
   ]
@@ -805,7 +805,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0105 5 15 268299 100006 0.37274086001065976 15 4.9e-3 0 
+      0.0105 5 15 268755 100008 0.37211586761176535 15 4.9e-3 0 
 
       '''
   ]
@@ -814,7 +814,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.011 5 15 240150 100006 0.41643139704351445 15 4.7e-3 0 
+      0.011 5 15 238961 100005 0.41849925301618257 15 4.7e-3 0 
 
       '''
   ]
@@ -823,7 +823,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.005 6 18 400011 7109 0.017772011269690084 18 2.3e-2 0 
+      0.005 6 18 400011 7244 0.01810950198869531 18 2.3e-2 0 
 
       '''
   ]
@@ -832,7 +832,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0055 6 18 400011 11520 0.0287992080217794 18 1.8e-2 0 
+      0.0055 6 18 400011 11465 0.02866171180292542 18 1.8e-2 0 
 
       '''
   ]
@@ -841,7 +841,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.006 6 18 400011 17669 0.044171285289654534 18 1.4e-2 0 
+      0.006 6 18 400011 17692 0.044228783708448016 18 1.4e-2 0 
 
       '''
   ]
@@ -850,7 +850,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0065 6 18 400011 25816 0.06453822519880703 18 1.2e-2 0 
+      0.0065 6 18 400011 26256 0.06563819494963888 18 1.2e-2 0 
 
       '''
   ]
@@ -859,7 +859,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.007 6 18 400011 36782 0.09195247130703905 18 9.7e-3 0 
+      0.007 6 18 400011 36922 0.09230246168230373 18 9.7e-3 0 
 
       '''
   ]
@@ -868,7 +868,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0075 6 18 400011 50714 0.12678151350837852 18 8.1e-3 0 
+      0.0075 6 18 400011 50466 0.12616153055790966 18 8.2e-3 0 
 
       '''
   ]
@@ -877,7 +877,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.008 6 18 400011 67402 0.1685003662399284 18 6.9e-3 0 
+      0.008 6 18 400011 67268 0.16816537545217505 18 6.9e-3 0 
 
       '''
   ]
@@ -886,7 +886,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0085 6 18 400011 86660 0.21664404228883705 18 5.9e-3 0 
+      0.0085 6 18 400011 86647 0.21661154318256248 18 5.9e-3 0 
 
       '''
   ]
@@ -895,7 +895,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.009 6 18 373237 100005 0.2679396737193794 18 5.3e-3 0 
+      0.009 6 18 369760 100004 0.27045651233232365 18 5.3e-3 0 
 
       '''
   ]
@@ -904,7 +904,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0095 6 18 306658 100006 0.3261157380534667 18 5.1e-3 0 
+      0.0095 6 18 306575 100002 0.32619098099975535 18 5.1e-3 0 
 
       '''
   ]
@@ -913,7 +913,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.01 6 18 260389 100006 0.3840638429426742 18 4.9e-3 0 
+      0.01 6 18 259847 100008 0.3848726365899933 18 4.9e-3 0 
 
       '''
   ]
@@ -922,7 +922,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0105 6 18 227064 100005 0.4404264876862911 18 4.6e-3 0 
+      0.0105 6 18 228277 100005 0.43808618476675265 18 4.6e-3 0 
 
       '''
   ]
@@ -931,7 +931,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.011 6 18 203098 100006 0.49240268244886704 18 4.4e-3 0 
+      0.011 6 18 203208 100005 0.492131215306484 18 4.4e-3 0 
 
       '''
   ]
@@ -940,7 +940,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.005 7 21 400011 4515 0.011287189602285938 21 2.9e-2 0 
+      0.005 7 21 400011 4404 0.011009697233326083 21 2.9e-2 0 
 
       '''
   ]
@@ -949,7 +949,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0055 7 21 400011 8096 0.02023944341530608 21 2.2e-2 0 
+      0.0055 7 21 400011 8019 0.020046948708910505 21 2.2e-2 0 
 
       '''
   ]
@@ -958,7 +958,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.006 7 21 400011 13737 0.034341555607220804 21 1.6e-2 0 
+      0.006 7 21 400011 13732 0.03432905595096135 21 1.6e-2 0 
 
       '''
   ]
@@ -967,7 +967,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0065 7 21 400011 21984 0.05495848864156236 21 1.3e-2 0 
+      0.0065 7 21 400011 22173 0.05543097564816968 21 1.3e-2 0 
 
       '''
   ]
@@ -976,7 +976,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.007 7 21 400011 34000 0.08499766256427949 21 1.0e-2 0 
+      0.007 7 21 400011 33742 0.08435268030129171 21 1.0e-2 0 
 
       '''
   ]
@@ -985,7 +985,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0075 7 21 400011 49738 0.12434158060653332 21 8.2e-3 0 
+      0.0075 7 21 400011 49667 0.1241640854876491 21 8.2e-3 0 
 
       '''
   ]
@@ -994,7 +994,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.008 7 21 400011 69063 0.17265275204931865 21 6.8e-3 0 
+      0.008 7 21 400011 69768 0.1744152035819015 21 6.7e-3 0 
 
       '''
   ]
@@ -1003,7 +1003,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0085 7 21 400011 93421 0.2335460774828692 21 5.6e-3 0 
+      0.0085 7 21 400011 93042 0.2325986035384027 21 5.6e-3 0 
 
       '''
   ]
@@ -1012,7 +1012,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.009 7 21 335946 100002 0.2976728402779018 21 5.2e-3 0 
+      0.009 7 21 335721 100003 0.2978753190893629 21 5.2e-3 0 
 
       '''
   ]
@@ -1021,7 +1021,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0095 7 21 271603 100004 0.36819917305773503 21 4.9e-3 0 
+      0.0095 7 21 271247 100006 0.36868979196083274 21 4.9e-3 0 
 
       '''
   ]
@@ -1030,7 +1030,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.01 7 21 229101 100005 0.43651053465502115 21 4.7e-3 0 
+      0.01 7 21 229503 100005 0.4357459379615953 21 4.7e-3 0 
 
       '''
   ]
@@ -1039,7 +1039,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0105 7 21 200087 100005 0.49980758370109 21 4.4e-3 0 
+      0.0105 7 21 201399 100004 0.49654665614029864 21 4.4e-3 0 
 
       '''
   ]
@@ -1048,7 +1048,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.011 7 21 180017 100005 0.5555308665292722 21 4.1e-3 0 
+      0.011 7 21 179893 100007 0.5559249109192687 21 4.1e-3 0 
 
       '''
   ]
@@ -1057,7 +1057,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.005 8 24 400011 3048 0.007619790455762466 24 3.5e-2 0 
+      0.005 8 24 400011 2974 0.007434795543122564 24 3.6e-2 0 
 
       '''
   ]
@@ -1066,7 +1066,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0055 8 24 400011 5978 0.014944589023801845 24 2.5e-2 0 
+      0.0055 8 24 400011 6028 0.015069585586396374 24 2.5e-2 0 
 
       '''
   ]
@@ -1075,7 +1075,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.006 8 24 400011 11252 0.028129226446272727 24 1.8e-2 0 
+      0.006 8 24 400011 11212 0.028029229196197103 24 1.8e-2 0 
 
       '''
   ]
@@ -1084,7 +1084,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0065 8 24 400011 18851 0.04712620402938919 24 1.4e-2 0 
+      0.0065 8 24 400011 19025 0.04756119206721815 24 1.4e-2 0 
 
       '''
   ]
@@ -1093,7 +1093,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.007 8 24 400011 31497 0.07874033464079738 24 1.1e-2 0 
+      0.007 8 24 400011 31393 0.07848034179060076 24 1.1e-2 0 
 
       '''
   ]
@@ -1102,7 +1102,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0075 8 24 400011 48741 0.12184914914839842 24 8.3e-3 0 
+      0.0075 8 24 400011 49184 0.12295661869298594 24 8.3e-3 0 
 
       '''
   ]
@@ -1111,7 +1111,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.008 8 24 400011 72047 0.18011254690496012 24 6.6e-3 0 
+      0.008 8 24 400011 71611 0.17902257687913584 24 6.6e-3 0 
 
       '''
   ]
@@ -1120,7 +1120,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0085 8 24 400011 99740 0.24934314306356575 24 5.4e-3 0 
+      0.0085 8 24 400011 99869 0.24966563419505963 24 5.4e-3 0 
 
       '''
   ]
@@ -1129,7 +1129,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.009 8 24 306009 100003 0.32679757784901753 24 5.1e-3 0 
+      0.009 8 24 305806 100002 0.327011242421666 24 5.1e-3 0 
 
       '''
   ]
@@ -1138,7 +1138,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0095 8 24 246547 100003 0.40561434533780577 24 4.8e-3 0 
+      0.0095 8 24 244988 100004 0.4081995852858099 24 4.8e-3 0 
 
       '''
   ]
@@ -1147,7 +1147,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.01 8 24 206760 100007 0.4836863996904624 24 4.5e-3 0 
+      0.01 8 24 207424 100004 0.48212357297130515 24 4.5e-3 0 
 
       '''
   ]
@@ -1156,7 +1156,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.0105 8 24 181030 100003 0.552411202563111 24 4.1e-3 0 
+      0.0105 8 24 181162 100004 0.5520142193175169 24 4.1e-3 0 
 
       '''
   ]
@@ -1165,7 +1165,7 @@
     
       '''
       format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
-      0.011 8 24 164526 100007 0.6078492153215905 24 3.9e-3 0 
+      0.011 8 24 163750 100007 0.6107297709923664 24 3.9e-3 0 
 
       '''
   ]
