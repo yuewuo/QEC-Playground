@@ -2,7 +2,7 @@ set terminal postscript eps color "Arial, 22"
 set xlabel "Physical error rate (p_Z)" font "Arial, 22"
 set ylabel "Logical error rate (p_L)" font "Arial, 22"
 # set grid ytics
-set size 1,1.1
+set size 1.286,1.1
 set encoding utf8
 
 # data range:
@@ -14,20 +14,18 @@ set encoding utf8
 # standard CX
 # RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6,7,8] --djs [12,15,18,21,24] [12,15,18,21,24] [0.0050,0.0055,0.0060,0.0065,0.0070,0.0075,0.0080,0.0085,0.0090,0.0095,0.0100,0.0105,0.0110]-p0 -m100000 -e100000 --use_xzzx_code --bias_eta 100 --decoder UF --max_half_weight 10 --error_model GenericBiasedWithStandardCX
 
-threshold1 = 0.0076018
-threshold2 = 0.0089297
-set arrow from threshold1, graph 0.4 to threshold1, graph 1 nohead linewidth 4 dashtype (5,2) lc "black"
-set arrow from threshold1, graph 0 to threshold1, graph 0.03 nohead linewidth 4 dashtype (5,2) lc "black"
-set arrow from threshold2, graph 0.4 to threshold2, graph 1 nohead linewidth 4 dashtype (5,2) lc "black"
-set arrow from threshold2, graph 0 to threshold2, graph 0.03 nohead linewidth 4 dashtype (5,2) lc "black"
+threshold1 = 0.0046182
+threshold2 = 0.0047775
+set arrow from threshold1, graph 0 to threshold1, graph 1 nohead linewidth 4 dashtype (5,2) lc "black"
+set arrow from threshold2, graph 0 to threshold2, graph 1 nohead linewidth 4 dashtype (5,2) lc "black"
 
-set label "p_{th} = 0.76%" at graph 0.22, graph 0.85
-set label "p_{th} = 0.89%" at graph 0.65, graph 0.65
+set label "p_{th} = 0.46%" at graph 0.06, graph 0.8
+set label "p_{th} = 0.48%" at graph 0.27, graph 0.6
 
-set xrange [0.0045:0.0115]
+set xrange [0.0025:0.0115]
 # labels
 # python -c "for i in range(7): print('\'%.3f\' %.3f' % tuple([0.008 + (i-3)*0.001 for j in range(2)]), end=', ')"
-set xtics ('0.005' 0.005, '0.006' 0.006, '0.007' 0.007, '0.008' 0.008, '0.009' 0.009, '0.010' 0.010, '0.011' 0.011)
+set xtics ('0.003' 0.003, '0.004' 0.004, '0.005' 0.005, '0.006' 0.006, '0.007' 0.007, '0.008' 0.008, '0.009' 0.009, '0.010' 0.010, '0.011' 0.011)
 set logscale y
 # labels
 # python -c "for i in range(2, 10): print('\'\' %.4f' % (0.0001 * i), end=', ')"
@@ -45,16 +43,16 @@ set style fill transparent solid 0.2 noborder
 
 # set title "Generaic Biased Noise Model (UnionFind Decoder)"
 
-set output "circuit_level_noise_model_2.eps"
+set output "circuit_level_noise_model_2_unweighted.eps"
 
 # plot legends just like Fig.7 in arXiv2104.09539v1
-set key at graph 0.6, 0.3
+set key at graph 0.7, 0.3
 set key vertical
 set key samplen 3
 set key maxrows 5
-set label "Standard" at graph 0.46, 0.35
-set label "Bias-Preserving" at graph 0.67, 0.35
-set object 1 rect from graph 0.44,0.4 to graph 0.965,0.03 lw 1.5
+set label "Standard" at graph 0.59, 0.35
+set label "Bias-Preserving" at graph 0.75, 0.35
+set object 1 rect from graph 0.575,0.4 to graph 0.965,0.03 lw 1.5
 
 plot \
     NaN with linespoints lt rgb "#e41a1c" linewidth 4 dashtype (1,1) pointtype 6 pointsize 1.5 title " ",\
@@ -88,14 +86,14 @@ plot \
     "standard_8.txt" using 1:6 with linespoints lt rgb "#984ea3" linewidth 4 dashtype (1,1) pointtype 12 pointsize 1 notitle "standard 8,24,24",\
     "" using 1:6:($6-$6*$8):($6+$6*$8) with errorbars lt rgb "#984ea3" linewidth 4 dashtype (1,1) pointtype 12 pointsize 1 notitle
 
-system("ps2pdf -dEPSCrop circuit_level_noise_model_2.eps circuit_level_noise_model_2.pdf")
+system("ps2pdf -dEPSCrop circuit_level_noise_model_2_unweighted.eps circuit_level_noise_model_2_unweighted.pdf")
 
 # set size 1,0.75
-# set output "circuit_level_noise_model_2_w.eps"
+# set output "circuit_level_noise_model_2_unweighted_w.eps"
 # replot
-# system("ps2pdf -dEPSCrop circuit_level_noise_model_2_w.eps circuit_level_noise_model_2_w.pdf")
+# system("ps2pdf -dEPSCrop circuit_level_noise_model_2_unweighted_w.eps circuit_level_noise_model_2_unweighted_w.pdf")
 
 # set size 1,0.6
-# set output "circuit_level_noise_model_2_w_w.eps"
+# set output "circuit_level_noise_model_2_unweighted_w_w.eps"
 # replot
-# system("ps2pdf -dEPSCrop circuit_level_noise_model_2_w_w.eps circuit_level_noise_model_2_w_w.pdf")
+# system("ps2pdf -dEPSCrop circuit_level_noise_model_2_unweighted_w_w.eps circuit_level_noise_model_2_unweighted_w_w.pdf")

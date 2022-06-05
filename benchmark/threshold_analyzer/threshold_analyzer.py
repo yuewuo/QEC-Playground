@@ -344,7 +344,16 @@ class ThresholdAnalyzer:
         # plot the fitted result as an image
         if save_image is not None:
             self.save_image_collected_data(save_image, popt, perr, *self.collected_data_list[-1])
-
+    
+    # given existing data, do estimate
+    def estimate_exiting(self, p_list, collected_data, save_image=None):
+        # fit into the curve
+        popt, perr = self.fit_results(collected_data, p_list, self.code_distances)
+        popt, perr = popt.tolist(), perr.tolist()
+        pl, pl_err = popt[3], perr[3]
+        # plot the fitted result as an image
+        if save_image is not None:
+            self.save_image_collected_data(save_image, popt, perr, self.code_distances, p_list, collected_data)
 
 if __name__ == "__main__":
     example_main()

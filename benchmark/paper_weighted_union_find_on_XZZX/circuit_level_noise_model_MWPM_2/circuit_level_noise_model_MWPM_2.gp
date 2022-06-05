@@ -14,12 +14,15 @@ set encoding utf8
 # standard CX
 # RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6,7,8] --djs [12,15,18,21,24] [12,15,18,21,24] [0.0050,0.0055,0.0060,0.0065,0.0070,0.0075,0.0080,0.0085,0.0090,0.0095,0.0100,0.0105,0.0110]-p0 -m100000 -e100000 --use_xzzx_code --bias_eta 100 --decoder UF --max_half_weight 10 --error_model GenericBiasedWithStandardCX
 
-threshold1 = 0.008
-threshold2 = 0.009
-set arrow from threshold1, graph 0.4 to threshold1, graph 1 nohead linewidth 4 dashtype (5,2) lc "grey"
-set arrow from threshold1, graph 0 to threshold1, graph 0.03 nohead linewidth 4 dashtype (5,2) lc "grey"
-set arrow from threshold2, graph 0.4 to threshold2, graph 1 nohead linewidth 4 dashtype (5,2) lc "grey"
-set arrow from threshold2, graph 0 to threshold2, graph 0.03 nohead linewidth 4 dashtype (5,2) lc "grey"
+threshold1 = 0.0081695
+threshold2 = 0.0097339
+set arrow from threshold1, graph 0.4 to threshold1, graph 1 nohead linewidth 4 dashtype (5,2) lc "black"
+set arrow from threshold1, graph 0 to threshold1, graph 0.03 nohead linewidth 4 dashtype (5,2) lc "black"
+set arrow from threshold2, graph 0.4 to threshold2, graph 1 nohead linewidth 4 dashtype (5,2) lc "black"
+set arrow from threshold2, graph 0 to threshold2, graph 0.03 nohead linewidth 4 dashtype (5,2) lc "black"
+
+set label "p_{th} = 0.82%" at graph 0.3, graph 0.85
+set label "p_{th} = 0.97%" at graph 0.78, graph 0.65
 
 set xrange [0.0045:0.0115]
 # labels

@@ -96,7 +96,7 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let error_model_configuration = matches.value_of_t::<serde_json::Value>("error_model_configuration").unwrap();
             let thread_timeout: f64 = matches.value_of_t("thread_timeout").unwrap();
             let use_brief_edge = matches.is_present("use_brief_edge");
-            let label: String = matches.value_of_t("label").unwrap();
+            let label: String = matches.value_of_t("label").unwrap_or(format!(""));
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
                 , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge, label));
