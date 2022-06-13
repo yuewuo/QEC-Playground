@@ -52,6 +52,9 @@ pub struct TailoredMWPMDecoderConfig {
     #[serde(alias = "nrd")]  // abbreviation
     #[serde(default = "tailored_mwpm_default_configs::naive_residual_decoding")]
     pub naive_residual_decoding: bool,
+    /// disable residual decoding to test correctness under infinite bias
+    #[serde(default = "tailored_mwpm_default_configs::disable_residual_decoding")]
+    pub disable_residual_decoding: bool,
     /// whether use the original residual decoding weighting in https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.124.130501
     #[serde(default = "tailored_mwpm_default_configs::original_residual_weighting")]
     pub original_residual_weighting: bool,
@@ -62,6 +65,7 @@ pub struct TailoredMWPMDecoderConfig {
 
 pub mod tailored_mwpm_default_configs {
     pub fn naive_residual_decoding() -> bool { false }
+    pub fn disable_residual_decoding() -> bool { false }
     pub fn original_residual_weighting() -> bool { false }
     pub fn original_residual_corner_weights() -> bool { false }
 }
@@ -296,7 +300,9 @@ impl TailoredMWPMDecoder {
                 }
             }
             let begin = Instant::now();
-            let residual_correction = if self.config.naive_residual_decoding {
+            let residual_correction = if self.config.disable_residual_decoding {
+                SparseCorrection::new()
+            } else if self.config.naive_residual_decoding {
                 // do naive residual decoding, instead of using the confusing method in the paper, I just match them together using normal graph
                 let mut residual_to_be_matched = Vec::new();
                 for i in 0..tailored_len {
@@ -586,6 +592,46 @@ mod tests {
     use super::super::types::ErrorType::*;
 
     #[test]
+    fn tailored_mwpm_decoder_code_capacity_inf_bias_d_3() {  // cargo test tailored_mwpm_decoder_code_capacity_inf_bias_d_3 -- --nocapture
+        let d = 3;
+        let noisy_measurements = 0;  // perfect measurement
+        let p = 0.02;
+        let bias_eta = 1e200;
+        // build simulator
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode{ noisy_measurements, dp: d, dn: d });
+        code_builder_sanity_check(&simulator).unwrap();
+        // build error model
+        let mut error_model = ErrorModel::new(&simulator);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = p - 2. * px;
+        simulator.set_error_rates(&mut error_model, px, py, pz, 0.);
+        simulator.compress_error_rates(&mut error_model);
+        error_model_sanity_check(&simulator, &error_model).unwrap();
+        let error_model = Arc::new(error_model);
+        // build decoder
+        let decoder_config = json!({
+            "precompute_complete_model_graph": true,
+        });
+        let enable_all = true;
+        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
+        if true || enable_all {  // debug 11: why cannot code distance 3 correct only 3 Z errors?
+            simulator.clear_all_errors();
+            simulator.get_node_mut_unwrap(&pos!(0, 1, 3)).set_error(&error_model, &Z);
+            simulator.get_node_mut_unwrap(&pos!(0, 3, 1)).set_error(&error_model, &Z);
+            simulator.get_node_mut_unwrap(&pos!(0, 3, 5)).set_error(&error_model, &Z);
+            simulator.propagate_errors();
+            let sparse_measurement = simulator.generate_sparse_measurement();
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
+            println!("{:?}", correction);
+            code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
+            let (logical_i, logical_j) = simulator.validate_correction(&correction);
+            // assert!(!logical_i && !logical_j);
+            assert!(logical_i && logical_j);  // .... surprisingly, it's supposed to have a logical error on both axis
+        }
+    }
+
+    #[test]
     fn tailored_mwpm_decoder_code_capacity() {  // cargo test tailored_mwpm_decoder_code_capacity -- --nocapture
         let d = 5;
         let noisy_measurements = 0;  // perfect measurement
@@ -607,8 +653,9 @@ mod tests {
         let decoder_config = json!({
             "precompute_complete_model_graph": true,
         });
+        let enable_all = true;
         let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
-        {  // debug 7: residual decoding
+        if false || enable_all {  // debug 7: residual decoding
             simulator.clear_all_errors();
             simulator.get_node_mut_unwrap(&pos!(0, 7, 5)).set_error(&error_model, &Z);
             simulator.get_node_mut_unwrap(&pos!(0, 5, 5)).set_error(&error_model, &Y);
@@ -620,7 +667,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false {  // debug 5: no edges in residual graph
+        if false || enable_all {  // debug 5: no edges in residual graph
             simulator.clear_all_errors();
             simulator.get_node_mut_unwrap(&pos!(0, 1, 5)).set_error(&error_model, &Z);
             simulator.get_node_mut_unwrap(&pos!(0, 2, 4)).set_error(&error_model, &Z);
@@ -632,7 +679,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false {  // debug 4
+        if false || enable_all {  // debug 4
             simulator.clear_all_errors();
             simulator.get_node_mut_unwrap(&pos!(0, 5, 5)).set_error(&error_model, &Z);
             simulator.get_node_mut_unwrap(&pos!(0, 6, 4)).set_error(&error_model, &Z);
@@ -646,7 +693,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false {  // debug 3
+        if false || enable_all {  // debug 3
             simulator.clear_all_errors();
             simulator.get_node_mut_unwrap(&pos!(0, 1, 5)).set_error(&error_model, &Z);
             simulator.get_node_mut_unwrap(&pos!(0, 2, 6)).set_error(&error_model, &Z);
@@ -659,7 +706,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false {  // debug 2.5
+        if false || enable_all {  // debug 2.5
             simulator.clear_all_errors();
             simulator.get_node_mut_unwrap(&pos!(0, 7, 7)).set_error(&error_model, &Z);
             simulator.get_node_mut_unwrap(&pos!(0, 6, 6)).set_error(&error_model, &Z);
@@ -673,7 +720,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false {  // debug 2
+        if false || enable_all {  // debug 2
             simulator.clear_all_errors();
             simulator.get_node_mut_unwrap(&pos!(0, 6, 6)).set_error(&error_model, &Z);
             simulator.get_node_mut_unwrap(&pos!(0, 6, 8)).set_error(&error_model, &Z);
@@ -687,7 +734,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false {  // debug 1
+        if false || enable_all {  // debug 1
             simulator.clear_all_errors();
             simulator.get_node_mut_unwrap(&pos!(0, 4, 4)).set_error(&error_model, &Z);
             simulator.get_node_mut_unwrap(&pos!(0, 5, 3)).set_error(&error_model, &Z);

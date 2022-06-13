@@ -11,13 +11,12 @@ import slurm_distribute
 from slurm_distribute import slurm_threads_or as STO
 
 di_vec = [3,5,7,9,11,13]  # rotated surface code only supports odd number code distances
-p_vec = [0.5 * (10 ** (- i / 5)) for i in range(5 * 4 + 1)] + [0.41 + i * 0.01 for i in range(10)]
-p_vec[0] = 0.4
+p_vec = [0.40 + i * 0.01 for i in range(11)]
 print(p_vec)
-min_error_cases = 40000
+min_error_cases = 100000000
 max_N = 100000000
 
-slurm_distribute.SLURM_DISTRIBUTE_TIME = "12:20:00"
+slurm_distribute.SLURM_DISTRIBUTE_TIME = "1:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '8G'
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # for more usuable machines, use `SLURM_USE_SCAVENGE_PARTITION=1` flag
 parameters = f"-p{STO(0)} --time_budget {3600} --code_type RotatedTailoredCode --bias_eta 1e200 --decoder tailored-mwpm --decoder_config {{\"pcmg\":true}}".split(" ")
