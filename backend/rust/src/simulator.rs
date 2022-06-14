@@ -356,7 +356,7 @@ impl Simulator {
 
     /// generate random errors according to the given error rates
     #[inline(never)]
-    pub fn generate_random_errors(&mut self, error_model: &ErrorModel) -> usize {
+    pub fn generate_random_errors(&mut self, error_model: &ErrorModel) -> (usize, usize) {
         // this size is small compared to the simulator itself
         let allocate_size = self.height * self.vertical * self.horizontal;
         let mut pending_pauli_errors = Vec::<(Position, ErrorType)>::with_capacity(allocate_size);
@@ -365,6 +365,7 @@ impl Simulator {
         // let mut pending_erasure_errors = Vec::<Position>::new();
         let mut rng = self.rng.clone();  // avoid mutable borrow
         let mut error_count = 0;
+        let mut erasure_count = 0;
         // first apply single-qubit errors
         simulator_iter_mut!(self, position, node, {
             let error_model_node = error_model.get_node_unwrap(position);
@@ -437,6 +438,9 @@ impl Simulator {
         // apply pending erasure errors, amd generate random pauli error
         for position in pending_erasure_errors.iter() {
             let mut node = self.get_node_mut_unwrap(&position);
+            if !node.has_erasure {  // only counts new erasures; there might be duplicated pending erasure
+                erasure_count += 1;
+            }
             node.has_erasure = true;
             if node.error != I {
                 error_count -= 1;
@@ -455,9 +459,13 @@ impl Simulator {
             let sparse_error_pattern = self.generate_sparse_error_pattern();
             sparse_error_pattern.len() == error_count
         });
+        debug_assert!({
+            let sparse_detected_erasures = self.generate_sparse_detected_erasures();
+            sparse_detected_erasures.len() == erasure_count
+        });
         self.rng = rng;  // save the random number generator
         self.propagate_errors();
-        error_count
+        (error_count, erasure_count)
     }
 
     /// clear all pauli and erasure errors and also propagated errors, returning to a clean state
@@ -591,6 +599,28 @@ impl Simulator {
             });
         }
         sparse_measurement_virtual
+    }
+
+    /// generate detected erasures
+    #[inline(never)]
+    pub fn generate_sparse_detected_erasures(&self) -> SparseDetectedErasures {
+        let mut sparse_detected_erasures = SparseDetectedErasures::new();
+        simulator_iter_real!(self, position, node, {
+            // if node.has_erasure {
+            //     sparse_detected_erasures.erasures.insert(position.clone());
+            //     for pauli_error_connection in node.pauli_error_connections.iter() {
+            //         match pauli_error_connection {
+            //             Either::Left((index1, index2)) => {
+            //                 detected_erasures.connected_insert(index1, index2);
+            //             },
+            //             Either::Right(idx) => {
+            //                 detected_erasures.boundaries.insert(self.fhi(*idx));
+            //             },
+            //         }
+            //     }
+            // }
+        });
+        sparse_detected_erasures
     }
 
     #[inline(never)]
@@ -978,6 +1008,32 @@ impl SparseMeasurement {
     }
 }
 
+/// detected erasures along with its effected edges
+#[derive(Debug, Clone, Serialize)]
+pub struct SparseDetectedErasures {
+    /// the position of the erasure errors
+    pub erasures: BTreeSet<Position>,
+    /// two-stabilizer connected with 0 weighted caused by the erasure, used by UF decoder or (indirectly) by MWPM decoder
+    pub connected: BTreeSet<(Position, Position)>,
+    /// stabilizer connected to boundary with 0 weight caused by the erasure, used by UF decoder or (indirectly) by MWPM decoder
+    pub boundaries: BTreeSet<Position>,
+}
+
+impl SparseDetectedErasures {
+    /// create a new clean measurement without nontrivial measurements
+    pub fn new() -> Self {
+        Self {
+            erasures: BTreeSet::new(),
+            connected: BTreeSet::new(),
+            boundaries: BTreeSet::new(),
+        }
+    }
+    /// the length of non-trivial measurements
+    pub fn len(&self) -> usize {
+        self.erasures.len()
+    }
+}
+
 /// in most cases errors are rare, this sparse structure use `BTreeMap` to store them
 #[derive(Debug, Clone)]
 pub struct SparseErrorPattern {
@@ -1122,7 +1178,7 @@ mod tests {
         assert!(!simulator.is_node_exist(&nonexisting_position), "nonexisting position");
         println!("std::mem::size_of::<SimulatorNode>() = {}", std::mem::size_of::<SimulatorNode>());
         println!("std::mem::size_of::<ErrorModelNode>() = {}", std::mem::size_of::<ErrorModelNode>());
-        if std::mem::size_of::<SimulatorNode>() > 24 {  // ArmV8 data cache line is 64 bytes
+        if std::mem::size_of::<SimulatorNode>() > 32 {  // ArmV8 data cache line is 64 bytes
             panic!("SimulatorNode which is unexpectedly large, check if anything wrong");
         }
     }

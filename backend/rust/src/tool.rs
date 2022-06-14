@@ -42,6 +42,7 @@ use super::tailored_model_graph::*;
 use super::tailored_complete_model_graph::*;
 use super::error_model_builder::*;
 use super::decoder_union_find::*;
+use super::erasure_graph::*;
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -297,6 +298,8 @@ pub enum BenchmarkDebugPrint {
     AllErrorPattern,
     /// print failed error patterns that causes logical errors, typically useful to pinpoint how decoder fails to decode a likely error
     FailedErrorPattern,
+    /// erasure graph
+    ErasureGraph,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -541,6 +544,12 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                 complete_tailored_model_graph.precompute(&simulator, config.precompute_complete_model_graph, parallel_init);
                 return format!("{}\n", serde_json::to_string(&complete_tailored_model_graph.to_json(&simulator)).expect("serialize should success"));
             },
+            Some(BenchmarkDebugPrint::ErasureGraph) => {
+                let mut erasure_graph = ErasureGraph::new(&simulator);
+                let error_model_graph = Arc::new(error_model_graph);
+                erasure_graph.build(&mut simulator, error_model_graph, parallel_init);
+                return format!("{}\n", serde_json::to_string(&erasure_graph.to_json(&simulator)).expect("serialize should success"));
+            },
             _ => { }
         }
         let debug_print = Arc::new(debug_print);  // share it across threads
@@ -611,13 +620,14 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().update_thread_counter(thread_counter); }
                     // generate random errors and the corresponding measurement
                     let begin = Instant::now();
-                    simulator.generate_random_errors(&error_model);
+                    let (error_count, erasure_count) = simulator.generate_random_errors(&error_model);
                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().error_pattern = Some(simulator.generate_sparse_error_pattern()); }  // runtime debug: find deadlock cases
                     if matches!(*debug_print, Some(BenchmarkDebugPrint::AllErrorPattern)) {
                         let sparse_error_pattern = simulator.generate_sparse_error_pattern();
                         eprintln!("{}", serde_json::to_string(&sparse_error_pattern).expect("serialize should success"));
                     }
-                    let sparse_measurement = simulator.generate_sparse_measurement();
+                    let sparse_measurement = if error_count != 0 { simulator.generate_sparse_measurement() } else { SparseMeasurement::new() };
+                    let sparse_detected_erasures = if erasure_count != 0 { simulator.generate_sparse_detected_erasures() } else { SparseDetectedErasures::new() };
                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().measurement = Some(sparse_measurement.clone()); }  // runtime debug: find deadlock cases
                     let prepare_elapsed = begin.elapsed().as_secs_f64();
                     // decode
