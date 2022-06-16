@@ -686,7 +686,12 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     let validate_elapsed = begin.elapsed().as_secs_f64();
                     if is_qec_failed && matches!(*debug_print, Some(BenchmarkDebugPrint::FailedErrorPattern)) {
                         let sparse_error_pattern = simulator.generate_sparse_error_pattern();
-                        eprintln!("{}", serde_json::to_string(&sparse_error_pattern).expect("serialize should success"));
+                        eprint!("{}", serde_json::to_string(&sparse_error_pattern).expect("serialize should success"));
+                        if sparse_detected_erasures.len() > 0 {  // has detected erasures, report as well
+                            eprintln!(", {}", serde_json::to_string(&sparse_detected_erasures).expect("serialize should success"));
+                        } else {
+                            eprintln!("");
+                        }
                     }
                     // update statistic information
                     if let Some(log_runtime_statistics_file) = &log_runtime_statistics_file {

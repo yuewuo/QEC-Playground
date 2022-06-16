@@ -127,6 +127,24 @@ impl CompleteModelGraph {
         self.nodes[position.t][position.i][position.j].as_mut().unwrap()
     }
 
+    /// get mutable model graph, will copy the model graph if it has more than one strong reference to it; remember to call `model_graph_changed` if the model graph is changed
+    pub fn get_model_graph_mut(&'_ mut self) -> &'_ mut ModelGraph {
+        match Arc::get_mut(&mut self.model_graph) {
+            Some(_) => { },  // no other references exist
+            None => {
+                // the existing reference doesn't allow mutable reference to it, so we have to copy it
+                let model_graph: ModelGraph = { (*Arc::clone(&self.model_graph)).clone() };
+                self.model_graph = Arc::new(model_graph);
+            },
+        }
+        Arc::get_mut(&mut self.model_graph).expect("the new copied model graph should be ok to have a mutable reference")
+    }
+
+    /// need to be called every time the model graph is changed
+    pub fn model_graph_changed(&mut self, simulator: &Simulator) {
+        self.find_shortest_boundary_paths(simulator);
+    }
+
     /// invalidate Dijkstra's algorithm state from previous call
     pub fn invalidate_previous_dijkstra(&mut self) -> usize {
         if self.active_timestamp == usize::MAX {  // rarely happens
@@ -179,6 +197,7 @@ impl CompleteModelGraph {
             for (index, target) in targets.iter().enumerate() {
                 if let Some(edge) = precomputed.edges.get(target) {
                     edges.push((index, edge.weight));
+                    // eprintln!("{:?} {:?}: {}", position, target, edge.weight);
                 }
             }
             (edges, precomputed.boundary.as_ref().map(|boundary| boundary.weight))
@@ -283,7 +302,7 @@ impl CompleteModelGraph {
             if &target != position {
                 let boundary_sum = self.get_boundary_sum(position, &target);
                 let mut add_entry = true;
-                if self.optimize_weight_greater_than_sum_boundary {
+                if self.optimize_weight_greater_than_sum_boundary && self.precompute_complete_model_graph {
                     add_entry = boundary_sum.is_none() || boundary_sum.unwrap() >= weight;
                 }
                 if add_entry {
@@ -339,8 +358,9 @@ impl CompleteModelGraph {
     pub fn find_shortest_boundary_paths(&mut self, simulator: &Simulator) {
         let model_graph = Arc::clone(&self.model_graph);
         let mut pq = PriorityQueue::<Position, PriorityElement>::new();
-        // create initial priority queue
+        // create initial priority queue and clear existing state (this function might be called multiple times on the fly)
         simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if self.is_node_exist(position) {
+            Arc::get_mut(self.get_node_mut_unwrap(&position).precomputed.as_mut().unwrap()).unwrap().boundary = None;
             let model_graph_node = model_graph.get_node_unwrap(position);
             if let Some(boundary) = &model_graph_node.boundary {
                 pq.push(position.clone(), PriorityElement::new(boundary.weight, position.clone()));

@@ -205,29 +205,29 @@ impl ErasureGraph {
 
 }
 
-// /// temporarily remember the weights that has been changed, so that it can revert back
-// pub struct ErasureGraphModifier<Weight> {
-//     /// edge with 0 weighted caused by the erasure, used by UF decoder or (indirectly) by MWPM decoder
-//     pub modified: Vec<(ErasureEdge, Weight)>,
-// }
+/// temporarily remember the weights that has been changed, so that it can revert back
+pub struct ErasureGraphModifier<Weight> {
+    /// edge with 0 weighted caused by the erasure, used by UF decoder or (indirectly) by MWPM decoder
+    pub modified: Vec<(ErasureEdge, Weight)>,
+}
 
 
-// impl<Weight> ErasureGraphModifier<Weight> {
-//     pub fn new() -> Self {
-//         Self {
-//             modified: Vec::new(),
-//         }
-//     }
-//     /// record the modified edge
-//     pub fn push_modified_edge(&mut self, erasure_edge: ErasureEdge, original_weight: Weight) {
-//         self.modified.push((erasure_edge, original_weight));
-//     }
-//     /// if some edges are not recovered
-//     pub fn has_modified_edges(&self) -> bool {
-//         !self.modified.is_empty()
-//     }
-//     /// retrieve the last modified edge, panic if no more modified edges
-//     pub fn pop_modified_edge(&mut self) -> (ErasureEdge, Weight) {
-//         self.modified.pop().expect("no more modified edges, please check `has_modified_edges` before calling this method")
-//     }
-// }
+impl<Weight> ErasureGraphModifier<Weight> {
+    pub fn new() -> Self {
+        Self {
+            modified: Vec::new(),
+        }
+    }
+    /// record the modified edge
+    pub fn push_modified_edge(&mut self, erasure_edge: ErasureEdge, original_weight: Weight) {
+        self.modified.push((erasure_edge, original_weight));
+    }
+    /// if some edges are not recovered
+    pub fn has_modified_edges(&self) -> bool {
+        !self.modified.is_empty()
+    }
+    /// retrieve the last modified edge, panic if no more modified edges
+    pub fn pop_modified_edge(&mut self) -> (ErasureEdge, Weight) {
+        self.modified.pop().expect("no more modified edges, please check `has_modified_edges` before calling this method")
+    }
+}
