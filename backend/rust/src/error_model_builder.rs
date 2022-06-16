@@ -21,8 +21,10 @@ pub enum ErrorModelBuilder {
     GenericBiasedWithBiasedCX,
     /// arXiv:2104.09539v1 Sec.IV.A
     GenericBiasedWithStandardCX,
-    // 100% erasure errors only on the data qubits before the gates happen and on the ancilla qubits after the gates finish
+    /// 100% erasure errors only on the data qubits before the gates happen and on the ancilla qubits before the measurement
     ErasureOnlyPhenomenological,
+    /// errors happen at 4 stages in each measurement round (although removed errors happening at initialization and measurement stage, measurement errors can still occur when curtain error applies on the ancilla after the last gate)
+    OnlyGateErrorCircuitLevel,
 }
 
 impl ErrorModelBuilder {
@@ -227,6 +229,103 @@ impl ErrorModelBuilder {
                         if node.qubit_type != QubitType::Data {
                             error_model.set_node(position, Some(erasure_node.clone()));
                         }
+                    }
+                });
+            },
+            ErrorModelBuilder::OnlyGateErrorCircuitLevel => {
+                assert_eq!(bias_eta, 0.5, "bias not supported yet, please use the default value 0.5");
+                let mut initialization_error_rate = 0.;
+                let mut measurement_error_rate = 0.;
+                let mut use_correlated_erasure = false;
+                let mut use_correlated_pauli = false;
+                let mut before_pauli_bug_fix = false;
+                let mut config_cloned = error_model_configuration.clone();
+                let config = config_cloned.as_object_mut().expect("error_model_configuration must be JSON object");
+                config.remove("initialization_error_rate").map(|value| initialization_error_rate = value.as_f64().expect("f64"));
+                config.remove("measurement_error_rate").map(|value| measurement_error_rate = value.as_f64().expect("f64"));
+                config.remove("use_correlated_erasure").map(|value| use_correlated_erasure = value.as_bool().expect("bool"));
+                config.remove("use_correlated_pauli").map(|value| use_correlated_pauli = value.as_bool().expect("bool"));
+                config.remove("before_pauli_bug_fix").map(|value| before_pauli_bug_fix = value.as_bool().expect("bool"));
+                if !config.is_empty() { panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>()); }
+                // initialization node
+                let mut initialization_node = ErrorModelNode::new();
+                initialization_node.pauli_error_rates.error_rate_X = initialization_error_rate / 3.;
+                initialization_node.pauli_error_rates.error_rate_Z = initialization_error_rate / 3.;
+                initialization_node.pauli_error_rates.error_rate_Y = initialization_error_rate / 3.;
+                let initialization_node = Arc::new(initialization_node);
+                // iterate over all nodes
+                simulator_iter_real!(simulator, position, node, {
+                    // first clear error rate
+                    error_model.set_node(position, Some(noiseless_node.clone()));
+                    if position.t >= simulator.height - simulator.measurement_cycles {  // no error on the top, as a perfect measurement round
+                        continue
+                    }
+                    // do different things for each stage
+                    match position.t % simulator.measurement_cycles {
+                        1 => {  // initialization
+                            if node.qubit_type != QubitType::Data {
+                                error_model.set_node(position, Some(initialization_node.clone()));
+                            }
+                        },
+                        0 => {  // measurement
+                            // do nothing
+                        },
+                        _ => {
+                            // errors everywhere
+                            let mut this_position_use_correlated_pauli = false;
+                            let mut error_node = ErrorModelNode::new();  // it's perfectly fine to instantiate an error node for each node: just memory inefficient at large code distances
+                            if use_correlated_erasure {
+                                if node.gate_type.is_two_qubit_gate() {
+                                    if node.qubit_type != QubitType::Data {  // this is ancilla
+                                        // better check whether peer is indeed data qubit, but it's hard here due to Rust's borrow check
+                                        let mut correlated_erasure_error_rates = CorrelatedErasureErrorRates::default_with_probability(0.);
+                                        correlated_erasure_error_rates.error_rate_EE = pe;
+                                        correlated_erasure_error_rates.sanity_check();
+                                        error_node.correlated_erasure_error_rates = Some(correlated_erasure_error_rates);
+                                        this_position_use_correlated_pauli = use_correlated_pauli;
+                                    }
+                                }
+                            } else {
+                                error_node.erasure_error_rate = pe;
+                            }
+                            // TODO: update the links
+                            // this bug is hard to find without visualization tool...
+                            // so I develop such a tool at https://qec.wuyue98.cn/ErrorModelViewer2D.html
+                            // to compare: (in url, %20 is space, %22 is double quote)
+                            //     https://qec.wuyue98.cn/ErrorModelViewer2D.html?p=0.01&pe=0.05&parameters=--use_xzzx_code%20--error_model%20OnlyGateErrorCircuitLevelCorrelatedErasure%20--error_model_configuration%20%22{\%22use_correlated_pauli\%22:true}%22
+                            //     https://qec.wuyue98.cn/ErrorModelViewer2D.html?p=0.01&pe=0.05&parameters=--use_xzzx_code%20--error_model%20OnlyGateErrorCircuitLevelCorrelatedErasure%20--error_model_configuration%20%22{\%22use_correlated_pauli\%22:true,\%22before_pauli_bug_fix\%22:true}%22
+                            let mut px_py_pz = if before_pauli_bug_fix {
+                                if this_position_use_correlated_pauli { (0., 0., 0.) } else { (p/3., p/3., p/3.) }
+                            } else {
+                                if use_correlated_pauli { (0., 0., 0.) } else { (p/3., p/3., p/3.) }
+                            };
+                            if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1 && node.qubit_type != QubitType::Data {
+                                // add additional measurement error
+                                // whether it's X axis measurement or Z axis measurement, the additional error rate is always `measurement_error_rate`
+                                px_py_pz = ErrorType::combine_probability(px_py_pz, (measurement_error_rate / 2., measurement_error_rate / 2., measurement_error_rate / 2.));
+                            }
+                            let (px, py, pz) = px_py_pz;
+                            error_node.pauli_error_rates.error_rate_X = px;
+                            error_node.pauli_error_rates.error_rate_Y = py;
+                            error_node.pauli_error_rates.error_rate_Z = pz;
+                            if pe > 0. {  // need to set minimum pauli error when this is subject to erasure
+                                if error_node.pauli_error_rates.error_rate_X == 0. {
+                                    error_node.pauli_error_rates.error_rate_X = 1e-300;  // f64::MIN_POSITIVE ~= 2.22e-308
+                                }
+                                if error_node.pauli_error_rates.error_rate_Y == 0. {
+                                    error_node.pauli_error_rates.error_rate_Y = 1e-300;  // f64::MIN_POSITIVE ~= 2.22e-308
+                                }
+                                if error_node.pauli_error_rates.error_rate_Z == 0. {
+                                    error_node.pauli_error_rates.error_rate_Z = 1e-300;  // f64::MIN_POSITIVE ~= 2.22e-308
+                                }
+                            }
+                            if this_position_use_correlated_pauli {
+                                let correlated_pauli_error_rates = CorrelatedPauliErrorRates::default_with_probability(p / 15.);  // 15 possible errors equally probable
+                                correlated_pauli_error_rates.sanity_check();
+                                error_node.correlated_pauli_error_rates = Some(correlated_pauli_error_rates);
+                            }
+                            error_model.set_node(position, Some(Arc::new(error_node)));
+                        },
                     }
                 });
             },
