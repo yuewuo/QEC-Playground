@@ -294,7 +294,7 @@ pub enum BenchmarkDebugPrint {
     TailoredModelGraph,
     /// tailored complete model graph, supporting decoder config `weight_function` or `wf`, `precompute_complete_model_graph` or `pcmg`
     TailoredCompleteModelGraph,
-    /// print all error patterns immediately after generating random errors, typically useful to pinpoint how program assertion fail
+    /// print all error patterns immediately after generating random errors, typically useful to pinpoint how program assertion fail and debug deadlock
     AllErrorPattern,
     /// print failed error patterns that causes logical errors, typically useful to pinpoint how decoder fails to decode a likely error
     FailedErrorPattern,
@@ -362,11 +362,12 @@ impl BenchmarkControl {
 }
 
 /// decoder might suffer from rare deadlock, and this controller will record the necessary information for debugging with low runtime overhead
-#[derive(Clone, Debug, Serialize)]
-struct BenchmarkThreadDebugger {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct BenchmarkThreadDebugger {
     thread_counter: usize,
     error_pattern: Option<SparseErrorPattern>,
     measurement: Option<SparseMeasurement>,
+    detected_erasures: Option<SparseDetectedErasures>,
     correction: Option<SparseCorrection>,
 }
 
@@ -376,6 +377,7 @@ impl BenchmarkThreadDebugger {
             thread_counter: 0,
             error_pattern: None,
             measurement: None,
+            detected_erasures: None,
             correction: None,
         }
     }
@@ -383,8 +385,21 @@ impl BenchmarkThreadDebugger {
         self.thread_counter = thread_counter;
         self.error_pattern = None;
         self.measurement = None;
+        self.detected_erasures = None;
         self.correction = None;
         self
+    }
+    /// load error to simulator, useful when debug specific case
+    #[allow(dead_code)]
+    pub fn load_errors(&self, simulator: &mut Simulator) {
+        if self.error_pattern.is_some() {
+            simulator.load_sparse_error_pattern(&self.error_pattern.as_ref().unwrap()).expect("success");
+        }
+        if self.detected_erasures.is_some() {
+            simulator.load_sparse_detected_erasures(&self.detected_erasures.as_ref().unwrap()).expect("success");
+        }
+        // propagate the errors and erasures
+        simulator.propagate_errors();
     }
 }
 
@@ -621,13 +636,22 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     // generate random errors and the corresponding measurement
                     let begin = Instant::now();
                     let (error_count, erasure_count) = simulator.generate_random_errors(&error_model);
-                    if thread_timeout >= 0. { thread_debugger.lock().unwrap().error_pattern = Some(simulator.generate_sparse_error_pattern()); }  // runtime debug: find deadlock cases
+                    let sparse_detected_erasures = if erasure_count != 0 { simulator.generate_sparse_detected_erasures() } else { SparseDetectedErasures::new() };
+                    if thread_timeout >= 0. {
+                        let mut thread_debugger = thread_debugger.lock().unwrap();
+                        thread_debugger.error_pattern = Some(simulator.generate_sparse_error_pattern());
+                        thread_debugger.detected_erasures = Some(sparse_detected_erasures.clone());
+                    }  // runtime debug: find deadlock cases
                     if matches!(*debug_print, Some(BenchmarkDebugPrint::AllErrorPattern)) {
                         let sparse_error_pattern = simulator.generate_sparse_error_pattern();
-                        eprintln!("{}", serde_json::to_string(&sparse_error_pattern).expect("serialize should success"));
+                        eprint!("{}", serde_json::to_string(&sparse_error_pattern).expect("serialize should success"));
+                        if sparse_detected_erasures.len() > 0 {  // has detected erasures, report as well
+                            eprintln!(", {}", serde_json::to_string(&sparse_detected_erasures).expect("serialize should success"));
+                        } else {
+                            eprintln!("");
+                        }
                     }
                     let sparse_measurement = if error_count != 0 { simulator.generate_sparse_measurement() } else { SparseMeasurement::new() };
-                    let sparse_detected_erasures = if erasure_count != 0 { simulator.generate_sparse_detected_erasures() } else { SparseDetectedErasures::new() };
                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().measurement = Some(sparse_measurement.clone()); }  // runtime debug: find deadlock cases
                     let prepare_elapsed = begin.elapsed().as_secs_f64();
                     // decode
@@ -637,13 +661,14 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                             (SparseCorrection::new(), json!({}))
                         },
                         BenchmarkDecoder::MWPM => {
-                            mwpm_decoder.as_mut().unwrap().decode(&sparse_measurement)
+                            mwpm_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
                         },
                         BenchmarkDecoder::TailoredMWPM => {
+                            assert!(sparse_detected_erasures.len() == 0, "tailored MWPM decoder doesn't support erasures");
                             tailored_mwpm_decoder.as_mut().unwrap().decode(&sparse_measurement)
                         },
                         BenchmarkDecoder::UnionFind => {
-                            union_find_decoder.as_mut().unwrap().decode(&sparse_measurement)
+                            union_find_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
                         }
                     };
                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().correction = Some(correction.clone()); }  // runtime debug: find deadlock cases

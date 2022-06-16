@@ -21,6 +21,8 @@ pub enum ErrorModelBuilder {
     GenericBiasedWithBiasedCX,
     /// arXiv:2104.09539v1 Sec.IV.A
     GenericBiasedWithStandardCX,
+    // 100% erasure errors only on the data qubits before the gates happen and on the ancilla qubits after the gates finish
+    ErasureOnlyPhenomenological,
 }
 
 impl ErrorModelBuilder {
@@ -198,6 +200,33 @@ impl ErrorModelBuilder {
                                 _ => { }
                             }
                         },
+                    }
+                });
+            },
+            ErrorModelBuilder::ErasureOnlyPhenomenological => {
+                assert_eq!(p, 0., "pauli error should be 0 in this error model");
+                let mut erasure_node = ErrorModelNode::new();
+                // erasure node must have some non-zero pauli error rate for the decoder to work properly
+                erasure_node.pauli_error_rates.error_rate_X = 1e-300;  // f64::MIN_POSITIVE ~= 2.22e-308
+                erasure_node.pauli_error_rates.error_rate_Z = 1e-300;
+                erasure_node.pauli_error_rates.error_rate_Y = 1e-300;
+                erasure_node.erasure_error_rate = pe;
+                let erasure_node = Arc::new(erasure_node);
+                // iterate over all nodes
+                simulator_iter_real!(simulator, position, node, {
+                    // first clear error rate
+                    error_model.set_node(position, Some(noiseless_node.clone()));
+                    if position.t >= simulator.height - simulator.measurement_cycles {  // no error on the top, as a perfect measurement round
+                        continue
+                    }
+                    if position.t % simulator.measurement_cycles == 0 {  // add data qubit erasure at the beginning
+                        if node.qubit_type == QubitType::Data {
+                            error_model.set_node(position, Some(erasure_node.clone()));
+                        }
+                    } else if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1 {  // the round before measurement, add erasures
+                        if node.qubit_type != QubitType::Data {
+                            error_model.set_node(position, Some(erasure_node.clone()));
+                        }
                     }
                 });
             },

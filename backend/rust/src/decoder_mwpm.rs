@@ -65,7 +65,14 @@ impl MWPMDecoder {
     }
 
     /// decode given measurement results
+    #[allow(dead_code)]
     pub fn decode(&mut self, sparse_measurement: &SparseMeasurement) -> (SparseCorrection, serde_json::Value) {
+        self.decode_with_erasure(sparse_measurement, &SparseDetectedErasures::new())
+    }
+
+    /// decode given measurement results and detected erasures
+    pub fn decode_with_erasure(&mut self, sparse_measurement: &SparseMeasurement, sparse_detected_erasures: &SparseDetectedErasures) -> (SparseCorrection, serde_json::Value) {
+        assert!(sparse_detected_erasures.len() == 0, "unimplemented");
         let mut correction = SparseCorrection::new();
         // list nontrivial measurements to be matched
         let to_be_matched = sparse_measurement.to_vec();

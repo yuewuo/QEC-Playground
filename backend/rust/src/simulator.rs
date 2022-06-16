@@ -15,6 +15,7 @@ use ErrorType::*;
 use std::sync::Arc;
 use std::collections::{HashMap, HashSet, BTreeSet, BTreeMap};
 use super::serde_hashkey;
+use super::erasure_graph::*;
 
 
 /// general simulator for two-dimensional code with circuit-level implementation of stabilizer measurements
@@ -606,21 +607,24 @@ impl Simulator {
     pub fn generate_sparse_detected_erasures(&self) -> SparseDetectedErasures {
         let mut sparse_detected_erasures = SparseDetectedErasures::new();
         simulator_iter_real!(self, position, node, {
-            // if node.has_erasure {
-            //     sparse_detected_erasures.erasures.insert(position.clone());
-            //     for pauli_error_connection in node.pauli_error_connections.iter() {
-            //         match pauli_error_connection {
-            //             Either::Left((index1, index2)) => {
-            //                 detected_erasures.connected_insert(index1, index2);
-            //             },
-            //             Either::Right(idx) => {
-            //                 detected_erasures.boundaries.insert(self.fhi(*idx));
-            //             },
-            //         }
-            //     }
-            // }
+            if node.has_erasure {
+                sparse_detected_erasures.erasures.insert(position.clone());
+            }
         });
         sparse_detected_erasures
+    }
+
+    /// load detected erasures back to the simulator
+    pub fn load_sparse_detected_erasures(&mut self, sparse_detected_erasures: &SparseDetectedErasures) -> Result<(), String> {
+        for position in sparse_detected_erasures.iter() {
+            if !self.is_node_exist(position) {
+                return Err(format!("invalid erasure at position {}", position))
+            }
+        }
+        simulator_iter_mut!(self, position, node, {
+            node.has_erasure = sparse_detected_erasures.contains(position);
+        });
+        Ok(())
     }
 
     #[inline(never)]
@@ -792,7 +796,6 @@ impl Simulator {
     }
 
     /// load an error pattern
-    #[allow(dead_code)]
     pub fn load_sparse_error_pattern(&mut self, sparse_error_pattern: &SparseErrorPattern) -> Result<(), String> {
         for (position, _error) in sparse_error_pattern.iter() {
             if !self.is_node_exist(position) {
@@ -968,7 +971,7 @@ impl std::fmt::Display for SimulatorNode {
 }
 
 /// in most cases non-trivial measurements are rare, this sparse structure use `BTreeSet` to store them
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SparseMeasurement {
     pub nontrivial: BTreeSet<Position>,
 }
@@ -1009,14 +1012,10 @@ impl SparseMeasurement {
 }
 
 /// detected erasures along with its effected edges
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SparseDetectedErasures {
     /// the position of the erasure errors
     pub erasures: BTreeSet<Position>,
-    /// two-stabilizer connected with 0 weighted caused by the erasure, used by UF decoder or (indirectly) by MWPM decoder
-    pub connected: BTreeSet<(Position, Position)>,
-    /// stabilizer connected to boundary with 0 weight caused by the erasure, used by UF decoder or (indirectly) by MWPM decoder
-    pub boundaries: BTreeSet<Position>,
 }
 
 impl SparseDetectedErasures {
@@ -1024,13 +1023,30 @@ impl SparseDetectedErasures {
     pub fn new() -> Self {
         Self {
             erasures: BTreeSet::new(),
-            connected: BTreeSet::new(),
-            boundaries: BTreeSet::new(),
         }
+    }
+    /// iterator
+    pub fn iter<'a>(&'a self) -> std::collections::btree_set::Iter<'a, Position> {
+        self.erasures.iter()
     }
     /// the length of non-trivial measurements
     pub fn len(&self) -> usize {
         self.erasures.len()
+    }
+    /// contains element
+    pub fn contains(&self, key: &Position) -> bool {
+        self.erasures.contains(key)
+    }
+    /// compute the edges that are re-weighted to 0 because of these erasures
+    pub fn get_erasure_edges(&self, erasure_graph: &ErasureGraph) -> Vec<ErasureEdge> {
+        let mut erasure_edges = Vec::<ErasureEdge>::new();
+        for erasure in self.erasures.iter() {
+            let erasure_node = erasure_graph.get_node_unwrap(erasure);
+            for erasure_edge in erasure_node.erasure_edges.iter() {
+                erasure_edges.push(erasure_edge.clone());
+            }
+        }
+        erasure_edges
     }
 }
 
@@ -1112,7 +1128,7 @@ impl<'de> Deserialize<'de> for SparseErrorPattern {
 
 /// share methods with [`SparseErrorPattern`] but records **propagated** errors of **data qubits** on **top layer**
 /// , thus in principle it's incompatible with [`SparseErrorPattern`] which records individual errors
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct SparseCorrection(SparseErrorPattern);
 
 impl SparseCorrection {

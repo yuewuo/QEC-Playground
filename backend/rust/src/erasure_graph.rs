@@ -64,6 +64,12 @@ impl ErasureGraph {
         self.get_node(position).as_ref().unwrap()
     }
 
+    /// get mutable `self.nodes[t][i][j]` without position check when compiled in release mode
+    #[inline]
+    pub fn get_node_mut(&'_ mut self, position: &Position) -> &'_ mut Option<Box<ErasureGraphNode>> {
+        &mut self.nodes[position.t][position.i][position.j]
+    }
+
     /// build erasure graph given the simulator and the error model in a specific region, for parallel initialization
     pub fn build_with_region(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, t_start: usize, t_end: usize) {
         let all_possible_errors = ErrorType::all_possible_errors();
@@ -104,7 +110,13 @@ impl ErasureGraph {
                     if sparse_measurement_real.len() == 2 {  // normal edge
                         let position1 = &sparse_measurement_real[0];
                         let position2 = &sparse_measurement_real[1];
-                        erasure_edges.push(ErasureEdge::Connection(position1.clone(), position2.clone()));
+                        let node1 = simulator.get_node_unwrap(position1);
+                        let node2 = simulator.get_node_unwrap(position2);
+                        // edge only happen when qubit type is the same (to isolate X and Z decoding graph in CSS surface code)
+                        let is_same_type = node1.qubit_type == node2.qubit_type;
+                        if is_same_type {
+                            erasure_edges.push(ErasureEdge::Connection(position1.clone(), position2.clone()));
+                        }
                     }
                 }
                 self.nodes[position.t][position.i][position.j] = Some(Box::new(ErasureGraphNode {
@@ -156,10 +168,10 @@ impl ErasureGraph {
             }
             // move the data from instances (without additional large memory allocation)
             for parallel_idx in 0..parallel {
-                let instance = instances[parallel_idx].lock().unwrap();
+                let mut instance = instances[parallel_idx].lock().unwrap();
                 simulator_iter!(simulator, position, if instance.is_node_exist(position) {
                     assert!(!self.is_node_exist(position), "critical bug: two parallel tasks should not work on the same vertex");
-                    std::mem::swap(&mut self.get_node(position), &mut instance.get_node(position));
+                    std::mem::swap(self.get_node_mut(position), &mut instance.get_node_mut(position));
                 });
             }
         }
@@ -192,3 +204,30 @@ impl ErasureGraph {
     }
 
 }
+
+// /// temporarily remember the weights that has been changed, so that it can revert back
+// pub struct ErasureGraphModifier<Weight> {
+//     /// edge with 0 weighted caused by the erasure, used by UF decoder or (indirectly) by MWPM decoder
+//     pub modified: Vec<(ErasureEdge, Weight)>,
+// }
+
+
+// impl<Weight> ErasureGraphModifier<Weight> {
+//     pub fn new() -> Self {
+//         Self {
+//             modified: Vec::new(),
+//         }
+//     }
+//     /// record the modified edge
+//     pub fn push_modified_edge(&mut self, erasure_edge: ErasureEdge, original_weight: Weight) {
+//         self.modified.push((erasure_edge, original_weight));
+//     }
+//     /// if some edges are not recovered
+//     pub fn has_modified_edges(&self) -> bool {
+//         !self.modified.is_empty()
+//     }
+//     /// retrieve the last modified edge, panic if no more modified edges
+//     pub fn pop_modified_edge(&mut self) -> (ErasureEdge, Weight) {
+//         self.modified.pop().expect("no more modified edges, please check `has_modified_edges` before calling this method")
+//     }
+// }
