@@ -14,7 +14,7 @@ rough_runtime_budgets = [(30000, 30000, 3600), (30000, 30000, 3600)]  # (max_rep
 rough_init_search_start_p = 0.12
 code_distances = [13, 15, 17, 19, 21]
 runtime_budgets = [(30000, 30000, 3600 * 10)] * len(code_distances)  # each given 10 hours
-target_relative_diff = 0.5
+target_relative_diff = 50  # don't know why... but I have to adjust this number to get a reasonable range of p
 fit_samples = 7
 bias_eta = 1e200
 
