@@ -4,11 +4,6 @@ use std::env;
 fn main() {
 
     let target_os = env::var("CARGO_CFG_TARGET_OS");
-
-    cc::Build::new()
-        .cpp(true)
-        .file("../../backend/blossomV/test.cpp")
-        .compile("test");
     
     let mut build = cc::Build::new();
 
@@ -44,6 +39,5 @@ fn main() {
         println!("cargo:rustc-link-lib=static=stdc++");  // have to add this to compile c++ (new, delete operators)
     }
 
-    println!("cargo:rustc-link-lib=static=test");
     println!("cargo:rustc-link-lib=static=blossomV");
 }
