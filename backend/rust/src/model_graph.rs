@@ -95,7 +95,7 @@ pub mod weight_function {
 impl ModelGraph {
     /// initialize the structure corresponding to a `Simulator`
     pub fn new(simulator: &Simulator) -> Self {
-        assert!(simulator.volume() > 0, "cannot build graph out of zero-sized simulator");
+        assert!(simulator.volume() > 0, "cannot build model graph out of zero-sized simulator");
         Self {
             nodes: (0..simulator.height).map(|t| {
                 (0..simulator.vertical).map(|i| {

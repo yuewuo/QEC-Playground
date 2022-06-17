@@ -25,6 +25,7 @@ mod tailored_model_graph;
 mod tailored_complete_model_graph;
 mod error_model_builder;
 mod union_find;
+mod erasure_graph;
 
 extern crate clap;
 #[macro_use] extern crate serde_json;

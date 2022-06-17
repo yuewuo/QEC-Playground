@@ -1,30 +1,24 @@
+use super::cfg_if;
 use super::libc;
-use libc::{c_ulonglong, c_double, c_int};
+use libc::{c_int};
 use std::collections::BTreeSet;
 
-#[link(name = "test")]
-extern {
-    fn square(value: c_ulonglong) -> c_ulonglong;
-    fn square_all(length: c_ulonglong, input: *const c_double, output: *mut c_double);
-}
 
-pub fn safe_square(value: u64) -> u64 {
-    unsafe { square(value) as u64 }
-}
+cfg_if::cfg_if! {
+    if #[cfg(feature="blossom_v")] {
 
-pub fn safe_square_all(input: Vec<f64>) -> Vec<f64> {
-    let length = input.len();
-    let mut output = Vec::with_capacity(length);
-    unsafe {
-        square_all(length as u64, input.as_ptr(), output.as_mut_ptr());
-        output.set_len(length);
+        #[link(name = "blossomV")]
+        extern {
+            fn minimum_weight_perfect_matching(node_num: c_int, edge_num: c_int, edges: *const c_int, weights: *const c_int, matched: *mut c_int);
+        }
+
+    } else {
+
+        fn minimum_weight_perfect_matching(_node_num: c_int, _edge_num: c_int, _edges: *const c_int, _weights: *const c_int, _matched: *mut c_int) {
+            unimplemented!("need blossom V library, see README.md")
+        }
+
     }
-    output
-}
-
-#[link(name = "blossomV")]
-extern {
-    fn minimum_weight_perfect_matching(node_num: c_int, edge_num: c_int, edges: *const c_int, weights: *const c_int, matched: *mut c_int);
 }
 
 pub fn safe_minimum_weight_perfect_matching_integer_weights(node_num: usize, input_weighted_edges: Vec<(usize, usize, c_int)>) -> Vec<usize> {

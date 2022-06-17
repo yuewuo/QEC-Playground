@@ -15,6 +15,7 @@ use ErrorType::*;
 use std::sync::Arc;
 use std::collections::{HashMap, HashSet, BTreeSet, BTreeMap};
 use super::serde_hashkey;
+use super::erasure_graph::*;
 
 
 /// general simulator for two-dimensional code with circuit-level implementation of stabilizer measurements
@@ -356,7 +357,7 @@ impl Simulator {
 
     /// generate random errors according to the given error rates
     #[inline(never)]
-    pub fn generate_random_errors(&mut self, error_model: &ErrorModel) -> usize {
+    pub fn generate_random_errors(&mut self, error_model: &ErrorModel) -> (usize, usize) {
         // this size is small compared to the simulator itself
         let allocate_size = self.height * self.vertical * self.horizontal;
         let mut pending_pauli_errors = Vec::<(Position, ErrorType)>::with_capacity(allocate_size);
@@ -365,6 +366,7 @@ impl Simulator {
         // let mut pending_erasure_errors = Vec::<Position>::new();
         let mut rng = self.rng.clone();  // avoid mutable borrow
         let mut error_count = 0;
+        let mut erasure_count = 0;
         // first apply single-qubit errors
         simulator_iter_mut!(self, position, node, {
             let error_model_node = error_model.get_node_unwrap(position);
@@ -437,6 +439,9 @@ impl Simulator {
         // apply pending erasure errors, amd generate random pauli error
         for position in pending_erasure_errors.iter() {
             let mut node = self.get_node_mut_unwrap(&position);
+            if !node.has_erasure {  // only counts new erasures; there might be duplicated pending erasure
+                erasure_count += 1;
+            }
             node.has_erasure = true;
             if node.error != I {
                 error_count -= 1;
@@ -455,9 +460,13 @@ impl Simulator {
             let sparse_error_pattern = self.generate_sparse_error_pattern();
             sparse_error_pattern.len() == error_count
         });
+        debug_assert!({
+            let sparse_detected_erasures = self.generate_sparse_detected_erasures();
+            sparse_detected_erasures.len() == erasure_count
+        });
         self.rng = rng;  // save the random number generator
         self.propagate_errors();
-        error_count
+        (error_count, erasure_count)
     }
 
     /// clear all pauli and erasure errors and also propagated errors, returning to a clean state
@@ -591,6 +600,31 @@ impl Simulator {
             });
         }
         sparse_measurement_virtual
+    }
+
+    /// generate detected erasures
+    #[inline(never)]
+    pub fn generate_sparse_detected_erasures(&self) -> SparseDetectedErasures {
+        let mut sparse_detected_erasures = SparseDetectedErasures::new();
+        simulator_iter_real!(self, position, node, {
+            if node.has_erasure {
+                sparse_detected_erasures.erasures.insert(position.clone());
+            }
+        });
+        sparse_detected_erasures
+    }
+
+    /// load detected erasures back to the simulator
+    pub fn load_sparse_detected_erasures(&mut self, sparse_detected_erasures: &SparseDetectedErasures) -> Result<(), String> {
+        for position in sparse_detected_erasures.iter() {
+            if !self.is_node_exist(position) {
+                return Err(format!("invalid erasure at position {}", position))
+            }
+        }
+        simulator_iter_mut!(self, position, node, {
+            node.has_erasure = sparse_detected_erasures.contains(position);
+        });
+        Ok(())
     }
 
     #[inline(never)]
@@ -762,7 +796,6 @@ impl Simulator {
     }
 
     /// load an error pattern
-    #[allow(dead_code)]
     pub fn load_sparse_error_pattern(&mut self, sparse_error_pattern: &SparseErrorPattern) -> Result<(), String> {
         for (position, _error) in sparse_error_pattern.iter() {
             if !self.is_node_exist(position) {
@@ -938,7 +971,7 @@ impl std::fmt::Display for SimulatorNode {
 }
 
 /// in most cases non-trivial measurements are rare, this sparse structure use `BTreeSet` to store them
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SparseMeasurement {
     pub nontrivial: BTreeSet<Position>,
 }
@@ -975,6 +1008,45 @@ impl SparseMeasurement {
     /// the length of non-trivial measurements
     pub fn len(&self) -> usize {
         self.nontrivial.len()
+    }
+}
+
+/// detected erasures along with its effected edges
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SparseDetectedErasures {
+    /// the position of the erasure errors
+    pub erasures: BTreeSet<Position>,
+}
+
+impl SparseDetectedErasures {
+    /// create a new clean measurement without nontrivial measurements
+    pub fn new() -> Self {
+        Self {
+            erasures: BTreeSet::new(),
+        }
+    }
+    /// iterator
+    pub fn iter<'a>(&'a self) -> std::collections::btree_set::Iter<'a, Position> {
+        self.erasures.iter()
+    }
+    /// the length of non-trivial measurements
+    pub fn len(&self) -> usize {
+        self.erasures.len()
+    }
+    /// contains element
+    pub fn contains(&self, key: &Position) -> bool {
+        self.erasures.contains(key)
+    }
+    /// compute the edges that are re-weighted to 0 because of these erasures
+    pub fn get_erasure_edges(&self, erasure_graph: &ErasureGraph) -> Vec<ErasureEdge> {
+        let mut erasure_edges = Vec::<ErasureEdge>::new();
+        for erasure in self.erasures.iter() {
+            let erasure_node = erasure_graph.get_node_unwrap(erasure);
+            for erasure_edge in erasure_node.erasure_edges.iter() {
+                erasure_edges.push(erasure_edge.clone());
+            }
+        }
+        erasure_edges
     }
 }
 
@@ -1056,7 +1128,7 @@ impl<'de> Deserialize<'de> for SparseErrorPattern {
 
 /// share methods with [`SparseErrorPattern`] but records **propagated** errors of **data qubits** on **top layer**
 /// , thus in principle it's incompatible with [`SparseErrorPattern`] which records individual errors
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct SparseCorrection(SparseErrorPattern);
 
 impl SparseCorrection {
@@ -1122,7 +1194,7 @@ mod tests {
         assert!(!simulator.is_node_exist(&nonexisting_position), "nonexisting position");
         println!("std::mem::size_of::<SimulatorNode>() = {}", std::mem::size_of::<SimulatorNode>());
         println!("std::mem::size_of::<ErrorModelNode>() = {}", std::mem::size_of::<ErrorModelNode>());
-        if std::mem::size_of::<SimulatorNode>() > 24 {  // ArmV8 data cache line is 64 bytes
+        if std::mem::size_of::<SimulatorNode>() > 32 {  // ArmV8 data cache line is 64 bytes
             panic!("SimulatorNode which is unexpectedly large, check if anything wrong");
         }
     }

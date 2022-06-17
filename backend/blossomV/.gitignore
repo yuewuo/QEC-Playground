@@ -1,2 +1,9 @@
 *.a
 *.o
+*.h
+*.cpp
+!blossomV.cpp
+Makefile
+*.TXT
+MinCost
+GEOM

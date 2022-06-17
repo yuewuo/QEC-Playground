@@ -7,6 +7,15 @@ The code is already running at [https://wuyue98.cn/QECPlayground/](https://wuyue
 
 We assume Ubuntu 18.04 system, but installation on Win10 is feasible in similar way.
 
+[Blossom V](https://doi.org/10.1007/s12532-009-0002-8) is widely-used in existing MWPM decoders, but according to the license we cannot embed it in this library.
+To run the MWPM decoder, you need to download this library [at this website](https://pub.ist.ac.at/~vnk/software.html) to folder `backend/blossomV`.
+
+```shell
+wget -c https://pub.ist.ac.at/~vnk/software/blossom5-v2.05.src.tar.gz -O - | tar -xz
+cp -r blossom5-v2.05.src/* backend/blossomV/
+rm -r blossom5-v2.05.src
+```
+
 ### Backend
 
 We use Rust programming language for backend server, implementing decoder algorithms and serving as HTTP service. First install Rust and its package manager Cargo

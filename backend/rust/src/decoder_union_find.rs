@@ -17,12 +17,15 @@ use crate::rand::thread_rng;
 use crate::rand::seq::SliceRandom;
 use crate::parking_lot::RwLock;
 use crate::derive_more::{Deref, DerefMut};
+use super::erasure_graph::*;
 
 /// MWPM decoder, initialized and cloned for multiple threads
 #[derive(Debug, Clone, Serialize)]
 pub struct UnionFindDecoder {
     /// model graph is immutably shared, just in case need to print out real weights instead of scaled and truncated weights
     pub model_graph: Arc<ModelGraph>,
+    /// erasure graph is immutably shared
+    pub erasure_graph: Arc<ErasureGraph>,
     /// complete model graph each thread maintain its own precomputed data
     pub complete_model_graph: CompleteModelGraph,
     /// index to position mapping (immutable shared), index is the one used in the union-find algorithm
@@ -183,8 +186,12 @@ impl UnionFindDecoder {
         // build model graph
         let mut simulator = simulator.clone();
         let mut model_graph = ModelGraph::new(&simulator);
-        model_graph.build(&mut simulator, error_model, &config.weight_function, parallel, config.use_combined_probability, use_brief_edge);
+        model_graph.build(&mut simulator, Arc::clone(&error_model), &config.weight_function, parallel, config.use_combined_probability, use_brief_edge);
         let model_graph = Arc::new(model_graph);
+        // build erasure graph
+        let mut erasure_graph = ErasureGraph::new(&simulator);
+        erasure_graph.build(&mut simulator, Arc::clone(&error_model), parallel);
+        let erasure_graph = Arc::new(erasure_graph);
         // build complete model graph
         let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
         complete_model_graph.optimize_weight_greater_than_sum_boundary = false;  // disable this optimization for any matching pair to exist
@@ -292,7 +299,8 @@ impl UnionFindDecoder {
         }
         let union_find = UnionFind::new(nodes.len());
         Self {
-            model_graph: Arc::clone(&model_graph),
+            model_graph: model_graph,
+            erasure_graph: erasure_graph,
             complete_model_graph: complete_model_graph,
             index_to_position: Arc::new(index_to_position),
             position_to_index: Arc::new(position_to_index),
@@ -385,7 +393,6 @@ impl UnionFindDecoder {
             self.cluster_boundaries[index].clear();
             self.cluster_boundaries[index].push(index);
             self.idle_cluster_boundaries[index].clear();
-            // TODO: copy length and boundary_length as well, since erasure error decoding requires modifying them on the fly
         }
         self.odd_clusters.clear();
         self.idle_odd_clusters.clear();
@@ -402,7 +409,13 @@ impl UnionFindDecoder {
     }
 
     /// decode given measurement results
+    #[allow(dead_code)]
     pub fn decode(&mut self, sparse_measurement: &SparseMeasurement) -> (SparseCorrection, serde_json::Value) {
+        self.decode_with_erasure(sparse_measurement, &SparseDetectedErasures::new())
+    }
+
+    /// decode given measurement results and detected erasures
+    pub fn decode_with_erasure(&mut self, sparse_measurement: &SparseMeasurement, sparse_detected_erasures: &SparseDetectedErasures) -> (SparseCorrection, serde_json::Value) {
         // clean the state and then read measurement result
         let time_prepare_decoders = {
             let begin = Instant::now();
@@ -421,6 +434,29 @@ impl UnionFindDecoder {
             // eprintln!("self.odd_clusters: {:?}", self.odd_clusters);
             begin.elapsed().as_secs_f64()
         };
+        // load the erasure information
+        if sparse_detected_erasures.len() > 0 {
+            let erasure_edges = sparse_detected_erasures.get_erasure_edges(&self.erasure_graph);
+            for erasure_edge in erasure_edges.iter() {
+                match erasure_edge {
+                    ErasureEdge::Connection(position1, position2) => {
+                        let index1 = self.position_to_index[position1];
+                        let index2 = self.position_to_index[position2];
+                        let node1 = self.nodes.get_mut(index1).unwrap();
+                        let neighbor = node1.index_to_neighbor(&index2).expect("neighbor must exist");
+                        let neighbor_edge_ptr = &node1.neighbors[neighbor].1;
+                        let mut neighbor_edge = neighbor_edge_ptr.write();
+                        neighbor_edge.increased = neighbor_edge.length;
+                    },
+                    ErasureEdge::Boundary(position) => {
+                        let index = self.position_to_index[position];
+                        let node = self.nodes.get_mut(index).unwrap();
+                        node.boundary_increased = node.boundary_length.expect("boundary must exist");
+                    },
+                }
+            }
+            self.run_single_iteration_optional_grow(true);  // need to update the state of clusters after manually set the growth of each edge
+        }
         // decode
         let time_run_to_stable = if sparse_measurement.len() > 0 {
             let begin = Instant::now();
@@ -511,6 +547,7 @@ impl UnionFindDecoder {
         // let mut max_steps = 20usize;
         let mut max_steps = usize::MAX;
         while !self.odd_clusters.is_empty() && max_steps > 0 {
+            eprintln!("odd_clusters: {:?}", self.odd_clusters);
             println!("[info] iteration begin");
             if max_steps != usize::MAX { max_steps -= 1; }
             self.debug_print_clusters();
@@ -634,9 +671,14 @@ impl UnionFindDecoder {
 
     /// grow and update cluster boundaries
     #[inline(never)]
-    fn run_single_iteration_uf_grow(&mut self, grow_step: usize) {
+    fn run_single_iteration_uf_grow(&mut self, grow_step: usize, no_growing: bool) {
         let fusion_list = &mut self.fusion_list;
         fusion_list.clear();
+        if no_growing {  // must iterate all clusters no matter it's odd or even to calculate the correct fusion list and boundary touching conditions
+            // failed to doing so will decrease the accuracy of this decoder: because the cluster states are not valid at the beginning
+            // clusters may grow unnecessarily and lead to additional logical errors
+            self.odd_clusters = (0..self.nodes.len()).collect();
+        }
         for &odd_cluster in self.odd_clusters.iter() {
             self.count_memory_access += 1;
             let boundaries_vec = &self.cluster_boundaries[odd_cluster];
@@ -652,11 +694,17 @@ impl UnionFindDecoder {
                         let mut edge = edge_ptr.write();
                         let mut is_fusion = false;
                         self.count_memory_access += 2;
-                        if edge.increased < edge.length {  // not grown
-                            self.count_memory_access += 1;  // write
-                            edge.increased += grow_step;  // may over-grown, but ok as long as weight is much smaller than usize::MAX
-                            if edge.increased >= edge.length {  // found new grown edge
+                        if no_growing {
+                            if edge.increased >= edge.length {
                                 is_fusion = true;
+                            }
+                        } else {
+                            if edge.increased < edge.length {  // not grown
+                                self.count_memory_access += 1;  // write
+                                edge.increased += grow_step;  // may over-grown, but ok as long as weight is much smaller than usize::MAX
+                                if edge.increased >= edge.length {  // found new grown edge
+                                    is_fusion = true;
+                                }
                             }
                         }
                         (is_fusion, *neighbor_index)
@@ -673,15 +721,23 @@ impl UnionFindDecoder {
                     Some(boundary_length) => {
                         let boundary_increased = &mut self.nodes[boundary].boundary_increased;
                         self.count_memory_access += 1;
-                        if *boundary_increased < boundary_length {
-                            *boundary_increased += grow_step;
-                            self.count_memory_access += 1;  // write
+                        if no_growing {
                             if *boundary_increased >= boundary_length {
                                 let union_find_node = self.union_find.get_mut(boundary);
-                                self.count_memory_access += 1;
                                 union_find_node.is_touching_boundary = true;  // this set is touching the boundary
                                 union_find_node.touching_boundary_index = boundary;
-                                self.count_memory_access += 2;
+                            }
+                        } else {
+                            if *boundary_increased < boundary_length {
+                                *boundary_increased += grow_step;
+                                self.count_memory_access += 1;  // write
+                                if *boundary_increased >= boundary_length {
+                                    let union_find_node = self.union_find.get_mut(boundary);
+                                    self.count_memory_access += 1;
+                                    union_find_node.is_touching_boundary = true;  // this set is touching the boundary
+                                    union_find_node.touching_boundary_index = boundary;
+                                    self.count_memory_access += 2;
+                                }
                             }
                         }
                     },
@@ -847,7 +903,13 @@ impl UnionFindDecoder {
     /// run a single iteration
     #[inline(never)]
     fn run_single_iteration(&mut self) {
-        let grow_step = {
+        self.run_single_iteration_optional_grow(false)
+    }
+
+    /// run a single iteration; if `no_growing` is set, then only update state without grow it
+    #[inline(never)]
+    fn run_single_iteration_optional_grow(&mut self, no_growing: bool) {
+        let grow_step = if no_growing { 1 } else {
             let begin = Instant::now();
             let grow_step = self.run_single_iteration_get_grow_step();
             self.time_uf_grow_step += begin.elapsed().as_secs_f64();
@@ -855,7 +917,7 @@ impl UnionFindDecoder {
         };
         {
             let begin = Instant::now();
-            self.run_single_iteration_uf_grow(grow_step);
+            self.run_single_iteration_uf_grow(grow_step, no_growing);
             self.time_uf_grow += begin.elapsed().as_secs_f64();
         }
         {
@@ -933,6 +995,8 @@ mod tests {
     use super::*;
     use super::super::code_builder::*;
     use super::super::types::ErrorType::*;
+    use super::super::error_model_builder::*;
+    use super::super::tool::*;
 
     #[test]
     fn union_find_decoder_code_capacity() {  // cargo test union_find_decoder_code_capacity -- --nocapture
@@ -1031,4 +1095,75 @@ mod tests {
         }
     }
     
+    // 2022.6.15: found an infinite-loop case
+    // {"correction":null,"detected_erasures":{"erasures":["[0][1][5]","[0][3][7]","[0][4][2]","[0][4][8]","[0][5][1]","[0][6][8]","[0][7][3]","[0][9][5]"]},"error_pattern":{"[0][1][5]":"Y","[0][4][2]":"X","[0][5][1]":"X"},"measurement":null,"thread_counter":451986}
+    // cargo run --release -- tool benchmark [5] [0] [0] --pes [0.1] --max_repeats 0 --min_failed_cases 0 --time_budget 60 --decoder union-find --decoder_config=\{\"pcmg\":true\} --code_type StandardPlanarCode --error_model erasure-only-phenomenological
+    #[test]
+    fn union_find_decoder_debug_1() {  // cargo test union_find_decoder_debug_1 -- --nocapture
+        let d = 5;
+        let noisy_measurements = 0;  // perfect measurement
+        let p = 0.;
+        let pe = 0.1;
+        // build simulator
+        let mut simulator = Simulator::new(CodeType::StandardPlanarCode{ noisy_measurements, di: d, dj: d });
+        code_builder_sanity_check(&simulator).unwrap();
+        // build error model
+        let mut error_model = ErrorModel::new(&simulator);
+        let error_model_builder = ErrorModelBuilder::ErasureOnlyPhenomenological;
+        error_model_builder.apply(&mut simulator, &mut error_model, &json!({}), p, 1., pe);
+        simulator.compress_error_rates(&mut error_model);
+        error_model_sanity_check(&simulator, &error_model).unwrap();
+        let error_model = Arc::new(error_model);
+        // build decoder
+        let decoder_config = json!({
+            "precompute_complete_model_graph": true,
+        });
+        let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
+        // load errors onto the simulator
+        let debug_case: BenchmarkThreadDebugger = serde_json::from_value(json!({"correction":null,"detected_erasures":{"erasures":["[0][1][5]","[0][3][7]","[0][4][2]","[0][4][8]","[0][5][1]","[0][6][8]","[0][7][3]","[0][9][5]"]},"error_pattern":{"[0][1][5]":"Y","[0][4][2]":"X","[0][5][1]":"X"},"measurement":null,"thread_counter":451986})).unwrap();
+        debug_case.load_errors(&mut simulator);
+        let sparse_measurement = simulator.generate_sparse_measurement();
+        println!("sparse_measurement: {:?}", sparse_measurement);
+        let sparse_detected_erasures = simulator.generate_sparse_detected_erasures();
+        let (correction, _runtime_statistics) = union_find_decoder.decode_with_erasure(&sparse_measurement, &sparse_detected_erasures);
+        code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
+        let (logical_i, logical_j) = simulator.validate_correction(&correction);
+        assert!(!logical_i && !logical_j);
+    }
+
+    // a verifier of `mwpm_decoder_debug_1`
+    #[test]
+    fn union_find_debug_2() {  // cargo test union_find_debug_2 -- --nocapture
+        let d = 5;
+        let noisy_measurements = 0;  // perfect measurement
+        let p = 0.;
+        let pe = 0.1;
+        // build simulator
+        let mut simulator = Simulator::new(CodeType::StandardPlanarCode{ noisy_measurements, di: d, dj: d });
+        code_builder_sanity_check(&simulator).unwrap();
+        // build error model
+        let mut error_model = ErrorModel::new(&simulator);
+        let error_model_builder = ErrorModelBuilder::ErasureOnlyPhenomenological;
+        error_model_builder.apply(&mut simulator, &mut error_model, &json!({}), p, 1., pe);
+        simulator.compress_error_rates(&mut error_model);
+        error_model_sanity_check(&simulator, &error_model).unwrap();
+        let error_model = Arc::new(error_model);
+        // build decoder
+        let decoder_config = json!({});
+        let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
+        // load errors onto the simulator
+        let sparse_error_pattern: SparseErrorPattern = serde_json::from_value(json!({"[0][1][5]":"Z","[0][2][6]":"Z","[0][4][4]":"X","[0][5][7]":"X","[0][9][7]":"Y"})).unwrap();
+        let sparse_detected_erasures: SparseDetectedErasures = serde_json::from_value(json!({"erasures":["[0][1][3]","[0][1][5]","[0][2][6]","[0][4][4]","[0][5][7]","[0][6][6]","[0][9][7]"]})).unwrap();
+        simulator.load_sparse_error_pattern(&sparse_error_pattern).expect("success");
+        simulator.load_sparse_detected_erasures(&sparse_detected_erasures).expect("success");
+        simulator.propagate_errors();
+        let sparse_measurement = simulator.generate_sparse_measurement();
+        println!("sparse_measurement: {:?}", sparse_measurement);
+        let sparse_detected_erasures = simulator.generate_sparse_detected_erasures();
+        let (correction, _runtime_statistics) = union_find_decoder.decode_with_erasure(&sparse_measurement, &sparse_detected_erasures);
+        code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
+        let (logical_i, logical_j) = simulator.validate_correction(&correction);
+        assert!(!logical_i && !logical_j);
+    }
+
 }
