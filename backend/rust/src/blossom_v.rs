@@ -1,11 +1,24 @@
+use super::cfg_if;
 use super::libc;
-use libc::{c_ulonglong, c_double, c_int};
+use libc::{c_int};
 use std::collections::BTreeSet;
 
 
-#[link(name = "blossomV")]
-extern {
-    fn minimum_weight_perfect_matching(node_num: c_int, edge_num: c_int, edges: *const c_int, weights: *const c_int, matched: *mut c_int);
+cfg_if::cfg_if! {
+    if #[cfg(feature="blossom_v")] {
+
+        #[link(name = "blossomV")]
+        extern {
+            fn minimum_weight_perfect_matching(node_num: c_int, edge_num: c_int, edges: *const c_int, weights: *const c_int, matched: *mut c_int);
+        }
+
+    } else {
+
+        fn minimum_weight_perfect_matching(_node_num: c_int, _edge_num: c_int, _edges: *const c_int, _weights: *const c_int, _matched: *mut c_int) {
+            unimplemented!("need blossom V library, see README.md")
+        }
+
+    }
 }
 
 pub fn safe_minimum_weight_perfect_matching_integer_weights(node_num: usize, input_weighted_edges: Vec<(usize, usize, c_int)>) -> Vec<usize> {

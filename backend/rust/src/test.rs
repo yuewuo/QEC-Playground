@@ -526,12 +526,6 @@ fn archived_debug_tests() {
             println!("[error] compiling feature `python_interfaces` not enabled")
         }
     }
-    {  // test call c function
-        println!("{}", blossom_v::safe_square(5));
-        let input = vec![1., 2., 3., 4.];
-        let output = blossom_v::safe_square_all(input);
-        println!("{:?}", output);
-    }
     {  // call blossom V matching
         let weighted_edges = vec![
             (0, 1, -3.),
