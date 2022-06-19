@@ -2,6 +2,3 @@
 __pycache__
 .DS_Store
 history.tmp
-
-# the compiled book is not committed to the git repo
-/documentation/book
