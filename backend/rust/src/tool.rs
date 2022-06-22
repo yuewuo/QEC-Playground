@@ -817,7 +817,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         }
         pb.finish();
         eprintln!("{}", progress_information());
-        output += &format!("\n{}\n", progress_information());
+        output += &format!("\n{}", progress_information());
     }
     output
 }

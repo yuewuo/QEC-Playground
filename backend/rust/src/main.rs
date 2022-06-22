@@ -310,7 +310,7 @@ async fn main() -> std::io::Result<()> {
         Some(("tool", matches)) => {
             let output = tool::run_matched_tool(&matches);
             match output {
-                Some(to_print) => { print!("{}", to_print); }
+                Some(to_print) => { println!("{}", to_print); }
                 None => { }
             }
         }

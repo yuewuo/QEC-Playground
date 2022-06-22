@@ -31,3 +31,6 @@ heading-split-level = 2
 
 [build]
 build-dir = "../docs"
+
+[preprocessor.bib]
+bibliography = "ref.bib"

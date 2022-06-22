@@ -6,135 +6,96 @@ A research tool to explore Quantum Error Correction (QEC), primarily surface cod
 
 ## Installation
 
-The code is already running at [https://wuyue98.cn/QECPlayground/](https://wuyue98.cn/QECPlayground/), but if you're interested in building them on yourself, follow this guide.
+See the [QEC-Playground Documentation: Installation](https://yuewuo.github.io/QEC-Playground/guide/installation.html) for the detailed instructions.
+A brief example is below.
 
-We assume Ubuntu 18.04 system, but installation on Win10 is feasible in similar way.
-
-[Blossom V](https://doi.org/10.1007/s12532-009-0002-8) is widely-used in existing MWPM decoders, but according to the license we cannot embed it in this library.
-To run the MWPM decoder, you need to download this library [at this website](https://pub.ist.ac.at/~vnk/software.html) to folder `backend/blossomV`.
-
-```shell
+```bash
+# Download the Blossom V Library [Optional]
 wget -c https://pub.ist.ac.at/~vnk/software/blossom5-v2.05.src.tar.gz -O - | tar -xz
 cp -r blossom5-v2.05.src/* backend/blossomV/
 rm -r blossom5-v2.05.src
-```
 
-### Backend
-
-We use Rust programming language for backend server, implementing decoder algorithms and serving as HTTP service. First install Rust and its package manager Cargo
-
-```bash
-curl https://sh.rustup.rs -sSf | sh
-source ~/.bashrc  # this will add `~/.cargo/bin` to path
-```
-
-Use default installation and it will show up `Rust is installed now. Great!`
-
-Then compile the backend
-
-```bash
-cd backend/rust/
-cargo build --release
-cargo run --release -- server  # start http server at http://127.0.0.1:8066
-```
-
-Install necessary python packets
-
-```bash
+# Install the Python Dependencies [Optional]
 sudo apt install python3 python3-pip
 pip3 install networkx
+
+# Install the Rust Toolchain
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.bashrc  # this will add `~/.cargo/bin` to path
+cd backend/rust/
+cargo build --release
+cd ../../
 ```
 
-### Frontend
 
-We use Vue.js to implement code and use npm package manager to build code. Download and install npm from https://nodejs.org/en/download/ first, then install vue CLI
+## Command-line Interface
 
-```bash
-npm install -g @vue/cli
-vue --version  # check whether installation is successful
-vue ui  # this will start a web page
-# select the folder of /qecplayground which contains the Vue project
-# then you can use GUI in browser to build the code
-```
+See the [QEC-Playground Documentation: CLI](https://yuewuo.github.io/QEC-Playground/guide/cli.html) for the detailed instructions.
+A brief example use case is below.
 
-Or you can use command line to build the frontend project
-
-```bash
-npm install
-npm run build  # build code into dist/ folder
-npm run serve  # fast debugging, hot re-compile
-```
-
-## Decoder Benchmark
-
-Run `cargo run -- help ` under `rust/` folder to get all provided commands of backend program, the output is below:
+Run `cargo run --release -- --help` under `backend/rust/` folder to get all provided commands of backend program.
+The option `--help` prints out the information of this command, which can be helpful to find subcommands as well as to understand the purpose of each option.
+An example output is below.
 
 ```init
-QECPlayground 1.0
-Yue Wu yue.wu@yale.edu
-Quantum Error Correction Playground for BIM'20 course
+QECPlayground 0.1.6
+Yue Wu <yue.wu@yale.edu>, Namitha Liyanage (namitha.liyanage@yale.edu)
+Quantum Error Correction Playground
 
 USAGE:
     qecp <SUBCOMMAND>
 
-FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
+OPTIONS:
+    -h, --help       Print help information
+    -V, --version    Print version information
 
 SUBCOMMANDS:
-    help      Prints this message or the help of the given subcommand(s)
-    server    HTTP server for decoding information
-    test      testing features
-    tool      tools
+    fpga_generator    fpga_generator
+    help              Print this message or the help of the given subcommand(s)
+    server            HTTP server for decoding information
+    test              testing features
+    tool              tools
 ```
 
-To run a simulation to get the error rate of decoder, run `cargo run -- tool automatic_benchmark -h`
+To run a simulation to benchmark the logical error rate of decoder, run `cargo run --release -- tool benchmark --help`. An example output is below.
 
 ```bash
-qecp-tool-automatic_benchmark
-automatically run benchmark with round upper bound, lower bound and minimum error cases
+qecp-tool-benchmark 0.1.6
+benchmark surface code decoders
 
 USAGE:
-    qecp tool automatic_benchmark [OPTIONS] <Ls> <ps>
-
-FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
-
-OPTIONS:
-    -m, --max_N <max_N>                        maximum total count, default to 100000000
-    -e, --min_error_cases <min_error_cases>    minimum error cases, default to 1000
-    -q, --qec_decoder <qec_decoder>            available decoders, e.g. `naive_decoder`
+    qecp tool benchmark [OPTIONS] <dis> <nms> <ps>
 
 ARGS:
-    <Ls>    [L1,L2,L3,...,Ln]
-    <ps>    [p1,p2,p3,...,pm]
+    <dis>    [di1,di2,di3,...,din] code distance of vertical axis
+    <nms>    [nm1,nm2,nm3,...,nmn] number of noisy measurement rounds, must have exactly the
+             same length as `dis`; note that a perfect measurement is always capped at the end,
+             so to simulate a single round of perfect measurement you should set this to 0
+    <ps>     [p1,p2,p3,...,pm] p = px + py + pz unless error model has special interpretation of
+             this value
+
+OPTIONS:
+        --bias_eta <bias_eta>
+            bias_eta = pz / (px + py) and px = py, px + py + pz = p. default to 1/2, which means px
+            = pz = py [default: 0.5]
+        ......
 ```
 
-You can use a subset of the parameters. For example, to test code distance 3, physical error rate 3e-2, 1e-2, 3e-3 using the `naive_decoder`, run:
+For example, to test code-distance-3 standard CSS surface code with depolarizing physical error rates 3%, 2% and 1% only on data qubits (i.e. perfect stabilizer measurements) using the default decoder (MWPM decoder), run:
 
 ```bash
-cargo run --release -- tool automatic_benchmark [3] [3e-2,1e-2,3e-3] -q naive_decoder
+cargo run --release -- tool benchmark [3] [0] [3e-2,2e-2,1e-2]
 ```
 
-Detailed commands to plot the graphs is in the comments of `/benchmark/*/*.gp`, for example we test the performance of MWPM decoder using
+An example result is below.
 
-```bash
-cargo run --release -- tool automatic_benchmark [3] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5] -q maximum_max_weight_matching_decoder
-cargo run --release -- tool automatic_benchmark [5] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -q maximum_max_weight_matching_decoder
-cargo run --release -- tool automatic_benchmark [7] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -q maximum_max_weight_matching_decoder
-cargo run --release -- tool automatic_benchmark [9] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -q maximum_max_weight_matching_decoder
-cargo run --release -- tool automatic_benchmark [11] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -q maximum_max_weight_matching_decoder
-cargo run --release -- tool automatic_benchmark [13] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -q maximum_max_weight_matching_decoder
-cargo run --release -- tool automatic_benchmark [15] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -q maximum_max_weight_matching_decoder
-cargo run --release -- tool automatic_benchmark [25] [5e-1,2e-1,1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -q maximum_max_weight_matching_decoder -m 1000000
+```init
+format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+0.03 3 0 567712 10000 0.01761456513161603 3 1.9e-2 0
+0.02 3 0 1255440 10000 0.007965334862677627 3 2.0e-2 0
+0.01 3 0 4705331 10000 0.002125248999485902 3 2.0e-2 0
 ```
 
-To maximize running speed, run
-
-```bash
-RUSTFLAGS="-C target-cpu=native" cargo run --release
-```
 
 ## Change Log
 
@@ -148,3 +109,11 @@ Guojun Chen: collaborator of CPSC 559 course project: design GUI. design and imp
 
 Namitha Godawatte Liyanage: implement approximate MWPM decoder and FPGA related functionalities.
 
+
+## Attribution
+
+When using QEC-Playground for research, please cite:
+
+```
+TODO: arXiv link for related papers (probably the fusion blossom paper)
+```
