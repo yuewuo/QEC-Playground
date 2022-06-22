@@ -1149,6 +1149,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "qecp"
+version = "0.1.5"
+dependencies = [
+ "actix-cors",
+ "actix-web",
+ "bytes",
+ "cc",
+ "cfg-if",
+ "clap",
+ "derivative",
+ "derive_more",
+ "either",
+ "float-cmp",
+ "float-ord",
+ "lazy_static",
+ "libc",
+ "ndarray",
+ "num_cpus",
+ "parking_lot 0.12.0",
+ "pbr",
+ "petgraph",
+ "platform-dirs",
+ "priority-queue",
+ "pyo3",
+ "rand",
+ "rand_core",
+ "rug",
+ "serde",
+ "serde-hashkey",
+ "serde_json",
+ "shlex",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1238,40 +1272,6 @@ dependencies = [
  "az",
  "gmp-mpfr-sys",
  "libc",
-]
-
-[[package]]
-name = "rust_qecp"
-version = "0.1.5"
-dependencies = [
- "actix-cors",
- "actix-web",
- "bytes",
- "cc",
- "cfg-if",
- "clap",
- "derivative",
- "derive_more",
- "either",
- "float-cmp",
- "float-ord",
- "lazy_static",
- "libc",
- "ndarray",
- "num_cpus",
- "parking_lot 0.12.0",
- "pbr",
- "petgraph",
- "platform-dirs",
- "priority-queue",
- "pyo3",
- "rand",
- "rand_core",
- "rug",
- "serde",
- "serde-hashkey",
- "serde_json",
- "shlex",
 ]
 
 [[package]]

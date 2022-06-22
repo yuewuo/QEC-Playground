@@ -537,7 +537,7 @@ class ErrorModelName:
         return stdout, returncode
 
 def fetch_error_model(di, dj, measurement_rounds, p=0, pe=0, configuration=[]):
-    qecp_path = os.path.join(rust_dir, "target", "release", "rust_qecp")
+    qecp_path = os.path.join(rust_dir, "target", "release", "qecp")
     command = [qecp_path, "tool", "fault_tolerant_benchmark"] + [f"[{di}]", "--djs", f"[{dj}]", f"[{measurement_rounds}]", f"[{p}]", "--pes", f"[{pe}]"]  + configuration + ["--debug_print_only", "--debug_print_error_model", "--debug_print_with_all_possible_error_rates"]
     stdout, returncode = run_qec_playground_command_get_stdout(command)
     if returncode != 0:

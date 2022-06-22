@@ -89,7 +89,7 @@ def qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command(p_vec, di_ve
     di_str = "[" + ",".join([str(e) for e in di_vec]) + "]"
     dj_str = "[" + ",".join([str(e) for e in dj_vec]) + "]"
     T_str = "[" + ",".join([str(e) for e in T_vec]) + "]"
-    qecp_path = os.path.join(rust_dir, "target", "release", "rust_qecp")
+    qecp_path = os.path.join(rust_dir, "target", "release", "qecp")
     command = [qecp_path, "tool", "fault_tolerant_benchmark", di_str, "--djs", dj_str, T_str, f"-m{max_N}", f"-e{min_error_cases}", p_str] + parameters
     if time_budget is not None:
         command += ["--time_budget", f"{time_budget}"]
@@ -100,7 +100,7 @@ def qec_playground_benchmark_simulator_runner_vec_command(p_vec, di_vec, dj_vec,
     di_str = "[" + ",".join([str(e) for e in di_vec]) + "]"
     dj_str = "[" + ",".join([str(e) for e in dj_vec]) + "]"
     T_str = "[" + ",".join([str(e) for e in T_vec]) + "]"
-    qecp_path = os.path.join(rust_dir, "target", "release", "rust_qecp")
+    qecp_path = os.path.join(rust_dir, "target", "release", "qecp")
     command = [qecp_path, "tool", "benchmark", di_str, "--djs", dj_str, T_str, f"-m{max_N}", f"-e{min_error_cases}", p_str] + parameters
     if time_budget is not None:
         command += ["--time_budget", f"{time_budget}"]

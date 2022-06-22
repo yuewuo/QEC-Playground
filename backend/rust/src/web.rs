@@ -60,7 +60,7 @@ async fn view_error_model(info: web::Query<ViewErrorModelQuery>) -> Result<HttpR
     let di = 5;
     let dj = di;
     let T = di;
-    let mut tokens = vec![format!("rust_qecp"), format!("tool"), format!("fault_tolerant_benchmark")
+    let mut tokens = vec![format!("qecp"), format!("tool"), format!("fault_tolerant_benchmark")
         , format!("--debug_print_only"), format!("--debug_print_error_model")
         , format!("[{}]", di), format!("--djs"), format!("[{}]", dj)
         , format!("[{}]", T), format!("[{}]", info.p), format!("--pes"), format!("[{}]", info.pe)];

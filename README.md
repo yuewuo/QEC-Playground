@@ -72,7 +72,7 @@ Yue Wu yue.wu@yale.edu
 Quantum Error Correction Playground for BIM'20 course
 
 USAGE:
-    rust_qecp <SUBCOMMAND>
+    qecp <SUBCOMMAND>
 
 FLAGS:
     -h, --help       Prints help information
@@ -88,11 +88,11 @@ SUBCOMMANDS:
 To run a simulation to get the error rate of decoder, run `cargo run -- tool automatic_benchmark -h`
 
 ```bash
-rust_qecp-tool-automatic_benchmark
+qecp-tool-automatic_benchmark
 automatically run benchmark with round upper bound, lower bound and minimum error cases
 
 USAGE:
-    rust_qecp tool automatic_benchmark [OPTIONS] <Ls> <ps>
+    qecp tool automatic_benchmark [OPTIONS] <Ls> <ps>
 
 FLAGS:
     -h, --help       Prints help information
