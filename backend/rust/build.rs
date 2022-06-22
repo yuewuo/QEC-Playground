@@ -35,7 +35,7 @@ fn main() {
             .compile("blossomV");
 
         println!("cargo:rerun-if-changed=../../backend/blossomV/blossomV.cpp");
-        println!("cargo:rerun-if-changed=../../backend/blossomV/PerfectMatching.cpp");
+        println!("cargo:rerun-if-changed=../../backend/blossomV/PerfectMatching.h");
 
         if target_os != Ok("macos".to_string()) {  // exclude from macOS
             // rust 1.61.0 linking failed, solved by adding `whole-archive`: https://doc.rust-lang.org/stable/rustc/command-line-arguments.html#linking-modifiers-whole-archive
