@@ -84,7 +84,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Introduction</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Introduction</a></li><li class="chapter-item expanded affix "><li class="part-title">User Guide</li><li class="chapter-item expanded "><a href="guide/installation.html"><strong aria-hidden="true">1.</strong> Installation</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -149,6 +149,67 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+<p><strong style="color:red;">TODO: add citations to all concepts</strong></p>
+<p><strong>QEC-Playground</strong> is a command line tool and library to explore quantum error correction, primarily surface code.
+It integrates the whole workflow from simulating surface code to decoding the syndrome and validating the decoding results.
+Every component in this workflow can be customized independently, so that user can explore different codes or decoders with minimum effort.</p>
+<p>On top of this library, we provide a Python binding so that you don't have to learn Rust programming language while enjoying the speed gain of Rust.
+You can implement your own surface code, error model or decoder in Python, while letting other components to run at full speed in Rust.</p>
+<ul>
+<li><strong>Simulator</strong>
+<ul>
+<li>generates random qubit errors and simulates the measurement outcome (syndrome), given the Clifford gate implementation of a surface code</li>
+<li><strong>Code Builder</strong>
+<ul>
+<li>builds the Clifford gate implementation of a supported surface code, given a few parameters like code distances and how many rounds of measurements</li>
+<li><strong style="color:red;">TODO:</strong> <em>Python: full customization supported</em></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Error Model</strong>
+<ul>
+<li>describes the error distribution, supporting single-qubit and two-qubit correlated Pauli errors and erasure errors</li>
+<li><strong>Error Model Builder</strong>
+<ul>
+<li>builds a supported error model, given customized parameters like initialization error rate, measurement error rate, noise bias, etc.</li>
+<li><strong style="color:red;">TODO:</strong> <em>Python: full customization supported</em></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Decoder</strong>
+<ul>
+<li>computes the correction pattern that tries to minimize the logical error rate of the logical qubit encoded in this surface code, given a measurement result</li>
+<li><strong style="color:red;">TODO:</strong> <em>Python: full customization supported</em></li>
+<li><strong>Model Graph</strong>
+<ul>
+<li>automatically builds the model graph from the Clifford gate implementation of any surface code for graph-based decoders, e.g. MWPM decoder and UF decoder</li>
+<li><strong style="color:red;">TODO:</strong> <em>Python: manually change the model graph</em></li>
+<li><strong>Complete Mode Graph</strong>
+<ul>
+<li>computes the complete model graph out of the model graph either offline (precompute the complete graph, memory-demanding) or online (compute edges on the fly, CPU-demanding)</li>
+<li><strong style="color:red;">TODO:</strong> <em>Python: manually change the complete model graph in the offline mode</em></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Erasure Graph</strong>
+<ul>
+<li>automatically builds the erasure graph from the Clifford gate implementation of any surface code for graph-based decoders, e.g. MWPM decoder and UF decoder</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="contributing"><a class="header" href="#contributing">Contributing</a></h1>
+<p><strong>QEC-Playground</strong> is free and open source.
+You can find the source code on <a href="https://github.com/yuewuo/QEC-Playground">Github</a>, where you can post issues and feature requests using <a href="https://github.com/yuewuo/QEC-Playground/issues">Github issue tracker</a>.
+Currently the project is maintained by <a href="https://wuyue98.cn/">Yue Wu</a> at <a href="http://www.yecl.org/">Yale Efficient Computing Lab</a>.
+If you'd like to contribute to the project, consider <a href="mailto:yue.wu@yale.edu">emailing the maintainer</a> or opening a <a href="https://github.com/yuewuo/QEC-Playground/pulls">pull request</a>.</p>
+<h1 id="license"><a class="header" href="#license">License</a></h1>
+<p>The QEC-Playground source and documentation are released under the <a href="https://opensource.org/licenses/MIT">MIT License</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="installation"><a class="header" href="#installation">Installation</a></h1>
 
                     </main>
 
@@ -167,6 +228,22 @@
 
         </div>
 
+        <!-- Livereload script (if served using the cli tool) -->
+        <script type="text/javascript">
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
 
 
         <script type="text/javascript">
