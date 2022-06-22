@@ -70,14 +70,14 @@ We use Vue.js to implement code and use npm package manager to build code. Downl
 npm install -g @vue/cli
 vue --version  # check whether installation is successful
 vue ui  # this will start a web page
-# select the folder of /qecplayground which contains the Vue project
+# select the folder of /frontend which contains the Vue project
 # then you can use GUI in browser to build the code
 ```
 
 Or you can use command line to build the frontend project
 
 ```bash
-cd qecplayground
+cd frontend
 npm install
 npm run build  # build code into dist/ folder
 npm run serve  # fast debugging, hot re-compile
