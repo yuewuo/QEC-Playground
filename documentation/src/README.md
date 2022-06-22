@@ -1,5 +1,7 @@
 # Introduction
 
+<strong style="color:red;">[Error] we're working on the documentation of this project, please wait for a formal release (1.0.0) before you want to use this project.</strong>
+
 <strong style="color:red;">TODO: add citations to all concepts</strong>
 
 **QEC-Playground** is a command line tool and library to explore quantum error correction, primarily surface code.
