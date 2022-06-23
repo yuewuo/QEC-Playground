@@ -33,7 +33,7 @@ def compile_code_if_necessary(additional_build_parameters=None):
 
 # get version
 def get_version():
-    compile_code_if_necessary()
+    # compile_code_if_necessary()
     stdout, returncode, _ = ap.timed_run_command([qecp_path, "--help"])
     assert returncode == 0, "get version command fails..."
     title_line = stdout.split("\n")[0]

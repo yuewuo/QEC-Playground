@@ -98,9 +98,36 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let thread_timeout: f64 = matches.value_of_t("thread_timeout").unwrap();
             let use_brief_edge = matches.is_present("use_brief_edge");
             let label: String = matches.value_of_t("label").unwrap_or(format!(""));
+            let mut error_model_modifier_str: Option<String> = None;
+            match matches.value_of_t::<usize>("load_error_model_from_temporary_store") {
+                Ok(error_model_temporary_id) => {
+                    match local_get_temporary_store(error_model_temporary_id) {
+                        Some(value) => { error_model_modifier_str = Some(value); },
+                        None => { return Some(format!("[error] temporary id not found (may expire): {}", error_model_temporary_id)) }
+                    }
+                },
+                Err(_) => { },
+            }
+            match matches.value_of_t::<String>("load_error_model_from_file") {
+                Ok(error_model_filepath) => {
+                    match fs::read_to_string(error_model_filepath.clone()) {
+                        Ok(value) => { error_model_modifier_str = Some(value); },
+                        Err(_) => { return Some(format!("[error] error model file cannot open: {}", error_model_filepath)) }
+                    }
+                },
+                Err(_) => { },
+            }
+            let error_model_modifier: Option<serde_json::Value> = match error_model_modifier_str {
+                Some(value) => match serde_json::from_str(&value) {
+                    Ok(error_model_modifier) => Some(error_model_modifier),
+                    Err(_) => { return Some(format!("[error] error model cannot recognize, please check file format")) }
+                },
+                None => None,
+            };
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
-                , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge, label));
+                , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge, label
+                , error_model_modifier));
         }
         Some(("fault_tolerant_benchmark", matches)) => {
             let dis: String = matches.value_of_t("Ls").expect("required");
@@ -407,7 +434,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         , parallel: usize, code_type: String, decoder: BenchmarkDecoder, decoder_config: serde_json::Value, ignore_logical_i: bool, ignore_logical_j: bool
         , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
         , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
-        , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String) -> String {
+        , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String, error_model_modifier: Option<serde_json::Value>) -> String {
     // if parallel = 0, use all CPU resources
     let parallel = if parallel == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel };
     let parallel_init = if parallel_init == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel_init };
@@ -437,6 +464,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         "log_error_pattern_when_logical_error": log_error_pattern_when_logical_error,
         "use_brief_edge": use_brief_edge,
         "label": label,
+        "error_model_modifier": error_model_modifier,
     });
     match &log_runtime_statistics_file {  // append runtime statistics data
         Some(log_runtime_statistics_file) => {
@@ -503,6 +531,18 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         // apply customized error model
         if let Some(error_model_builder) = &error_model_builder {
             error_model_builder.apply(&mut simulator, &mut error_model_graph, &error_model_configuration, p_graph, bias_eta, pe_graph);
+        }
+        // apply error model modifier
+        match &error_model_modifier {
+            Some(modifier) => {
+                match ErrorModelBuilder::apply_error_model_modifier(&mut simulator, &mut error_model_graph, &modifier) {
+                    Ok(_) => { },
+                    Err(reason) => {
+                        panic!("[error] apply error model failed: {}", reason);
+                    },
+                }
+            },
+            None => { }
         }
         debug_assert!({  // check correctness only in debug mode because it's expensive
             let sanity_check_result = code_builder_sanity_check(&simulator);
@@ -591,6 +631,18 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         // apply customized error model
         if let Some(error_model_builder) = &error_model_builder {
             error_model_builder.apply(&mut simulator, &mut error_model, &error_model_configuration, p, bias_eta, pe);
+        }
+        // apply error model modifier
+        match &error_model_modifier {
+            Some(modifier) => {
+                match ErrorModelBuilder::apply_error_model_modifier(&mut simulator, &mut error_model, &modifier) {
+                    Ok(_) => { },
+                    Err(reason) => {
+                        panic!("[error] apply error model failed: {}", reason);
+                    },
+                }
+            },
+            None => { }
         }
         debug_assert!({  // check correctness only in debug mode because it's expensive
             let sanity_check_result = code_builder_sanity_check(&simulator);
@@ -892,6 +944,7 @@ fn fault_tolerant_benchmark(dis: &Vec<usize>, djs: &Vec<usize>, Ts: &Vec<usize>,
         "rug_precision": rug_precision,
         "disable_optimize_correction_pattern": disable_optimize_correction_pattern,
         "use_reduced_graph": use_reduced_graph,
+        "error_model_modifier": error_model_modifier,
     });
     match &log_runtime_statistics_file {  // append runtime statistics data
         Some(log_runtime_statistics_file) => {
