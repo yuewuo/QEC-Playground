@@ -13,17 +13,6 @@ pub enum QubitType {
     StabY,  // in tailored surface code
 }
 
-impl QubitType {
-    /// if measure in Z basis, it's prepared in |0> state, otherwise it's measuring X basis and prepared in |+> state; data qubit will return None
-    pub fn is_measured_in_z_basis(&self) -> Option<bool> {
-        match self {
-            Self::Data => None,
-            Self::StabZ => Some(true),
-            Self::StabX | Self::StabXZZXLogicalX | Self::StabXZZXLogicalZ | Self::StabY => Some(false),
-        }
-    }
-}
-
 /// Error type, corresponds to `ETYPE` in `FaultTolerantView.vue`
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
