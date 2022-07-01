@@ -1,0 +1,398 @@
+[
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[3]' --djs '[3]' '[0]' -m0 -e4000000 '[9.00000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.09 3 0 36348522 4000002 0.11004579498445631 3 9.2e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[3]' --djs '[3]' '[0]' -m0 -e4000000 '[9.10000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.091 3 0 35663659 4000002 0.11215904683251934 3 9.2e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[3]' --djs '[3]' '[0]' -m0 -e4000000 '[9.20000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.092 3 0 35016964 4000001 0.11423037702526125 3 9.2e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[3]' --djs '[3]' '[0]' -m0 -e4000000 '[9.30000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.093 3 0 34435718 4000000 0.11615846081676008 3 9.2e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[3]' --djs '[3]' '[0]' -m0 -e4000000 '[9.40000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.094 3 0 33795074 4000003 0.11836053384584984 3 9.2e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[3]' --djs '[3]' '[0]' -m0 -e4000000 '[9.50000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.095 3 0 33221518 4000001 0.12040392013393247 3 9.2e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[3]' --djs '[3]' '[0]' -m0 -e4000000 '[9.60000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.096 3 0 32651860 4000004 0.12250462913904445 3 9.2e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[3]' --djs '[3]' '[0]' -m0 -e4000000 '[9.70000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.097 3 0 32102424 4000003 0.12460127621515435 3 9.2e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[3]' --djs '[3]' '[0]' -m0 -e4000000 '[9.80000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.098 3 0 31590823 4000002 0.126619113405181 3 9.2e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[3]' --djs '[3]' '[0]' -m0 -e4000000 '[9.90000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.099 3 0 31048102 4000002 0.12883241622950092 3 9.1e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[3]' --djs '[3]' '[0]' -m0 -e4000000 '[1.00000000e-01]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.1 3 0 30523217 4000002 0.13104785121437232 3 9.1e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[5]' --djs '[5]' '[0]' -m0 -e4000000 '[9.00000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.09 5 0 50106382 4000003 0.0798302100518852 5 9.4e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[5]' --djs '[5]' '[0]' -m0 -e4000000 '[9.10000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.091 5 0 48696153 4000000 0.08214201232692858 5 9.4e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[5]' --djs '[5]' '[0]' -m0 -e4000000 '[9.20000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.092 5 0 47357514 4000001 0.08446391421644303 5 9.4e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[5]' --djs '[5]' '[0]' -m0 -e4000000 '[9.30000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.093 5 0 46090346 4000001 0.08678609182061683 5 9.4e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[5]' --djs '[5]' '[0]' -m0 -e4000000 '[9.40000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.094 5 0 44878392 4000002 0.08912979769863412 5 9.4e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[5]' --djs '[5]' '[0]' -m0 -e4000000 '[9.50000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.095 5 0 43688319 4000001 0.0915576770074399 5 9.3e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[5]' --djs '[5]' '[0]' -m0 -e4000000 '[9.60000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.096 5 0 42568681 4000004 0.09396589008712768 5 9.3e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[5]' --djs '[5]' '[0]' -m0 -e4000000 '[9.70000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.097 5 0 41526670 4000002 0.09632368788539991 5 9.3e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[5]' --djs '[5]' '[0]' -m0 -e4000000 '[9.80000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.098 5 0 40466627 4000000 0.0988468843721519 5 9.3e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[5]' --djs '[5]' '[0]' -m0 -e4000000 '[9.90000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.099 5 0 39476161 4000001 0.1013270008702214 5 9.3e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[5]' --djs '[5]' '[0]' -m0 -e4000000 '[1.00000000e-01]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.1 5 0 38502439 4000003 0.10388960034453922 5 9.3e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[7]' --djs '[7]' '[0]' -m0 -e4000000 '[9.00000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.09 7 0 75601617 4000000 0.05290892124701513 7 9.5e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[7]' --djs '[7]' '[0]' -m0 -e4000000 '[9.10000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.091 7 0 72641353 4000001 0.05506506741414907 7 9.5e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[7]' --djs '[7]' '[0]' -m0 -e4000000 '[9.20000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.092 7 0 69961193 4000001 0.057174568192397746 7 9.5e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[7]' --djs '[7]' '[0]' -m0 -e4000000 '[9.30000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.093 7 0 67295807 4000000 0.05943906728096745 7 9.5e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[7]' --djs '[7]' '[0]' -m0 -e4000000 '[9.40000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.094 7 0 64838557 4000001 0.061691702978522486 7 9.5e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[7]' --djs '[7]' '[0]' -m0 -e4000000 '[9.50000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.095 7 0 62564603 4000000 0.06393391483679678 7 9.5e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[7]' --djs '[7]' '[0]' -m0 -e4000000 '[9.60000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.096 7 0 60303700 4000001 0.06633093823430403 7 9.5e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[7]' --djs '[7]' '[0]' -m0 -e4000000 '[9.70000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.097 7 0 58229069 4000003 0.0686942633412188 7 9.5e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[7]' --djs '[7]' '[0]' -m0 -e4000000 '[9.80000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.098 7 0 56179613 4000001 0.07120022346896551 7 9.4e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[7]' --djs '[7]' '[0]' -m0 -e4000000 '[9.90000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.099 7 0 54289664 4000002 0.07367888664774201 7 9.4e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[7]' --djs '[7]' '[0]' -m0 -e4000000 '[1.00000000e-01]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.1 7 0 52434788 4000002 0.07628527076337183 7 9.4e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[9]' --djs '[9]' '[0]' -m0 -e4000000 '[9.00000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.09 9 0 115126714 4000000 0.03474432528318319 9 9.6e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[9]' --djs '[9]' '[0]' -m0 -e4000000 '[9.10000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.091 9 0 109387801 4000000 0.03656714883591087 9 9.6e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[9]' --djs '[9]' '[0]' -m0 -e4000000 '[9.20000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.092 9 0 104150343 4000002 0.03840603770263147 9 9.6e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[9]' --djs '[9]' '[0]' -m0 -e4000000 '[9.30000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.093 9 0 99238909 4000001 0.0403067812847479 9 9.6e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[9]' --djs '[9]' '[0]' -m0 -e4000000 '[9.40000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.094 9 0 94602196 4000000 0.04228231657539958 9 9.6e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[9]' --djs '[9]' '[0]' -m0 -e4000000 '[9.50000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.095 9 0 90131362 4000001 0.04437967996089974 9 9.6e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[9]' --djs '[9]' '[0]' -m0 -e4000000 '[9.60000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.096 9 0 86172316 4000000 0.04641862010532478 9 9.6e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[9]' --djs '[9]' '[0]' -m0 -e4000000 '[9.70000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.097 9 0 82240781 4000001 0.04863768256286379 9 9.6e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[9]' --djs '[9]' '[0]' -m0 -e4000000 '[9.80000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.098 9 0 78674988 4000000 0.05084207956917642 9 9.5e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[9]' --djs '[9]' '[0]' -m0 -e4000000 '[9.90000000e-02]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.099 9 0 75166993 4000001 0.05321485987872363 9 9.5e-4 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/qecp tool benchmark '[9]' --djs '[9]' '[0]' -m0 -e4000000 '[1.00000000e-01]' -p12 --decoder mwpm --decoder_config '{"pcmg":true}' --time_budget 7200
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.1 9 0 72079107 4000000 0.05549458319454485 9 9.5e-4 0 
+
+      '''
+  ]
+]
