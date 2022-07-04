@@ -173,6 +173,7 @@ impl<U: UnionNodeTrait> UnionFindGeneric<U> {
     }
 
     #[inline(never)]
+    #[allow(dead_code)]
     pub fn immutable_get(&self, key: usize) -> &U {
         let root_key = self.immutable_find(key);
         &self.payload[root_key]

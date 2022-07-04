@@ -23,10 +23,12 @@ impl Xoroshiro128StarStar {
         f64::from_bits(0x3FF << 52 | self.next_u64() >> 12) - 1.
     }
 
+    #[allow(dead_code)]
     pub fn get_s0_i64(&self) -> i64 {
         i64::from_le_bytes(self.s0.to_le_bytes())
     }
 
+    #[allow(dead_code)]
     pub fn get_s1_i64(&self) -> i64 {
         i64::from_le_bytes(self.s1.to_le_bytes())
     }
@@ -98,6 +100,7 @@ pub struct SplitMix64 {
 }
 
 impl SplitMix64 {
+    #[allow(dead_code)]
     pub fn get_x_i64(&self) -> i64 {
         i64::from_le_bytes(self.x.to_le_bytes())
     }

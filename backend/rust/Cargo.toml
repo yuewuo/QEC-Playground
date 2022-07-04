@@ -1,13 +1,24 @@
 [package]
-name = "rust_qecp"
-version = "0.1.5"
+name = "qecp"
+version = "0.1.6"
 authors = ["Yue Wu <yue.wu@yale.edu>", "Namitha Liyanage (namitha.liyanage@yale.edu)"]
+license = "MIT"
 description = "Quantum Error Correction Playground for Surface Code Research"
+readme = "../../README.md"
+homepage = "https://yuewuo.github.io/QEC-Playground/"
+repository = "https://github.com/yuewuo/QEC-Playground"
+# documentation = ""  # use the default docs.rs page
+keywords = ["QEC", "quantum-computing", "error-correction", "simulation", "visualization"]
+categories = ["science"]
 edition = "2021"
 
-# # profiling: https://github.com/flamegraph-rs/flamegraph
-# # enable the following debug configuration, and then run `cargo flamegraph -- ...` which is equivalent to `cargo run --release -- ...`
-# # e.g. `cargo flamegraph --root -- tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1 '[0.01]' -p1 --time_budget 3600 --rotated_planar_code`
+# see https://doc.rust-lang.org/1.39.0/cargo/reference/manifest.html#the-documentation-field-optional
+[badges]
+maintenance = { status = "actively-developed" }
+
+# profiling: https://github.com/flamegraph-rs/flamegraph
+# enable the following debug configuration, and then run `cargo flamegraph -- ...` which is equivalent to `cargo run --release -- ...`
+# e.g. `cargo flamegraph --root -- tool benchmark '[13]' --djs '[13]' '[1]' -m100000000 -e1000 '[0.01]' -p1 --time_budget 60 --code_type RotatedPlanarCode`
 # embed debug symbols, increase the binary from 7MB to 9.3MB which is acceptable
 [profile.release]
 debug = true
@@ -20,6 +31,7 @@ default = []
 fpga_amenable = []  # use FPGA-amenable code block (not friendly to read, but to test the equivalency with existing code)
 python_interfaces = ["pyo3"]  # by default to avoid using python interface, which includes `fpga_generator.rs`,
 blossom_v = []  # automatically enabled when file `blossomV/PerfectMatching.h` exists
+MWPM_reverse_order = []  # test the logical error rate arbitrariness of MWPM decoders, see articles/UFandMWPM.md
 
 [dependencies]
 rand = { version = "0.8.4", features = ["alloc"] }

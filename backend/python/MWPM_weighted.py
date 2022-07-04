@@ -16,18 +16,18 @@ min_error_cases: if reaches the minimum error cases, the error rate is returned 
 max_N: the maximum cases to try before return. This is useful when logical error rate is too small to be found in reasonable time
 parallel: use how many processes for parallel computing. <= 1 will automatically use os.cpu_count()-1 instead
 """
-def compute_error_rate(weights, p=0.01, min_error_cases=1000, max_N=100000000, rust_qecp_path=None, rust_qecp_name="rust_qecp", parallel=1):
+def compute_error_rate(weights, p=0.01, min_error_cases=1000, max_N=100000000, qecp_path=None, qecp_name="qecp", parallel=1):
     if parallel < 1:
         parallel = os.cpu_count() - 1
-    if rust_qecp_path is None:  # automatically find the rust_qecp binary
-        rust_qecp_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "rust", "target", "release")
-        rust_qecp_binary = os.path.join(rust_qecp_path, rust_qecp_name)
+    if qecp_path is None:  # automatically find the qecp binary
+        qecp_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "rust", "target", "release")
+        qecp_binary = os.path.join(qecp_path, qecp_name)
     d = sanity_check_weights_return_d(weights)
-    weights_path = os.path.join(rust_qecp_path, "weights.txt")
+    weights_path = os.path.join(qecp_path, "weights.txt")
     output_weights_to_file(weights, weights_path)
     max_N_each = math.ceil(max_N / parallel)
     min_error_cases_each = math.ceil(min_error_cases / parallel)
-    cmd = rust_qecp_binary + " tool error_rate_MWPM_with_weight [%d] [%f] -m %d -e %d -w " % (d, p, max_N_each, min_error_cases_each) + weights_path
+    cmd = qecp_binary + " tool error_rate_MWPM_with_weight [%d] [%f] -m %d -e %d -w " % (d, p, max_N_each, min_error_cases_each) + weights_path
     # print("cmd:", cmd)
     runnings = []
     for i in range(parallel):
@@ -38,7 +38,7 @@ def compute_error_rate(weights, p=0.01, min_error_cases=1000, max_N=100000000, r
     for r in runnings:
         text = r.read()
         elements = text.split(" ")
-        assert int(elements[1]) == d, "strange output from rust_qecp"
+        assert int(elements[1]) == d, "strange output from qecp"
         total_rounds += int(elements[2].strip())
         qec_failed += int(elements[3].strip())
     # print(total_rounds, qec_failed)

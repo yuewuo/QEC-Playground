@@ -1,0 +1,395 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>QEC-Playground Documentation</title>
+        <meta name="robots" content="noindex" />
+
+
+        <!-- Custom HTML head -->
+        
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+        <!-- MathJax -->
+        <script async type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Introduction</a></li><li class="chapter-item expanded affix "><li class="part-title">User Guide</li><li class="chapter-item expanded "><a href="guide/installation.html"><strong aria-hidden="true">1.</strong> Installation</a></li><li class="chapter-item expanded affix "><a href="bibliography.html">Bibliography</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">QEC-Playground Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/yuewuo/QEC-Playground/documentation" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+<p><strong style="color:red;">[Error] we're working on the documentation of this project, please wait for a formal release (1.0.0) before you want to use this project.</strong></p>
+<p><strong style="color:red;">TODO: add citations to all concepts</strong></p>
+<p><strong>QEC-Playground</strong> is a command line tool and library to explore quantum error correction, primarily surface code.
+It integrates the whole workflow from simulating surface code to decoding the syndrome and validating the decoding results.
+Every component in this workflow can be customized independently, so that user can explore different codes or decoders with minimum effort.</p>
+<p>On top of this library, we provide a Python binding so that you don't have to learn Rust programming language while enjoying the speed gain of Rust.
+You can implement your own surface code, error model or decoder in Python, while letting other components to run at full speed in Rust.</p>
+<ul>
+<li><strong>Simulator</strong>
+<ul>
+<li>generates random qubit errors and simulates the measurement outcome (syndrome), given the Clifford gate implementation of a surface code</li>
+<li><strong>Code Builder</strong>
+<ul>
+<li>builds the Clifford gate implementation of a supported surface code, given a few parameters like code distances and how many rounds of measurements</li>
+<li><strong style="color:red;">TODO:</strong> <em>Python: full customization supported</em></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Error Model</strong>
+<ul>
+<li>describes the error distribution, supporting single-qubit and two-qubit correlated Pauli errors and erasure errors</li>
+<li><strong>Error Model Builder</strong>
+<ul>
+<li>builds a supported error model, given customized parameters like initialization error rate, measurement error rate, noise bias, etc.</li>
+<li><strong style="color:red;">TODO:</strong> <em>Python: full customization supported</em></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Decoder</strong>
+<ul>
+<li>computes the correction pattern that tries to minimize the logical error rate of the logical qubit encoded in this surface code, given a measurement result</li>
+<li><strong style="color:red;">TODO:</strong> <em>Python: full customization supported</em></li>
+<li><strong>Model Graph</strong>
+<ul>
+<li>automatically builds the model graph from the Clifford gate implementation of any surface code for graph-based decoders, e.g. MWPM decoder and UF decoder</li>
+<li><strong style="color:red;">TODO:</strong> <em>Python: manually change the model graph</em></li>
+<li><strong>Complete Mode Graph</strong>
+<ul>
+<li>computes the complete model graph out of the model graph either offline (precompute the complete graph, memory-demanding) or online (compute edges on the fly, CPU-demanding)</li>
+<li><strong style="color:red;">TODO:</strong> <em>Python: manually change the complete model graph in the offline mode</em></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Erasure Graph</strong>
+<ul>
+<li>automatically builds the erasure graph from the Clifford gate implementation of any surface code for graph-based decoders, e.g. MWPM decoder and UF decoder</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="contributing"><a class="header" href="#contributing">Contributing</a></h1>
+<p><strong>QEC-Playground</strong> is free and open source.
+You can find the source code on <a href="https://github.com/yuewuo/QEC-Playground">Github</a>, where you can post issues and feature requests using <a href="https://github.com/yuewuo/QEC-Playground/issues">Github issue tracker</a>.
+Currently the project is maintained by <a href="https://wuyue98.cn/">Yue Wu</a> at <a href="http://www.yecl.org/">Yale Efficient Computing Lab</a>.
+If you'd like to contribute to the project, consider <a href="mailto:yue.wu@yale.edu">emailing the maintainer</a> or opening a <a href="https://github.com/yuewuo/QEC-Playground/pulls">pull request</a>.</p>
+<h1 id="license"><a class="header" href="#license">License</a></h1>
+<p>The QEC-Playground source and documentation are released under the <a href="https://opensource.org/licenses/MIT">MIT License</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="installation"><a class="header" href="#installation">Installation</a></h1>
+<p>There are multiple ways to install this library.
+Choose any one of the methods below that best suit your needs.</p>
+<h2 id="pre-compiled-binaries"><a class="header" href="#pre-compiled-binaries">Pre-compiled Binaries</a></h2>
+<p><strong style="color:red;">TODO: upload the binary and alert the limitation of Blossom V library license issue</strong></p>
+<h2 id="build-from-source-using-rust"><a class="header" href="#build-from-source-using-rust">Build from Source using Rust</a></h2>
+<p>This is the recommended way to install the library for two reasons.
+First, the pre-compiled binary doesn't include the Blossom V library due to incompatible license, and thus is not capable of running any decoder that based on Minimum-Weight Perfect Matching (MWPM) algorithm.
+Second, you can access all the examples as well as the simulation scripts and data in our published papers only from the source code repository.</p>
+<h3 id="download-the-blossom-v-library-optional"><a class="header" href="#download-the-blossom-v-library-optional">Download the Blossom V Library [Optional]</a></h3>
+<p>In order to use the MWPM algorithm (e.g. in the MWPM decoder or the tailored-SC decoder), you need to download the Blossom V [<a href="guide/../bibliography.html#kolmogorov2009blossom">kolmogorov2009blossom</a>] library from <a href="https://pub.ist.ac.at/%7Evnk/software.html">https://pub.ist.ac.at/~vnk/software.html</a> into the folder <code>backend/blossomV</code>.
+You're responsible for requesting a proper license for the use of this library, as well as obeying any requirement.</p>
+<p>An example of downloading the Blossom V library is below. Note that the latest version number and website address may change over time.</p>
+<pre><code class="language-bash">wget -c https://pub.ist.ac.at/~vnk/software/blossom5-v2.05.src.tar.gz -O - | tar -xz
+cp -r blossom5-v2.05.src/* backend/blossomV/
+rm -r blossom5-v2.05.src
+</code></pre>
+<p>You don't need to compile the Blossom V library manually.</p>
+<p>Note that you can still compile the project without the Blossom V library.
+The build script automatically detects whether the Blossom V library exists and enables the feature accordingly.</p>
+<h3 id="install-the-python-dependencies-optional"><a class="header" href="#install-the-python-dependencies-optional">Install the Python Dependencies [Optional]</a></h3>
+<p>To enable the binding between Rust and Python, install the following packages</p>
+<pre><code class="language-bash">sudo apt install python3 python3-pip
+pip3 install networkx
+</code></pre>
+<h3 id="install-the-rust-toolchain"><a class="header" href="#install-the-rust-toolchain">Install the Rust Toolchain</a></h3>
+<p>We need the Rust toolchain to compile the project written in the Rust programming language.
+Please see <a href="https://rustup.rs/">https://rustup.rs/</a> for the latest instructions.
+An example on Unix-like operating systems is below.</p>
+<pre><code class="language-bash">curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.bashrc  # this will add `~/.cargo/bin` to path
+</code></pre>
+<p>After installing the Rust toolchain successfully, you can compile the backend by</p>
+<pre><code class="language-bash">cd backend/rust/
+cargo build --release
+</code></pre>
+<h3 id="install-frontend-tools-optional"><a class="header" href="#install-frontend-tools-optional">Install Frontend tools [Optional]</a></h3>
+<p><strong style="color:red;">TODO: We plan to remove the dependency of Node.js for building the frontend, by rewriting the tutorials and visualization pages as single-page Vue applications.</strong></p>
+<p>The code is already running at <a href="https://wuyue98.cn/QECPlayground/">https://wuyue98.cn/QECPlayground/</a>, but if you're interested in building them on yourself, follow this guide.</p>
+<p>We use Vue.js to implement code and use npm package manager to build code. Download and install npm from https://nodejs.org/en/download/ first, then install vue CLI</p>
+<pre><code class="language-bash">npm install -g @vue/cli
+vue --version  # check whether installation is successful
+vue ui  # this will start a web page
+# select the folder of /frontend which contains the Vue project
+# then you can use GUI in browser to build the code
+</code></pre>
+<p>Or you can use command line to build the frontend project</p>
+<pre><code class="language-bash">cd frontend
+npm install
+npm run build  # build code into dist/ folder
+npm run serve  # fast debugging, hot re-compile
+</code></pre>
+<h3 id="install-mdbook-to-build-the-documentation"><a class="header" href="#install-mdbook-to-build-the-documentation">Install mdbook to build the documentation</a></h3>
+<p>In order to build this documentation, you need to install <a href="https://crates.io/crates/mdbook">mdbook</a> and several plugins.</p>
+<pre><code class="language-bash">cargo install mdbook
+cargo install mdbook-bib
+cd documentation
+mdbook serve  # dev mode, automatically refresh the local web page on code change
+mdbook build  # build deployment in /docs folder, to be recognized by GitHub Pages
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="bibliography"><a class="header" href="#bibliography">Bibliography</a></h1>
+<script type="text/javascript">
+function defaultCopyTextToClipboard(text) {
+    var textArea = document.createElement("textarea");
+    textArea.value = text;
+
+    // Avoid scrolling to bottom
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        var ok = document.execCommand('copy');
+        var msg = ok ? 'was ok' : 'failed';
+        console.log('Backing copy: Text copy was ' + msg);
+    } catch (err) {
+        console.error('Backing copy: Unable to copy text', err);
+    }
+
+    document.body.removeChild(textArea);
+}
+
+function copyToClipboard(text) {
+    if (!navigator.clipboard) {
+        defaultCopyTextToClipboard(text);
+        return;
+    }
+    navigator.clipboard.writeText(text).then(function() {
+        console.log('Text copied to clipboard');
+    }, function(err) {
+        console.error('Error copying text: ', err);
+    });
+}
+
+</script>
+<style></style>
+<div class="bib_div">
+<details data-key="kolmogorov2009blossom" class=ref>
+<summary class=citation>
+<a id="kolmogorov2009blossom">[kolmogorov2009blossom]</a> - Kolmogorov, Vladimir - <cite>Blossom V: a new implementation of a minimum cost perfect matching algorithm</cite>. - 2009. -
+<button onclick="copyToClipboard('\{\{ #cite kolmogorov2009blossom \}\}')">Copy citation_key</button>
+</summary>
+<section class=abstract>
+<h1 id="summaryabstract"><a class="header" href="#summaryabstract">Summary/Abstract</a></h1>
+<div>N/A</div>
+</section>
+</details>
+</div>
+<br/>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script type="text/javascript">
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script type="text/javascript">
+            window.playground_line_numbers = true;
+        </script>
+
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+
+        <script src="ace.js" type="text/javascript" charset="utf-8"></script>
+        <script src="editor.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mode-rust.js" type="text/javascript" charset="utf-8"></script>
+        <script src="theme-dawn.js" type="text/javascript" charset="utf-8"></script>
+        <script src="theme-tomorrow_night.js" type="text/javascript" charset="utf-8"></script>
+
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script type="text/javascript">
+        window.addEventListener('load', function() {
+            MathJax.Hub.Register.StartupHook('End', function() {
+                window.setTimeout(window.print, 100);
+            });
+        });
+        </script>
+
+    </body>
+</html>

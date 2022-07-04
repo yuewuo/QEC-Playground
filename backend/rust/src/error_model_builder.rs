@@ -490,6 +490,70 @@ impl ErrorModelBuilder {
             },
         }
     }
+
+    /// check as strictly as possible, given the user specified json error model description
+    pub fn apply_error_model_modifier(simulator : &mut Simulator, error_model: &mut ErrorModel, modifier: &serde_json::Value) -> Result<(), String> {
+        if modifier.get("code_type").ok_or(format!("missing field: code_type"))? != &json!(simulator.code_type) {
+            return Err(format!("mismatch: code_type"))
+        }
+        if modifier.get("height").ok_or(format!("missing field: height"))? != &json!(simulator.height) {
+            return Err(format!("mismatch: height"))
+        }
+        if modifier.get("vertical").ok_or(format!("missing field: vertical"))? != &json!(simulator.vertical) {
+            return Err(format!("mismatch: vertical"))
+        }
+        if modifier.get("horizontal").ok_or(format!("missing field: horizontal"))? != &json!(simulator.horizontal) {
+            return Err(format!("mismatch: horizontal"))
+        }
+        // iterate nodes
+        let nodes = modifier.get("nodes").ok_or(format!("missing field: nodes"))?.as_array().ok_or(format!("format error: nodes"))?;
+        if simulator.nodes.len() != nodes.len() {
+            return Err(format!("mismatch: nodes.len()"))
+        }
+        for t in 0..nodes.len() {
+            let nodes_row_0 = nodes[t].as_array().ok_or(format!("format error: nodes[{}]", t))?;
+            if nodes_row_0.len() != simulator.nodes[t].len() {
+                return Err(format!("mismatch: nodes[{}].len()", t))
+            }
+            for i in 0..nodes_row_0.len() {
+                let nodes_row_1 = nodes_row_0[i].as_array().ok_or(format!("format error: nodes[{}][{}]", t, i))?;
+                if nodes_row_1.len() != simulator.nodes[t][i].len() {
+                    return Err(format!("mismatch: nodes[{}][{}].len()", t, i))
+                }
+                for j in 0..nodes_row_1.len() {
+                    let node = &nodes_row_1[j];
+                    if node.is_null() != simulator.nodes[t][i][j].is_none() {
+                        return Err(format!("mismatch: nodes[{}][{}][{}].is_none", t, i, j))
+                    }
+                    if !node.is_null() {
+                        let self_node = simulator.nodes[t][i][j].as_mut().unwrap();  // already checked existance
+                        if node.get("position").ok_or(format!("missing field: position"))? != &json!(pos!(t, i, j)) {
+                            return Err(format!("mismatch position [{}][{}][{}]", t, i, j))
+                        }
+                        if node.get("qubit_type").ok_or(format!("missing field: qubit_type"))? != &json!(self_node.qubit_type) {
+                            return Err(format!("mismatch [{}][{}][{}]: qubit_type", t, i, j))
+                        }
+                        if node.get("gate_type").ok_or(format!("missing field: gate_type"))? != &json!(self_node.gate_type) {
+                            return Err(format!("mismatch [{}][{}][{}]: gate_type", t, i, j))
+                        }
+                        if node.get("gate_peer").ok_or(format!("missing field: gate_peer"))? != &json!(self_node.gate_peer) {
+                            return Err(format!("mismatch [{}][{}][{}]: gate_peer", t, i, j))
+                        }
+                        // TODO: user can modify the 'is_virtual' attribute to manually discard a measurement event
+                        let is_virtual = node.get("is_virtual").ok_or(format!("missing field: is_virtual"))?.as_bool().ok_or(format!("wrong field: is_virtual"))?;
+                        let is_peer_virtual = node.get("is_peer_virtual").ok_or(format!("missing field: is_peer_virtual"))?.as_bool().ok_or(format!("wrong field: is_peer_virtual"))?;
+                        assert_eq!(is_virtual, self_node.is_virtual, "is_virtual modification not implemented, needs sanity check");
+                        assert_eq!(is_peer_virtual, self_node.is_peer_virtual, "is_peer_virtual modification not implemented, needs sanity check");
+                        // then copy error rate data
+                        let error_model_node = node.get("error_model").ok_or(format!("missing field: error_model"))?.clone();
+                        let error_model_node: ErrorModelNode = serde_json::from_value(error_model_node).map_err(|e| format!("{:?}", e))?;
+                        error_model.set_node(&pos!(t, i, j), Some(Arc::new(error_model_node)));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 impl std::str::FromStr for ErrorModelBuilder {

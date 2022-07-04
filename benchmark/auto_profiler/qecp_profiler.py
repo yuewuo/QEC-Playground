@@ -14,7 +14,7 @@ if 'COMPARE_WITH_VERSION' in os.environ and os.environ["COMPARE_WITH_VERSION"] !
     COMPARE_WITH_VERSION = os.environ["COMPARE_WITH_VERSION"]
 print(f"[info] COMPARE_WITH_VERSION = {COMPARE_WITH_VERSION}")
 
-qecp_path = os.path.join(ap.rust_dir, "target", "release", "rust_qecp")
+qecp_path = os.path.join(ap.rust_dir, "target", "release", "qecp")
 
 QEC_PLAYGROUND_COMPILATION_DONE = False
 if 'MANUALLY_COMPILE_QEC' in os.environ and os.environ["MANUALLY_COMPILE_QEC"] == "TRUE":
@@ -33,13 +33,13 @@ def compile_code_if_necessary(additional_build_parameters=None):
 
 # get version
 def get_version():
-    compile_code_if_necessary()
+    # compile_code_if_necessary()
     stdout, returncode, _ = ap.timed_run_command([qecp_path, "--help"])
     assert returncode == 0, "get version command fails..."
     title_line = stdout.split("\n")[0]
     reg = re.compile("^QECPlayground (?P<version>\d+\.\d+\.\d+)$")
     reg_match = reg.match(title_line)
-    assert reg_match is not None, "cannot extract version information, please check the output format of rust_qecp"
+    assert reg_match is not None, "cannot extract version information, please check the output format of qecp"
     return reg_match.groupdict()['version']
 qecp_version = get_version()
 print(f"[info] rust qecp version: {qecp_version}")

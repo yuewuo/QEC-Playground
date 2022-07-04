@@ -25,22 +25,6 @@ pub fn getFileContentFromMultiplePlaces(folders: &Vec<String>, filename: &String
     Err(format!("cannot find '{}' from folders {:?}", filename, folders))
 }
 
-// if even but the median is not unique, return None
-pub fn find_strict_one_median(numbers: &mut Vec<usize>) -> Option<usize> {
-    numbers.sort();
-    if numbers.len() % 2 == 0 {
-        let first = numbers[numbers.len() / 2 - 1];
-        let second = numbers[numbers.len() / 2];
-        if first != second {
-            None
-        } else {
-            Some(first)
-        }
-    } else {
-        Some(numbers[numbers.len() / 2])
-    }
-}
-
 // https://users.rust-lang.org/t/hashmap-performance/6476/8
 // https://gist.github.com/arthurprs/88eef0b57b9f8341c54e2d82ec775698
 // a much simpler but super fast hasher, only suitable for `ftqec::Index`!!!
