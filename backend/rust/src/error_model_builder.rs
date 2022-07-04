@@ -108,6 +108,7 @@ impl ErrorModelBuilder {
                     if position.t == simulator.measurement_cycles - 1 {
                         for i in 0..((dn+1)/2-1) {
                             for j in 0..(dp+1)/2 {
+                                // println!("{:?} {:?} {:?}", position.t, 3 + 2*i + 2*j, dn-1 - 2*i + 2*j);
                                 error_model.set_node(&pos!(position.t, 3 + 2*i + 2*j, dn-1 - 2*i + 2*j), Some(messed_measurement_node.clone()));
                             }
                         }
@@ -208,8 +209,8 @@ impl ErrorModelBuilder {
                 });
             },
             ErrorModelBuilder::TailoredScBellInitCircuit => {
-                let (noisy_measurements, dp, dn) = match simulator.code_type {
-                    CodeType::RotatedTailoredCode{ noisy_measurements, dp, dn } => { (noisy_measurements, dp, dn) }
+                let (noisy_measurements, dp, _dn) = match simulator.code_type {
+                    CodeType::RotatedTailoredCodeBellInit{ noisy_measurements, dp, dn } => { (noisy_measurements, dp, dn) }
                     _ => unimplemented!("tailored surface code with Bell state initialization is only implemented for open-boundary rotated tailored surface code")
                 };
                 assert!(noisy_measurements > 0, "to simulate bell initialization, noisy measurement must be set +1 (e.g. set noisy measurement 1 is equivalent to 0 noisy measurements)");
@@ -224,6 +225,34 @@ impl ErrorModelBuilder {
                         error_model.set_node(position, Some(noiseless_node.clone()));  // clear existing noise model
                     }
                 });
+                // a bunch of function for determining qubit type during init, copied from code_builder.rs
+                let (di, dj) = (dp, dp);
+                let is_real = |i: usize, j: usize| -> bool {
+                    let is_real_dj = |pi, pj| { pi + pj < dj || (pi + pj == dj && pi % 2 == 0 && pi > 0) };
+                    let is_real_di = |pi, pj| { pi + pj < di || (pi + pj == di && pj % 2 == 0 && pj > 0) };
+                    if i <= dj && j <= dj {
+                        is_real_dj(dj - i, dj - j)
+                    } else if i >= di && j >= di {
+                        is_real_dj(i - di, j - di)
+                    } else if i >= dj && j <= di {
+                        is_real_di(i - dj, di - j)
+                    } else if i <= di && j >= dj {
+                        is_real_di(di - i, j - dj)
+                    } else {
+                        unreachable!()
+                    } 
+                };
+                // some criteria for bell init 
+                let is_bell_init_anc = |i: usize, j: usize| -> bool { 
+                    is_real(i, j) 
+                    && i - j < dj - 3 
+                    && ((i % 4 == 1 && j % 4 == 0) || (i % 4 == 3 && j % 4 == 2))
+                };
+                let is_bell_init_unfixed = |i: usize, j: usize| -> bool {
+                    is_real(i, j)
+                    && ((i % 4 == 0 && j % 4 == 3) || (i % 4 == 2 && j % 4 == 1))
+                };
+
                 ////Error nodes for XY code
                 let initialization_error_rate = p;
                 // normal bias nodes
@@ -233,6 +262,13 @@ impl ErrorModelBuilder {
                 normal_biased_node.pauli_error_rates.error_rate_Y = initialization_error_rate / bias_eta;
                 let normal_biased_node = Arc::new(normal_biased_node);
 
+                // normal bias + cx node (for init)
+                let mut normal_biased_with_cx_node = (*normal_biased_node).clone();
+                normal_biased_with_cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZI = p;
+                normal_biased_with_cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IZ = 0.5 * p;
+                normal_biased_with_cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZZ = 0.5 * p;
+                let normal_biased_with_cx_node = Arc::new(normal_biased_with_cx_node);
+
                 // biased CX gate node; CX & CY have same error model if using bias-preserving gate
                 let mut cx_node = ErrorModelNode::new();
                 cx_node.correlated_pauli_error_rates = Some(CorrelatedPauliErrorRates::default_with_probability(p / bias_eta));
@@ -241,10 +277,20 @@ impl ErrorModelBuilder {
                 cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZZ = 0.5 * p;
                 let cx_node = Arc::new(cx_node);
 
-                // biased CX node (cx_node) with measurement error  // [Q] How to implement cx(a,d).measurement
-                let mut cx_measurement_error_node = (*cx_node).clone();
-                cx_measurement_error_node.pauli_error_rates.error_rate_Z = pm;
-                let cx_measurement_error_node = Arc::new(cx_measurement_error_node);
+                // reversed CX gate node, for convinience
+                let mut rev_cx_node = ErrorModelNode::new();
+                rev_cx_node.correlated_pauli_error_rates = Some(CorrelatedPauliErrorRates::default_with_probability(p / bias_eta));
+                rev_cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IZ = p;
+                rev_cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZI = 0.5 * p;
+                rev_cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZZ = 0.5 * p;
+                let rev_cx_node = Arc::new(rev_cx_node);
+
+                // CX gate with measurement error
+                let mut cx_measurement_error_node: ErrorModelNode = (*cx_node).clone();
+                cx_measurement_error_node.pauli_error_rates.error_rate_X = initialization_error_rate / bias_eta;
+                cx_measurement_error_node.pauli_error_rates.error_rate_Z = initialization_error_rate;
+                cx_measurement_error_node.pauli_error_rates.error_rate_Y = initialization_error_rate / bias_eta;
+                let cx_measurement_error_node = Arc::new(cx_measurement_error_node);    
 
                 let simulator = &*simulator;  // force simulator to be immutable, to avoid unexpected changes
                 assert!(px + py + pz <= 1. && px >= 0. && py >= 0. && pz >= 0.);
@@ -252,8 +298,6 @@ impl ErrorModelBuilder {
                 if simulator.measurement_cycles == 1 {
                     eprintln!("[warning] setting error rates of unknown code, no perfect measurement protection is enabled");
                 }
-                // println!("sim.measurement_cycles: {:?}, noisy_measurements: {:?}", simulator.measurement_cycles, noisy_measurements);
-                println!("dp, dn: {:?}, {:?}", dp, dn);
                 // create an error model that is always 50% change of measurement error
                 let mut messed_measurement_node = ErrorModelNode::new();
                 messed_measurement_node.pauli_error_rates.error_rate_Y = 0.5;  // Y error will cause pure measurement error for StabX (X basis), StabZ (Z basis), StabY (X basis)
@@ -261,23 +305,55 @@ impl ErrorModelBuilder {
 
                 simulator_iter_real!(simulator, position, node, {
                     error_model.set_node(position, Some(noiseless_node.clone()));  // clear existing noise model
-                    if position.t == simulator.measurement_cycles - 1 {
-                        for i in 0..((dn+1)/2-1) {
-                            for j in 0..(dp+1)/2 { // TODO: something for initialization
-                                error_model.set_node(&pos!(position.t, 3 + 2*i + 2*j, dn-1 - 2*i + 2*j), Some(messed_measurement_node.clone()));
-                            }
+                    if position.t < simulator.measurement_cycles {
+                        let (i, j) = (position.i, position.j);
+                        match position.t {
+                            0 => {
+                                // if is_bell_init_anc: normal+cx
+                                // else: normal
+                                if is_bell_init_anc(i, j) {
+                                    error_model.set_node(position, Some(normal_biased_with_cx_node.clone()));
+                                } else {
+                                    error_model.set_node(position, Some(normal_biased_node.clone()));
+                                }
+                            },
+                            1 | 2 | 3 => {
+                                // if is_bell_init_anc: cx
+                                if is_bell_init_anc(i, j) {
+                                    error_model.set_node(position, Some(cx_node.clone()));
+                                }
+                            },
+                            4 => {
+                                // if is_bell_init_anc: rev_cx  
+                                if is_bell_init_anc(i, j) {
+                                    error_model.set_node(position, Some(rev_cx_node.clone()));
+                                }
+                            },
+                            5 => {
+                                // if is_bell_init_anc: cx
+                                // if is_bell_init_unfixed: y 
+                                if is_bell_init_anc(i, j) {
+                                    error_model.set_node(position, Some(cx_measurement_error_node.clone()));
+                                }
+                                if is_bell_init_unfixed(i, j) {
+                                    error_model.set_node(position, Some(messed_measurement_node.clone()));
+                                }
+                            },
+                            _ => {
+                                //nothing
+                            },
                         }
-                    } else if position.t >= simulator.measurement_cycles && position.t < simulator.height - simulator.measurement_cycles {  // no error before the first round and at final round
+                    } else if  position.t < simulator.height - simulator.measurement_cycles {  // no error before the first round and at final round
                         // do different things for each stage
                         match position.t % simulator.measurement_cycles {
-                            1 => { 
+                            1 => {  // pauli error on qubits
                                 error_model.set_node(position, Some(normal_biased_node.clone()));
                             },
                             0 => { // measurement
                                 // do nothing
 
                             },
-                            _ => {
+                            _ => { // gate things
                                 let has_measurement_error = position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1 && node.qubit_type != QubitType::Data;// && position.t < (noisy_measurements - 2) * simulator.measurement_cycles - 2;
                                 // println!("position.t: {:?}; err: {:?}", position.t, has_measurement_error);
                                 if (node.gate_type == GateType::CXGateControl || node.gate_type == GateType::CYGateControl) && node.qubit_type != QubitType::Data { //an ancilla
