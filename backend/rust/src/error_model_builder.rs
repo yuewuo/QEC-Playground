@@ -306,8 +306,7 @@ impl ErrorModelBuilder {
 
                 simulator_iter_real!(simulator, position, node, {
                     error_model.set_node(position, Some(noiseless_node.clone()));  // clear existing noise model
-                    if position.t >= simulator.measurement_cycles 
-                       && position.t < 2 * simulator.measurement_cycles { // first measurement_cycle is empty, used to set a perfect measurement
+                    if position.t < simulator.measurement_cycles { // first measurement_cycle is empty, used to set a perfect measurement
                         let (i, j) = (position.i, position.j);
                         match position.t {
                             0 => {

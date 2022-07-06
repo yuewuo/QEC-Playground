@@ -538,16 +538,7 @@ pub fn build_code(simulator: &mut Simulator) {
                                     (false, None)
                                 }
                             };
-                            if is_bell_init && t < simulator.measurement_cycles { // an empty cycle for a measurement
-                                if t == 0 {  // measurement
-                                    match qubit_type {
-                                        QubitType::StabY => { gate_type = GateType::MeasureX; }
-                                        QubitType::StabX => { gate_type = GateType::MeasureX; }
-                                        QubitType::Data => { }
-                                        _ => { unreachable!() }
-                                    }
-                                }
-                            } else if is_bell_init && t < 2 * simulator.measurement_cycles {
+                            if is_bell_init && t < simulator.measurement_cycles {
                                  // code_type is BellInit and t < measurement_cycle for init circuit
                                 match t % simulator.measurement_cycles {
                                     0 => { // anc to top
@@ -601,7 +592,6 @@ pub fn build_code(simulator: &mut Simulator) {
                                         }
                                     },
                                     _ => {
-                                        println!("t={:?} unreachable", t);
                                         unreachable!()
                                     },
                                 }
