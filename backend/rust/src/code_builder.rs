@@ -86,6 +86,7 @@ impl CodeType {
             "RotatedPlanarCode" => Self::RotatedPlanarCode{ noisy_measurements, dp: di, dn: dj },
             "StandardTailoredCode" => Self::StandardTailoredCode{ noisy_measurements, di, dj },
             "RotatedTailoredCode" => Self::RotatedTailoredCode{ noisy_measurements, dp: di, dn: dj },
+            "RotatedTailoredCodeBellInit" => Self::RotatedTailoredCodeBellInit{ noisy_measurements, dp: di, dn: dj },
             "PeriodicRotatedTailoredCode" => Self::PeriodicRotatedTailoredCode{ noisy_measurements, dp: di, dn: dj },
             "StandardXZZXCode" => Self::StandardXZZXCode{ noisy_measurements, di, dj },
             "RotatedXZZXCode" => Self::RotatedXZZXCode{ noisy_measurements, dp: di, dn: dj },
@@ -94,7 +95,7 @@ impl CodeType {
     }
     pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
         static VARIANTS: &'static [&str] = &[
-            "StandardPlanarCode", "RotatedPlanarCode", "StandardTailoredCode", "RotatedTailoredCode", "PeriodicRotatedTailoredCode", "StandardXZZXCode", "RotatedXZZXCode"
+            "StandardPlanarCode", "RotatedPlanarCode", "StandardTailoredCode", "RotatedTailoredCode", "RotatedTailoredCodeBellInit", "PeriodicRotatedTailoredCode", "StandardXZZXCode", "RotatedXZZXCode"
         ];
         VARIANTS.iter().map(|x| PossibleValue::new(x))
     }
@@ -537,7 +538,74 @@ pub fn build_code(simulator: &mut Simulator) {
                                     (false, None)
                                 }
                             };
-                            if !is_bell_init || t > simulator.measurement_cycles {
+                            if is_bell_init && t < simulator.measurement_cycles { // an empty cycle for a measurement
+                                if t == 0 {  // measurement
+                                    match qubit_type {
+                                        QubitType::StabY => { gate_type = GateType::MeasureX; }
+                                        QubitType::StabX => { gate_type = GateType::MeasureX; }
+                                        QubitType::Data => { }
+                                        _ => { unreachable!() }
+                                    }
+                                }
+                            } else if is_bell_init && t < 2 * simulator.measurement_cycles {
+                                 // code_type is BellInit and t < measurement_cycle for init circuit
+                                match t % simulator.measurement_cycles {
+                                    0 => { // anc to top
+                                        if is_bell_init_anc(i, j) && is_bell_init_top(i-1, j) {
+                                            gate_type = GateType::CXGateControl;
+                                            gate_peer = Some(pos!(t, i-1, j));
+                                        }
+                                        if is_bell_init_top(i, j) && is_bell_init_anc(i+1, j) {
+                                            gate_type = GateType::CXGateTarget;
+                                            gate_peer = Some(pos!(t, i+1, j));
+                                        }
+                                    },
+                                    1 => { // anc to left
+                                        if is_bell_init_anc(i, j) && is_bell_init_left(i, j-1) {
+                                                gate_type = GateType::CXGateControl;
+                                                gate_peer = Some(pos!(t, i, j-1));
+                                        }
+                                        if is_bell_init_left(i, j) && is_bell_init_anc(i, j+1) {
+                                                gate_type = GateType::CXGateTarget;
+                                                gate_peer = Some(pos!(t, i, j+1));
+                                        }
+                                    },
+                                    2 => { // anc to right
+                                        if is_bell_init_anc(i, j) && is_bell_init_right(i, j+1) {
+                                                gate_type = GateType::CXGateControl;
+                                                gate_peer = Some(pos!(t, i, j+1));
+                                        }
+                                        if is_bell_init_right(i, j) && is_bell_init_anc(i, j-1) {
+                                                gate_type = GateType::CXGateTarget;
+                                                gate_peer = Some(pos!(t, i, j-1));
+                                        }
+                                    },
+                                    3 | 5 => { // anc to bot
+                                        if is_bell_init_anc(i, j) && is_bell_init_bot(i+1, j) {
+                                            gate_type = GateType::CXGateControl;
+                                            gate_peer = Some(pos!(t, i+1, j));
+                                        }
+                                        if is_bell_init_bot(i, j) && is_bell_init_anc(i-1, j) {
+                                            gate_type = GateType::CXGateTarget;
+                                            gate_peer = Some(pos!(t, i-1, j));
+                                        }
+                                    },
+                                    4 => { // anc to bot, with reversed CNOT
+                                        if is_bell_init_anc(i, j) && is_bell_init_bot(i+1, j) {
+                                            gate_type = GateType::CXGateTarget;
+                                            gate_peer = Some(pos!(t, i+1, j));
+                                        }
+                                        if is_bell_init_bot(i, j) && is_bell_init_anc(i-1, j) {
+                                            gate_type = GateType::CXGateControl;
+                                            gate_peer = Some(pos!(t, i-1, j));
+                                        }
+                                    },
+                                    _ => {
+                                        println!("t={:?} unreachable", t);
+                                        unreachable!()
+                                    },
+                                }
+                            } else { // normal cycles
                                 match t % simulator.measurement_cycles {
                                     1 => {  // initialization
                                         match qubit_type {
@@ -608,60 +676,6 @@ pub fn build_code(simulator: &mut Simulator) {
                                         }
                                     },
                                     _ => unreachable!()
-                                }
-                            } else { // code_type is BellInit and t <= measurement_cycle
-                                match t {
-                                    0 => { // anc to top
-                                        if is_bell_init_anc(i, j) && is_bell_init_top(i-1, j) {
-                                            gate_type = GateType::CXGateControl;
-                                            gate_peer = Some(pos!(t, i-1, j));
-                                        }
-                                        if is_bell_init_top(i, j) && is_bell_init_anc(i+1, j) {
-                                            gate_type = GateType::CXGateTarget;
-                                            gate_peer = Some(pos!(t, i+1, j));
-                                        }
-                                    },
-                                    1 => { // anc to left
-                                        if is_bell_init_anc(i, j) && is_bell_init_left(i, j-1) {
-                                                gate_type = GateType::CXGateControl;
-                                                gate_peer = Some(pos!(t, i, j-1));
-                                        }
-                                        if is_bell_init_left(i, j) && is_bell_init_anc(i, j+1) {
-                                                gate_type = GateType::CXGateTarget;
-                                                gate_peer = Some(pos!(t, i, j+1));
-                                        }
-                                    },
-                                    2 => { // anc to right
-                                        if is_bell_init_anc(i, j) && is_bell_init_right(i, j+1) {
-                                                gate_type = GateType::CXGateControl;
-                                                gate_peer = Some(pos!(t, i, j+1));
-                                        }
-                                        if is_bell_init_right(i, j) && is_bell_init_anc(i, j-1) {
-                                                gate_type = GateType::CXGateTarget;
-                                                gate_peer = Some(pos!(t, i, j-1));
-                                        }
-                                    },
-                                    3 | 5 => { // anc to bot
-                                        if is_bell_init_anc(i, j) && is_bell_init_bot(i+1, j) {
-                                            gate_type = GateType::CXGateControl;
-                                            gate_peer = Some(pos!(t, i+1, j));
-                                        }
-                                        if is_bell_init_bot(i, j) && is_bell_init_anc(i-1, j) {
-                                            gate_type = GateType::CXGateTarget;
-                                            gate_peer = Some(pos!(t, i-1, j));
-                                        }
-                                    },
-                                    4 => { // anc to bot, with reversed CNOT
-                                        if is_bell_init_anc(i, j) && is_bell_init_bot(i+1, j) {
-                                            gate_type = GateType::CXGateTarget;
-                                            gate_peer = Some(pos!(t, i+1, j));
-                                        }
-                                        if is_bell_init_bot(i, j) && is_bell_init_anc(i-1, j) {
-                                            gate_type = GateType::CXGateControl;
-                                            gate_peer = Some(pos!(t, i-1, j));
-                                        }
-                                    },
-                                    _ => unreachable!(),
                                 }
                             }
                             row_j.push(Some(Box::new(SimulatorNode::new(qubit_type, gate_type, gate_peer.clone())

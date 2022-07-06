@@ -264,6 +264,7 @@ impl ErrorModelBuilder {
 
                 // normal bias + cx node (for init)
                 let mut normal_biased_with_cx_node = (*normal_biased_node).clone();
+                normal_biased_with_cx_node.correlated_pauli_error_rates = Some(CorrelatedPauliErrorRates::default_with_probability(p / bias_eta));
                 normal_biased_with_cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZI = p;
                 normal_biased_with_cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IZ = 0.5 * p;
                 normal_biased_with_cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZZ = 0.5 * p;
@@ -305,7 +306,8 @@ impl ErrorModelBuilder {
 
                 simulator_iter_real!(simulator, position, node, {
                     error_model.set_node(position, Some(noiseless_node.clone()));  // clear existing noise model
-                    if position.t < simulator.measurement_cycles {
+                    if position.t >= simulator.measurement_cycles 
+                       && position.t < 2 * simulator.measurement_cycles { // first measurement_cycle is empty, used to set a perfect measurement
                         let (i, j) = (position.i, position.j);
                         match position.t {
                             0 => {
