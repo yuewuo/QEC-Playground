@@ -538,10 +538,10 @@ pub fn build_code(simulator: &mut Simulator) {
                                     (false, None)
                                 }
                             };
-                            if is_bell_init && t < simulator.measurement_cycles {
+                            if is_bell_init && t > 0 && t <= simulator.measurement_cycles {
                                  // code_type is BellInit and t < measurement_cycle for init circuit
                                 match t % simulator.measurement_cycles {
-                                    0 => { // anc to top
+                                    1 => { // anc to top
                                         if is_bell_init_anc(i, j) && is_bell_init_top(i-1, j) {
                                             gate_type = GateType::CXGateControl;
                                             gate_peer = Some(pos!(t, i-1, j));
@@ -551,7 +551,7 @@ pub fn build_code(simulator: &mut Simulator) {
                                             gate_peer = Some(pos!(t, i+1, j));
                                         }
                                     },
-                                    1 => { // anc to left
+                                    2 => { // anc to left
                                         if is_bell_init_anc(i, j) && is_bell_init_left(i, j-1) {
                                                 gate_type = GateType::CXGateControl;
                                                 gate_peer = Some(pos!(t, i, j-1));
@@ -561,7 +561,7 @@ pub fn build_code(simulator: &mut Simulator) {
                                                 gate_peer = Some(pos!(t, i, j+1));
                                         }
                                     },
-                                    2 => { // anc to right
+                                    3 => { // anc to right
                                         if is_bell_init_anc(i, j) && is_bell_init_right(i, j+1) {
                                                 gate_type = GateType::CXGateControl;
                                                 gate_peer = Some(pos!(t, i, j+1));
@@ -571,7 +571,7 @@ pub fn build_code(simulator: &mut Simulator) {
                                                 gate_peer = Some(pos!(t, i, j-1));
                                         }
                                     },
-                                    3 | 5 => { // anc to bot
+                                    4 | 0 => { // anc to bot
                                         if is_bell_init_anc(i, j) && is_bell_init_bot(i+1, j) {
                                             gate_type = GateType::CXGateControl;
                                             gate_peer = Some(pos!(t, i+1, j));
@@ -581,7 +581,7 @@ pub fn build_code(simulator: &mut Simulator) {
                                             gate_peer = Some(pos!(t, i-1, j));
                                         }
                                     },
-                                    4 => { // anc to bot, with reversed CNOT
+                                    5 => { // anc to bot, with reversed CNOT
                                         if is_bell_init_anc(i, j) && is_bell_init_bot(i+1, j) {
                                             gate_type = GateType::CXGateTarget;
                                             gate_peer = Some(pos!(t, i+1, j));
@@ -1112,7 +1112,7 @@ pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &
             let logical_j = left_cardinality % 2 != 0;  // odd cardinality means there is a logical X error
             Some((logical_i, logical_j))
         },
-        &CodeType::RotatedTailoredCode { dp, dn, .. } => {
+        &CodeType::RotatedTailoredCode { dp, dn, .. } | &CodeType::RotatedTailoredCodeBellInit { dp, dn, .. } => {
             // check cardinality of top boundary for logical_i
             let mut top_cardinality = 0;
             for delta in 0..dn {

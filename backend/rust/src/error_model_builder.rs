@@ -215,16 +215,6 @@ impl ErrorModelBuilder {
                 };
                 assert!(noisy_measurements > 0, "to simulate bell initialization, noisy measurement must be set +1 (e.g. set noisy measurement 1 is equivalent to 0 noisy measurements)");
                 assert!(simulator.measurement_cycles > 1);
-                // change all stabilizers at the first round as virtual
-                simulator_iter_mut!(simulator, position, node, t => simulator.measurement_cycles, {  ////[Q] why t=>sim.meas_cycles 
-                    if node.qubit_type != QubitType::Data {
-                        assert!(node.gate_type.is_measurement());
-                        assert!(node.gate_type.is_single_qubit_gate());
-                        // since no peer, just set myself as virtual is ok
-                        node.is_virtual = true;
-                        error_model.set_node(position, Some(noiseless_node.clone()));  // clear existing noise model
-                    }
-                });
                 // a bunch of function for determining qubit type during init, copied from code_builder.rs
                 let (di, dj) = (dp, dp);
                 let is_real = |i: usize, j: usize| -> bool {
@@ -306,10 +296,10 @@ impl ErrorModelBuilder {
 
                 simulator_iter_real!(simulator, position, node, {
                     error_model.set_node(position, Some(noiseless_node.clone()));  // clear existing noise model
-                    if position.t < simulator.measurement_cycles { // first measurement_cycle is empty, used to set a perfect measurement
+                    if position.t > 0 && position.t <= simulator.measurement_cycles { // first measurement_cycle is empty, used to set a perfect measurement
                         let (i, j) = (position.i, position.j);
                         match position.t {
-                            0 => {
+                            1 => {
                                 // if is_bell_init_anc: normal+cx
                                 // else: normal
                                 if is_bell_init_anc(i, j) {
@@ -318,19 +308,19 @@ impl ErrorModelBuilder {
                                     error_model.set_node(position, Some(normal_biased_node.clone()));
                                 }
                             },
-                            1 | 2 | 3 => {
+                            2 | 3 | 4 => {
                                 // if is_bell_init_anc: cx
                                 if is_bell_init_anc(i, j) {
                                     error_model.set_node(position, Some(cx_node.clone()));
                                 }
                             },
-                            4 => {
+                            5 => {
                                 // if is_bell_init_anc: rev_cx  
                                 if is_bell_init_anc(i, j) {
                                     error_model.set_node(position, Some(rev_cx_node.clone()));
                                 }
                             },
-                            5 => {
+                            0 => {
                                 // if is_bell_init_anc: cx
                                 // if is_bell_init_unfixed: y 
                                 if is_bell_init_anc(i, j) {
