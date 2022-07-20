@@ -27,16 +27,10 @@ debug = true
 
 [features]
 # to enable a feature, use `--features xxx`
-default = ["python_interfaces"]
+default = []
 fpga_amenable = []  # use FPGA-amenable code block (not friendly to read, but to test the equivalency with existing code)
 python_interfaces = ["pyo3"]  # by default to avoid using python interface, which includes `fpga_generator.rs`,
 blossom_v = []  # automatically enabled when file `blossomV/PerfectMatching.h` exists
-
-[lib]
-name = "qecp"
-# "cdylib" is necessary to produce a shared library for Python to import from.
-
-crate-type = ["cdylib"]
 
 [dependencies]
 rand = { version = "0.8.4", features = ["alloc"] }
@@ -66,8 +60,6 @@ float-cmp = "0.9.0"
 float-ord = "0.3.2"
 priority-queue = "1.2.1"
 parking_lot = "0.12.0"
-cffi = "0.1.7"
-
 
 [build-dependencies]
 cc = "1.0.66"
