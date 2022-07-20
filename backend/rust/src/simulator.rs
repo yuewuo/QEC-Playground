@@ -1,7 +1,6 @@
 //! General purpose Pauli group simulator optimized for surface code
 //! 
-#[cfg(feature="python_interfaces")]
-use pyo3::prelude::*;
+
 
 use std::cmp::Ordering;
 use super::types::*;
@@ -21,44 +20,46 @@ use super::erasure_graph::*;
 
 /// general simulator for two-dimensional code with circuit-level implementation of stabilizer measurements
 #[derive(Debug, Serialize)]
-#[cfg(feature="python_interfaces")]
-#[pyclass]
 pub struct Simulator {
     /// information of the preferred code
-    #[pyo3(get, set)]
     pub code_type: CodeType,
-    /// the information fields of CodeType
-    #[pyo3(get, set)]
-    pub builtin_code_information: BuiltinCodeInformation,
     /// size of the snapshot, where `nodes` is ensured to be a cube of `height` * `vertical` * `horizontal`
-    #[pyo3(get, set)]
     pub height: usize,
-    #[pyo3(get, set)]
     pub vertical: usize,
-    #[pyo3(get, set)]
     pub horizontal: usize,
     /// nodes array, because some rotated code can easily have more than half of the nodes non-existing, existing nodes are stored on heap
     pub nodes: Vec::< Vec::< Vec::< Option<Box <SimulatorNode> > > > >,
     /// use embedded random number generator
     pub rng: Xoroshiro128StarStar,
     /// how many cycles is there a round of measurements; default to 1
-    #[pyo3(get, set)]
     pub measurement_cycles: usize,
+}
+
+impl Simulator {
+    pub fn clone(&self) -> Self {
+        Self {
+            code_type: self.code_type.clone(),
+            height: self.height,
+            vertical: self.vertical,
+            horizontal: self.horizontal,
+            nodes: self.nodes.clone(),
+            rng: Xoroshiro128StarStar::new(),  // do not copy random number generator, otherwise parallel simulation may give same result
+            measurement_cycles: self.measurement_cycles,
+        }
+    }
+    pub fn volume(&self) -> usize {
+        self.height * self.vertical * self.horizontal
+    }
 }
 
 /// when plotting, t is the time axis; looking at the direction of `t=-∞`, the top-left corner is `i=j=0`;
 /// `i` is vertical position, which increases when moving from top to bottom;
 /// `j` is horizontal position, which increases when moving from left to right
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-#[cfg(feature="python_interfaces")]
-#[pyclass]
 pub struct Position {
     // pub index: [usize; 3],
-    #[pyo3(get, set)]
     pub t: usize,
-    #[pyo3(get, set)]
     pub i: usize,
-    #[pyo3(get, set)]
     pub j: usize,
 }
 
@@ -67,39 +68,27 @@ pub struct Position {
 /// errors at this node will have no impact on the measurement because errors are applied after the measurement).
 /// we also maintain "virtual nodes" at the boundary of a code, these virtual nodes are missing stabilizers at the boundary of a open-boundary surface code.
 #[derive(Debug, Clone, Serialize)]
-#[cfg(feature="python_interfaces")]
-#[pyclass]
 pub struct SimulatorNode {
-    #[pyo3(get, set)]
     pub qubit_type: QubitType,
     /// single-qubit or two-qubit gate applied 
-    #[pyo3(get, set)]
     pub gate_type: GateType,
     pub gate_peer: Option<Arc<Position>>,
     /// simulation data
-    #[pyo3(get, set)]
     pub error: ErrorType,
-    #[pyo3(get, set)]
     pub has_erasure: bool,
-    #[pyo3(get, set)]
     pub propagated: ErrorType,
     /// Virtual qubit doesn't physically exist, which means they will never have errors themselves.
     /// Real qubit errors can propagate to virtual qubits, but errors will never propagate to real qubits.
     /// Virtual qubits can be understood as perfect stabilizers that only absorb propagated errors and never propagate them.
     /// They're useful in tailored surface code decoding, and also to represent virtual boundaries
-    #[pyo3(get, set)]
     pub is_virtual: bool,
-    #[pyo3(get, set)]
     pub is_peer_virtual: bool,
     /// miscellaneous information, should be static, e.g. decoding assistance information
     pub miscellaneous: Option<Arc<serde_json::Value>>,
 }
 
-#[cfg(feature="python_interfaces")]
-#[pymethods]
 impl SimulatorNode {
     /// create a new simulator node
-    #[new]
     pub fn new(qubit_type: QubitType, gate_type: GateType, gate_peer: Option<Position>) -> Self {
         Self {
             qubit_type: qubit_type,
@@ -113,31 +102,7 @@ impl SimulatorNode {
             miscellaneous: None,
         }
     }
-    #[cfg(feature="python_interfaces")]
-    #[setter]
-    pub fn set_gate_peer(&mut self, pos: Position){
-        self.gate_peer = Option::Some(pos).map(Arc::new);
-    }
-    #[cfg(feature="python_interfaces")]
-    #[getter]
-    pub fn get_gate_peer(&self) -> Position{
-       (**self.gate_peer.as_ref().unwrap()).clone()
-    }
-    /// set error wi
-    pub fn set_error(&mut self, _error_model: &ErrorModel, error: &ErrorType) {
-        debug_assert!(!self.is_virtual || error == &I, "should not add errors at virtual nodes");
-        // TODO: in debug build, check if this error is valid given the error rates
-        self.error = *error;
-    }
 
-    pub fn set_error_temp(&mut self, error: &ErrorType){
-        debug_assert!(!self.is_virtual || error == &I, "should not add errors at virtual nodes");
-        // TODO: in debug build, check if this error is valid given the error rates
-        self.error = *error;
-    }
-}
-
-impl SimulatorNode{
     /// quick initialization function to set virtual bits (if there is any)
     pub fn set_virtual(mut self, is_virtual: bool, is_peer_virtual: bool) -> Self {
         self.is_virtual = is_virtual;
@@ -150,12 +115,18 @@ impl SimulatorNode{
         self.miscellaneous = miscellaneous.map(|x| Arc::new(x));
         self
     }
+
+    /// set error with sanity check only at debug build
+    #[inline]
+    pub fn set_error(&mut self, _error_model: &ErrorModel, error: &ErrorType) {
+        debug_assert!(!self.is_virtual || error == &I, "should not add errors at virtual nodes");
+        // TODO: in debug build, check if this error is valid given the error rates
+        self.error = *error;
+    }
 }
 
 /// single-qubit and two-qubit gate type
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, Copy)]
-#[cfg(feature="python_interfaces")]
-#[pyclass]
 pub enum GateType {
     /// initialize in $|0\rangle$ state which is the eigenstate of $\hat{Z}$
     InitializeZ,
@@ -180,8 +151,6 @@ pub enum GateType {
     None,
 }
 
-#[cfg(feature="python_interfaces")]
-#[pymethods]
 impl GateType {
     pub fn is_initialization(&self) -> bool {
         self == &GateType::InitializeZ || self == &GateType::InitializeX
@@ -245,15 +214,11 @@ impl GateType {
     }
 }
 
-#[cfg(feature="python_interfaces")]
-#[pymethods]
 impl Simulator {
     /// given builtin code type, this will automatically build the code structure
-    #[new]
-    pub fn new(code_type: CodeType, builtin_code_information: BuiltinCodeInformation) -> Self {
+    pub fn new(code_type: CodeType) -> Self {
         let mut simulator = Self {
             code_type: code_type,
-            builtin_code_information: builtin_code_information,
             height: 0,
             vertical: 0,
             horizontal: 0,
@@ -263,27 +228,6 @@ impl Simulator {
         };
         build_code(&mut simulator);
         simulator
-    }
-
-    pub fn set_nodes(&mut self, position: Position, error: ErrorType){
-        let node = self.get_node_mut_unwrap(&position);
-        node.set_error_temp(&error);
-    }
-
-    pub fn clone(&self) -> Self {
-        Self {
-            code_type: self.code_type.clone(),
-            builtin_code_information: self.builtin_code_information.clone(),
-            height: self.height,
-            vertical: self.vertical,
-            horizontal: self.horizontal,
-            nodes: self.nodes.clone(),
-            rng: Xoroshiro128StarStar::new(),  // do not copy random number generator, otherwise parallel simulation may give same result
-            measurement_cycles: self.measurement_cycles,
-        }
-    }
-    pub fn volume(&self) -> usize {
-        self.height * self.vertical * self.horizontal
     }
 
     /// judge if `[t][i][j]` is valid index of `self.nodes`
@@ -296,6 +240,42 @@ impl Simulator {
     #[inline]
     pub fn is_node_exist(&self, position: &Position) -> bool {
         self.is_valid_position(position) && self.get_node(position).is_some()
+    }
+
+    /// get `self.nodes[t][i][j]` without position check when compiled in release mode
+    #[inline]
+    pub fn get_node(&'_ self, position: &Position) -> &'_ Option<Box<SimulatorNode>> {
+        debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
+            , position, self.height, self.vertical, self.horizontal);
+        &self.nodes[position.t][position.i][position.j]
+    }
+
+    /// get `self.nodes[t][i][j]` and then unwrap without position check when compiled in release mode
+    #[inline]
+    pub fn get_node_unwrap(&'_ self, position: &Position) -> &'_ SimulatorNode {
+        debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
+            , position, self.height, self.vertical, self.horizontal);
+        debug_assert!(self.is_node_exist(position), "position {} does not exist in the simulator with size [{}][{}][{}]"
+            , position, self.height, self.vertical, self.horizontal);
+        self.get_node(position).as_ref().unwrap()
+    }
+
+    /// get mutable `self.nodes[t][i][j]` without position check when compiled in release mode
+    #[inline]
+    pub fn get_node_mut(&'_ mut self, position: &Position) -> &'_ mut Option<Box<SimulatorNode>> {
+        debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
+            , position, self.height, self.vertical, self.horizontal);
+        &mut self.nodes[position.t][position.i][position.j]
+    }
+
+    /// get mutable `self.nodes[t][i][j]` and unwrap without position check when compiled in release mode
+    #[inline]
+    pub fn get_node_mut_unwrap(&'_ mut self, position: &Position) -> &'_ mut SimulatorNode {
+        debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
+            , position, self.height, self.vertical, self.horizontal);
+        debug_assert!(self.is_node_exist(position), "position {} does not exist in the simulator with size [{}][{}][{}]"
+            , position, self.height, self.vertical, self.horizontal);
+        self.get_node_mut(position).as_mut().unwrap()
     }
 
     /// check if this node is a real node, i.e. physically exist in the simulation
@@ -634,6 +614,19 @@ impl Simulator {
         sparse_detected_erasures
     }
 
+    /// load detected erasures back to the simulator
+    pub fn load_sparse_detected_erasures(&mut self, sparse_detected_erasures: &SparseDetectedErasures) -> Result<(), String> {
+        for position in sparse_detected_erasures.iter() {
+            if !self.is_node_exist(position) {
+                return Err(format!("invalid erasure at position {}", position))
+            }
+        }
+        simulator_iter_mut!(self, position, node, {
+            node.has_erasure = sparse_detected_erasures.contains(position);
+        });
+        Ok(())
+    }
+
     #[inline(never)]
     pub fn fast_measurement_given_few_errors(&mut self, sparse_errors: &SparseErrorPattern) -> (SparseCorrection, SparseMeasurement, SparseMeasurement) {
         if sparse_errors.len() == 0 {
@@ -802,78 +795,6 @@ impl Simulator {
         sparse_error_pattern
     }
 
-    /// generate correction pattern using errors only at the top layer
-    pub fn generate_sparse_correction(&self) -> SparseCorrection {
-        let mut sparse_correction = SparseCorrection::new();
-        simulator_iter!(self, position, node, t => self.height - 1, {
-            if node.propagated != I && node.qubit_type == QubitType::Data {
-                sparse_correction.add(position.clone(), node.propagated);
-            }
-        });
-        sparse_correction
-    }
-
-    /// test if correction successfully recover the logical information
-    #[inline(never)]
-    pub fn validate_correction(&mut self, correction: &SparseCorrection) -> (bool, bool) {
-        if let Some((logical_i, logical_j)) = code_builder_validate_correction(self, correction) {
-            return (logical_i, logical_j)
-        }
-        unimplemented!("correction validation method not found for this code");
-    }
-
-}
-
-impl Simulator{
-    /// get `self.nodes[t][i][j]` without position check when compiled in release mode
-    #[inline]
-    pub fn get_node(&'_ self, position: &Position) -> &'_ Option<Box<SimulatorNode>> {
-        debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
-            , position, self.height, self.vertical, self.horizontal);
-        &self.nodes[position.t][position.i][position.j]
-    }
-
-    /// get mutable `self.nodes[t][i][j]` without position check when compiled in release mode
-    #[inline]
-    pub fn get_node_mut(&'_ mut self, position: &Position) -> &'_ mut Option<Box<SimulatorNode>> {
-        debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
-            , position, self.height, self.vertical, self.horizontal);
-        &mut self.nodes[position.t][position.i][position.j]
-    }
-
-    /// get mutable `self.nodes[t][i][j]` and unwrap without position check when compiled in release mode
-    #[inline]
-    pub fn get_node_mut_unwrap(&'_ mut self, position: &Position) -> &'_ mut SimulatorNode {
-        debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
-            , position, self.height, self.vertical, self.horizontal);
-        debug_assert!(self.is_node_exist(position), "position {} does not exist in the simulator with size [{}][{}][{}]"
-            , position, self.height, self.vertical, self.horizontal);
-        self.get_node_mut(position).as_mut().unwrap()
-    }
-
-    /// get `self.nodes[t][i][j]` and then unwrap without position check when compiled in release mode
-    #[inline]
-    pub fn get_node_unwrap(&'_ self, position: &Position) -> &'_ SimulatorNode {
-        debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
-            , position, self.height, self.vertical, self.horizontal);
-        debug_assert!(self.is_node_exist(position), "position {} does not exist in the simulator with size [{}][{}][{}]"
-            , position, self.height, self.vertical, self.horizontal);
-        self.get_node(position).as_ref().unwrap()
-    }
-
-    /// load detected erasures back to the simulator
-    pub fn load_sparse_detected_erasures(&mut self, sparse_detected_erasures: &SparseDetectedErasures) -> Result<(), String> {
-        for position in sparse_detected_erasures.iter() {
-            if !self.is_node_exist(position) {
-                return Err(format!("invalid erasure at position {}", position))
-            }
-        }
-        simulator_iter_mut!(self, position, node, {
-            node.has_erasure = sparse_detected_erasures.contains(position);
-        });
-        Ok(())
-    }
-    
     /// load an error pattern
     pub fn load_sparse_error_pattern(&mut self, sparse_error_pattern: &SparseErrorPattern) -> Result<(), String> {
         for (position, _error) in sparse_error_pattern.iter() {
@@ -888,6 +809,17 @@ impl Simulator{
             }
         });
         Ok(())
+    }
+
+    /// generate correction pattern using errors only at the top layer
+    pub fn generate_sparse_correction(&self) -> SparseCorrection {
+        let mut sparse_correction = SparseCorrection::new();
+        simulator_iter!(self, position, node, t => self.height - 1, {
+            if node.propagated != I && node.qubit_type == QubitType::Data {
+                sparse_correction.add(position.clone(), node.propagated);
+            }
+        });
+        sparse_correction
     }
 
     /// create json object for debugging and viewing
@@ -921,6 +853,16 @@ impl Simulator{
             }).collect::<Vec<Vec<Vec<Option<serde_json::Value>>>>>()
         })
     }
+
+    /// test if correction successfully recover the logical information
+    #[inline(never)]
+    pub fn validate_correction(&mut self, correction: &SparseCorrection) -> (bool, bool) {
+        if let Some((logical_i, logical_j)) = code_builder_validate_correction(self, correction) {
+            return (logical_i, logical_j)
+        }
+        unimplemented!("correction validation method not found for this code");
+    }
+
 }
 
 impl Default for Position {
@@ -955,10 +897,7 @@ impl PartialOrd for Position {
     }
 }
 
-#[cfg(feature="python_interfaces")]
-#[pymethods]
 impl Position {
-    #[new]
     pub fn new(t: usize, i: usize, j: usize) -> Self {
         Self {
             t: t,
@@ -1033,18 +972,12 @@ impl std::fmt::Display for SimulatorNode {
 
 /// in most cases non-trivial measurements are rare, this sparse structure use `BTreeSet` to store them
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg(feature="python_interfaces")]
-#[pyclass]
 pub struct SparseMeasurement {
-    #[pyo3(get, set)]
     pub nontrivial: BTreeSet<Position>,
 }
 
-// #[cfg(feature="python_interfaces")]
-// #[pymethods]
 impl SparseMeasurement {
     /// create a new clean measurement without nontrivial measurements
-    // #[new]
     pub fn new() -> Self {
         Self {
             nontrivial: BTreeSet::new(),
@@ -1080,11 +1013,8 @@ impl SparseMeasurement {
 
 /// detected erasures along with its effected edges
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg(feature="python_interfaces")]
-#[pyclass]
 pub struct SparseDetectedErasures {
     /// the position of the erasure errors
-    #[pyo3(get, set)]
     pub erasures: BTreeSet<Position>,
 }
 
@@ -1122,11 +1052,8 @@ impl SparseDetectedErasures {
 
 /// in most cases errors are rare, this sparse structure use `BTreeMap` to store them
 #[derive(Debug, Clone)]
-#[cfg(feature="python_interfaces")]
-#[pyclass]
 pub struct SparseErrorPattern {
     /// error happening at position: Position (t, i, j)
-    #[pyo3(get, set)]
     pub errors: BTreeMap<Position, ErrorType>,
 }
 
@@ -1202,8 +1129,6 @@ impl<'de> Deserialize<'de> for SparseErrorPattern {
 /// share methods with [`SparseErrorPattern`] but records **propagated** errors of **data qubits** on **top layer**
 /// , thus in principle it's incompatible with [`SparseErrorPattern`] which records individual errors
 #[derive(Debug, Clone, Deserialize)]
-#[cfg(feature="python_interfaces")]
-#[pyclass]
 pub struct SparseCorrection(SparseErrorPattern);
 
 impl SparseCorrection {
@@ -1261,7 +1186,7 @@ mod tests {
         let di = 5;
         let dj = 5;
         let noisy_measurements = 5;
-        let simulator = Simulator::new(CodeType::StandardPlanarCode, CodeType::BuiltinCodeInformation { noisy_measurements, di, dj });
+        let simulator = Simulator::new(CodeType::StandardPlanarCode { noisy_measurements, di, dj });
         let invalid_position = pos!(100, 100, 100);
         assert!(!simulator.is_valid_position(&invalid_position), "invalid position");
         let nonexisting_position = pos!(0, 0, 0);
@@ -1274,19 +1199,4 @@ mod tests {
         }
     }
 
-}
-
-
-#[cfg(feature="python_interfaces")]
-#[pyfunction]
-pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_class::<Simulator>()?;
-    m.add_class::<SimulatorNode>()?;
-    m.add_class::<Position>()?;
-    m.add_class::<GateType>()?;
-    m.add_class::<SparseMeasurement>()?;
-    m.add_class::<SparseDetectedErasures>()?;
-    m.add_class::<SparseErrorPattern>()?;
-    m.add_class::<SparseCorrection>()?;
-    Ok(())
 }

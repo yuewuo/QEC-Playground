@@ -1,12 +1,9 @@
 #![allow(non_snake_case)]
-#[cfg(feature="python_interfaces")]
-use pyo3::prelude::*;
+
 use serde::{Serialize, Deserialize};
 
 /// Qubit type, corresponds to `QTYPE` in `FaultTolerantView.vue`
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, Copy)]
-#[cfg(feature="python_interfaces")]
-#[pyclass]
 pub enum QubitType {
     Data,
     StabX,
@@ -16,8 +13,6 @@ pub enum QubitType {
     StabY,  // in tailored surface code
 }
 
-#[cfg(feature="python_interfaces")]
-#[pymethods]
 impl QubitType {
     /// if measure in Z basis, it's prepared in |0> state, otherwise it's measuring X basis and prepared in |+> state; data qubit will return None
     pub fn is_measured_in_z_basis(&self) -> Option<bool> {
@@ -32,8 +27,6 @@ impl QubitType {
 /// Error type, corresponds to `ETYPE` in `FaultTolerantView.vue`
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-#[cfg(feature="python_interfaces")]
-#[pyclass]
 pub enum ErrorType {
     I,
     X,
@@ -82,11 +75,9 @@ impl ErrorType {
             (Self::Y, Self::Y) => Self::I,
         }
     }
-    //#[staticmethod]
     pub fn all_possible_errors() -> Vec::<Self> {
         vec![Self::X, Self::Z, Self::Y]
     }
-    //#[classmethod]
     pub fn combine_probability(p_xyz_1: (f64, f64, f64), p_xyz_2: (f64, f64, f64)) -> (f64, f64, f64) {
         let (px1, py1, pz1) = p_xyz_1;
         let (px2, py2, pz2) = p_xyz_2;
@@ -468,12 +459,4 @@ impl std::fmt::Display for ErrorModelName {
         })?;
         Ok(())
     }
-}
-
-#[cfg(feature="python_interfaces")]
-#[pyfunction]
-pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_class::<ErrorType>()?;
-    m.add_class::<QubitType>()?;
-    Ok(())
 }

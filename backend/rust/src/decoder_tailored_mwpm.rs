@@ -598,7 +598,7 @@ mod tests {
         let p = 0.02;
         let bias_eta = 1e200;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeType::BuiltinCodeInformation{ noisy_measurements, dp: d, dn: d });
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode{ noisy_measurements, dp: d, dn: d });
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -638,7 +638,7 @@ mod tests {
         let p = 0.005;
         let bias_eta = 1e6;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeType::BuiltinCodeInformation{ noisy_measurements, dp: d, dn: d });
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode{ noisy_measurements, dp: d, dn: d });
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -756,7 +756,7 @@ mod tests {
         let p = 0.01;
         let bias_eta = 10.;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeType::BuiltinCodeInformation{ noisy_measurements, dp: d, dn: d });
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode{ noisy_measurements, dp: d, dn: d });
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -809,7 +809,7 @@ mod tests {
         let p = 0.05;
         let bias_eta = 10.;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeType::BuiltinCodeInformation{ noisy_measurements, dp: d, dn: d });
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode{ noisy_measurements, dp: d, dn: d });
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -850,7 +850,7 @@ mod tests {
         let p = 1.99053585e-01;
         let bias_eta = 1e200;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeType::BuiltinCodeInformation{ noisy_measurements, dp: d, dn: d });
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode{ noisy_measurements, dp: d, dn: d });
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -886,7 +886,7 @@ mod tests {
         let p = 0.005;
         let bias_eta = 1e6;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::PeriodicRotatedTailoredCode, CodeType::BuiltinCodeInformation{ noisy_measurements, dp: d+1, dn: d+1 });
+        let mut simulator = Simulator::new(CodeType::PeriodicRotatedTailoredCode{ noisy_measurements, dp: d+1, dn: d+1 });
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -925,7 +925,7 @@ mod tests {
         let p = 0.001;
         let bias_eta = 1e200;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::PeriodicRotatedTailoredCode, CodeType::BuiltinCodeInformation{ noisy_measurements, dp: d+1, dn: d+1 });
+        let mut simulator = Simulator::new(CodeType::PeriodicRotatedTailoredCode{ noisy_measurements, dp: d+1, dn: d+1 });
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
