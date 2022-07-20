@@ -2,4 +2,3 @@
 __pycache__
 .DS_Store
 history.tmp
-backend/rust/QEC_ENV/
