@@ -17,6 +17,7 @@ mod error_model;
 mod decoder_mwpm;
 mod decoder_tailored_mwpm;
 mod decoder_union_find;
+mod decoder_fusion;
 mod tailored_model_graph;
 mod tailored_complete_model_graph;
 mod error_model_builder;
@@ -50,6 +51,7 @@ extern crate float_cmp;
 extern crate priority_queue;
 extern crate float_ord;
 extern crate parking_lot;
+extern crate fusion_blossom;
 
 fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> {
     clap::Command::new("QECPlayground")
