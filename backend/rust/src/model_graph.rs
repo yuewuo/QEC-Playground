@@ -375,6 +375,18 @@ impl ModelGraph {
         self.add_edge(position2, position1, probability, weight, error_pattern.clone(), correction.clone(), use_brief_edge);
     }
 
+    /// unlike [`CompleteModelGraph::build_correction_matching`], this function can only match between incident nodes
+    pub fn build_correction_matching(&self, source: &Position, target: &Position) -> &SparseCorrection {
+        let node = self.get_node_unwrap(&source);
+        let edge = node.edges.get(target);
+        &edge.as_ref().unwrap().correction
+    }
+
+    pub fn build_correction_boundary(&self, source: &Position) -> &SparseCorrection {
+        let node = self.get_node_unwrap(&source);
+        &node.boundary.as_ref().unwrap().correction
+    }
+
     /// if there are multiple edges connecting two stabilizer measurements, elect the best one
     pub fn elect_edges<F>(&mut self, simulator: &Simulator, use_combined_probability: bool, weight_of: F) where F: Fn(f64) -> f64 + Copy {
         simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if self.is_node_exist(position) {

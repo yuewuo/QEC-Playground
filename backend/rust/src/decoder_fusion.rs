@@ -5,7 +5,6 @@ use serde::{Serialize, Deserialize};
 use super::simulator::*;
 use super::error_model::*;
 use super::model_graph::*;
-use super::complete_model_graph::*;
 use super::serde_json;
 use std::sync::{Arc};
 use std::time::Instant;
@@ -16,7 +15,7 @@ use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct FusionDecoderSharedData {
-    // TODO: optimize for the placement of positions to better leverage cache system: group near ones together
+    // TODO: optimize for the placement of positions to better leverage cache system of the decoder: group near ones together
     pub vertex_num: usize,
     pub real_vertex_num: usize,
     pub weighted_edges: Vec<(usize, usize, fusion_blossom::util::Weight)>,
@@ -32,16 +31,11 @@ pub struct FusionDecoder {
     pub model_graph: Arc<ModelGraph>,
     /// erasure graph is immutably shared
     pub erasure_graph: Arc<ErasureGraph>,
-
-
+    /// shared data helps interface with the fusion blossom algorithm
     pub shared_data: Arc<FusionDecoderSharedData>,
+    /// fusion blossom algorithm: a fast MWPM solver for quantum error correction
     #[serde(skip)]
     pub fusion_solver: fusion_blossom::mwpm_solver::SolverSerial,
-
-
-    // TODO: remove the dependency of complete model graph
-    /// complete model graph each thread maintain its own precomputed data; the internal model_graph might be copied and modified if erasure error exists
-    pub complete_model_graph: CompleteModelGraph,
     /// save configuration for later usage
     pub config: MWPMDecoderConfig,
     /// an immutably shared simulator that is used to change model graph on the fly for correcting erasure errors
@@ -51,11 +45,6 @@ pub struct FusionDecoder {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FusionDecoderConfig {
-    /// build complete model graph at first, but this will consume O(N^2) memory and increase initialization time,
-    /// disable this when you're simulating large code
-    #[serde(alias = "pcmg")]  // abbreviation
-    #[serde(default = "mwpm_default_configs::precompute_complete_model_graph")]
-    pub precompute_complete_model_graph: bool,
     /// weight function, by default using [`WeightFunction::AutotuneImproved`]
     #[serde(alias = "wf")]  // abbreviation
     #[serde(default = "mwpm_default_configs::weight_function")]
@@ -84,9 +73,6 @@ impl FusionDecoder {
         let mut erasure_graph = ErasureGraph::new(&simulator);
         erasure_graph.build(&mut simulator, Arc::clone(&error_model), parallel);
         let erasure_graph = Arc::new(erasure_graph);
-        // build complete model graph
-        let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
-        complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph, parallel);
         // build fusion decoder shared information
         let mut shared_data = FusionDecoderSharedData {
             vertex_num: 0,
@@ -142,7 +128,6 @@ impl FusionDecoder {
             erasure_graph: erasure_graph,
             shared_data: Arc::new(shared_data),
             fusion_solver: fusion_solver,
-            complete_model_graph: complete_model_graph,
             config: config,
             simulator: Arc::new(simulator),
         }
@@ -166,21 +151,20 @@ impl FusionDecoder {
             // run the Blossom algorithm
             let begin = Instant::now();
             let syndrome_vertices: Vec<usize> = to_be_matched.iter().map(|position| self.shared_data.position_to_vertex_mapping[position]).collect();
-            let fusion_mwpm_result = self.fusion_solver.solve(&syndrome_vertices);
+            let fusion_subgraph = self.fusion_solver.solve_subgraph(&syndrome_vertices);
             time_fusion += begin.elapsed().as_secs_f64();
             // build correction based on the matching
             let begin = Instant::now();
-            for i in 0..syndrome_vertices.len() {
-                let a = syndrome_vertices[i];
-                let b = fusion_mwpm_result[i];
-                if b < a {
+            for edge_idx in fusion_subgraph.iter() {
+                let (a, b, _) = self.shared_data.weighted_edges[*edge_idx];
+                if b < self.shared_data.real_vertex_num {
                     let pos_a = &self.shared_data.vertex_to_position_mapping[a];
                     let pos_b = &self.shared_data.vertex_to_position_mapping[b];
-                    let matching_correction = self.complete_model_graph.build_correction_matching(pos_a, pos_b);
+                    let matching_correction = self.model_graph.build_correction_matching(pos_a, pos_b);
                     correction.extend(&matching_correction);
-                } else if b >= self.shared_data.real_vertex_num {
+                } else {
                     let pos_a = &self.shared_data.vertex_to_position_mapping[a];
-                    let boundary_correction = self.complete_model_graph.build_correction_boundary(pos_a);
+                    let boundary_correction = self.model_graph.build_correction_boundary(pos_a);
                     correction.extend(&boundary_correction);
                 }
             }
