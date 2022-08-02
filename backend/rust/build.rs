@@ -32,6 +32,7 @@ fn main() {
         build.flag("-Wno-unused-parameter")
             .flag("-Wno-unused-variable")
             .flag("-Wno-reorder-ctor")
+            .flag("-Wno-reorder")
             .compile("blossomV");
 
         println!("cargo:rerun-if-changed=../../backend/blossomV/blossomV.cpp");

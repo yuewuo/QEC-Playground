@@ -6,6 +6,7 @@ See [this](https://keepachangelog.com/en/1.0.0/) for format of writing change lo
 
 For major updates, please run the [auto profiler](benchmark/auto_profiler/auto_profiler.md) to test performance and verify correctness
 
+- [ ] deprecate ftqec module and migrate scripts
 - [ ] write book
 - [ ] update 3D tool to support visualizing data structure from backend
 - [ ] add SQLite support to cache intermediate results, to allow broken-point continuous simulation with a random or specified UUID

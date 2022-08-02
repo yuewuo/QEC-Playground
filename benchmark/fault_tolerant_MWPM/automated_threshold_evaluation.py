@@ -85,6 +85,8 @@ def run_qec_playground_command_get_stdout(command, no_stdout=False, use_tmp_out=
     return stdout, process.returncode
 
 def qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command(p_vec, di_vec, dj_vec, T_vec, parameters, max_N=100000, min_error_cases=3000, rust_dir=rust_dir, time_budget=None):
+    print("[error] command 'fault_tolerant_benchmark' deprecated, please consider migrate the script to newer interface 'benchmark', or start a feature request in https://github.com/yuewuo/QEC-Playground to ask the maintainer to do this migration. sorry for the inconvenience.")
+    raise "not longer supported, please revert back to commit 0a7cd03b33d6ad1e62fff7d7fb4e88d60c3fbe55 to use this script"
     p_str = "[" + ",".join([f"{e:.8e}" for e in p_vec]) + "]"
     di_str = "[" + ",".join([str(e) for e in di_vec]) + "]"
     dj_str = "[" + ",".join([str(e) for e in dj_vec]) + "]"

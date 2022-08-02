@@ -55,13 +55,13 @@ struct ViewErrorModelQuery {
     error_model_temporary_id: usize,
 }
 
-/// call `tool fault_tolerant_benchmark` with code distance 5x5x5
+/// call `tool benchmark` with code distance 5x5x5
 async fn view_error_model(info: web::Query<ViewErrorModelQuery>) -> Result<HttpResponse, Error> {
     let di = 5;
     let dj = di;
     let T = di;
-    let mut tokens = vec![format!("qecp"), format!("tool"), format!("fault_tolerant_benchmark")
-        , format!("--debug_print_only"), format!("--debug_print_error_model")
+    let mut tokens = vec![format!("qecp"), format!("tool"), format!("benchmark")
+        , format!("--debug_print"), format!("full-error-model")
         , format!("[{}]", di), format!("--djs"), format!("[{}]", dj)
         , format!("[{}]", T), format!("[{}]", info.p), format!("--pes"), format!("[{}]", info.pe)];
     let temporary_store = TEMPORARY_STORE.read().unwrap();  // must acquire a reader lock, so that tool.rs is definitely; will slow down requests a little bit, but safety worth it
@@ -88,7 +88,7 @@ async fn view_error_model(info: web::Query<ViewErrorModelQuery>) -> Result<HttpR
     };
     let output = match matches.subcommand() {
         Some(("tool", matches)) => {
-            super::tool::run_matched_tool(&matches).expect("fault_tolerant_benchmark always gives output")
+            super::tool::run_matched_tool(&matches).expect("benchmark always gives output")
         }
         _ => unreachable!()
     };

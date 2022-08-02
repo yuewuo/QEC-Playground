@@ -73,5 +73,25 @@ pub fn safe_minimum_weight_perfect_matching(node_num: usize, input_weighted_edge
 }
 ```
 
+### update 2022.6.30
 
+The command of reproducing the above results are
+
+```sh
+
+# targeting 1e-3 relative error
+
+cargo run --release -- tool benchmark [3] [0] [0.1] -e4000000 -p0 --decoder mwpm --decoder_config '{"pcmg":true}'
+cargo run --release --features MWPM_reverse_order -- tool benchmark [3] [0] [0.1] -e4000000 -p0 --decoder mwpm --decoder_config '{"pcmg":true}'
+
+cargo run --release -- tool benchmark [5] [0] [0.1] -e4000000 -p0 --decoder mwpm --decoder_config '{"pcmg":true}'
+cargo run --release --features MWPM_reverse_order -- tool benchmark [5] [0] [0.1] -e4000000 -p0 --decoder mwpm --decoder_config '{"pcmg":true}'
+
+cargo run --release -- tool benchmark [7] [0] [0.1] -e4000000 -p0 --decoder mwpm --decoder_config '{"pcmg":true}'
+cargo run --release --features MWPM_reverse_order -- tool benchmark [7] [0] [0.1] -e4000000 -p0 --decoder mwpm --decoder_config '{"pcmg":true}'
+
+cargo run --release -- tool benchmark [9] [0] [0.1] -e4000000 -p0 --decoder mwpm --decoder_config '{"pcmg":true}'
+cargo run --release --features MWPM_reverse_order -- tool benchmark [9] [0] [0.1] -e4000000 -p0 --decoder mwpm --decoder_config '{"pcmg":true}'
+
+```
 
