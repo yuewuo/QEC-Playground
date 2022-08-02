@@ -1,3 +1,4 @@
+#![feature(cfg_eval)]
 #[cfg(feature="python_interfaces")]
 use pyo3::prelude::*;
 mod util;

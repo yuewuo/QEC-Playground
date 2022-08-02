@@ -1,3 +1,4 @@
+#![feature(cfg_eval)]
 mod util;
 mod test;
 mod tool;

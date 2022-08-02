@@ -6,6 +6,7 @@
 //! TODO: add svg picture to show example of different code types, see <https://docs.rs/embed-doc-image-showcase/latest/embed_doc_image_showcase/>
 //! for how to embed picture in cargo doc
 //! 
+
 #[cfg(feature="python_interfaces")]
 use super::pyo3::prelude::*;
 use super::simulator::*;
@@ -18,10 +19,9 @@ use ErrorType::*;
 
 /// commonly used code type that has built-in functions to automatically build up the simulator.
 /// other type of code type is also feasible, but one needs to implement the generation of code patch.
+#[cfg_attr(feature = "python_interfaces", pyclass)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-#[cfg(feature="python_interfaces")]
-#[pyclass]
 pub enum CodeType {
     ///noisy measurement rounds (excluding the final perfect measurement cap), vertical code dsitance, horizontal code distance
     StandardPlanarCode,
@@ -41,71 +41,19 @@ pub enum CodeType {
     Customized,
 }
 
-// #[derive(Debug, Clone, Serialize, Deserialize)]
-// #[serde(deny_unknown_fields)]
-// #[cfg(feature="python_interfaces")]
-// #[pyclass]
-// pub enum CodeType {
-//     /// noisy measurement rounds (excluding the final perfect measurement cap), vertical code distance, horizontal code distance
-//     StandardPlanarCode {
-//         noisy_measurements: usize,
-//         di: usize,
-//         dj: usize,
-//     },
-//     /// noisy measurement rounds (excluding the final perfect measurement cap), +i+j axis code distance, +i-j axis code distance
-//     RotatedPlanarCode {
-//         noisy_measurements: usize,
-//         dp: usize,  // positive code distance, +i+j axis, same logical operator with `di`
-//         dn: usize,  // negative code distance, +i-j axis, same logical operator with `dj`
-//     },
-//     /// noisy measurement rounds (excluding the final perfect measurement cap), vertical code distance, horizontal code distance
-//     StandardXZZXCode {
-//         noisy_measurements: usize,
-//         di: usize,
-//         dj: usize,
-//     },
-//     /// noisy measurement rounds (excluding the final perfect measurement cap), +i+j axis code distance, +i-j axis code distance
-//     RotatedXZZXCode {
-//         noisy_measurements: usize,
-//         dp: usize,  // positive code distance, +i+j axis, same logical operator with `di`
-//         dn: usize,  // negative code distance, +i-j axis, same logical operator with `dj`
-//     },
-//     /// noisy measurement rounds (excluding the final perfect measurement cap), vertical code distance, horizontal code distance
-//     StandardTailoredCode {
-//         noisy_measurements: usize,
-//         di: usize,
-//         dj: usize,
-//     },
-//     /// noisy measurement rounds (excluding the final perfect measurement cap), +i+j axis code distance, +i-j axis code distance
-//     RotatedTailoredCode {
-//         noisy_measurements: usize,
-//         dp: usize,  // positive code distance, +i+j axis, same logical operator with `di`
-//         dn: usize,  // negative code distance, +i-j axis, same logical operator with `dj`
-//     },
-//     /// periodic boundary condition of rotated tailored surface code, code distances must be even number
-//     PeriodicRotatedTailoredCode {
-//         noisy_measurements: usize,
-//         dp: usize,  // positive code distance, +i+j axis, same logical operator with `di`
-//         dn: usize,  // negative code distance, +i-j axis, same logical operator with `dj`
-//     },
-//     /// unknown code type, user must provide necessary information and build circuit-level implementation
-//     Customized,
-// }
-
 /// built-in code types' information
+#[cfg_attr(feature = "python_interfaces", pyclass)]
 #[derive(Debug, Serialize, Clone)]
-#[cfg(feature="python_interfaces")]
-#[pyclass]
 pub struct BuiltinCodeInformation {
     pub noisy_measurements: usize,
     pub di: usize,
     pub dj: usize,
 }
 
-#[cfg(feature="python_interfaces")]
-#[pymethods]
-impl BuiltinCodeInformation{
-    #[new]
+#[cfg_eval]
+#[cfg_attr(feature = "python_interfaces", pymethods)]
+impl BuiltinCodeInformation {
+    #[cfg_attr(feature = "python_interfaces", new)]
     pub fn new(noisy_measurements: usize, di: usize, dj: usize) -> Self{
         BuiltinCodeInformation{
             noisy_measurements: noisy_measurements,
@@ -115,8 +63,7 @@ impl BuiltinCodeInformation{
     }
 }
 
-#[cfg(feature="python_interfaces")]
-#[pymethods]
+#[cfg_attr(feature = "python_interfaces", pymethods)]
 impl CodeType {
     // pub fn builtin_code_information(&self) -> Option<BuiltinCodeInformation> {
     //     match &self {
@@ -1425,7 +1372,7 @@ mod tests {
     }
 
 }
- 
+
 #[cfg(feature="python_interfaces")]
 #[pyfunction]
 pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
