@@ -36,8 +36,11 @@ MWPM_reverse_order = []  # test the logical error rate arbitrariness of MWPM dec
 [lib]
 name = "qecp"
 # "cdylib" is necessary to produce a shared library for Python to import from.
-
 crate-type = ["cdylib"]
+
+[[bin]]
+name = "qecp-cli"
+path = "src/main.rs"
 
 [dependencies]
 rand = { version = "0.8.4", features = ["alloc"] }

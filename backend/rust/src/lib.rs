@@ -6,14 +6,10 @@ mod tool;
 mod types;
 //mod web;
 mod blossom_v;
-mod ftqec;
-mod offer_decoder;
 mod reproducible_rand;
-mod offer_mwpm;
-mod union_find_decoder;
-mod distributed_uf_decoder;
-mod fpga_generator;
-mod fast_benchmark;
+// mod distributed_uf_decoder;  TODO: migrate back
+// mod fpga_generator;  TODO: migrate back
+// mod fast_benchmark;  TODO: migrate back
 mod simulator;
 mod code_builder;
 #[macro_use] mod util_macros;
