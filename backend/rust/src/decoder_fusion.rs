@@ -37,7 +37,7 @@ pub struct FusionDecoder {
     #[serde(skip)]
     pub fusion_solver: fusion_blossom::mwpm_solver::SolverSerial,
     /// save configuration for later usage
-    pub config: MWPMDecoderConfig,
+    pub config: FusionDecoderConfig,
     /// an immutably shared simulator that is used to change model graph on the fly for correcting erasure errors
     pub simulator: Arc<Simulator>,
 }
@@ -63,7 +63,7 @@ impl FusionDecoder {
     /// create a new MWPM decoder with decoder configuration
     pub fn new(simulator: &Simulator, error_model: Arc<ErrorModel>, decoder_configuration: &serde_json::Value, parallel: usize, use_brief_edge: bool) -> Self {
         // read attribute of decoder configuration
-        let config: MWPMDecoderConfig = serde_json::from_value(decoder_configuration.clone()).unwrap();
+        let config: FusionDecoderConfig = serde_json::from_value(decoder_configuration.clone()).unwrap();
         // build model graph
         let mut simulator = simulator.clone();
         let mut model_graph = ModelGraph::new(&simulator);
@@ -235,7 +235,7 @@ mod tests {
         error_model_sanity_check(&simulator, &error_model).unwrap();
         let error_model = Arc::new(error_model);
         // build decoder
-        let decoder_config = json!({"pcmg":true});
+        let decoder_config = json!({});
         let mut fusion_decoder = FusionDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
         // load errors onto the simulator
         let sparse_error_pattern: SparseErrorPattern = serde_json::from_value(json!({"[0][1][2]":"Y","[0][1][9]":"X","[0][2][1]":"Z","[0][4][8]":"Y","[0][5][2]":"Z","[0][5][9]":"Z","[0][6][10]":"Z","[0][7][11]":"Z","[0][8][6]":"X","[0][8][11]":"X","[0][8][12]":"Z","[0][9][5]":"Y","[0][12][2]":"Y","[0][12][6]":"X","[0][12][13]":"X","[0][13][2]":"Z","[0][13][6]":"Y"})).unwrap();
