@@ -238,9 +238,29 @@ impl ErrorModelBuilder {
                     && i - j < dj - 3 
                     && ((i % 4 == 1 && j % 4 == 0) || (i % 4 == 3 && j % 4 == 2))
                 };
+                let is_bell_init_top = |i: usize, j: usize| -> bool { 
+                is_real(i, j) 
+                && i - j < dj - 1
+                && ((i % 4 == 0 && j % 4 == 0) || (i % 4 == 2 && j % 4 == 2)) 
+                };
+                let is_bell_init_left = |i: usize, j: usize| -> bool {
+                    is_real(i, j) 
+                    && i - j < dj - 1
+                    && ((i % 4 == 1 && j % 4 == 3) || (i % 4 == 3 && j % 4 == 1))  
+                };
+                let is_bell_init_right = |i: usize, j: usize| -> bool {
+                    is_real(i, j) 
+                    && i - j < dj - 1
+                    && ((i % 4 == 1 && j % 4 == 1) || (i % 4 == 3 && j % 4 == 3))  
+                };
+                let is_bell_init_bot = |i: usize, j: usize| -> bool { 
+                    is_real(i, j) 
+                    && i - j < dj - 1
+                    && ((i % 4 == 2 && j % 4 == 0) || (i % 4 == 0 && j % 4 == 2))  
+                };
                 let is_bell_init_unfixed = |i: usize, j: usize| -> bool {
                     is_real(i, j)
-                    && ((i % 4 == 0 && j % 4 == 3) || (i % 4 == 2 && j % 4 == 1))
+                    && ((i % 4 == 3 && j % 4 == 0) || (i % 4 == 1 && j % 4 == 2))
                 };
 
                 ////Error nodes for XY code
@@ -291,39 +311,52 @@ impl ErrorModelBuilder {
                 }
                 // create an error model that is always 50% change of measurement error
                 let mut messed_measurement_node = ErrorModelNode::new();
-                messed_measurement_node.pauli_error_rates.error_rate_Y = 0.5;  // Y error will cause pure measurement error for StabX (X basis), StabZ (Z basis), StabY (X basis)
+                messed_measurement_node.pauli_error_rates.error_rate_Z = 0.5;  // Z error will cause pure measurement error for unfixed stabilizer(Y)
                 let messed_measurement_node = Arc::new(messed_measurement_node);
 
                 simulator_iter_real!(simulator, position, node, {
                     error_model.set_node(position, Some(noiseless_node.clone()));  // clear existing noise model
                     if position.t > 0 && position.t <= simulator.measurement_cycles { // first measurement_cycle is empty, used to set a perfect measurement
                         let (i, j) = (position.i, position.j);
+                        assert!(is_real(i, j), "sim_iter_real should iter over real right?");
                         match position.t {
                             1 => {
                                 // if is_bell_init_anc: normal+cx
                                 // else: normal
-                                if is_bell_init_anc(i, j) {
+                                if is_bell_init_anc(i, j) && is_bell_init_top(i-1, j) {
                                     error_model.set_node(position, Some(normal_biased_with_cx_node.clone()));
                                 } else {
                                     error_model.set_node(position, Some(normal_biased_node.clone()));
                                 }
                             },
-                            2 | 3 | 4 => {
+                            2 => {
                                 // if is_bell_init_anc: cx
-                                if is_bell_init_anc(i, j) {
+                                if is_bell_init_anc(i, j) && is_bell_init_left(i, j-1) {
+                                    error_model.set_node(position, Some(cx_node.clone()));
+                                }
+                            },
+                            3 => {
+                                // if is_bell_init_anc: cx
+                                if is_bell_init_anc(i, j) && is_bell_init_right(i, j+1) {
+                                    error_model.set_node(position, Some(cx_node.clone()));
+                                }
+                            },
+                            4 => {
+                                // if is_bell_init_anc: cx
+                                if is_bell_init_anc(i, j) && is_bell_init_bot(i+1, j) {
                                     error_model.set_node(position, Some(cx_node.clone()));
                                 }
                             },
                             5 => {
                                 // if is_bell_init_anc: rev_cx  
-                                if is_bell_init_anc(i, j) {
+                                if is_bell_init_anc(i, j) && is_bell_init_bot(i+1, j) {
                                     error_model.set_node(position, Some(rev_cx_node.clone()));
                                 }
                             },
                             0 => {
                                 // if is_bell_init_anc: cx
-                                // if is_bell_init_unfixed: y 
-                                if is_bell_init_anc(i, j) {
+                                // if is_bell_init_unfixed: z 
+                                if is_bell_init_anc(i, j) && is_bell_init_bot(i+1, j) {
                                     error_model.set_node(position, Some(cx_measurement_error_node.clone()));
                                 }
                                 if is_bell_init_unfixed(i, j) {
@@ -334,7 +367,7 @@ impl ErrorModelBuilder {
                                 //nothing
                             },
                         }
-                    } else if  position.t < simulator.height - simulator.measurement_cycles {  // no error before the first round and at final round
+                    } else if position.t < simulator.height - simulator.measurement_cycles {  // no error before the first round and at final round
                         // do different things for each stage
                         match position.t % simulator.measurement_cycles {
                             1 => {  // pauli error on qubits

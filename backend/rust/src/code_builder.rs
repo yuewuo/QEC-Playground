@@ -408,7 +408,7 @@ pub fn build_code(simulator: &mut Simulator) {
             simulator.measurement_cycles = 6;
             assert!(di > 0, "code distance must be positive integer");
             assert!(dj > 0, "code distance must be positive integer");
-            let is_rotated = matches!(code_type, CodeType::RotatedTailoredCode { .. });
+            let is_rotated = matches!(code_type, CodeType::RotatedTailoredCode { .. }) || matches!(code_type, CodeType::RotatedTailoredCodeBellInit { .. });
             let is_bell_init = matches!(code_type, CodeType::RotatedTailoredCodeBellInit { .. });
             if is_rotated {
                 assert!(di % 2 == 1, "code distance must be odd integer, current: di = {}", di);
@@ -482,22 +482,22 @@ pub fn build_code(simulator: &mut Simulator) {
             let is_bell_init_top = |i: usize, j: usize| -> bool { 
                 is_real(i, j) 
                 && i - j < dj - 1
-                &&((i % 4 == 0 && j % 4 == 0) || (i % 4 == 2 && j % 4 == 2)) 
+                && ((i % 4 == 0 && j % 4 == 0) || (i % 4 == 2 && j % 4 == 2)) 
             };
             let is_bell_init_left = |i: usize, j: usize| -> bool {
                 is_real(i, j) 
                 && i - j < dj - 1
-                &&((i % 4 == 1 && j % 4 == 3) || (i % 4 == 3 && j % 4 == 1))  
+                && ((i % 4 == 1 && j % 4 == 3) || (i % 4 == 3 && j % 4 == 1))  
             };
             let is_bell_init_right = |i: usize, j: usize| -> bool {
                 is_real(i, j) 
                 && i - j < dj - 1
-                &&((i % 4 == 1 && j % 4 == 1) || (i % 4 == 3 && j % 4 == 3))  
+                && ((i % 4 == 1 && j % 4 == 1) || (i % 4 == 3 && j % 4 == 3))  
             };
             let is_bell_init_bot = |i: usize, j: usize| -> bool { 
                 is_real(i, j) 
                 && i - j < dj - 1
-                &&((i % 4 == 2 && j % 4 == 0) || (i % 4 == 0 && j % 4 == 2))  
+                && ((i % 4 == 2 && j % 4 == 0) || (i % 4 == 0 && j % 4 == 2))  
             };
 
             for t in 0..height {
@@ -545,10 +545,16 @@ pub fn build_code(simulator: &mut Simulator) {
                                         if is_bell_init_anc(i, j) && is_bell_init_top(i-1, j) {
                                             gate_type = GateType::CXGateControl;
                                             gate_peer = Some(pos!(t, i-1, j));
-                                        }
-                                        if is_bell_init_top(i, j) && is_bell_init_anc(i+1, j) {
+                                        } else if is_bell_init_top(i, j) && is_bell_init_anc(i+1, j) {
                                             gate_type = GateType::CXGateTarget;
                                             gate_peer = Some(pos!(t, i+1, j));
+                                        } else {
+                                            match qubit_type {
+                                                QubitType::StabY => { gate_type = GateType::InitializeX; }
+                                                QubitType::StabX => { gate_type = GateType::InitializeX; }
+                                                QubitType::Data => { }
+                                                _ => { unreachable!() }
+                                            }
                                         }
                                     },
                                     2 => { // anc to left
@@ -581,7 +587,7 @@ pub fn build_code(simulator: &mut Simulator) {
                                             gate_peer = Some(pos!(t, i-1, j));
                                         }
                                     },
-                                    5 => { // anc to bot, with reversed CNOT
+                                    5 => { // bot to anc
                                         if is_bell_init_anc(i, j) && is_bell_init_bot(i+1, j) {
                                             gate_type = GateType::CXGateTarget;
                                             gate_peer = Some(pos!(t, i+1, j));
