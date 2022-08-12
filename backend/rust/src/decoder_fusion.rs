@@ -119,7 +119,8 @@ impl FusionDecoder {
             let scale: f64 = (fusion_blossom::util::Weight::MAX as f64) / 10. / ((shared_data.vertex_num + 1) as f64) / maximum_weight;
             weighted_edges_unscaled.iter().map(|(a, b, weight)| (*a, *b, 2 * (weight * scale).ceil() as fusion_blossom::util::Weight)).collect()
         };
-        let fusion_solver = fusion_blossom::mwpm_solver::SolverSerial::new(shared_data.vertex_num, &shared_data.weighted_edges, &shared_data.virtual_vertices);
+        let initializer = fusion_blossom::util::SolverInitializer::new(shared_data.vertex_num, shared_data.weighted_edges.clone(), shared_data.virtual_vertices.clone());
+        let fusion_solver = fusion_blossom::mwpm_solver::SolverSerial::new(&initializer);
         // println!("position_to_vertex_mapping: {:?}", shared_data.position_to_vertex_mapping);
         // println!("weighted_edges: {:?}", shared_data.weighted_edges);
         // println!("virtual_vertices: {:?}", shared_data.virtual_vertices);
