@@ -66,13 +66,13 @@ textarea {
             <canvas class="abs" id="front_canvas" :width="main_height + 'px'" :height="main_height + 'px'" style="pointer-events:none;"></canvas>  
         </div>
         <div class="abs" style="background-color: white;" :style="{ width: (main_height*0.05)+'px', height: main_height+'px', left: main_height+'px', top: 0 }">
-            <el-slider v-model="t" vertical :height="(main_height*0.96)+'px'" :min="0" :max="42" :step="1" :show-stops="true" :style="{ margin: `${20*scale}px 0 0 ${25*scale}px` }" :marks="marks"></el-slider>
+            <el-slider v-model="t" vertical :height="(main_height*0.96)+'px'" :min="0" :max="36" :step="1" :show-stops="true" :style="{ margin: `${20*scale}px 0 0 ${25*scale}px` }" :marks="marks"></el-slider>
         </div>
         <div class="abs" style="right: 0; top: 0;" :style="{ width: (main_width-main_height*1.15)+'px', height: main_height+'px' }">
             <div :style="{ margin: (20*scale)+'px', 'font-size': (18*scale)+'px' }">
                 <p style="font-size: 160%; font-weight: bold;">Error Model<span v-if="data_ready" style="font-weight: normal;"> ({{ Object.keys(data.code_type)[0] }})</span></p>
                 <p style="font-size: 100%; max-width: 100%;" :style="{ 'margin-top': (20*scale)+'px' }">parameters: \( d_i = d_j = T = \;\){{di}}, \( p_{\small\text{Pauli}} = \;\){{p_str}}, \(p_{\small\text{erasure}} = \;\){{pe_str}}</p>
-                <textarea style="width: 95%; resize: none;" :style="{ padding: (10*scale)+'px', 'margin-top': (10*scale)+'px', 'font-size': (15*scale)+'px' }" id="parameters-textarea" rows="4" v-model="full_parameters" v-on:keypress="textarea_keypress" v-on:blur="textarea_updated"></textarea>
+                <textarea style="width: 95%; resize: none;" :style="{ padding: (10*scale)+'px', 'margin-top': (10*scale)+'px', 'font-size': (14*scale)+'px' }" id="parameters-textarea" rows="3" v-model="full_parameters" v-on:keypress="textarea_keypress" v-on:blur="textarea_updated"></textarea>
                 <div style="font-size: 80%; font-family: arial; color: grey;">
                     <p>- Errors are placed *after* the gate (thus any ancilla error at measurement stage is meaningless because it's after the current measurement and before the next initialization; in order to add pure additional measurement errors, add them to gate4 stage as single-qubit pauli error)</p>
                     <p>- <span><span class="demo":style="{ width: (20*scale)+'px', height: (20*scale)+'px', 'border-radius': (20*scale)+'px', 'top': (5*scale)+'px', 'margin-right': (5*scale)+'px', 'background-color': pauli_color }"></span>single-qubit Pauli error</span>
@@ -87,10 +87,10 @@ textarea {
                         <div v-if="node != null">
                             <p style="font-size: 150%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">{{ qubit_type_name(node.qubit_type) }} Qubit at [{{t}}][{{si}}][{{sj}}]</p>
                             <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">Single-Qubit Pauli Error:
-                                <p :style="{ color: node.error_model.pp.px > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small X} = \;\)<span>{{ node.error_model.pp.px }}</span></p>
-                                <p :style="{ color: node.error_model.pp.pz > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small Z} = \;\)<span>{{ node.error_model.pp.pz }}</span></p>
-                                <p :style="{ color: node.error_model.pp.py > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small Y} = \;\)<span>{{ node.error_model.pp.py }}</span></p></p>
-                                <p :style="{ color: node.error_model.pp.px + node.error_model.pp.pz + node.error_model.pp.py > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">
+                                <p :style="{ color: node.error_model.pp.px > 2e-300 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small X} = \;\)<span>{{ node.error_model.pp.px }}</span></p>
+                                <p :style="{ color: node.error_model.pp.pz > 2e-300 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small Z} = \;\)<span>{{ node.error_model.pp.pz }}</span></p>
+                                <p :style="{ color: node.error_model.pp.py > 2e-300 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small Y} = \;\)<span>{{ node.error_model.pp.py }}</span></p></p>
+                                <p :style="{ color: node.error_model.pp.px + node.error_model.pp.pz + node.error_model.pp.py > 4e-300 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">
                                     \( p_{\small X} + p_{\small Z} + p_{\small Y} = \;\)<span>{{ node.error_model.pp.px + node.error_model.pp.pz + node.error_model.pp.py }}</span></p></p>
                             <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">Single-Qubit Erasure Error: 
                                 <p :style="{ color: node.error_model.pe > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small\text{erasure}} = \;\)<span>{{ node.error_model.pe }}</span></p></p>
@@ -166,7 +166,7 @@ function create_marks(scale=1) {
     }
     marks[0] = make_mark(`time`, color="black")
     for (let mt = 0; mt <= di; mt++) {
-        const t = 6 * (mt + 2)
+        const t = 6 * (mt + 1)
         marks[t] = make_mark(`meas${mt}`, color="#1989FA", font_weight="bold")
         marks[t-1] = make_mark(`gate4`)
         marks[t-2] = make_mark(`gate3`)
