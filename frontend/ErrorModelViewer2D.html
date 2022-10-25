@@ -57,9 +57,9 @@ textarea {
         <div v-if="data_ready" class="abs" :style="{ width: main_height+'px', height: main_height+'px', left: 0, top: 0 }">
             <canvas class="abs" id="behind_canvas" :width="main_height + 'px'" :height="main_height + 'px'" style="pointer-events:none;"></canvas>  
             <div class="abs" style="width: 100%; height: 100%; top: 0; left: 0" @click="select_node(null)"></div>
-            <div v-for="(item, i) in data.snapshot[t]">
-                <div v-for="(node, j) in data.snapshot[t][i]">
-                    <div v-if="node != null" class="abs qubit" style="border-radius: 100%;" :style="{ 'background-color': qubit_color(node), width: (qubit_radius*2)+'px', height: (qubit_radius*2)+'px', left: pos(j)+'px', top: pos(i)+'px' }"
+            <div v-for="(item, i) in data.nodes[t]">
+                <div v-for="(node, j) in data.nodes[t][i]">
+                    <div v-if="node != null && !node.is_virtual" class="abs qubit" style="border-radius: 100%;" :style="{ 'background-color': qubit_color(node), width: (qubit_radius*2)+'px', height: (qubit_radius*2)+'px', left: pos(j)+'px', top: pos(i)+'px' }"
                         @click="select_node(node)"></div>
                 </div>
             </div>
@@ -70,7 +70,7 @@ textarea {
         </div>
         <div class="abs" style="right: 0; top: 0;" :style="{ width: (main_width-main_height*1.15)+'px', height: main_height+'px' }">
             <div :style="{ margin: (20*scale)+'px', 'font-size': (18*scale)+'px' }">
-                <p style="font-size: 160%; font-weight: bold;">Error Model<span v-if="data_ready" style="font-weight: normal;"> ({{ data.code_type }})</span></p>
+                <p style="font-size: 160%; font-weight: bold;">Error Model<span v-if="data_ready" style="font-weight: normal;"> ({{ Object.keys(data.code_type)[0] }})</span></p>
                 <p style="font-size: 100%; max-width: 100%;" :style="{ 'margin-top': (20*scale)+'px' }">parameters: \( d_i = d_j = T = \;\){{di}}, \( p_{\small\text{Pauli}} = \;\){{p_str}}, \(p_{\small\text{erasure}} = \;\){{pe_str}}</p>
                 <textarea style="width: 95%; resize: none;" :style="{ padding: (10*scale)+'px', 'margin-top': (10*scale)+'px', 'font-size': (15*scale)+'px' }" id="parameters-textarea" rows="4" v-model="full_parameters" v-on:keypress="textarea_keypress" v-on:blur="textarea_updated"></textarea>
                 <div style="font-size: 80%; font-family: arial; color: grey;">
@@ -83,26 +83,26 @@ textarea {
                          :style="{ width: (20*scale)+'px', height: (20*scale)+'px', 'border-radius': (20*scale)+'px', 'top': (5*scale)+'px', 'margin-right': (5*scale)+'px', 'background-color': qubit_type_color(qubit_type) }"></span>{{ qubit_type_name(qubit_type) }} Qubit</span></p>
                 </div>
                 <div v-if="data_ready" v-show="selected != null">
-                    <div v-for="node of [data.snapshot[t][si][sj]]">
+                    <div v-for="node of [data.nodes[t][si][sj]]">
                         <div v-if="node != null">
                             <p style="font-size: 150%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">{{ qubit_type_name(node.qubit_type) }} Qubit at [{{t}}][{{si}}][{{sj}}]</p>
                             <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">Single-Qubit Pauli Error:
-                                <p :style="{ color: node.error_rate_x > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small X} = \;\)<span>{{ node.error_rate_x }}</span></p>
-                                <p :style="{ color: node.error_rate_z > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small Z} = \;\)<span>{{ node.error_rate_z }}</span></p>
-                                <p :style="{ color: node.error_rate_y > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small Y} = \;\)<span>{{ node.error_rate_y }}</span></p></p>
-                                <p :style="{ color: node.error_rate_x + node.error_rate_z + node.error_rate_y > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">
-                                    \( p_{\small X} + p_{\small Z} + p_{\small Y} = \;\)<span>{{ node.error_rate_x + node.error_rate_z + node.error_rate_y }}</span></p></p>
+                                <p :style="{ color: node.error_model.pp.px > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small X} = \;\)<span>{{ node.error_model.pp.px }}</span></p>
+                                <p :style="{ color: node.error_model.pp.pz > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small Z} = \;\)<span>{{ node.error_model.pp.pz }}</span></p>
+                                <p :style="{ color: node.error_model.pp.py > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small Y} = \;\)<span>{{ node.error_model.pp.py }}</span></p></p>
+                                <p :style="{ color: node.error_model.pp.px + node.error_model.pp.pz + node.error_model.pp.py > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">
+                                    \( p_{\small X} + p_{\small Z} + p_{\small Y} = \;\)<span>{{ node.error_model.pp.px + node.error_model.pp.pz + node.error_model.pp.py }}</span></p></p>
                             <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">Single-Qubit Erasure Error: 
-                                <p :style="{ color: node.erasure_error_rate > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small\text{erasure}} = \;\)<span>{{ node.erasure_error_rate }}</span></p></p>
-                            <div v-show="node.connection != null">
-                                <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">Peer Qubit of this Two-Qubit Gate: [{{(node.connection||{})["t"]}}][{{(node.connection||{})["i"]}}][{{(node.connection||{})["j"]}}]</p>
+                                <p :style="{ color: node.error_model.pe > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small\text{erasure}} = \;\)<span>{{ node.error_model.pe }}</span></p></p>
+                            <div v-show="node.gate_peer != null">
+                                <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">Peer Qubit of this Two-Qubit Gate: {{ node.gate_peer }}</p>
                                 <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">Correlated Two-Qubit Pauli Error: (this \(\otimes\) peer)
-                                    <p v-for="name of all_correlated_pauli_names" :style="{ color: (node.correlated_error_model||all_zero_correlated_pauli)[`error_rate_${name}`] > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">
-                                        \( p_{\small {{ name[0] }} \otimes {{ name[1] }}} = \;\)<span>{{ (node.correlated_error_model||all_zero_correlated_pauli)[`error_rate_${name}`] }}</span></p></p>
+                                    <p v-for="name of all_correlated_pauli_names" :style="{ color: (node.error_model.corr_pp||all_zero_correlated_pauli)[`p${name.toLowerCase()}`] > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">
+                                        \( p_{\small {{ name[0] }} \otimes {{ name[1] }}} = \;\)<span>{{ (node.error_model.corr_pp||all_zero_correlated_pauli)[`p${name.toLowerCase()}`] }}</span></p></p>
                                     <p :style="{ color: sum_correlated_pauli(node) > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( \sum p_{\small \cdots \otimes \cdots} = \;\)<span>{{ sum_correlated_pauli(node) }}</span></p>
                                 <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">Correlated Two-Qubit Erasure Error: (this \(\otimes\) peer)
-                                    <p v-for="name of all_correlated_erasure_names" :style="{ color: (node.correlated_erasure_error_model||all_zero_correlated_erasure)[`error_rate_${name}`] > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">
-                                        \( p_{\small {{ name[0] }} \otimes {{ name[1] }}} = \;\)<span>{{ (node.correlated_erasure_error_model||all_zero_correlated_erasure)[`error_rate_${name}`] }}</span></p></p>
+                                    <p v-for="name of all_correlated_erasure_names" :style="{ color: (node.error_model.corr_pe||all_zero_correlated_erasure)[`p${name.toLowerCase()}`] > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">
+                                        \( p_{\small {{ name[0] }} \otimes {{ name[1] }}} = \;\)<span>{{ (node.error_model.corr_pe||all_zero_correlated_erasure)[`p${name.toLowerCase()}`] }}</span></p></p>
                                     <p :style="{ color: sum_correlated_erasure(node) > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small I \otimes E} + p_{\small E \otimes I} + p_{\small E \otimes E} = \;\)<span>{{ sum_correlated_erasure(node) }}</span></p>
                             </div>
                         </div>
@@ -124,14 +124,23 @@ if (window.location.href.startsWith("file://")) {
     base_url = "http://127.0.0.1:8066/view_error_model"  // start local server using `cargo run -- server`
 }
 
-// debug url: ?p=0.01&pe=0.05&parameters=--use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration "{\"use_correlated_pauli\":true}"
-// debug url: ?p=0.01&pe=0.05&parameters=--use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration "{\"use_correlated_pauli\":true,\"initialization_error_rate\":0.005,\"measurement_error_rate\":0.005}"
+// debug url: ?p=0.01&pe=0.05&parameters=--code_type StandardXZZXCode --error_model only-gate-error-circuit-level --error_model_configuration '{"use_correlated_pauli":true,"use_correlated_erasure":true}'
+// debug url: ?p=0.01&pe=0.05&parameters=--code_type StandardXZZXCode --error_model only-gate-error-circuit-level --error_model_configuration '{"use_correlated_pauli":true,"use_correlated_erasure":true,"initialization_error_rate":0.005,"measurement_error_rate":0.005}'
 
 async function get_error_model_data() {
     const url = base_url + window.location.search
     // console.log(url)
     const response = await axios.get(url)
     return response.data
+}
+
+function get_position(position_str) {
+    const matched_pos = position_str.match(/^\[(\d+)\]\[(\d+)\]\[(\d+)\]$/)
+    return {
+        t: parseInt(matched_pos[1]),
+        i: parseInt(matched_pos[2]),
+        j: parseInt(matched_pos[3]),
+    }
 }
 
 const di = 5
@@ -237,8 +246,9 @@ var app = new Vue({
             this.data_error = `${e.response.status} ${e.response.statusText}\n\n${remove_ansi_color(e.response.data)}`
             return
         }
+        this.fill_data()
         let found_qubit_types = {}
-        for (let row of this.data.snapshot[0]) {
+        for (let row of this.data.nodes[0]) {
             for (let node of row) {
                 if (node != null) {
                     this.default_selection = [node.i, node.j]
@@ -252,9 +262,9 @@ var app = new Vue({
                 this.existing_qubit_types.push(qubit_type)
             }
         }
-        console.assert(this.data.di == di)
-        console.assert(this.data.dj == di)
-        console.assert(this.data.MeasurementRounds == di)
+        console.assert(this.data.vertical == 2 * di + 1)
+        console.assert(this.data.horizontal == 2 * di + 1)
+        console.assert(this.data.height == 6 * (di + 1) + 1)
         this.data_ready = true
         this.data_error = null
         this.update_mathjax()
@@ -327,7 +337,7 @@ var app = new Vue({
             })
         },
         pos(i) {
-            return Math.round(this.main_height * (0.5 + (i - (di - 1)) / (di - 1) * 0.45) - this.qubit_radius)
+            return Math.round(this.main_height * (0.5 + (i - di) / di * 0.45) - this.qubit_radius)
         },
         qubit_type_name(qubit_type) {
             if (qubit_type == "StabX") { return "X Ancilla" }
@@ -372,24 +382,39 @@ var app = new Vue({
             this.selected = [node.i, node.j]
         },
         sum_correlated_pauli(node) {
-            if (node == null || node.correlated_error_model == null) {
+            if (node == null || node.error_model == null || node.error_model.corr_pp == null) {
                 return 0
             }
             let sum = 0
             for (name of this.all_correlated_pauli_names) {
-                sum += node.correlated_error_model[`error_rate_${name}`]
+                sum += node.error_model.corr_pp[`p${name.toLowerCase()}`]
             }
             return sum
         },
         sum_correlated_erasure(node) {
-            if (node == null || node.correlated_erasure_error_model == null) {
+            if (node == null || node.error_model.corr_pe == null) {
                 return 0
             }
             let sum = 0
             for (name of this.all_correlated_erasure_names) {
-                sum += node.correlated_erasure_error_model[`error_rate_${name}`]
+                sum += node.error_model.corr_pe[`p${name.toLowerCase()}`]
             }
             return sum
+        },
+        fill_data() {  // fill in missing information of the nodes
+            for (let t = 0; t < this.data.nodes.length; ++t) {
+                for (let i = 0; i < this.data.nodes[t].length; ++i) {
+                    for (let j = 0; j < this.data.nodes[t][i].length; ++j) {
+                        let node = this.data.nodes[t][i][j]
+                        if (node != null) {
+                            node.i = i
+                            node.j = j
+                            node.t = t
+                            console.assert(node.position == `[${t}][${i}][${j}]`)
+                        }
+                    }
+                }
+            }
         },
         update_canvas() {
             // draw gates
@@ -398,14 +423,14 @@ var app = new Vue({
                 let context = canvas.getContext('2d')
                 context.clearRect(0, 0, canvas.width, canvas.height)
                 let width = canvas.width
-                for (let i = 0; i < this.data.snapshot[this.t].length; ++i) {
-                    for (let j = 0; j < this.data.snapshot[this.t][i].length; ++j) {
-                        const node = this.data.snapshot[this.t][i][j]
-                        if (node == null) continue
+                for (let i = 0; i < this.data.nodes[this.t].length; ++i) {
+                    for (let j = 0; j < this.data.nodes[this.t][i].length; ++j) {
+                        const node = this.data.nodes[this.t][i][j]
+                        if (node == null || node.is_virtual || node.is_peer_virtual) continue
                         context.lineWidth = 2 * this.scale
                         context.strokeStyle = 'black'
                         context.fillStyle = "black"
-                        if (node.gate_type == "Target") {
+                        if (node.gate_type == "CXGateTarget") {
                             // draw CNOT:target
                             const circle_radius = this.qubit_radius * 0.8
                             context.beginPath()
@@ -419,7 +444,7 @@ var app = new Vue({
                             context.moveTo(this.pos(j) + this.qubit_radius - circle_radius, this.pos(i) + this.qubit_radius)
                             context.lineTo(this.pos(j) + this.qubit_radius + circle_radius, this.pos(i) + this.qubit_radius)
                             context.stroke()
-                        } else if (node.gate_type == "TargetCY") {
+                        } else if (node.gate_type == "CYGateTarget") {
                             const half_square_length = this.qubit_radius * 0.6
                             context.beginPath()
                             context.moveTo(this.pos(j) + this.qubit_radius + half_square_length, this.pos(i) + this.qubit_radius + half_square_length)
@@ -431,37 +456,40 @@ var app = new Vue({
                             context.font = `${30 * this.scale}px Arial`
                             context.textAlign = "center"
                             context.fillText("Y", this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius + 12 * this.scale)
-                        } else if (node.gate_type == "Control" || node.gate_type == "ControlledPhase" || node.gate_type == "ControlCY") {
+                        } else if (node.gate_type == "CXGateControl" || node.gate_type == "CZGate" || node.gate_type == "CYGateControl") {
                             // draw CNOT:control
                             const circle_radius = 8 * this.scale
                             context.beginPath()
                             context.arc(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius, circle_radius, 0, 2 * Math.PI)
                             context.fill()
-                        }
-                        if (this.t > 0 && node.qubit_type != "Data") {
+                        } else if (node.gate_type == "MeasureX" || node.gate_type == "MeasureZ") {
                             let measure_basis = "?"
-                            if (node.qubit_type == "StabZ") { measure_basis = "Z" }
-                            if (node.qubit_type == "StabX") { measure_basis = "X" }
-                            if (node.qubit_type == "StabXZZXLogicalX") { measure_basis = "X" }
-                            if (node.qubit_type == "StabXZZXLogicalZ") { measure_basis = "X" }
-                            if (node.qubit_type == "StabY") { measure_basis = "X" }
-                            let init_basis = "|?〉"
-                            if (measure_basis == "X") { init_basis = "|+〉" }
-                            if (measure_basis == "Z") { init_basis = "|0〉" }
+                            if (node.gate_type == "MeasureX") {
+                                measure_basis = "X"
+                            }
+                            if (node.gate_type == "MeasureZ") {
+                                measure_basis = "Z"
+                            }
                             context.font = `${30 * this.scale}px Arial`
                             context.textAlign = "center"
-                            if (this.t % 6 == 0) {
-                                // draw measurement
-                                context.fillText("Meas." + measure_basis, this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius)
-                            } else if (this.t % 6 == 1) {
-                                // draw initialization
-                                context.fillText("Init." + init_basis, this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius)
+                            context.fillText("Meas." + measure_basis, this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius)
+                        } else if (node.gate_type == "InitializeX" || node.gate_type == "InitializeZ") {
+                            let init_basis = "|?〉"
+                            if (node.gate_type == "InitializeX") {
+                                init_basis = "|+〉"
                             }
+                            if (node.gate_type == "InitializeZ") {
+                                init_basis = "|0〉"
+                            }
+                            context.font = `${30 * this.scale}px Arial`
+                            context.textAlign = "center"
+                            context.fillText("Init." + init_basis, this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius)
                         }
-                        if (node.connection != null) {
+                        if (node.gate_peer != null) {
                             // draw half of the connection
-                            let ci = node.connection.i
-                            let cj = node.connection.j
+                            const gate_peer = get_position(node.gate_peer)
+                            let ci = gate_peer.i
+                            let cj = gate_peer.j
                             context.beginPath()
                             context.moveTo(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius)
                             context.lineTo(this.pos((j+cj)/2) + this.qubit_radius, this.pos((i+ci)/2) + this.qubit_radius)
@@ -476,34 +504,37 @@ var app = new Vue({
                 let context = canvas.getContext('2d')
                 context.clearRect(0, 0, canvas.width, canvas.height)
                 let width = canvas.width
-                for (let i = 0; i < this.data.snapshot[this.t].length; ++i) {
-                    for (let j = 0; j < this.data.snapshot[this.t][i].length; ++j) {
-                        const node = this.data.snapshot[this.t][i][j]
+                for (let i = 0; i < this.data.nodes[this.t].length; ++i) {
+                    for (let j = 0; j < this.data.nodes[this.t][i].length; ++j) {
+                        const node = this.data.nodes[this.t][i][j]
                         if (node == null) continue
                         context.lineWidth = 0
-                        if (node.error_rate_x > 0 || node.error_rate_z > 0 || node.error_rate_y > 0) {
+                        // 1e-300 is used for supporting decoding erasure errors
+                        if (node.error_model.pp.px > 2e-300 || node.error_model.pp.pz > 2e-300 || node.error_model.pp.py > 2e-300) {
                             const circle_radius = this.qubit_radius * 1.5
                             context.beginPath()
                             context.arc(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius, circle_radius, 0, 2 * Math.PI)
                             context.fillStyle = this.pauli_color
                             context.fill()
                         }
-                        if (node.erasure_error_rate > 0) {
+                        if (node.error_model.pe > 0) {
                             const circle_radius = this.qubit_radius * 1.25
                             context.beginPath()
                             context.arc(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius, circle_radius, 0, 2 * Math.PI)
                             context.fillStyle = this.erasure_color
                             context.fill()
                         }
-                        if (node.connection != null) {
-                            let ci = node.connection.i
-                            let cj = node.connection.j
+                        if (node.gate_peer != null) {
+                            const gate_peer = get_position(node.gate_peer)
+                            let ci = gate_peer.i
+                            let cj = gate_peer.j
                             const mid_point = 0.6
                             let ei = ci * mid_point + i * (1 - mid_point)
                             let ej = cj * mid_point + j * (1 - mid_point)
                             if (this.sum_correlated_pauli(node) > 0) {
                                 let linear_gradident = context.createLinearGradient(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius, this.pos(ej) + this.qubit_radius, this.pos(ei) + this.qubit_radius)
                                 linear_gradident.addColorStop(0, this.pauli_color)
+                                linear_gradident.addColorStop(0.6, this.pauli_color)
                                 linear_gradident.addColorStop(1, "rgba(255, 255, 255, 0)")
                                 context.fillStyle = linear_gradident
                                 const expand_width = this.qubit_radius * 0.7
@@ -516,6 +547,7 @@ var app = new Vue({
                             if (this.sum_correlated_erasure(node) > 0) {
                                 let linear_gradident = context.createLinearGradient(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius, this.pos(ej) + this.qubit_radius, this.pos(ei) + this.qubit_radius)
                                 linear_gradident.addColorStop(0, this.erasure_color)
+                                linear_gradident.addColorStop(0.6, this.erasure_color)
                                 linear_gradident.addColorStop(1, "rgba(255, 255, 255, 0)")
                                 context.fillStyle = linear_gradident
                                 const expand_width = this.qubit_radius * 0.4
