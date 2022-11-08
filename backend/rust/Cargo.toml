@@ -11,6 +11,12 @@ repository = "https://github.com/yuewuo/QEC-Playground"
 keywords = ["QEC", "quantum-computing", "error-correction", "simulation", "visualization"]
 categories = ["science"]
 edition = "2021"
+exclude = [
+    "doc/*",
+    "pylib/*",
+    "read_nohup_out.py",
+    "test.py",
+]
 
 # see https://doc.rust-lang.org/1.39.0/cargo/reference/manifest.html#the-documentation-field-optional
 [badges]
