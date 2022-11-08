@@ -1208,7 +1208,7 @@ mod tests {
         let di = 7;
         let dj = 5;
         let noisy_measurements = 3;
-        let mut simulator = Simulator::new(CodeType::StandardPlanarCode, BuiltinCodeInformation{ noisy_measurements, di, dj });
+        let mut simulator = Simulator::new(CodeType::StandardPlanarCode, BuiltinCodeInformation::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
         {  // count how many nodes
             let mut nodes_count = 0;
@@ -1318,7 +1318,7 @@ mod tests {
         let di = 7;
         let dj = 5;
         let noisy_measurements = 3;
-        let mut simulator = Simulator::new(CodeType::StandardTailoredCode, BuiltinCodeInformation{ noisy_measurements, di, dj });
+        let mut simulator = Simulator::new(CodeType::StandardTailoredCode, BuiltinCodeInformation::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
         {  // check stabilizer measurements
             // data qubit at corner
@@ -1345,7 +1345,7 @@ mod tests {
         let di = 7;
         let dj = 5;
         let noisy_measurements = 0;
-        let mut simulator = Simulator::new(CodeType::PeriodicRotatedTailoredCode, BuiltinCodeInformation( noisy_measurements, di+1, dj+1 ));
+        let mut simulator = Simulator::new(CodeType::PeriodicRotatedTailoredCode, BuiltinCodeInformation::new(noisy_measurements, di+1, dj+1));
         code_builder_sanity_check(&simulator).unwrap();
         {  // check stabilizer measurements
             // data qubit at center

@@ -1255,7 +1255,7 @@ mod tests {
         let di = 5;
         let dj = 5;
         let noisy_measurements = 5;
-        let simulator = Simulator::new(CodeType::StandardPlanarCode, CodeType::BuiltinCodeInformation { noisy_measurements, di, dj });
+        let simulator = Simulator::new(CodeType::StandardPlanarCode, BuiltinCodeInformation::new(noisy_measurements, di, dj));
         let invalid_position = pos!(100, 100, 100);
         assert!(!simulator.is_valid_position(&invalid_position), "invalid position");
         let nonexisting_position = pos!(0, 0, 0);
