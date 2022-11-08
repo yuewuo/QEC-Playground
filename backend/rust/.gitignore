@@ -3,3 +3,5 @@ tmp/
 *.bin
 *.json
 flamegraph*.svg
+QEC_ENV/
+

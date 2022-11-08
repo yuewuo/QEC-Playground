@@ -2,10 +2,8 @@
 
 use super::clap;
 use super::serde_json;
-#[cfg(feature="python_interfaces")]
+#[cfg(feature="python_binding")]
 use super::pyo3::prelude::*;
-#[cfg(feature="python_interfaces")]
-use super::pyo3::types::{IntoPyDict};
 use super::num_cpus;
 use std::sync::{Arc, Mutex};
 use super::pbr::ProgressBar;
@@ -122,6 +120,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum, Serialize)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub enum BenchmarkDebugPrint {
     /// the original error model
     ErrorModel,
@@ -144,6 +144,8 @@ pub enum BenchmarkDebugPrint {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub struct BenchmarkDebugPrintDecoderConfig {
     /// see [`MWPMDecoderConfig`]
     #[serde(alias = "pcmg")]  // abbreviation
@@ -160,6 +162,8 @@ pub struct BenchmarkDebugPrintDecoderConfig {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum, Serialize)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub enum BenchmarkDecoder {
     /// no decoder applied, return empty correction
     None,
@@ -175,6 +179,8 @@ pub enum BenchmarkDecoder {
 
 /// progress variable shared between threads to update information
 #[derive(Clone, Debug, Serialize)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 struct BenchmarkControl {
     total_repeats: usize,
     qec_failed: usize,
@@ -337,7 +343,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             }, _ => { },
         }
         // prepare simulator
-        let mut simulator = Simulator::new(CodeType::new(&code_type, noisy_measurements, di, dj));
+        let mut simulator = Simulator::new(CodeType::new(&code_type), BuiltinCodeInformation::new(noisy_measurements, di, dj));
         let mut error_model_graph = ErrorModel::new(&simulator);
         // first use p_graph and pe_graph to build decoder graph, then revert back to real error model
         let px_graph = p_graph / (1. + bias_eta) / 2.;

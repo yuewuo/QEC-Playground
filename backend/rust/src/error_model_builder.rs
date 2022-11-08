@@ -77,7 +77,7 @@ impl ErrorModelBuilder {
             },
             ErrorModelBuilder::TailoredScBellInitPhenomenological => {
                 let (noisy_measurements, dp, dn) = match simulator.code_type {
-                    CodeType::RotatedTailoredCode{ noisy_measurements, dp, dn } => { (noisy_measurements, dp, dn) }
+                    CodeType::RotatedTailoredCode => { (simulator.builtin_code_information.noisy_measurements, simulator.builtin_code_information.di, simulator.builtin_code_information.dj) }
                     _ => unimplemented!("tailored surface code with Bell state initialization is only implemented for open-boundary rotated tailored surface code")
                 };
                 assert!(noisy_measurements > 0, "to simulate bell initialization, noisy measurement must be set +1 (e.g. set noisy measurement 1 is equivalent to 0 noisy measurements)");
@@ -274,6 +274,13 @@ impl ErrorModelBuilder {
                             // errors everywhere
                             let mut this_position_use_correlated_pauli = false;
                             let mut error_node = ErrorModelNode::new();  // it's perfectly fine to instantiate an error node for each node: just memory inefficient at large code distances
+                            if use_correlated_pauli {
+                                if node.gate_type.is_two_qubit_gate() {
+                                    if node.qubit_type != QubitType::Data {  // this is ancilla
+                                        this_position_use_correlated_pauli = use_correlated_pauli;
+                                    }
+                                }
+                            }
                             if use_correlated_erasure {
                                 if node.gate_type.is_two_qubit_gate() {
                                     if node.qubit_type != QubitType::Data {  // this is ancilla
@@ -282,18 +289,16 @@ impl ErrorModelBuilder {
                                         correlated_erasure_error_rates.error_rate_EE = pe;
                                         correlated_erasure_error_rates.sanity_check();
                                         error_node.correlated_erasure_error_rates = Some(correlated_erasure_error_rates);
-                                        this_position_use_correlated_pauli = use_correlated_pauli;
                                     }
                                 }
                             } else {
                                 error_node.erasure_error_rate = pe;
                             }
-                            // TODO: update the links
                             // this bug is hard to find without visualization tool...
                             // so I develop such a tool at https://qec.wuyue98.cn/ErrorModelViewer2D.html
                             // to compare: (in url, %20 is space, %22 is double quote)
-                            //     https://qec.wuyue98.cn/ErrorModelViewer2D.html?p=0.01&pe=0.05&parameters=--use_xzzx_code%20--error_model%20OnlyGateErrorCircuitLevelCorrelatedErasure%20--error_model_configuration%20%22{\%22use_correlated_pauli\%22:true}%22
-                            //     https://qec.wuyue98.cn/ErrorModelViewer2D.html?p=0.01&pe=0.05&parameters=--use_xzzx_code%20--error_model%20OnlyGateErrorCircuitLevelCorrelatedErasure%20--error_model_configuration%20%22{\%22use_correlated_pauli\%22:true,\%22before_pauli_bug_fix\%22:true}%22
+                            //     https://qec.wuyue98.cn/ErrorModelViewer2D.html?p=0.01&pe=0.05&parameters=--code_type%20StandardXZZXCode%20--error_model%20only-gate-error-circuit-level%20--error_model_configuration%20%27{"use_correlated_pauli":true,"use_correlated_erasure":true}%27
+                            //     https://qec.wuyue98.cn/ErrorModelViewer2D.html?p=0.01&pe=0.05&parameters=--code_type%20StandardXZZXCode%20--error_model%20only-gate-error-circuit-level%20--error_model_configuration%20%27{"use_correlated_pauli":true,"use_correlated_erasure":true,"before_pauli_bug_fix":true}%27
                             let mut px_py_pz = if before_pauli_bug_fix {
                                 if this_position_use_correlated_pauli { (0., 0., 0.) } else { (p/3., p/3., p/3.) }
                             } else {

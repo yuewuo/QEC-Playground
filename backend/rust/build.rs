@@ -38,14 +38,12 @@ fn main() {
         println!("cargo:rerun-if-changed=../../backend/blossomV/blossomV.cpp");
         println!("cargo:rerun-if-changed=../../backend/blossomV/PerfectMatching.h");
 
+        println!("cargo:rustc-link-lib=static=blossomV");
+
         if target_os != Ok("macos".to_string()) {  // exclude from macOS
-            // rust 1.61.0 linking failed, solved by adding `whole-archive`: https://doc.rust-lang.org/stable/rustc/command-line-arguments.html#linking-modifiers-whole-archive
-            // but exceptions occur: error: internal compiler error: unexpected panic    note: the compiler unexpectedly panicked. this is a bug.
-            // ignore it and revert back to 1.60.0
-            // println!("cargo:rustc-link-lib=static:+whole-archive=stdc++");  // have to add this to compile c++ (new, delete operators)
-            println!("cargo:rustc-link-lib=static=stdc++");  // have to add this to compile c++ (new, delete operators)
+            // println!("cargo:rustc-link-lib=static=stdc++");  // have to add this to compile c++ (new, delete operators)
+            println!("cargo:rustc-link-lib=dylib=stdc++");  // NOTE: this MUST be put after "cargo:rustc-link-lib=static=blossomV"
         }
 
-        println!("cargo:rustc-link-lib=static=blossomV");
     }
 }

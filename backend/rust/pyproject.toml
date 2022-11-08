@@ -1,0 +1,35 @@
+[build-system]
+requires = ["maturin>=0.12,<0.13"]
+build-backend = "maturin"
+
+[project]
+name = "qecp"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Rust",
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    'Intended Audience :: Developers',
+    'Intended Audience :: Information Technology',
+    'Intended Audience :: System Administrators',
+    'License :: OSI Approved :: MIT License',
+    'Operating System :: Unix',
+    'Operating System :: POSIX :: Linux',
+    'Environment :: Console',
+    'Environment :: MacOS X',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Topic :: Internet',
+]
+
+# by default remove blossom V in the build because of license issue;
+# users can enable blossom V by removing `remove_blossom_v` feature, at the responsibility of users
+[tool.maturin]
+features = ["python_binding"]
+bindings = "pyo3"
+cargo-extra-args = "--features python_binding"  # necessary when running `pip wheel`, e.g. in GitHub Action

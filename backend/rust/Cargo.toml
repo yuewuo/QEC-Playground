@@ -28,10 +28,18 @@ debug = true
 [features]
 # to enable a feature, use `--features xxx`
 default = []
-fpga_amenable = []  # use FPGA-amenable code block (not friendly to read, but to test the equivalency with existing code)
-python_interfaces = ["pyo3"]  # by default to avoid using python interface, which includes `fpga_generator.rs`,
+python_binding = ["pyo3"]  # by default to avoid using python interface, which includes `fpga_generator.rs`,
 blossom_v = []  # automatically enabled when file `blossomV/PerfectMatching.h` exists
 MWPM_reverse_order = []  # test the logical error rate arbitrariness of MWPM decoders, see articles/UFandMWPM.md
+
+[lib]
+name = "qecp"
+# "cdylib" is necessary to produce a shared library for Python to import from.
+crate-type = ["lib", "cdylib"]
+
+[[bin]]
+name = "qecp-cli"
+path = "src/main.rs"
 
 [dependencies]
 rand = { version = "0.8.4", features = ["alloc"] }
@@ -44,7 +52,7 @@ clap = { version = "3.1.6", features = ["cargo", "derive"] }
 ndarray = "0.15.4"
 actix-web = "4.0.1"
 actix-cors = "0.6.1"
-pyo3 = { version =  "0.16.2", features = ["auto-initialize"], optional = true }
+pyo3 = { version =  "0.17.2", features = ["extension-module", "multiple-pymethods", "abi3-py37"], optional = true }
 libc = "0.2.81"
 petgraph = "0.6.0"
 pbr = "1.0.4"
@@ -62,6 +70,7 @@ float-ord = "0.3.2"
 priority-queue = "1.2.1"
 parking_lot = "0.12.0"
 fusion-blossom = { path = "../../../fusion-blossom" }
+
 
 [build-dependencies]
 cc = "1.0.66"
