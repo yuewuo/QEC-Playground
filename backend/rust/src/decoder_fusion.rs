@@ -11,7 +11,10 @@ use std::time::Instant;
 use super::erasure_graph::*;
 use super::decoder_mwpm::*;
 use super::fusion_blossom;
+use super::fusion_blossom::mwpm_solver::PrimalDualSolver;
 use std::collections::BTreeMap;
+use super::derivative::*;
+
 
 #[derive(Debug, Clone, Serialize)]
 pub struct FusionDecoderSharedData {
@@ -25,7 +28,8 @@ pub struct FusionDecoderSharedData {
 }
 
 /// MWPM decoder based on fusion blossom algorithm, initialized and cloned for multiple threads
-#[derive(Debug, Clone, Serialize)]
+#[derive(Derivative, Serialize)]
+#[derivative(Debug)]
 pub struct FusionDecoder {
     /// model graph is immutably shared
     pub model_graph: Arc<ModelGraph>,
@@ -35,11 +39,28 @@ pub struct FusionDecoder {
     pub shared_data: Arc<FusionDecoderSharedData>,
     /// fusion blossom algorithm: a fast MWPM solver for quantum error correction
     #[serde(skip)]
+    #[derivative(Debug="ignore")]
     pub fusion_solver: fusion_blossom::mwpm_solver::SolverSerial,
     /// save configuration for later usage
     pub config: FusionDecoderConfig,
     /// an immutably shared simulator that is used to change model graph on the fly for correcting erasure errors
     pub simulator: Arc<Simulator>,
+}
+
+impl Clone for FusionDecoder {
+    fn clone(&self) -> Self {
+        let initializer = fusion_blossom::util::SolverInitializer::new(self.shared_data.vertex_num
+            , self.shared_data.weighted_edges.clone(), self.shared_data.virtual_vertices.clone());
+        let fusion_solver = fusion_blossom::mwpm_solver::SolverSerial::new(&initializer);
+        Self {
+            model_graph: self.model_graph.clone(),
+            erasure_graph: self.erasure_graph.clone(),
+            shared_data: self.shared_data.clone(),
+            fusion_solver: fusion_solver,
+            config: self.config.clone(),
+            simulator: self.simulator.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -152,7 +173,10 @@ impl FusionDecoder {
             // run the Blossom algorithm
             let begin = Instant::now();
             let syndrome_vertices: Vec<usize> = to_be_matched.iter().map(|position| self.shared_data.position_to_vertex_mapping[position]).collect();
-            let fusion_subgraph = self.fusion_solver.solve_subgraph(&syndrome_vertices);
+            let syndrome_pattern = fusion_blossom::util::SyndromePattern::new_vertices(syndrome_vertices);
+            self.fusion_solver.solve(&syndrome_pattern);
+            let fusion_subgraph = self.fusion_solver.subgraph();
+            self.fusion_solver.clear();
             time_fusion += begin.elapsed().as_secs_f64();
             // build correction based on the matching
             let begin = Instant::now();
@@ -194,7 +218,7 @@ mod tests {
         let p = 0.;
         let pe = 0.1;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::StandardPlanarCode{ noisy_measurements, di: d, dj: d });
+        let mut simulator = Simulator::new(CodeType::StandardPlanarCode, BuiltinCodeInformation::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -228,7 +252,7 @@ mod tests {
         let noisy_measurements = 0;  // perfect measurement
         let p = 0.1;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::StandardPlanarCode{ noisy_measurements, di: d, dj: d });
+        let mut simulator = Simulator::new(CodeType::StandardPlanarCode, BuiltinCodeInformation::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);

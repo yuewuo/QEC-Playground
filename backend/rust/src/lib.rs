@@ -30,6 +30,7 @@ pub mod tailored_complete_model_graph;
 pub mod error_model_builder;
 pub mod union_find;
 pub mod erasure_graph;
+pub mod decoder_fusion;
 
 extern crate clap;
 #[macro_use] extern crate serde_json;
@@ -58,6 +59,7 @@ extern crate float_cmp;
 extern crate priority_queue;
 extern crate float_ord;
 extern crate parking_lot;
+extern crate fusion_blossom;
 
 #[cfg(feature="python_binding")]
 #[pymodule]
