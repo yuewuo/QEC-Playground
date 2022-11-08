@@ -22,6 +22,8 @@ exclude = [
     "pylib/*",
     "read_nohup_out.py",
     "test.py",
+    ".vscode/*",
+    ".github/*",
 ]
 
 # see https://doc.rust-lang.org/1.39.0/cargo/reference/manifest.html#the-documentation-field-optional
