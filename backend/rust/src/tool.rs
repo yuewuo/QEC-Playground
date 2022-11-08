@@ -20,6 +20,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use super::error_model::*;
 use serde::{Serialize, Deserialize};
 use super::decoder_mwpm::*;
+use super::decoder_fusion::*;
 use super::model_graph::*;
 use super::complete_model_graph::*;
 use super::decoder_tailored_mwpm::*;
@@ -168,6 +169,8 @@ pub enum BenchmarkDecoder {
     None,
     /// minimum-weight perfect matching decoder
     MWPM,
+    /// a fast MWPM decoder based on fusion blossom algorithm
+    Fusion,
     /// tailored surface code MWPM decoder
     TailoredMWPM,
     /// union-find decoder
@@ -435,6 +438,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         let mwpm_decoder = if decoder == BenchmarkDecoder::MWPM {
             Some(MWPMDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init, use_brief_edge))
         } else { None };
+        let fusion_decoder = if decoder == BenchmarkDecoder::Fusion {
+            Some(FusionDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init, use_brief_edge))
+        } else { None };
         let tailored_mwpm_decoder = if decoder == BenchmarkDecoder::TailoredMWPM {
             Some(TailoredMWPMDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init, use_brief_edge))
         } else { None };
@@ -495,6 +501,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let debug_print = Arc::clone(&debug_print);
             let log_runtime_statistics_file = log_runtime_statistics_file.clone();
             let mut mwpm_decoder = mwpm_decoder.clone();
+            let mut fusion_decoder = fusion_decoder.clone();
             let mut tailored_mwpm_decoder = tailored_mwpm_decoder.clone();
             let mut union_find_decoder = union_find_decoder.clone();
             let thread_ended = Arc::new(AtomicBool::new(false));
@@ -533,6 +540,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                         },
                         BenchmarkDecoder::MWPM => {
                             mwpm_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
+                        },
+                        BenchmarkDecoder::Fusion => {
+                            fusion_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
                         },
                         BenchmarkDecoder::TailoredMWPM => {
                             assert!(sparse_detected_erasures.len() == 0, "tailored MWPM decoder doesn't support erasures");

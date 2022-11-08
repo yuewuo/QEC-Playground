@@ -102,7 +102,7 @@ impl CompleteModelGraph {
                 }).collect()
             }).collect(),
             active_timestamp: 0,
-            optimize_weight_greater_than_sum_boundary: true,
+            optimize_weight_greater_than_sum_boundary: false,  // Yue 2022.7.22: fusion algorithm sometimes fail because of this flag: remove it
             model_graph: model_graph,
         }
     }
@@ -218,6 +218,9 @@ impl CompleteModelGraph {
                 let node = self.get_node_unwrap(&source);
                 let precomputed = node.precomputed.as_ref().unwrap();
                 let target_edge = precomputed.edges.get(target);
+                if target_edge.is_none() {
+                    println!("target_edge none: source: {source:?}, target: {target:?}");
+                }
                 let edge = target_edge.as_ref().unwrap();
                 let next = &edge.next;
                 let model_graph_node = model_graph.get_node_unwrap(&source);
