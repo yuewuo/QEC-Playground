@@ -127,6 +127,8 @@ use std::collections::{HashMap, VecDeque, HashSet};
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::rc::Rc;
+use std::fs::OpenOptions;
+use std::io::prelude::*;
 use super::serde::{Serialize, Deserialize};
 use super::derive_more::{Constructor};
 use super::offer_decoder;
@@ -227,6 +229,8 @@ pub struct ProcessingUnit {
 pub struct Neighbor {
     /// the index of this neighbor
     pub address: usize,
+    /// the supposed updated root of the neighbor, which may not be the real updated_root. only used to stop broadcast when unnecessary
+    pub supposed_updated_root: usize,
     /// this will sync with the peer at the start of the iteration, and keeps constant within the iteration
     pub old_root: usize,
     /// this will need `latency` time to sync with peer
@@ -390,12 +394,14 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
             }));
             processing_units[*a].neighbors.push(Neighbor {
                 address: *b,
+                supposed_updated_root: *b,
                 old_root: *b,
                 is_fully_grown: false,  // will update in `spread_cluster`
                 link: neighbor_link.clone(),
             });
             processing_units[*b].neighbors.push(Neighbor {
                 address: *a,
+                supposed_updated_root: *a,
                 old_root: *a,
                 is_fully_grown: false,  // will update in `spread_cluster`
                 link: neighbor_link.clone(),
@@ -497,7 +503,7 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
     }
 
     /// suppose the root node has the correct cardinality, it should spread to all of his nodes
-    pub fn sync_is_odd_cluster(&mut self) -> usize {
+    pub fn spread_is_odd_cluster(&mut self) -> usize {
         let mut clock_cycles = 0;
         let nodes_len = self.nodes.len();
         // in FPGA, this is done by giving a trigger signal to all PUs, in O(1) time
@@ -620,6 +626,7 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                 drop(neighbor_link);
                 let neighbor_root = self.processing_units[neighbor_addr].updated_root;
                 let neighbor = &mut self.processing_units[i].neighbors[j];  // re-borrow as mutable
+                neighbor.supposed_updated_root = neighbor_root;
                 neighbor.old_root = neighbor_root;
             }
         }
@@ -650,6 +657,13 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                 //     which is done in O(log(log(d))) gate level latency on FPGA, so it's still 1 clock cycle with slightly lower clock rate in large code distances
                 let mut new_updated_root = pu.updated_root;
                 let neighbors_len = pu.neighbors.len();
+                for j in 0..neighbors_len {
+                    let pu = &self.processing_units[i];
+                    let neighbor = &pu.neighbors[j];
+                    if neighbor.is_fully_grown {
+                        new_updated_root = self.get_node_smaller(new_updated_root, neighbor.address);
+                    }
+                }
                 // processing one message from all union channels
                 let pu = &mut self.processing_units[i];
                 let in_messages: Vec<Option<UnionMessage>> = pu.union_in_channels.iter().map(|(_peer, in_channel)| {
@@ -658,23 +672,14 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                 }).collect();
                 // handle those messages to compute `new_updated_root`, this can be done in O(1) on FPGA, 
                 //    with O(log(log(d))) higher gate level latency, which may reduce the clock cycle a little bit, but still pretty scalable
-                let pu = &self.processing_units[i];
-                for (j, message) in in_messages.iter().enumerate() {
+                for message in in_messages.iter() {
                     match message {
                         Some(UnionMessage{ old_root, updated_root }) => {
                             if *old_root == pu_old_root {  // otherwise don't consider it at all!
                                 new_updated_root = self.get_node_smaller(new_updated_root, *updated_root);
                             }
                         },
-                        None => {
-                            // update: optimize FPGA resource usage and latency, based on the fact that `message.updated_root` is no worse than `neighbor.old_root`
-                            if j < neighbors_len {
-                                let neighbor = &pu.neighbors[j];
-                                if neighbor.is_fully_grown {
-                                    new_updated_root = self.get_node_smaller(new_updated_root, neighbor.old_root);
-                                }
-                            }
-                        },
+                        None => { },
                     }
                 }
                 // send messages to all union channels if the updated root changes in this cycle, this can be done in O(1) on FPGA
@@ -701,36 +706,29 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                 pu.updated_root = new_updated_root;
                 // at the same time, try to find a direct message to route
                 // since the direct message should be very rare in the system, just a simple logic would suffice
-                if cfg!(not(feature="fpga_amenable")) {
-                    if new_updated_root != old_updated_root {
-                        if self.nodes[i].is_error_syndrome {  // only nodes with error syndrome should tell the root about updated cardinality
-                            pu.pending_tell_new_root_cardinality = true;
-                        }
-                        if pu.is_touching_boundary {
-                            pu.pending_tell_new_root_touching_boundary = true;
-                        }
+                if new_updated_root != old_updated_root {
+                    if self.nodes[i].is_error_syndrome {  // only nodes with error syndrome should tell the root about updated cardinality
+                        pu.pending_tell_new_root_cardinality = true;
                     }
-                    if pu.is_touching_boundary != old_is_touching_boundary {
+                    if pu.is_touching_boundary {
                         pu.pending_tell_new_root_touching_boundary = true;
                     }
-                    if new_updated_root == i {  // don't need to send message to myself
-                        pu.pending_tell_new_root_cardinality = false;
-                        pu.pending_tell_new_root_touching_boundary = false;
-                    }
-                } else {
-                    // FPGA-amenable code block that should be equivalent to above
-                    pu.pending_tell_new_root_cardinality = if pu.pending_tell_new_root_cardinality {
-                        new_updated_root != i
-                    } else {
-                        new_updated_root != old_updated_root && self.nodes[i].is_error_syndrome
-                    };
-                    pu.pending_tell_new_root_touching_boundary = if pu.pending_tell_new_root_touching_boundary {
-                        new_updated_root != i
-                    } else {
-                        (new_updated_root != old_updated_root && pu.is_touching_boundary) || pu.is_touching_boundary != old_is_touching_boundary
-                    };
+                }
+                if pu.is_touching_boundary != old_is_touching_boundary {
+                    pu.pending_tell_new_root_touching_boundary = true;
+                }
+                if new_updated_root == i {  // don't need to send message to myself
+                    pu.pending_tell_new_root_cardinality = false;
+                    pu.pending_tell_new_root_touching_boundary = false;
                 }
                 let mut pending_direct_message = None;
+                if pu.pending_tell_new_root_cardinality || pu.pending_tell_new_root_touching_boundary {
+                    pending_direct_message = Some(DirectMessage {
+                        receiver: new_updated_root,
+                        is_odd_cardinality_root: pu.pending_tell_new_root_cardinality,
+                        is_touching_boundary: pu.pending_tell_new_root_touching_boundary,
+                    });
+                }
                 // read from all direct channels, finish in O(1) on FPGA
                 let mut need_to_pop_direct_in_channel_from_idx = None;
                 for (j, (_peer, in_channel)) in pu.direct_in_channels.iter().enumerate() {
@@ -756,15 +754,6 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                                 need_to_pop_direct_in_channel_from_idx = Some(j);
                             }
                         }
-                    }
-                }
-                if need_to_pop_direct_in_channel_from_idx.is_none() {
-                    if pu.pending_tell_new_root_cardinality || pu.pending_tell_new_root_touching_boundary {
-                        pending_direct_message = Some(DirectMessage {
-                            receiver: new_updated_root,
-                            is_odd_cardinality_root: pu.pending_tell_new_root_cardinality,
-                            is_touching_boundary: pu.pending_tell_new_root_touching_boundary,
-                        });
                     }
                 }
                 // find the most attractive channel for `pending_direct_message`, finish in O(1) on FPGA
@@ -818,6 +807,8 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                 }
                 // update internal state
                 if pending_message_sent_successfully {  // don't send again next time
+                    pu.pending_tell_new_root_cardinality = false;
+                    pu.pending_tell_new_root_touching_boundary = false;
                     match need_to_pop_direct_in_channel_from_idx {
                         Some(direct_in_channel_idx) => {
                             let (_peer, in_channel) = &pu.direct_in_channels[direct_in_channel_idx];
@@ -826,10 +817,7 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
                             in_channel.deque.pop_front().unwrap();
                             in_channel.deque.push_front(None);
                         },
-                        None => {
-                            pu.pending_tell_new_root_cardinality = false;
-                            pu.pending_tell_new_root_touching_boundary = false;
-                        },
+                        None => { },
                     }
                 }
             }
@@ -854,7 +842,7 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
         // during iteration, this corresponds to Union operations in sequential UF decoder and takes average O(log(d)) time but worst O(d) time
         clock_cycles += self.spread_clusters();
         // update the odd cluster state, requires O(log(d)) time in 
-        clock_cycles += self.sync_is_odd_cluster();
+        clock_cycles += self.spread_is_odd_cluster();
         // check if there are still odd clusters, if so, then it needs to run further
         let mut has_odd_cluster = false;
         for pu in self.processing_units.iter() {
@@ -937,13 +925,62 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
         }
         println!("[debug print end]");
     }
+
+    pub fn dump_print_input(&self, id:usize) {
+        println!("[dump print start] {}", id);
+        let mut file = OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open("input.txt")
+            .unwrap();
+        if let Err(e) = writeln!(file, "{:08X}", id) {
+            eprintln!("Couldn't write to file: {}", e);
+        }
+        let nodes_len = self.nodes.len();
+        for i in 0..nodes_len {
+            let node = &self.nodes[i];
+            let error_val = if node.is_error_syndrome { 1 } else { 0 };
+            // println!("{}", error_val);
+            if let Err(e) = writeln!(file, "{:08X}", error_val) {
+                eprintln!("Couldn't write to file: {}", e);
+            }
+        }
+    }
+
+    pub fn dump_print_output(&self, id : usize) {
+        println!("[dump print output] {}", id);
+        let mut file = OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open("output.txt")
+            .unwrap();
+        if let Err(e) = writeln!(file, "{:08X}", id) {
+            eprintln!("Couldn't write to file: {}", e);
+        }
+        let nodes_len = self.processing_units.len();
+        for i in 0..nodes_len {
+            let node = &self.processing_units[i];
+            // println!("{} {}", (node.updated_root)/4, (node.updated_root)%4);
+            if let Err(e) = writeln!(file, "{:04X}{:04X}", (node.updated_root)/4, (node.updated_root)%4) {
+                eprintln!("Couldn't write to file: {}", e);
+            }
+        }
+    }
+}
+
+/// create nodes for standard planar code (2d, perfect measurement condition). return only X stabilizers or only Z stabilizers.
+/// return (nodes, position_to_index, neighbors), the fast channel should be empty, which is Vec::new()
+pub fn make_standard_planar_code_2d_nodes_no_fast_channel(d: usize, is_x_stabilizers: bool) -> (Vec<InputNode<(usize, usize)>>, HashMap<(usize, usize), usize>,
+        Vec<InputNeighbor>) {
+    let (nodes, position_to_index, neighbors, _fast_channels) = make_standard_planar_code_2d_nodes(d, is_x_stabilizers, 0);
+    (nodes, position_to_index, neighbors)
 }
 
 /// create nodes for standard planar code (2d, perfect measurement condition). return only X stabilizers or only Z stabilizers.
 /// return (nodes, position_to_index, neighbors, fast_channels), the fast channel is build every (fast_channel_interval) ^ k distance
 /// fast_channel_interval = 0 will generate no fast channels
 pub fn make_standard_planar_code_2d_nodes(d: usize, is_x_stabilizers: bool, fast_channel_interval: usize) -> (Vec<InputNode<(usize, usize)>>,
-        HashMap<(usize, usize), usize>, Vec<InputNeighbor>, Vec<InputFastChannel>) {
+HashMap<(usize, usize), usize>, Vec<InputNeighbor>, Vec<InputFastChannel>) {
     let mut nodes = Vec::new();
     let mut position_to_index = HashMap::new();
     for i in (if is_x_stabilizers { 0..=2*d-2 } else { 1..=2*d-3 }).step_by(2) {
@@ -1224,7 +1261,7 @@ pub fn compare_standard_planar_code_3d_nodes(a: &(usize, usize, usize), b: &(usi
     }
 }
 
-pub fn build_distributed_union_find_given_uf_decoder_3d<>(decoder: &union_find_decoder::DeprecatedUnionFindDecoder<(usize, usize, usize)>) ->
+pub fn build_distributed_union_find_given_uf_decoder_3d<>(decoder: &union_find_decoder::UnionFindDecoder<(usize, usize, usize)>) ->
         (DistributedUnionFind<(usize, usize, usize)>, HashMap<(usize, usize, usize), usize>) {
     let mut nodes = Vec::new();
     let mut position_to_index = HashMap::new();
@@ -1252,7 +1289,7 @@ pub fn build_distributed_union_find_given_uf_decoder_3d<>(decoder: &union_find_d
     (duf_decoder, position_to_index)
 }
 
-pub fn copy_state_back_to_union_find_decoder(decoder: &mut union_find_decoder::DeprecatedUnionFindDecoder<(usize, usize, usize)>, 
+pub fn copy_state_back_to_union_find_decoder(decoder: &mut union_find_decoder::UnionFindDecoder<(usize, usize, usize)>, 
         duf_decoder: &DistributedUnionFind<(usize, usize, usize)>) {
     // copy root, but the root might be changed internally by UnionFind library
     assert_eq!(decoder.nodes.len(), duf_decoder.nodes.len(), "they should have the same number of nodes");
@@ -1291,21 +1328,13 @@ pub fn copy_state_back_to_union_find_decoder(decoder: &mut union_find_decoder::D
     }
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::super::types::{ErrorType, ErrorModelName};
-    use super::super::rand::prelude::*;
 
     // use `cargo test distributed_union_find_decoder_test_case_1 -- --nocapture` to run specific test
-
-    /// return (nodes, position_to_index, neighbors), the fast channel should be empty, which is Vec::new()
-    pub fn make_standard_planar_code_2d_nodes_no_fast_channel(d: usize, is_x_stabilizers: bool) -> (Vec<InputNode<(usize, usize)>>, HashMap<(usize, usize), usize>,
-    Vec<InputNeighbor>) {
-    let (nodes, position_to_index, neighbors, _) = make_standard_planar_code_2d_nodes(d, is_x_stabilizers, 0);
-    (nodes, position_to_index, neighbors)
-    }
-
+    
     fn make_standard_planar_code_2d_nodes_no_fast_channel_only_x(d: usize) -> (Vec<InputNode<(usize, usize)>>, HashMap<(usize, usize), usize>, Vec<InputNeighbor>) {
         make_standard_planar_code_2d_nodes_no_fast_channel(d, true)
     }
@@ -1333,13 +1362,13 @@ mod tests {
 
     #[test]
     fn distributed_union_find_decoder_sanity_check_3() {
-        // test `sync_is_odd_cluster` function
+        // test `spread_is_odd_cluster` function
         let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(3);
         nodes[position_to_index[&(0, 1)]].is_error_syndrome = true;  // test touching boundary
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;  // test single error syndrome
         nodes[position_to_index[&(4, 1)]].is_error_syndrome = true;  // test 2 matching together
         nodes[position_to_index[&(4, 3)]].is_error_syndrome = true;
-        let mut distributed_union_find = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
+        let mut distributed_union_find = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
             compare_standard_planar_code_2d_nodes);
         assert_eq!(distributed_union_find.processing_units[position_to_index[&(4, 1)]].is_odd_cluster, true);
         assert_eq!(distributed_union_find.processing_units[position_to_index[&(4, 3)]].is_odd_cluster, true);
@@ -1348,7 +1377,7 @@ mod tests {
         distributed_union_find.processing_units[position_to_index[&(4, 3)]].updated_root = position_to_index[&(4, 1)];
         distributed_union_find.processing_units[position_to_index[&(4, 1)]].is_odd_cardinality = false;  // because the set has (4, 1) and (4, 3)
         distributed_union_find.channels_sanity_check();
-        distributed_union_find.sync_is_odd_cluster();
+        distributed_union_find.spread_is_odd_cluster();
         distributed_union_find.channels_sanity_check();
         assert_eq!(distributed_union_find.processing_units[position_to_index[&(4, 1)]].is_odd_cluster, false);
         assert_eq!(distributed_union_find.processing_units[position_to_index[&(4, 3)]].is_odd_cluster, false);
@@ -1362,7 +1391,7 @@ mod tests {
         // test `spread_clusters` function
         let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(3);
         nodes[position_to_index[&(2, 1)]].is_error_syndrome = true;  // test single error syndrome
-        let mut distributed_union_find = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
+        let mut distributed_union_find = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
             compare_standard_planar_code_2d_nodes);
         distributed_union_find.debug_print();
         distributed_union_find.reach_consistent_state();
@@ -1380,20 +1409,7 @@ mod tests {
         let d = 5;
         let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(d);
         nodes[position_to_index[&(4, 5)]].is_error_syndrome = true;
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
-            compare_standard_planar_code_2d_nodes);
-        decoder.detailed_print_run_to_stable(true);
-        assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
-            , "cardinality of one side of boundary determines if there is logical error");
-    }
-
-    #[test]
-    fn distributed_union_find_decoder_bug_find_2() {
-        let d = 7;
-        let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(d);
-        nodes[position_to_index[&(0, 3)]].is_error_syndrome = true;
-        nodes[position_to_index[&(2, 7)]].is_error_syndrome = true;
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
             compare_standard_planar_code_2d_nodes);
         decoder.detailed_print_run_to_stable(true);
         assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
@@ -1509,7 +1525,7 @@ mod tests {
         assert_eq!(1, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
             , "cardinality of one side of boundary determines if there is logical error");
     }
-    
+
     #[test]
     fn distributed_union_find_decoder_test_build_given_ftqec_model_1() {
         let measurement_rounds = 3;
@@ -1531,7 +1547,7 @@ mod tests {
         assert_eq!(0, get_standard_planar_code_3d_boundary_cardinality(QubitType::StabZ, &position_to_index, &decoder)
             , "cardinality of one side of boundary determines if there is logical error");
     }
-    
+
     #[test]
     fn distributed_union_find_decoder_test_build_given_ftqec_model_2() {
         let measurement_rounds = 3;

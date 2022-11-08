@@ -23,7 +23,6 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
     }
 }
 
-
 fn archived_debug_tests() {
     cfg_if::cfg_if! {
         if #[cfg(feature="python_binding")] {
