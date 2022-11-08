@@ -48,7 +48,6 @@ extern crate derivative;
 extern crate derive_more;
 extern crate lazy_static;
 extern crate either;
-extern crate rug;
 extern crate shlex;
 extern crate cfg_if;
 #[cfg(feature="python_binding")]
