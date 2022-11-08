@@ -1,9 +1,9 @@
 #![allow(non_snake_case)]
 
 use super::clap;
-#[cfg(feature="python_interfaces")]
+#[cfg(feature="python_binding")]
 use super::pyo3::prelude::*;
-#[cfg(feature="python_interfaces")]
+#[cfg(feature="python_binding")]
 use super::pyo3::types::{IntoPyDict};
 use super::blossom_v;
 
@@ -26,7 +26,7 @@ pub fn run_matched_test(matches: &clap::ArgMatches) {
 
 fn archived_debug_tests() {
     cfg_if::cfg_if! {
-        if #[cfg(feature="python_interfaces")] {
+        if #[cfg(feature="python_binding")] {
             // call python networkx.algorithms.matching.max_weight_matching
             Python::with_gil(|py| {
                 (|py: Python| -> PyResult<()> {
@@ -54,7 +54,7 @@ fn archived_debug_tests() {
                 })
             }).expect("python run failed");
         } else {
-            println!("[error] compiling feature `python_interfaces` not enabled")
+            println!("[error] compiling feature `python_binding` not enabled")
         }
     }
     {  // call blossom V matching

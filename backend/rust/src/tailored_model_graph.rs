@@ -214,10 +214,10 @@ impl TailoredModelGraph {
                         let mut left = None;
                         let mut right = None;
                         for x in 0..4 {
-                            let left_up = simulator.code_type.get_left_up(sparse_measurement[x].i, sparse_measurement[x].j);
-                            let left_down = simulator.code_type.get_left_down(sparse_measurement[x].i, sparse_measurement[x].j);
-                            let right_up = simulator.code_type.get_right_up(sparse_measurement[x].i, sparse_measurement[x].j);
-                            let right_down = simulator.code_type.get_right_down(sparse_measurement[x].i, sparse_measurement[x].j);
+                            let left_up = simulator.code_type.get_left_up(sparse_measurement[x].i, sparse_measurement[x].j, &simulator.builtin_code_information);
+                            let left_down = simulator.code_type.get_left_down(sparse_measurement[x].i, sparse_measurement[x].j, &simulator.builtin_code_information);
+                            let right_up = simulator.code_type.get_right_up(sparse_measurement[x].i, sparse_measurement[x].j, &simulator.builtin_code_information);
+                            let right_down = simulator.code_type.get_right_down(sparse_measurement[x].i, sparse_measurement[x].j, &simulator.builtin_code_information);
                             for y in 0..4 {
                                 for z in 0..4 {
                                     if (sparse_measurement[y].i, sparse_measurement[y].j) == left_down && (sparse_measurement[z].i, sparse_measurement[z].j) == right_down {

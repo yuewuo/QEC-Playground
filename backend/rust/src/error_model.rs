@@ -3,6 +3,8 @@
 //! customized error rate with high flexibility
 //! 
 
+#[cfg(feature="python_binding")]
+use super::pyo3::prelude::*;
 use super::simulator::*;
 use super::util_macros::*;
 use super::types::*;
@@ -12,6 +14,7 @@ use std::sync::Arc;
 
 /// describing an error model, strictly corresponding to an instance of `Simulator`
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub struct ErrorModel {
     /// each error model node corresponds to a simulator node, this allows immutable sharing between threads
     pub nodes: Vec::< Vec::< Vec::< Option<Arc <ErrorModelNode> > > > >,
@@ -19,6 +22,7 @@ pub struct ErrorModel {
 
 /// error model node corresponds to 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub struct ErrorModelNode {
     /// without losing generality, errors are applied after the gate
     #[serde(rename = "pp")]
@@ -31,7 +35,10 @@ pub struct ErrorModelNode {
     pub correlated_erasure_error_rates: Option<CorrelatedErasureErrorRates>,
 }
 
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl ErrorModelNode {
+    #[cfg_attr(feature = "python_binding", new)]
     pub fn new() -> Self {
         Self {
             pauli_error_rates: PauliErrorRates::default(),
@@ -59,7 +66,10 @@ impl ErrorModelNode {
     }
 }
 
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl ErrorModel {
+    #[cfg_attr(feature = "python_binding", new)]
     pub fn new(simulator: &Simulator) -> Self {
         assert!(simulator.volume() > 0, "cannot build error model out of zero-sized simulator");
         let default_error_model_node = Arc::new(ErrorModelNode::new());
@@ -77,7 +87,9 @@ impl ErrorModel {
             }).collect()
         }
     }
+}
 
+impl ErrorModel{
     /// get reference `self.nodes[t][i][j]` and then unwrap
     pub fn get_node_unwrap(&'_ self, position: &Position) -> &'_ ErrorModelNode {
         self.nodes[position.t][position.i][position.j].as_ref().unwrap()
@@ -97,8 +109,8 @@ impl ErrorModel {
 /// check if error rates are not zero at perfect measurement ranges or at (always) virtual nodes,
 /// also check for error rate constrains on virtual nodes
 pub fn error_model_sanity_check(simulator: &Simulator, error_model: &ErrorModel) -> Result<(), String> {
-    match simulator.code_type.builtin_code_information() {
-        Some(BuiltinCodeInformation{ noisy_measurements, .. }) => {
+    match simulator.builtin_code_information {
+        BuiltinCodeInformation{ noisy_measurements, .. } => {
             // check that no errors present in the final perfect measurement rounds
             let expected_height = simulator.measurement_cycles * (noisy_measurements + 1) + 1;
             if simulator.height != expected_height {
@@ -119,7 +131,7 @@ pub fn error_model_sanity_check(simulator: &Simulator, error_model: &ErrorModel)
                     return Err(format!("detected noisy position {} which is virtual node", position))
                 }
             });
-        }, _ => { println!("[warning] code doesn't provide enough information for sanity check") }
+        }
     }
     simulator_iter!(simulator, position, node, {
         let error_model_node = error_model.get_node_unwrap(position);
@@ -154,5 +166,13 @@ pub fn error_model_sanity_check(simulator: &Simulator, error_model: &ErrorModel)
             }
         }
     });
+    Ok(())
+}
+
+#[cfg(feature="python_binding")]
+#[pyfunction]
+pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_class::<ErrorModel>()?;
+    m.add_class::<ErrorModelNode>()?;
     Ok(())
 }
