@@ -2,9 +2,9 @@
 
 use super::clap;
 use super::serde_json;
-#[cfg(feature="python_interfaces")]
+#[cfg(feature="python_binding")]
 use super::pyo3::prelude::*;
-#[cfg(feature="python_interfaces")]
+#[cfg(feature="python_binding")]
 use super::pyo3::types::{IntoPyDict};
 use super::num_cpus;
 use std::sync::{Arc, Mutex};

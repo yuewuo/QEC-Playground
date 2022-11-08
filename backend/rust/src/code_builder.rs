@@ -7,7 +7,7 @@
 //! for how to embed picture in cargo doc
 //! 
 
-#[cfg(feature="python_interfaces")]
+#[cfg(feature="python_binding")]
 use super::pyo3::prelude::*;
 use super::simulator::*;
 use serde::{Serialize, Deserialize};
@@ -19,7 +19,7 @@ use ErrorType::*;
 
 /// commonly used code type that has built-in functions to automatically build up the simulator.
 /// other type of code type is also feasible, but one needs to implement the generation of code patch.
-#[cfg_attr(feature = "python_interfaces", pyclass)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum CodeType {
@@ -42,7 +42,7 @@ pub enum CodeType {
 }
 
 /// built-in code types' information
-#[cfg_attr(feature = "python_interfaces", pyclass)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 #[derive(Debug, Serialize, Clone)]
 pub struct BuiltinCodeInformation {
     pub noisy_measurements: usize,
@@ -50,10 +50,10 @@ pub struct BuiltinCodeInformation {
     pub dj: usize,
 }
 
-#[cfg_eval]
-#[cfg_attr(feature = "python_interfaces", pymethods)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl BuiltinCodeInformation {
-    #[cfg_attr(feature = "python_interfaces", new)]
+    #[cfg_attr(feature = "python_binding", new)]
     pub fn new(noisy_measurements: usize, di: usize, dj: usize) -> Self{
         BuiltinCodeInformation{
             noisy_measurements: noisy_measurements,
@@ -63,7 +63,7 @@ impl BuiltinCodeInformation {
     }
 }
 
-#[cfg_attr(feature = "python_interfaces", pymethods)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl CodeType {
     // pub fn builtin_code_information(&self) -> Option<BuiltinCodeInformation> {
     //     match &self {
@@ -1373,7 +1373,7 @@ mod tests {
 
 }
 
-#[cfg(feature="python_interfaces")]
+#[cfg(feature="python_binding")]
 #[pyfunction]
 pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<CodeType>()?;

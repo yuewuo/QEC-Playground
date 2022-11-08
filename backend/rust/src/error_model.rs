@@ -3,7 +3,7 @@
 //! customized error rate with high flexibility
 //! 
 
-#[cfg(feature="python_interfaces")]
+#[cfg(feature="python_binding")]
 use super::pyo3::prelude::*;
 use super::simulator::*;
 use super::util_macros::*;
@@ -14,7 +14,7 @@ use std::sync::Arc;
 
 /// describing an error model, strictly corresponding to an instance of `Simulator`
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "python_interfaces", pyclass)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub struct ErrorModel {
     /// each error model node corresponds to a simulator node, this allows immutable sharing between threads
     pub nodes: Vec::< Vec::< Vec::< Option<Arc <ErrorModelNode> > > > >,
@@ -22,7 +22,7 @@ pub struct ErrorModel {
 
 /// error model node corresponds to 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "python_interfaces", pyclass)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub struct ErrorModelNode {
     /// without losing generality, errors are applied after the gate
     #[serde(rename = "pp")]
@@ -35,10 +35,10 @@ pub struct ErrorModelNode {
     pub correlated_erasure_error_rates: Option<CorrelatedErasureErrorRates>,
 }
 
-#[cfg_eval]
-#[cfg_attr(feature = "python_interfaces", pymethods)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl ErrorModelNode {
-    #[cfg_attr(feature = "python_interfaces", new)]
+    #[cfg_attr(feature = "python_binding", new)]
     pub fn new() -> Self {
         Self {
             pauli_error_rates: PauliErrorRates::default(),
@@ -66,9 +66,9 @@ impl ErrorModelNode {
     }
 }
 
-// #[cfg_attr(feature = "python_interfaces", pymethods)]
+// #[cfg_attr(feature = "python_binding", pymethods)]
 impl ErrorModel {
-    //#[cfg_attr(feature = "python_interfaces", new)]
+    //#[cfg_attr(feature = "python_binding", new)]
     pub fn new(simulator: &Simulator) -> Self {
         assert!(simulator.volume() > 0, "cannot build error model out of zero-sized simulator");
         let default_error_model_node = Arc::new(ErrorModelNode::new());
@@ -168,7 +168,7 @@ pub fn error_model_sanity_check(simulator: &Simulator, error_model: &ErrorModel)
     Ok(())
 }
 
-#[cfg(feature="python_interfaces")]
+#[cfg(feature="python_binding")]
 #[pyfunction]
 pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<ErrorModel>()?;

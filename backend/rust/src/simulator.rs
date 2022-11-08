@@ -1,6 +1,6 @@
 //! General purpose Pauli group simulator optimized for surface code
 //! 
-#[cfg(feature="python_interfaces")]
+#[cfg(feature="python_binding")]
 use pyo3::prelude::*;
 use std::cmp::Ordering;
 use super::types::*;
@@ -20,29 +20,29 @@ use super::erasure_graph::*;
 
 /// general simulator for two-dimensional code with circuit-level implementation of stabilizer measurements
 #[derive(Debug, Serialize)]
-#[cfg_eval]
-#[cfg_attr(feature = "python_interfaces", pyclass)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub struct Simulator {
     /// information of the preferred code
-    // #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    // #[cfg_attr(feature = "python_binding", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub code_type: CodeType,
     /// the information fields of CodeType
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub builtin_code_information: BuiltinCodeInformation,
     /// size of the snapshot, where `nodes` is ensured to be a cube of `height` * `vertical` * `horizontal`
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub height: usize,
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub vertical: usize,
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub horizontal: usize,
     /// nodes array, because some rotated code can easily have more than half of the nodes non-existing, existing nodes are stored on heap
     pub nodes: Vec::< Vec::< Vec::< Option<Box <SimulatorNode> > > > >,
     /// use embedded random number generator
     pub rng: Xoroshiro128StarStar,
     /// how many cycles is there a round of measurements; default to 1
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub measurement_cycles: usize,
 }
 
@@ -50,15 +50,15 @@ pub struct Simulator {
 /// `i` is vertical position, which increases when moving from top to bottom;
 /// `j` is horizontal position, which increases when moving from left to right
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-#[cfg_eval]
-#[cfg_attr(feature = "python_interfaces", pyclass)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub struct Position {
     // pub index: [usize; 3],
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub t: usize,
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub i: usize,
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub j: usize,
 }
 
@@ -67,39 +67,39 @@ pub struct Position {
 /// errors at this node will have no impact on the measurement because errors are applied after the measurement).
 /// we also maintain "virtual nodes" at the boundary of a code, these virtual nodes are missing stabilizers at the boundary of a open-boundary surface code.
 #[derive(Debug, Clone, Serialize)]
-#[cfg_eval]
-#[cfg_attr(feature = "python_interfaces", pyclass)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub struct SimulatorNode {
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub qubit_type: QubitType,
     /// single-qubit or two-qubit gate applied 
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub gate_type: GateType,
     pub gate_peer: Option<Arc<Position>>,
     /// simulation data
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub error: ErrorType,
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub has_erasure: bool,
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub propagated: ErrorType,
     /// Virtual qubit doesn't physically exist, which means they will never have errors themselves.
     /// Real qubit errors can propagate to virtual qubits, but errors will never propagate to real qubits.
     /// Virtual qubits can be understood as perfect stabilizers that only absorb propagated errors and never propagate them.
     /// They're useful in tailored surface code decoding, and also to represent virtual boundaries
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub is_virtual: bool,
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub is_peer_virtual: bool,
     /// miscellaneous information, should be static, e.g. decoding assistance information
     pub miscellaneous: Option<Arc<serde_json::Value>>,
 }
 
-#[cfg_eval]
-#[cfg_attr(feature = "python_interfaces", pymethods)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl SimulatorNode {
     /// create a new simulator node
-    #[cfg_attr(feature = "python_interfaces", new)]
+    #[cfg_attr(feature = "python_binding", new)]
     pub fn new(qubit_type: QubitType, gate_type: GateType, gate_peer: Option<Position>) -> Self {
         Self {
             qubit_type: qubit_type,
@@ -113,11 +113,11 @@ impl SimulatorNode {
             miscellaneous: None,
         }
     }
-    #[cfg_attr(feature="python_interfaces", setter)]
+    #[cfg_attr(feature="python_binding", setter)]
     pub fn set_gate_peer(&mut self, pos: Position){
         self.gate_peer = Option::Some(pos).map(Arc::new);
     }
-    #[cfg_attr(feature="python_interfaces", getter)]
+    #[cfg_attr(feature="python_binding", getter)]
     pub fn get_gate_peer(&self) -> Position{
        (**self.gate_peer.as_ref().unwrap()).clone()
     }
@@ -152,7 +152,7 @@ impl SimulatorNode{
 
 /// single-qubit and two-qubit gate type
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, Copy)]
-#[cfg_attr(feature = "python_interfaces", pyclass)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub enum GateType {
     /// initialize in $|0\rangle$ state which is the eigenstate of $\hat{Z}$
     InitializeZ,
@@ -177,7 +177,7 @@ pub enum GateType {
     None,
 }
 
-#[cfg_attr(feature = "python_interfaces", pymethods)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl GateType {
     pub fn is_initialization(&self) -> bool {
         self == &GateType::InitializeZ || self == &GateType::InitializeX
@@ -241,11 +241,11 @@ impl GateType {
     }
 }
 
-#[cfg_eval]
-#[cfg_attr(feature = "python_interfaces", pymethods)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl Simulator {
     /// given builtin code type, this will automatically build the code structure
-    #[cfg_attr(feature = "python_interfaces", new)]
+    #[cfg_attr(feature = "python_binding", new)]
     pub fn new(code_type: CodeType, builtin_code_information: BuiltinCodeInformation) -> Self {
         let mut simulator = Self {
             code_type: code_type,
@@ -951,10 +951,10 @@ impl PartialOrd for Position {
     }
 }
 
-#[cfg_eval]
-#[cfg_attr(feature = "python_interfaces", pymethods)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl Position {
-    #[cfg_attr(feature = "python_interfaces", new)]
+    #[cfg_attr(feature = "python_binding", new)]
     pub fn new(t: usize, i: usize, j: usize) -> Self {
         Self {
             t: t,
@@ -1029,17 +1029,17 @@ impl std::fmt::Display for SimulatorNode {
 
 /// in most cases non-trivial measurements are rare, this sparse structure use `BTreeSet` to store them
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_eval]
-#[cfg_attr(feature = "python_interfaces", pyclass)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub struct SparseMeasurement {
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub nontrivial: BTreeSet<Position>,
 }
 
-// #[cfg_attr(feature = "python_interfaces", pymethods)]
+// #[cfg_attr(feature = "python_binding", pymethods)]
 impl SparseMeasurement {
     /// create a new clean measurement without nontrivial measurements
-    // #[cfg_attr(feature = "python_interfaces", new)]
+    // #[cfg_attr(feature = "python_binding", new)]
     pub fn new() -> Self {
         Self {
             nontrivial: BTreeSet::new(),
@@ -1075,11 +1075,11 @@ impl SparseMeasurement {
 
 /// detected erasures along with its effected edges
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_eval]
-#[cfg_attr(feature = "python_interfaces", pyclass)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub struct SparseDetectedErasures {
     /// the position of the erasure errors
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub erasures: BTreeSet<Position>,
 }
 
@@ -1117,11 +1117,11 @@ impl SparseDetectedErasures {
 
 /// in most cases errors are rare, this sparse structure use `BTreeMap` to store them
 #[derive(Debug, Clone)]
-#[cfg_eval]
-#[cfg_attr(feature = "python_interfaces", pyclass)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub struct SparseErrorPattern {
     /// error happening at position: Position (t, i, j)
-    #[cfg_attr(feature = "python_interfaces", pyo3(get, set))]
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub errors: BTreeMap<Position, ErrorType>,
 }
 
@@ -1197,7 +1197,7 @@ impl<'de> Deserialize<'de> for SparseErrorPattern {
 /// share methods with [`SparseErrorPattern`] but records **propagated** errors of **data qubits** on **top layer**
 /// , thus in principle it's incompatible with [`SparseErrorPattern`] which records individual errors
 #[derive(Debug, Clone, Deserialize)]
-#[cfg_attr(feature = "python_interfaces", pyclass)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub struct SparseCorrection(SparseErrorPattern);
 
 impl SparseCorrection {
@@ -1270,7 +1270,7 @@ mod tests {
 
 }
 
-#[cfg(feature="python_interfaces")]
+#[cfg(feature="python_binding")]
 #[pyfunction]
 pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<Simulator>()?;

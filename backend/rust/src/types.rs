@@ -1,11 +1,11 @@
 #![allow(non_snake_case)]
-#[cfg(feature="python_interfaces")]
+#[cfg(feature="python_binding")]
 use pyo3::prelude::*;
 use serde::{Serialize, Deserialize};
 
 /// Qubit type, corresponds to `QTYPE` in `FaultTolerantView.vue`
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, Copy)]
-#[cfg_attr(feature = "python_interfaces", pyclass)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub enum QubitType {
     Data,
     StabX,
@@ -15,7 +15,8 @@ pub enum QubitType {
     StabY,  // in tailored surface code
 }
 
-#[cfg_attr(feature = "python_interfaces", pymethods)]
+#[cfg(feature="python_binding")]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl QubitType {
     /// if measure in Z basis, it's prepared in |0> state, otherwise it's measuring X basis and prepared in |+> state; data qubit will return None
     pub fn is_measured_in_z_basis(&self) -> Option<bool> {
@@ -30,7 +31,7 @@ impl QubitType {
 /// Error type, corresponds to `ETYPE` in `FaultTolerantView.vue`
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-#[cfg_attr(feature = "python_interfaces", pyclass)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub enum ErrorType {
     I,
     X,
@@ -467,7 +468,7 @@ impl std::fmt::Display for ErrorModelName {
     }
 }
 
-#[cfg(feature="python_interfaces")]
+#[cfg(feature="python_binding")]
 #[pyfunction]
 pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<ErrorType>()?;
