@@ -1,10 +1,10 @@
 [package]
 name = "qecp"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["Yue Wu <yue.wu@yale.edu>", "Namitha Liyanage <namitha.liyanage@yale.edu>"]
 license = "MIT"
 description = "Quantum Error Correction Playground for Surface Code Research"
-readme = "../../README.md"
+readme = "README.md"
 homepage = "https://yuewuo.github.io/QEC-Playground/"
 repository = "https://github.com/yuewuo/QEC-Playground"
 # documentation = ""  # use the default docs.rs page
@@ -12,7 +12,13 @@ keywords = ["QEC", "quantum-computing", "error-correction", "simulation", "visua
 categories = ["science"]
 edition = "2021"
 exclude = [
-    "doc/*",
+    "docs/*",
+    "documentation/*",
+    "frontend/*",
+    "backend/*",
+    "articles/*",
+    "benchmark/*",
+    "tmp/*",
     "pylib/*",
     "read_nohup_out.py",
     "test.py",

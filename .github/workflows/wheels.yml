@@ -62,7 +62,6 @@ jobs:  # Workflow credit to https://github.com/samuelcolvin/rtoml/blob/main/.git
 
       - name: Build Wheels
         if: matrix.os != 'macos' || matrix['python-version'] != '7'  # no python37 for macos
-        working-directory: ./backend/rust
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
           CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
@@ -87,7 +86,6 @@ jobs:  # Workflow credit to https://github.com/samuelcolvin/rtoml/blob/main/.git
 
       - name: Build windows 32bit wheels
         if: matrix.os == 'windows'
-        working-directory: ./backend/rust
         run: cibuildwheel --output-dir wheelhouse
         env:
           CIBW_BUILD: 'cp3${{ matrix.python-version }}-win32'
@@ -101,18 +99,16 @@ jobs:  # Workflow credit to https://github.com/samuelcolvin/rtoml/blob/main/.git
 
       - name: list wheel files
         if: matrix.os != 'macos' || matrix['python-version'] != '7'  # no python37 for macos
-        working-directory: ./backend/rust
         run: ${{ matrix.ls || 'ls -lh' }} wheelhouse/
 
       - name: twine check
         if: matrix.os != 'macos' || matrix['python-version'] != '7'  # no python37 for macos
-        working-directory: ./backend/rust
         run: twine check wheelhouse/*
 
       - uses: actions/upload-artifact@v3
         if: matrix.os != 'macos' || matrix['python-version'] != '7'  # no python37 for macos
         with:
-          path: backend/rust/wheelhouse/*.whl
+          path: wheelhouse/*.whl
 
   # build_sdist:
   #   name: Build source distribution

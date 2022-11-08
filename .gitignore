@@ -3,3 +3,9 @@ __pycache__
 .DS_Store
 history.tmp
 .env
+
+target/
+tmp/
+*.bin
+*.json
+flamegraph*.svg
