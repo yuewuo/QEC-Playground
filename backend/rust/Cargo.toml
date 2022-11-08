@@ -1,6 +1,6 @@
 [package]
 name = "qecp"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["Yue Wu <yue.wu@yale.edu>", "Namitha Liyanage (namitha.liyanage@yale.edu)"]
 license = "MIT"
 description = "Quantum Error Correction Playground for Surface Code Research"
