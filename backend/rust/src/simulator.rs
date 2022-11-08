@@ -121,13 +121,12 @@ impl SimulatorNode {
     pub fn get_gate_peer(&self) -> Position{
        (**self.gate_peer.as_ref().unwrap()).clone()
     }
-    /// set error wi
-    pub fn set_error(&mut self, _error_model: &ErrorModel, error: &ErrorType) {
+    /// set error with sanity check
+    pub fn set_error_check(&mut self, _error_model: &ErrorModel, error: &ErrorType) {
         debug_assert!(!self.is_virtual || error == &I, "should not add errors at virtual nodes");
         // TODO: in debug build, check if this error is valid given the error rates
         self.error = *error;
     }
-
     pub fn set_error_temp(&mut self, error: &ErrorType){
         debug_assert!(!self.is_virtual || error == &I, "should not add errors at virtual nodes");
         // TODO: in debug build, check if this error is valid given the error rates
@@ -388,16 +387,16 @@ impl Simulator {
             let error_model_node = error_model.get_node_unwrap(position);
             let random_pauli = rng.next_f64();
             if random_pauli < error_model_node.pauli_error_rates.error_rate_X {
-                node.set_error(error_model, &X);
+                node.set_error_check(error_model, &X);
                 // println!("X error at {} {} {}",node.i, node.j, node.t);
             } else if random_pauli < error_model_node.pauli_error_rates.error_rate_X + error_model_node.pauli_error_rates.error_rate_Z {
-                node.set_error(error_model, &Z);
+                node.set_error_check(error_model, &Z);
                 // println!("Z error at {} {} {}",node.i, node.j, node.t);
             } else if random_pauli < error_model_node.pauli_error_rates.error_probability() {
-                node.set_error(error_model, &Y);
+                node.set_error_check(error_model, &Y);
                 // println!("Y error at {} {} {}",node.i, node.j, node.t);
             } else {
-                node.set_error(error_model, &I);
+                node.set_error_check(error_model, &I);
             }
             if node.error != I {
                 error_count += 1;
@@ -447,7 +446,7 @@ impl Simulator {
             if node.error != I {
                 error_count -= 1;
             }
-            node.set_error(error_model, &node.error.multiply(&peer_error));
+            node.set_error_check(error_model, &node.error.multiply(&peer_error));
             if node.error != I {
                 error_count += 1;
             }
@@ -463,7 +462,7 @@ impl Simulator {
                 error_count -= 1;
             }
             let random_erasure = rng.next_f64();
-            node.set_error(error_model, &(if random_erasure < 0.25 { X }
+            node.set_error_check(error_model, &(if random_erasure < 0.25 { X }
                 else if random_erasure < 0.5 { Z }
                 else if random_erasure < 0.75 { Y }
                 else { I }
