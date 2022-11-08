@@ -585,6 +585,8 @@ impl TailoredMWPMDecoder {
     }
 }
 
+
+#[cfg(feature = "blossom_v")]
 #[cfg(test)]
 mod tests {
     use super::*;
