@@ -100,20 +100,19 @@ jobs:  # Workflow credit to https://github.com/samuelcolvin/rtoml/blob/main/.git
             rustup show
 
       - name: list wheel files
-        working-directory: ./backend/rust
         if: matrix.os != 'macos' || matrix['python-version'] != '7'  # no python37 for macos
+        working-directory: ./backend/rust
         run: ${{ matrix.ls || 'ls -lh' }} wheelhouse/
 
       - name: twine check
-        working-directory: ./backend/rust
         if: matrix.os != 'macos' || matrix['python-version'] != '7'  # no python37 for macos
+        working-directory: ./backend/rust
         run: twine check wheelhouse/*
 
       - uses: actions/upload-artifact@v3
         if: matrix.os != 'macos' || matrix['python-version'] != '7'  # no python37 for macos
-        working-directory: ./backend/rust
         with:
-          path: wheelhouse/*.whl
+          path: backend/rust/wheelhouse/*.whl
 
   # build_sdist:
   #   name: Build source distribution
