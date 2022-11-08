@@ -1,1379 +1,730 @@
 #![allow(non_snake_case)]
 
 use super::clap;
-use super::util;
-use super::rand::prelude::*;
 use super::serde_json;
-use std::path::Path;
-use super::types::*;
-use super::ndarray::{Axis};
-use super::qec;
+#[cfg(feature="python_binding")]
 use super::pyo3::prelude::*;
-use super::pyo3::types::{IntoPyDict};
-use std::io::BufRead;
-use super::blossom_v;
 use super::num_cpus;
 use std::sync::{Arc, Mutex};
-use super::ftqec;
 use super::pbr::ProgressBar;
-use super::types::QubitType;
-use super::offer_decoder;
-use super::offer_mwpm;
-use super::union_find_decoder;
-use super::distributed_uf_decoder;
+use super::serde_json::{json};
+use std::fs::File;
+use std::io::prelude::*;
+use std::time::Instant;
+use super::util::local_get_temporary_store;
+use std::fs;
+use super::code_builder::*;
+use super::simulator::*;
+use super::clap::{ArgEnum, PossibleValue};
+use std::sync::atomic::{AtomicBool, Ordering};
+use super::error_model::*;
+use serde::{Serialize, Deserialize};
+use super::decoder_mwpm::*;
+use super::model_graph::*;
+use super::complete_model_graph::*;
+use super::decoder_tailored_mwpm::*;
+use super::tailored_model_graph::*;
+use super::tailored_complete_model_graph::*;
+use super::error_model_builder::*;
+use super::decoder_union_find::*;
+use super::erasure_graph::*;
 
-pub fn run_matched_tool(matches: &clap::ArgMatches) {
+pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
-        ("generate_random_errors", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
-            let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
+        Some(("benchmark", matches)) => {
+            let dis: String = matches.value_of_t("dis").expect("required");
+            let djs: String = matches.value_of_t("djs").unwrap_or(dis.clone());
+            let dis: Vec<usize> = serde_json::from_str(&dis).expect("dis should be [di1,di2,di3,...,din]");
+            let djs: Vec<usize> = serde_json::from_str(&djs).expect("djs should be [dj1,dj2,dj3,...,djn]");
+            let nms: String = matches.value_of_t("nms").expect("required");
+            let nms: Vec<usize> = serde_json::from_str(&nms).expect("nms should be [nm1,nm2,nm3,...,nmn]");
+            assert!(nms.len() == dis.len(), "nms and dis should be paired");
+            assert!(dis.len() == djs.len(), "dis and djs should be paired");
+            let ps: String = matches.value_of_t("ps").expect("required");
             let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let N = value_t!(matches, "N", usize).expect("N should be integer");
-            let directory = value_t!(matches, "directory", String).unwrap_or("./".to_string());
-            generate_random_errors(&Ls, &ps, N, &directory);
-        }
-        ("decoder_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
-            let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
-            let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let directory = value_t!(matches, "directory", String).unwrap_or("./".to_string());
-            let qec_decoder = value_t!(matches, "qec_decoder", String).unwrap_or("naive_decoder".to_string());
-            decoder_benchmark(&Ls, &ps, &directory, &qec_decoder);
-        }
-        ("automatic_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
-            let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
-            let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(1000);  // default to 1e3
-            let qec_decoder = value_t!(matches, "qec_decoder", String).unwrap_or("naive_decoder".to_string());
-            automatic_benchmark(&Ls, &ps, max_N, min_error_cases, &qec_decoder);
-        }
-        ("error_rate_MWPM_with_weight", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
-            let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
-            let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(1000);  // default to 1e3
-            let weights = value_t!(matches, "weights", String).unwrap_or("default_weights".to_string());
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            error_rate_MWPM_with_weight(&Ls, &ps, max_N, min_error_cases, &weights, parallel);
-        }
-        ("fault_tolerant_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
-            let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let Ts = value_t!(matches, "Ts", String).expect("required");
-            let Ts: Vec<usize> = serde_json::from_str(&Ts).expect("Ts should be [T1,T2,T3,...,Tn]");
-            assert!(Ts.len() == Ls.len(), "Ts and Ls should be paired");
-            let ps = value_t!(matches, "ps", String).expect("required");
-            let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("boundary".to_string());
-            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
-            let autotune = ! matches.is_present("no_autotune");  // default autotune is enabled
-            let rotated_planar_code = matches.is_present("rotated_planar_code");  // default use standard planar code
-            let ignore_6_neighbors = matches.is_present("ignore_6_neighbors");  // default use 12 neighbors version
-            let extra_measurement_error = value_t!(matches, "extra_measurement_error", f64).unwrap_or(1.);  // default to 1.
-            let bypass_correction = matches.is_present("bypass_correction");
-            let independent_px_pz = matches.is_present("independent_px_pz");
-            let only_count_logical_x = matches.is_present("only_count_logical_x");
-            let imperfect_initialization = matches.is_present("imperfect_initialization");
-            let shallow_error_on_bottom = matches.is_present("shallow_error_on_bottom");
-            fault_tolerant_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
-                , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, !imperfect_initialization
-                , shallow_error_on_bottom);
-        }
-        ("decoder_comparison_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
-            let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let Ts = value_t!(matches, "Ts", String).expect("required");
-            let Ts: Vec<usize> = serde_json::from_str(&Ts).expect("Ts should be [T1,T2,T3,...,Tn]");
-            assert!(Ts.len() == Ls.len(), "Ts and Ls should be paired");
-            let ps = value_t!(matches, "ps", String).expect("required");
-            let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let validate_layer = value_t!(matches, "validate_layer", String).unwrap_or("boundary".to_string());
-            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
-            let autotune = ! matches.is_present("no_autotune");  // default autotune is enabled
-            let rotated_planar_code = matches.is_present("rotated_planar_code");  // default use standard planar code
-            let ignore_6_neighbors = matches.is_present("ignore_6_neighbors");  // default use 12 neighbors version
-            let extra_measurement_error = value_t!(matches, "extra_measurement_error", f64).unwrap_or(1.);  // default to 1.
-            let bypass_correction = matches.is_present("bypass_correction");
-            let independent_px_pz = matches.is_present("independent_px_pz");
-            let only_count_logical_x = matches.is_present("only_count_logical_x");
-            let imperfect_initialization = matches.is_present("imperfect_initialization");
-            let substreams = value_t!(matches, "substreams", usize).unwrap_or(32);  // default to 32.
-            decoder_comparison_benchmark(&Ls, &Ts, &ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code
-                , ignore_6_neighbors, extra_measurement_error, bypass_correction, independent_px_pz, only_count_logical_x, !imperfect_initialization, substreams);
-        }
-        ("offer_decoder_standard_planar_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
-            let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
-            let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
-            let only_count_logical_x = matches.is_present("only_count_logical_x");
-            let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(usize::MAX);
-            let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(usize::MAX);
-            let disable_probabilistic_accept = matches.is_present("disable_probabilistic_accept");
-            let repeat_experiment_each_error = value_t!(matches, "repeat_experiment_each_error", usize).unwrap_or(1);
-            offer_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, max_resend, max_cycles
-                , disable_probabilistic_accept, repeat_experiment_each_error);
-        }
-        ("offer_algorithm_standard_planar_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
-            let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
-            let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
-            let only_count_logical_x = matches.is_present("only_count_logical_x");
-            let max_resend = value_t!(matches, "max_resend", usize).unwrap_or(usize::MAX);
-            let max_cycles = value_t!(matches, "max_cycles", usize).unwrap_or(usize::MAX);
-            let disable_probabilistic_accept = matches.is_present("disable_probabilistic_accept");
-            let repeat_experiment_each_error = value_t!(matches, "repeat_experiment_each_error", usize).unwrap_or(1);
-            offer_algorithm_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x, max_resend, max_cycles
-                , disable_probabilistic_accept, repeat_experiment_each_error);
-        }
-        ("union_find_decoder_standard_planar_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
-            let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
-            let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
-            let only_count_logical_x = matches.is_present("only_count_logical_x");
-            union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x);
-        }
-        ("distributed_union_find_decoder_standard_planar_benchmark", Some(matches)) => {
-            let Ls = value_t!(matches, "Ls", String).expect("required");
-            let Ls: Vec<usize> = serde_json::from_str(&Ls).expect("Ls should be [L1,L2,L3,...,Ln]");
-            let ps = value_t!(matches, "ps", String).expect("required");
-            let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let max_N = value_t!(matches, "max_N", usize).unwrap_or(100000000);  // default to 1e8
-            let min_error_cases = value_t!(matches, "min_error_cases", usize).unwrap_or(10000);  // default to 1e3
-            let parallel = value_t!(matches, "parallel", usize).unwrap_or(1);  // default to 1
-            let mini_batch = value_t!(matches, "mini_batch", usize).unwrap_or(1);  // default to 1
-            let only_count_logical_x = matches.is_present("only_count_logical_x");
-            distributed_union_find_decoder_standard_planar_benchmark(&Ls, &ps, max_N, min_error_cases, parallel, mini_batch, only_count_logical_x);
+            let ps_graph: Option<String> = matches.value_of_t("ps_graph").ok();
+            let ps_graph: Vec<f64> = match ps_graph {
+                Some(ps_graph) => serde_json::from_str(&ps_graph).expect("ps_graph should be [p1,p2,p3,...,pm]"),
+                None => ps.clone(),
+            };
+            let pes: Option<String> = matches.value_of_t("pes").ok();
+            let pes: Vec<f64> = match pes {
+                Some(pes) => serde_json::from_str(&pes).expect("pes should be [pe1,pe2,pe3,...,pem]"),
+                None => vec![0.; ps.len()],  // by default no erasure errors
+            };
+            let pes_graph: Option<String> = matches.value_of_t("pes_graph").ok();
+            let pes_graph: Vec<f64> = match pes_graph {
+                Some(pes_graph) => serde_json::from_str(&pes_graph).expect("pes_graph should be [pe1,pe2,pe3,...,pem]"),
+                None => pes.clone(),
+            };
+            let bias_eta: f64 = matches.value_of_t("bias_eta").unwrap();
+            assert_eq!(pes.len(), ps.len(), "pe and p should be paired");
+            let mut max_repeats: usize = matches.value_of_t("max_repeats").unwrap();
+            if max_repeats == 0 {
+                max_repeats = usize::MAX;
+            }
+            let mut min_failed_cases: usize = matches.value_of_t("min_failed_cases").unwrap();
+            if min_failed_cases == 0 {
+                min_failed_cases = usize::MAX;
+            }
+            let parallel: usize = matches.value_of_t("parallel").unwrap();
+            let parallel_init: usize = matches.value_of_t("parallel_init").unwrap_or(parallel);
+            let code_type: String = matches.value_of_t("code_type").unwrap_or("StandardPlanarCode".to_string());
+            let decoder = matches.value_of_t::<BenchmarkDecoder>("decoder").unwrap();
+            let decoder_config = matches.value_of_t::<serde_json::Value>("decoder_config").unwrap();
+            let ignore_logical_i = matches.is_present("ignore_logical_i");
+            let ignore_logical_j = matches.is_present("ignore_logical_j");
+            let debug_print = matches.value_of_t::<BenchmarkDebugPrint>("debug_print").ok();
+            let time_budget: Option<f64> = matches.value_of_t("time_budget").ok();
+            let log_runtime_statistics: Option<String> = matches.value_of_t("log_runtime_statistics").ok();
+            let log_error_pattern_when_logical_error = matches.is_present("log_error_pattern_when_logical_error");
+            let error_model_builder = matches.value_of_t::<ErrorModelBuilder>("error_model").ok();
+            let error_model_configuration = matches.value_of_t::<serde_json::Value>("error_model_configuration").unwrap();
+            let thread_timeout: f64 = matches.value_of_t("thread_timeout").unwrap();
+            let use_brief_edge = matches.is_present("use_brief_edge");
+            let label: String = matches.value_of_t("label").unwrap_or(format!(""));
+            let mut error_model_modifier_str: Option<String> = None;
+            match matches.value_of_t::<usize>("load_error_model_from_temporary_store") {
+                Ok(error_model_temporary_id) => {
+                    match local_get_temporary_store(error_model_temporary_id) {
+                        Some(value) => { error_model_modifier_str = Some(value); },
+                        None => { return Some(format!("[error] temporary id not found (may expire): {}", error_model_temporary_id)) }
+                    }
+                },
+                Err(_) => { },
+            }
+            match matches.value_of_t::<String>("load_error_model_from_file") {
+                Ok(error_model_filepath) => {
+                    match fs::read_to_string(error_model_filepath.clone()) {
+                        Ok(value) => { error_model_modifier_str = Some(value); },
+                        Err(_) => { return Some(format!("[error] error model file cannot open: {}", error_model_filepath)) }
+                    }
+                },
+                Err(_) => { },
+            }
+            let error_model_modifier: Option<serde_json::Value> = match error_model_modifier_str {
+                Some(value) => match serde_json::from_str(&value) {
+                    Ok(error_model_modifier) => Some(error_model_modifier),
+                    Err(_) => { return Some(format!("[error] error model cannot recognize, please check file format")) }
+                },
+                None => None,
+            };
+            return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
+                , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
+                , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge, label
+                , error_model_modifier));
         }
         _ => unreachable!()
     }
 }
 
-/**
-default example:
-    d = L = 3,5,7,9,11,15,25
-    p = 3e-2,1e-2,3e-3,1e-3,3e-4,1e-4
-`cargo run --release -- tool generate_random_errors [3,5,7,9,11,15,25] [3e-2,1e-2,3e-3,1e-3,3e-4,1e-4] 1000 -d ./tmp/random_errors`
-**/
-fn generate_random_errors(Ls: &Vec<usize>, ps: &Vec<f64>, N: usize, directory: &str) {
-    for p in ps {
-        for L in Ls {
-            let p = *p;
-            let L = *L;
-            println!("p: {}, L: {} starting", p, L);
-            let mut data_ro = BatchZxError::new_N_L(N, L);
-            let mut data = data_ro.view_mut();
-            let mut rng = thread_rng();
-            let mut total_rounds = 0;
-            let mut i = 0;
-            let mut error_cnt = 0;
-            while i < N {
-                let mut has_error = false;
-                for j in 0..L {
-                    for k in 0..L {
-                        let is_error = rng.gen::<f64>() < p;
-                        if is_error {
-                            error_cnt += 1;
-                            has_error = true;
-                        }
-                        data[[i, j, k]] = is_error;
-                    }
-                }
-                total_rounds += 1;  // record the total round
-                if has_error {  // only save data when error occurs
-                    i += 1;
-                }
-            }
-            println!("    N/total_rounds = {}/{} = {}", N, total_rounds, N as f64 / total_rounds as f64);
-            // prepare the head
-            let error_rate = error_cnt as f64 / ((total_rounds*L*L) as f64);
-            let head = serde_json::json!({
-                "p": p,
-                "error_cnt": error_cnt,
-                "error_rate": error_rate,
-                "total_rounds": total_rounds,
-            });
-            // save to file
-            let filename = format!("errors_{}_{}.bin", p, L);
-            let path = Path::new(directory).join(filename);
-            util::save(path.to_str().expect("path string"), &head, &data_ro).expect("save failed");
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum, Serialize)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
+pub enum BenchmarkDebugPrint {
+    /// the original error model
+    ErrorModel,
+    /// including every possible error rate (correlated ones), but initialize them as 0
+    FullErrorModel,
+    /// model graph, supporting decoder config `weight_function` or `wf`
+    ModelGraph,
+    /// complete model graph, supporting decoder config `weight_function` or `wf`, `precompute_complete_model_graph` or `pcmg`
+    CompleteModelGraph,
+    /// tailored model graph, supporting decoder config `weight_function` or `wf`
+    TailoredModelGraph,
+    /// tailored complete model graph, supporting decoder config `weight_function` or `wf`, `precompute_complete_model_graph` or `pcmg`
+    TailoredCompleteModelGraph,
+    /// print all error patterns immediately after generating random errors, typically useful to pinpoint how program assertion fail and debug deadlock
+    AllErrorPattern,
+    /// print failed error patterns that causes logical errors, typically useful to pinpoint how decoder fails to decode a likely error
+    FailedErrorPattern,
+    /// erasure graph
+    ErasureGraph,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
+pub struct BenchmarkDebugPrintDecoderConfig {
+    /// see [`MWPMDecoderConfig`]
+    #[serde(alias = "pcmg")]  // abbreviation
+    #[serde(default = "mwpm_default_configs::precompute_complete_model_graph")]
+    pub precompute_complete_model_graph: bool,
+    /// see [`MWPMDecoderConfig`]
+    #[serde(alias = "wf")]  // abbreviation
+    #[serde(default = "mwpm_default_configs::weight_function")]
+    pub weight_function: WeightFunction,
+    /// combined probability can improve accuracy, but will cause probabilities differ a lot even in the case of i.i.d. error model
+    #[serde(alias = "ucp")]  // abbreviation
+    #[serde(default = "mwpm_default_configs::use_combined_probability")]
+    pub use_combined_probability: bool,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum, Serialize)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
+pub enum BenchmarkDecoder {
+    /// no decoder applied, return empty correction
+    None,
+    /// minimum-weight perfect matching decoder
+    MWPM,
+    /// tailored surface code MWPM decoder
+    TailoredMWPM,
+    /// union-find decoder
+    UnionFind,
+}
+
+/// progress variable shared between threads to update information
+#[derive(Clone, Debug, Serialize)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
+struct BenchmarkControl {
+    total_repeats: usize,
+    qec_failed: usize,
+    external_termination: bool,
+}
+
+impl BenchmarkControl {
+    fn new() -> Self {
+        Self {
+            total_repeats: 0,
+            qec_failed: 0,
+            external_termination: false,
         }
+    }
+    fn update_data_should_terminate(&mut self, is_qec_failed: bool, max_repeats: usize, min_failed_cases: usize) -> bool {
+        self.total_repeats += 1;
+        if is_qec_failed {
+            self.qec_failed += 1;
+        }
+        self.should_terminate(max_repeats, min_failed_cases)
+    }
+    fn should_terminate(&self, max_repeats: usize, min_failed_cases: usize) -> bool {
+        self.external_termination || self.total_repeats >= max_repeats || self.qec_failed >= min_failed_cases
+    }
+    fn set_external_terminate(&mut self) {
+        self.external_termination = true;
     }
 }
 
-/**
-default example:
-    d = L = 3,5,7,9,11,15,25
-    p = 3e-2,1e-2,3e-3,1e-3,3e-4,1e-4
-`cargo run --release -- tool decoder_benchmark [3,5,7,9,11,15,25] [3e-2,1e-2,3e-3,1e-3,3e-4,1e-4] -d ./tmp/random_errors -q naive_decoder`
-**/
-fn decoder_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, directory: &str, qec_decoder: &str) {
-    println!("format: <p> <L> <total_rounds> <qec_failed> <error_rate>");
-    for p in ps {
-        for L in Ls {
-            let p = *p;
-            let L = *L;
-            // load from file
-            let filename = format!("errors_{}_{}.bin", p, L);
-            let path = Path::new(directory).join(filename);
-            let (head, data) = util::load(path.to_str().expect("path string")).expect("load failed");
-            let total_rounds = head.get("total_rounds").expect("total_rounds").as_u64().expect("u64") as usize;
-            let N = head.get("N").expect("N").as_u64().expect("u64") as usize;
-            let no_error = ZxError::new_L(L);
-            let mut qec_failed = 0;
-            for i in 0..N {
-                let x_error = ZxError::new(data.index_axis(Axis(0), i).to_owned());
-                let measurement = util::generate_perfect_measurements(&x_error, &no_error);
-                let (x_correction, _z_correction) = qec::naive_correction(&measurement);
-                if x_error.validate_x_correction(&x_correction).is_err() {
-                    qec_failed += 1;
-                }
-            }
-            let error_rate = qec_failed as f64 / total_rounds as f64;
-            println!("{} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate);
+/// decoder might suffer from rare deadlock, and this controller will record the necessary information for debugging with low runtime overhead
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct BenchmarkThreadDebugger {
+    thread_counter: usize,
+    error_pattern: Option<SparseErrorPattern>,
+    measurement: Option<SparseMeasurement>,
+    detected_erasures: Option<SparseDetectedErasures>,
+    correction: Option<SparseCorrection>,
+}
+
+impl BenchmarkThreadDebugger {
+    fn new() -> Self {
+        Self {
+            thread_counter: 0,
+            error_pattern: None,
+            measurement: None,
+            detected_erasures: None,
+            correction: None,
         }
     }
-    if qec_decoder == "naive_decoder" {
-
+    fn update_thread_counter(&mut self, thread_counter: usize) -> &mut Self {
+        self.thread_counter = thread_counter;
+        self.error_pattern = None;
+        self.measurement = None;
+        self.detected_erasures = None;
+        self.correction = None;
+        self
+    }
+    /// load error to simulator, useful when debug specific case
+    #[allow(dead_code)]
+    pub fn load_errors(&self, simulator: &mut Simulator) {
+        if self.error_pattern.is_some() {
+            simulator.load_sparse_error_pattern(&self.error_pattern.as_ref().unwrap()).expect("success");
+        }
+        if self.detected_erasures.is_some() {
+            simulator.load_sparse_detected_erasures(&self.detected_erasures.as_ref().unwrap()).expect("success");
+        }
+        // propagate the errors and erasures
+        simulator.propagate_errors();
     }
 }
 
-/**
-default example:
-`cargo run --release -- tool automatic_benchmark [3] [3e-2,1e-2,3e-3] -q naive_decoder`
-**/
-fn automatic_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, qec_decoder: &str) {
-    println!("format: <p> <L> <total_rounds> <qec_failed> <error_rate>");
-    if qec_decoder == "naive_decoder" || qec_decoder == "maximum_max_weight_matching_decoder" || qec_decoder == "blossom_V" {
-        for L in Ls {
-            for p in ps {
-                let p = *p;
-                let L = *L;
-                let no_error = ZxError::new_L(L);
-                let mut x_error_ro = ZxError::new_L(L);
-                let mut rng = thread_rng();
-                let mut total_rounds = 0;
-                let mut qec_failed = 0;
-                while total_rounds < max_N && qec_failed < min_error_cases {
-                    let mut x_error = x_error_ro.view_mut();
-                    let mut has_error = false;
-                    for i in 0..L {
-                        for j in 0..L {
-                            let is_error = rng.gen::<f64>() < p;
-                            x_error[[i, j]] = is_error;
-                            if is_error {
-                                has_error = true;
-                            }
-                        }
-                    }
-                    total_rounds += 1;  // record the total round
-                    if !has_error {
-                        continue
-                    }
-                    let measurement = util::generate_perfect_measurements(&x_error_ro, &no_error);
-                    let (x_correction, _z_correction) = if qec_decoder == "naive_decoder" {
-                        qec::naive_correction(&measurement)
-                    } else {  // "maximum_max_weight_matching_decoder" or "blossom_V"
-                        if qec_decoder == "maximum_max_weight_matching_decoder" {
-                            let maximum_max_weight_matching = |_node_num: usize, weighted_edges: Vec<(usize, usize, f64)>| 
-                                -> std::collections::HashSet<(usize, usize)> {
-                                    Python::with_gil(|py| {
-                                        (|py: Python| -> PyResult<std::collections::HashSet<(usize, usize)>> {
-                                            let networkx = py.import("networkx")?;
-                                            let max_weight_matching = networkx.getattr("algorithms")?.getattr("matching")?.getattr("max_weight_matching")?;
-                                            let G = networkx.call_method0("Graph")?;
-                                            let weighted_edges = weighted_edges.to_object(py);
-                                            G.call_method1("add_weighted_edges_from", (weighted_edges,))?;
-                                            let dict = vec![("maxcardinality", true)].into_py_dict(py);
-                                            let matched: std::collections::HashSet<(usize, usize)> = max_weight_matching.call((G,), Some(dict))?.extract()?;
-                                            Ok(matched)
-                                        })(py).map_err(|e| {
-                                            e.print_and_set_sys_last_vars(py);
-                                        })
-                                    }).expect("python run failed")
-                                };
-                            qec::maximum_max_weight_matching_correction(&measurement, maximum_max_weight_matching)
+fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_repeats: usize, min_failed_cases: usize
+        , parallel: usize, code_type: String, decoder: BenchmarkDecoder, decoder_config: serde_json::Value, ignore_logical_i: bool, ignore_logical_j: bool
+        , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
+        , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
+        , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String, error_model_modifier: Option<serde_json::Value>) -> String {
+    // if parallel = 0, use all CPU resources
+    let parallel = if parallel == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel };
+    let parallel_init = if parallel_init == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel_init };
+    // create runtime statistics file object if given file path
+    let log_runtime_statistics_file = log_runtime_statistics.clone().map(|filename| 
+        Arc::new(Mutex::new(File::create(filename.as_str()).expect("cannot create file"))));
+    let fixed_configuration = json!({
+        "dis": dis,
+        "djs": djs,
+        "nms": nms,
+        "ps": ps,
+        "pes": pes,
+        "ps_graph": ps_graph,  // used to build decoding graph
+        "pes_graph": pes_graph,  // used to build decoding graph
+        "bias_eta": bias_eta,
+        "max_repeats": max_repeats,
+        "min_failed_cases": min_failed_cases,
+        "parallel": parallel,
+        "parallel_init": parallel_init,
+        "code_type": code_type,
+        "decoder": decoder,
+        "decoder_config": decoder_config,
+        "ignore_logical_i": ignore_logical_i,
+        "ignore_logical_j": ignore_logical_j,
+        "debug_print": debug_print,
+        "log_runtime_statistics": log_runtime_statistics,
+        "log_error_pattern_when_logical_error": log_error_pattern_when_logical_error,
+        "use_brief_edge": use_brief_edge,
+        "label": label,
+        "error_model_modifier": error_model_modifier,
+    });
+    match &log_runtime_statistics_file {  // append runtime statistics data
+        Some(log_runtime_statistics_file) => {
+            let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
+            log_runtime_statistics_file.write(b"#f ").unwrap();
+            log_runtime_statistics_file.write(fixed_configuration.to_string().as_bytes()).unwrap();
+            log_runtime_statistics_file.write(b"\n").unwrap();
+            log_runtime_statistics_file.sync_data().unwrap();
+        }, _ => { },
+    }
+    // first list all configurations and validate them at the beginning
+    assert_eq!(pes.len(), ps.len(), "pe and p should be matched");
+    assert_eq!(ps_graph.len(), ps.len(), "ps_graph and p should be matched");
+    assert_eq!(pes_graph.len(), ps.len(), "pes_graph and p should be matched");
+    let mut configurations = Vec::new();
+    for (di_idx, &di) in dis.iter().enumerate() {
+        let noisy_measurements = nms[di_idx];
+        let dj = djs[di_idx];
+        for (p_idx, p) in ps.iter().enumerate() {
+            let p = *p;
+            let pe = pes[p_idx];
+            let p_graph = ps_graph[p_idx];
+            let pe_graph = pes_graph[p_idx];
+            assert!(p >= 0. && p <= 1.0, "invalid probability value");
+            assert!(p_graph >= 0. && p_graph <= 1.0, "invalid probability value");
+            assert!(pe >= 0. && pe <= 1.0, "invalid probability value");
+            assert!(pe_graph >= 0. && pe_graph <= 1.0, "invalid probability value");
+            configurations.push((di, dj, noisy_measurements, p, pe, p_graph, pe_graph));
+        }
+    }
+    let mut output = format!("");
+    if debug_print.is_none() {  // debug print only will not run simulations
+        output = format!("format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>");
+        eprintln!("{}", output);  // compatible with old scripts
+    }
+    // start running simulations
+    for &(di, dj, noisy_measurements, p, pe, p_graph, pe_graph) in configurations.iter() {
+        // append runtime statistics data
+        match &log_runtime_statistics_file {
+            Some(log_runtime_statistics_file) => {
+                let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
+                log_runtime_statistics_file.write(b"# ").unwrap();
+                log_runtime_statistics_file.write(json!({
+                    "di": di,
+                    "dj": dj,
+                    "noisy_measurements": noisy_measurements,
+                    "p": p,
+                    "pe": pe,
+                    "p_graph": p_graph,
+                    "pe_graph": pe_graph,
+                }).to_string().as_bytes()).unwrap();
+                log_runtime_statistics_file.write(b"\n").unwrap();
+                log_runtime_statistics_file.sync_data().unwrap();
+            }, _ => { },
+        }
+        // prepare simulator
+        let mut simulator = Simulator::new(CodeType::new(&code_type), BuiltinCodeInformation::new(noisy_measurements, di, dj));
+        let mut error_model_graph = ErrorModel::new(&simulator);
+        // first use p_graph and pe_graph to build decoder graph, then revert back to real error model
+        let px_graph = p_graph / (1. + bias_eta) / 2.;
+        let py_graph = px_graph;
+        let pz_graph = p_graph - 2. * px_graph;
+        simulator.set_error_rates(&mut error_model_graph, px_graph, py_graph, pz_graph, pe_graph);
+        // apply customized error model
+        if let Some(error_model_builder) = &error_model_builder {
+            error_model_builder.apply(&mut simulator, &mut error_model_graph, &error_model_configuration, p_graph, bias_eta, pe_graph);
+        }
+        // apply error model modifier
+        match &error_model_modifier {
+            Some(modifier) => {
+                match ErrorModelBuilder::apply_error_model_modifier(&mut simulator, &mut error_model_graph, &modifier) {
+                    Ok(_) => { },
+                    Err(reason) => {
+                        panic!("[error] apply error model failed: {}", reason);
+                    },
+                }
+            },
+            None => { }
+        }
+        debug_assert!({  // check correctness only in debug mode because it's expensive
+            let sanity_check_result = code_builder_sanity_check(&simulator);
+            if let Err(message) = &sanity_check_result {
+                println!("[error] code_builder_sanity_check: {}", message)
+            }
+            sanity_check_result.is_ok()
+        });
+        assert!({  // this assertion is cheap, check it in release mode as well
+            let sanity_check_result = error_model_sanity_check(&simulator, &error_model_graph);
+            if let Err(message) = &sanity_check_result {
+                println!("[error] error_model_sanity_check: {}", message)
+            }
+            sanity_check_result.is_ok()
+        });
+        simulator.compress_error_rates(&mut error_model_graph);  // by default compress all error rates
+        match debug_print {
+            Some(BenchmarkDebugPrint::ErrorModel) => {
+                return format!("{}\n", serde_json::to_string(&simulator.to_json(&error_model_graph)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::FullErrorModel) => {
+                simulator.expand_error_rates(&mut error_model_graph);  // expand all optional error rates
+                return format!("{}\n", serde_json::to_string(&simulator.to_json(&error_model_graph)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::ModelGraph) => {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut model_graph = ModelGraph::new(&simulator);
+                let error_model_graph = Arc::new(error_model_graph);
+                model_graph.build(&mut simulator, error_model_graph, &config.weight_function, parallel_init, config.use_combined_probability, use_brief_edge);
+                return format!("{}\n", serde_json::to_string(&model_graph.to_json(&simulator)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::CompleteModelGraph) => {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut model_graph = ModelGraph::new(&simulator);
+                let error_model_graph = Arc::new(error_model_graph);
+                model_graph.build(&mut simulator, error_model_graph, &config.weight_function, parallel_init, config.use_combined_probability, use_brief_edge);
+                let model_graph = Arc::new(model_graph);
+                let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
+                complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph, parallel_init);
+                return format!("{}\n", serde_json::to_string(&complete_model_graph.to_json(&simulator)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::TailoredModelGraph) => {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
+                tailored_model_graph.build(&mut simulator, &error_model_graph, &config.weight_function);
+                return format!("{}\n", serde_json::to_string(&tailored_model_graph.to_json(&simulator)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::TailoredCompleteModelGraph) => {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
+                tailored_model_graph.build(&mut simulator, &error_model_graph, &config.weight_function);
+                let tailored_model_graph = Arc::new(tailored_model_graph);
+                let mut complete_tailored_model_graph = TailoredCompleteModelGraph::new(&simulator, Arc::clone(&tailored_model_graph));
+                complete_tailored_model_graph.precompute(&simulator, config.precompute_complete_model_graph, parallel_init);
+                return format!("{}\n", serde_json::to_string(&complete_tailored_model_graph.to_json(&simulator)).expect("serialize should success"));
+            },
+            Some(BenchmarkDebugPrint::ErasureGraph) => {
+                let mut erasure_graph = ErasureGraph::new(&simulator);
+                let error_model_graph = Arc::new(error_model_graph);
+                erasure_graph.build(&mut simulator, error_model_graph, parallel_init);
+                return format!("{}\n", serde_json::to_string(&erasure_graph.to_json(&simulator)).expect("serialize should success"));
+            },
+            _ => { }
+        }
+        let debug_print = Arc::new(debug_print);  // share it across threads
+        let error_model_graph = Arc::new(error_model_graph);  // change mutability of error model
+        // build decoder precomputed data which is shared between threads
+        if decoder == BenchmarkDecoder::None {
+            assert!(decoder_config.is_object() && decoder_config.as_object().unwrap().len() == 0, "this decoder doesn't support decoder configuration");
+        }
+        let mwpm_decoder = if decoder == BenchmarkDecoder::MWPM {
+            Some(MWPMDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init, use_brief_edge))
+        } else { None };
+        let tailored_mwpm_decoder = if decoder == BenchmarkDecoder::TailoredMWPM {
+            Some(TailoredMWPMDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init, use_brief_edge))
+        } else { None };
+        let union_find_decoder = if decoder == BenchmarkDecoder::UnionFind {
+            Some(UnionFindDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init, use_brief_edge))
+        } else { None };
+        // then prepare the real error model
+        let mut error_model = ErrorModel::new(&simulator);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = p - 2. * px;
+        simulator.set_error_rates(&mut error_model, px, py, pz, pe);
+        // apply customized error model
+        if let Some(error_model_builder) = &error_model_builder {
+            error_model_builder.apply(&mut simulator, &mut error_model, &error_model_configuration, p, bias_eta, pe);
+        }
+        // apply error model modifier
+        match &error_model_modifier {
+            Some(modifier) => {
+                match ErrorModelBuilder::apply_error_model_modifier(&mut simulator, &mut error_model, &modifier) {
+                    Ok(_) => { },
+                    Err(reason) => {
+                        panic!("[error] apply error model failed: {}", reason);
+                    },
+                }
+            },
+            None => { }
+        }
+        debug_assert!({  // check correctness only in debug mode because it's expensive
+            let sanity_check_result = code_builder_sanity_check(&simulator);
+            if let Err(message) = &sanity_check_result {
+                println!("[error] code_builder_sanity_check: {}", message)
+            }
+            sanity_check_result.is_ok()
+        });
+        assert!({  // this assertion is cheap, check it in release mode as well
+            let sanity_check_result = error_model_sanity_check(&simulator, &error_model);
+            if let Err(message) = &sanity_check_result {
+                println!("[error] error_model_sanity_check: {}", message)
+            }
+            sanity_check_result.is_ok()
+        });
+        simulator.compress_error_rates(&mut error_model);  // by default compress all error rates
+        let error_model = Arc::new(error_model);  // change mutability of error model
+        // prepare result variables for simulation
+        let benchmark_control = Arc::new(Mutex::new(BenchmarkControl::new()));
+        // setup progress bar
+        let mut pb = ProgressBar::on(std::io::stderr(), max_repeats as u64);
+        pb.set(0);
+        // spawn threads to do simulation
+        let mut handlers = Vec::new();
+        let mut threads_debugger: Vec<Arc<Mutex<BenchmarkThreadDebugger>>> = Vec::new();
+        let mut threads_ended = Vec::new();  // keep updating progress bar until all threads ends
+        for _parallel_idx in 0..parallel {
+            let benchmark_control = Arc::clone(&benchmark_control);
+            let mut simulator: Simulator = simulator.clone();
+            let error_model = Arc::clone(&error_model);
+            let debug_print = Arc::clone(&debug_print);
+            let log_runtime_statistics_file = log_runtime_statistics_file.clone();
+            let mut mwpm_decoder = mwpm_decoder.clone();
+            let mut tailored_mwpm_decoder = tailored_mwpm_decoder.clone();
+            let mut union_find_decoder = union_find_decoder.clone();
+            let thread_ended = Arc::new(AtomicBool::new(false));
+            threads_ended.push(Arc::clone(&thread_ended));
+            let thread_debugger = Arc::new(Mutex::new(BenchmarkThreadDebugger::new()));
+            threads_debugger.push(thread_debugger.clone());
+            handlers.push(std::thread::spawn(move || {
+                for thread_counter in 0..usize::MAX {
+                    if thread_timeout >= 0. { thread_debugger.lock().unwrap().update_thread_counter(thread_counter); }
+                    // generate random errors and the corresponding measurement
+                    let begin = Instant::now();
+                    let (error_count, erasure_count) = simulator.generate_random_errors(&error_model);
+                    let sparse_detected_erasures = if erasure_count != 0 { simulator.generate_sparse_detected_erasures() } else { SparseDetectedErasures::new() };
+                    if thread_timeout >= 0. {
+                        let mut thread_debugger = thread_debugger.lock().unwrap();
+                        thread_debugger.error_pattern = Some(simulator.generate_sparse_error_pattern());
+                        thread_debugger.detected_erasures = Some(sparse_detected_erasures.clone());
+                    }  // runtime debug: find deadlock cases
+                    if matches!(*debug_print, Some(BenchmarkDebugPrint::AllErrorPattern)) {
+                        let sparse_error_pattern = simulator.generate_sparse_error_pattern();
+                        eprint!("{}", serde_json::to_string(&sparse_error_pattern).expect("serialize should success"));
+                        if sparse_detected_erasures.len() > 0 {  // has detected erasures, report as well
+                            eprintln!(", {}", serde_json::to_string(&sparse_detected_erasures).expect("serialize should success"));
                         } else {
-                            qec::maximum_max_weight_matching_correction(&measurement, blossom_v::maximum_weight_perfect_matching_compatible)
+                            eprintln!("");
+                        }
+                    }
+                    let sparse_measurement = if error_count != 0 { simulator.generate_sparse_measurement() } else { SparseMeasurement::new() };
+                    if thread_timeout >= 0. { thread_debugger.lock().unwrap().measurement = Some(sparse_measurement.clone()); }  // runtime debug: find deadlock cases
+                    let prepare_elapsed = begin.elapsed().as_secs_f64();
+                    // decode
+                    let begin = Instant::now();
+                    let (correction, mut runtime_statistics) = match decoder {
+                        BenchmarkDecoder::None => {
+                            (SparseCorrection::new(), json!({}))
+                        },
+                        BenchmarkDecoder::MWPM => {
+                            mwpm_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
+                        },
+                        BenchmarkDecoder::TailoredMWPM => {
+                            assert!(sparse_detected_erasures.len() == 0, "tailored MWPM decoder doesn't support erasures");
+                            tailored_mwpm_decoder.as_mut().unwrap().decode(&sparse_measurement)
+                        },
+                        BenchmarkDecoder::UnionFind => {
+                            union_find_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
                         }
                     };
-                    if x_error_ro.validate_x_correction(&x_correction).is_err() {
-                        qec_failed += 1;
+                    if thread_timeout >= 0. { thread_debugger.lock().unwrap().correction = Some(correction.clone()); }  // runtime debug: find deadlock cases
+                    let decode_elapsed = begin.elapsed().as_secs_f64();
+                    // validate correction
+                    let begin = Instant::now();
+                    let mut is_qec_failed = false;
+                    let (logical_i, logical_j) = simulator.validate_correction(&correction);
+                    if logical_i && !ignore_logical_i {
+                        is_qec_failed = true;
                     }
-                }
-                let error_rate = qec_failed as f64 / total_rounds as f64;
-                println!("{} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate);
-            }
-        }
-    } else {
-        println!("[error] unknown decoder");
-    }
-}
-
-/**
-default example:
-`cargo run --release -- tool error_rate_MWPM_with_weight [5] [1e-2] -w default_weights.txt`
-(run `python ../python/MWPM_weighted.py` to generate `default_weights.txt`)
-**/
-fn error_rate_MWPM_with_weight(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, weights_filename: &str, parallel: usize) {
-    let mut parallel = parallel;
-    if parallel == 0 {
-        parallel = num_cpus::get() - 1;
-    }
-    // println!("format: <p> <L> <total_rounds> <qec_failed> <error_rate>");
-    // read weights from file
-    let file = std::fs::File::open(weights_filename).expect("file open failed");
-    let mut lines = std::io::BufReader::new(file).lines();
-    let weight_L = lines.next().expect("next").expect("should have L").parse::<usize>().expect("L usize");
-    let mut weight_covered = ndarray::Array::from_elem((weight_L+1, weight_L+1, weight_L+1, weight_L+1), false);
-    let mut weight_covered_mut = weight_covered.view_mut();
-    let mut weights = ndarray::Array::from_elem((weight_L+1, weight_L+1, weight_L+1, weight_L+1), 0f64);
-    let mut weights_mut = weights.view_mut();
-    for line in lines {
-        if let Ok(line) = line {
-            let mut elements = line.split_ascii_whitespace();
-            let i1 = elements.next().expect("next").parse::<usize>().expect("usize");
-            let j1 = elements.next().expect("next").parse::<usize>().expect("usize");
-            let i2 = elements.next().expect("next").parse::<usize>().expect("usize");
-            let j2 = elements.next().expect("next").parse::<usize>().expect("usize");
-            let weight = elements.next().expect("next").parse::<f64>().expect("f64");
-            weight_covered_mut[[i1, j1, i2, j2]] = true;
-            weights_mut[[i1, j1, i2, j2]] = weight;
-        }
-    }
-    for i1 in 0..weight_L+1 {
-        for j1 in 0..weight_L+1 {
-            for i2 in 0..weight_L+1 {
-                for j2 in 0..weight_L+1 {
-                    let warning_weight_not_exist = true;  // whether warn if weight is missing in the weights file
-                    if warning_weight_not_exist && !weight_covered[[i1, j1, i2, j2]] {
-                        println!("[warning] weight of (i1, j1, i2, j2) = ({}, {}, {}, {}) missing, weights file might be wrong", i1, j1, i2, j2);
+                    if logical_j && !ignore_logical_j {
+                        is_qec_failed = true;
                     }
-                }
-            }
-        }
-    }
-    for L in Ls {
-        for p in ps {
-            let total_rounds = Arc::new(Mutex::new(0));
-            let qec_failed = Arc::new(Mutex::new(0));
-            let mut handlers = Vec::new();
-            let mut pb = ProgressBar::on(std::io::stderr(), max_N as u64);
-            pb.set(0);
-            for _i in 0..parallel {
-                let p = *p;
-                let L = *L;
-                assert_eq!(weight_L, L);
-                let total_rounds = Arc::clone(&total_rounds);
-                let qec_failed = Arc::clone(&qec_failed);
-                let weights = weights.clone();
-                handlers.push(std::thread::spawn(move || {
-                    // println!("thread {}", _i);
-                    let weights_of = |i1: usize, j1: usize, i2: usize, j2: usize| weights[[i1, j1, i2, j2]];
-                    let no_error = ZxError::new_L(L);
-                    let mut x_error_ro = ZxError::new_L(L);
-                    let mut rng = thread_rng();
-                    let mut current_total_rounds = {
-                        *total_rounds.lock().unwrap()
-                    };
-                    let mut current_qec_failed = {
-                        *qec_failed.lock().unwrap()
-                    };
-                    while current_total_rounds < max_N && current_qec_failed < min_error_cases {
-                        let mini_batch = 1000;
-                        let mut mini_qec_failed = 0;
-                        for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
-                            let mut x_error = x_error_ro.view_mut();
-                            let mut has_error = false;
-                            for i in 0..L {
-                                for j in 0..L {
-                                    let is_error = rng.gen::<f64>() < p;
-                                    x_error[[i, j]] = is_error;
-                                    if is_error {
-                                        has_error = true;
-                                    }
-                                }
-                            }
-                            if !has_error {
-                                continue
-                            }
-                            let measurement = util::generate_perfect_measurements(&x_error_ro, &no_error);
-                            let (x_correction, _z_correction) = qec::maximum_max_weight_matching_correction_weighted(&measurement,
-                                blossom_v::maximum_weight_perfect_matching_compatible, weights_of);
-                            if x_error_ro.validate_x_correction(&x_correction).is_err() {
-                                mini_qec_failed += 1;
-                            }
+                    let validate_elapsed = begin.elapsed().as_secs_f64();
+                    if is_qec_failed && matches!(*debug_print, Some(BenchmarkDebugPrint::FailedErrorPattern)) {
+                        let sparse_error_pattern = simulator.generate_sparse_error_pattern();
+                        eprint!("{}", serde_json::to_string(&sparse_error_pattern).expect("serialize should success"));
+                        if sparse_detected_erasures.len() > 0 {  // has detected erasures, report as well
+                            eprintln!(", {}", serde_json::to_string(&sparse_detected_erasures).expect("serialize should success"));
+                        } else {
+                            eprintln!("");
                         }
-                        // sync data from outside
-                        current_total_rounds = {
-                            let mut total_rounds = total_rounds.lock().unwrap();
-                            *total_rounds += mini_batch;
-                            *total_rounds
-                        };
-                        current_qec_failed = {
-                            let mut qec_failed = qec_failed.lock().unwrap();
-                            *qec_failed += mini_qec_failed;
-                            *qec_failed
-                        };
                     }
-                }));
-            }
-            loop {
-                let total_rounds = *total_rounds.lock().unwrap();
-                if total_rounds >= max_N { break }
-                let qec_failed = *qec_failed.lock().unwrap();
-                if qec_failed >= min_error_cases { break }
-                let error_rate = qec_failed as f64 / total_rounds as f64;
-                pb.message(format!("{} {} {} {} {} ", p, L, total_rounds, qec_failed, error_rate).as_str());
-                let progress = total_rounds / max_N;
-                pb.set(progress as u64);
-                std::thread::sleep(std::time::Duration::from_millis(200));
-            }
-            pb.total = (*total_rounds.lock().unwrap() / max_N) as u64;
-            pb.finish();
-            for handler in handlers {
-                handler.join().unwrap();
-            }
-            let total_rounds = *total_rounds.lock().unwrap();
-            let qec_failed = *qec_failed.lock().unwrap();
-            let error_rate = qec_failed as f64 / total_rounds as f64;
-            println!("{} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate);
-        }
-    }
-}
-
-/**
-default example:
-`cargo run --release -- tool fault_tolerant_benchmark [5] [5] [1e-3]`
-it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
-**/
-fn fault_tolerant_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
-        , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64
-        , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool, shallow_error_on_bottom: bool) {
-    let mut parallel = parallel;
-    if parallel == 0 {
-        parallel = num_cpus::get() - 1;
-    }
-    println!("format: <p> <L> <T> <total_rounds> <qec_failed> <error_rate>");
-    for (L_idx, L) in Ls.iter().enumerate() {
-        let MeasurementRounds = Ts[L_idx];
-        for p in ps {
-            let p = *p;
-            assert!(3. * p < 0.5, "why should errors (X, Z, Y) happening more than half of a time?");
-            let L = *L;
-            let total_rounds = Arc::new(Mutex::new(0));
-            let qec_failed = Arc::new(Mutex::new(0));
-            let mut handlers = Vec::new();
-            let mini_batch_count = 1 + max_N / mini_batch;
-            let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
-            pb.set(0);
-            // build general models
-            let mut model = if rotated_planar_code {
-                ftqec::PlanarCodeModel::new_rotated_planar_code(MeasurementRounds, L)
-            } else {
-                ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, L)
-            };
-            if !perfect_initialization {
-                model.set_depolarizing_error(p);
-            } else {
-                // if we use the `set_depolarizing_error` model, then old judgement doesn't work
-                // in order to verify that the modification is good, here we mimic the behavior of old model
-                // that is, we do not generate error on the added bottom layer, so that there is no bottom boundary
-                model.set_depolarizing_error_with_perfect_initialization(p);
-            }
-            if shallow_error_on_bottom {
-                model.iterate_snapshot_mut(|t, _i, _j, node| {
-                    if t == 6 && node.qubit_type == QubitType::Data {
-                        node.error_rate_x = p;
-                        node.error_rate_z = p;
-                        node.error_rate_y = p;
-                    }
-                })
-            }
-            model.iterate_snapshot_mut(|t, _i, _j, node| {
-                if t % 6 == 5 && node.qubit_type != QubitType::Data {  // just add error before the measurement stage
-                    node.error_rate_x *= extra_measurement_error;
-                    node.error_rate_z *= extra_measurement_error;
-                    node.error_rate_y *= extra_measurement_error;
-                }
-                if independent_px_pz {
-                    node.error_rate_y = node.error_rate_x * node.error_rate_z;
-                }
-            });
-            model.build_graph();
-            if ignore_6_neighbors {
-                model.iterate_snapshot_mut(|t, i, j, node| {
-                    if node.edges.len() == 12 {
-                        let mut modified_edges = Vec::new();
-                        for edge in node.edges.drain(..) {
-                            let tc = t != edge.t;
-                            let ic = i != edge.i;
-                            let jc = j != edge.j;
-                            if (tc && !ic && !jc) || (!tc && ic && !jc) || (!tc && !ic && jc) {
-                                modified_edges.push(edge);
-                            }
+                    // update statistic information
+                    if let Some(log_runtime_statistics_file) = &log_runtime_statistics_file {
+                        runtime_statistics["qec_failed"] = json!(is_qec_failed);
+                        if log_error_pattern_when_logical_error && is_qec_failed {
+                            runtime_statistics["error_pattern"] = json!(simulator.generate_sparse_error_pattern());
                         }
-                        assert!(modified_edges.len() <= 6, "we keep only 6 neighbors");
-                        node.edges = modified_edges;
+                        runtime_statistics["elapsed"] = json!({
+                            "prepare": prepare_elapsed,
+                            "decode": decode_elapsed,
+                            "validate": validate_elapsed,
+                        });
+                        let to_be_written = format!("{}\n", runtime_statistics.to_string());
+                        let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
+                        log_runtime_statistics_file.write(to_be_written.as_bytes()).unwrap();
                     }
-                });
+                    // update simulation counters, then break the loop if benchmark should terminate
+                    if benchmark_control.lock().unwrap().update_data_should_terminate(is_qec_failed, max_repeats, min_failed_cases) {
+                        break
+                    }
+                }
+                thread_ended.store(true, Ordering::SeqCst);
+            }));
+        }
+        // monitor results and display them using progress bar
+        let repeat_begin = Instant::now();
+        let progress_information = || -> String {
+            let benchmark_control = benchmark_control.lock().unwrap().clone();
+            let total_repeats = benchmark_control.total_repeats;
+            let qec_failed = benchmark_control.qec_failed;
+            // compute simulation results
+            let error_rate = qec_failed as f64 / total_repeats as f64;
+            let confidence_interval_95_percent = 1.96 * (error_rate * (1. - error_rate) / (total_repeats as f64)).sqrt() / error_rate;
+            format!("{} {} {} {} {} {} {} {:.1e} {} ", p, di, noisy_measurements, total_repeats, qec_failed, error_rate, dj
+                , confidence_interval_95_percent, pe)
+        };
+        loop {
+            let time_elapsed = repeat_begin.elapsed().as_secs_f64();
+            match time_budget {
+                Some(time_budget) => {
+                    if time_elapsed > time_budget {
+                        benchmark_control.lock().unwrap().set_external_terminate();
+                    }
+                }, _ => { }
             }
-            let model_error = model.clone();  // avoid copying decoding structure a lot of times
-            model.optimize_correction_pattern();
-            if !bypass_correction {
-                if autotune {
-                    model.build_exhausted_path_autotune();
+            // compute simulation results
+            pb.message(progress_information().as_str());
+            {  // estimate running time cleverer
+                let benchmark_control = benchmark_control.lock().unwrap().clone();
+                let total_repeats = benchmark_control.total_repeats;
+                let qec_failed = benchmark_control.qec_failed;
+                let ratio_total_rounds = (total_repeats as f64) / (max_repeats as f64);
+                let ratio_qec_failed = (qec_failed as f64) / (min_failed_cases as f64);
+                let (mut pb_total, mut set_progress) = 
+                if ratio_total_rounds >= ratio_qec_failed {
+                    let progress = total_repeats as u64;
+                    (if max_repeats as u64 > progress { max_repeats as u64 } else { progress }, progress)
                 } else {
-                    model.build_exhausted_path_equally_weighted();
-                }
-            }
-            let model_decoder = Arc::new(model);  // only for decode, so that you're confident I'm not cheating by using information of original errors
-            for _i in 0..parallel {
-                let total_rounds = Arc::clone(&total_rounds);
-                let qec_failed = Arc::clone(&qec_failed);
-                let mut model_error = model_error.clone();  // only for generating error and validating correction
-                let model_decoder = Arc::clone(&model_decoder);  // only for decode, so that you're confident I'm not cheating by using information of original errors
-                let validate_layer: isize = match validate_layer.as_str() {
-                    "boundary" => -2,
-                    "all" => -1,
-                    "bottom" => 0,
-                    "top" => MeasurementRounds as isize,
-                    _ => validate_layer.parse::<isize>().expect("integer"),
+                    let progress = qec_failed as u64;
+                    (if min_failed_cases as u64 > progress { min_failed_cases as u64 } else { progress }, progress)
                 };
-                let mini_batch = mini_batch;
-                handlers.push(std::thread::spawn(move || {
-                    // println!("thread {}", _i);
-                    let mut rng = thread_rng();
-                    let mut current_total_rounds = {
-                        *total_rounds.lock().unwrap()
-                    };
-                    let mut current_qec_failed = {
-                        *qec_failed.lock().unwrap()
-                    };
-                    while current_total_rounds < max_N && current_qec_failed < min_error_cases {
-                        let mut mini_qec_failed = 0;
-                        for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
-                            let error_count = model_error.generate_random_errors(|| rng.gen::<f64>());
-                            if error_count == 0 {
-                                continue
-                            }
-                            model_error.propagate_error();
-                            let measurement = model_error.generate_measurement();
-                            // use `model_decoder` for decoding, so that it is blind to the real error information
-                            let correction = if !bypass_correction {
-                                model_decoder.decode_MWPM(&measurement)
-                            } else {
-                                model_decoder.generate_default_correction()
-                            };
-                            if validate_layer == -2 {
-                                let validation_ret = model_error.validate_correction_on_boundary(&correction);
-                                if validation_ret.is_err() {
-                                    if only_count_logical_x {
-                                        match validation_ret {
-                                            Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed += 1; },
-                                            Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed += 1; },
-                                            _ => {},
-                                        }
-                                    } else {
-                                        mini_qec_failed += 1;
-                                    }
-                                }
-                            } else if validate_layer == -1 {
-                                // model_error.validate_correction_on_boundary(&correction);
-                                if model_error.validate_correction_on_all_layers(&correction).is_err() {
-                                    mini_qec_failed += 1;
-                                }
-                            } else {
-                                let validation_ret = model_error.validate_correction_on_t_layer(&correction, validate_layer as usize);
-                                if validation_ret.is_err() {
-                                    if only_count_logical_x {  // only if contains logical X error will it count
-                                        match validation_ret {
-                                            Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed += 1; },
-                                            Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed += 1; },
-                                            _ => { },
-                                        }
-                                    } else {
-                                        mini_qec_failed += 1;
-                                    }
-                                }
-                            }
+                match time_budget {
+                    Some(time_budget) => {
+                        let ratio_time = time_elapsed / time_budget;
+                        if ratio_time >= ratio_total_rounds && ratio_time >= ratio_qec_failed {
+                            let progress = total_repeats as u64;
+                            pb_total = ((progress as f64) / ratio_time) as u64;
+                            set_progress = progress;
                         }
-                        // sync data from outside
-                        current_total_rounds = {
-                            let mut total_rounds = total_rounds.lock().unwrap();
-                            *total_rounds += mini_batch;
-                            *total_rounds
-                        };
-                        current_qec_failed = {
-                            let mut qec_failed = qec_failed.lock().unwrap();
-                            *qec_failed += mini_qec_failed;
-                            *qec_failed
-                        };
-                    }
-                }));
+                    }, _ => { }
+                }
+                // update progress bar only once, to avoid misleading outputs in stderr (although not visible for human when running it, it will be included in stderr file)
+                pb.total = pb_total;
+                pb.set(set_progress);
             }
-            loop {
-                let total_rounds = *total_rounds.lock().unwrap();
-                if total_rounds >= max_N { break }
-                let qec_failed = *qec_failed.lock().unwrap();
-                if qec_failed >= min_error_cases { break }
-                let error_rate = qec_failed as f64 / total_rounds as f64;
-                pb.message(format!("{} {} {} {} {} {} ", p, L, MeasurementRounds, total_rounds, qec_failed, error_rate).as_str());
-                let progress = total_rounds / mini_batch;
-                pb.set(progress as u64);
-                std::thread::sleep(std::time::Duration::from_millis(200));
+            // synchronize statistics log file to make sure data is not lost when interrupting
+            if let Some(log_runtime_statistics_file) = &log_runtime_statistics_file {
+                let log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
+                log_runtime_statistics_file.sync_data().unwrap();
             }
-            pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
-            pb.finish();
-            for handler in handlers {
-                handler.join().unwrap();
+            if benchmark_control.lock().unwrap().should_terminate(max_repeats, min_failed_cases) {
+                break
             }
-            let total_rounds = *total_rounds.lock().unwrap();
-            let qec_failed = *qec_failed.lock().unwrap();
-            let error_rate = qec_failed as f64 / total_rounds as f64;
-            println!("{} {} {} {} {} {}", p, L, MeasurementRounds, total_rounds, qec_failed, error_rate);
+            // refresh 4 times per second
+            std::thread::sleep(std::time::Duration::from_millis(250));
         }
-    }
-}
-
-
-fn decoder_comparison_benchmark(Ls: &Vec<usize>, Ts: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize
-    , validate_layer: String, mini_batch: usize, autotune: bool, rotated_planar_code: bool, ignore_6_neighbors: bool, extra_measurement_error: f64 , bypass_correction: bool, independent_px_pz: bool, only_count_logical_x: bool, perfect_initialization: bool, substreams: usize) {
-
-    let mut parallel = parallel;
-    if parallel == 0 {
-        parallel = num_cpus::get() - 1;
-    }
-    println!("format: <p> <L> <T> <total_rounds> <qec_failed_MWPM> <qec_failed_approx> <error_rate_MWPM> <error_rate_approx>");
-    // println!("FT BM {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?}", Ls, Ts, ps, max_N, min_error_cases, parallel, validate_layer, mini_batch, autotune, rotated_planar_code, ignore_6_neighbors, extra_measurement_error);
-
-    for (L_idx, L) in Ls.iter().enumerate() {
-        let MeasurementRounds = Ts[L_idx];
-        for p in ps {
-            let p = *p;
-            assert!(3. * p < 0.5, "why should errors (X, Z, Y) happening more than half of a time?");
-            let L = *L;
-            let total_rounds = Arc::new(Mutex::new(0));
-            let qec_failed = Arc::new(Mutex::new((0,0)));
-            let mut handlers = Vec::new();
-            let mini_batch_count = 1 + max_N / mini_batch;
-            let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
-            pb.set(0);
-            // build general models
-            let mut model = if rotated_planar_code {
-                ftqec::PlanarCodeModel::new_rotated_planar_code(MeasurementRounds, L)
-            } else {
-                ftqec::PlanarCodeModel::new_standard_planar_code(MeasurementRounds, L)
-            };
-            if !perfect_initialization {
-                model.set_depolarizing_error(p);
-            } else {
-                // if we use the `set_depolarizing_error` model, then old judgement doesn't work
-                // in order to verify that the modification is good, here we mimic the behavior of old model
-                // that is, we do not generate error on the added bottom layer, so that there is no bottom boundary
-                model.set_depolarizing_error_with_perfect_initialization(p);
-            }
-            model.iterate_snapshot_mut(|t, _i, _j, node| {
-                if t % 6 == 5 && node.qubit_type != QubitType::Data {  // just add error before the measurement stage
-                    node.error_rate_x *= extra_measurement_error;
-                    node.error_rate_z *= extra_measurement_error;
-                    node.error_rate_y *= extra_measurement_error;
-                }
-                if independent_px_pz {
-                    node.error_rate_y = node.error_rate_x * node.error_rate_z;
-                }
-            });
-            model.build_graph();
-            if ignore_6_neighbors {
-                model.iterate_snapshot_mut(|t, i, j, node| {
-                    if node.edges.len() == 12 {
-                        let mut modified_edges = Vec::new();
-                        for edge in node.edges.drain(..) {
-                            let tc = t != edge.t;
-                            let ic = i != edge.i;
-                            let jc = j != edge.j;
-                            if (tc && !ic && !jc) || (!tc && ic && !jc) || (!tc && !ic && jc) {
-                                modified_edges.push(edge);
-                            }
-                        }
-                        assert!(modified_edges.len() <= 6, "we keep only 6 neighbors");
-                        node.edges = modified_edges;
+        // wait for all threads to terminate until timeout
+        let begin = Instant::now();
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        loop {
+            let time_elapsed = begin.elapsed().as_secs_f64();
+            if thread_timeout >= 0. && time_elapsed >= thread_timeout {  // abnormal break because of timeout
+                eprintln!("[error] some threads don't terminate properly within timeout, here are the details:");
+                for parallel_idx in (0..parallel).rev() {
+                    let thread_ended = threads_ended.swap_remove(parallel_idx);
+                    let handler = handlers.swap_remove(parallel_idx);
+                    let thread_debugger = threads_debugger.swap_remove(parallel_idx);
+                    if !thread_ended.load(Ordering::SeqCst) {
+                        eprintln!("[error] thread {} doesn't terminate within timeout", parallel_idx);
+                        eprintln!("{}", json!(thread_debugger.lock().unwrap().clone()));
+                    } else {  // still join normal threads
+                        eprintln!("[info] thread {} normally exit", parallel_idx);
+                        handler.join().unwrap();
                     }
-                });
+                }
+                break
             }
-            let model_error = model.clone();  // avoid copying decoding structure a lot of times
-            model.optimize_correction_pattern();
-            if !bypass_correction {
-                if autotune {
-                    model.build_exhausted_path_autotune();
-                } else {
-                    model.build_exhausted_path_equally_weighted();
+            // check if all threads ended before break the loop
+            let mut all_threads_ended = true;
+            for thread_ended in threads_ended.iter() {
+                if !thread_ended.load(Ordering::SeqCst) {
+                    all_threads_ended = false;
                 }
             }
-            let model_decoder_MWPM = Arc::new(model.clone());
-            let model_decoder_approx = Arc::new(model.clone());  // only for decode, so that you're confident I'm not cheating by using information of original errors
-            // println!("Parallel {:?}", parallel);
-            for _i in 0..parallel {
-                let total_rounds = Arc::clone(&total_rounds);
-                // println!("Total rounds {:?}", total_rounds);
-                let qec_failed = Arc::clone(&qec_failed);
-                let mut model_error = model_error.clone();  // only for generating error and validating correction
-                let model_decoder_MWPM = Arc::clone(&model_decoder_MWPM);
-                let model_decoder_approx = Arc::clone(&model_decoder_approx);  // only for decode, so that you're confident I'm not cheating by using information of original errors
-                let validate_layer: isize = match validate_layer.as_str() {
-                    "boundary" => -2,
-                    "all" => -1,
-                    "bottom" => 0,
-                    "top" => MeasurementRounds as isize,
-                    _ => validate_layer.parse::<isize>().expect("integer"),
-                };
-                if validate_layer != -2 {
-                    println!("Check evaluation metric");
+            if all_threads_ended {  // only when all threads ended normally will it joina
+                for handler in handlers.drain(..) {
+                    handler.join().unwrap();
                 }
-                let mini_batch = mini_batch;
-                handlers.push(std::thread::spawn(move || {
-                    // println!("thread {}", _i);
-                    let mut rng = thread_rng();
-                    let mut current_total_rounds = {
-                        *total_rounds.lock().unwrap()
-                    };
-                    let mut current_qec_failed = {
-                        *qec_failed.lock().unwrap()
-                    };
-                    while current_total_rounds < max_N && current_qec_failed.0 < min_error_cases {
-                        // println!("current_total_rounds {:?}", current_total_rounds);
-                        let mut mini_qec_failed = (0,0);
-                        for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
-                            let error_count = model_error.generate_random_errors(|| rng.gen::<f64>());
-                            if error_count == 0 {
-                                continue
-                            }
-                            // let original = model_error.clone();
-                            // println!{"error_count {:?}", error_count};
-                            model_error.propagate_error();
-                            // let propagate = model_error.clone();
-                            let measurement = model_error.generate_measurement();
-                            // println!{"Measurement {:?}", measurement};
-                            // use `model_decoder` for decoding, so that it is blind to the real error information
-                            let correction_MWPM = model_decoder_MWPM.decode_MWPM(&measurement);
-                            // let correction_MWPM = model_decoder_MWPM.decode_MWPM_approx(&measurement, substreams, false);
-                            // println!("correction : {:?}", correction_MWPM);
-                            let correction_approx = model_decoder_approx.decode_MWPM_approx(&measurement, substreams, false);
-                            // println!("correction approx: {:?}", correction_approx);
-                            // We need a new model to test approx corrections
-                            let model_error_approx = model_error.clone();
-                            if validate_layer == -2 {
-                                let validation_ret = model_error.validate_correction_on_boundary(&correction_MWPM);
-                                if validation_ret.is_err() {
-                                    if only_count_logical_x {
-                                        match validation_ret {
-                                            Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed.0 += 1; },
-                                            Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed.0 += 1; },
-                                            _ => {},
-                                        }
-                                    } else {
-                                        mini_qec_failed.0 += 1;
-                                    }
-                                }
-                                let validation_ret = model_error_approx.validate_correction_on_boundary(&correction_approx);
-                                if validation_ret.is_err() {
-                                    if only_count_logical_x {
-                                        match validation_ret {
-                                            Err(ftqec::ValidationFailedReason::XLogicalError(_, _, _)) => { mini_qec_failed.1 += 1; },
-                                            Err(ftqec::ValidationFailedReason::BothXandZLogicalError(_, _, _, _, _)) => { mini_qec_failed.1 += 1; },
-                                            _ => {},
-                                        }
-                                    } else {
-                                        mini_qec_failed.1 += 1;
-                                    }
-                                }
-                            } else if validate_layer == -1 {
-                                if model_error.validate_correction_on_all_layers(&correction_MWPM).is_err() {
-                                    // println!("MWPM failed");
-                                    mini_qec_failed.0 += 1;
-                                }
-                                if model_error_approx.validate_correction_on_all_layers(&correction_approx).is_err() {
-                                    // println!("MWPM approx failed");
-                                    mini_qec_failed.1 += 1;
-                                }
-                            } else {
-                                println!("When boundary checking layer by layer checking not allowed");
-                                // if model_error.validate_correction_on_t_layer(&correction_MWPM, validate_layer as usize).is_err() {
-                                //     // println!("MWPM failed at {}",validate_layer);
-                                //     mini_qec_failed.0 += 1;
-                                // }
-                                // if model_error_approx.validate_correction_on_t_layer(&correction_approx, validate_layer as usize).is_err() {
-                                //     // println!("MWPM approx failed at {}", validate_layer);
-                                //     mini_qec_failed.1 += 1;
-                                // }
-                            }
-                            // if mini_qec_failed.0 != mini_qec_failed.1 {
-                            //     println!("Original errors");
-                            //     original.print_errors();
-                            //     println!("Popagated Errors");
-                            //     propagate.print_errors();
-                            //     println!("{:?}", measurement);
-                            //     println!("{:?}", correction_MWPM);
-                            //     println!("{:?}", correction_approx);
-                            //     return;
-                            // }
-                        }
-                        // sync data from outside
-                        current_total_rounds = {
-                            let mut total_rounds = total_rounds.lock().unwrap();
-                            // println!("total_rounds {:?}", *total_rounds);
-                            *total_rounds += mini_batch;
-                            *total_rounds
-                        };
-                        // println!("current_total_rounds {:?}", current_total_rounds);
-                        current_qec_failed = {
-                            let mut qec_failed = qec_failed.lock().unwrap();
-                            *qec_failed = (qec_failed.0 + mini_qec_failed.0, qec_failed.1 + mini_qec_failed.1);
-                            *qec_failed
-                        };
-                    }
-                }));
+                break
             }
-            loop {
-                let total_rounds = *total_rounds.lock().unwrap();
-                // println!("total_rounds {:?}", total_rounds);
-                if total_rounds >= max_N { break }
-                let qec_failed = *qec_failed.lock().unwrap();
-                if qec_failed.0 >= min_error_cases { break }
-                let error_rate = (qec_failed.0 as f64 / total_rounds as f64, qec_failed.1 as f64 / total_rounds as f64);
-                pb.message(format!("{} {} {} {} {} {} {} {} ", p, L, MeasurementRounds, total_rounds, qec_failed.0, qec_failed.1,error_rate.0, error_rate.1).as_str());
-                let progress = total_rounds / mini_batch;
-                pb.set(progress as u64);
-                std::thread::sleep(std::time::Duration::from_millis(200));
-            }
-            pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
-            pb.finish();
-            for handler in handlers {
-                handler.join().unwrap();
-            }
-            let total_rounds = *total_rounds.lock().unwrap();
-            let qec_failed = *qec_failed.lock().unwrap();
-            let error_rate = (qec_failed.0 as f64 / total_rounds as f64, qec_failed.1 as f64 / total_rounds as f64);
-            println!("{} {} {} {} {} {} {} {}", p, L, MeasurementRounds, total_rounds, qec_failed.0, qec_failed.1,error_rate.0, error_rate.1);
+            eprintln!("[info] waiting for all threads to end, time elapsed: {:.3}s", time_elapsed);
+            std::thread::sleep(std::time::Duration::from_millis(1000));
         }
+        pb.finish();
+        eprintln!("{}", progress_information());
+        output += &format!("\n{}", progress_information());
+    }
+    output
+}
+
+impl BenchmarkDebugPrint {
+    pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
+        Self::value_variants().iter().filter_map(ArgEnum::to_possible_value)
     }
 }
 
-/**
-default example:
-`cargo run --release -- tool offer_decoder_standard_planar_benchmark [5] [1e-3]`
-it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
-**/
-fn offer_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
-        , only_count_logical_x: bool, max_resend: usize, max_cycles: usize, disable_probabilistic_accept: bool, repeat_experiment_each_error: usize) {
-    let mut parallel = parallel;
-    if parallel == 0 {
-        parallel = num_cpus::get() - 1;
-    }
-    println!("format: <p> <T> <total_rounds> <qec_failed> <error_rate> <average_cycles> <max_cycles>");
-    for L in Ls.iter() {
-        for p in ps {
-            let p = *p;
-            assert!(3. * p < 0.5, "why should errors (X, Z, Y) happening more than half of a time?");
-            let L = *L;
-            let total_rounds = Arc::new(Mutex::new(0));
-            let qec_failed = Arc::new(Mutex::new(0));
-            let total_cycles = Arc::new(Mutex::new(0));
-            let max_cycles_used = Arc::new(Mutex::new(0));
-            let mut handlers = Vec::new();
-            let mini_batch_count = 1 + max_N / mini_batch;
-            let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
-            pb.set(0);
-            for _i in 0..parallel {
-                let total_rounds = Arc::clone(&total_rounds);
-                let qec_failed = Arc::clone(&qec_failed);
-                let total_cycles = Arc::clone(&total_cycles);
-                let max_cycles_used = Arc::clone(&max_cycles_used);
-                let mini_batch = mini_batch;
-                let disable_probabilistic_accept = disable_probabilistic_accept;
-                let L = L;
-                let p = p;
-                handlers.push(std::thread::spawn(move || {
-                    let mut decoder = offer_decoder::create_standard_planar_code_offer_decoder(L);
-                    decoder.disable_probabilistic_accept = disable_probabilistic_accept;
-                    let mut rng = thread_rng();
-                    let mut current_total_rounds = {
-                        *total_rounds.lock().unwrap()
-                    };
-                    let mut current_qec_failed = {
-                        *qec_failed.lock().unwrap()
-                    };
-                    let mut current_max_cycles_used = 0;
-                    while current_total_rounds < max_N && current_qec_failed < min_error_cases {
-                        let mut mini_qec_failed = 0;
-                        let mut mini_total_cycles = 0;
-                        for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
-                            decoder.reinitialize();
-                            let error_count = decoder.generate_depolarizing_random_errors(p, || rng.gen::<f64>());
-                            if error_count == 0 {
-                                continue
-                            }
-                            // repeat experiment multiple times for each error pattern
-                            let error_pattern = decoder.error_pattern();
-                            let mut succeed_count = 0;
-                            let mut valid_count = 0;
-                            let mut min_cycles_repeated = usize::MAX;
-                            for k in 0..repeat_experiment_each_error {
-                                decoder.load_error_pattern(&error_pattern);
-                                decoder.error_changed();
-                                let mut within_cycles = false;
-                                let cycles = match decoder.pseudo_parallel_execute_to_stable_with_max_resend_max_cycles(max_resend, max_cycles) {
-                                    Ok(cycles) => {
-                                        within_cycles = true;
-                                        cycles
-                                    },
-                                    Err(cycles) => cycles,
-                                };
-                                if k == 0 || within_cycles {
-                                    valid_count += 1;
-                                    if cycles < min_cycles_repeated {
-                                        min_cycles_repeated = cycles;
-                                    }
-                                    if only_count_logical_x {
-                                        if !decoder.has_logical_error(ErrorType::X) {
-                                            succeed_count += 1;
-                                        }
-                                    } else {  // check for both logical X and logical Z error
-                                        if !decoder.has_logical_error(ErrorType::Y) {
-                                            succeed_count += 1;
-                                        }
-                                    }
-                                }
-                            }
-                            mini_total_cycles += min_cycles_repeated;
-                            if min_cycles_repeated > current_max_cycles_used {
-                                current_max_cycles_used = min_cycles_repeated;
-                            }
-                            if succeed_count * 2 <= valid_count {  // max vote
-                                mini_qec_failed += 1;
-                            }
-                        }
-                        // sync data from outside
-                        current_total_rounds = {
-                            let mut total_rounds = total_rounds.lock().unwrap();
-                            *total_rounds += mini_batch;
-                            *total_rounds
-                        };
-                        current_qec_failed = {
-                            let mut qec_failed = qec_failed.lock().unwrap();
-                            *qec_failed += mini_qec_failed;
-                            *qec_failed
-                        };
-                        {
-                            let mut total_cycles = total_cycles.lock().unwrap();
-                            *total_cycles += mini_total_cycles;
-                        };
-                        {
-                            let mut max_cycles_used = max_cycles_used.lock().unwrap();
-                            if current_max_cycles_used > *max_cycles_used {
-                                *max_cycles_used = current_max_cycles_used;
-                            }
-                        }
-                    }
-                }));
+impl std::str::FromStr for BenchmarkDebugPrint {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        for variant in Self::value_variants() {
+            if variant.to_possible_value().unwrap().matches(s, false) {
+                return Ok(*variant);
             }
-            loop {
-                let total_rounds = *total_rounds.lock().unwrap();
-                if total_rounds >= max_N { break }
-                let qec_failed = *qec_failed.lock().unwrap();
-                if qec_failed >= min_error_cases { break }
-                let error_rate = qec_failed as f64 / total_rounds as f64;
-                let total_cycles = *total_cycles.lock().unwrap();
-                let average_cycles = total_cycles as f64 / total_rounds as f64;
-                let max_cycles_used = *max_cycles_used.lock().unwrap();
-                pb.message(format!("{} {} {} {} {} {} {} ", p, L, total_rounds, qec_failed, error_rate, average_cycles, max_cycles_used).as_str());
-                let progress = total_rounds / mini_batch;
-                pb.set(progress as u64);
-                std::thread::sleep(std::time::Duration::from_millis(200));
-            }
-            pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
-            pb.finish();
-            for handler in handlers {
-                handler.join().unwrap();
-            }
-            let total_rounds = *total_rounds.lock().unwrap();
-            let qec_failed = *qec_failed.lock().unwrap();
-            let error_rate = qec_failed as f64 / total_rounds as f64;
-            let total_cycles = *total_cycles.lock().unwrap();
-            let average_cycles = total_cycles as f64 / total_rounds as f64;
-            let max_cycles_used = *max_cycles_used.lock().unwrap();
-            println!("{} {} {} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate, average_cycles, max_cycles_used);
         }
+        Err(format!("Invalid variant: {}", s))
     }
 }
 
-/**
-default example:
-`cargo run --release -- tool offer_algorithm_standard_planar_benchmark [5] [1e-3]`
-it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
-**/
-fn offer_algorithm_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
-    , only_count_logical_x: bool, max_resend: usize, max_cycles: usize, disable_probabilistic_accept: bool, repeat_experiment_each_error: usize) {
-    let mut parallel = parallel;
-    if parallel == 0 {
-        parallel = num_cpus::get() - 1;
-    }
-    println!("format: <p> <T> <total_rounds> <qec_failed> <error_rate> <average_cycles> <max_cycles>");
-    for L in Ls.iter() {
-        for p in ps {
-            let p = *p;
-            assert!(3. * p < 0.5, "why should errors (X, Z, Y) happening more than half of a time?");
-            let L = *L;
-            let total_rounds = Arc::new(Mutex::new(0));
-            let qec_failed = Arc::new(Mutex::new(0));
-            let total_cycles = Arc::new(Mutex::new(0));
-            let max_cycles_used = Arc::new(Mutex::new(0));
-            let mut handlers = Vec::new();
-            let mini_batch_count = 1 + max_N / mini_batch;
-            let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
-            pb.set(0);
-            for _i in 0..parallel {
-                let total_rounds = Arc::clone(&total_rounds);
-                let qec_failed = Arc::clone(&qec_failed);
-                let total_cycles = Arc::clone(&total_cycles);
-                let max_cycles_used = Arc::clone(&max_cycles_used);
-                let mini_batch = mini_batch;
-                let disable_probabilistic_accept = disable_probabilistic_accept;
-                let L = L;
-                let p = p;
-                handlers.push(std::thread::spawn(move || {
-                    let mut decoder = offer_decoder::create_standard_planar_code_offer_decoder(L);
-                    decoder.disable_probabilistic_accept = disable_probabilistic_accept;
-                    let mut rng = thread_rng();
-                    let mut current_total_rounds = {
-                        *total_rounds.lock().unwrap()
-                    };
-                    let mut current_qec_failed = {
-                        *qec_failed.lock().unwrap()
-                    };
-                    let mut current_max_cycles_used = 0;
-                    while current_total_rounds < max_N && current_qec_failed < min_error_cases {
-                        let mut mini_qec_failed = 0;
-                        let mut mini_total_cycles = 0;
-                        for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
-                            decoder.reinitialize();
-                            let error_count = decoder.generate_depolarizing_random_errors(p, || rng.gen::<f64>());
-                            if error_count == 0 {
-                                continue
-                            }
-                            // repeat experiment multiple times for each error pattern
-                            let error_pattern = decoder.error_pattern();
-                            let mut succeed_count = 0;
-                            let mut valid_count = 0;
-                            let mut min_cycles_repeated = usize::MAX;
-                            for k in 0..repeat_experiment_each_error {
-                                decoder.load_error_pattern(&error_pattern);
-                                decoder.error_changed();
-                                let mut within_cycles = false;
-                                let ((_cost_x, cycles_x), (_cost_z, cycles_z)) = offer_mwpm::run_given_offer_decoder_instance(&mut decoder, max_resend, max_cycles);
-                                let cycles = match (cycles_x, cycles_z) {
-                                    (Ok(cycles_x), Ok(cycles_z)) => {
-                                        within_cycles = true;
-                                        std::cmp::max(cycles_x, cycles_z)
-                                    }
-                                    (Ok(cycles_x), Err(cycles_z)) => std::cmp::max(cycles_x, cycles_z),
-                                    (Err(cycles_x), Ok(cycles_z)) => std::cmp::max(cycles_x, cycles_z),
-                                    (Err(cycles_x), Err(cycles_z)) => std::cmp::max(cycles_x, cycles_z),
-                                };
-                                if k == 0 || within_cycles {
-                                    valid_count += 1;
-                                    if cycles < min_cycles_repeated {
-                                        min_cycles_repeated = cycles;
-                                    }
-                                    if only_count_logical_x {
-                                        if !decoder.has_logical_error(ErrorType::X) {
-                                            succeed_count += 1;
-                                        }
-                                    } else {  // check for both logical X and logical Z error
-                                        if !decoder.has_logical_error(ErrorType::Y) {
-                                            succeed_count += 1;
-                                        }
-                                    }
-                                }
-                            }
-                            mini_total_cycles += min_cycles_repeated;
-                            if min_cycles_repeated > current_max_cycles_used {
-                                current_max_cycles_used = min_cycles_repeated;
-                            }
-                            if succeed_count * 2 <= valid_count {  // max vote
-                                mini_qec_failed += 1;
-                            }
-                        }
-                        // sync data from outside
-                        current_total_rounds = {
-                            let mut total_rounds = total_rounds.lock().unwrap();
-                            *total_rounds += mini_batch;
-                            *total_rounds
-                        };
-                        current_qec_failed = {
-                            let mut qec_failed = qec_failed.lock().unwrap();
-                            *qec_failed += mini_qec_failed;
-                            *qec_failed
-                        };
-                        {
-                            let mut total_cycles = total_cycles.lock().unwrap();
-                            *total_cycles += mini_total_cycles;
-                        };
-                        {
-                            let mut max_cycles_used = max_cycles_used.lock().unwrap();
-                            if current_max_cycles_used > *max_cycles_used {
-                                *max_cycles_used = current_max_cycles_used;
-                            }
-                        }
-                    }
-                }));
-            }
-            loop {
-                let total_rounds = *total_rounds.lock().unwrap();
-                if total_rounds >= max_N { break }
-                let qec_failed = *qec_failed.lock().unwrap();
-                if qec_failed >= min_error_cases { break }
-                let error_rate = qec_failed as f64 / total_rounds as f64;
-                let total_cycles = *total_cycles.lock().unwrap();
-                let average_cycles = total_cycles as f64 / total_rounds as f64;
-                let max_cycles_used = *max_cycles_used.lock().unwrap();
-                pb.message(format!("{} {} {} {} {} {} {} ", p, L, total_rounds, qec_failed, error_rate, average_cycles, max_cycles_used).as_str());
-                let progress = total_rounds / mini_batch;
-                pb.set(progress as u64);
-                std::thread::sleep(std::time::Duration::from_millis(200));
-            }
-            pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
-            pb.finish();
-            for handler in handlers {
-                handler.join().unwrap();
-            }
-            let total_rounds = *total_rounds.lock().unwrap();
-            let qec_failed = *qec_failed.lock().unwrap();
-            let error_rate = qec_failed as f64 / total_rounds as f64;
-            let total_cycles = *total_cycles.lock().unwrap();
-            let average_cycles = total_cycles as f64 / total_rounds as f64;
-            let max_cycles_used = *max_cycles_used.lock().unwrap();
-            println!("{} {} {} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate, average_cycles, max_cycles_used);
-        }
+impl BenchmarkDecoder {
+    pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
+        Self::value_variants().iter().filter_map(ArgEnum::to_possible_value)
     }
 }
 
-/**
-default example:
-`cargo run --release -- tool union_find_decoder_standard_planar_benchmark [5] [1e-3]`
-it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
-**/
-fn union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
-        , only_count_logical_x: bool) {
-    let mut parallel = parallel;
-    if parallel == 0 {
-        parallel = num_cpus::get() - 1;
-    }
-    println!("format: <p> <T> <total_rounds> <qec_failed> <error_rate>");
-    for L in Ls.iter() {
-        for p in ps {
-            let p = *p;
-            assert!(3. * p < 0.5, "why should errors (X, Z, Y) happening more than half of a time?");
-            let L = *L;
-            let total_rounds = Arc::new(Mutex::new(0));
-            let qec_failed = Arc::new(Mutex::new(0));
-            let mut handlers = Vec::new();
-            let mini_batch_count = 1 + max_N / mini_batch;
-            let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
-            pb.set(0);
-            for _i in 0..parallel {
-                let total_rounds = Arc::clone(&total_rounds);
-                let qec_failed = Arc::clone(&qec_failed);
-                let mini_batch = mini_batch;
-                let L = L;
-                let p = p;
-                handlers.push(std::thread::spawn(move || {
-                    let mut decoder = offer_decoder::create_standard_planar_code_offer_decoder(L);
-                    let mut rng = thread_rng();
-                    let mut current_total_rounds = {
-                        *total_rounds.lock().unwrap()
-                    };
-                    let mut current_qec_failed = {
-                        *qec_failed.lock().unwrap()
-                    };
-                    while current_total_rounds < max_N && current_qec_failed < min_error_cases {
-                        let mut mini_qec_failed = 0;
-                        for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
-                            decoder.reinitialize();
-                            let error_count = decoder.generate_depolarizing_random_errors(p, || rng.gen::<f64>());
-                            if error_count == 0 {
-                                continue
-                            }
-                            let (has_x_logical_error, has_z_logical_error) = union_find_decoder::run_given_offer_decoder_instance(&mut decoder);
-                            if only_count_logical_x {
-                                if has_x_logical_error {
-                                    mini_qec_failed += 1;
-                                }
-                            } else {
-                                if has_x_logical_error || has_z_logical_error {
-                                    mini_qec_failed += 1;
-                                }
-                            }
-                        }
-                        // sync data from outside
-                        current_total_rounds = {
-                            let mut total_rounds = total_rounds.lock().unwrap();
-                            *total_rounds += mini_batch;
-                            *total_rounds
-                        };
-                        current_qec_failed = {
-                            let mut qec_failed = qec_failed.lock().unwrap();
-                            *qec_failed += mini_qec_failed;
-                            *qec_failed
-                        };
-                    }
-                }));
+impl std::str::FromStr for BenchmarkDecoder {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        for variant in Self::value_variants() {
+            if variant.to_possible_value().unwrap().matches(s, false) {
+                return Ok(*variant);
             }
-            loop {
-                let total_rounds = *total_rounds.lock().unwrap();
-                if total_rounds >= max_N { break }
-                let qec_failed = *qec_failed.lock().unwrap();
-                if qec_failed >= min_error_cases { break }
-                let error_rate = qec_failed as f64 / total_rounds as f64;
-                pb.message(format!("{} {} {} {} {} ", p, L, total_rounds, qec_failed, error_rate).as_str());
-                let progress = total_rounds / mini_batch;
-                pb.set(progress as u64);
-                std::thread::sleep(std::time::Duration::from_millis(200));
-            }
-            pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
-            pb.finish();
-            for handler in handlers {
-                handler.join().unwrap();
-            }
-            let total_rounds = *total_rounds.lock().unwrap();
-            let qec_failed = *qec_failed.lock().unwrap();
-            let error_rate = qec_failed as f64 / total_rounds as f64;
-            println!("{} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate);
         }
-    }
-}
-
-/**
-default example:
-`cargo run --release -- tool distributed_union_find_decoder_standard_planar_benchmark [5] [1e-3]`
-it supports progress bar (in stderr), so you can run this in backend by redirect stdout to a file. This will not contain information of dynamic progress
-**/
-fn distributed_union_find_decoder_standard_planar_benchmark(Ls: &Vec<usize>, ps: &Vec<f64>, max_N: usize, min_error_cases: usize, parallel: usize, mini_batch: usize
-    , only_count_logical_x: bool) {
-    let mut parallel = parallel;
-    if parallel == 0 {
-        parallel = num_cpus::get() - 1;
-    }
-    println!("format: <p> <T> <total_rounds> <qec_failed> <error_rate>");
-    let mut id = 137;
-    for L in Ls.iter() {
-        for p in ps {
-            let p = *p;
-            assert!(3. * p < 0.5, "why should errors (X, Z, Y) happening more than half of a time?");
-            let L = *L;
-            let total_rounds = Arc::new(Mutex::new(0));
-            let qec_failed = Arc::new(Mutex::new(0));
-            let mut handlers = Vec::new();
-            let mini_batch_count = 1 + max_N / mini_batch;
-            let mut pb = ProgressBar::on(std::io::stderr(), mini_batch_count as u64);
-            pb.set(0);
-            for _i in 0..parallel {
-                let total_rounds = Arc::clone(&total_rounds);
-                let qec_failed = Arc::clone(&qec_failed);
-                let mini_batch = mini_batch;
-                let L = L;
-                let p = p;
-                handlers.push(std::thread::spawn(move || {
-                    let mut decoder = offer_decoder::create_standard_planar_code_offer_decoder(L);
-                    let mut rng = thread_rng();
-                    let mut current_total_rounds = {
-                        *total_rounds.lock().unwrap()
-                    };
-                    let mut current_qec_failed = {
-                        *qec_failed.lock().unwrap()
-                    };
-                    while current_total_rounds < max_N && current_qec_failed < min_error_cases {
-                        let mut mini_qec_failed = 0;
-                        for _j in 0..mini_batch {  // run at least `mini_batch` times before sync with outside
-                            decoder.reinitialize();
-                            let error_count = decoder.generate_depolarizing_random_errors(p, || rng.gen::<f64>());
-                            if error_count == 0 {
-                                continue
-                            }
-                            let (has_x_logical_error, has_z_logical_error) = distributed_uf_decoder::run_given_offer_decoder_instance_no_fast_channel(&mut decoder, id.clone());
-                            if only_count_logical_x {
-                                if has_x_logical_error {
-                                    mini_qec_failed += 1;
-                                } else {
-                                    id = id+1;
-                                }
-                            } else {
-                                if has_x_logical_error || has_z_logical_error {
-                                    mini_qec_failed += 1;
-                                }
-                            }
-                        }
-                        // sync data from outside
-                        current_total_rounds = {
-                            let mut total_rounds = total_rounds.lock().unwrap();
-                            *total_rounds += mini_batch;
-                            *total_rounds
-                        };
-                        current_qec_failed = {
-                            let mut qec_failed = qec_failed.lock().unwrap();
-                            *qec_failed += mini_qec_failed;
-                            *qec_failed
-                        };
-                    }
-                }));
-            }
-            loop {
-                let total_rounds = *total_rounds.lock().unwrap();
-                if total_rounds >= max_N { break }
-                let qec_failed = *qec_failed.lock().unwrap();
-                if qec_failed >= min_error_cases { break }
-                let error_rate = qec_failed as f64 / total_rounds as f64;
-                pb.message(format!("{} {} {} {} {} ", p, L, total_rounds, qec_failed, error_rate).as_str());
-                let progress = total_rounds / mini_batch;
-                pb.set(progress as u64);
-                std::thread::sleep(std::time::Duration::from_millis(200));
-            }
-            pb.total = (*total_rounds.lock().unwrap() / mini_batch) as u64;
-            pb.finish();
-            for handler in handlers {
-                handler.join().unwrap();
-            }
-            let total_rounds = *total_rounds.lock().unwrap();
-            let qec_failed = *qec_failed.lock().unwrap();
-            let error_rate = qec_failed as f64 / total_rounds as f64;
-            println!("{} {} {} {} {}", p, L, total_rounds, qec_failed, error_rate);
-        }
+        Err(format!("Invalid variant: {}", s))
     }
 }

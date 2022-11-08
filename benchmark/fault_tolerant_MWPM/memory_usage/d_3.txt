@@ -1,0 +1,23 @@
+	Command being timed: "/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [3] --djs [3] [3] -m100000 -e3000 [1.00000000e-02] --debug_print_only --decoder UF --max_half_weight 10 --use_xzzx_code --error_model GenericBiasedWithBiasedCX"
+	User time (seconds): 0.01
+	System time (seconds): 0.00
+	Percent of CPU this job got: 46%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.02
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 9460
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 758
+	Voluntary context switches: 0
+	Involuntary context switches: 1
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 0
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

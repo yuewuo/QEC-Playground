@@ -132,6 +132,9 @@ use std::io::prelude::*;
 use super::serde::{Serialize, Deserialize};
 use super::derive_more::{Constructor};
 use super::offer_decoder;
+use super::ftqec;
+use super::types::QubitType;
+use super::union_find_decoder;
 
 #[derive(Debug, Serialize, Deserialize, Constructor)]
 pub struct InputNode<U: std::fmt::Debug> {
@@ -184,6 +187,9 @@ pub struct DistributedUnionFind<U: std::fmt::Debug> {
     #[serde(skip_serializing)]
     /// compare function given two nodes' user data
     pub compare: Box<dyn Fn(&U, &U) -> Ordering>,
+    /// original inputs
+    pub input_neighbors: Vec<InputNeighbor>,
+    pub input_fast_channels: Vec<InputFastChannel>,
 }
 
 #[derive(Debug, Serialize)]
@@ -335,7 +341,7 @@ impl<Message: std::fmt::Debug> Channel<Message> {
         }
         found
     }
-} 
+}
 
 impl<U: std::fmt::Debug> DistributedUnionFind<U> {
     pub fn new(nodes: Vec<InputNode<U>>, mut neighbors: Vec<InputNeighbor>, mut fast_channels: Vec<InputFastChannel>, 
@@ -455,6 +461,8 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
             processing_units: processing_units,
             distance: Box::new(distance),
             compare: Box::new(compare),
+            input_neighbors: neighbors,
+            input_fast_channels: fast_channels,
         }
     }
 
@@ -964,6 +972,15 @@ impl<U: std::fmt::Debug> DistributedUnionFind<U> {
 /// return (nodes, position_to_index, neighbors), the fast channel should be empty, which is Vec::new()
 pub fn make_standard_planar_code_2d_nodes_no_fast_channel(d: usize, is_x_stabilizers: bool) -> (Vec<InputNode<(usize, usize)>>, HashMap<(usize, usize), usize>,
         Vec<InputNeighbor>) {
+    let (nodes, position_to_index, neighbors, _fast_channels) = make_standard_planar_code_2d_nodes(d, is_x_stabilizers, 0);
+    (nodes, position_to_index, neighbors)
+}
+
+/// create nodes for standard planar code (2d, perfect measurement condition). return only X stabilizers or only Z stabilizers.
+/// return (nodes, position_to_index, neighbors, fast_channels), the fast channel is build every (fast_channel_interval) ^ k distance
+/// fast_channel_interval = 0 will generate no fast channels
+pub fn make_standard_planar_code_2d_nodes(d: usize, is_x_stabilizers: bool, fast_channel_interval: usize) -> (Vec<InputNode<(usize, usize)>>,
+HashMap<(usize, usize), usize>, Vec<InputNeighbor>, Vec<InputFastChannel>) {
     let mut nodes = Vec::new();
     let mut position_to_index = HashMap::new();
     for i in (if is_x_stabilizers { 0..=2*d-2 } else { 1..=2*d-3 }).step_by(2) {
@@ -978,13 +995,14 @@ pub fn make_standard_planar_code_2d_nodes_no_fast_channel(d: usize, is_x_stabili
         }
     }
     let mut neighbors = Vec::new();
+    let mut fast_channels = Vec::new();
     for i in (if is_x_stabilizers { 0..=2*d-2 } else { 1..=2*d-3 }).step_by(2) {
         for j in (if is_x_stabilizers { 1..=2*d-3 } else { 0..=2*d-2 }).step_by(2) {
             for (di, dj) in [(2, 0), (0, 2)].iter() {
                 let ni = i + di;
                 let nj = j + dj;
                 if ni <= 2*d-2 && nj <= 2*d-2 {
-                    neighbors.push(InputNeighbor{
+                    neighbors.push(InputNeighbor {
                         a: position_to_index[&(i, j)],
                         b: position_to_index[&(ni, nj)],
                         increased: 0,
@@ -993,9 +1011,41 @@ pub fn make_standard_planar_code_2d_nodes_no_fast_channel(d: usize, is_x_stabili
                     });
                 }
             }
+            if fast_channel_interval > 1 {
+                // build fast channels to bottom direction
+                let mut interval = fast_channel_interval;
+                loop {
+                    let fi = i + interval;
+                    if fi <= 2*d-2 {
+                        fast_channels.push(InputFastChannel {
+                            a: position_to_index[&(i, j)],
+                            b: position_to_index[&(fi, j)],
+                            latency: 1,
+                        })
+                    } else {
+                        break
+                    }
+                    interval *= fast_channel_interval;
+                }
+                // build fast channels to right direction
+                let mut interval = fast_channel_interval;
+                loop {
+                    let fj = j + interval;
+                    if fj <= 2*d-2 {
+                        fast_channels.push(InputFastChannel {
+                            a: position_to_index[&(i, j)],
+                            b: position_to_index[&(i, fj)],
+                            latency: 1,
+                        })
+                    } else {
+                        break
+                    }
+                    interval *= fast_channel_interval;
+                }
+            }
         }
     }
-    (nodes, position_to_index, neighbors)
+    (nodes, position_to_index, neighbors, fast_channels)
 }
 
 pub fn manhattan_distance_standard_planar_code_2d_nodes(a: &(usize, usize), b: &(usize, usize)) -> usize {
@@ -1043,34 +1093,27 @@ pub fn get_standard_planar_code_2d_left_boundary_cardinality(d: usize, position_
     boundary_cardinality
 }
 
-/// return `(has_x_logical_error, has_z_logical_error)`
-pub fn run_given_offer_decoder_instance_no_fast_channel(decoder: &mut offer_decoder::OfferDecoder, id:usize) -> (bool, bool) {
+/// return `(has_x_logical_error, has_z_logical_error, cycle)`
+pub fn run_given_offer_decoder_instance_with_cycle(decoder: &mut offer_decoder::OfferDecoder, fast_channel_interval: usize) -> (bool, bool, usize) {
     let d = decoder.d;
     decoder.error_changed();
     // decode X errors
-    let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel(d, true);
-    let mut has_syndromes = false;
+    let (mut nodes, position_to_index, neighbors, fast_channels) = make_standard_planar_code_2d_nodes(d, true, fast_channel_interval);
     for i in (0..=2*d-2).step_by(2) {
         for j in (1..=2*d-3).step_by(2) {
             if decoder.qubits[i][j].measurement {
                 nodes[position_to_index[&(i, j)]].is_error_syndrome = true;
-                has_syndromes = true;
             }
         }
     }
-    let mut uf_decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
+    let mut uf_decoder = DistributedUnionFind::new(nodes, neighbors, fast_channels, manhattan_distance_standard_planar_code_2d_nodes,
         compare_standard_planar_code_2d_nodes);
-    uf_decoder.run_to_stable();
+    let cycle_x = uf_decoder.run_to_stable();
     let left_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, false)
         + decoder.origin_error_left_boundary_cardinality();
     let has_x_logical_error = left_boundary_cardinality % 2 == 1;
-
-    if !has_x_logical_error && has_syndromes {
-        uf_decoder.dump_print_input(id);
-        uf_decoder.dump_print_output(id);
-    }
     // decode Z errors
-    let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel(d, false);
+    let (mut nodes, position_to_index, neighbors, fast_channels) = make_standard_planar_code_2d_nodes(d, false, fast_channel_interval);
     for i in (1..=2*d-3).step_by(2) {
         for j in (0..=2*d-2).step_by(2) {
             if decoder.qubits[i][j].measurement {
@@ -1078,14 +1121,213 @@ pub fn run_given_offer_decoder_instance_no_fast_channel(decoder: &mut offer_deco
             }
         }
     }
-    let mut uf_decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
+    let mut uf_decoder = DistributedUnionFind::new(nodes, neighbors, fast_channels, manhattan_distance_standard_planar_code_2d_nodes,
         compare_standard_planar_code_2d_nodes);
-    uf_decoder.run_to_stable();
+    let cycle_z = uf_decoder.run_to_stable();
     let top_boundary_cardinality = get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &uf_decoder, true)
         + decoder.origin_error_top_boundary_cardinality();
     let has_z_logical_error = top_boundary_cardinality % 2 == 1;
+    (has_x_logical_error, has_z_logical_error, std::cmp::max(cycle_x, cycle_z))
+}
+
+/// return `(has_x_logical_error, has_z_logical_error, cycle)`
+pub fn run_given_offer_decoder_instance_no_fast_channel_with_cycle(decoder: &mut offer_decoder::OfferDecoder) -> (bool, bool, usize) {
+    run_given_offer_decoder_instance_with_cycle(decoder, 0)
+}
+
+/// return `(has_x_logical_error, has_z_logical_error)`
+pub fn run_given_offer_decoder_instance_no_fast_channel(decoder: &mut offer_decoder::OfferDecoder) -> (bool, bool) {
+    let (has_x_logical_error, has_z_logical_error, _cycle) = run_given_offer_decoder_instance_no_fast_channel_with_cycle(decoder);
     (has_x_logical_error, has_z_logical_error)
 }
+
+/// return (nodes, position_to_index, neighbors)
+pub fn make_decoder_given_ftqec_model(model: &ftqec::PlanarCodeModel, stabilizer: QubitType, fast_channel_interval: usize) ->
+        (Vec<InputNode<(usize, usize, usize)>>, HashMap<(usize, usize, usize), usize>, Vec<InputNeighbor>, Vec<InputFastChannel>) {
+    assert!(stabilizer == QubitType::StabZ || stabilizer == QubitType::StabX, "stabilizer must be either StabZ or StabX");
+    assert!(fast_channel_interval <= 1, "fast channel not supported yet");
+    let mut nodes = Vec::new();
+    let mut position_to_index = HashMap::new();
+    model.iterate_measurement_stabilizers(|t, i, j, node| {
+        if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
+            position_to_index.insert((t, i, j), nodes.len());
+            nodes.push(InputNode {
+                user_data: (t, i, j),
+                is_error_syndrome: false,
+                boundary_cost: if node.boundary.is_some() { Some(2) } else { None },
+            });
+        }
+    });
+    model.iterate_measurement_errors(|t, i, j, node| {
+        if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
+            nodes[position_to_index[&(t, i, j)]].is_error_syndrome = true;
+        }
+    });
+    let mut neighbors = Vec::new();
+    let fast_channels = Vec::new();
+    model.iterate_measurement_stabilizers(|t, i, j, node| {
+        if t > 12 && node.qubit_type == stabilizer {  // ignore the bottom layer
+            let idx = position_to_index[&(t, i, j)];
+            for edge in node.edges.iter() {
+                if edge.t > 12 {
+                    let peer_idx = position_to_index[&(edge.t, edge.i, edge.j)];
+                    if idx < peer_idx {  // remove duplicated neighbors
+                        neighbors.push(InputNeighbor {
+                            a: idx,
+                            b: peer_idx,
+                            increased: 0,
+                            length: 2,
+                            latency: 1,
+                        });
+                    }
+
+                } else {
+                    nodes[idx].boundary_cost = Some(2);  // viewing the bottom layer as boundary
+                }
+            }
+        }
+    });
+    assert!(neighbors.len() > 0, "ftqec model may not have `build_graph` called, so the neighbor connections have not built yet");
+    (nodes, position_to_index, neighbors, fast_channels)
+}
+
+#[allow(dead_code)]
+pub fn get_standard_planar_code_3d_boundary_cardinality(stabilizer: QubitType, position_to_index: &HashMap<(usize, usize, usize), usize>
+        , decoder: &DistributedUnionFind<(usize, usize, usize)>) -> usize {
+    let mut boundary_cardinality = 0;
+    let mut counted_sets = HashSet::new();
+    let mut counting_indices = Vec::new();
+    for ((_t, i, j), index) in position_to_index.iter() {
+        match stabilizer {
+            QubitType::StabZ => {
+                if *j == 1 {
+                    counting_indices.push(*index);
+                }
+            },
+            QubitType::StabX => {
+                if *i == 1 {
+                    counting_indices.push(*index);
+                }
+            },
+            _ => panic!("unsupported stabilizer type")
+        }
+    }
+    for index in counting_indices.into_iter() {
+        let pu = &decoder.processing_units[index];
+        let root = pu.updated_root;
+        if counted_sets.get(&root).is_none() {  // every set should only be counted once
+            let node = &decoder.nodes[index];
+            if pu.boundary_increased >= node.boundary_cost.unwrap() {  // only when this node is bleeding into the boundary
+                let root_pu = &decoder.processing_units[root];
+                if root_pu.is_odd_cardinality {  // connect to boundary only if the cardinality is odd
+                    counted_sets.insert(root);
+                    boundary_cardinality += 1;
+                }
+            }
+        }
+    }
+    boundary_cardinality
+}
+
+pub fn manhattan_distance_standard_planar_code_3d_nodes(a: &(usize, usize, usize), b: &(usize, usize, usize)) -> usize {
+    let (t1, i1, j1) = *a;
+    let (t2, i2, j2) = *b;
+    let dt_origin = (t1 as isize - t2 as isize).abs() as usize;
+    assert!(dt_origin % 6 == 0, "dt should only be 6x");
+    let dt = dt_origin / 6;
+    let di = (i1 as isize - i2 as isize).abs() as usize;
+    let dj = (j1 as isize - j2 as isize).abs() as usize;
+    assert!(di % 2 == 0 && dj % 2 == 0, "cannot compute cost between different types of stabilizers");
+    (di + dj) / 2 + dt
+}
+
+pub fn compare_standard_planar_code_3d_nodes(a: &(usize, usize, usize), b: &(usize, usize, usize)) -> Ordering {
+    let (t1, i1, j1) = *a;
+    let (t2, i2, j2) = *b;
+    let sum1 = t1 / 6 + i1 / 2 + j1 / 2;
+    let sum2 = t2 / 6 + i2 / 2 + j2 / 2;
+    if sum1 < sum2 {
+        Ordering::Less
+    } else if sum1 > sum2 {
+        Ordering::Greater
+    } else {
+        if i1 < i2 {
+            Ordering::Less
+        } else if i1 > i2 {
+            Ordering::Greater
+        } else {
+            j1.cmp(&j2)
+        }
+    }
+}
+
+pub fn build_distributed_union_find_given_uf_decoder_3d<>(decoder: &union_find_decoder::UnionFindDecoder<(usize, usize, usize)>) ->
+        (DistributedUnionFind<(usize, usize, usize)>, HashMap<(usize, usize, usize), usize>) {
+    let mut nodes = Vec::new();
+    let mut position_to_index = HashMap::new();
+    for node in decoder.nodes.iter() {
+        let position = node.node.user_data.clone();
+        position_to_index.insert(position.clone(), nodes.len());
+        nodes.push(InputNode {
+            user_data: position,
+            is_error_syndrome: node.node.is_error_syndrome,
+            boundary_cost: node.node.boundary_cost.clone(),
+        });
+    }
+    let mut neighbors = Vec::new();
+    for neighbor in decoder.input_neighbors.iter() {
+        neighbors.push(InputNeighbor {
+            a: neighbor.a,
+            b: neighbor.b,
+            increased: 0,
+            length: neighbor.length,
+            latency: 1,
+        });
+    }
+    let duf_decoder = DistributedUnionFind::new(nodes, neighbors, vec![], manhattan_distance_standard_planar_code_3d_nodes,
+        compare_standard_planar_code_3d_nodes);
+    (duf_decoder, position_to_index)
+}
+
+pub fn copy_state_back_to_union_find_decoder(decoder: &mut union_find_decoder::UnionFindDecoder<(usize, usize, usize)>, 
+        duf_decoder: &DistributedUnionFind<(usize, usize, usize)>) {
+    // copy root, but the root might be changed internally by UnionFind library
+    assert_eq!(decoder.nodes.len(), duf_decoder.nodes.len(), "they should have the same number of nodes");
+    for a in 0..decoder.nodes.len() {
+        let duf_processing_unit = &duf_decoder.processing_units[a];
+        let b = duf_processing_unit.updated_root;
+        decoder.union_find.union(a, b);
+    }
+    // copy cardinality and is_touching_boundary
+    for a in 0..decoder.nodes.len() {
+        let duf_processing_unit = &duf_decoder.processing_units[a];
+        let duf_updated_root = duf_processing_unit.updated_root;
+        let duf_root_processing_unit = &duf_decoder.processing_units[duf_updated_root];
+        let uf_union_node = decoder.union_find.get_mut(a);
+        uf_union_node.cardinality = duf_root_processing_unit.debug_cardinality;  // accurate cardinality
+        // uf_union_node.cardinality = if duf_root_processing_unit.is_odd_cardinality { 1 } else { 0 };  // or just use parity of cardinality
+        uf_union_node.is_touching_boundary = duf_root_processing_unit.is_touching_boundary;
+    }
+    // copy boundary increase and boundary state
+    for a in 0..decoder.nodes.len() {
+        let duf_processing_unit = &duf_decoder.processing_units[a];
+        let uf_decoder_node = &mut decoder.nodes[a];
+        uf_decoder_node.boundary_increased = duf_processing_unit.boundary_increased;
+    }
+    // copy neighbor increase and neighbor state
+    for a in 0..decoder.nodes.len() {
+        let duf_processing_unit = &duf_decoder.processing_units[a];
+        let uf_decoder_node = &mut decoder.nodes[a];
+        for duf_neighbor in duf_processing_unit.neighbors.iter() {
+            let uf_neighbor_index = uf_decoder_node.neighbor_index[&duf_neighbor.address];
+            let uf_neighbor_partial_edge = &mut uf_decoder_node.neighbors[uf_neighbor_index];
+            assert_eq!(uf_neighbor_partial_edge.address, duf_neighbor.address);
+            assert_eq!(uf_neighbor_partial_edge.length, duf_neighbor.link.borrow().length);
+            uf_neighbor_partial_edge.increased = duf_neighbor.link.borrow().increased;
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -1182,7 +1424,7 @@ mod tests {
         assert_eq!(neighbors.len(), 7, "d=3 should have 7 direct neighbor connections");
         nodes[position_to_index[&(2, 1)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
             compare_standard_planar_code_2d_nodes);
         decoder.detailed_print_run_to_stable(true);
         assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
@@ -1197,7 +1439,7 @@ mod tests {
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 5)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 7)]].is_error_syndrome = true;
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
             compare_standard_planar_code_2d_nodes);
         decoder.detailed_print_run_to_stable(true);
         assert_eq!(0, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
@@ -1213,11 +1455,149 @@ mod tests {
         nodes[position_to_index[&(0, 5)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
         nodes[position_to_index[&(2, 5)]].is_error_syndrome = true;
-        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,          
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
             compare_standard_planar_code_2d_nodes);
         decoder.detailed_print_run_to_stable(true);
         assert_eq!(1, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
             , "cardinality of one side of boundary determines if there is logical error");
+    }
+
+    #[test]
+    fn distributed_union_find_decoder_test_case_4() {
+        let d = 5;
+        let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(d);
+        nodes[position_to_index[&(4, 3)]].is_error_syndrome = true;
+        nodes[position_to_index[&(6, 5)]].is_error_syndrome = true;
+        nodes[position_to_index[&(6, 7)]].is_error_syndrome = true;
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
+            compare_standard_planar_code_2d_nodes);
+        decoder.detailed_print_run_to_stable(true);
+        decoder.debug_print();
+        assert_eq!(1, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
+            , "cardinality of one side of boundary determines if there is logical error");
+    }
+
+    #[test]
+    fn distributed_union_find_decoder_test_case_5() {
+        let d = 5;
+        let (mut nodes, position_to_index, neighbors) = make_standard_planar_code_2d_nodes_no_fast_channel_only_x(d);
+        nodes[position_to_index[&(0, 1)]].is_error_syndrome = false;
+        nodes[position_to_index[&(0, 3)]].is_error_syndrome = true;
+        nodes[position_to_index[&(0, 5)]].is_error_syndrome = false;
+        nodes[position_to_index[&(0, 7)]].is_error_syndrome = false;
+        nodes[position_to_index[&(2, 1)]].is_error_syndrome = false;
+        nodes[position_to_index[&(2, 3)]].is_error_syndrome = false;
+        nodes[position_to_index[&(2, 5)]].is_error_syndrome = true;
+        nodes[position_to_index[&(2, 7)]].is_error_syndrome = false;
+        nodes[position_to_index[&(4, 1)]].is_error_syndrome = true;
+        nodes[position_to_index[&(4, 3)]].is_error_syndrome = true;
+        nodes[position_to_index[&(4, 5)]].is_error_syndrome = false;
+        nodes[position_to_index[&(4, 7)]].is_error_syndrome = false;
+        nodes[position_to_index[&(6, 1)]].is_error_syndrome = true;
+        nodes[position_to_index[&(6, 3)]].is_error_syndrome = false;
+        nodes[position_to_index[&(6, 5)]].is_error_syndrome = true;
+        nodes[position_to_index[&(6, 7)]].is_error_syndrome = true;
+        nodes[position_to_index[&(8, 1)]].is_error_syndrome = true;
+        nodes[position_to_index[&(8, 3)]].is_error_syndrome = true;
+        nodes[position_to_index[&(8, 5)]].is_error_syndrome = true;
+        nodes[position_to_index[&(8, 7)]].is_error_syndrome = true;
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, Vec::new(), manhattan_distance_standard_planar_code_2d_nodes,
+            compare_standard_planar_code_2d_nodes);
+        decoder.detailed_print_run_to_stable(true);
+        decoder.debug_print();
+        assert_eq!(1, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
+            , "cardinality of one side of boundary determines if there is logical error");
+    }
+
+    #[test]
+    fn distributed_union_find_decoder_test_case_6() {
+        // test fast channels, same as test case 3
+        let d = 5;
+        let (mut nodes, position_to_index, neighbors, fast_channels) = make_standard_planar_code_2d_nodes(d, true, 2);
+        nodes[position_to_index[&(0, 1)]].is_error_syndrome = true;
+        nodes[position_to_index[&(0, 3)]].is_error_syndrome = true;
+        nodes[position_to_index[&(0, 5)]].is_error_syndrome = true;
+        nodes[position_to_index[&(2, 3)]].is_error_syndrome = true;
+        nodes[position_to_index[&(2, 5)]].is_error_syndrome = true;
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, fast_channels, manhattan_distance_standard_planar_code_2d_nodes,
+            compare_standard_planar_code_2d_nodes);
+        decoder.detailed_print_run_to_stable(true);
+        assert_eq!(1, get_standard_planar_code_2d_left_boundary_cardinality(d, &position_to_index, &decoder, false)
+            , "cardinality of one side of boundary determines if there is logical error");
+    }
+
+    #[test]
+    fn distributed_union_find_decoder_test_build_given_ftqec_model_1() {
+        let measurement_rounds = 3;
+        let d = 3;
+        let p = 0.01;  // physical error rate
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
+        model.set_phenomenological_error_with_perfect_initialization(p);
+        model.build_graph(ftqec::weight_autotune);
+        let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
+        model.add_error_at(el2t(0), 0, 2, &ErrorType::X).expect("error rate = 0 here");  // data qubit error (detected by next layer)
+        model.add_error_at(el2t(1), 2, 3, &ErrorType::X).expect("error rate = 0 here");  // measurement error (detected by this and next layer)
+        model.propagate_error();
+        let (nodes, position_to_index, neighbors, fast_channels) = make_decoder_given_ftqec_model(&model, QubitType::StabZ, 1);
+        assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
+        assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, fast_channels, manhattan_distance_standard_planar_code_3d_nodes,
+            compare_standard_planar_code_3d_nodes);
+        decoder.detailed_print_run_to_stable(true);
+        assert_eq!(0, get_standard_planar_code_3d_boundary_cardinality(QubitType::StabZ, &position_to_index, &decoder)
+            , "cardinality of one side of boundary determines if there is logical error");
+    }
+
+    #[test]
+    fn distributed_union_find_decoder_test_build_given_ftqec_model_2() {
+        let measurement_rounds = 3;
+        let d = 3;
+        let p = 0.01;  // physical error rate
+        let mut model = ftqec::PlanarCodeModel::new_standard_planar_code(measurement_rounds, d);
+        model.set_phenomenological_error_with_perfect_initialization(p);
+        model.build_graph(ftqec::weight_autotune);
+        let el2t = |layer| layer * 6usize + 18 - 1;  // error from layer 0 is at t = 18-1 = 17
+        model.add_error_at(el2t(0), 0, 0, &ErrorType::X).expect("error rate = 0 here");  // data qubit error (detected by next layer)
+        model.propagate_error();
+        let (nodes, position_to_index, neighbors, fast_channels) = make_decoder_given_ftqec_model(&model, QubitType::StabZ, 1);
+        assert_eq!(d * (d - 1) * measurement_rounds, nodes.len());
+        assert_eq!((measurement_rounds * (d * (d - 1) * 2 - d - (d - 1)) + (measurement_rounds - 1) * d * (d - 1)), neighbors.len());
+        let mut decoder = DistributedUnionFind::new(nodes, neighbors, fast_channels, manhattan_distance_standard_planar_code_3d_nodes,
+            compare_standard_planar_code_3d_nodes);
+        decoder.detailed_print_run_to_stable(true);
+        assert_eq!(1, get_standard_planar_code_3d_boundary_cardinality(QubitType::StabZ, &position_to_index, &decoder)
+            , "cardinality of one side of boundary determines if there is logical error");
+    }
+
+    #[test]
+    fn distributed_union_find_decoder_test_xzzx_code_1() {
+        let di = 3;
+        let dj = 3;
+        let measurement_rounds = 3;
+        let bias_zeta = 100.;  // definition of zeta see arXiv:2104.09539v1
+        let p = 0.006;
+        let max_half_weight = 4;
+        let mut model = ftqec::PlanarCodeModel::new_standard_XZZX_code_rectangle(measurement_rounds, di, dj);
+        model.apply_error_model(&ErrorModelName::GenericBiasedWithBiasedCX, None, p, bias_zeta, 0.);
+        model.build_graph(ftqec::weight_autotune);
+        // model.optimize_correction_pattern();  // no need if not building corrections
+        // model.build_exhausted_path();
+        let use_random_error = true;
+        if use_random_error {
+            let mut rng = thread_rng();
+            let error_count = model.generate_random_errors(|| rng.gen::<f64>());
+            println!("error_count: {}", error_count);
+        }
+        model.propagate_error();
+        let measurement = model.generate_measurement();
+        let decoders = union_find_decoder::suboptimal_matching_by_union_find_given_measurement_build_decoders(&model, &measurement
+            , &ftqec::DetectedErasures::new(di, dj), max_half_weight);
+        for mut decoder in decoders.into_iter() {
+            // build distributed union-find decoder from union-find decoder
+            let (mut duf_decoder, _position_to_index) = build_distributed_union_find_given_uf_decoder_3d(&decoder);
+            duf_decoder.detailed_print_run_to_stable(true);
+            copy_state_back_to_union_find_decoder(&mut decoder, &duf_decoder);
+        }
     }
 
 }

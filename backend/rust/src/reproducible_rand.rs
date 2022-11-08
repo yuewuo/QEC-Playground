@@ -2,13 +2,14 @@
 //!
 //! There is probabilistic fall back mechanism in offer decoder, but the behavior is highly related to the random number generator which is not reproducible.
 //! Here we try to use a specific random number generator to reproduce the result given the random seed, to better debug the algorithm
-//! We use Xoroshiro128StarStar from https://docs.rs/crate/rand_xoshiro/0.6.0/source/src/xoroshiro128starstar.rs
+//! We use Xoroshiro128StarStar from <https://docs.rs/crate/rand_xoshiro/0.6.0/source/src/xoroshiro128starstar.rs>
 //! The code is mostly copied here so that I can do the same in JavaScript and test it.
 
 use rand_core::le::read_u64_into;
 use rand_core::impls::fill_bytes_via_next;
 use rand_core::{RngCore, SeedableRng};
 use super::serde::{Serialize, Deserialize};
+use super::rand::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Xoroshiro128StarStar {
@@ -22,12 +23,19 @@ impl Xoroshiro128StarStar {
         f64::from_bits(0x3FF << 52 | self.next_u64() >> 12) - 1.
     }
 
+    #[allow(dead_code)]
     pub fn get_s0_i64(&self) -> i64 {
         i64::from_le_bytes(self.s0.to_le_bytes())
     }
 
+    #[allow(dead_code)]
     pub fn get_s1_i64(&self) -> i64 {
         i64::from_le_bytes(self.s1.to_le_bytes())
+    }
+
+    pub fn new() -> Self {
+        let mut rng = thread_rng();
+        Self::seed_from_u64(rng.gen::<u64>())
     }
 }
 
@@ -92,6 +100,7 @@ pub struct SplitMix64 {
 }
 
 impl SplitMix64 {
+    #[allow(dead_code)]
     pub fn get_x_i64(&self) -> i64 {
         i64::from_le_bytes(self.x.to_le_bytes())
     }
@@ -150,4 +159,13 @@ impl RngCore for SplitMix64 {
         self.fill_bytes(dest);
         Ok(())
     }
+}
+
+impl SplitMix64 {
+    #[inline]
+    #[allow(dead_code)]
+    pub fn next_f64(&mut self) -> f64 {
+        f64::from_bits(0x3FF << 52 | self.next_u64() >> 12) - 1.
+    }
+
 }

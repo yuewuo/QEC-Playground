@@ -1,0 +1,414 @@
+<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg version="1.1" width="1200" height="454" onload="init(evt)" viewBox="0 0 1200 454" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:fg="http://github.com/jonhoo/inferno"><!--Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples.--><!--NOTES: --><defs><linearGradient id="background" y1="0" y2="1" x1="0" x2="0"><stop stop-color="#eeeeee" offset="5%"/><stop stop-color="#eeeeb0" offset="95%"/></linearGradient></defs><style type="text/css">
+text { font-family:"Verdana"; font-size:12px; fill:rgb(0,0,0); }
+#title { text-anchor:middle; font-size:17px; }
+#search { opacity:0.1; cursor:pointer; }
+#search:hover, #search.show { opacity:1; }
+#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+#unzoom { cursor:pointer; }
+#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+.hide { display:none; }
+.parent { opacity:0.5; }
+</style><script type="text/ecmascript"><![CDATA[
+        var nametype = 'Function:';
+        var fontsize = 12;
+        var fontwidth = 0.59;
+        var xpad = 10;
+        var inverted = false;
+        var searchcolor = 'rgb(230,0,230)';
+        var fluiddrawing = true;
+        var truncate_text_right = false;
+    ]]><![CDATA["use strict";
+var details, searchbtn, unzoombtn, matchedtxt, svg, searching, frames;
+function init(evt) {
+    details = document.getElementById("details").firstChild;
+    searchbtn = document.getElementById("search");
+    unzoombtn = document.getElementById("unzoom");
+    matchedtxt = document.getElementById("matched");
+    svg = document.getElementsByTagName("svg")[0];
+    frames = document.getElementById("frames");
+    total_samples = parseInt(frames.attributes.total_samples.value);
+    searching = 0;
+
+    // Use GET parameters to restore a flamegraph's state.
+    var restore_state = function() {
+        var params = get_params();
+        if (params.x && params.y)
+            zoom(find_group(document.querySelector('[*|x="' + params.x + '"][y="' + params.y + '"]')));
+        if (params.s)
+            search(params.s);
+    };
+
+    if (fluiddrawing) {
+        // Make width dynamic so the SVG fits its parent's width.
+        svg.removeAttribute("width");
+        // Edge requires us to have a viewBox that gets updated with size changes.
+        var isEdge = /Edge\/\d./i.test(navigator.userAgent);
+        if (!isEdge) {
+          svg.removeAttribute("viewBox");
+        }
+        var update_for_width_change = function() {
+            if (isEdge) {
+                svg.attributes.viewBox.value = "0 0 " + svg.width.baseVal.value + " " + svg.height.baseVal.value;
+            }
+
+            // Keep consistent padding on left and right of frames container.
+            frames.attributes.width.value = svg.width.baseVal.value - xpad * 2;
+
+            // Text truncation needs to be adjusted for the current width.
+            var el = frames.children;
+            for(var i = 0; i < el.length; i++) {
+                update_text(el[i]);
+            }
+
+            // Keep search elements at a fixed distance from right edge.
+            var svgWidth = svg.width.baseVal.value;
+            searchbtn.attributes.x.value = svgWidth - xpad - 100;
+            matchedtxt.attributes.x.value = svgWidth - xpad - 100;
+        };
+        window.addEventListener('resize', function() {
+            update_for_width_change();
+        });
+        // This needs to be done asynchronously for Safari to work.
+        setTimeout(function() {
+            unzoom();
+            update_for_width_change();
+            restore_state();
+        }, 0);
+    } else {
+        restore_state();
+    }
+}
+// event listeners
+window.addEventListener("click", function(e) {
+    var target = find_group(e.target);
+    if (target) {
+        if (target.nodeName == "a") {
+            if (e.ctrlKey === false) return;
+            e.preventDefault();
+        }
+        if (target.classList.contains("parent")) unzoom();
+        zoom(target);
+
+        // set parameters for zoom state
+        var el = target.querySelector("rect");
+        if (el && el.attributes && el.attributes.y && el.attributes["fg:x"]) {
+            var params = get_params()
+            params.x = el.attributes["fg:x"].value;
+            params.y = el.attributes.y.value;
+            history.replaceState(null, null, parse_params(params));
+        }
+    }
+    else if (e.target.id == "unzoom") {
+        unzoom();
+
+        // remove zoom state
+        var params = get_params();
+        if (params.x) delete params.x;
+        if (params.y) delete params.y;
+        history.replaceState(null, null, parse_params(params));
+    }
+    else if (e.target.id == "search") search_prompt();
+}, false)
+// mouse-over for info
+// show
+window.addEventListener("mouseover", function(e) {
+    var target = find_group(e.target);
+    if (target) details.nodeValue = nametype + " " + g_to_text(target);
+}, false)
+// clear
+window.addEventListener("mouseout", function(e) {
+    var target = find_group(e.target);
+    if (target) details.nodeValue = ' ';
+}, false)
+// ctrl-F for search
+window.addEventListener("keydown",function (e) {
+    if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+        e.preventDefault();
+        search_prompt();
+    }
+}, false)
+// functions
+function get_params() {
+    var params = {};
+    var paramsarr = window.location.search.substr(1).split('&');
+    for (var i = 0; i < paramsarr.length; ++i) {
+        var tmp = paramsarr[i].split("=");
+        if (!tmp[0] || !tmp[1]) continue;
+        params[tmp[0]]  = decodeURIComponent(tmp[1]);
+    }
+    return params;
+}
+function parse_params(params) {
+    var uri = "?";
+    for (var key in params) {
+        uri += key + '=' + encodeURIComponent(params[key]) + '&';
+    }
+    if (uri.slice(-1) == "&")
+        uri = uri.substring(0, uri.length - 1);
+    if (uri == '?')
+        uri = window.location.href.split('?')[0];
+    return uri;
+}
+function find_child(node, selector) {
+    var children = node.querySelectorAll(selector);
+    if (children.length) return children[0];
+    return;
+}
+function find_group(node) {
+    var parent = node.parentElement;
+    if (!parent) return;
+    if (parent.id == "frames") return node;
+    return find_group(parent);
+}
+function orig_save(e, attr, val) {
+    if (e.attributes["fg:orig_" + attr] != undefined) return;
+    if (e.attributes[attr] == undefined) return;
+    if (val == undefined) val = e.attributes[attr].value;
+    e.setAttribute("fg:orig_" + attr, val);
+}
+function orig_load(e, attr) {
+    if (e.attributes["fg:orig_"+attr] == undefined) return;
+    e.attributes[attr].value = e.attributes["fg:orig_" + attr].value;
+    e.removeAttribute("fg:orig_" + attr);
+}
+function g_to_text(e) {
+    var text = find_child(e, "title").firstChild.nodeValue;
+    return (text)
+}
+function g_to_func(e) {
+    var func = g_to_text(e);
+    // if there's any manipulation we want to do to the function
+    // name before it's searched, do it here before returning.
+    return (func);
+}
+function update_text(e) {
+    var r = find_child(e, "rect");
+    var t = find_child(e, "text");
+    var w = parseFloat(r.attributes.width.value) * frames.attributes.width.value / 100 - 3;
+    var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+    t.attributes.x.value = format_percent((parseFloat(r.attributes.x.value) + (100 * 3 / frames.attributes.width.value)));
+    // Smaller than this size won't fit anything
+    if (w < 2 * fontsize * fontwidth) {
+        t.textContent = "";
+        return;
+    }
+    t.textContent = txt;
+    // Fit in full text width
+    if (/^ *\$/.test(txt) || t.getComputedTextLength() < w)
+        return;
+    if (truncate_text_right) {
+        // Truncate the right side of the text.
+        for (var x = txt.length - 2; x > 0; x--) {
+            if (t.getSubStringLength(0, x + 2) <= w) {
+                t.textContent = txt.substring(0, x) + "..";
+                return;
+            }
+        }
+    } else {
+        // Truncate the left side of the text.
+        for (var x = 2; x < txt.length; x++) {
+            if (t.getSubStringLength(x - 2, txt.length) <= w) {
+                t.textContent = ".." + txt.substring(x, txt.length);
+                return;
+            }
+        }
+    }
+    t.textContent = "";
+}
+// zoom
+function zoom_reset(e) {
+    if (e.tagName == "rect") {
+        e.attributes.x.value = format_percent(100 * parseInt(e.attributes["fg:x"].value) / total_samples);
+        e.attributes.width.value = format_percent(100 * parseInt(e.attributes["fg:w"].value) / total_samples);
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_reset(c[i]);
+    }
+}
+function zoom_child(e, x, zoomed_width_samples) {
+    if (e.tagName == "text") {
+        var parent_x = parseFloat(find_child(e.parentNode, "rect[x]").attributes.x.value);
+        e.attributes.x.value = format_percent(parent_x + (100 * 3 / frames.attributes.width.value));
+    } else if (e.tagName == "rect") {
+        e.attributes.x.value = format_percent(100 * (parseInt(e.attributes["fg:x"].value) - x) / zoomed_width_samples);
+        e.attributes.width.value = format_percent(100 * parseInt(e.attributes["fg:w"].value) / zoomed_width_samples);
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_child(c[i], x, zoomed_width_samples);
+    }
+}
+function zoom_parent(e) {
+    if (e.attributes) {
+        if (e.attributes.x != undefined) {
+            e.attributes.x.value = "0.0%";
+        }
+        if (e.attributes.width != undefined) {
+            e.attributes.width.value = "100.0%";
+        }
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_parent(c[i]);
+    }
+}
+function zoom(node) {
+    var attr = find_child(node, "rect").attributes;
+    var width = parseInt(attr["fg:w"].value);
+    var xmin = parseInt(attr["fg:x"].value);
+    var xmax = xmin + width;
+    var ymin = parseFloat(attr.y.value);
+    unzoombtn.classList.remove("hide");
+    var el = frames.children;
+    for (var i = 0; i < el.length; i++) {
+        var e = el[i];
+        var a = find_child(e, "rect").attributes;
+        var ex = parseInt(a["fg:x"].value);
+        var ew = parseInt(a["fg:w"].value);
+        // Is it an ancestor
+        if (!inverted) {
+            var upstack = parseFloat(a.y.value) > ymin;
+        } else {
+            var upstack = parseFloat(a.y.value) < ymin;
+        }
+        if (upstack) {
+            // Direct ancestor
+            if (ex <= xmin && (ex+ew) >= xmax) {
+                e.classList.add("parent");
+                zoom_parent(e);
+                update_text(e);
+            }
+            // not in current path
+            else
+                e.classList.add("hide");
+        }
+        // Children maybe
+        else {
+            // no common path
+            if (ex < xmin || ex >= xmax) {
+                e.classList.add("hide");
+            }
+            else {
+                zoom_child(e, xmin, width);
+                update_text(e);
+            }
+        }
+    }
+}
+function unzoom() {
+    unzoombtn.classList.add("hide");
+    var el = frames.children;
+    for(var i = 0; i < el.length; i++) {
+        el[i].classList.remove("parent");
+        el[i].classList.remove("hide");
+        zoom_reset(el[i]);
+        update_text(el[i]);
+    }
+}
+// search
+function reset_search() {
+    var el = document.querySelectorAll("#frames rect");
+    for (var i = 0; i < el.length; i++) {
+        orig_load(el[i], "fill")
+    }
+    var params = get_params();
+    delete params.s;
+    history.replaceState(null, null, parse_params(params));
+}
+function search_prompt() {
+    if (!searching) {
+        var term = prompt("Enter a search term (regexp " +
+            "allowed, eg: ^ext4_)", "");
+        if (term != null) {
+            search(term)
+        }
+    } else {
+        reset_search();
+        searching = 0;
+        searchbtn.classList.remove("show");
+        searchbtn.firstChild.nodeValue = "Search"
+        matchedtxt.classList.add("hide");
+        matchedtxt.firstChild.nodeValue = ""
+    }
+}
+function search(term) {
+    var re = new RegExp(term);
+    var el = frames.children;
+    var matches = new Object();
+    var maxwidth = 0;
+    for (var i = 0; i < el.length; i++) {
+        var e = el[i];
+        // Skip over frames which are either not visible, or below the zoomed-to frame
+        if (e.classList.contains("hide") || e.classList.contains("parent")) {
+            continue;
+        }
+        var func = g_to_func(e);
+        var rect = find_child(e, "rect");
+        if (func == null || rect == null)
+            continue;
+        // Save max width. Only works as we have a root frame
+        var w = parseInt(rect.attributes["fg:w"].value);
+        if (w > maxwidth)
+            maxwidth = w;
+        if (func.match(re)) {
+            // highlight
+            var x = parseInt(rect.attributes["fg:x"].value);
+            orig_save(rect, "fill");
+            rect.attributes.fill.value = searchcolor;
+            // remember matches
+            if (matches[x] == undefined) {
+                matches[x] = w;
+            } else {
+                if (w > matches[x]) {
+                    // overwrite with parent
+                    matches[x] = w;
+                }
+            }
+            searching = 1;
+        }
+    }
+    if (!searching)
+        return;
+    var params = get_params();
+    params.s = term;
+    history.replaceState(null, null, parse_params(params));
+
+    searchbtn.classList.add("show");
+    searchbtn.firstChild.nodeValue = "Reset Search";
+    // calculate percent matched, excluding vertical overlap
+    var count = 0;
+    var lastx = -1;
+    var lastw = 0;
+    var keys = Array();
+    for (k in matches) {
+        if (matches.hasOwnProperty(k))
+            keys.push(k);
+    }
+    // sort the matched frames by their x location
+    // ascending, then width descending
+    keys.sort(function(a, b){
+        return a - b;
+    });
+    // Step through frames saving only the biggest bottom-up frames
+    // thanks to the sort order. This relies on the tree property
+    // where children are always smaller than their parents.
+    for (var k in keys) {
+        var x = parseInt(keys[k]);
+        var w = matches[keys[k]];
+        if (x >= lastx + lastw) {
+            count += w;
+            lastx = x;
+            lastw = w;
+        }
+    }
+    // display matched percent
+    matchedtxt.classList.remove("hide");
+    var pct = 100 * count / maxwidth;
+    if (pct != 100) pct = pct.toFixed(1);
+    matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+}
+function format_percent(n) {
+    return n.toFixed(4) + "%";
+}
+]]></script><rect x="0" y="0" width="100%" height="454" fill="url(#background)"/><text id="title" x="50.0000%" y="24.00">Flame Graph</text><text id="details" x="10" y="437.00"> </text><text id="unzoom" class="hide" x="10" y="24.00">Reset Zoom</text><text id="search" x="1090" y="24.00">Search</text><text id="matched" x="1090" y="437.00"> </text><svg id="frames" x="10" width="1180" total_samples="65833"><g><title>libsystem_malloc.dylib`free (8 samples, 0.01%)</title><rect x="0.0456%" y="69" width="0.0122%" height="15" fill="rgb(227,0,7)" fg:x="30" fg:w="8"/><text x="0.2956%" y="79.50"></text></g><g><title>libsystem_malloc.dylib`free_tiny (31 samples, 0.05%)</title><rect x="0.0577%" y="69" width="0.0471%" height="15" fill="rgb(217,0,24)" fg:x="38" fg:w="31"/><text x="0.3077%" y="79.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_no_lock (30 samples, 0.05%)</title><rect x="0.0592%" y="53" width="0.0456%" height="15" fill="rgb(221,193,54)" fg:x="39" fg:w="30"/><text x="0.3092%" y="63.50"></text></g><g><title>rust_qecp`&lt;alloc::collections::btree::map::BTreeMap&lt;K,V&gt; as core::ops::drop::Drop&gt;::drop (64 samples, 0.10%)</title><rect x="0.0091%" y="101" width="0.0972%" height="15" fill="rgb(248,212,6)" fg:x="6" fg:w="64"/><text x="0.2591%" y="111.50"></text></g><g><title>rust_qecp`alloc::collections::btree::navigate::_&lt;impl alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Dying,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;&gt;::deallocating_next_unchecked (54 samples, 0.08%)</title><rect x="0.0243%" y="85" width="0.0820%" height="15" fill="rgb(208,68,35)" fg:x="16" fg:w="54"/><text x="0.2743%" y="95.50"></text></g><g><title>rust_qecp`&lt;alloc::vec::Vec&lt;T,A&gt; as core::ops::drop::Drop&gt;::drop (70 samples, 0.11%)</title><rect x="0.0061%" y="149" width="0.1063%" height="15" fill="rgb(232,128,0)" fg:x="4" fg:w="70"/><text x="0.2561%" y="159.50"></text></g><g><title>rust_qecp`core::ptr::drop_in_place&lt;alloc::vec::Vec&lt;core::option::Option&lt;alloc::boxed::Box&lt;rust_qecp::complete_model_graph::CompleteModelGraphNode&gt;&gt;&gt;&gt; (68 samples, 0.10%)</title><rect x="0.0091%" y="133" width="0.1033%" height="15" fill="rgb(207,160,47)" fg:x="6" fg:w="68"/><text x="0.2591%" y="143.50"></text></g><g><title>rust_qecp`alloc::sync::Arc&lt;T&gt;::drop_slow (68 samples, 0.10%)</title><rect x="0.0091%" y="117" width="0.1033%" height="15" fill="rgb(228,23,34)" fg:x="6" fg:w="68"/><text x="0.2591%" y="127.50"></text></g><g><title>rust_qecp`&lt;alloc::vec::Vec&lt;T,A&gt; as core::ops::drop::Drop&gt;::drop (23 samples, 0.03%)</title><rect x="0.1306%" y="85" width="0.0349%" height="15" fill="rgb(218,30,26)" fg:x="86" fg:w="23"/><text x="0.3806%" y="95.50"></text></g><g><title>rust_qecp`alloc::sync::Arc&lt;T&gt;::drop_slow (15 samples, 0.02%)</title><rect x="0.1428%" y="69" width="0.0228%" height="15" fill="rgb(220,122,19)" fg:x="94" fg:w="15"/><text x="0.3928%" y="79.50"></text></g><g><title>rust_qecp`&lt;alloc::collections::btree::map::BTreeMap&lt;K,V&gt; as core::ops::drop::Drop&gt;::drop (12 samples, 0.02%)</title><rect x="0.1473%" y="53" width="0.0182%" height="15" fill="rgb(250,228,42)" fg:x="97" fg:w="12"/><text x="0.3973%" y="63.50"></text></g><g><title>rust_qecp`&lt;alloc::collections::btree::map::BTreeMap&lt;K,V&gt; as core::ops::drop::Drop&gt;::drop (36 samples, 0.05%)</title><rect x="0.1230%" y="101" width="0.0547%" height="15" fill="rgb(240,193,28)" fg:x="81" fg:w="36"/><text x="0.3730%" y="111.50"></text></g><g><title>rust_qecp`alloc::sync::Arc&lt;T&gt;::drop_slow (44 samples, 0.07%)</title><rect x="0.1185%" y="149" width="0.0668%" height="15" fill="rgb(216,20,37)" fg:x="78" fg:w="44"/><text x="0.3685%" y="159.50"></text></g><g><title>rust_qecp`core::ptr::drop_in_place&lt;alloc::vec::Vec&lt;alloc::vec::Vec&lt;core::option::Option&lt;alloc::boxed::Box&lt;rust_qecp::model_graph::ModelGraphNode&gt;&gt;&gt;&gt;&gt; (44 samples, 0.07%)</title><rect x="0.1185%" y="133" width="0.0668%" height="15" fill="rgb(206,188,39)" fg:x="78" fg:w="44"/><text x="0.3685%" y="143.50"></text></g><g><title>rust_qecp`core::ptr::drop_in_place&lt;core::option::Option&lt;alloc::boxed::Box&lt;rust_qecp::model_graph::ModelGraphNode&gt;&gt;&gt; (44 samples, 0.07%)</title><rect x="0.1185%" y="117" width="0.0668%" height="15" fill="rgb(217,207,13)" fg:x="78" fg:w="44"/><text x="0.3685%" y="127.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::BTreeMap&lt;K,V&gt;::insert (7 samples, 0.01%)</title><rect x="0.2005%" y="133" width="0.0106%" height="15" fill="rgb(231,73,38)" fg:x="132" fg:w="7"/><text x="0.4505%" y="143.50"></text></g><g><title>rust_qecp`alloc::collections::btree::navigate::_&lt;impl alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Immut,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;&gt;::next_unchecked (59 samples, 0.09%)</title><rect x="0.2111%" y="133" width="0.0896%" height="15" fill="rgb(225,20,46)" fg:x="139" fg:w="59"/><text x="0.4611%" y="143.50"></text></g><g><title>rust_qecp`indexmap::map::IndexMap&lt;K,V,S&gt;::hash (188 samples, 0.29%)</title><rect x="0.3038%" y="133" width="0.2856%" height="15" fill="rgb(210,31,41)" fg:x="200" fg:w="188"/><text x="0.5538%" y="143.50"></text></g><g><title>rust_qecp`indexmap::map::core::IndexMapCore&lt;K,V&gt;::swap_remove_index (10 samples, 0.02%)</title><rect x="0.5894%" y="133" width="0.0152%" height="15" fill="rgb(221,200,47)" fg:x="388" fg:w="10"/><text x="0.8394%" y="143.50"></text></g><g><title>rust_qecp`priority_queue::priority_queue::PriorityQueue&lt;I,P,H&gt;::push (8 samples, 0.01%)</title><rect x="0.6137%" y="133" width="0.0122%" height="15" fill="rgb(226,26,5)" fg:x="404" fg:w="8"/><text x="0.8637%" y="143.50"></text></g><g><title>rust_qecp`&lt;float_ord::FloatOrd&lt;f64&gt; as core::cmp::PartialOrd&gt;::partial_cmp (249 samples, 0.38%)</title><rect x="2.0461%" y="117" width="0.3782%" height="15" fill="rgb(249,33,26)" fg:x="1347" fg:w="249"/><text x="2.2961%" y="127.50"></text></g><g><title>rust_qecp`&lt;std::collections::hash::map::DefaultHasher as core::hash::Hasher&gt;::write (767 samples, 1.17%)</title><rect x="2.4243%" y="117" width="1.1651%" height="15" fill="rgb(235,183,28)" fg:x="1596" fg:w="767"/><text x="2.6743%" y="127.50"></text></g><g><title>libsystem_platform.dylib`_platform_memmove (28 samples, 0.04%)</title><rect x="3.8218%" y="85" width="0.0425%" height="15" fill="rgb(221,5,38)" fg:x="2516" fg:w="28"/><text x="4.0718%" y="95.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (9 samples, 0.01%)</title><rect x="3.9190%" y="69" width="0.0137%" height="15" fill="rgb(247,18,42)" fg:x="2580" fg:w="9"/><text x="4.1690%" y="79.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (8 samples, 0.01%)</title><rect x="3.9205%" y="53" width="0.0122%" height="15" fill="rgb(241,131,45)" fg:x="2581" fg:w="8"/><text x="4.1705%" y="63.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_should_clear (7 samples, 0.01%)</title><rect x="3.9220%" y="37" width="0.0106%" height="15" fill="rgb(249,31,29)" fg:x="2582" fg:w="7"/><text x="4.1720%" y="47.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::entry::VacantEntry&lt;K,V&gt;::insert (80 samples, 0.12%)</title><rect x="3.8127%" y="101" width="0.1215%" height="15" fill="rgb(225,111,53)" fg:x="2510" fg:w="80"/><text x="4.0627%" y="111.50"></text></g><g><title>rust_qecp`alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Mut,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;::insert_recursing (43 samples, 0.07%)</title><rect x="3.8689%" y="85" width="0.0653%" height="15" fill="rgb(238,160,17)" fg:x="2547" fg:w="43"/><text x="4.1189%" y="95.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::BTreeMap&lt;K,V&gt;::insert (231 samples, 0.35%)</title><rect x="3.5894%" y="117" width="0.3509%" height="15" fill="rgb(214,148,48)" fg:x="2363" fg:w="231"/><text x="3.8394%" y="127.50"></text></g><g><title>rust_qecp`alloc::collections::btree::navigate::_&lt;impl alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Immut,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;&gt;::next_unchecked (81 samples, 0.12%)</title><rect x="3.9418%" y="117" width="0.1230%" height="15" fill="rgb(232,36,49)" fg:x="2595" fg:w="81"/><text x="4.1918%" y="127.50"></text></g><g><title>rust_qecp`hashbrown::raw::inner::RawTable&lt;T,A&gt;::erase_entry (76 samples, 0.12%)</title><rect x="4.0648%" y="117" width="0.1154%" height="15" fill="rgb(209,103,24)" fg:x="2676" fg:w="76"/><text x="4.3148%" y="127.50"></text></g><g><title>rust_qecp`indexmap::map::IndexMap&lt;K,V,S&gt;::hash (332 samples, 0.50%)</title><rect x="4.1803%" y="117" width="0.5043%" height="15" fill="rgb(229,88,8)" fg:x="2752" fg:w="332"/><text x="4.4303%" y="127.50"></text></g><g><title>rust_qecp`indexmap::map::core::IndexMapCore&lt;K,V&gt;::get_index_of (1,661 samples, 2.52%)</title><rect x="4.6846%" y="117" width="2.5231%" height="15" fill="rgb(213,181,19)" fg:x="3084" fg:w="1661"/><text x="4.9346%" y="127.50">ru..</text></g><g><title>rust_qecp`indexmap::map::core::IndexMapCore&lt;K,V&gt;::swap_remove_index (38 samples, 0.06%)</title><rect x="7.2076%" y="117" width="0.0577%" height="15" fill="rgb(254,191,54)" fg:x="4745" fg:w="38"/><text x="7.4576%" y="127.50"></text></g><g><title>rust_qecp`indexmap::map::core::VacantEntry&lt;K,V&gt;::insert (9 samples, 0.01%)</title><rect x="7.2654%" y="117" width="0.0137%" height="15" fill="rgb(241,83,37)" fg:x="4783" fg:w="9"/><text x="7.5154%" y="127.50"></text></g><g><title>rust_qecp`priority_queue::priority_queue::PriorityQueue&lt;I,P,H&gt;::bubble_up (16 samples, 0.02%)</title><rect x="7.2866%" y="117" width="0.0243%" height="15" fill="rgb(233,36,39)" fg:x="4797" fg:w="16"/><text x="7.5366%" y="127.50"></text></g><g><title>rust_qecp`priority_queue::priority_queue::PriorityQueue&lt;I,P,H&gt;::heapify (389 samples, 0.59%)</title><rect x="7.3109%" y="117" width="0.5909%" height="15" fill="rgb(226,3,54)" fg:x="4813" fg:w="389"/><text x="7.5609%" y="127.50"></text></g><g><title>rust_qecp`&lt;float_ord::FloatOrd&lt;f64&gt; as core::cmp::PartialOrd&gt;::partial_cmp (17 samples, 0.03%)</title><rect x="7.9504%" y="101" width="0.0258%" height="15" fill="rgb(245,192,40)" fg:x="5234" fg:w="17"/><text x="8.2004%" y="111.50"></text></g><g><title>rust_qecp`&lt;std::collections::hash::map::DefaultHasher as core::hash::Hasher&gt;::write (63 samples, 0.10%)</title><rect x="7.9762%" y="101" width="0.0957%" height="15" fill="rgb(238,167,29)" fg:x="5251" fg:w="63"/><text x="8.2262%" y="111.50"></text></g><g><title>rust_qecp`hashbrown::raw::inner::RawTable&lt;T,A&gt;::insert (9 samples, 0.01%)</title><rect x="8.0811%" y="101" width="0.0137%" height="15" fill="rgb(232,182,51)" fg:x="5320" fg:w="9"/><text x="8.3311%" y="111.50"></text></g><g><title>rust_qecp`indexmap::map::IndexMap&lt;K,V,S&gt;::hash (33 samples, 0.05%)</title><rect x="8.0947%" y="101" width="0.0501%" height="15" fill="rgb(231,60,39)" fg:x="5329" fg:w="33"/><text x="8.3447%" y="111.50"></text></g><g><title>rust_qecp`indexmap::map::core::VacantEntry&lt;K,V&gt;::insert (41 samples, 0.06%)</title><rect x="8.1449%" y="101" width="0.0623%" height="15" fill="rgb(208,69,12)" fg:x="5362" fg:w="41"/><text x="8.3949%" y="111.50"></text></g><g><title>rust_qecp`hashbrown::raw::inner::RawTable&lt;T,A&gt;::insert (26 samples, 0.04%)</title><rect x="8.1676%" y="85" width="0.0395%" height="15" fill="rgb(235,93,37)" fg:x="5377" fg:w="26"/><text x="8.4176%" y="95.50"></text></g><g><title>rust_qecp`hashbrown::raw::inner::RawTable&lt;T,A&gt;::reserve_rehash (9 samples, 0.01%)</title><rect x="8.1935%" y="69" width="0.0137%" height="15" fill="rgb(213,116,39)" fg:x="5394" fg:w="9"/><text x="8.4435%" y="79.50"></text></g><g><title>rust_qecp`indexmap::map::core::raw::_&lt;impl indexmap::map::core::IndexMapCore&lt;K,V&gt;&gt;::entry (16 samples, 0.02%)</title><rect x="8.2071%" y="101" width="0.0243%" height="15" fill="rgb(222,207,29)" fg:x="5403" fg:w="16"/><text x="8.4571%" y="111.50"></text></g><g><title>rust_qecp`priority_queue::priority_queue::PriorityQueue&lt;I,P,H&gt;::bubble_up (31 samples, 0.05%)</title><rect x="8.2314%" y="101" width="0.0471%" height="15" fill="rgb(206,96,30)" fg:x="5419" fg:w="31"/><text x="8.4814%" y="111.50"></text></g><g><title>rust_qecp`priority_queue::priority_queue::PriorityQueue&lt;I,P,H&gt;::push (252 samples, 0.38%)</title><rect x="7.9018%" y="117" width="0.3828%" height="15" fill="rgb(218,138,4)" fg:x="5202" fg:w="252"/><text x="8.1518%" y="127.50"></text></g><g><title>rust_qecp`priority_queue::priority_queue::left (38 samples, 0.06%)</title><rect x="8.2846%" y="117" width="0.0577%" height="15" fill="rgb(250,191,14)" fg:x="5454" fg:w="38"/><text x="8.5346%" y="127.50"></text></g><g><title>rust_qecp`priority_queue::priority_queue::right (22 samples, 0.03%)</title><rect x="8.3423%" y="117" width="0.0334%" height="15" fill="rgb(239,60,40)" fg:x="5492" fg:w="22"/><text x="8.5923%" y="127.50"></text></g><g><title>rust_qecp`rust_qecp::complete_model_graph::CompleteModelGraph::precompute (5,120 samples, 7.78%)</title><rect x="0.6258%" y="133" width="7.7773%" height="15" fill="rgb(206,27,48)" fg:x="412" fg:w="5120"/><text x="0.8758%" y="143.50">rust_qecp`r..</text></g><g><title>rust_qecp`priority_queue::store::Store&lt;I,P,H&gt;::swap_remove (18 samples, 0.03%)</title><rect x="8.3757%" y="117" width="0.0273%" height="15" fill="rgb(225,35,8)" fg:x="5514" fg:w="18"/><text x="8.6257%" y="127.50"></text></g><g><title>libsystem_malloc.dylib`free (7 samples, 0.01%)</title><rect x="8.4198%" y="117" width="0.0106%" height="15" fill="rgb(250,213,24)" fg:x="5543" fg:w="7"/><text x="8.6698%" y="127.50"></text></g><g><title>rust_qecp`alloc::collections::btree::navigate::LazyLeafRange&lt;BorrowType,K,V&gt;::init_front (26 samples, 0.04%)</title><rect x="8.4411%" y="117" width="0.0395%" height="15" fill="rgb(247,123,22)" fg:x="5557" fg:w="26"/><text x="8.6911%" y="127.50"></text></g><g><title>rust_qecp`alloc::sync::Arc&lt;T&gt;::drop_slow (7 samples, 0.01%)</title><rect x="8.4927%" y="117" width="0.0106%" height="15" fill="rgb(231,138,38)" fg:x="5591" fg:w="7"/><text x="8.7427%" y="127.50"></text></g><g><title>rust_qecp`&lt;alloc::collections::btree::map::BTreeMap&lt;K,V&gt; as core::ops::drop::Drop&gt;::drop (7 samples, 0.01%)</title><rect x="8.4927%" y="101" width="0.0106%" height="15" fill="rgb(231,145,46)" fg:x="5591" fg:w="7"/><text x="8.7427%" y="111.50"></text></g><g><title>rust_qecp`rust_qecp::model_graph::ModelGraph::add_edge_between (11 samples, 0.02%)</title><rect x="8.5033%" y="117" width="0.0167%" height="15" fill="rgb(251,118,11)" fg:x="5598" fg:w="11"/><text x="8.7533%" y="127.50"></text></g><g><title>rust_qecp`rust_qecp::model_graph::ModelGraph::add_edge (11 samples, 0.02%)</title><rect x="8.5033%" y="101" width="0.0167%" height="15" fill="rgb(217,147,25)" fg:x="5598" fg:w="11"/><text x="8.7533%" y="111.50"></text></g><g><title>libsystem_malloc.dylib`free (9 samples, 0.01%)</title><rect x="8.8011%" y="101" width="0.0137%" height="15" fill="rgb(247,81,37)" fg:x="5794" fg:w="9"/><text x="9.0511%" y="111.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (7 samples, 0.01%)</title><rect x="8.8406%" y="85" width="0.0106%" height="15" fill="rgb(209,12,38)" fg:x="5820" fg:w="7"/><text x="9.0906%" y="95.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (7 samples, 0.01%)</title><rect x="8.8406%" y="69" width="0.0106%" height="15" fill="rgb(227,1,9)" fg:x="5820" fg:w="7"/><text x="9.0906%" y="79.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_should_clear (7 samples, 0.01%)</title><rect x="8.8406%" y="53" width="0.0106%" height="15" fill="rgb(248,47,43)" fg:x="5820" fg:w="7"/><text x="9.0906%" y="63.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::BTreeMap&lt;K,V&gt;::insert (25 samples, 0.04%)</title><rect x="8.8223%" y="101" width="0.0380%" height="15" fill="rgb(221,10,30)" fg:x="5808" fg:w="25"/><text x="9.0723%" y="111.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (7 samples, 0.01%)</title><rect x="8.8694%" y="69" width="0.0106%" height="15" fill="rgb(210,229,1)" fg:x="5839" fg:w="7"/><text x="9.1194%" y="79.50"></text></g><g><title>rust_qecp`alloc::raw_vec::RawVec&lt;T,A&gt;::reserve_for_push (10 samples, 0.02%)</title><rect x="8.8664%" y="101" width="0.0152%" height="15" fill="rgb(222,148,37)" fg:x="5837" fg:w="10"/><text x="9.1164%" y="111.50"></text></g><g><title>rust_qecp`alloc::raw_vec::finish_grow (8 samples, 0.01%)</title><rect x="8.8694%" y="85" width="0.0122%" height="15" fill="rgb(234,67,33)" fg:x="5839" fg:w="8"/><text x="9.1194%" y="95.50"></text></g><g><title>rust_qecp`rust_qecp::simulator::Simulator::fast_measurement_given_few_errors (278 samples, 0.42%)</title><rect x="8.5200%" y="117" width="0.4223%" height="15" fill="rgb(247,98,35)" fg:x="5609" fg:w="278"/><text x="8.7700%" y="127.50"></text></g><g><title>rust_qecp`rust_qecp::simulator::Simulator::propagate_error_from (40 samples, 0.06%)</title><rect x="8.8816%" y="101" width="0.0608%" height="15" fill="rgb(247,138,52)" fg:x="5847" fg:w="40"/><text x="9.1316%" y="111.50"></text></g><g><title>rust_qecp`rust_qecp::decoder_mwpm::MWPMDecoder::new (5,766 samples, 8.76%)</title><rect x="0.1960%" y="149" width="8.7585%" height="15" fill="rgb(213,79,30)" fg:x="129" fg:w="5766"/><text x="0.4460%" y="159.50">rust_qecp`ru..</text></g><g><title>rust_qecp`rust_qecp::model_graph::ModelGraph::build (363 samples, 0.55%)</title><rect x="8.4031%" y="133" width="0.5514%" height="15" fill="rgb(246,177,23)" fg:x="5532" fg:w="363"/><text x="8.6531%" y="143.50"></text></g><g><title>rust_qecp`rust_qecp::tool::benchmark::_{{closure}} (7 samples, 0.01%)</title><rect x="8.9575%" y="149" width="0.0106%" height="15" fill="rgb(230,62,27)" fg:x="5897" fg:w="7"/><text x="9.2075%" y="159.50"></text></g><g><title>rust_qecp`alloc::fmt::format (7 samples, 0.01%)</title><rect x="8.9575%" y="133" width="0.0106%" height="15" fill="rgb(216,154,8)" fg:x="5897" fg:w="7"/><text x="9.2075%" y="143.50"></text></g><g><title>rust_qecp`core::fmt::write (7 samples, 0.01%)</title><rect x="8.9575%" y="117" width="0.0106%" height="15" fill="rgb(244,35,45)" fg:x="5897" fg:w="7"/><text x="9.2075%" y="127.50"></text></g><g><title>dyld`start (5,908 samples, 8.97%)</title><rect x="0.0000%" y="389" width="8.9742%" height="15" fill="rgb(251,115,12)" fg:x="0" fg:w="5908"/><text x="0.2500%" y="399.50">dyld`start</text></g><g><title>rust_qecp`main (5,907 samples, 8.97%)</title><rect x="0.0015%" y="373" width="8.9727%" height="15" fill="rgb(240,54,50)" fg:x="1" fg:w="5907"/><text x="0.2515%" y="383.50">rust_qecp`main</text></g><g><title>rust_qecp`std::rt::lang_start_internal (5,907 samples, 8.97%)</title><rect x="0.0015%" y="357" width="8.9727%" height="15" fill="rgb(233,84,52)" fg:x="1" fg:w="5907"/><text x="0.2515%" y="367.50">rust_qecp`std..</text></g><g><title>rust_qecp`std::rt::lang_start::_{{closure}} (5,907 samples, 8.97%)</title><rect x="0.0015%" y="341" width="8.9727%" height="15" fill="rgb(207,117,47)" fg:x="1" fg:w="5907"/><text x="0.2515%" y="351.50">rust_qecp`std..</text></g><g><title>rust_qecp`std::sys_common::backtrace::__rust_begin_short_backtrace (5,907 samples, 8.97%)</title><rect x="0.0015%" y="325" width="8.9727%" height="15" fill="rgb(249,43,39)" fg:x="1" fg:w="5907"/><text x="0.2515%" y="335.50">rust_qecp`std..</text></g><g><title>rust_qecp`rust_qecp::main (5,907 samples, 8.97%)</title><rect x="0.0015%" y="309" width="8.9727%" height="15" fill="rgb(209,38,44)" fg:x="1" fg:w="5907"/><text x="0.2515%" y="319.50">rust_qecp`rus..</text></g><g><title>rust_qecp`tokio::task::local::LocalSet::block_on (5,907 samples, 8.97%)</title><rect x="0.0015%" y="293" width="8.9727%" height="15" fill="rgb(236,212,23)" fg:x="1" fg:w="5907"/><text x="0.2515%" y="303.50">rust_qecp`tok..</text></g><g><title>rust_qecp`tokio::runtime::basic_scheduler::BasicScheduler::block_on (5,907 samples, 8.97%)</title><rect x="0.0015%" y="277" width="8.9727%" height="15" fill="rgb(242,79,21)" fg:x="1" fg:w="5907"/><text x="0.2515%" y="287.50">rust_qecp`tok..</text></g><g><title>rust_qecp`tokio::macros::scoped_tls::ScopedKey&lt;T&gt;::set (5,907 samples, 8.97%)</title><rect x="0.0015%" y="261" width="8.9727%" height="15" fill="rgb(211,96,35)" fg:x="1" fg:w="5907"/><text x="0.2515%" y="271.50">rust_qecp`tok..</text></g><g><title>rust_qecp`tokio::runtime::basic_scheduler::Context::enter (5,907 samples, 8.97%)</title><rect x="0.0015%" y="245" width="8.9727%" height="15" fill="rgb(253,215,40)" fg:x="1" fg:w="5907"/><text x="0.2515%" y="255.50">rust_qecp`tok..</text></g><g><title>rust_qecp`&lt;core::future::from_generator::GenFuture&lt;T&gt; as core::future::future::Future&gt;::poll (5,907 samples, 8.97%)</title><rect x="0.0015%" y="229" width="8.9727%" height="15" fill="rgb(211,81,21)" fg:x="1" fg:w="5907"/><text x="0.2515%" y="239.50">rust_qecp`&lt;co..</text></g><g><title>rust_qecp`tokio::macros::scoped_tls::ScopedKey&lt;T&gt;::set (5,907 samples, 8.97%)</title><rect x="0.0015%" y="213" width="8.9727%" height="15" fill="rgb(208,190,38)" fg:x="1" fg:w="5907"/><text x="0.2515%" y="223.50">rust_qecp`tok..</text></g><g><title>rust_qecp`&lt;core::future::from_generator::GenFuture&lt;T&gt; as core::future::future::Future&gt;::poll (5,907 samples, 8.97%)</title><rect x="0.0015%" y="197" width="8.9727%" height="15" fill="rgb(235,213,38)" fg:x="1" fg:w="5907"/><text x="0.2515%" y="207.50">rust_qecp`&lt;co..</text></g><g><title>rust_qecp`rust_qecp::tool::run_matched_tool (5,907 samples, 8.97%)</title><rect x="0.0015%" y="181" width="8.9727%" height="15" fill="rgb(237,122,38)" fg:x="1" fg:w="5907"/><text x="0.2515%" y="191.50">rust_qecp`rus..</text></g><g><title>rust_qecp`rust_qecp::tool::benchmark (5,907 samples, 8.97%)</title><rect x="0.0015%" y="165" width="8.9727%" height="15" fill="rgb(244,218,35)" fg:x="1" fg:w="5907"/><text x="0.2515%" y="175.50">rust_qecp`rus..</text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (16 samples, 0.02%)</title><rect x="9.0122%" y="261" width="0.0243%" height="15" fill="rgb(240,68,47)" fg:x="5933" fg:w="16"/><text x="9.2622%" y="271.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (15 samples, 0.02%)</title><rect x="9.0137%" y="245" width="0.0228%" height="15" fill="rgb(210,16,53)" fg:x="5934" fg:w="15"/><text x="9.2637%" y="255.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_should_clear (13 samples, 0.02%)</title><rect x="9.0168%" y="229" width="0.0197%" height="15" fill="rgb(235,124,12)" fg:x="5936" fg:w="13"/><text x="9.2668%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_from_free_list (8 samples, 0.01%)</title><rect x="9.0243%" y="213" width="0.0122%" height="15" fill="rgb(224,169,11)" fg:x="5941" fg:w="8"/><text x="9.2743%" y="223.50"></text></g><g><title>rust_qecp`&lt;alloc::collections::btree::map::BTreeMap&lt;K,V&gt; as core::clone::Clone&gt;::clone::clone_subtree (28 samples, 0.04%)</title><rect x="8.9970%" y="309" width="0.0425%" height="15" fill="rgb(250,166,2)" fg:x="5923" fg:w="28"/><text x="9.2470%" y="319.50"></text></g><g><title>rust_qecp`&lt;alloc::collections::btree::map::BTreeMap&lt;K,V&gt; as core::clone::Clone&gt;::clone::clone_subtree (25 samples, 0.04%)</title><rect x="9.0016%" y="293" width="0.0380%" height="15" fill="rgb(242,216,29)" fg:x="5926" fg:w="25"/><text x="9.2516%" y="303.50"></text></g><g><title>rust_qecp`&lt;alloc::collections::btree::map::BTreeMap&lt;K,V&gt; as core::clone::Clone&gt;::clone::clone_subtree (18 samples, 0.03%)</title><rect x="9.0122%" y="277" width="0.0273%" height="15" fill="rgb(230,116,27)" fg:x="5933" fg:w="18"/><text x="9.2622%" y="287.50"></text></g><g><title>libsystem_malloc.dylib`free (8 samples, 0.01%)</title><rect x="9.0487%" y="293" width="0.0122%" height="15" fill="rgb(228,99,48)" fg:x="5957" fg:w="8"/><text x="9.2987%" y="303.50"></text></g><g><title>libsystem_malloc.dylib`free_tiny (8 samples, 0.01%)</title><rect x="9.0608%" y="293" width="0.0122%" height="15" fill="rgb(253,11,6)" fg:x="5965" fg:w="8"/><text x="9.3108%" y="303.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_no_lock (7 samples, 0.01%)</title><rect x="9.0623%" y="277" width="0.0106%" height="15" fill="rgb(247,143,39)" fg:x="5966" fg:w="7"/><text x="9.3123%" y="287.50"></text></g><g><title>libsystem_malloc.dylib`free (11 samples, 0.02%)</title><rect x="9.1094%" y="277" width="0.0167%" height="15" fill="rgb(236,97,10)" fg:x="5997" fg:w="11"/><text x="9.3594%" y="287.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_list_add_ptr (8 samples, 0.01%)</title><rect x="9.1550%" y="245" width="0.0122%" height="15" fill="rgb(233,208,19)" fg:x="6027" fg:w="8"/><text x="9.4050%" y="255.50"></text></g><g><title>libsystem_malloc.dylib`free_tiny (37 samples, 0.06%)</title><rect x="9.1261%" y="277" width="0.0562%" height="15" fill="rgb(216,164,2)" fg:x="6008" fg:w="37"/><text x="9.3761%" y="287.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_no_lock (34 samples, 0.05%)</title><rect x="9.1307%" y="261" width="0.0516%" height="15" fill="rgb(220,129,5)" fg:x="6011" fg:w="34"/><text x="9.3807%" y="271.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_list_remove_ptr (10 samples, 0.02%)</title><rect x="9.1671%" y="245" width="0.0152%" height="15" fill="rgb(242,17,10)" fg:x="6035" fg:w="10"/><text x="9.4171%" y="255.50"></text></g><g><title>rust_qecp`&lt;alloc::collections::btree::map::BTreeMap&lt;K,V&gt; as core::ops::drop::Drop&gt;::drop (102 samples, 0.15%)</title><rect x="9.0395%" y="309" width="0.1549%" height="15" fill="rgb(242,107,0)" fg:x="5951" fg:w="102"/><text x="9.2895%" y="319.50"></text></g><g><title>rust_qecp`alloc::collections::btree::navigate::_&lt;impl alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Dying,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;&gt;::deallocating_next_unchecked (78 samples, 0.12%)</title><rect x="9.0760%" y="293" width="0.1185%" height="15" fill="rgb(251,28,31)" fg:x="5975" fg:w="78"/><text x="9.3260%" y="303.50"></text></g><g><title>rust_qecp`rust_qecp::complete_model_graph::CompleteModelGraph::build_correction_matching (24 samples, 0.04%)</title><rect x="9.2203%" y="309" width="0.0365%" height="15" fill="rgb(233,223,10)" fg:x="6070" fg:w="24"/><text x="9.4703%" y="319.50"></text></g><g><title>libsystem_malloc.dylib`free (45 samples, 0.07%)</title><rect x="10.8380%" y="293" width="0.0684%" height="15" fill="rgb(215,21,27)" fg:x="7135" fg:w="45"/><text x="11.0880%" y="303.50"></text></g><g><title>libsystem_malloc.dylib`szone_size (15 samples, 0.02%)</title><rect x="10.8836%" y="277" width="0.0228%" height="15" fill="rgb(232,23,21)" fg:x="7165" fg:w="15"/><text x="11.1336%" y="287.50"></text></g><g><title>libsystem_malloc.dylib`tiny_size (15 samples, 0.02%)</title><rect x="10.8836%" y="261" width="0.0228%" height="15" fill="rgb(244,5,23)" fg:x="7165" fg:w="15"/><text x="11.1336%" y="271.50"></text></g><g><title>libsystem_malloc.dylib`free_small (27 samples, 0.04%)</title><rect x="10.9064%" y="293" width="0.0410%" height="15" fill="rgb(226,81,46)" fg:x="7180" fg:w="27"/><text x="11.1564%" y="303.50"></text></g><g><title>libsystem_malloc.dylib`free_tiny (8 samples, 0.01%)</title><rect x="10.9474%" y="293" width="0.0122%" height="15" fill="rgb(247,70,30)" fg:x="7207" fg:w="8"/><text x="11.1974%" y="303.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_no_lock (8 samples, 0.01%)</title><rect x="10.9474%" y="277" width="0.0122%" height="15" fill="rgb(212,68,19)" fg:x="7207" fg:w="8"/><text x="11.1974%" y="287.50"></text></g><g><title>libsystem_malloc.dylib`free (8 samples, 0.01%)</title><rect x="10.9732%" y="277" width="0.0122%" height="15" fill="rgb(240,187,13)" fg:x="7224" fg:w="8"/><text x="11.2232%" y="287.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_list_add_ptr (10 samples, 0.02%)</title><rect x="11.0006%" y="245" width="0.0152%" height="15" fill="rgb(223,113,26)" fg:x="7242" fg:w="10"/><text x="11.2506%" y="255.50"></text></g><g><title>libsystem_malloc.dylib`free_tiny (21 samples, 0.03%)</title><rect x="10.9854%" y="277" width="0.0319%" height="15" fill="rgb(206,192,2)" fg:x="7232" fg:w="21"/><text x="11.2354%" y="287.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_no_lock (16 samples, 0.02%)</title><rect x="10.9930%" y="261" width="0.0243%" height="15" fill="rgb(241,108,4)" fg:x="7237" fg:w="16"/><text x="11.2430%" y="271.50"></text></g><g><title>rust_qecp`&lt;alloc::collections::btree::map::BTreeMap&lt;K,V&gt; as core::ops::drop::Drop&gt;::drop (41 samples, 0.06%)</title><rect x="10.9687%" y="293" width="0.0623%" height="15" fill="rgb(247,173,49)" fg:x="7221" fg:w="41"/><text x="11.2187%" y="303.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::BTreeMap&lt;K,V&gt;::insert (8 samples, 0.01%)</title><rect x="11.0446%" y="293" width="0.0122%" height="15" fill="rgb(224,114,35)" fg:x="7271" fg:w="8"/><text x="11.2946%" y="303.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::entry::VacantEntry&lt;K,V&gt;::insert (8 samples, 0.01%)</title><rect x="11.0568%" y="293" width="0.0122%" height="15" fill="rgb(245,159,27)" fg:x="7279" fg:w="8"/><text x="11.3068%" y="303.50"></text></g><g><title>rust_qecp`alloc::collections::btree::navigate::_&lt;impl alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Immut,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;&gt;::next_unchecked (15 samples, 0.02%)</title><rect x="11.0750%" y="293" width="0.0228%" height="15" fill="rgb(245,172,44)" fg:x="7291" fg:w="15"/><text x="11.3250%" y="303.50"></text></g><g><title>libsystem_malloc.dylib`szone_realloc (13 samples, 0.02%)</title><rect x="11.1145%" y="229" width="0.0197%" height="15" fill="rgb(236,23,11)" fg:x="7317" fg:w="13"/><text x="11.3645%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`malloc_zone_realloc (64 samples, 0.10%)</title><rect x="11.1084%" y="245" width="0.0972%" height="15" fill="rgb(205,117,38)" fg:x="7313" fg:w="64"/><text x="11.3584%" y="255.50"></text></g><g><title>libsystem_platform.dylib`_platform_memmove (46 samples, 0.07%)</title><rect x="11.1358%" y="229" width="0.0699%" height="15" fill="rgb(237,72,25)" fg:x="7331" fg:w="46"/><text x="11.3858%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`realloc (68 samples, 0.10%)</title><rect x="11.1084%" y="261" width="0.1033%" height="15" fill="rgb(244,70,9)" fg:x="7313" fg:w="68"/><text x="11.3584%" y="271.50"></text></g><g><title>rust_qecp`alloc::raw_vec::RawVec&lt;T,A&gt;::reserve_for_push (76 samples, 0.12%)</title><rect x="11.0978%" y="293" width="0.1154%" height="15" fill="rgb(217,125,39)" fg:x="7306" fg:w="76"/><text x="11.3478%" y="303.50"></text></g><g><title>rust_qecp`alloc::raw_vec::finish_grow (70 samples, 0.11%)</title><rect x="11.1069%" y="277" width="0.1063%" height="15" fill="rgb(235,36,10)" fg:x="7312" fg:w="70"/><text x="11.3569%" y="287.50"></text></g><g><title>libsystem_kernel.dylib`madvise (635 samples, 0.96%)</title><rect x="15.9783%" y="261" width="0.9646%" height="15" fill="rgb(251,123,47)" fg:x="10519" fg:w="635"/><text x="16.2283%" y="271.50"></text></g><g><title>libsystem_malloc.dylib`free_medium (643 samples, 0.98%)</title><rect x="15.9677%" y="277" width="0.9767%" height="15" fill="rgb(221,13,13)" fg:x="10512" fg:w="643"/><text x="16.2177%" y="287.50"></text></g><g><title>rust_qecp`PerfectMatching::AddEdge (482 samples, 0.73%)</title><rect x="16.9444%" y="277" width="0.7322%" height="15" fill="rgb(238,131,9)" fg:x="11155" fg:w="482"/><text x="17.1944%" y="287.50"></text></g><g><title>libsystem_kernel.dylib`getrusage (17 samples, 0.03%)</title><rect x="17.8831%" y="261" width="0.0258%" height="15" fill="rgb(211,50,8)" fg:x="11773" fg:w="17"/><text x="18.1331%" y="271.50"></text></g><g><title>rust_qecp`PerfectMatching::AddEdge (2,729 samples, 4.15%)</title><rect x="17.9241%" y="261" width="4.1453%" height="15" fill="rgb(245,182,24)" fg:x="11800" fg:w="2729"/><text x="18.1741%" y="271.50">rust_..</text></g><g><title>rust_qecp`PerfectMatching::Finish (23 samples, 0.03%)</title><rect x="22.0710%" y="261" width="0.0349%" height="15" fill="rgb(242,14,37)" fg:x="14530" fg:w="23"/><text x="22.3210%" y="271.50"></text></g><g><title>rust_qecp`PerfectMatching::ProcessEdge00 (267 samples, 0.41%)</title><rect x="22.1150%" y="261" width="0.4056%" height="15" fill="rgb(246,228,12)" fg:x="14559" fg:w="267"/><text x="22.3650%" y="271.50"></text></g><g><title>libsystem_kernel.dylib`getrusage (274 samples, 0.42%)</title><rect x="22.6786%" y="245" width="0.4162%" height="15" fill="rgb(213,55,15)" fg:x="14930" fg:w="274"/><text x="22.9286%" y="255.50"></text></g><g><title>rust_qecp`PerfectMatching::Augment (85 samples, 0.13%)</title><rect x="23.0948%" y="245" width="0.1291%" height="15" fill="rgb(209,9,3)" fg:x="15204" fg:w="85"/><text x="23.3448%" y="255.50"></text></g><g><title>rust_qecp`PerfectMatching::AugmentBranch (84 samples, 0.13%)</title><rect x="23.0963%" y="229" width="0.1276%" height="15" fill="rgb(230,59,30)" fg:x="15205" fg:w="84"/><text x="23.3463%" y="239.50"></text></g><g><title>rust_qecp`PerfectMatching::Expand (1,387 samples, 2.11%)</title><rect x="23.2254%" y="245" width="2.1068%" height="15" fill="rgb(209,121,21)" fg:x="15290" fg:w="1387"/><text x="23.4754%" y="255.50">r..</text></g><g><title>rust_qecp`PerfectMatching::AugmentBranch (50 samples, 0.08%)</title><rect x="26.9774%" y="197" width="0.0759%" height="15" fill="rgb(220,109,13)" fg:x="17760" fg:w="50"/><text x="27.2274%" y="207.50"></text></g><g><title>rust_qecp`PerfectMatching::GrowNode (470 samples, 0.71%)</title><rect x="26.3500%" y="229" width="0.7139%" height="15" fill="rgb(232,18,1)" fg:x="17347" fg:w="470"/><text x="26.6000%" y="239.50"></text></g><g><title>rust_qecp`PerfectMatching::Augment (57 samples, 0.09%)</title><rect x="26.9774%" y="213" width="0.0866%" height="15" fill="rgb(215,41,42)" fg:x="17760" fg:w="57"/><text x="27.2274%" y="223.50"></text></g><g><title>rust_qecp`PerfectMatching::ProcessEdge00 (7 samples, 0.01%)</title><rect x="27.0533%" y="197" width="0.0106%" height="15" fill="rgb(224,123,36)" fg:x="17810" fg:w="7"/><text x="27.3033%" y="207.50"></text></g><g><title>rust_qecp`PerfectMatching::GrowTree (1,235 samples, 1.88%)</title><rect x="25.3338%" y="245" width="1.8760%" height="15" fill="rgb(240,125,3)" fg:x="16678" fg:w="1235"/><text x="25.5838%" y="255.50">r..</text></g><g><title>rust_qecp`PriorityQueue&lt;int&gt;::_Remove(PriorityQueue (96 samples, 0.15%)</title><rect x="27.0639%" y="229" width="0.1458%" height="15" fill="rgb(205,98,50)" fg:x="17817" fg:w="96"/><text x="27.3139%" y="239.50"></text></g><g><title>rust_qecp`PerfectMatching::InitGreedy (3,327 samples, 5.05%)</title><rect x="27.3981%" y="229" width="5.0537%" height="15" fill="rgb(205,185,37)" fg:x="18037" fg:w="3327"/><text x="27.6481%" y="239.50">rust_q..</text></g><g><title>rust_qecp`PerfectMatching::InitGlobal (3,452 samples, 5.24%)</title><rect x="27.2098%" y="245" width="5.2436%" height="15" fill="rgb(238,207,15)" fg:x="17913" fg:w="3452"/><text x="27.4598%" y="255.50">rust_q..</text></g><g><title>rust_qecp`PerfectMatching::AugmentBranch (28 samples, 0.04%)</title><rect x="35.7495%" y="213" width="0.0425%" height="15" fill="rgb(213,199,42)" fg:x="23535" fg:w="28"/><text x="35.9995%" y="223.50"></text></g><g><title>rust_qecp`PerfectMatching::Augment (34 samples, 0.05%)</title><rect x="35.7495%" y="229" width="0.0516%" height="15" fill="rgb(235,201,11)" fg:x="23535" fg:w="34"/><text x="35.9995%" y="239.50"></text></g><g><title>rust_qecp`PerfectMatching::Shrink (2,208 samples, 3.35%)</title><rect x="32.4533%" y="245" width="3.3539%" height="15" fill="rgb(207,46,11)" fg:x="21365" fg:w="2208"/><text x="32.7033%" y="255.50">rus..</text></g><g><title>rust_qecp`PerfectMatching::Solve (8,834 samples, 13.42%)</title><rect x="22.5206%" y="261" width="13.4188%" height="15" fill="rgb(241,35,35)" fg:x="14826" fg:w="8834"/><text x="22.7706%" y="271.50">rust_qecp`PerfectMat..</text></g><g><title>rust_qecp`PriorityQueue&lt;int&gt;::_Remove(PriorityQueue (87 samples, 0.13%)</title><rect x="35.8073%" y="245" width="0.1322%" height="15" fill="rgb(243,32,47)" fg:x="23573" fg:w="87"/><text x="36.0573%" y="255.50"></text></g><g><title>libsystem_malloc.dylib`free_medium (213 samples, 0.32%)</title><rect x="35.9425%" y="245" width="0.3235%" height="15" fill="rgb(247,202,23)" fg:x="23662" fg:w="213"/><text x="36.1925%" y="255.50"></text></g><g><title>libsystem_kernel.dylib`madvise (211 samples, 0.32%)</title><rect x="35.9455%" y="229" width="0.3205%" height="15" fill="rgb(219,102,11)" fg:x="23664" fg:w="211"/><text x="36.1955%" y="239.50"></text></g><g><title>rust_qecp`PerfectMatching::~PerfectMatching (217 samples, 0.33%)</title><rect x="35.9394%" y="261" width="0.3296%" height="15" fill="rgb(243,110,44)" fg:x="23660" fg:w="217"/><text x="36.1894%" y="271.50"></text></g><g><title>rust_qecp`rust_qecp::blossom_v::safe_minimum_weight_perfect_matching (16,579 samples, 25.18%)</title><rect x="11.2147%" y="293" width="25.1834%" height="15" fill="rgb(222,74,54)" fg:x="7383" fg:w="16579"/><text x="11.4647%" y="303.50">rust_qecp`rust_qecp::blossom_v::safe_min..</text></g><g><title>rust_qecp`minimum_weight_perfect_matching (12,323 samples, 18.72%)</title><rect x="17.6796%" y="277" width="18.7186%" height="15" fill="rgb(216,99,12)" fg:x="11639" fg:w="12323"/><text x="17.9296%" y="287.50">rust_qecp`minimum_weight_perf..</text></g><g><title>rust_qecp`PriorityQueue&lt;int&gt;::_Remove(PriorityQueue (85 samples, 0.13%)</title><rect x="36.2690%" y="261" width="0.1291%" height="15" fill="rgb(226,22,26)" fg:x="23877" fg:w="85"/><text x="36.5190%" y="271.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (8 samples, 0.01%)</title><rect x="36.4088%" y="245" width="0.0122%" height="15" fill="rgb(217,163,10)" fg:x="23969" fg:w="8"/><text x="36.6588%" y="255.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::entry::VacantEntry&lt;K,V&gt;::insert (21 samples, 0.03%)</title><rect x="36.4255%" y="245" width="0.0319%" height="15" fill="rgb(213,25,53)" fg:x="23980" fg:w="21"/><text x="36.6755%" y="255.50"></text></g><g><title>rust_qecp`alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Mut,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;::insert_recursing (12 samples, 0.02%)</title><rect x="36.4392%" y="229" width="0.0182%" height="15" fill="rgb(252,105,26)" fg:x="23989" fg:w="12"/><text x="36.6892%" y="239.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::BTreeMap&lt;K,V&gt;::insert (35 samples, 0.05%)</title><rect x="36.4073%" y="261" width="0.0532%" height="15" fill="rgb(220,39,43)" fg:x="23968" fg:w="35"/><text x="36.6573%" y="271.50"></text></g><g><title>rust_qecp`rust_qecp::complete_model_graph::CompleteModelGraph::build_correction_boundary (47 samples, 0.07%)</title><rect x="36.3982%" y="293" width="0.0714%" height="15" fill="rgb(229,68,48)" fg:x="23962" fg:w="47"/><text x="36.6482%" y="303.50"></text></g><g><title>rust_qecp`rust_qecp::simulator::SparseErrorPattern::add (41 samples, 0.06%)</title><rect x="36.4073%" y="277" width="0.0623%" height="15" fill="rgb(252,8,32)" fg:x="23968" fg:w="41"/><text x="36.6573%" y="287.50"></text></g><g><title>libsystem_malloc.dylib`set_tiny_meta_header_in_use (12 samples, 0.02%)</title><rect x="37.6073%" y="229" width="0.0182%" height="15" fill="rgb(223,20,43)" fg:x="24758" fg:w="12"/><text x="37.8573%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (44 samples, 0.07%)</title><rect x="37.5784%" y="261" width="0.0668%" height="15" fill="rgb(229,81,49)" fg:x="24739" fg:w="44"/><text x="37.8284%" y="271.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_should_clear (41 samples, 0.06%)</title><rect x="37.5830%" y="245" width="0.0623%" height="15" fill="rgb(236,28,36)" fg:x="24742" fg:w="41"/><text x="37.8330%" y="255.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_from_free_list (13 samples, 0.02%)</title><rect x="37.6255%" y="229" width="0.0197%" height="15" fill="rgb(249,185,26)" fg:x="24770" fg:w="13"/><text x="37.8755%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (55 samples, 0.08%)</title><rect x="37.5663%" y="277" width="0.0835%" height="15" fill="rgb(249,174,33)" fg:x="24731" fg:w="55"/><text x="37.8163%" y="287.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::entry::VacantEntry&lt;K,V&gt;::insert (89 samples, 0.14%)</title><rect x="37.6559%" y="277" width="0.1352%" height="15" fill="rgb(233,201,37)" fg:x="24790" fg:w="89"/><text x="37.9059%" y="287.50"></text></g><g><title>rust_qecp`alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Mut,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;::insert_recursing (48 samples, 0.07%)</title><rect x="37.7182%" y="261" width="0.0729%" height="15" fill="rgb(221,78,26)" fg:x="24831" fg:w="48"/><text x="37.9682%" y="271.50"></text></g><g><title>rust_qecp`rust_qecp::complete_model_graph::CompleteModelGraph::build_correction_matching (968 samples, 1.47%)</title><rect x="36.4696%" y="293" width="1.4704%" height="15" fill="rgb(250,127,30)" fg:x="24009" fg:w="968"/><text x="36.7196%" y="303.50"></text></g><g><title>rust_qecp`alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Mut,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;::insert_recursing (96 samples, 0.15%)</title><rect x="37.7941%" y="277" width="0.1458%" height="15" fill="rgb(230,49,44)" fg:x="24881" fg:w="96"/><text x="38.0441%" y="287.50"></text></g><g><title>rust_qecp`DYLD-STUB$$realloc (7 samples, 0.01%)</title><rect x="78.8510%" y="261" width="0.0106%" height="15" fill="rgb(229,67,23)" fg:x="51910" fg:w="7"/><text x="79.1010%" y="271.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_allocate (11 samples, 0.02%)</title><rect x="78.8936%" y="213" width="0.0167%" height="15" fill="rgb(249,83,47)" fg:x="51938" fg:w="11"/><text x="79.1436%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (26 samples, 0.04%)</title><rect x="78.8723%" y="245" width="0.0395%" height="15" fill="rgb(215,43,3)" fg:x="51924" fg:w="26"/><text x="79.1223%" y="255.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_malloc (17 samples, 0.03%)</title><rect x="78.8860%" y="229" width="0.0258%" height="15" fill="rgb(238,154,13)" fg:x="51933" fg:w="17"/><text x="79.1360%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_size (7 samples, 0.01%)</title><rect x="78.9315%" y="245" width="0.0106%" height="15" fill="rgb(219,56,2)" fg:x="51963" fg:w="7"/><text x="79.1815%" y="255.50"></text></g><g><title>libsystem_malloc.dylib`default_zone_realloc (12 samples, 0.02%)</title><rect x="78.9953%" y="229" width="0.0182%" height="15" fill="rgb(233,0,4)" fg:x="52005" fg:w="12"/><text x="79.2453%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_free (8 samples, 0.01%)</title><rect x="79.0363%" y="213" width="0.0122%" height="15" fill="rgb(235,30,7)" fg:x="52032" fg:w="8"/><text x="79.2863%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_pointer_size (31 samples, 0.05%)</title><rect x="79.0591%" y="213" width="0.0471%" height="15" fill="rgb(250,79,13)" fg:x="52047" fg:w="31"/><text x="79.3091%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_free (7 samples, 0.01%)</title><rect x="79.1503%" y="197" width="0.0106%" height="15" fill="rgb(211,146,34)" fg:x="52107" fg:w="7"/><text x="79.4003%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_free_to_block (95 samples, 0.14%)</title><rect x="79.1609%" y="197" width="0.1443%" height="15" fill="rgb(228,22,38)" fg:x="52114" fg:w="95"/><text x="79.4109%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_allocate (27 samples, 0.04%)</title><rect x="79.3128%" y="181" width="0.0410%" height="15" fill="rgb(235,168,5)" fg:x="52214" fg:w="27"/><text x="79.5628%" y="191.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_allocate_from_block (14 samples, 0.02%)</title><rect x="79.3326%" y="165" width="0.0213%" height="15" fill="rgb(221,155,16)" fg:x="52227" fg:w="14"/><text x="79.5826%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_malloc (34 samples, 0.05%)</title><rect x="79.3052%" y="197" width="0.0516%" height="15" fill="rgb(215,215,53)" fg:x="52209" fg:w="34"/><text x="79.5552%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_pointer_size (38 samples, 0.06%)</title><rect x="79.3569%" y="197" width="0.0577%" height="15" fill="rgb(223,4,10)" fg:x="52243" fg:w="38"/><text x="79.6069%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`set_tiny_meta_header_in_use (11 samples, 0.02%)</title><rect x="79.4632%" y="165" width="0.0167%" height="15" fill="rgb(234,103,6)" fg:x="52313" fg:w="11"/><text x="79.7132%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (57 samples, 0.09%)</title><rect x="79.4146%" y="197" width="0.0866%" height="15" fill="rgb(227,97,0)" fg:x="52281" fg:w="57"/><text x="79.6646%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_should_clear (43 samples, 0.07%)</title><rect x="79.4358%" y="181" width="0.0653%" height="15" fill="rgb(234,150,53)" fg:x="52295" fg:w="43"/><text x="79.6858%" y="191.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_from_free_list (14 samples, 0.02%)</title><rect x="79.4799%" y="165" width="0.0213%" height="15" fill="rgb(228,201,54)" fg:x="52324" fg:w="14"/><text x="79.7299%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_realloc (263 samples, 0.40%)</title><rect x="79.1062%" y="213" width="0.3995%" height="15" fill="rgb(222,22,37)" fg:x="52078" fg:w="263"/><text x="79.3562%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`free_tiny (13 samples, 0.02%)</title><rect x="79.5239%" y="197" width="0.0197%" height="15" fill="rgb(237,53,32)" fg:x="52353" fg:w="13"/><text x="79.7739%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_no_lock (9 samples, 0.01%)</title><rect x="79.5300%" y="181" width="0.0137%" height="15" fill="rgb(233,25,53)" fg:x="52357" fg:w="9"/><text x="79.7800%" y="191.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (11 samples, 0.02%)</title><rect x="79.5498%" y="197" width="0.0167%" height="15" fill="rgb(210,40,34)" fg:x="52370" fg:w="11"/><text x="79.7998%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`small_malloc_should_clear (9 samples, 0.01%)</title><rect x="79.5528%" y="181" width="0.0137%" height="15" fill="rgb(241,220,44)" fg:x="52372" fg:w="9"/><text x="79.8028%" y="191.50"></text></g><g><title>libsystem_malloc.dylib`szone_realloc (40 samples, 0.06%)</title><rect x="79.5148%" y="213" width="0.0608%" height="15" fill="rgb(235,28,35)" fg:x="52347" fg:w="40"/><text x="79.7648%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`malloc_zone_realloc (440 samples, 0.67%)</title><rect x="79.0136%" y="229" width="0.6684%" height="15" fill="rgb(210,56,17)" fg:x="52017" fg:w="440"/><text x="79.2636%" y="239.50"></text></g><g><title>libsystem_platform.dylib`_platform_memmove (68 samples, 0.10%)</title><rect x="79.5786%" y="213" width="0.1033%" height="15" fill="rgb(224,130,29)" fg:x="52389" fg:w="68"/><text x="79.8286%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_pointer_size (21 samples, 0.03%)</title><rect x="79.6819%" y="229" width="0.0319%" height="15" fill="rgb(235,212,8)" fg:x="52457" fg:w="21"/><text x="79.9319%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_realloc (8 samples, 0.01%)</title><rect x="79.7138%" y="229" width="0.0122%" height="15" fill="rgb(223,33,50)" fg:x="52478" fg:w="8"/><text x="79.9638%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`realloc (526 samples, 0.80%)</title><rect x="78.9422%" y="245" width="0.7990%" height="15" fill="rgb(219,149,13)" fg:x="51970" fg:w="526"/><text x="79.1922%" y="255.50"></text></g><g><title>libsystem_malloc.dylib`szone_size (10 samples, 0.02%)</title><rect x="79.7260%" y="229" width="0.0152%" height="15" fill="rgb(250,156,29)" fg:x="52486" fg:w="10"/><text x="79.9760%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`tiny_size (10 samples, 0.02%)</title><rect x="79.7260%" y="213" width="0.0152%" height="15" fill="rgb(216,193,19)" fg:x="52486" fg:w="10"/><text x="79.9760%" y="223.50"></text></g><g><title>rust_qecp`alloc::raw_vec::RawVec&lt;T,A&gt;::reserve_for_push (619 samples, 0.94%)</title><rect x="78.8024%" y="277" width="0.9403%" height="15" fill="rgb(216,135,14)" fg:x="51878" fg:w="619"/><text x="79.0524%" y="287.50"></text></g><g><title>rust_qecp`alloc::raw_vec::finish_grow (577 samples, 0.88%)</title><rect x="78.8662%" y="261" width="0.8765%" height="15" fill="rgb(241,47,5)" fg:x="51920" fg:w="577"/><text x="79.1162%" y="271.50"></text></g><g><title>rust_qecp`alloc::raw_vec::finish_grow (13 samples, 0.02%)</title><rect x="79.7427%" y="277" width="0.0197%" height="15" fill="rgb(233,42,35)" fg:x="52497" fg:w="13"/><text x="79.9927%" y="287.50"></text></g><g><title>rust_qecp`rust_qecp::complete_model_graph::CompleteModelGraph::get_edges (27,535 samples, 41.83%)</title><rect x="37.9399%" y="293" width="41.8255%" height="15" fill="rgb(231,13,6)" fg:x="24977" fg:w="27535"/><text x="38.1899%" y="303.50">rust_qecp`rust_qecp::complete_model_graph::CompleteModelGraph::get_e..</text></g><g><title>rust_qecp`alloc::collections::btree::navigate::_&lt;impl alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Immut,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;&gt;::next_unchecked (12 samples, 0.02%)</title><rect x="79.9280%" y="277" width="0.0182%" height="15" fill="rgb(207,181,40)" fg:x="52619" fg:w="12"/><text x="80.1780%" y="287.50"></text></g><g><title>libsystem_platform.dylib`_platform_memmove (10 samples, 0.02%)</title><rect x="80.0662%" y="229" width="0.0152%" height="15" fill="rgb(254,173,49)" fg:x="52710" fg:w="10"/><text x="80.3162%" y="239.50"></text></g><g><title>rust_qecp`alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Mut,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;::insert_recursing (11 samples, 0.02%)</title><rect x="80.0814%" y="229" width="0.0167%" height="15" fill="rgb(221,1,38)" fg:x="52720" fg:w="11"/><text x="80.3314%" y="239.50"></text></g><g><title>rust_qecp`rust_qecp::decoder_mwpm::MWPMDecoder::decode (46,632 samples, 70.83%)</title><rect x="9.2659%" y="309" width="70.8338%" height="15" fill="rgb(206,124,46)" fg:x="6100" fg:w="46632"/><text x="9.5159%" y="319.50">rust_qecp`rust_qecp::decoder_mwpm::MWPMDecoder::decode</text></g><g><title>rust_qecp`rust_qecp::simulator::SparseCorrection::extend (219 samples, 0.33%)</title><rect x="79.7670%" y="293" width="0.3327%" height="15" fill="rgb(249,21,11)" fg:x="52513" fg:w="219"/><text x="80.0170%" y="303.50"></text></g><g><title>rust_qecp`rust_qecp::simulator::SparseErrorPattern::add (101 samples, 0.15%)</title><rect x="79.9462%" y="277" width="0.1534%" height="15" fill="rgb(222,201,40)" fg:x="52631" fg:w="101"/><text x="80.1962%" y="287.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::BTreeMap&lt;K,V&gt;::insert (45 samples, 0.07%)</title><rect x="80.0313%" y="261" width="0.0684%" height="15" fill="rgb(235,61,29)" fg:x="52687" fg:w="45"/><text x="80.2813%" y="271.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::entry::VacantEntry&lt;K,V&gt;::insert (24 samples, 0.04%)</title><rect x="80.0632%" y="245" width="0.0365%" height="15" fill="rgb(219,207,3)" fg:x="52708" fg:w="24"/><text x="80.3132%" y="255.50"></text></g><g><title>libsystem_malloc.dylib`free_medium (669 samples, 1.02%)</title><rect x="86.9397%" y="293" width="1.0162%" height="15" fill="rgb(222,56,46)" fg:x="57235" fg:w="669"/><text x="87.1897%" y="303.50"></text></g><g><title>libsystem_kernel.dylib`madvise (667 samples, 1.01%)</title><rect x="86.9427%" y="277" width="1.0132%" height="15" fill="rgb(239,76,54)" fg:x="57237" fg:w="667"/><text x="87.1927%" y="287.50"></text></g><g><title>rust_qecp`rust_qecp::simulator::Simulator::propagate_error_from (236 samples, 0.36%)</title><rect x="87.9559%" y="293" width="0.3585%" height="15" fill="rgb(231,124,27)" fg:x="57904" fg:w="236"/><text x="88.2059%" y="303.50"></text></g><g><title>rust_qecp`rust_qecp::simulator::Simulator::generate_random_errors (11,194 samples, 17.00%)</title><rect x="80.0996%" y="309" width="17.0036%" height="15" fill="rgb(249,195,6)" fg:x="52732" fg:w="11194"/><text x="80.3496%" y="319.50">rust_qecp`rust_qecp::simul..</text></g><g><title>rust_qecp`rust_qecp::simulator::Simulator::propagate_errors (5,786 samples, 8.79%)</title><rect x="88.3144%" y="293" width="8.7889%" height="15" fill="rgb(237,174,47)" fg:x="58140" fg:w="5786"/><text x="88.5644%" y="303.50">rust_qecp`ru..</text></g><g><title>rust_qecp`rust_qecp::simulator::Simulator::propagate_error_from (4,469 samples, 6.79%)</title><rect x="90.3149%" y="277" width="6.7884%" height="15" fill="rgb(206,201,31)" fg:x="59457" fg:w="4469"/><text x="90.5649%" y="287.50">rust_qecp..</text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (9 samples, 0.01%)</title><rect x="99.1873%" y="229" width="0.0137%" height="15" fill="rgb(231,57,52)" fg:x="65298" fg:w="9"/><text x="99.4373%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_should_clear (9 samples, 0.01%)</title><rect x="99.1873%" y="213" width="0.0137%" height="15" fill="rgb(248,177,22)" fg:x="65298" fg:w="9"/><text x="99.4373%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_from_free_list (9 samples, 0.01%)</title><rect x="99.1873%" y="197" width="0.0137%" height="15" fill="rgb(215,211,37)" fg:x="65298" fg:w="9"/><text x="99.4373%" y="207.50"></text></g><g><title>rust_qecp`rust_qecp::simulator::Simulator::generate_sparse_error_pattern (1,383 samples, 2.10%)</title><rect x="97.1033%" y="309" width="2.1008%" height="15" fill="rgb(241,128,51)" fg:x="63926" fg:w="1383"/><text x="97.3533%" y="319.50">r..</text></g><g><title>rust_qecp`alloc::collections::btree::map::BTreeMap&lt;K,V&gt;::insert (56 samples, 0.09%)</title><rect x="99.1190%" y="293" width="0.0851%" height="15" fill="rgb(227,165,31)" fg:x="65253" fg:w="56"/><text x="99.3690%" y="303.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::entry::VacantEntry&lt;K,V&gt;::insert (23 samples, 0.03%)</title><rect x="99.1691%" y="277" width="0.0349%" height="15" fill="rgb(228,167,24)" fg:x="65286" fg:w="23"/><text x="99.4191%" y="287.50"></text></g><g><title>rust_qecp`alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Mut,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;::insert_recursing (19 samples, 0.03%)</title><rect x="99.1752%" y="261" width="0.0289%" height="15" fill="rgb(228,143,12)" fg:x="65290" fg:w="19"/><text x="99.4252%" y="271.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (11 samples, 0.02%)</title><rect x="99.1873%" y="245" width="0.0167%" height="15" fill="rgb(249,149,8)" fg:x="65298" fg:w="11"/><text x="99.4373%" y="255.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (8 samples, 0.01%)</title><rect x="99.9438%" y="229" width="0.0122%" height="15" fill="rgb(243,35,44)" fg:x="65796" fg:w="8"/><text x="100.1938%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_should_clear (8 samples, 0.01%)</title><rect x="99.9438%" y="213" width="0.0122%" height="15" fill="rgb(246,89,9)" fg:x="65796" fg:w="8"/><text x="100.1938%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (10 samples, 0.02%)</title><rect x="99.9423%" y="245" width="0.0152%" height="15" fill="rgb(233,213,13)" fg:x="65795" fg:w="10"/><text x="100.1923%" y="255.50"></text></g><g><title>rust_qecp`alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Mut,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;::insert_recursing (19 samples, 0.03%)</title><rect x="99.9301%" y="261" width="0.0289%" height="15" fill="rgb(233,141,41)" fg:x="65787" fg:w="19"/><text x="100.1801%" y="271.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::entry::VacantEntry&lt;K,V&gt;::insert (26 samples, 0.04%)</title><rect x="99.9225%" y="277" width="0.0395%" height="15" fill="rgb(239,167,4)" fg:x="65782" fg:w="26"/><text x="100.1725%" y="287.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::BTreeMap&lt;K,V&gt;::insert (145 samples, 0.22%)</title><rect x="99.7433%" y="293" width="0.2203%" height="15" fill="rgb(209,217,16)" fg:x="65664" fg:w="145"/><text x="99.9933%" y="303.50"></text></g><g><title>rust_qecp`rust_qecp::simulator::Simulator::generate_sparse_measurement (502 samples, 0.76%)</title><rect x="99.2040%" y="309" width="0.7625%" height="15" fill="rgb(219,88,35)" fg:x="65309" fg:w="502"/><text x="99.4540%" y="319.50"></text></g><g><title>rust_qecp`std::sys_common::backtrace::__rust_begin_short_backtrace (59,924 samples, 91.02%)</title><rect x="8.9742%" y="325" width="91.0243%" height="15" fill="rgb(220,193,23)" fg:x="5908" fg:w="59924"/><text x="9.2242%" y="335.50">rust_qecp`std::sys_common::backtrace::__rust_begin_short_backtrace</text></g><g><title>rust_qecp`rust_qecp::simulator::Simulator::validate_correction (21 samples, 0.03%)</title><rect x="99.9666%" y="309" width="0.0319%" height="15" fill="rgb(230,90,52)" fg:x="65811" fg:w="21"/><text x="100.2166%" y="319.50"></text></g><g><title>rust_qecp`rust_qecp::code_builder::code_builder_validate_correction (20 samples, 0.03%)</title><rect x="99.9681%" y="293" width="0.0304%" height="15" fill="rgb(252,106,19)" fg:x="65812" fg:w="20"/><text x="100.2181%" y="303.50"></text></g><g><title>all (65,833 samples, 100%)</title><rect x="0.0000%" y="405" width="100.0000%" height="15" fill="rgb(206,74,20)" fg:x="0" fg:w="65833"/><text x="0.2500%" y="415.50"></text></g><g><title>libsystem_pthread.dylib`thread_start (59,925 samples, 91.03%)</title><rect x="8.9742%" y="389" width="91.0258%" height="15" fill="rgb(230,138,44)" fg:x="5908" fg:w="59925"/><text x="9.2242%" y="399.50">libsystem_pthread.dylib`thread_start</text></g><g><title>libsystem_pthread.dylib`_pthread_start (59,925 samples, 91.03%)</title><rect x="8.9742%" y="373" width="91.0258%" height="15" fill="rgb(235,182,43)" fg:x="5908" fg:w="59925"/><text x="9.2242%" y="383.50">libsystem_pthread.dylib`_pthread_start</text></g><g><title>rust_qecp`std::sys::unix::thread::Thread::new::thread_start (59,925 samples, 91.03%)</title><rect x="8.9742%" y="357" width="91.0258%" height="15" fill="rgb(242,16,51)" fg:x="5908" fg:w="59925"/><text x="9.2242%" y="367.50">rust_qecp`std::sys::unix::thread::Thread::new::thread_start</text></g><g><title>rust_qecp`core::ops::function::FnOnce::call_once{{vtable.shim}} (59,925 samples, 91.03%)</title><rect x="8.9742%" y="341" width="91.0258%" height="15" fill="rgb(248,9,4)" fg:x="5908" fg:w="59925"/><text x="9.2242%" y="351.50">rust_qecp`core::ops::function::FnOnce::call_once{{vtable.shim}}</text></g></svg></svg>

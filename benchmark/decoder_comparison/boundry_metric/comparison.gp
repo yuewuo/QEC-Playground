@@ -40,17 +40,14 @@ set output "equally_weighted.eps"
 plot "d_9_9.txt" using 1:7 with linespoints lt rgb "red" linewidth 5 pointtype 6 pointsize 1.5 title "MWPM",\
     "d_9_9.txt" using 1:8 with linespoints lt rgb "blue" linewidth 5 pointtype 2 pointsize 1.5 title "approximation",\
 
-set output '|ps2pdf -dEPSCrop equally_weighted.eps comparsion.pdf'
-replot
+system("ps2pdf -dEPSCrop equally_weighted.eps comparsion.pdf")
 
 set size 1,0.75
 set output "equally_weighted_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop equally_weighted_w.eps comparsion_w.pdf'
-replot
+system("ps2pdf -dEPSCrop equally_weighted_w.eps comparsion_w.pdf")
 
 set size 1,0.6
 set output "equally_weighted_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop equally_weighted_w_w.eps comparsion_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop equally_weighted_w_w.eps comparsion_w_w.pdf")

@@ -1,0 +1,6 @@
+create_time = "2022-03-21 14:34:54"
+time_consumption = 60.63254404067993
+command = [ "sudo", "flamegraph", "-o", "/Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.1/pure_simulation_d_5.svg", "/Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp", "tool", "fault_tolerant_benchmark", "[5]", "[5]", "[0.01]", "--bypass_correction", "--max_N", "0", "--min_error_cases", "0", "--time_budget", "60",]
+command_str = "sudo flamegraph -o /Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.1/pure_simulation_d_5.svg /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [5] [5] [0.01] --bypass_correction --max_N 0 --min_error_cases 0 --time_budget 60"
+name = "pure_simulation_d_5"
+stdout = [ "format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>", "0.01 5 5 792301 560925 0.7079695721701726 5 1.4e-3 0", "writing flamegraph to \"/Users/wuyue/Documents/GitHub/QEC-Playground/benchmark/auto_profiler/data/qecp_v0.1.1/pure_simulation_d_5.svg\"", "",]

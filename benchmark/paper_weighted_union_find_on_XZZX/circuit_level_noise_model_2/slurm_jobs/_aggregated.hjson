@@ -1,0 +1,1172 @@
+[
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[5.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 4 12 400011 2970 0.007424795818115002 12 3.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[5.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0055 4 12 400011 4156 0.010389714282857222 12 3.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[6.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.006 4 12 400011 5655 0.01413711122944119 12 2.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[6.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0065 4 12 400011 7593 0.01898197799560512 12 2.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[7.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.007 4 12 400011 10120 0.0252993042691326 12 1.9e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[7.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0075 4 12 400011 12894 0.03223411356187705 12 1.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[8.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.008 4 12 400011 16373 0.04093137438720435 12 1.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[8.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0085 4 12 400011 20854 0.052133566326926006 12 1.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[9.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.009 4 12 400011 26440 0.06609818229998675 12 1.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[9.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0095 4 12 400011 32500 0.08124776568644362 12 1.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[1.00000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.01 4 12 400011 38396 0.09598736034759044 12 9.5e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[1.05000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0105 4 12 400011 46101 0.11524933064340731 12 8.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[1.10000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.011 4 12 400011 54539 0.13634375054685996 12 7.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[5.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 15 400011 1220 0.0030499161273064993 15 5.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[5.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0055 5 15 400011 1993 0.004982362985017912 15 4.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[6.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.006 5 15 400011 3102 0.007754786743364558 15 3.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[6.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0065 5 15 400011 4750 0.011874673446480221 15 2.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[7.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.007 5 15 400011 6944 0.017359522613128137 15 2.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[7.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0075 5 15 400011 10271 0.025676793888168074 15 1.9e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[8.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.008 5 15 400011 14224 0.035559022126891514 15 1.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[8.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0085 5 15 400011 19372 0.04842866821162418 15 1.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[9.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.009 5 15 400011 26800 0.06699815755066736 15 1.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[9.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0095 5 15 400011 34997 0.08749009402241438 15 1.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[1.00000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.01 5 15 400011 41569 0.10391964220983924 15 9.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[1.05000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0105 5 15 400011 53465 0.13365882438232948 15 7.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[1.10000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.011 5 15 400011 65956 0.16488546564969464 15 7.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[5.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 6 18 400011 626 0.0015649569636834986 18 7.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[5.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0055 6 18 400011 1174 0.002934919289719533 18 5.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[6.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.006 6 18 400011 2013 0.005032361610055724 18 4.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[6.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0065 6 18 400011 3377 0.008442267837634465 18 3.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[7.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.007 6 18 400011 5097 0.012742149590886251 18 2.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[7.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0075 6 18 400011 8151 0.02037693963416006 18 2.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[8.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.008 6 18 400011 12534 0.03133413831119644 18 1.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[8.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0085 6 18 400011 18599 0.046496221353912764 18 1.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[9.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.009 6 18 400011 27116 0.06778813582626478 18 1.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[9.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0095 6 18 400011 37935 0.09483489204046888 18 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[1.00000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.01 6 18 400011 48190 0.12047168702860671 18 8.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[1.05000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0105 6 18 400011 63513 0.15877813360132598 18 7.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[1.10000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.011 6 18 400011 81357 0.20338690686006136 18 6.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[5.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 7 21 400011 270 0.0006749814380104547 21 1.2e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[5.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0055 7 21 400011 607 0.0015174582698975778 21 7.9e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[6.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.006 7 21 400011 1071 0.0026774263707748038 21 6.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[6.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0065 7 21 400011 2105 0.0052623552852296565 21 4.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[7.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.007 7 21 400011 3797 0.009492238963428505 21 3.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[7.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0075 7 21 400011 6432 0.016079557812160167 21 2.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[8.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.008 7 21 400011 10827 0.027066755664219233 21 1.9e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[8.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0085 7 21 400011 17278 0.04319381217016532 21 1.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[9.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.009 7 21 400011 26730 0.06682316236303501 21 1.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[9.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0095 7 21 400011 39882 0.09970225818789984 21 9.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[1.00000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.01 7 21 400011 53171 0.13292384459427367 21 7.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[1.05000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0105 7 21 400011 73350 0.18336995732617353 21 6.5e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[1.10000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.011 7 21 400011 96385 0.24095587371347288 21 5.5e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[5.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 8 24 400011 146 0.00036498996277602364 24 1.6e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[5.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0055 8 24 400011 308 0.0007699788255822965 24 1.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[6.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.006 8 24 400011 658 0.001644954763743997 24 7.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[6.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0065 8 24 400011 1362 0.0034049063650749604 24 5.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[7.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.007 8 24 400011 2669 0.006672316511295939 24 3.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[7.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0075 8 24 400011 5101 0.012752149315893814 24 2.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[8.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.008 8 24 400011 9313 0.023281859748856906 24 2.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[8.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0085 8 24 400011 16128 0.04031889123049116 24 1.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[9.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.009 8 24 400011 26244 0.0656081957746162 24 1.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[9.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0095 8 24 400011 41801 0.10449962626027784 24 9.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[1.00000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.01 8 24 400011 59076 0.1476859386366875 24 7.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[1.05000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0105 8 24 400011 84010 0.21001922447132704 24 6.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[1.10000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-biased-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.011 8 24 353936 100005 0.2825510826816148 24 5.2e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[5.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 4 12 400011 16353 0.04088137576216654 12 1.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[5.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0055 4 12 400011 21637 0.05409101249715633 12 1.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[6.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.006 4 12 400011 27434 0.06858311396436598 12 1.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[6.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0065 4 12 400011 34156 0.0853876518395744 12 1.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[7.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.007 4 12 400011 42383 0.10595458624887816 12 9.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[7.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0075 4 12 400011 51204 0.1280064798218049 12 8.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[8.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.008 4 12 400011 61205 0.15300829227196253 12 7.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[8.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0085 4 12 400011 72054 0.18013004642372335 12 6.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[9.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.009 4 12 400011 83802 0.2094992387709338 12 6.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[9.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0095 4 12 400011 96051 0.24012089667534142 12 5.5e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[1.00000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.01 4 12 361570 100004 0.276582681085267 12 5.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[1.05000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0105 4 12 322570 100004 0.31002263074681463 12 5.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[4]' --djs '[12]' '[12]' -m400000 -e100000 '[1.10000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.011 4 12 292244 100004 0.3421935095331298 12 5.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[5.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 5 15 400011 9517 0.023791845724242585 15 2.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[5.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0055 5 15 400011 14216 0.035539022676876385 15 1.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[6.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.006 5 15 400011 20262 0.05065360702580679 15 1.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[6.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0065 5 15 400011 28070 0.07017307024056839 15 1.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[7.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.007 5 15 400011 37537 0.09383991940221643 15 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[7.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0075 5 15 400011 48915 0.12228413718622738 15 8.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[8.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.008 5 15 400011 62376 0.1559357117679264 15 7.2e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[8.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0085 5 15 400011 77583 0.19395216631542633 15 6.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[9.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.009 5 15 400011 94160 0.23539352667801636 15 5.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[9.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0095 5 15 356378 100004 0.2806121589997138 15 5.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[1.00000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.01 5 15 306085 100005 0.3267229691098878 15 5.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[1.05000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0105 5 15 268755 100008 0.37211586761176535 15 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[5]' --djs '[15]' '[15]' -m400000 -e100000 '[1.10000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.011 5 15 238961 100005 0.41849925301618257 15 4.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[5.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 6 18 400011 7244 0.01810950198869531 18 2.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[5.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0055 6 18 400011 11465 0.02866171180292542 18 1.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[6.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.006 6 18 400011 17692 0.044228783708448016 18 1.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[6.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0065 6 18 400011 26256 0.06563819494963888 18 1.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[7.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.007 6 18 400011 36922 0.09230246168230373 18 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[7.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0075 6 18 400011 50466 0.12616153055790966 18 8.2e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[8.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.008 6 18 400011 67268 0.16816537545217505 18 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[8.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0085 6 18 400011 86647 0.21661154318256248 18 5.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[9.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.009 6 18 369760 100004 0.27045651233232365 18 5.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[9.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0095 6 18 306575 100002 0.32619098099975535 18 5.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[1.00000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.01 6 18 259847 100008 0.3848726365899933 18 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[1.05000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0105 6 18 228277 100005 0.43808618476675265 18 4.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[6]' --djs '[18]' '[18]' -m400000 -e100000 '[1.10000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.011 6 18 203208 100005 0.492131215306484 18 4.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[5.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 7 21 400011 4404 0.011009697233326083 21 2.9e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[5.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0055 7 21 400011 8019 0.020046948708910505 21 2.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[6.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.006 7 21 400011 13732 0.03432905595096135 21 1.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[6.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0065 7 21 400011 22173 0.05543097564816968 21 1.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[7.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.007 7 21 400011 33742 0.08435268030129171 21 1.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[7.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0075 7 21 400011 49667 0.1241640854876491 21 8.2e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[8.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.008 7 21 400011 69768 0.1744152035819015 21 6.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[8.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0085 7 21 400011 93042 0.2325986035384027 21 5.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[9.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.009 7 21 335721 100003 0.2978753190893629 21 5.2e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[9.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0095 7 21 271247 100006 0.36868979196083274 21 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[1.00000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.01 7 21 229503 100005 0.4357459379615953 21 4.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[1.05000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0105 7 21 201399 100004 0.49654665614029864 21 4.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[7]' --djs '[21]' '[21]' -m400000 -e100000 '[1.10000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.011 7 21 179893 100007 0.5559249109192687 21 4.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[5.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.005 8 24 400011 2974 0.007434795543122564 24 3.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[5.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0055 8 24 400011 6028 0.015069585586396374 24 2.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[6.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.006 8 24 400011 11212 0.028029229196197103 24 1.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[6.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0065 8 24 400011 19025 0.04756119206721815 24 1.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[7.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.007 8 24 400011 31393 0.07848034179060076 24 1.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[7.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0075 8 24 400011 49184 0.12295661869298594 24 8.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[8.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.008 8 24 400011 71611 0.17902257687913584 24 6.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[8.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0085 8 24 400011 99869 0.24966563419505963 24 5.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[9.00000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.009 8 24 305806 100002 0.327011242421666 24 5.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[9.50000000e-03]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0095 8 24 244988 100004 0.4081995852858099 24 4.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[1.00000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.01 8 24 207424 100004 0.48212357297130515 24 4.5e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[1.05000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.0105 8 24 181162 100004 0.5520142193175169 24 4.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/loomis/project/lin_zhong/yw729/QEC-Playground/backend/rust/target/release/rust_qecp tool benchmark '[8]' --djs '[24]' '[24]' -m400000 -e100000 '[1.10000000e-02]' -p12 --time_budget 43200 --code_type StandardXZZXCode --bias_eta 100 --decoder union-find --decoder_config '{"pcmg":true,"use_real_weighted":true,"max_half_weight":9223372036854775807,"use_combined_probability":false}' --error_model generic-biased-with-standard-cx
+    
+      '''
+      format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0.011 8 24 163750 100007 0.6107297709923664 24 3.9e-3 0 
+
+      '''
+  ]
+]

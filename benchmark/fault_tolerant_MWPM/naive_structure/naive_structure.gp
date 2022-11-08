@@ -7,16 +7,16 @@ set size 1,1
 # data generating commands:
 # cargo run --release -- tool fault_tolerant_benchmark [3] [3] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0 -m100000000 -afalse -i
 # cargo run --release -- tool fault_tolerant_benchmark [5] [5] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5] -p0 -m100000000 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -p0 -m100000000 -b10 -e1000 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-4] -p0 -m100000000 -b10 -e200 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000 -b1 -e1000 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-3] -p0 -m100000000 -b1 -e200 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [5e-4] -p0 -m100000000 -b1 -e50 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [2e-4] -p0 -m100000000 -b1 -e10 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [11] [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3] -p0 -m100000000 -b1 -e200 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [11] [11] [5e-4] -p0 -m100000000 -b1 -e50 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [13] [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3] -p0 -m100000000 -b1 -e200 -afalse -i
-# cargo run --release -- tool fault_tolerant_benchmark [13] [13] [5e-4] -p0 -m100000000 -b1 -e20 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4] -p0 -m100000000-e1000 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-4] -p0 -m100000000-e200 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3] -p0 -m100000000-e1000 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-3] -p0 -m100000000-e200 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [5e-4] -p0 -m100000000-e50 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [2e-4] -p0 -m100000000-e10 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [11] [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3] -p0 -m100000000-e200 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [11] [11] [5e-4] -p0 -m100000000-e50 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [13] [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3] -p0 -m100000000-e200 -afalse -i
+# cargo run --release -- tool fault_tolerant_benchmark [13] [13] [5e-4] -p0 -m100000000-e20 -afalse -i
 
 # collecting more data around the threshold
 
@@ -39,17 +39,14 @@ plot "d_3_3.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6
     "d_11_11.txt" using 1:6 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
     "d_13_13.txt" using 1:6 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
 
-set output '|ps2pdf -dEPSCrop naive_structure.eps naive_structure.pdf'
-replot
+system("ps2pdf -dEPSCrop naive_structure.eps naive_structure.pdf")
 
 set size 1,0.75
 set output "naive_structure_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop naive_structure_w.eps naive_structure_w.pdf'
-replot
+system("ps2pdf -dEPSCrop naive_structure_w.eps naive_structure_w.pdf")
 
 set size 1,0.6
 set output "naive_structure_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop naive_structure_w_w.eps naive_structure_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop naive_structure_w_w.eps naive_structure_w_w.pdf")

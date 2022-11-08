@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPA2 Exam by Yue</title>
+
+<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+<style>
+.abs {
+    position: absolute;
+}
+.fwidth {
+    width: 100%;
+}
+h1 {
+    margin: 0;
+}
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+.node {
+    border-radius: 100%;
+    background-color: #03DAC6;
+}
+.b012 {
+    border-radius: 100%;
+    background-color: #6200EE;
+}
+.b01234 {
+    border-radius: 100%;
+    background-color: #BB86FC;
+}
+.content {
+    font-size: 40px;
+    margin-top: 40px;
+}
+</style>
+
+</head>
+<body>
+
+<!-- This interactive page is designed to teach Maximum Weight Matching algorithm for Yue's OPA2 exam at Yale 2021.12.3 -->
+<!-- it works on a 3440 * 1440 screen, and all other screen format is not intended or tested -->
+
+<script src="https://unpkg.com/vue@2.6.14/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<div id="app" style="width: 100%; height: 100%;">
+    <div class="abs fwidth" style="top: 80px; text-align: center; font-size: 80px; font-weight: bold;">
+        Maximum Weight Matching in a Graph: Edmond's Blossom Algorithm
+    </div>
+    <div class="abs fwidth" style="top: 190px; text-align: center; font-size: 40px; font-weight: bold; color: grey;">
+        Yue Wu (yue.wu@yale.edu)
+    </div>
+
+    <!-- left part is for word description -->
+    <div class="abs" style="width: 50%; height: 80%; top: 20%; left: 0%;">
+        <div style="margin: 30px;">
+            <div class="content">A maximum weighted matching of an <strong style="color: #6200EE;">edge-weighted graph</strong> (each edge \( e \) has a weight \( w_e \)) is a <strong style="color: #6200EE;">matching</strong> for which the sum of the weights of the edges is <strong style="color: #6200EE;">maximum</strong>.</div>
+            <div class="content"><strong>Applications</strong>:
+                <ol style="margin: 0; margin-left: 50px;">
+                    <li>assignment problem for bipartite graph: <strong>resource management</strong></li>
+                    <li>Minimum-Weight Perfect Matching (MWPM) problem: <strong>quantum error correction</strong></li>
+                </ol>
+            </div>
+            <div class="content"><strong>Edmond's Blossom Algorithm</strong> for MWPM solves a Linear Programming (LP) problem:
+                <ul style="margin: 0; margin-left: 50px;">
+                    <li>Primal variable \( x_e \): defined for edge \( e \in E \). <strong style="color: #B00020;">(\( x_e \) indicates whether \( e \) is in the matching)</strong></li>
+                    <li>Dual variable \( y_S \): defined for a set of vertices \( S \subseteq V \).  <strong style="color: #B00020;">(\( y_S \) is the "exploratory radius")</strong></li>
+                    <li>Possible blossoms \( \mathcal{O} \): defined as \( \{S| S  \subseteq V, |S|>1, |S| \textrm{ is odd}\} \).</li>
+                    <li>Hair \( \delta(S) \): defined as the set of edges that have one vertex in \( S \) and the other vertex not in \( S \).</li>
+                </ul>
+            </div>
+            <div style="width: 100%;">
+                <img class="abs" src="OPA2-MaximumWeightMatching.jpg" style="width: 80%; margin-left: 0; margin-top: 20px;">
+                <div class="abs" style="left: 82%; margin-top: 27px; font-size: 30px; width: 370px; height: 331px; padding: 10px; border-style: dotted;">
+                    <strong>Primal Variables:</strong><br>
+                    <span style="color: #eed500;" v-show="x_ab_selected">\( x_{AB} \) = 1,</span>
+                    <span style="color: #eed500;" v-show="x_cd_selected">\( x_{CD} \) = 1,</span>
+                    <span style="color: #eed500;" v-show="x_ef_selected">\( x_{EF} \) = 1</span>
+                    <span style="color: #eed500;" v-show="x_de_selected">\( x_{DE} \) = 1</span>
+                    <br>
+                    <strong>Dual Variables:</strong><br>
+                    <span style="color: #03DAC6;" v-show="nodes[0].radius > 0">\( y_{\{A\}} \) = \( y_{\{B\}} \) = \( y_{\{C\}} \) = <span>{{ nodes[0].radius.toFixed(2) }}</span><br></span>
+                    <span style="color: #03DAC6;" v-show="nodes[0].radius > 0">\( y_{\{D\}} \) = <span>{{ nodes[3].radius.toFixed(2) }}</span>, \( y_{\{E\}} \) = <span>{{ nodes[4].radius.toFixed(2) }}</span><br></span>
+                    <span style="color: #03DAC6;" v-show="nodes[0].radius > 0">\( y_{\{F\}} \) = <span>{{ nodes[5].radius.toFixed(2) }}</span><br></span>
+                    <span style="color: #6200EE;" v-show="b012_radius > 0">\( y_{\{A,B,C\}} \) = <span>{{ b012_radius.toFixed(2) }}</span><br></span>
+                    <span style="color: #BB86FC;" v-show="b01234_radius > 0">\( y_{\{A,B,C,D,E\}} \) = <span>{{ b01234_radius.toFixed(2) }}</span><br></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- right part is for interactive demo -->
+    <div class="abs" style="width: 50%; height: 80%; top: 20%; right: 0%;">
+        <div class="abs fwidth" style="top: 20px; text-align: center; font-size: 40px; font-weight: bold;">Demo: solving MWPM for fully-connected graph with weight = geometric distance</div>
+        <!-- control -->
+        <div class="abs" style="bottom: 50px; left: 20px;">
+            <div style="width: 1480px; margin-left: 100px;">
+                <el-slider
+                    v-model="progress" :show-tooltip="false"
+                    :step="0.01" :min="-0.6" :max="Math.round(build_end*100)/100"
+                    :marks="marks">
+                </el-slider>
+            </div>
+        </div>
+        <!-- drawing part -->
+        <div class="abs" style="width: 90%; ; top: 10%; left: 5%;" v-bind:style="{ 'height': canvas_height + 'px', 'width': canvas_width + 'px' }">
+            <!-- lines -->
+            <canvas class="abs" id="lines" :width="canvas_width + 'px'" :height="canvas_height + 'px'"></canvas>  
+            <!-- blossoms -->
+            <div v-for="item in b01234" class="b01234 abs" v-bind:style="{ 'width': wts(2*item.radius), 'height': wts(2*item.radius), 'left': wts(nodes[item.id].position[0]-item.radius), 'top': wts(nodes[item.id].position[1]-item.radius) }"></div>
+            <div v-for="item in b012" class="b012 abs" v-bind:style="{ 'width': wts(2*item.radius), 'height': wts(2*item.radius), 'left': wts(nodes[item.id].position[0]-item.radius), 'top': wts(nodes[item.id].position[1]-item.radius) }"></div>
+            <!-- individual nodes -->
+            <div v-for="item in nodes" class="node abs" v-bind:style="{ 'width': wts(2*item.radius), 'height': wts(2*item.radius), 'left': wts(item.position[0]-item.radius), 'top': wts(item.position[1]-item.radius) }"></div>
+            <!-- alternating tree -->
+            <canvas class="abs" id="tree" :width="canvas_width + 'px'" :height="canvas_height + 'px'"></canvas>
+            <!-- individual nodes -->
+            <div v-for="item in nodes" class="abs" v-bind:style="{ 'width': wts(2*item.radius), 'height': wts(2*item.radius), 'left': wts(item.position[0]-item.radius), 'top': wts(item.position[1]-item.radius) }">
+                <div class="abs" v-bind:style="{ 'left': wts(item.radius-point_radius), 'top': wts(item.radius-point_radius), 'width': wts(2*point_radius), 'height': wts(2*point_radius) }" style="border-radius: 100%; background-color: black;"></div>
+                <div class="abs" v-bind:style="{ 'left': wts(item.radius+0.1), 'top': wts(item.radius-0.45) }" style="font-size: 35px; font-weight: bold; color: blue;">{{ item.name }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+const width_transform_ratio = 120
+const canvas_width = 1548  // 3440 * 0.5 * 0.9
+const canvas_height = 920
+// width transform
+function wt(width) {
+    return width_transform_ratio * width
+}
+function wts(width) {
+    return (width_transform_ratio * width) + 'px'
+}
+
+const pxb = 2.5  // position x bias
+const pyb = 2.5  // position y bias
+const sq3 = Math.sqrt(3)
+const sq2 = Math.sqrt(2)
+// nodes
+var nodes = [
+    {
+        id: 0,
+        name: "A",
+        position: [pxb+2-sq3-0.5, pyb+3-sq3-1],
+        radius: 1,
+    },
+    {
+        id: 1,
+        name: "B",
+        position: [pxb+2-sq3-0.5, pyb+3-sq3+1],
+        radius: 1,
+    },
+    {
+        id: 2,
+        name: "C",
+        position: [pxb+2-0.5, pyb+3-sq3],
+        radius: 1,
+    },
+    {
+        id: 3,
+        name: "D",
+        position: [pxb+3, pyb+3],
+        radius: 1,
+    },
+    {
+        id: 4,
+        name: "E",
+        position: [pxb+3+sq2, pyb+3-sq2],
+        radius: 1,
+    },
+    {
+        id: 5,
+        name: "F",
+        position: [pxb+8, pyb+0],
+        radius: 1,
+    },
+]
+// progress tags
+function distance(i, j) {
+    const dx = nodes[i].position[0] - nodes[j].position[0]
+    const dy = nodes[i].position[1] - nodes[j].position[1]
+    return Math.sqrt(dx*dx + dy*dy)
+}
+const graph = -0.6
+const matching_1 = -0.4
+const matching_2 = -0.2
+const initial = 0
+const first_blossom = 1
+const alternate_tree = first_blossom + distance(2, 3) - 2
+const second_blossom = alternate_tree + (distance(2, 4) - alternate_tree - 1) / 2
+const final = second_blossom + (distance(4, 5) - (second_blossom) - (first_blossom + (second_blossom - alternate_tree))) / 2
+const build_1 = final + 0.2
+const build_2 = build_1 + 0.2
+const build_end = build_2 + 0.2
+function create_marks() {
+    let marks = {}
+    marks[graph] = "graph"
+    marks[matching_1] = "matching 1"
+    marks[matching_2] = "matching 2"
+    marks[initial] = "initial"
+    marks[first_blossom] = "first blossom"
+    marks[alternate_tree] = "alternate tree"
+    marks[second_blossom] = "second blossom"
+    marks[final] = "final"
+    marks[build_1] = "build 1"
+    marks[build_2] = "build 2"
+    marks[build_end] = "end"
+    return marks
+}
+var app = new Vue({
+    el: '#app',
+    data: function() {
+        return {
+            canvas_width: canvas_width,
+            canvas_height: canvas_height,
+            nodes: nodes,
+            point_radius: 0.05,
+            b012_radius: 0,
+            b012: [
+                { id: 0, radius: 0, },
+                { id: 1, radius: 0, },
+                { id: 2, radius: 0, },
+            ],
+            b01234_radius: 0,
+            b01234: [
+                { id: 0, radius: 0, },
+                { id: 1, radius: 0, },
+                { id: 2, radius: 0, },
+                { id: 3, radius: 0, },
+                { id: 4, radius: 0, },
+            ],
+            // control
+            progress: graph,
+            marks: create_marks(),
+            build_end: build_end,
+            // display
+            x_ab_selected: false,
+            x_cd_selected: false,
+            x_ef_selected: false,
+            x_de_selected: false,
+        }
+    },
+    mounted() {
+        this.update_progress()
+        this.update_lines()
+        window.setInterval(this.update_tree, 33) // 30fps
+    },
+    methods: {
+        wts(width) {
+            return wts(width)
+        },
+        updated_radiuses() {
+            // compute blossom radius
+            for (let i=0; i<=2; ++i) {
+                this.b012[i].radius = this.nodes[i].radius + this.b012_radius
+                this.b01234[i].radius = this.nodes[i].radius + this.b012_radius + this.b01234_radius
+            }
+            for (let i=3; i<=4; ++i) {
+                this.b01234[i].radius = this.nodes[i].radius + this.b01234_radius
+            }
+        },
+        clear_radiuses() {
+            for (let i in this.nodes) {
+                this.nodes[i].radius = 0
+            }
+            this.b012_radius = 0
+            this.b01234_radius = 0
+        },
+        update_tree() {
+            let canvas = document.getElementById('tree')
+            let context = canvas.getContext('2d')
+            context.clearRect(0, 0, canvas.width, canvas.height)
+            let offset = (Date.now() / 50) % 10000
+            let draw_b012 = () => {
+                for (let ij of [[0, 1], [1, 2], [2, 0]]) {
+                    let i = ij[0]
+                    let j = ij[1]
+                    context.beginPath()
+                    context.setLineDash([5, 15])
+                    context.lineDashOffset = offset
+                    context.moveTo(wt(this.nodes[i].position[0]), wt(this.nodes[i].position[1]))
+                    context.lineTo(wt(this.nodes[j].position[0]), wt(this.nodes[j].position[1]))
+                    context.lineWidth = 12
+                    context.strokeStyle = '#ff6f00'
+                    context.lineCap = "round"
+                    context.stroke()
+                }
+            }
+            let draw_tree_234 = () => {
+                for (let ijm of [[2, 3, false], [3, 4, true]]) {
+                    let i = ijm[0]
+                    let j = ijm[1]
+                    let match = ijm[2]
+                    context.beginPath()
+                    if (match) {
+                        context.setLineDash([])
+                    } else {
+                        context.setLineDash([0, 20])
+                        context.lineDashOffset = 0
+                    }
+                    context.moveTo(wt(this.nodes[i].position[0]), wt(this.nodes[i].position[1]))
+                    context.lineTo(wt(this.nodes[j].position[0]), wt(this.nodes[j].position[1]))
+                    context.lineWidth = 12
+                    context.strokeStyle = '#e91e63'
+                    context.lineCap = "round"
+                    context.stroke()
+                }
+            }
+            let draw_b01234 = () => {
+                for (let ij of [[2, 3], [3, 4], [4, 2]]) {
+                    let i = ij[0]
+                    let j = ij[1]
+                    context.beginPath()
+                    context.setLineDash([5, 15])
+                    context.lineDashOffset = offset
+                    context.moveTo(wt(this.nodes[i].position[0]), wt(this.nodes[i].position[1]))
+                    context.lineTo(wt(this.nodes[j].position[0]), wt(this.nodes[j].position[1]))
+                    context.lineWidth = 12
+                    context.strokeStyle = '#e91e63'
+                    context.lineCap = "round"
+                    context.stroke()
+                }
+            }
+            let draw_final_match = (list) => {
+                for (let ij of list) {
+                    let i = ij[0]
+                    let j = ij[1]
+                    context.beginPath()
+                    context.setLineDash([])
+                    context.moveTo(wt(this.nodes[i].position[0]), wt(this.nodes[i].position[1]))
+                    context.lineTo(wt(this.nodes[j].position[0]), wt(this.nodes[j].position[1]))
+                    context.lineWidth = 12
+                    context.strokeStyle = '#ffeb3b'
+                    context.lineCap = "round"
+                    context.stroke()
+                }
+            }
+            if (this.progress < 0) {
+                
+            } else if (this.progress <= first_blossom) {
+                
+            } else if (this.progress <= alternate_tree) {
+                draw_b012()
+                draw_final_match([[3, 4]])
+            } else if (this.progress <= second_blossom) {
+                draw_b012()
+                draw_tree_234()
+            } else if (this.progress <= final) {
+                draw_b012()
+                draw_b01234()
+            } else if (this.progress <= build_1) {
+                draw_b012()
+                draw_b01234()
+                draw_final_match([[4, 5]])
+            } else if (this.progress <= build_2) {
+                draw_b012()
+                draw_final_match([[2, 3], [4, 5]])
+            } else {
+                draw_final_match([[0, 1], [2, 3], [4, 5]])
+            }
+        },
+        update_progress() {
+            this.clear_radiuses()
+            this.update_lines()
+            this.x_ab_selected = false
+            this.x_cd_selected = false
+            this.x_ef_selected = false
+            this.x_de_selected = false
+            if (this.progress < 0) {
+                // lines
+            } else if (this.progress <= first_blossom) {
+                for (let i in this.nodes) {
+                    this.nodes[i].radius = this.progress
+                }
+            } else if (this.progress <= alternate_tree) {
+                for (let i of [0, 1, 2, 3, 4]) {
+                    this.nodes[i].radius = first_blossom
+                }
+                this.nodes[5].radius = this.progress
+                this.b012_radius = this.progress - first_blossom
+                this.x_de_selected = true
+            } else if (this.progress <= second_blossom) {
+                for (let i of [0, 1, 2]) {
+                    this.nodes[i].radius = first_blossom
+                }
+                const delta = (this.progress - alternate_tree)
+                this.nodes[3].radius = first_blossom - delta
+                this.nodes[4].radius = first_blossom + delta
+                this.nodes[5].radius = this.progress
+                this.b012_radius = this.progress - first_blossom
+                this.x_de_selected = true
+            } else {
+                let progress = this.progress
+                if (progress > final) { progress = final }
+                for (let i of [0, 1, 2]) {
+                    this.nodes[i].radius = first_blossom
+                }
+                this.nodes[3].radius = first_blossom - (second_blossom - alternate_tree)
+                this.nodes[4].radius = first_blossom + (second_blossom - alternate_tree)
+                this.nodes[5].radius = progress
+                this.b012_radius = second_blossom - first_blossom
+                this.b01234_radius = progress - second_blossom
+            }
+            if (this.progress <= final) {
+                
+            } else if (this.progress <= build_1) {
+                this.x_ef_selected = true
+            } else if (this.progress <= build_2) {
+                this.x_ef_selected = true
+                this.x_cd_selected = true
+            } else {
+                this.x_ef_selected = true
+                this.x_cd_selected = true
+                this.x_ab_selected = true
+            }
+        },
+        update_lines() {
+            let canvas = document.getElementById('lines')
+            if (canvas.getContext) {
+                let context = canvas.getContext('2d')
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                if (this.progress > initial) {
+                    return
+                }
+                // draw full connections
+                for (let i in this.nodes) {
+                    for (let j in this.nodes) {
+                        if (i < j) {
+                            context.beginPath()
+                            context.moveTo(wt(this.nodes[i].position[0]), wt(this.nodes[i].position[1]))
+                            context.lineTo(wt(this.nodes[j].position[0]), wt(this.nodes[j].position[1]))
+                            context.lineWidth = 4
+                            context.strokeStyle = 'grey'
+                            context.stroke()
+                        }
+                    }
+                }
+                if (this.progress < matching_1) {
+                    // do nothing
+                } else if (this.progress < matching_2) {
+                    for (let ij of [[0, 2], [3, 4]]) {
+                        let i = ij[0]
+                        let j = ij[1]
+                        context.beginPath()
+                        context.moveTo(wt(this.nodes[i].position[0]), wt(this.nodes[i].position[1]))
+                        context.lineTo(wt(this.nodes[j].position[0]), wt(this.nodes[j].position[1]))
+                        context.lineWidth = 8
+                        context.strokeStyle = 'red'
+                        context.stroke()
+                    }
+                } else if (this.progress < initial) {
+                    for (let ij of [[0, 2], [3, 4], [1, 5]]) {
+                        let i = ij[0]
+                        let j = ij[1]
+                        context.beginPath()
+                        context.moveTo(wt(this.nodes[i].position[0]), wt(this.nodes[i].position[1]))
+                        context.lineTo(wt(this.nodes[j].position[0]), wt(this.nodes[j].position[1]))
+                        context.lineWidth = 8
+                        context.strokeStyle = 'red'
+                        context.stroke()
+                    }
+                }
+            }
+        },
+    },
+    watch: {
+        radiuses: {
+            handler: function (val, oldVal) {
+                this.updated_radiuses()
+            },
+            deep: true,
+        },
+        b012_radius: {
+            handler: function (val, oldVal) {
+                this.updated_radiuses()
+            },
+        },
+        b01234_radius: {
+            handler: function (val, oldVal) {
+                this.updated_radiuses()
+            },
+        },
+        progress: {
+            handler: function (val, oldVal) {
+                this.update_progress()
+                this.updated_radiuses()
+            },
+        },
+    }
+})
+
+</script>
+
+</body>
+</html>

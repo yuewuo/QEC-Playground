@@ -5,12 +5,12 @@ set grid ytics
 set size 1,1
 
 # data generating commands:
-# cargo run --release -- tool fault_tolerant_benchmark [3] [3] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0 -b1000 -m100000000 --only_count_logical_x
-# cargo run --release -- tool fault_tolerant_benchmark [5] [5] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5] -b1000 -p0 -m100000000 --only_count_logical_x
-# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4] -p0 -m100000000 -b10 -e200 --only_count_logical_x
-# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000 -b1 -e200 --only_count_logical_x
-# cargo run --release -- tool fault_tolerant_benchmark [11] [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000 -b1 -e200 --only_count_logical_x
-# cargo run --release -- tool fault_tolerant_benchmark [13] [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000 -b1 -e200 --only_count_logical_x
+# cargo run --release -- tool fault_tolerant_benchmark [3] [3] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5,1e-5] -p0-m100000000 --only_count_logical_x
+# cargo run --release -- tool fault_tolerant_benchmark [5] [5] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4,5e-5,2e-5]-p0 -m100000000 --only_count_logical_x
+# cargo run --release -- tool fault_tolerant_benchmark [7] [7] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4,2e-4,1e-4] -p0 -m100000000-e200 --only_count_logical_x
+# cargo run --release -- tool fault_tolerant_benchmark [9] [9] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000-e200 --only_count_logical_x
+# cargo run --release -- tool fault_tolerant_benchmark [11] [11] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000-e200 --only_count_logical_x
+# cargo run --release -- tool fault_tolerant_benchmark [13] [13] [1e-1,5e-2,2e-2,1e-2,5e-3,2e-3,1e-3,5e-4] -p0 -m100000000-e200 --only_count_logical_x
 
 set logscale x
 set xrange [0.00001:0.1]
@@ -31,17 +31,14 @@ plot "d_3_3.txt" using 1:6 with linespoints lt rgb "red" linewidth 5 pointtype 6
     "d_11_11.txt" using 1:6 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
     "d_13_13.txt" using 1:6 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
 
-set output '|ps2pdf -dEPSCrop only_count_logical_x.eps only_count_logical_x.pdf'
-replot
+system("ps2pdf -dEPSCrop only_count_logical_x.eps only_count_logical_x.pdf")
 
 set size 1,0.75
 set output "only_count_logical_x_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop only_count_logical_x_w.eps only_count_logical_x_w.pdf'
-replot
+system("ps2pdf -dEPSCrop only_count_logical_x_w.eps only_count_logical_x_w.pdf")
 
 set size 1,0.6
 set output "only_count_logical_x_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop only_count_logical_x_w_w.eps only_count_logical_x_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop only_count_logical_x_w_w.eps only_count_logical_x_w_w.pdf")

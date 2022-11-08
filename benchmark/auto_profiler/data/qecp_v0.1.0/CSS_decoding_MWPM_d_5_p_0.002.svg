@@ -1,0 +1,414 @@
+<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg version="1.1" width="1200" height="374" onload="init(evt)" viewBox="0 0 1200 374" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:fg="http://github.com/jonhoo/inferno"><!--Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples.--><!--NOTES: --><defs><linearGradient id="background" y1="0" y2="1" x1="0" x2="0"><stop stop-color="#eeeeee" offset="5%"/><stop stop-color="#eeeeb0" offset="95%"/></linearGradient></defs><style type="text/css">
+text { font-family:"Verdana"; font-size:12px; fill:rgb(0,0,0); }
+#title { text-anchor:middle; font-size:17px; }
+#search { opacity:0.1; cursor:pointer; }
+#search:hover, #search.show { opacity:1; }
+#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+#unzoom { cursor:pointer; }
+#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+.hide { display:none; }
+.parent { opacity:0.5; }
+</style><script type="text/ecmascript"><![CDATA[
+        var nametype = 'Function:';
+        var fontsize = 12;
+        var fontwidth = 0.59;
+        var xpad = 10;
+        var inverted = false;
+        var searchcolor = 'rgb(230,0,230)';
+        var fluiddrawing = true;
+        var truncate_text_right = false;
+    ]]><![CDATA["use strict";
+var details, searchbtn, unzoombtn, matchedtxt, svg, searching, frames;
+function init(evt) {
+    details = document.getElementById("details").firstChild;
+    searchbtn = document.getElementById("search");
+    unzoombtn = document.getElementById("unzoom");
+    matchedtxt = document.getElementById("matched");
+    svg = document.getElementsByTagName("svg")[0];
+    frames = document.getElementById("frames");
+    total_samples = parseInt(frames.attributes.total_samples.value);
+    searching = 0;
+
+    // Use GET parameters to restore a flamegraph's state.
+    var restore_state = function() {
+        var params = get_params();
+        if (params.x && params.y)
+            zoom(find_group(document.querySelector('[*|x="' + params.x + '"][y="' + params.y + '"]')));
+        if (params.s)
+            search(params.s);
+    };
+
+    if (fluiddrawing) {
+        // Make width dynamic so the SVG fits its parent's width.
+        svg.removeAttribute("width");
+        // Edge requires us to have a viewBox that gets updated with size changes.
+        var isEdge = /Edge\/\d./i.test(navigator.userAgent);
+        if (!isEdge) {
+          svg.removeAttribute("viewBox");
+        }
+        var update_for_width_change = function() {
+            if (isEdge) {
+                svg.attributes.viewBox.value = "0 0 " + svg.width.baseVal.value + " " + svg.height.baseVal.value;
+            }
+
+            // Keep consistent padding on left and right of frames container.
+            frames.attributes.width.value = svg.width.baseVal.value - xpad * 2;
+
+            // Text truncation needs to be adjusted for the current width.
+            var el = frames.children;
+            for(var i = 0; i < el.length; i++) {
+                update_text(el[i]);
+            }
+
+            // Keep search elements at a fixed distance from right edge.
+            var svgWidth = svg.width.baseVal.value;
+            searchbtn.attributes.x.value = svgWidth - xpad - 100;
+            matchedtxt.attributes.x.value = svgWidth - xpad - 100;
+        };
+        window.addEventListener('resize', function() {
+            update_for_width_change();
+        });
+        // This needs to be done asynchronously for Safari to work.
+        setTimeout(function() {
+            unzoom();
+            update_for_width_change();
+            restore_state();
+        }, 0);
+    } else {
+        restore_state();
+    }
+}
+// event listeners
+window.addEventListener("click", function(e) {
+    var target = find_group(e.target);
+    if (target) {
+        if (target.nodeName == "a") {
+            if (e.ctrlKey === false) return;
+            e.preventDefault();
+        }
+        if (target.classList.contains("parent")) unzoom();
+        zoom(target);
+
+        // set parameters for zoom state
+        var el = target.querySelector("rect");
+        if (el && el.attributes && el.attributes.y && el.attributes["fg:x"]) {
+            var params = get_params()
+            params.x = el.attributes["fg:x"].value;
+            params.y = el.attributes.y.value;
+            history.replaceState(null, null, parse_params(params));
+        }
+    }
+    else if (e.target.id == "unzoom") {
+        unzoom();
+
+        // remove zoom state
+        var params = get_params();
+        if (params.x) delete params.x;
+        if (params.y) delete params.y;
+        history.replaceState(null, null, parse_params(params));
+    }
+    else if (e.target.id == "search") search_prompt();
+}, false)
+// mouse-over for info
+// show
+window.addEventListener("mouseover", function(e) {
+    var target = find_group(e.target);
+    if (target) details.nodeValue = nametype + " " + g_to_text(target);
+}, false)
+// clear
+window.addEventListener("mouseout", function(e) {
+    var target = find_group(e.target);
+    if (target) details.nodeValue = ' ';
+}, false)
+// ctrl-F for search
+window.addEventListener("keydown",function (e) {
+    if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+        e.preventDefault();
+        search_prompt();
+    }
+}, false)
+// functions
+function get_params() {
+    var params = {};
+    var paramsarr = window.location.search.substr(1).split('&');
+    for (var i = 0; i < paramsarr.length; ++i) {
+        var tmp = paramsarr[i].split("=");
+        if (!tmp[0] || !tmp[1]) continue;
+        params[tmp[0]]  = decodeURIComponent(tmp[1]);
+    }
+    return params;
+}
+function parse_params(params) {
+    var uri = "?";
+    for (var key in params) {
+        uri += key + '=' + encodeURIComponent(params[key]) + '&';
+    }
+    if (uri.slice(-1) == "&")
+        uri = uri.substring(0, uri.length - 1);
+    if (uri == '?')
+        uri = window.location.href.split('?')[0];
+    return uri;
+}
+function find_child(node, selector) {
+    var children = node.querySelectorAll(selector);
+    if (children.length) return children[0];
+    return;
+}
+function find_group(node) {
+    var parent = node.parentElement;
+    if (!parent) return;
+    if (parent.id == "frames") return node;
+    return find_group(parent);
+}
+function orig_save(e, attr, val) {
+    if (e.attributes["fg:orig_" + attr] != undefined) return;
+    if (e.attributes[attr] == undefined) return;
+    if (val == undefined) val = e.attributes[attr].value;
+    e.setAttribute("fg:orig_" + attr, val);
+}
+function orig_load(e, attr) {
+    if (e.attributes["fg:orig_"+attr] == undefined) return;
+    e.attributes[attr].value = e.attributes["fg:orig_" + attr].value;
+    e.removeAttribute("fg:orig_" + attr);
+}
+function g_to_text(e) {
+    var text = find_child(e, "title").firstChild.nodeValue;
+    return (text)
+}
+function g_to_func(e) {
+    var func = g_to_text(e);
+    // if there's any manipulation we want to do to the function
+    // name before it's searched, do it here before returning.
+    return (func);
+}
+function update_text(e) {
+    var r = find_child(e, "rect");
+    var t = find_child(e, "text");
+    var w = parseFloat(r.attributes.width.value) * frames.attributes.width.value / 100 - 3;
+    var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+    t.attributes.x.value = format_percent((parseFloat(r.attributes.x.value) + (100 * 3 / frames.attributes.width.value)));
+    // Smaller than this size won't fit anything
+    if (w < 2 * fontsize * fontwidth) {
+        t.textContent = "";
+        return;
+    }
+    t.textContent = txt;
+    // Fit in full text width
+    if (/^ *\$/.test(txt) || t.getComputedTextLength() < w)
+        return;
+    if (truncate_text_right) {
+        // Truncate the right side of the text.
+        for (var x = txt.length - 2; x > 0; x--) {
+            if (t.getSubStringLength(0, x + 2) <= w) {
+                t.textContent = txt.substring(0, x) + "..";
+                return;
+            }
+        }
+    } else {
+        // Truncate the left side of the text.
+        for (var x = 2; x < txt.length; x++) {
+            if (t.getSubStringLength(x - 2, txt.length) <= w) {
+                t.textContent = ".." + txt.substring(x, txt.length);
+                return;
+            }
+        }
+    }
+    t.textContent = "";
+}
+// zoom
+function zoom_reset(e) {
+    if (e.tagName == "rect") {
+        e.attributes.x.value = format_percent(100 * parseInt(e.attributes["fg:x"].value) / total_samples);
+        e.attributes.width.value = format_percent(100 * parseInt(e.attributes["fg:w"].value) / total_samples);
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_reset(c[i]);
+    }
+}
+function zoom_child(e, x, zoomed_width_samples) {
+    if (e.tagName == "text") {
+        var parent_x = parseFloat(find_child(e.parentNode, "rect[x]").attributes.x.value);
+        e.attributes.x.value = format_percent(parent_x + (100 * 3 / frames.attributes.width.value));
+    } else if (e.tagName == "rect") {
+        e.attributes.x.value = format_percent(100 * (parseInt(e.attributes["fg:x"].value) - x) / zoomed_width_samples);
+        e.attributes.width.value = format_percent(100 * parseInt(e.attributes["fg:w"].value) / zoomed_width_samples);
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_child(c[i], x, zoomed_width_samples);
+    }
+}
+function zoom_parent(e) {
+    if (e.attributes) {
+        if (e.attributes.x != undefined) {
+            e.attributes.x.value = "0.0%";
+        }
+        if (e.attributes.width != undefined) {
+            e.attributes.width.value = "100.0%";
+        }
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_parent(c[i]);
+    }
+}
+function zoom(node) {
+    var attr = find_child(node, "rect").attributes;
+    var width = parseInt(attr["fg:w"].value);
+    var xmin = parseInt(attr["fg:x"].value);
+    var xmax = xmin + width;
+    var ymin = parseFloat(attr.y.value);
+    unzoombtn.classList.remove("hide");
+    var el = frames.children;
+    for (var i = 0; i < el.length; i++) {
+        var e = el[i];
+        var a = find_child(e, "rect").attributes;
+        var ex = parseInt(a["fg:x"].value);
+        var ew = parseInt(a["fg:w"].value);
+        // Is it an ancestor
+        if (!inverted) {
+            var upstack = parseFloat(a.y.value) > ymin;
+        } else {
+            var upstack = parseFloat(a.y.value) < ymin;
+        }
+        if (upstack) {
+            // Direct ancestor
+            if (ex <= xmin && (ex+ew) >= xmax) {
+                e.classList.add("parent");
+                zoom_parent(e);
+                update_text(e);
+            }
+            // not in current path
+            else
+                e.classList.add("hide");
+        }
+        // Children maybe
+        else {
+            // no common path
+            if (ex < xmin || ex >= xmax) {
+                e.classList.add("hide");
+            }
+            else {
+                zoom_child(e, xmin, width);
+                update_text(e);
+            }
+        }
+    }
+}
+function unzoom() {
+    unzoombtn.classList.add("hide");
+    var el = frames.children;
+    for(var i = 0; i < el.length; i++) {
+        el[i].classList.remove("parent");
+        el[i].classList.remove("hide");
+        zoom_reset(el[i]);
+        update_text(el[i]);
+    }
+}
+// search
+function reset_search() {
+    var el = document.querySelectorAll("#frames rect");
+    for (var i = 0; i < el.length; i++) {
+        orig_load(el[i], "fill")
+    }
+    var params = get_params();
+    delete params.s;
+    history.replaceState(null, null, parse_params(params));
+}
+function search_prompt() {
+    if (!searching) {
+        var term = prompt("Enter a search term (regexp " +
+            "allowed, eg: ^ext4_)", "");
+        if (term != null) {
+            search(term)
+        }
+    } else {
+        reset_search();
+        searching = 0;
+        searchbtn.classList.remove("show");
+        searchbtn.firstChild.nodeValue = "Search"
+        matchedtxt.classList.add("hide");
+        matchedtxt.firstChild.nodeValue = ""
+    }
+}
+function search(term) {
+    var re = new RegExp(term);
+    var el = frames.children;
+    var matches = new Object();
+    var maxwidth = 0;
+    for (var i = 0; i < el.length; i++) {
+        var e = el[i];
+        // Skip over frames which are either not visible, or below the zoomed-to frame
+        if (e.classList.contains("hide") || e.classList.contains("parent")) {
+            continue;
+        }
+        var func = g_to_func(e);
+        var rect = find_child(e, "rect");
+        if (func == null || rect == null)
+            continue;
+        // Save max width. Only works as we have a root frame
+        var w = parseInt(rect.attributes["fg:w"].value);
+        if (w > maxwidth)
+            maxwidth = w;
+        if (func.match(re)) {
+            // highlight
+            var x = parseInt(rect.attributes["fg:x"].value);
+            orig_save(rect, "fill");
+            rect.attributes.fill.value = searchcolor;
+            // remember matches
+            if (matches[x] == undefined) {
+                matches[x] = w;
+            } else {
+                if (w > matches[x]) {
+                    // overwrite with parent
+                    matches[x] = w;
+                }
+            }
+            searching = 1;
+        }
+    }
+    if (!searching)
+        return;
+    var params = get_params();
+    params.s = term;
+    history.replaceState(null, null, parse_params(params));
+
+    searchbtn.classList.add("show");
+    searchbtn.firstChild.nodeValue = "Reset Search";
+    // calculate percent matched, excluding vertical overlap
+    var count = 0;
+    var lastx = -1;
+    var lastw = 0;
+    var keys = Array();
+    for (k in matches) {
+        if (matches.hasOwnProperty(k))
+            keys.push(k);
+    }
+    // sort the matched frames by their x location
+    // ascending, then width descending
+    keys.sort(function(a, b){
+        return a - b;
+    });
+    // Step through frames saving only the biggest bottom-up frames
+    // thanks to the sort order. This relies on the tree property
+    // where children are always smaller than their parents.
+    for (var k in keys) {
+        var x = parseInt(keys[k]);
+        var w = matches[keys[k]];
+        if (x >= lastx + lastw) {
+            count += w;
+            lastx = x;
+            lastw = w;
+        }
+    }
+    // display matched percent
+    matchedtxt.classList.remove("hide");
+    var pct = 100 * count / maxwidth;
+    if (pct != 100) pct = pct.toFixed(1);
+    matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+}
+function format_percent(n) {
+    return n.toFixed(4) + "%";
+}
+]]></script><rect x="0" y="0" width="100%" height="374" fill="url(#background)"/><text id="title" x="50.0000%" y="24.00">Flame Graph</text><text id="details" x="10" y="357.00"> </text><text id="unzoom" class="hide" x="10" y="24.00">Reset Zoom</text><text id="search" x="1090" y="24.00">Search</text><text id="matched" x="1090" y="357.00"> </text><svg id="frames" x="10" width="1180" total_samples="60334"><g><title>rust_qecp`&lt;std::io::stdio::Stderr as std::io::Write&gt;::write (11 samples, 0.02%)</title><rect x="0.0149%" y="53" width="0.0182%" height="15" fill="rgb(227,0,7)" fg:x="9" fg:w="11"/><text x="0.2649%" y="63.50"></text></g><g><title>libsystem_kernel.dylib`write (11 samples, 0.02%)</title><rect x="0.0149%" y="37" width="0.0182%" height="15" fill="rgb(217,0,24)" fg:x="9" fg:w="11"/><text x="0.2649%" y="47.50"></text></g><g><title>rust_qecp`alloc::fmt::format (7 samples, 0.01%)</title><rect x="0.0331%" y="53" width="0.0116%" height="15" fill="rgb(221,193,54)" fg:x="20" fg:w="7"/><text x="0.2831%" y="63.50"></text></g><g><title>rust_qecp`pbr::pb::ProgressBar&lt;T&gt;::draw (21 samples, 0.03%)</title><rect x="0.0116%" y="69" width="0.0348%" height="15" fill="rgb(248,212,6)" fg:x="7" fg:w="21"/><text x="0.2616%" y="79.50"></text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::build_exhausted_path (16 samples, 0.03%)</title><rect x="0.0464%" y="69" width="0.0265%" height="15" fill="rgb(208,68,35)" fg:x="28" fg:w="16"/><text x="0.2964%" y="79.50"></text></g><g><title>rust_qecp`petgraph::algo::dijkstra::dijkstra (7 samples, 0.01%)</title><rect x="0.0613%" y="53" width="0.0116%" height="15" fill="rgb(232,128,0)" fg:x="37" fg:w="7"/><text x="0.3113%" y="63.50"></text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::build_graph_fast_benchmark (18 samples, 0.03%)</title><rect x="0.0729%" y="69" width="0.0298%" height="15" fill="rgb(207,160,47)" fg:x="44" fg:w="18"/><text x="0.3229%" y="79.50"></text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::fast_measurement_given_few_errors (14 samples, 0.02%)</title><rect x="0.0796%" y="53" width="0.0232%" height="15" fill="rgb(228,23,34)" fg:x="48" fg:w="14"/><text x="0.3296%" y="63.50"></text></g><g><title>dyld`start (67 samples, 0.11%)</title><rect x="0.0000%" y="309" width="0.1110%" height="15" fill="rgb(218,30,26)" fg:x="0" fg:w="67"/><text x="0.2500%" y="319.50"></text></g><g><title>rust_qecp`main (66 samples, 0.11%)</title><rect x="0.0017%" y="293" width="0.1094%" height="15" fill="rgb(220,122,19)" fg:x="1" fg:w="66"/><text x="0.2517%" y="303.50"></text></g><g><title>rust_qecp`std::rt::lang_start_internal (66 samples, 0.11%)</title><rect x="0.0017%" y="277" width="0.1094%" height="15" fill="rgb(250,228,42)" fg:x="1" fg:w="66"/><text x="0.2517%" y="287.50"></text></g><g><title>rust_qecp`std::rt::lang_start::_{{closure}} (66 samples, 0.11%)</title><rect x="0.0017%" y="261" width="0.1094%" height="15" fill="rgb(240,193,28)" fg:x="1" fg:w="66"/><text x="0.2517%" y="271.50"></text></g><g><title>rust_qecp`std::sys_common::backtrace::__rust_begin_short_backtrace (66 samples, 0.11%)</title><rect x="0.0017%" y="245" width="0.1094%" height="15" fill="rgb(216,20,37)" fg:x="1" fg:w="66"/><text x="0.2517%" y="255.50"></text></g><g><title>rust_qecp`rust_qecp::main (66 samples, 0.11%)</title><rect x="0.0017%" y="229" width="0.1094%" height="15" fill="rgb(206,188,39)" fg:x="1" fg:w="66"/><text x="0.2517%" y="239.50"></text></g><g><title>rust_qecp`tokio::runtime::handle::Handle::enter (66 samples, 0.11%)</title><rect x="0.0017%" y="213" width="0.1094%" height="15" fill="rgb(217,207,13)" fg:x="1" fg:w="66"/><text x="0.2517%" y="223.50"></text></g><g><title>rust_qecp`tokio::runtime::context::enter (66 samples, 0.11%)</title><rect x="0.0017%" y="197" width="0.1094%" height="15" fill="rgb(231,73,38)" fg:x="1" fg:w="66"/><text x="0.2517%" y="207.50"></text></g><g><title>rust_qecp`tokio::runtime::basic_scheduler::BasicScheduler&lt;P&gt;::block_on (66 samples, 0.11%)</title><rect x="0.0017%" y="181" width="0.1094%" height="15" fill="rgb(225,20,46)" fg:x="1" fg:w="66"/><text x="0.2517%" y="191.50"></text></g><g><title>rust_qecp`tokio::macros::scoped_tls::ScopedKey&lt;T&gt;::set (66 samples, 0.11%)</title><rect x="0.0017%" y="165" width="0.1094%" height="15" fill="rgb(210,31,41)" fg:x="1" fg:w="66"/><text x="0.2517%" y="175.50"></text></g><g><title>rust_qecp`&lt;core::future::from_generator::GenFuture&lt;T&gt; as core::future::future::Future&gt;::poll (66 samples, 0.11%)</title><rect x="0.0017%" y="149" width="0.1094%" height="15" fill="rgb(221,200,47)" fg:x="1" fg:w="66"/><text x="0.2517%" y="159.50"></text></g><g><title>rust_qecp`tokio::macros::scoped_tls::ScopedKey&lt;T&gt;::set (66 samples, 0.11%)</title><rect x="0.0017%" y="133" width="0.1094%" height="15" fill="rgb(226,26,5)" fg:x="1" fg:w="66"/><text x="0.2517%" y="143.50"></text></g><g><title>rust_qecp`&lt;core::future::from_generator::GenFuture&lt;T&gt; as core::future::future::Future&gt;::poll (66 samples, 0.11%)</title><rect x="0.0017%" y="117" width="0.1094%" height="15" fill="rgb(249,33,26)" fg:x="1" fg:w="66"/><text x="0.2517%" y="127.50"></text></g><g><title>rust_qecp`rust_qecp::tool::run_matched_tool (65 samples, 0.11%)</title><rect x="0.0033%" y="101" width="0.1077%" height="15" fill="rgb(235,183,28)" fg:x="2" fg:w="65"/><text x="0.2533%" y="111.50"></text></g><g><title>rust_qecp`rust_qecp::tool::fault_tolerant_benchmark (65 samples, 0.11%)</title><rect x="0.0033%" y="85" width="0.1077%" height="15" fill="rgb(221,5,38)" fg:x="2" fg:w="65"/><text x="0.2533%" y="95.50"></text></g><g><title>libsystem_kernel.dylib`mach_absolute_time (25 samples, 0.04%)</title><rect x="0.1508%" y="229" width="0.0414%" height="15" fill="rgb(247,18,42)" fg:x="91" fg:w="25"/><text x="0.4008%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`free (33 samples, 0.05%)</title><rect x="0.1972%" y="229" width="0.0547%" height="15" fill="rgb(241,131,45)" fg:x="119" fg:w="33"/><text x="0.4472%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`szone_size (7 samples, 0.01%)</title><rect x="0.2403%" y="213" width="0.0116%" height="15" fill="rgb(249,31,29)" fg:x="145" fg:w="7"/><text x="0.4903%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`tiny_size (7 samples, 0.01%)</title><rect x="0.2403%" y="197" width="0.0116%" height="15" fill="rgb(225,111,53)" fg:x="145" fg:w="7"/><text x="0.4903%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`free_tiny (36 samples, 0.06%)</title><rect x="0.2519%" y="229" width="0.0597%" height="15" fill="rgb(238,160,17)" fg:x="152" fg:w="36"/><text x="0.5019%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_no_lock (25 samples, 0.04%)</title><rect x="0.2702%" y="213" width="0.0414%" height="15" fill="rgb(214,148,48)" fg:x="163" fg:w="25"/><text x="0.5202%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_list_remove_ptr (7 samples, 0.01%)</title><rect x="0.3000%" y="197" width="0.0116%" height="15" fill="rgb(232,36,49)" fg:x="181" fg:w="7"/><text x="0.5500%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_free_definite_size (7 samples, 0.01%)</title><rect x="0.3116%" y="229" width="0.0116%" height="15" fill="rgb(209,103,24)" fg:x="188" fg:w="7"/><text x="0.5616%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`szone_free_definite_size (9 samples, 0.01%)</title><rect x="0.3331%" y="229" width="0.0149%" height="15" fill="rgb(229,88,8)" fg:x="201" fg:w="9"/><text x="0.5831%" y="239.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_pointer_size (12 samples, 0.02%)</title><rect x="0.4127%" y="197" width="0.0199%" height="15" fill="rgb(213,181,19)" fg:x="249" fg:w="12"/><text x="0.6627%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`free (40 samples, 0.07%)</title><rect x="0.3746%" y="213" width="0.0663%" height="15" fill="rgb(254,191,54)" fg:x="226" fg:w="40"/><text x="0.6246%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`free_tiny (15 samples, 0.02%)</title><rect x="0.4409%" y="213" width="0.0249%" height="15" fill="rgb(241,83,37)" fg:x="266" fg:w="15"/><text x="0.6909%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_no_lock (12 samples, 0.02%)</title><rect x="0.4459%" y="197" width="0.0199%" height="15" fill="rgb(233,36,39)" fg:x="269" fg:w="12"/><text x="0.6959%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_free_to_block (14 samples, 0.02%)</title><rect x="0.4674%" y="213" width="0.0232%" height="15" fill="rgb(226,3,54)" fg:x="282" fg:w="14"/><text x="0.7174%" y="223.50"></text></g><g><title>rust_qecp`&lt;alloc::collections::btree::map::IntoIter&lt;K,V&gt; as core::ops::drop::Drop&gt;::drop (94 samples, 0.16%)</title><rect x="0.3597%" y="229" width="0.1558%" height="15" fill="rgb(245,192,40)" fg:x="217" fg:w="94"/><text x="0.6097%" y="239.50"></text></g><g><title>rust_qecp`alloc::collections::btree::navigate::_&lt;impl alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Dying,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;&gt;::deallocating_next_unchecked (13 samples, 0.02%)</title><rect x="0.4939%" y="213" width="0.0215%" height="15" fill="rgb(238,167,29)" fg:x="298" fg:w="13"/><text x="0.7439%" y="223.50"></text></g><g><title>libsystem_kernel.dylib`mach_absolute_time (92 samples, 0.15%)</title><rect x="0.5519%" y="213" width="0.1525%" height="15" fill="rgb(232,182,51)" fg:x="333" fg:w="92"/><text x="0.8019%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_pointer_size (7 samples, 0.01%)</title><rect x="0.7392%" y="197" width="0.0116%" height="15" fill="rgb(231,60,39)" fg:x="446" fg:w="7"/><text x="0.9892%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`free (20 samples, 0.03%)</title><rect x="0.7226%" y="213" width="0.0331%" height="15" fill="rgb(208,69,12)" fg:x="436" fg:w="20"/><text x="0.9726%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_free_definite_size (8 samples, 0.01%)</title><rect x="0.7624%" y="213" width="0.0133%" height="15" fill="rgb(235,93,37)" fg:x="460" fg:w="8"/><text x="1.0124%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_free_to_block (11 samples, 0.02%)</title><rect x="0.7757%" y="213" width="0.0182%" height="15" fill="rgb(213,116,39)" fg:x="468" fg:w="11"/><text x="1.0257%" y="223.50"></text></g><g><title>libsystem_platform.dylib`_platform_memmove (17 samples, 0.03%)</title><rect x="0.7939%" y="213" width="0.0282%" height="15" fill="rgb(222,207,29)" fg:x="479" fg:w="17"/><text x="1.0439%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_should_clear (22 samples, 0.04%)</title><rect x="0.9000%" y="149" width="0.0365%" height="15" fill="rgb(206,96,30)" fg:x="543" fg:w="22"/><text x="1.1500%" y="159.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_from_free_list (15 samples, 0.02%)</title><rect x="0.9116%" y="133" width="0.0249%" height="15" fill="rgb(218,138,4)" fg:x="550" fg:w="15"/><text x="1.1616%" y="143.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (31 samples, 0.05%)</title><rect x="0.8917%" y="165" width="0.0514%" height="15" fill="rgb(250,191,14)" fg:x="538" fg:w="31"/><text x="1.1417%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_calloc (37 samples, 0.06%)</title><rect x="0.8834%" y="181" width="0.0613%" height="15" fill="rgb(239,60,40)" fg:x="533" fg:w="37"/><text x="1.1334%" y="191.50"></text></g><g><title>rust_qecp`&lt;rust_qecp::ftqec::Correction as core::convert::From&lt;&amp;rust_qecp::ftqec::SparseCorrection&gt;&gt;::from (77 samples, 0.13%)</title><rect x="0.8221%" y="213" width="0.1276%" height="15" fill="rgb(206,27,48)" fg:x="496" fg:w="77"/><text x="1.0721%" y="223.50"></text></g><g><title>rust_qecp`ndarray::impl_constructors::_&lt;impl ndarray::ArrayBase&lt;S,D&gt;&gt;::from_elem (46 samples, 0.08%)</title><rect x="0.8735%" y="197" width="0.0762%" height="15" fill="rgb(225,35,8)" fg:x="527" fg:w="46"/><text x="1.1235%" y="207.50"></text></g><g><title>libsystem_kernel.dylib`mach_absolute_time (67 samples, 0.11%)</title><rect x="4.0425%" y="197" width="0.1110%" height="15" fill="rgb(250,213,24)" fg:x="2439" fg:w="67"/><text x="4.2925%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_allocate (40 samples, 0.07%)</title><rect x="4.2132%" y="165" width="0.0663%" height="15" fill="rgb(247,123,22)" fg:x="2542" fg:w="40"/><text x="4.4632%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_allocate_from_block (15 samples, 0.02%)</title><rect x="4.2546%" y="149" width="0.0249%" height="15" fill="rgb(231,138,38)" fg:x="2567" fg:w="15"/><text x="4.5046%" y="159.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (80 samples, 0.13%)</title><rect x="4.1535%" y="197" width="0.1326%" height="15" fill="rgb(231,145,46)" fg:x="2506" fg:w="80"/><text x="4.4035%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_malloc (56 samples, 0.09%)</title><rect x="4.1933%" y="181" width="0.0928%" height="15" fill="rgb(251,118,11)" fg:x="2530" fg:w="56"/><text x="4.4433%" y="191.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_pointer_size (22 samples, 0.04%)</title><rect x="4.3574%" y="181" width="0.0365%" height="15" fill="rgb(217,147,25)" fg:x="2629" fg:w="22"/><text x="4.6074%" y="191.50"></text></g><g><title>libsystem_malloc.dylib`free (62 samples, 0.10%)</title><rect x="4.2944%" y="197" width="0.1028%" height="15" fill="rgb(247,81,37)" fg:x="2591" fg:w="62"/><text x="4.5444%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`free_tiny (8 samples, 0.01%)</title><rect x="4.3972%" y="197" width="0.0133%" height="15" fill="rgb(209,12,38)" fg:x="2653" fg:w="8"/><text x="4.6472%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_free_definite_size (8 samples, 0.01%)</title><rect x="4.4104%" y="197" width="0.0133%" height="15" fill="rgb(227,1,9)" fg:x="2661" fg:w="8"/><text x="4.6604%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_free_to_block (13 samples, 0.02%)</title><rect x="4.4237%" y="197" width="0.0215%" height="15" fill="rgb(248,47,43)" fg:x="2669" fg:w="13"/><text x="4.6737%" y="207.50"></text></g><g><title>libsystem_platform.dylib`_platform_memmove (18 samples, 0.03%)</title><rect x="4.4668%" y="197" width="0.0298%" height="15" fill="rgb(221,10,30)" fg:x="2695" fg:w="18"/><text x="4.7168%" y="207.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (11 samples, 0.02%)</title><rect x="4.5298%" y="165" width="0.0182%" height="15" fill="rgb(210,229,1)" fg:x="2733" fg:w="11"/><text x="4.7798%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_should_clear (10 samples, 0.02%)</title><rect x="4.5314%" y="149" width="0.0166%" height="15" fill="rgb(222,148,37)" fg:x="2734" fg:w="10"/><text x="4.7814%" y="159.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (13 samples, 0.02%)</title><rect x="4.5281%" y="181" width="0.0215%" height="15" fill="rgb(234,67,33)" fg:x="2732" fg:w="13"/><text x="4.7781%" y="191.50"></text></g><g><title>libsystem_platform.dylib`_platform_memmove (13 samples, 0.02%)</title><rect x="4.5712%" y="165" width="0.0215%" height="15" fill="rgb(247,98,35)" fg:x="2758" fg:w="13"/><text x="4.8212%" y="175.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::entry::VacantEntry&lt;K,V&gt;::insert (42 samples, 0.07%)</title><rect x="4.5530%" y="181" width="0.0696%" height="15" fill="rgb(247,138,52)" fg:x="2747" fg:w="42"/><text x="4.8030%" y="191.50"></text></g><g><title>rust_qecp`alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Mut,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;::insert_recursing (15 samples, 0.02%)</title><rect x="4.5977%" y="165" width="0.0249%" height="15" fill="rgb(213,79,30)" fg:x="2774" fg:w="15"/><text x="4.8477%" y="175.50"></text></g><g><title>rust_qecp`alloc::collections::btree::map::BTreeMap&lt;K,V&gt;::insert (79 samples, 0.13%)</title><rect x="4.5099%" y="197" width="0.1309%" height="15" fill="rgb(246,177,23)" fg:x="2721" fg:w="79"/><text x="4.7599%" y="207.50"></text></g><g><title>rust_qecp`alloc::collections::btree::node::Handle&lt;alloc::collections::btree::node::NodeRef&lt;alloc::collections::btree::node::marker::Mut,K,V,alloc::collections::btree::node::marker::Leaf&gt;,alloc::collections::btree::node::marker::Edge&gt;::insert_recursing (11 samples, 0.02%)</title><rect x="4.6226%" y="181" width="0.0182%" height="15" fill="rgb(230,62,27)" fg:x="2789" fg:w="11"/><text x="4.8726%" y="191.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_allocate (9 samples, 0.01%)</title><rect x="4.6624%" y="133" width="0.0149%" height="15" fill="rgb(216,154,8)" fg:x="2813" fg:w="9"/><text x="4.9124%" y="143.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (14 samples, 0.02%)</title><rect x="4.6557%" y="165" width="0.0232%" height="15" fill="rgb(244,35,45)" fg:x="2809" fg:w="14"/><text x="4.9057%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_malloc (10 samples, 0.02%)</title><rect x="4.6624%" y="149" width="0.0166%" height="15" fill="rgb(251,115,12)" fg:x="2813" fg:w="10"/><text x="4.9124%" y="159.50"></text></g><g><title>rust_qecp`alloc::raw_vec::RawVec&lt;T,A&gt;::reserve::do_reserve_and_handle (21 samples, 0.03%)</title><rect x="4.6475%" y="197" width="0.0348%" height="15" fill="rgb(240,54,50)" fg:x="2804" fg:w="21"/><text x="4.8975%" y="207.50"></text></g><g><title>rust_qecp`alloc::raw_vec::finish_grow (16 samples, 0.03%)</title><rect x="4.6557%" y="181" width="0.0265%" height="15" fill="rgb(233,84,52)" fg:x="2809" fg:w="16"/><text x="4.9057%" y="191.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (16 samples, 0.03%)</title><rect x="4.7486%" y="165" width="0.0265%" height="15" fill="rgb(207,117,47)" fg:x="2865" fg:w="16"/><text x="4.9986%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_malloc (12 samples, 0.02%)</title><rect x="4.7552%" y="149" width="0.0199%" height="15" fill="rgb(249,43,39)" fg:x="2869" fg:w="12"/><text x="5.0052%" y="159.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_allocate (7 samples, 0.01%)</title><rect x="4.7635%" y="133" width="0.0116%" height="15" fill="rgb(209,38,44)" fg:x="2874" fg:w="7"/><text x="5.0135%" y="143.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_pointer_size (7 samples, 0.01%)</title><rect x="4.8414%" y="133" width="0.0116%" height="15" fill="rgb(236,212,23)" fg:x="2921" fg:w="7"/><text x="5.0914%" y="143.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_free_to_block (12 samples, 0.02%)</title><rect x="4.8795%" y="117" width="0.0199%" height="15" fill="rgb(242,79,21)" fg:x="2944" fg:w="12"/><text x="5.1295%" y="127.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_pointer_size (8 samples, 0.01%)</title><rect x="4.9077%" y="117" width="0.0133%" height="15" fill="rgb(211,96,35)" fg:x="2961" fg:w="8"/><text x="5.1577%" y="127.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (33 samples, 0.05%)</title><rect x="4.9209%" y="117" width="0.0547%" height="15" fill="rgb(253,215,40)" fg:x="2969" fg:w="33"/><text x="5.1709%" y="127.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_should_clear (27 samples, 0.04%)</title><rect x="4.9309%" y="101" width="0.0448%" height="15" fill="rgb(211,81,21)" fg:x="2975" fg:w="27"/><text x="5.1809%" y="111.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_from_free_list (15 samples, 0.02%)</title><rect x="4.9508%" y="85" width="0.0249%" height="15" fill="rgb(208,190,38)" fg:x="2987" fg:w="15"/><text x="5.2008%" y="95.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_realloc (75 samples, 0.12%)</title><rect x="4.8530%" y="133" width="0.1243%" height="15" fill="rgb(235,213,38)" fg:x="2928" fg:w="75"/><text x="5.1030%" y="143.50"></text></g><g><title>libsystem_malloc.dylib`small_malloc_should_clear (11 samples, 0.02%)</title><rect x="5.0370%" y="101" width="0.0182%" height="15" fill="rgb(237,122,38)" fg:x="3039" fg:w="11"/><text x="5.2870%" y="111.50"></text></g><g><title>libsystem_malloc.dylib`small_malloc_from_free_list (7 samples, 0.01%)</title><rect x="5.0436%" y="85" width="0.0116%" height="15" fill="rgb(244,218,35)" fg:x="3043" fg:w="7"/><text x="5.2936%" y="95.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (14 samples, 0.02%)</title><rect x="5.0353%" y="117" width="0.0232%" height="15" fill="rgb(240,68,47)" fg:x="3038" fg:w="14"/><text x="5.2853%" y="127.50"></text></g><g><title>libsystem_malloc.dylib`szone_realloc (64 samples, 0.11%)</title><rect x="4.9856%" y="133" width="0.1061%" height="15" fill="rgb(210,16,53)" fg:x="3008" fg:w="64"/><text x="5.2356%" y="143.50"></text></g><g><title>libsystem_malloc.dylib`tiny_try_realloc_in_place (12 samples, 0.02%)</title><rect x="5.0718%" y="117" width="0.0199%" height="15" fill="rgb(235,124,12)" fg:x="3060" fg:w="12"/><text x="5.3218%" y="127.50"></text></g><g><title>libsystem_malloc.dylib`malloc_zone_realloc (179 samples, 0.30%)</title><rect x="4.8165%" y="149" width="0.2967%" height="15" fill="rgb(224,169,11)" fg:x="2906" fg:w="179"/><text x="5.0665%" y="159.50"></text></g><g><title>libsystem_platform.dylib`_platform_memmove (13 samples, 0.02%)</title><rect x="5.0917%" y="133" width="0.0215%" height="15" fill="rgb(250,166,2)" fg:x="3072" fg:w="13"/><text x="5.3417%" y="143.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_pointer_size (18 samples, 0.03%)</title><rect x="5.1132%" y="149" width="0.0298%" height="15" fill="rgb(242,216,29)" fg:x="3085" fg:w="18"/><text x="5.3632%" y="159.50"></text></g><g><title>libsystem_malloc.dylib`realloc (238 samples, 0.39%)</title><rect x="4.7867%" y="165" width="0.3945%" height="15" fill="rgb(230,116,27)" fg:x="2888" fg:w="238"/><text x="5.0367%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`szone_size (12 samples, 0.02%)</title><rect x="5.1613%" y="149" width="0.0199%" height="15" fill="rgb(228,99,48)" fg:x="3114" fg:w="12"/><text x="5.4113%" y="159.50"></text></g><g><title>libsystem_malloc.dylib`tiny_size (12 samples, 0.02%)</title><rect x="5.1613%" y="133" width="0.0199%" height="15" fill="rgb(253,11,6)" fg:x="3114" fg:w="12"/><text x="5.4113%" y="143.50"></text></g><g><title>rust_qecp`alloc::raw_vec::RawVec&lt;T,A&gt;::reserve_for_push (305 samples, 0.51%)</title><rect x="4.6823%" y="197" width="0.5055%" height="15" fill="rgb(247,143,39)" fg:x="2825" fg:w="305"/><text x="4.9323%" y="207.50"></text></g><g><title>rust_qecp`alloc::raw_vec::finish_grow (272 samples, 0.45%)</title><rect x="4.7370%" y="181" width="0.4508%" height="15" fill="rgb(236,97,10)" fg:x="2858" fg:w="272"/><text x="4.9870%" y="191.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_malloc (8 samples, 0.01%)</title><rect x="5.5607%" y="165" width="0.0133%" height="15" fill="rgb(233,208,19)" fg:x="3355" fg:w="8"/><text x="5.8107%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (33 samples, 0.05%)</title><rect x="5.5441%" y="181" width="0.0547%" height="15" fill="rgb(216,164,2)" fg:x="3345" fg:w="33"/><text x="5.7941%" y="191.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (15 samples, 0.02%)</title><rect x="5.5740%" y="165" width="0.0249%" height="15" fill="rgb(220,129,5)" fg:x="3363" fg:w="15"/><text x="5.8240%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_should_clear (11 samples, 0.02%)</title><rect x="5.5806%" y="149" width="0.0182%" height="15" fill="rgb(242,17,10)" fg:x="3367" fg:w="11"/><text x="5.8306%" y="159.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_from_free_list (7 samples, 0.01%)</title><rect x="5.5872%" y="133" width="0.0116%" height="15" fill="rgb(242,107,0)" fg:x="3371" fg:w="7"/><text x="5.8372%" y="143.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_pointer_size (9 samples, 0.01%)</title><rect x="5.6303%" y="165" width="0.0149%" height="15" fill="rgb(251,28,31)" fg:x="3397" fg:w="9"/><text x="5.8803%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`free (36 samples, 0.06%)</title><rect x="5.6005%" y="181" width="0.0597%" height="15" fill="rgb(233,223,10)" fg:x="3379" fg:w="36"/><text x="5.8505%" y="191.50"></text></g><g><title>libsystem_malloc.dylib`szone_size (8 samples, 0.01%)</title><rect x="5.6469%" y="165" width="0.0133%" height="15" fill="rgb(215,21,27)" fg:x="3407" fg:w="8"/><text x="5.8969%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`tiny_size (7 samples, 0.01%)</title><rect x="5.6486%" y="149" width="0.0116%" height="15" fill="rgb(232,23,21)" fg:x="3408" fg:w="7"/><text x="5.8986%" y="159.50"></text></g><g><title>libsystem_malloc.dylib`free_small (17 samples, 0.03%)</title><rect x="5.6602%" y="181" width="0.0282%" height="15" fill="rgb(244,5,23)" fg:x="3415" fg:w="17"/><text x="5.9102%" y="191.50"></text></g><g><title>libsystem_malloc.dylib`free_tiny (7 samples, 0.01%)</title><rect x="5.6883%" y="181" width="0.0116%" height="15" fill="rgb(226,81,46)" fg:x="3432" fg:w="7"/><text x="5.9383%" y="191.50"></text></g><g><title>rust_qecp`PerfectMatching::AddEdge (82 samples, 0.14%)</title><rect x="5.7265%" y="181" width="0.1359%" height="15" fill="rgb(247,70,30)" fg:x="3455" fg:w="82"/><text x="5.9765%" y="191.50"></text></g><g><title>libc++abi.dylib`operator new(unsigned long) (9 samples, 0.01%)</title><rect x="5.9320%" y="165" width="0.0149%" height="15" fill="rgb(212,68,19)" fg:x="3579" fg:w="9"/><text x="6.1820%" y="175.50"></text></g><g><title>libsystem_kernel.dylib`getrusage (293 samples, 0.49%)</title><rect x="5.9469%" y="165" width="0.4856%" height="15" fill="rgb(240,187,13)" fg:x="3588" fg:w="293"/><text x="6.1969%" y="175.50"></text></g><g><title>libsystem_platform.dylib`_platform_memset (14 samples, 0.02%)</title><rect x="6.4574%" y="165" width="0.0232%" height="15" fill="rgb(223,113,26)" fg:x="3896" fg:w="14"/><text x="6.7074%" y="175.50"></text></g><g><title>rust_qecp`PerfectMatching::AddEdge (255 samples, 0.42%)</title><rect x="6.4872%" y="165" width="0.4226%" height="15" fill="rgb(206,192,2)" fg:x="3914" fg:w="255"/><text x="6.7372%" y="175.50"></text></g><g><title>rust_qecp`PerfectMatching::Finish (17 samples, 0.03%)</title><rect x="6.9099%" y="165" width="0.0282%" height="15" fill="rgb(241,108,4)" fg:x="4169" fg:w="17"/><text x="7.1599%" y="175.50"></text></g><g><title>rust_qecp`PerfectMatching::GetMatch (14 samples, 0.02%)</title><rect x="6.9380%" y="165" width="0.0232%" height="15" fill="rgb(247,173,49)" fg:x="4186" fg:w="14"/><text x="7.1880%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (29 samples, 0.05%)</title><rect x="6.9762%" y="133" width="0.0481%" height="15" fill="rgb(224,114,35)" fg:x="4209" fg:w="29"/><text x="7.2262%" y="143.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_malloc (16 samples, 0.03%)</title><rect x="6.9977%" y="117" width="0.0265%" height="15" fill="rgb(245,159,27)" fg:x="4222" fg:w="16"/><text x="7.2477%" y="127.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_allocate (12 samples, 0.02%)</title><rect x="7.0043%" y="101" width="0.0199%" height="15" fill="rgb(245,172,44)" fg:x="4226" fg:w="12"/><text x="7.2543%" y="111.50"></text></g><g><title>libc++abi.dylib`operator new(unsigned long) (32 samples, 0.05%)</title><rect x="6.9762%" y="149" width="0.0530%" height="15" fill="rgb(236,23,11)" fg:x="4209" fg:w="32"/><text x="7.2262%" y="159.50"></text></g><g><title>libsystem_malloc.dylib`small_free_list_add_ptr (13 samples, 0.02%)</title><rect x="7.0938%" y="85" width="0.0215%" height="15" fill="rgb(205,117,38)" fg:x="4280" fg:w="13"/><text x="7.3438%" y="95.50"></text></g><g><title>libsystem_malloc.dylib`small_malloc_should_clear (44 samples, 0.07%)</title><rect x="7.0524%" y="117" width="0.0729%" height="15" fill="rgb(237,72,25)" fg:x="4255" fg:w="44"/><text x="7.3024%" y="127.50"></text></g><g><title>libsystem_malloc.dylib`small_malloc_from_free_list (35 samples, 0.06%)</title><rect x="7.0673%" y="101" width="0.0580%" height="15" fill="rgb(244,70,9)" fg:x="4264" fg:w="35"/><text x="7.3173%" y="111.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (58 samples, 0.10%)</title><rect x="7.0425%" y="133" width="0.0961%" height="15" fill="rgb(217,125,39)" fg:x="4249" fg:w="58"/><text x="7.2925%" y="143.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_should_clear (8 samples, 0.01%)</title><rect x="7.1253%" y="117" width="0.0133%" height="15" fill="rgb(235,36,10)" fg:x="4299" fg:w="8"/><text x="7.3753%" y="127.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (67 samples, 0.11%)</title><rect x="7.0292%" y="149" width="0.1110%" height="15" fill="rgb(251,123,47)" fg:x="4241" fg:w="67"/><text x="7.2792%" y="159.50"></text></g><g><title>rust_qecp`PerfectMatching::PerfectMatching (110 samples, 0.18%)</title><rect x="6.9629%" y="165" width="0.1823%" height="15" fill="rgb(221,13,13)" fg:x="4201" fg:w="110"/><text x="7.2129%" y="175.50"></text></g><g><title>rust_qecp`PerfectMatching::ProcessEdge00 (8 samples, 0.01%)</title><rect x="7.1452%" y="165" width="0.0133%" height="15" fill="rgb(238,131,9)" fg:x="4311" fg:w="8"/><text x="7.3952%" y="175.50"></text></g><g><title>libsystem_kernel.dylib`getrusage (179 samples, 0.30%)</title><rect x="7.2165%" y="149" width="0.2967%" height="15" fill="rgb(211,50,8)" fg:x="4354" fg:w="179"/><text x="7.4665%" y="159.50"></text></g><g><title>rust_qecp`PerfectMatching::AugmentBranch (30 samples, 0.05%)</title><rect x="7.5165%" y="133" width="0.0497%" height="15" fill="rgb(245,182,24)" fg:x="4535" fg:w="30"/><text x="7.7665%" y="143.50"></text></g><g><title>rust_qecp`PerfectMatching::Augment (31 samples, 0.05%)</title><rect x="7.5165%" y="149" width="0.0514%" height="15" fill="rgb(242,14,37)" fg:x="4535" fg:w="31"/><text x="7.7665%" y="159.50"></text></g><g><title>rust_qecp`PerfectMatching::GrowNode (31 samples, 0.05%)</title><rect x="7.6275%" y="133" width="0.0514%" height="15" fill="rgb(246,228,12)" fg:x="4602" fg:w="31"/><text x="7.8775%" y="143.50"></text></g><g><title>rust_qecp`PerfectMatching::GrowTree (73 samples, 0.12%)</title><rect x="7.5762%" y="149" width="0.1210%" height="15" fill="rgb(213,55,15)" fg:x="4571" fg:w="73"/><text x="7.8262%" y="159.50"></text></g><g><title>rust_qecp`PriorityQueue&lt;double&gt;::_Remove(PriorityQueue (11 samples, 0.02%)</title><rect x="7.6789%" y="133" width="0.0182%" height="15" fill="rgb(209,9,3)" fg:x="4633" fg:w="11"/><text x="7.9289%" y="143.50"></text></g><g><title>rust_qecp`PerfectMatching::InitGreedy (643 samples, 1.07%)</title><rect x="7.8662%" y="133" width="1.0657%" height="15" fill="rgb(230,59,30)" fg:x="4746" fg:w="643"/><text x="8.1162%" y="143.50"></text></g><g><title>rust_qecp`PerfectMatching::InitGlobal (751 samples, 1.24%)</title><rect x="7.6972%" y="149" width="1.2447%" height="15" fill="rgb(209,121,21)" fg:x="4644" fg:w="751"/><text x="7.9472%" y="159.50"></text></g><g><title>rust_qecp`PerfectMatching::Shrink (52 samples, 0.09%)</title><rect x="8.9469%" y="149" width="0.0862%" height="15" fill="rgb(220,109,13)" fg:x="5398" fg:w="52"/><text x="9.1969%" y="159.50"></text></g><g><title>rust_qecp`PerfectMatching::FindBlossomRoot (11 samples, 0.02%)</title><rect x="9.0148%" y="133" width="0.0182%" height="15" fill="rgb(232,18,1)" fg:x="5439" fg:w="11"/><text x="9.2648%" y="143.50"></text></g><g><title>rust_qecp`PerfectMatching::Solve (1,137 samples, 1.88%)</title><rect x="7.1585%" y="165" width="1.8845%" height="15" fill="rgb(215,41,42)" fg:x="4319" fg:w="1137"/><text x="7.4085%" y="175.50">r..</text></g><g><title>libsystem_malloc.dylib`free (30 samples, 0.05%)</title><rect x="9.0463%" y="149" width="0.0497%" height="15" fill="rgb(224,123,36)" fg:x="5458" fg:w="30"/><text x="9.2963%" y="159.50"></text></g><g><title>libsystem_malloc.dylib`szone_size (9 samples, 0.01%)</title><rect x="9.0811%" y="133" width="0.0149%" height="15" fill="rgb(240,125,3)" fg:x="5479" fg:w="9"/><text x="9.3311%" y="143.50"></text></g><g><title>libsystem_malloc.dylib`tiny_size (8 samples, 0.01%)</title><rect x="9.0828%" y="117" width="0.0133%" height="15" fill="rgb(205,98,50)" fg:x="5480" fg:w="8"/><text x="9.3328%" y="127.50"></text></g><g><title>libsystem_malloc.dylib`free_small (19 samples, 0.03%)</title><rect x="9.0960%" y="149" width="0.0315%" height="15" fill="rgb(205,185,37)" fg:x="5488" fg:w="19"/><text x="9.3460%" y="159.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_free_to_block (10 samples, 0.02%)</title><rect x="9.1441%" y="149" width="0.0166%" height="15" fill="rgb(238,207,15)" fg:x="5517" fg:w="10"/><text x="9.3941%" y="159.50"></text></g><g><title>rust_qecp`PerfectMatching::~PerfectMatching (81 samples, 0.13%)</title><rect x="9.0447%" y="165" width="0.1343%" height="15" fill="rgb(213,199,42)" fg:x="5457" fg:w="81"/><text x="9.2947%" y="175.50"></text></g><g><title>rust_qecp`rust_qecp::blossom_v::safe_minimum_weight_perfect_matching (2,403 samples, 3.98%)</title><rect x="5.1977%" y="197" width="3.9828%" height="15" fill="rgb(235,201,11)" fg:x="3136" fg:w="2403"/><text x="5.4477%" y="207.50">rust..</text></g><g><title>rust_qecp`minimum_weight_perfect_matching (1,997 samples, 3.31%)</title><rect x="5.8707%" y="181" width="3.3099%" height="15" fill="rgb(207,46,11)" fg:x="3542" fg:w="1997"/><text x="6.1207%" y="191.50">rus..</text></g><g><title>libsystem_malloc.dylib`_malloc_zone_malloc (23 samples, 0.04%)</title><rect x="9.4690%" y="181" width="0.0381%" height="15" fill="rgb(241,35,35)" fg:x="5713" fg:w="23"/><text x="9.7190%" y="191.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_malloc (15 samples, 0.02%)</title><rect x="9.4822%" y="165" width="0.0249%" height="15" fill="rgb(243,32,47)" fg:x="5721" fg:w="15"/><text x="9.7322%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`nanov2_allocate (10 samples, 0.02%)</title><rect x="9.4905%" y="149" width="0.0166%" height="15" fill="rgb(247,202,23)" fg:x="5726" fg:w="10"/><text x="9.7405%" y="159.50"></text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::decode_MWPM_sparse_correction_with_edge_matchings (5,133 samples, 8.51%)</title><rect x="1.0061%" y="213" width="8.5076%" height="15" fill="rgb(219,102,11)" fg:x="607" fg:w="5133"/><text x="1.2561%" y="223.50">rust_qecp`ru..</text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::get_correction_two_nodes (201 samples, 0.33%)</title><rect x="9.1806%" y="197" width="0.3331%" height="15" fill="rgb(243,110,44)" fg:x="5539" fg:w="201"/><text x="9.4306%" y="207.50"></text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::decode_MWPM (5,517 samples, 9.14%)</title><rect x="0.5420%" y="229" width="9.1441%" height="15" fill="rgb(222,74,54)" fg:x="327" fg:w="5517"/><text x="0.7920%" y="239.50">rust_qecp`rus..</text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::get_correction_two_nodes (104 samples, 0.17%)</title><rect x="9.5137%" y="213" width="0.1724%" height="15" fill="rgb(216,99,12)" fg:x="5740" fg:w="104"/><text x="9.7637%" y="223.50"></text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::generate_detected_erasures (7,359 samples, 12.20%)</title><rect x="9.6861%" y="229" width="12.1971%" height="15" fill="rgb(226,22,26)" fg:x="5844" fg:w="7359"/><text x="9.9361%" y="239.50">rust_qecp`rust_qec..</text></g><g><title>libsystem_malloc.dylib`DYLD-STUB$$_platform_memset (7 samples, 0.01%)</title><rect x="23.0799%" y="165" width="0.0116%" height="15" fill="rgb(217,163,10)" fg:x="13925" fg:w="7"/><text x="23.3299%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_should_clear (28 samples, 0.05%)</title><rect x="23.0931%" y="165" width="0.0464%" height="15" fill="rgb(213,25,53)" fg:x="13933" fg:w="28"/><text x="23.3431%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_from_free_list (14 samples, 0.02%)</title><rect x="23.1163%" y="149" width="0.0232%" height="15" fill="rgb(252,105,26)" fg:x="13947" fg:w="14"/><text x="23.3663%" y="159.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_list_add_ptr (7 samples, 0.01%)</title><rect x="23.1279%" y="133" width="0.0116%" height="15" fill="rgb(220,39,43)" fg:x="13954" fg:w="7"/><text x="23.3779%" y="143.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (51 samples, 0.08%)</title><rect x="23.0799%" y="181" width="0.0845%" height="15" fill="rgb(229,68,48)" fg:x="13925" fg:w="51"/><text x="23.3299%" y="191.50"></text></g><g><title>libsystem_platform.dylib`_platform_memset (15 samples, 0.02%)</title><rect x="23.1395%" y="165" width="0.0249%" height="15" fill="rgb(252,8,32)" fg:x="13961" fg:w="15"/><text x="23.3895%" y="175.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_calloc (58 samples, 0.10%)</title><rect x="23.0732%" y="197" width="0.0961%" height="15" fill="rgb(223,20,43)" fg:x="13921" fg:w="58"/><text x="23.3232%" y="207.50"></text></g><g><title>rust_qecp`ndarray::impl_constructors::_&lt;impl ndarray::ArrayBase&lt;S,D&gt;&gt;::from_elem (64 samples, 0.11%)</title><rect x="23.0716%" y="213" width="0.1061%" height="15" fill="rgb(229,81,49)" fg:x="13920" fg:w="64"/><text x="23.3216%" y="223.50"></text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::generate_measurement (1,449 samples, 2.40%)</title><rect x="21.8832%" y="229" width="2.4016%" height="15" fill="rgb(236,28,36)" fg:x="13203" fg:w="1449"/><text x="22.1332%" y="239.50">ru..</text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::is_measurement_error_at (668 samples, 1.11%)</title><rect x="23.1776%" y="213" width="1.1072%" height="15" fill="rgb(249,185,26)" fg:x="13984" fg:w="668"/><text x="23.4276%" y="223.50"></text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::generate_random_errors (21,621 samples, 35.84%)</title><rect x="24.2848%" y="229" width="35.8355%" height="15" fill="rgb(249,174,33)" fg:x="14652" fg:w="21621"/><text x="24.5348%" y="239.50">rust_qecp`rust_qecp::ftqec::PlanarCodeModel::generate_rand..</text></g><g><title>libsystem_malloc.dylib`free (15 samples, 0.02%)</title><rect x="60.1303%" y="213" width="0.0249%" height="15" fill="rgb(233,201,37)" fg:x="36279" fg:w="15"/><text x="60.3803%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_list_add_ptr (9 samples, 0.01%)</title><rect x="60.1850%" y="181" width="0.0149%" height="15" fill="rgb(221,78,26)" fg:x="36312" fg:w="9"/><text x="60.4350%" y="191.50"></text></g><g><title>libsystem_malloc.dylib`free_tiny (30 samples, 0.05%)</title><rect x="60.1551%" y="213" width="0.0497%" height="15" fill="rgb(250,127,30)" fg:x="36294" fg:w="30"/><text x="60.4051%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`tiny_free_no_lock (27 samples, 0.04%)</title><rect x="60.1601%" y="197" width="0.0448%" height="15" fill="rgb(230,49,44)" fg:x="36297" fg:w="27"/><text x="60.4101%" y="207.50"></text></g><g><title>rust_qecp`rust_qecp::ftqec::Correction::xor_ndarray3 (960 samples, 1.59%)</title><rect x="60.2115%" y="213" width="1.5911%" height="15" fill="rgb(229,67,23)" fg:x="36328" fg:w="960"/><text x="60.4615%" y="223.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_should_clear (27 samples, 0.04%)</title><rect x="63.3905%" y="149" width="0.0448%" height="15" fill="rgb(249,83,47)" fg:x="38246" fg:w="27"/><text x="63.6405%" y="159.50"></text></g><g><title>libsystem_malloc.dylib`tiny_malloc_from_free_list (19 samples, 0.03%)</title><rect x="63.4037%" y="133" width="0.0315%" height="15" fill="rgb(215,43,3)" fg:x="38254" fg:w="19"/><text x="63.6537%" y="143.50"></text></g><g><title>libsystem_malloc.dylib`szone_malloc_should_clear (45 samples, 0.07%)</title><rect x="63.3755%" y="165" width="0.0746%" height="15" fill="rgb(238,154,13)" fg:x="38237" fg:w="45"/><text x="63.6255%" y="175.50"></text></g><g><title>libsystem_platform.dylib`_platform_memset (9 samples, 0.01%)</title><rect x="63.4352%" y="149" width="0.0149%" height="15" fill="rgb(219,56,2)" fg:x="38273" fg:w="9"/><text x="63.6852%" y="159.50"></text></g><g><title>libsystem_malloc.dylib`_malloc_zone_calloc (53 samples, 0.09%)</title><rect x="63.3639%" y="181" width="0.0878%" height="15" fill="rgb(233,0,4)" fg:x="38230" fg:w="53"/><text x="63.6139%" y="191.50"></text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::get_boundary_cardinality (2,015 samples, 3.34%)</title><rect x="60.1203%" y="229" width="3.3397%" height="15" fill="rgb(235,30,7)" fg:x="36273" fg:w="2015"/><text x="60.3703%" y="239.50">rus..</text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::get_data_qubit_error_pattern (1,000 samples, 1.66%)</title><rect x="61.8026%" y="213" width="1.6574%" height="15" fill="rgb(250,79,13)" fg:x="37288" fg:w="1000"/><text x="62.0526%" y="223.50"></text></g><g><title>rust_qecp`ndarray::impl_constructors::_&lt;impl ndarray::ArrayBase&lt;S,D&gt;&gt;::from_elem (62 samples, 0.10%)</title><rect x="63.3573%" y="197" width="0.1028%" height="15" fill="rgb(211,146,34)" fg:x="38226" fg:w="62"/><text x="63.6073%" y="207.50"></text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::propagate_error (22,020 samples, 36.50%)</title><rect x="63.4700%" y="229" width="36.4968%" height="15" fill="rgb(228,22,38)" fg:x="38294" fg:w="22020"/><text x="63.7200%" y="239.50">rust_qecp`rust_qecp::ftqec::PlanarCodeModel::propagate_error</text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::propagate_error_at (15,198 samples, 25.19%)</title><rect x="74.7771%" y="213" width="25.1898%" height="15" fill="rgb(235,168,5)" fg:x="45116" fg:w="15198"/><text x="75.0271%" y="223.50">rust_qecp`rust_qecp::ftqec::PlanarCodeMo..</text></g><g><title>all (60,334 samples, 100%)</title><rect x="0.0000%" y="325" width="100.0000%" height="15" fill="rgb(221,155,16)" fg:x="0" fg:w="60334"/><text x="0.2500%" y="335.50"></text></g><g><title>libsystem_pthread.dylib`thread_start (60,267 samples, 99.89%)</title><rect x="0.1110%" y="309" width="99.8890%" height="15" fill="rgb(215,215,53)" fg:x="67" fg:w="60267"/><text x="0.3610%" y="319.50">libsystem_pthread.dylib`thread_start</text></g><g><title>libsystem_pthread.dylib`_pthread_start (60,267 samples, 99.89%)</title><rect x="0.1110%" y="293" width="99.8890%" height="15" fill="rgb(223,4,10)" fg:x="67" fg:w="60267"/><text x="0.3610%" y="303.50">libsystem_pthread.dylib`_pthread_start</text></g><g><title>rust_qecp`std::sys::unix::thread::Thread::new::thread_start (60,267 samples, 99.89%)</title><rect x="0.1110%" y="277" width="99.8890%" height="15" fill="rgb(234,103,6)" fg:x="67" fg:w="60267"/><text x="0.3610%" y="287.50">rust_qecp`std::sys::unix::thread::Thread::new::thread_start</text></g><g><title>rust_qecp`core::ops::function::FnOnce::call_once{{vtable.shim}} (60,267 samples, 99.89%)</title><rect x="0.1110%" y="261" width="99.8890%" height="15" fill="rgb(227,97,0)" fg:x="67" fg:w="60267"/><text x="0.3610%" y="271.50">rust_qecp`core::ops::function::FnOnce::call_once{{vtable.shim}}</text></g><g><title>rust_qecp`std::sys_common::backtrace::__rust_begin_short_backtrace (60,247 samples, 99.86%)</title><rect x="0.1442%" y="245" width="99.8558%" height="15" fill="rgb(234,150,53)" fg:x="87" fg:w="60247"/><text x="0.3942%" y="255.50">rust_qecp`std::sys_common::backtrace::__rust_begin_short_backtrace</text></g><g><title>rust_qecp`rust_qecp::ftqec::PlanarCodeModel::propagate_error_at (20 samples, 0.03%)</title><rect x="99.9669%" y="229" width="0.0331%" height="15" fill="rgb(228,201,54)" fg:x="60314" fg:w="20"/><text x="100.2169%" y="239.50"></text></g></svg></svg>

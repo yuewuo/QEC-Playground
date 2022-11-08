@@ -1,0 +1,70 @@
+{
+	// See https://go.microsoft.com/fwlink/?LinkId=733558
+	// for the documentation about the tasks.json format
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Gnuplot",
+			"command": "bash",
+			"args": ["-c", "gnuplot ${fileBasenameNoExtension}.gp"],
+			"presentation": {
+				"reveal": "silent",
+				"revealProblems": "onProblem",
+				"panel": "dedicated",
+				"clear": true,
+				"close": false
+			},
+			"options": {
+				"cwd": "${fileDirname}"
+			}
+		},
+		{
+			"label": "View Gnuplot",
+			"command": "bash",
+			"args": ["-c", "evince ${fileBasenameNoExtension}.pdf"],
+			"presentation": {
+				"reveal": "silent",
+				"revealProblems": "onProblem",
+				"panel": "dedicated",
+				"clear": true,
+				"close": true
+			},
+			"options": {
+				"cwd": "${fileDirname}"
+			}
+		},
+		{
+			"label": "Sync I9X",
+			"command": "bash",
+			"args": ["-c", "i9x-sync"],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"clear": true,
+				"close": false
+			},
+		},
+		{
+			"label": "Sync Laptop",
+			"command": "bash",
+			"args": ["-c", "laptop-sync"],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"clear": true,
+				"close": false
+			},
+		},
+		{
+			"label": "Sync HPC QEC-Playgound",
+			"command": "bash",
+			"args": ["-c", "hpc-sync-qec-playground"],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"clear": true,
+				"close": false
+			},
+		}
+	]
+}

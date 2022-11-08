@@ -31,17 +31,14 @@ plot "d_3.txt" using 1:5 with linespoints lt rgb "red" linewidth 5 pointtype 6 p
     "d_11.txt" using 1:5 with linespoints lt rgb "purple" linewidth 5 pointtype 2 pointsize 1.5 title "d = 11",\
     "d_13.txt" using 1:5 with linespoints lt rgb "orange" linewidth 5 pointtype 2 pointsize 1.5 title "d = 13"
 
-set output '|ps2pdf -dEPSCrop union_find_decoder.eps union_find_decoder.pdf'
-replot
+system("ps2pdf -dEPSCrop union_find_decoder.eps union_find_decoder.pdf")
 
 set size 1,0.75
 set output "union_find_decoder_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop union_find_decoder_w.eps union_find_decoder_w.pdf'
-replot
+system("ps2pdf -dEPSCrop union_find_decoder_w.eps union_find_decoder_w.pdf")
 
 set size 1,0.6
 set output "union_find_decoder_w_w.eps"
 replot
-set output '|ps2pdf -dEPSCrop union_find_decoder_w_w.eps union_find_decoder_w_w.pdf'
-replot
+system("ps2pdf -dEPSCrop union_find_decoder_w_w.eps union_find_decoder_w_w.pdf")

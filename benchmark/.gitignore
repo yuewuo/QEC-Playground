@@ -1,2 +1,24 @@
 *.pdf
 *.eps
+
+# this is the realtime output of slurm jobs
+*.joberror
+*.jobout
+# also ignore the slurm outputs, typically empty files
+slurm-*.out
+slurm-*.err
+unfinished.tasks
+python_interface/example.json
+# slurm job scripts are not needed, _aggregated.hjson is enough to record all results
+job_script.sbatch
+rerun-job_script.sbatch
+job_script.sh
+all.tasks
+rerun-*.sh
+
+cargo-flamegraph.stacks
+tmp.svg
+tmp.txt
+archived_results
+
+tmp/

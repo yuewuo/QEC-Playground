@@ -1,0 +1,17 @@
+# UF_decoder, no_autotune, autotune_minus_no_error, use_combined_probability, use_nature_initialization_error, use_nature_measurement_error, threshold, relative_confidence_interval
+False False False False False False 0.007204430463475116 0.004334472069652843
+False False False True False False 0.007407507650650758 0.00792457542186184
+False False True False False False 0.007202444629783985 0.003665063826959045
+False False True True False False 0.0074273138612917676 0.007151497510385921
+False True False False False False 0.006663071672135138 0.005007513718512279
+False True False True False False 0.006662701775152487 0.003538007239402387
+False True True False False False 0.006677750502284522 0.0033410643801767294
+False True True True False False 0.006682145779562882 0.0035787138293447737
+True False False False False False 0.006676928062784102 0.0024494755327798073
+True False False True False False 0.006821483337830308 0.0027800557747107222
+True False True False False False 0.006683590418752962 0.0027683800413536323
+True False True True False False 0.006807939008252978 0.0033467043192278445
+True True False False False False 0.005989973486560608 0.0027248757070766337
+True True False True False False 0.005971740817155507 0.0028122280774183616
+True True True False False False 0.005962603175162806 0.00436347579085547
+True True True True False False 0.005984111290533759 0.002608086941931657

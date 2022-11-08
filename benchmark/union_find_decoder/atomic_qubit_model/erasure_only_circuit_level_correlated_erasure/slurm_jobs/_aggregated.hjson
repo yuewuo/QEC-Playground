@@ -1,0 +1,1136 @@
+[
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.5]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 16849 12695 0.7534571784675649 3 8.6e-3 0.5
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.3154786722400966]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 12176 9098 0.7472076215505913 3 1.0e-2 0.3154786722400966
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.1990535852767486]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 21426 15498 0.7233267992159059 3 8.3e-3 0.1990535852767486
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.125594321575479]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 21004 11855 0.5644163016568273 3 1.2e-2 0.125594321575479
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.07924465962305567]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 27498 7788 0.28322059786166265 3 1.9e-2 0.07924465962305567
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 33862 3371 0.09955111924871538 3 3.2e-2 0.05
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.031547867224009665]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 60509 1710 0.028260258804475368 3 4.7e-2 0.031547867224009665
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.019905358527674867]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 175023 1194 0.006821960542328723 3 5.7e-2 0.019905358527674867
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.012559432157547897]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 603414 1044 0.0017301554156847537 3 6.1e-2 0.012559432157547895
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.007924465962305567]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 2494453 1001 0.0004012903831020268 3 6.2e-2 0.007924465962305567
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.005]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 10277592 1003 0.00009759095321160832 3 6.2e-2 0.005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.003154786722400965]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 37094206 1002 0.000027012304832727784 3 6.2e-2 0.003154786722400965
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0019905358527674867]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 100057327 659 0.0000065862243151868325 3 7.6e-2 0.0019905358527674867
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0012559432157547897]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 100079969 169 0.0000016886496037983386 3 1.5e-1 0.0012559432157547895
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.000792446596230557]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 100101876 45 0.00000044954202456705205 3 2.9e-1 0.000792446596230557
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0005]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 100136715 9 0.00000008987712448925452 3 6.5e-1 0.0005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0003154786722400965]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 100144311 2 0.00000001997117939130861 3 1.4e0 0.0003154786722400965
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.00019905358527674868]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 100168329 1 0.000000009983195387036955 3 2.0e0 0.00019905358527674868
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.00012559432157547898]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 100188710 0 0 3 NaN 0.00012559432157547898
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[7.924465962305571e-05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 100318524 0 0 3 NaN 0.00007924465962305571
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[5e-05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 3 3 100318040 0 0 3 NaN 0.00005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.5]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 4156 3049 0.733638113570741 5 1.8e-2 0.5
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.3154786722400966]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 4432 3293 0.7430054151624549 5 1.7e-2 0.3154786722400966
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.1990535852767486]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 4498 3396 0.7550022232103157 5 1.7e-2 0.1990535852767486
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.125594321575479]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 4498 3329 0.7401067140951534 5 1.7e-2 0.125594321575479
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.07924465962305567]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 4794 2472 0.5156445556946183 5 2.7e-2 0.07924465962305567
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 10597 1298 0.12248749646126263 5 5.1e-2 0.05
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.031547867224009665]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 80170 1026 0.01279780466508669 5 6.1e-2 0.031547867224009665
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.019905358527674867]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 873091 1002 0.0011476466943308315 5 6.2e-2 0.019905358527674867
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.012559432157547897]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 10576288 1000 0.00009455113173922647 5 6.2e-2 0.012559432157547895
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.007924465962305567]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 23614775 194 0.000008215195783148474 5 1.4e-1 0.007924465962305567
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.005]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 23496794 19 0.0000008086209548417542 5 4.5e-1 0.005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.003154786722400965]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 26547882 1 0.0000000376677883380678 5 2.0e0 0.003154786722400965
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0019905358527674867]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 29112695 0 0 5 NaN 0.0019905358527674867
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0012559432157547897]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 38611617 0 0 5 NaN 0.0012559432157547895
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.000792446596230557]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 50255794 0 0 5 NaN 0.000792446596230557
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0005]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 73164943 0 0 5 NaN 0.0005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0003154786722400965]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 100008440 0 0 5 NaN 0.0003154786722400965
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.00019905358527674868]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 100012290 0 0 5 NaN 0.00019905358527674868
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.00012559432157547898]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 100017707 0 0 5 NaN 0.00012559432157547898
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[7.924465962305571e-05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 100022730 0 0 5 NaN 0.00007924465962305571
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[5e-05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 5 5 100027687 0 0 5 NaN 0.00005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.5]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 2150 1603 0.7455813953488372 7 2.5e-2 0.5
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.3154786722400966]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 2312 1706 0.7378892733564014 7 2.4e-2 0.3154786722400966
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.1990535852767486]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 2273 1735 0.763308402991641 7 2.3e-2 0.1990535852767486
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.125594321575479]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 2125 1598 0.752 7 2.4e-2 0.125594321575479
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.07924465962305567]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 2129 1414 0.6641615782057304 7 3.0e-2 0.07924465962305567
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 8581 1062 0.1237617993240881 7 5.6e-2 0.05
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.031547867224009665]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 211485 1004 0.004747381610988959 7 6.2e-2 0.031547867224009665
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.019905358527674867]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 4489318 587 0.00013075482734794015 7 8.1e-2 0.019905358527674867
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.012559432157547897]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 4387645 17 0.000003874515827966939 7 4.8e-1 0.012559432157547895
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.007924465962305567]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 4104145 0 0 7 NaN 0.007924465962305567
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.005]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 3807648 0 0 7 NaN 0.005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.003154786722400965]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 3876013 0 0 7 NaN 0.003154786722400965
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0019905358527674867]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 3808666 0 0 7 NaN 0.0019905358527674867
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0012559432157547897]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 4428499 0 0 7 NaN 0.0012559432157547895
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.000792446596230557]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 5014201 0 0 7 NaN 0.000792446596230557
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0005]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 6304952 0 0 7 NaN 0.0005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0003154786722400965]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 7889961 0 0 7 NaN 0.0003154786722400965
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.00019905358527674868]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 9703290 0 0 7 NaN 0.00019905358527674868
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.00012559432157547898]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 16298432 0 0 7 NaN 0.00012559432157547898
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[7.924465962305571e-05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 23276803 0 0 7 NaN 0.00007924465962305571
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[5e-05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 7 7 35710261 0 0 7 NaN 0.00005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.5]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1638 1235 0.753968253968254 9 2.8e-2 0.5
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.3154786722400966]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1700 1277 0.7511764705882353 9 2.7e-2 0.3154786722400966
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.1990535852767486]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1740 1299 0.746551724137931 9 2.7e-2 0.1990535852767486
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.125594321575479]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1665 1243 0.7465465465465465 9 2.8e-2 0.125594321575479
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.07924465962305567]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1561 1136 0.7277386290839206 9 3.0e-2 0.07924465962305567
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 7991 1012 0.12664247278187962 9 5.8e-2 0.05
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.031547867224009665]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 683052 1000 0.001464017380814345 9 6.2e-2 0.031547867224009665
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.019905358527674867]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1144024 17 0.00001485982811549408 9 4.8e-1 0.019905358527674867
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.012559432157547897]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1084932 0 0 9 NaN 0.012559432157547895
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.007924465962305567]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1063371 0 0 9 NaN 0.007924465962305567
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.005]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1026655 0 0 9 NaN 0.005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.003154786722400965]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1046731 0 0 9 NaN 0.003154786722400965
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0019905358527674867]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1026353 0 0 9 NaN 0.0019905358527674867
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0012559432157547897]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 973832 0 0 9 NaN 0.0012559432157547895
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.000792446596230557]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1014106 0 0 9 NaN 0.000792446596230557
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0005]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1049234 0 0 9 NaN 0.0005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0003154786722400965]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1245722 0 0 9 NaN 0.0003154786722400965
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.00019905358527674868]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 1685517 0 0 9 NaN 0.00019905358527674868
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.00012559432157547898]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 2224735 0 0 9 NaN 0.00012559432157547898
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[7.924465962305571e-05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 3245275 0 0 9 NaN 0.00007924465962305571
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[5e-05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 9 9 4752082 0 0 9 NaN 0.00005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.5]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 1492 1128 0.7560321715817694 11 2.9e-2 0.5
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.3154786722400966]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 1475 1143 0.7749152542372881 11 2.8e-2 0.3154786722400966
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.1990535852767486]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 1510 1138 0.7536423841059603 11 2.9e-2 0.1990535852767486
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.125594321575479]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 1447 1088 0.7519004837595025 11 3.0e-2 0.125594321575479
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.07924465962305567]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 1377 1067 0.7748729121278141 11 2.8e-2 0.07924465962305567
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 8396 1001 0.11922343973320629 11 5.8e-2 0.05
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.031547867224009665]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 461516 220 0.0004766898655734579 11 1.3e-1 0.031547867224009665
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.019905358527674867]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 389352 0 0 11 NaN 0.019905358527674867
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.012559432157547897]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 362024 0 0 11 NaN 0.012559432157547895
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.007924465962305567]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 351936 0 0 11 NaN 0.007924465962305567
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.005]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 340759 0 0 11 NaN 0.005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.003154786722400965]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 330145 0 0 11 NaN 0.003154786722400965
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0019905358527674867]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 308322 0 0 11 NaN 0.0019905358527674867
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0012559432157547897]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 312696 0 0 11 NaN 0.0012559432157547895
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.000792446596230557]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 324737 0 0 11 NaN 0.000792446596230557
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0005]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 327821 0 0 11 NaN 0.0005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0003154786722400965]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 343123 0 0 11 NaN 0.0003154786722400965
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.00019905358527674868]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 364893 0 0 11 NaN 0.00019905358527674868
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.00012559432157547898]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 451594 0 0 11 NaN 0.00012559432157547898
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[7.924465962305571e-05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 588158 0 0 11 NaN 0.00007924465962305571
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[5e-05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 11 11 830928 0 0 11 NaN 0.00005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.5]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 1454 1068 0.734525447042641 13 3.1e-2 0.5
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.3154786722400966]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 1421 1071 0.7536945812807881 13 3.0e-2 0.3154786722400966
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.1990535852767486]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 1410 1062 0.7531914893617021 13 3.0e-2 0.1990535852767486
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.125594321575479]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 1362 1034 0.7591776798825257 13 3.0e-2 0.125594321575479
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.07924465962305567]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 1381 1023 0.7407675597393193 13 3.1e-2 0.07924465962305567
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 8744 1005 0.11493595608417201 13 5.8e-2 0.05
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.031547867224009665]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 135574 20 0.00014752091108914689 13 4.4e-1 0.031547867224009665
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.019905358527674867]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 120478 0 0 13 NaN 0.019905358527674867
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.012559432157547897]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 102393 0 0 13 NaN 0.012559432157547895
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.007924465962305567]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 100965 0 0 13 NaN 0.007924465962305567
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.005]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 96099 0 0 13 NaN 0.005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.003154786722400965]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 94531 0 0 13 NaN 0.003154786722400965
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0019905358527674867]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 91183 0 0 13 NaN 0.0019905358527674867
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0012559432157547897]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 83742 0 0 13 NaN 0.0012559432157547895
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.000792446596230557]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 88650 0 0 13 NaN 0.000792446596230557
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0005]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 85815 0 0 13 NaN 0.0005
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.0003154786722400965]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 97266 0 0 13 NaN 0.0003154786722400965
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.00019905358527674868]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 99750 0 0 13 NaN 0.00019905358527674868
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[0.00012559432157547898]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 113216 0 0 13 NaN 0.00012559432157547898
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[7.924465962305571e-05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 137354 0 0 13 NaN 0.00007924465962305571
+
+      '''
+  ]
+  [
+    /Users/wuyue/Documents/GitHub/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e1000 '[0.00000000e+00]' -p12 --decoder UF --max_half_weight 10 --time_budget 6000.0 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration '{"use_correlated_pauli":true}' --pes '[5e-05]'
+    
+      '''
+      format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>
+      0 13 13 187149 0 0 13 NaN 0.00005
+
+      '''
+  ]
+]
