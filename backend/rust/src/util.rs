@@ -172,17 +172,8 @@ mod tests {
 
     use super::*;
 
-    // use `cargo test util_find_strict_one_median -- --nocapture` to run specific test
-
     #[test]
-    fn util_find_strict_one_median() {
-        assert_eq!(find_strict_one_median(&mut vec![4,3,3,8]), None);
-        assert_eq!(find_strict_one_median(&mut vec![4,3,4,8]), Some(4));
-        assert_eq!(find_strict_one_median(&mut vec![5,3,7]), Some(5));
-    }
-
-    #[test]
-    fn temporary_store_read_files() {
+    fn temporary_store_read_files() {  // cargo test temporary_store_read_files -- --nocapture
         let resource_id_1 = local_put_temporary_store(format!("hello")).unwrap();
         let resource_id_2 = local_put_temporary_store(format!("world")).unwrap();
         // println!("{:?}", resource_id_1);
