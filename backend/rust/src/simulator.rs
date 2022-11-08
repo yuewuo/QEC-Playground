@@ -277,6 +277,7 @@ impl Simulator {
             measurement_cycles: self.measurement_cycles,
         }
     }
+
     pub fn volume(&self) -> usize {
         self.height * self.vertical * self.horizontal
     }

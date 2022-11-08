@@ -66,9 +66,10 @@ impl ErrorModelNode {
     }
 }
 
-// #[cfg_attr(feature = "python_binding", pymethods)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl ErrorModel {
-    //#[cfg_attr(feature = "python_binding", new)]
+    #[cfg_attr(feature = "python_binding", new)]
     pub fn new(simulator: &Simulator) -> Self {
         assert!(simulator.volume() > 0, "cannot build error model out of zero-sized simulator");
         let default_error_model_node = Arc::new(ErrorModelNode::new());

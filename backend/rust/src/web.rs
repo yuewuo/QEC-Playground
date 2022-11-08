@@ -2,7 +2,7 @@
 
 use crate::serde::Deserialize;
 use crate::actix_web::{web, App, HttpServer, HttpRequest, HttpResponse, Error};
-use crate::util::{local_get_temporary_store, local_put_temporary_store, TEMPORARY_STORE};
+use super::util::{local_get_temporary_store, local_put_temporary_store, TEMPORARY_STORE};
 
 
 pub const TEMPORARY_STORE_SIZE_LIMIT: usize = 10_000_000;  // 10MB, only applicable to web service
@@ -75,7 +75,7 @@ async fn view_error_model(info: web::Query<ViewErrorModelQuery>) -> Result<HttpR
         tokens.push(format!("--load_error_model_from_temporary_store"));
         tokens.push(format!("{}", info.error_model_temporary_id));
     }
-    tokens.append(&mut match super::shlex::split(&info.parameters) {
+    tokens.append(&mut match crate::shlex::split(&info.parameters) {
         Some(mut t) => t,
         None => {
             return Ok(HttpResponse::BadRequest().body(format!("building tokens from parameters failed")))

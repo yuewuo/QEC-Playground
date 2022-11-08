@@ -28,7 +28,6 @@ debug = true
 [features]
 # to enable a feature, use `--features xxx`
 default = []
-fpga_amenable = []  # use FPGA-amenable code block (not friendly to read, but to test the equivalency with existing code)
 python_binding = ["pyo3"]  # by default to avoid using python interface, which includes `fpga_generator.rs`,
 blossom_v = []  # automatically enabled when file `blossomV/PerfectMatching.h` exists
 MWPM_reverse_order = []  # test the logical error rate arbitrariness of MWPM decoders, see articles/UFandMWPM.md
@@ -70,7 +69,6 @@ float-cmp = "0.9.0"
 float-ord = "0.3.2"
 priority-queue = "1.2.1"
 parking_lot = "0.12.0"
-cffi = "0.1.7"
 
 
 [build-dependencies]

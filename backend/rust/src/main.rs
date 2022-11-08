@@ -1,8 +1,3 @@
-#![cfg_attr(
-    feature="python_binding",
-    feature(cfg_eval)
-)]
-
 extern crate clap;
 extern crate pbr;
 
