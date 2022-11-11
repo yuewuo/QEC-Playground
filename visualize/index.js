@@ -19,7 +19,7 @@ if (typeof Vue === 'undefined') {
 }
 const { ref, reactive, watch, computed } = Vue
 
-// fetch fusion blossom runtime data
+// fetch visualization data
 const urlParams = new URLSearchParams(window.location.search)
 const filename = urlParams.get('filename') || "visualizer.json"
 
@@ -43,6 +43,7 @@ const App = {
             case_select: case_select,
             case_select_label: ref(1),
             case_labels: ref([]),
+            qecp_data_ready: ref(false),
             use_perspective_camera: gui3d.use_perspective_camera,
             sizes: gui3d.sizes,
             export_scale_selected: ref(1),
@@ -83,11 +84,13 @@ const App = {
         }
         // load case
         this.show_case(0)  // load the first case
-        this.snapshot_num = qecp_data.snapshots.length
-        for (let [idx, [name, _]] of qecp_data.snapshots.entries()) {
-            this.snapshot_labels.push(`[${idx}] ${name}`)
+        this.case_num = qecp_data.cases.length
+        for (let idx=0; idx < qecp_data.cases.length; idx++) {
+            let this_case = qecp_data.cases[idx]
+            this.case_labels.push(`[${idx}]`)
         }
-        this.snapshot_select_label = this.snapshot_labels[0]
+        this.case_select_label = this.case_labels[0]
+        this.qecp_data_ready = true
         // only if data loads successfully will the animation starts
         if (!is_mock) {  // if mock, no need to refresh all the time
             gui3d.animate()
@@ -112,12 +115,12 @@ const App = {
                 } else if (event.key == "p" || event.key == "P") {
                     this.use_perspective_camera = true
                 } else if (event.key == "ArrowRight") {
-                    if (this.snapshot_select < this.snapshot_num - 1) {
-                        this.snapshot_select += 1
+                    if (this.case_select < this.case_num - 1) {
+                        this.case_select += 1
                     }
                 } else if (event.key == "ArrowLeft") {
-                    if (this.snapshot_select > 0) {
-                        this.snapshot_select -= 1
+                    if (this.case_select > 0) {
+                        this.case_select -= 1
                     }
                 } else {
                     return  // unrecognized, propagate to other listeners
@@ -128,19 +131,19 @@ const App = {
         }
         // get command from url parameters
         await Vue.nextTick()
-        let snapshot_idx = urlParams.get('si') || urlParams.get('snapshot_idx')
-        if (snapshot_idx != null) {
-            snapshot_idx = parseInt(snapshot_idx)
-            if (snapshot_idx < 0) {  // iterate from the end, like python list[-1]
-                snapshot_idx = this.snapshot_num + snapshot_idx
-                if (snapshot_idx < 0) {  // too small
-                    snapshot_idx = 0
+        let case_idx = urlParams.get('si') || urlParams.get('case_idx')
+        if (case_idx != null) {
+            case_idx = parseInt(case_idx)
+            if (case_idx < 0) {  // iterate from the end, like python list[-1]
+                case_idx = this.case_num + case_idx
+                if (case_idx < 0) {  // too small
+                    case_idx = 0
                 }
             }
-            if (snapshot_idx >= this.snapshot_num) {
-                snapshot_idx = this.snapshot_num - 1
+            if (case_idx >= this.case_num) {
+                case_idx = this.case_num - 1
             }
-            this.snapshot_select = snapshot_idx
+            this.case_select = case_idx
         }
         // update resolution options when sizes changed
         watch(gui3d.sizes, this.update_export_resolutions, { immediate: true })
@@ -167,11 +170,11 @@ const App = {
         }, 100);
     },
     methods: {
-        show_snapshot(snapshot_idx) {
+        show_case(case_idx) {
             try {
                 window.qecp_data = qecp_data
-                window.snapshot_idx = snapshot_idx
-                gui3d.show_snapshot(snapshot_idx, qecp_data)
+                window.case_idx = case_idx
+                gui3d.show_case(case_idx, qecp_data)
             } catch (e) {
                 this.error_message = "load data error"
                 throw e
@@ -184,7 +187,7 @@ const App = {
             if (this.current_selected == null) return
             if (this.current_selected.type == "vertex") {
                 let vertex_index = this.current_selected.vertex_index
-                let vertex = this.snapshot.vertices[vertex_index]
+                let vertex = this.active_case.vertices[vertex_index]
                 this.selected_vertex_attributes = ""
                 if (vertex.s == 1) {
                     this.selected_vertex_attributes += "(syndrome) "
@@ -200,7 +203,7 @@ const App = {
                 console.assert(!(vertex.s == 1 && vertex.v == 1), "a vertex cannot be both syndrome and virtual")
                 // fetch edge list
                 let neighbor_edges = []
-                for (let [edge_index, edge] of this.snapshot.edges.entries()) {
+                for (let [edge_index, edge] of this.active_case.edges.entries()) {
                     if (edge == null) {
                         continue
                     }
@@ -238,7 +241,7 @@ const App = {
             }
             if (this.current_selected.type == "edge") {
                 const edge_index = this.current_selected.edge_index
-                const edge = this.snapshot.edges[edge_index]
+                const edge = this.active_case.edges[edge_index]
                 const [translated_left_grown, translated_right_grown] = gui3d.translate_edge(edge.lg, edge.rg, edge.w)
                 const translated_unexplored = edge.w - translated_left_grown - translated_right_grown
                 this.selected_edge = {
@@ -314,17 +317,23 @@ const App = {
             const data = gui3d.render_png(this.export_scale_selected)
             gui3d.download_png(data)
         },
+        get_idx_from_label(label) {
+            return parseInt(label.split(']')[0].split('[')[1])
+        },
+        get_case(case_idx) {
+            return qecp_data.cases[case_idx]
+        },
     },
     watch: {
-        async snapshot_select() {
-            // console.log(this.snapshot_select)
-            this.show_snapshot(this.snapshot_select)  // load the snapshot
-            this.snapshot_select_label = this.snapshot_labels[this.snapshot_select]
+        async case_select() {
+            // console.log(this.case_select)
+            this.show_case(this.case_select)  // load the case
+            this.case_select_label = this.case_labels[this.case_select]
             for (const _ of Array(4).keys()) await Vue.nextTick()
             this.update_selected_display()
         },
-        snapshot_select_label() {
-            this.snapshot_select = parseInt(this.snapshot_select_label.split(']')[0].split('[')[1])
+        case_select_label() {
+            this.case_select = this.get_idx_from_label(this.case_select_label)
         },
         current_selected() {
             this.update_selected_display()
@@ -373,8 +382,9 @@ const App = {
                 opacity: 0.2
             }
         },
-        snapshot() {
-            return qecp_data.snapshots[this.snapshot_select][1]
+        active_case() {
+            if (!this.qecp_data_ready) return
+            return qecp_data.cases[this.case_select]
         },
     },
 }

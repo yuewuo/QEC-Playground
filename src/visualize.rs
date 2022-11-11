@@ -143,7 +143,7 @@ impl Visualizer {
                 "detected_erasures": [],
                 "qec_failed": false,
                 "elapsed": {
-                    "prepare": 0.,
+                    "simulate": 0.,
                     "decode": 0.,
                     "validate": 0.,
                 },

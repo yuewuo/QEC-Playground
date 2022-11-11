@@ -72,6 +72,13 @@ h3 {
     width: 580px;
     padding: 10px;
     margin: 10px;
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+}
+.select-info-time {
+    width: 190px;
+    margin: 0 10px 0 10px;
 }
 .edge-visualizer {
     display: inline-block;
@@ -128,17 +135,33 @@ h3 {
             {{ warning_message }}
         </q-banner>
         <div class="selector">
-            <q-select filled v-model="snapshot_select_label" :options="snapshot_labels" options-dense behavior="menu" rounded>
+            <q-select filled v-model="case_select_label" :options="case_labels" options-dense behavior="menu" rounded>
+                <template v-slot:selected v-if="case_select_label && active_case">
+                    {{ case_select_label }} &nbsp;
+                    <q-badge color="blue" v-if="get_idx_from_label(case_select_label) == 0">error model</q-badge>
+                    <q-badge color="red" v-else-if="active_case.qec_failed">failed</q-badge>
+                    <q-badge color="green" v-else>success</q-badge>
+                    &nbsp; {{ Object.keys(active_case.error_pattern).length }} errors
+                </template>
+                <template v-slot:option="scope">
+                    <q-item v-bind="scope.itemProps" v-if="scope.opt">
+                        {{ scope.opt }} &nbsp;
+                        <q-badge style="height: 20px;" color="blue" v-if="get_idx_from_label(scope.opt) == 0">error model</q-badge>
+                        <q-badge style="height: 20px;" color="red" v-else-if="get_case(get_idx_from_label(scope.opt)).qec_failed">failed</q-badge>
+                        <q-badge style="height: 20px;" color="green" v-else>success</q-badge>
+                        &nbsp; {{ Object.keys(get_case(get_idx_from_label(scope.opt)).error_pattern).length }} errors
+                    </q-item>
+                </template>
                 <template v-slot:before>
-                    <q-btn round flat icon="arrow_circle_left" :disabled="snapshot_select == 0" @click="snapshot_select -= 1" size="xl"/>
+                    <q-btn round flat icon="arrow_circle_left" :disabled="case_select == 0" @click="case_select -= 1" size="xl"/>
                 </template>
                 <template v-slot:after>
-                    <q-btn round flat icon="arrow_circle_right" :disabled="snapshot_select == snapshot_num-1" @click="snapshot_select += 1" size="xl"/>
+                    <q-btn round flat icon="arrow_circle_right" :disabled="case_select == case_num-1" @click="case_select += 1" size="xl"/>
                 </template>
             </q-select>
         </div>
         <div class="slider">
-            <q-slider v-model="snapshot_select" :min="0" :max="snapshot_num-1" :step="1" snap
+            <q-slider v-model="case_select" :min="0" :max="case_num-1" :step="1" snap
                 thumb-size="25px" track-size="8px"></q-slider>
         </div>
         <div class="flex-center-div">
@@ -179,6 +202,20 @@ h3 {
             <q-btn push color="brown-5" rounded label="preview" style="margin-left: 10px;" no-caps @click="preview_image"></q-btn>
             <q-btn push color="brown-5" rounded label="download" style="margin-left: 10px;" no-caps @click="download_image"></q-btn>
         </div>
+        <q-card bordered class="select-info-div" v-if="active_case">
+            <q-card-section class="bg-cyan text-white select-info-time">
+                <div class="text-h6">{{ Number.parseFloat(active_case.elapsed.simulate).toExponential(3) }} (s)</div>
+                <div class="text-subtitle2">Simulate Time</div>
+            </q-card-section>
+            <q-card-section class="bg-cyan text-white select-info-time">
+                <div class="text-h6">{{ Number.parseFloat(active_case.elapsed.decode).toExponential(3) }} (s)</div>
+                <div class="text-subtitle2">Decode Time</div>
+            </q-card-section>
+            <q-card-section class="bg-cyan text-white select-info-time">
+                <div class="text-h6">{{ Number.parseFloat(active_case.elapsed.validate).toExponential(3) }} (s)</div>
+                <div class="text-subtitle2">Validate Time</div>
+            </q-card-section>
+        </q-card>
     </q-scroll-area>
 </div>
 

@@ -113,10 +113,11 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
                 None => None,
             };
             let enable_visualizer = matches.is_present("enable_visualizer");
+            let visualizer_skip_success_cases = matches.is_present("visualizer_skip_success_cases");
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
                 , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge, label
-                , error_model_modifier, enable_visualizer));
+                , error_model_modifier, enable_visualizer, visualizer_skip_success_cases));
         }
         _ => unreachable!()
     }
@@ -260,7 +261,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
         , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
         , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String, error_model_modifier: Option<serde_json::Value>
-        , enable_visualizer: bool) -> String {
+        , enable_visualizer: bool, visualizer_skip_success_cases: bool) -> String {
     // if parallel = 0, use all CPU resources
     let parallel = if parallel == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel };
     let parallel_init = if parallel_init == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel_init };
@@ -547,7 +548,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     }
                     let sparse_measurement = if error_count != 0 { simulator.generate_sparse_measurement() } else { SparseMeasurement::new() };
                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().measurement = Some(sparse_measurement.clone()); }  // runtime debug: find deadlock cases
-                    let prepare_elapsed = begin.elapsed().as_secs_f64();
+                    let simulate_elapsed = begin.elapsed().as_secs_f64();
                     // decode
                     let begin = Instant::now();
                     let (correction, mut runtime_statistics) = match decoder {
@@ -597,7 +598,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                             runtime_statistics["error_pattern"] = json!(simulator.generate_sparse_error_pattern());
                         }
                         runtime_statistics["elapsed"] = json!({
-                            "prepare": prepare_elapsed,
+                            "simulate": simulate_elapsed,
                             "decode": decode_elapsed,
                             "validate": validate_elapsed,
                         });
@@ -607,20 +608,22 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     }
                     // update visualizer
                     if let Some(visualizer) = &visualizer {
-                        let case = json!({
-                            "error_pattern": simulator.generate_sparse_error_pattern(),
-                            "measurement": sparse_measurement,
-                            "detected_erasures": sparse_detected_erasures,
-                            "correction": correction,
-                            "qec_failed": is_qec_failed,
-                            "elapsed": {
-                                "prepare": prepare_elapsed,
-                                "decode": decode_elapsed,
-                                "validate": validate_elapsed,
-                            },
-                        });
-                        let mut visualizer = visualizer.lock().unwrap();
-                        visualizer.add_case(case).unwrap();
+                        if !visualizer_skip_success_cases || is_qec_failed {
+                            let case = json!({
+                                "error_pattern": simulator.generate_sparse_error_pattern(),
+                                "measurement": sparse_measurement,
+                                "detected_erasures": sparse_detected_erasures,
+                                "correction": correction,
+                                "qec_failed": is_qec_failed,
+                                "elapsed": {
+                                    "simulate": simulate_elapsed,
+                                    "decode": decode_elapsed,
+                                    "validate": validate_elapsed,
+                                },
+                            });
+                            let mut visualizer = visualizer.lock().unwrap();
+                            visualizer.add_case(case).unwrap();
+                        }
                     }
                     // update simulation counters, then break the loop if benchmark should terminate
                     if benchmark_control.lock().unwrap().update_data_should_terminate(is_qec_failed, max_repeats, min_failed_cases) {

@@ -154,80 +154,82 @@ const unit_up_vector = new THREE.Vector3( 0, 1, 0 )
 
 // create common geometries
 const segment = parseInt(urlParams.get('segment') || 128)  // higher segment will consume more GPU resources
-const vertex_radius = parseFloat(urlParams.get('vertex_radius') || 0.15)
-export const vertex_radius_scale = ref(1)
-const scaled_vertex_radius = computed(() => {
-    return vertex_radius * vertex_radius_scale.value
+const qubit_radius = parseFloat(urlParams.get('qubit_radius') || 0.15)
+export const qubit_radius_scale = ref(1)
+const scaled_qubit_radius = computed(() => {
+    return qubit_radius * qubit_radius_scale.value
 })
-const vertex_geometry = new THREE.SphereGeometry( vertex_radius, segment, segment )
-const edge_radius = parseFloat(urlParams.get('edge_radius') || 0.03)
-const edge_radius_scale = ref(1)
-const scaled_edge_radius = computed(() => {
-    return edge_radius * edge_radius_scale.value
+const qubit_geometry = new THREE.SphereGeometry( qubit_radius, segment, segment )
+const idle_gate_radius = parseFloat(urlParams.get('idle_gate_radius') || 0.03)
+const idle_gate_radius_scale = ref(1)
+const scaled_idle_gate_radius = computed(() => {
+    return idle_gate_radius * idle_gate_radius_scale.value
 })
-const edge_geometry = new THREE.CylinderGeometry( edge_radius, edge_radius, 1, segment, 1, true )
-edge_geometry.translate(0, 0.5, 0)
+const idle_gate_geometry = new THREE.CylinderGeometry( idle_gate_radius, idle_gate_radius, 1, segment, 1, true )
+idle_gate_geometry.translate(0, 0.5, 0)
+
+// measurement bits
+const meas_radius = parseFloat(urlParams.get('meas_radius') || 0.06)
+export const meas_radius_scale = ref(1)
+const scaled_meas_radius = computed(() => {
+    return meas_radius * meas_radius_scale.value
+})
+const meas_geometry = new THREE.SphereGeometry( meas_radius, segment, segment )
+const defect_meas_radius = parseFloat(urlParams.get('defect_meas_radius') || 0.1)
+export const defect_meas_radius_scale = ref(1)
+const scaled_defect_meas_radius = computed(() => {
+    return defect_meas_radius * defect_meas_radius_scale.value
+})
+const defect_meas_geometry = new THREE.SphereGeometry( defect_meas_radius, segment, segment )
 
 // create common materials
-export const defect_vertex_material = new THREE.MeshStandardMaterial({
-    color: 0xff0000,
+export const qubit_material = new THREE.MeshStandardMaterial({
+    color: 0x000000,
     opacity: 1,
     transparent: true,
     side: THREE.FrontSide,
 })
-export const disabled_mirror_vertex_material = new THREE.MeshStandardMaterial({
-    color: 0x1e81b0,
-    opacity: 1,
-    transparent: true,
-    side: THREE.FrontSide,
-})
-export const real_vertex_material = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
+export const idle_gate_material = new THREE.MeshStandardMaterial({
+    color: 0x000000,
     opacity: 0.1,
     transparent: true,
     side: THREE.FrontSide,
 })
-export const virtual_vertex_material = new THREE.MeshStandardMaterial({
-    color: 0xffff00,
+export const meas_material = new THREE.MeshStandardMaterial({
+    color: 0x000055,
+    opacity: 1,
+    transparent: true,
+    side: THREE.FrontSide,
+})
+export const virtual_meas_material = new THREE.MeshStandardMaterial({
+    color: 0xFFFF00,
     opacity: 0.5,
     transparent: true,
     side: THREE.FrontSide,
 })
-export const defect_vertex_outline_material = new THREE.MeshStandardMaterial({
+export const defect_meas_material = new THREE.MeshStandardMaterial({
+    color: 0xFF0000,
+    opacity: 1,
+    transparent: true,
+    side: THREE.FrontSide,
+})
+export const meas_outline_material = new THREE.MeshStandardMaterial({
     color: 0x000000,
     opacity: 1,
     transparent: true,
     side: THREE.BackSide,
 })
-export const real_vertex_outline_material = new THREE.MeshStandardMaterial({
+export const virtual_meas_outline_material = new THREE.MeshStandardMaterial({
     color: 0x000000,
     opacity: 1,
     transparent: true,
     side: THREE.BackSide,
 })
-export const virtual_vertex_outline_material = new THREE.MeshStandardMaterial({
+export const defect_meas_outline_material = new THREE.MeshStandardMaterial({
     color: 0x000000,
     opacity: 1,
     transparent: true,
     side: THREE.BackSide,
-})
-export const edge_material = new THREE.MeshStandardMaterial({
-    color: 0x000000,
-    opacity: 0.1,
-    transparent: true,
-    side: THREE.FrontSide,
-})
-export const grown_edge_material = new THREE.MeshStandardMaterial({
-    color: 0xff0000,
-    opacity: 1,
-    transparent: true,
-    side: THREE.FrontSide,
-})
-export const subgraph_edge_material = new THREE.MeshStandardMaterial({
-    color: 0x0000ff,
-    opacity: 1,
-    transparent: true,
-    side: THREE.FrontSide,
 })
 export const hover_material = new THREE.MeshStandardMaterial({  // when mouse is on this object (vertex or edge)
     color: 0x6FDFDF,
@@ -237,54 +239,37 @@ export const selected_material = new THREE.MeshStandardMaterial({  // when mouse
     color: 0x4B7BE5,
     side: THREE.DoubleSide,
 })
-export const blossom_convex_material = new THREE.MeshStandardMaterial({
-    color: 0x82A284,
-    opacity: 0.7,
-    transparent: true,
-    side: THREE.BackSide,
-})
-export const blossom_convex_material_2d = blossom_convex_material.clone()
-blossom_convex_material_2d.side = THREE.DoubleSide
 
-// meshes that can be reused across different snapshots
-export var vertex_meshes = []
-window.vertex_meshes = vertex_meshes
+// meshes that can be reused across different cases
+export var qubit_meshes = []
+window.qubit_meshes = qubit_meshes
 export const outline_ratio = ref(1.2)
-export var vertex_outline_meshes = []
-window.vertex_outline_meshes = vertex_outline_meshes
-const scaled_vertex_outline_radius = computed(() => {
-    return scaled_vertex_radius.value * outline_ratio.value
+export var qubit_outline_meshes = []
+window.qubit_outline_meshes = qubit_outline_meshes
+const scaled_qubit_outline_radius = computed(() => {
+    return scaled_qubit_radius.value * outline_ratio.value
 })
-export var vertex_caches = []  // store some information that can be useful
-export var left_edge_meshes = []
-export var right_edge_meshes = []
-export var middle_edge_meshes = []
-export var edge_caches = []  // store some information that can be useful
-window.left_edge_meshes = left_edge_meshes
-window.right_edge_meshes = right_edge_meshes
-window.middle_edge_meshes = middle_edge_meshes
-export var blossom_convex_meshes = []
-window.blossom_convex_meshes = blossom_convex_meshes
+export var meas_outline_meshes = []
+
+export var idle_gate_meshes = []
+window.idle_gate_meshes = idle_gate_meshes
 
 // update the sizes of objects
-watch(vertex_radius_scale, (newVal, oldVal) => {
-    vertex_geometry.scale(1/oldVal, 1/oldVal, 1/oldVal)
-    vertex_geometry.scale(newVal, newVal, newVal)
+watch(qubit_radius_scale, (newVal, oldVal) => {
+    qubit_geometry.scale(1/oldVal, 1/oldVal, 1/oldVal)
+    qubit_geometry.scale(newVal, newVal, newVal)
 })
-watch(edge_radius_scale, (newVal, oldVal) => {
-    edge_geometry.scale(1/oldVal, 1, 1/oldVal)
-    edge_geometry.scale(newVal, 1, newVal)
-})
-watch([scaled_edge_radius, scaled_vertex_outline_radius], async () => {
-    await refresh_snapshot_data()
+watch(idle_gate_radius_scale, (newVal, oldVal) => {
+    idle_gate_geometry.scale(1/oldVal, 1, 1/oldVal)
+    idle_gate_geometry.scale(newVal, 1, newVal)
 })
 function update_mesh_outline(mesh) {
     mesh.scale.x = outline_ratio.value
     mesh.scale.y = outline_ratio.value
     mesh.scale.z = outline_ratio.value
 }
-watch([outline_ratio, vertex_radius_scale], () => {
-    for (let mesh of vertex_outline_meshes) {
+watch([outline_ratio, meas_radius_scale], () => {
+    for (let mesh of meas_outline_meshes) {
         update_mesh_outline(mesh)
     }
 })
@@ -301,32 +286,16 @@ export function load_position(mesh_position, data_position) {
     mesh_position.y = data_position.t
 }
 
-/// translate to a format that is easy to plot (gracefully handle the overgrown edges)
-export function translate_edge(left_grown, right_grown, weight) {
-    console.assert(left_grown >= 0 && right_grown >= 0, "grown should be non-negative")
-    if (left_grown + right_grown <= weight) {
-        return [left_grown, right_grown]
-    } else {
-        const middle = (left_grown + weight - right_grown) / 2
-        if (middle < 0) {
-            return [0, weight]
-        }
-        if (middle > weight) {
-            return [weight, 0]
-        }
-        return [middle, weight - middle]
-    }
-}
-
-export const active_fusion_data = ref(null)
-export const active_snapshot_idx = ref(0)
+export const active_qecp_data = ref(null)
+export const active_case_idx = ref(0)
 window.is_vertices_2d_plane = false  // will be true only if all vertices' t position = 0
-export async function refresh_snapshot_data() {
-    // console.log("refresh_snapshot_data")
-    if (active_fusion_data.value != null) {  // no fusion data provided
-        const fusion_data = active_fusion_data.value
-        const snapshot_idx = active_snapshot_idx.value
-        const snapshot = fusion_data.snapshots[snapshot_idx][1]
+export async function refresh_case() {
+    // console.log("refresh_case")
+    if (active_qecp_data.value != null) {  // no qecp data provided
+        const qecp_data = active_qecp_data.value
+        const case_idx = active_case_idx.value
+        const active_case = qecp_data.cases[case_idx]
+        console.log(active_case)
         // clear hover and select
         current_hover.value = null
         let current_selected_value = JSON.parse(JSON.stringify(current_selected.value))
@@ -336,7 +305,7 @@ export async function refresh_snapshot_data() {
         // update vertex cache
         vertex_caches = []
         window.is_vertices_2d_plane = true
-        for (let position of fusion_data.positions) {
+        for (let position of qecp_data.positions) {
             if (position.t != 0) {
                 window.is_vertices_2d_plane = false
             }
@@ -348,19 +317,19 @@ export async function refresh_snapshot_data() {
         }
         // draw vertices
         let subgraph_set = {}
-        if (snapshot.subgraph != null) {
-            for (let edge_index of snapshot.subgraph) {
+        if (active_case.subgraph != null) {
+            for (let edge_index of active_case.subgraph) {
                 subgraph_set[edge_index] = true
             }
         }
-        for (let [i, vertex] of snapshot.vertices.entries()) {
+        for (let [i, vertex] of active_case.vertices.entries()) {
             if (vertex == null) {
                 if (i < vertex_meshes.length) {  // hide
                     vertex_meshes[i].visible = false
                 }
                 continue
             }
-            let position = fusion_data.positions[i]
+            let position = qecp_data.positions[i]
             while (vertex_meshes.length <= i) {
                 const vertex_mesh = new THREE.Mesh( vertex_geometry, real_vertex_material )
                 vertex_mesh.visible = false
@@ -384,7 +353,7 @@ export async function refresh_snapshot_data() {
             }
             vertex_mesh.visible = true
         }
-        for (let i = snapshot.vertices.length; i < vertex_meshes.length; ++i) {
+        for (let i = active_case.vertices.length; i < vertex_meshes.length; ++i) {
             vertex_meshes[i].visible = false
         }
         // draw edges
@@ -393,7 +362,7 @@ export async function refresh_snapshot_data() {
             edge_offset = Math.sqrt(Math.pow(scaled_vertex_outline_radius.value, 2) - Math.pow(scaled_edge_radius.value, 2))
         }
         edge_caches = []  // clear cache
-        for (let [i, edge] of snapshot.edges.entries()) {
+        for (let [i, edge] of active_case.edges.entries()) {
             if (edge == null) {
                 if (i < left_edge_meshes.length) {  // hide
                     for (let j of [0, 1]) {
@@ -404,8 +373,8 @@ export async function refresh_snapshot_data() {
                 }
                 continue
             }
-            const left_position = fusion_data.positions[edge.l]
-            const right_position = fusion_data.positions[edge.r]
+            const left_position = qecp_data.positions[edge.l]
+            const right_position = qecp_data.positions[edge.r]
             const relative = compute_vector3(right_position).add(compute_vector3(left_position).multiplyScalar(-1))
             const direction = relative.clone().normalize()
             // console.log(direction)
@@ -462,7 +431,7 @@ export async function refresh_snapshot_data() {
                         edge_mesh.visible = false
                     }
                     edge_mesh.material = is_grown_part ? grown_edge_material : edge_material
-                    if (snapshot.subgraph != null) {
+                    if (active_case.subgraph != null) {
                         edge_mesh.material = edge_material  // do not display grown edges
                     }
                     if (subgraph_set[i]) {
@@ -471,7 +440,7 @@ export async function refresh_snapshot_data() {
                 }
             }
         }
-        for (let i = snapshot.edges.length; i < left_edge_meshes.length; ++i) {
+        for (let i = active_case.edges.length; i < left_edge_meshes.length; ++i) {
             for (let j of [0, 1]) {
                 left_edge_meshes[i][j].visible = false
                 right_edge_meshes[i][j].visible = false
@@ -479,14 +448,14 @@ export async function refresh_snapshot_data() {
             }
         }
         // draw vertex outlines
-        for (let [i, vertex] of snapshot.vertices.entries()) {
+        for (let [i, vertex] of active_case.vertices.entries()) {
             if (vertex == null) {
                 if (i < vertex_outline_meshes.length) {  // hide
                     vertex_outline_meshes[i].visible = false
                 }
                 continue
             }
-            let position = fusion_data.positions[i]
+            let position = qecp_data.positions[i]
             while (vertex_outline_meshes.length <= i) {
                 const vertex_outline_mesh = new THREE.Mesh( vertex_geometry, real_vertex_outline_material )
                 vertex_outline_mesh.visible = false
@@ -505,7 +474,7 @@ export async function refresh_snapshot_data() {
             }
             vertex_outline_mesh.visible = true
         }
-        for (let i = snapshot.vertices.length; i < vertex_meshes.length; ++i) {
+        for (let i = active_case.vertices.length; i < vertex_meshes.length; ++i) {
             vertex_outline_meshes[i].visible = false
         }
         // draw convex
@@ -513,9 +482,9 @@ export async function refresh_snapshot_data() {
             scene.remove( blossom_convex_mesh )
             blossom_convex_mesh.geometry.dispose()
         }
-        for (let [i, dual_node] of snapshot.dual_nodes.entries()) {
+        for (let [i, dual_node] of active_case.dual_nodes.entries()) {
             if (dual_node == null) { continue }
-            if (snapshot.subgraph != null) { continue }  // do not display convex if subgraph is displayed
+            if (active_case.subgraph != null) { continue }  // do not display convex if subgraph is displayed
             // for child node in a blossom, this will not display properly; we should avoid plotting child nodes
             let display_node = dual_node.p == null && (dual_node.d > 0 || dual_node.o != null)
             if (display_node) {  // no parent and (positive dual variable or it's a blossom)
@@ -523,7 +492,7 @@ export async function refresh_snapshot_data() {
                 if (dual_node.b != null) {
                     for (let [is_left, edge_index] of dual_node.b) {
                         let cached_position = edge_caches[edge_index].position
-                        const edge = snapshot.edges[edge_index]
+                        const edge = active_case.edges[edge_index]
                         if (edge.ld == edge.rd && edge.lg + edge.rg >= edge.w) {
                             continue  // do not draw this edge, this is an internal edge
                         }
@@ -581,10 +550,10 @@ export async function refresh_snapshot_data() {
         }
     }
 }
-watch([active_fusion_data, active_snapshot_idx, scaled_vertex_outline_radius], refresh_snapshot_data)
-export function show_snapshot(snapshot_idx, fusion_data) {
-    active_snapshot_idx.value = snapshot_idx
-    active_fusion_data.value = fusion_data
+watch([active_qecp_data, active_case_idx, scaled_qubit_outline_radius], refresh_case)
+export function show_case(case_idx, qecp_data) {
+    active_case_idx.value = case_idx
+    active_qecp_data.value = qecp_data
 }
 
 // configurations
@@ -603,67 +572,67 @@ watch(sizes, () => {  // move render configuration GUI to 3D canvas
 }, { immediate: true })
 const conf = {
     scene_background: scene.background,
-    defect_vertex_color: defect_vertex_material.color,
-    defect_vertex_opacity: defect_vertex_material.opacity,
-    disabled_mirror_vertex_color: disabled_mirror_vertex_material.color,
-    disabled_mirror_vertex_opacity: disabled_mirror_vertex_material.opacity,
-    real_vertex_color: real_vertex_material.color,
-    real_vertex_opacity: real_vertex_material.opacity,
-    virtual_vertex_color: virtual_vertex_material.color,
-    virtual_vertex_opacity: virtual_vertex_material.opacity,
-    defect_vertex_outline_color: defect_vertex_outline_material.color,
-    defect_vertex_outline_opacity: defect_vertex_outline_material.opacity,
-    real_vertex_outline_color: real_vertex_outline_material.color,
-    real_vertex_outline_opacity: real_vertex_outline_material.opacity,
-    virtual_vertex_outline_color: virtual_vertex_outline_material.color,
-    virtual_vertex_outline_opacity: virtual_vertex_outline_material.opacity,
-    edge_color: edge_material.color,
-    edge_opacity: edge_material.opacity,
-    edge_side: edge_material.side,
-    grown_edge_color: grown_edge_material.color,
-    grown_edge_opacity: grown_edge_material.opacity,
-    grown_edge_side: grown_edge_material.side,
-    subgraph_edge_color: subgraph_edge_material.color,
-    subgraph_edge_opacity: subgraph_edge_material.opacity,
-    subgraph_edge_side: subgraph_edge_material.side,
-    outline_ratio: outline_ratio.value,
-    vertex_radius_scale: vertex_radius_scale.value,
-    edge_radius_scale: edge_radius_scale.value,
+    // defect_vertex_color: defect_vertex_material.color,
+    // defect_vertex_opacity: defect_vertex_material.opacity,
+    // disabled_mirror_vertex_color: disabled_mirror_vertex_material.color,
+    // disabled_mirror_vertex_opacity: disabled_mirror_vertex_material.opacity,
+    // real_vertex_color: real_vertex_material.color,
+    // real_vertex_opacity: real_vertex_material.opacity,
+    // virtual_vertex_color: virtual_vertex_material.color,
+    // virtual_vertex_opacity: virtual_vertex_material.opacity,
+    // defect_vertex_outline_color: defect_vertex_outline_material.color,
+    // defect_vertex_outline_opacity: defect_vertex_outline_material.opacity,
+    // real_vertex_outline_color: real_vertex_outline_material.color,
+    // real_vertex_outline_opacity: real_vertex_outline_material.opacity,
+    // virtual_vertex_outline_color: virtual_vertex_outline_material.color,
+    // virtual_vertex_outline_opacity: virtual_vertex_outline_material.opacity,
+    // edge_color: edge_material.color,
+    // edge_opacity: edge_material.opacity,
+    // edge_side: edge_material.side,
+    // grown_edge_color: grown_edge_material.color,
+    // grown_edge_opacity: grown_edge_material.opacity,
+    // grown_edge_side: grown_edge_material.side,
+    // subgraph_edge_color: subgraph_edge_material.color,
+    // subgraph_edge_opacity: subgraph_edge_material.opacity,
+    // subgraph_edge_side: subgraph_edge_material.side,
+    // outline_ratio: outline_ratio.value,
+    // vertex_radius_scale: vertex_radius_scale.value,
+    // edge_radius_scale: edge_radius_scale.value,
 }
 const side_options = { "FrontSide": THREE.FrontSide, "BackSide": THREE.BackSide, "DoubleSide": THREE.DoubleSide } 
 export const controller = {}
 window.controller = controller
 controller.scene_background = gui.addColor( conf, 'scene_background' ).onChange( function ( value ) { scene.background = value } )
-const vertex_folder = gui.addFolder( 'vertex' )
-controller.defect_vertex_color = vertex_folder.addColor( conf, 'defect_vertex_color' ).onChange( function ( value ) { defect_vertex_material.color = value } )
-controller.defect_vertex_opacity = vertex_folder.add( conf, 'defect_vertex_opacity', 0, 1 ).onChange( function ( value ) { defect_vertex_material.opacity = Number(value) } )
-controller.disabled_mirror_vertex_color = vertex_folder.addColor( conf, 'disabled_mirror_vertex_color' ).onChange( function ( value ) { disabled_mirror_vertex_material.color = value } )
-controller.disabled_mirror_vertex_opacity = vertex_folder.add( conf, 'disabled_mirror_vertex_opacity', 0, 1 ).onChange( function ( value ) { disabled_mirror_vertex_material.opacity = Number(value) } )
-controller.real_vertex_color = vertex_folder.addColor( conf, 'real_vertex_color' ).onChange( function ( value ) { real_vertex_material.color = value } )
-controller.real_vertex_opacity = vertex_folder.add( conf, 'real_vertex_opacity', 0, 1 ).onChange( function ( value ) { real_vertex_material.opacity = Number(value) } )
-controller.virtual_vertex_color = vertex_folder.addColor( conf, 'virtual_vertex_color' ).onChange( function ( value ) { virtual_vertex_material.color = value } )
-controller.virtual_vertex_opacity = vertex_folder.add( conf, 'virtual_vertex_opacity', 0, 1 ).onChange( function ( value ) { virtual_vertex_material.opacity = Number(value) } )
-const vertex_outline_folder = gui.addFolder( 'vertex outline' )
-controller.vertex_outline_color = vertex_outline_folder.addColor( conf, 'defect_vertex_outline_color' ).onChange( function ( value ) { defect_vertex_outline_material.color = value } )
-controller.vertex_outline_opacity = vertex_outline_folder.add( conf, 'defect_vertex_outline_opacity', 0, 1 ).onChange( function ( value ) { defect_vertex_outline_material.opacity = Number(value) } )
-controller.vertex_outline_color = vertex_outline_folder.addColor( conf, 'real_vertex_outline_color' ).onChange( function ( value ) { real_vertex_outline_material.color = value } )
-controller.vertex_outline_opacity = vertex_outline_folder.add( conf, 'real_vertex_outline_opacity', 0, 1 ).onChange( function ( value ) { real_vertex_outline_material.opacity = Number(value) } )
-controller.virtual_vertex_outline_color = vertex_outline_folder.addColor( conf, 'virtual_vertex_outline_color' ).onChange( function ( value ) { virtual_vertex_outline_material.color = value } )
-controller.virtual_vertex_outline_opacity = vertex_outline_folder.add( conf, 'virtual_vertex_outline_opacity', 0, 1 ).onChange( function ( value ) { virtual_vertex_outline_material.opacity = Number(value) } )
-const edge_folder = gui.addFolder( 'edge' )
-controller.edge_color = edge_folder.addColor( conf, 'edge_color' ).onChange( function ( value ) { edge_material.color = value } )
-controller.edge_opacity = edge_folder.add( conf, 'edge_opacity', 0, 1 ).onChange( function ( value ) { edge_material.opacity = Number(value) } )
-controller.edge_side = edge_folder.add( conf, 'edge_side', side_options ).onChange( function ( value ) { edge_material.side = Number(value) } )
-controller.grown_edge_color = edge_folder.addColor( conf, 'grown_edge_color' ).onChange( function ( value ) { grown_edge_material.color = value } )
-controller.grown_edge_opacity = edge_folder.add( conf, 'grown_edge_opacity', 0, 1 ).onChange( function ( value ) { grown_edge_material.opacity = Number(value) } )
-controller.grown_edge_side = edge_folder.add( conf, 'grown_edge_side', side_options ).onChange( function ( value ) { grown_edge_material.side = Number(value) } )
-controller.subgraph_edge_color = edge_folder.addColor( conf, 'subgraph_edge_color' ).onChange( function ( value ) { subgraph_edge_material.color = value } )
-controller.subgraph_edge_opacity = edge_folder.add( conf, 'subgraph_edge_opacity', 0, 1 ).onChange( function ( value ) { subgraph_edge_material.opacity = Number(value) } )
-controller.subgraph_edge_side = edge_folder.add( conf, 'subgraph_edge_side', side_options ).onChange( function ( value ) { subgraph_edge_material.side = Number(value) } )
-const size_folder = gui.addFolder( 'size' )
-controller.outline_ratio = size_folder.add( conf, 'outline_ratio', 0.99, 2 ).onChange( function ( value ) { outline_ratio.value = Number(value) } )
-controller.vertex_radius_scale = size_folder.add( conf, 'vertex_radius_scale', 0.1, 5 ).onChange( function ( value ) { vertex_radius_scale.value = Number(value) } )
-controller.edge_radius_scale = size_folder.add( conf, 'edge_radius_scale', 0.1, 10 ).onChange( function ( value ) { edge_radius_scale.value = Number(value) } )
+// const vertex_folder = gui.addFolder( 'vertex' )
+// controller.defect_vertex_color = vertex_folder.addColor( conf, 'defect_vertex_color' ).onChange( function ( value ) { defect_vertex_material.color = value } )
+// controller.defect_vertex_opacity = vertex_folder.add( conf, 'defect_vertex_opacity', 0, 1 ).onChange( function ( value ) { defect_vertex_material.opacity = Number(value) } )
+// controller.disabled_mirror_vertex_color = vertex_folder.addColor( conf, 'disabled_mirror_vertex_color' ).onChange( function ( value ) { disabled_mirror_vertex_material.color = value } )
+// controller.disabled_mirror_vertex_opacity = vertex_folder.add( conf, 'disabled_mirror_vertex_opacity', 0, 1 ).onChange( function ( value ) { disabled_mirror_vertex_material.opacity = Number(value) } )
+// controller.real_vertex_color = vertex_folder.addColor( conf, 'real_vertex_color' ).onChange( function ( value ) { real_vertex_material.color = value } )
+// controller.real_vertex_opacity = vertex_folder.add( conf, 'real_vertex_opacity', 0, 1 ).onChange( function ( value ) { real_vertex_material.opacity = Number(value) } )
+// controller.virtual_vertex_color = vertex_folder.addColor( conf, 'virtual_vertex_color' ).onChange( function ( value ) { virtual_vertex_material.color = value } )
+// controller.virtual_vertex_opacity = vertex_folder.add( conf, 'virtual_vertex_opacity', 0, 1 ).onChange( function ( value ) { virtual_vertex_material.opacity = Number(value) } )
+// const vertex_outline_folder = gui.addFolder( 'vertex outline' )
+// controller.vertex_outline_color = vertex_outline_folder.addColor( conf, 'defect_vertex_outline_color' ).onChange( function ( value ) { defect_vertex_outline_material.color = value } )
+// controller.vertex_outline_opacity = vertex_outline_folder.add( conf, 'defect_vertex_outline_opacity', 0, 1 ).onChange( function ( value ) { defect_vertex_outline_material.opacity = Number(value) } )
+// controller.vertex_outline_color = vertex_outline_folder.addColor( conf, 'real_vertex_outline_color' ).onChange( function ( value ) { real_vertex_outline_material.color = value } )
+// controller.vertex_outline_opacity = vertex_outline_folder.add( conf, 'real_vertex_outline_opacity', 0, 1 ).onChange( function ( value ) { real_vertex_outline_material.opacity = Number(value) } )
+// controller.virtual_vertex_outline_color = vertex_outline_folder.addColor( conf, 'virtual_vertex_outline_color' ).onChange( function ( value ) { virtual_vertex_outline_material.color = value } )
+// controller.virtual_vertex_outline_opacity = vertex_outline_folder.add( conf, 'virtual_vertex_outline_opacity', 0, 1 ).onChange( function ( value ) { virtual_vertex_outline_material.opacity = Number(value) } )
+// const edge_folder = gui.addFolder( 'edge' )
+// controller.edge_color = edge_folder.addColor( conf, 'edge_color' ).onChange( function ( value ) { edge_material.color = value } )
+// controller.edge_opacity = edge_folder.add( conf, 'edge_opacity', 0, 1 ).onChange( function ( value ) { edge_material.opacity = Number(value) } )
+// controller.edge_side = edge_folder.add( conf, 'edge_side', side_options ).onChange( function ( value ) { edge_material.side = Number(value) } )
+// controller.grown_edge_color = edge_folder.addColor( conf, 'grown_edge_color' ).onChange( function ( value ) { grown_edge_material.color = value } )
+// controller.grown_edge_opacity = edge_folder.add( conf, 'grown_edge_opacity', 0, 1 ).onChange( function ( value ) { grown_edge_material.opacity = Number(value) } )
+// controller.grown_edge_side = edge_folder.add( conf, 'grown_edge_side', side_options ).onChange( function ( value ) { grown_edge_material.side = Number(value) } )
+// controller.subgraph_edge_color = edge_folder.addColor( conf, 'subgraph_edge_color' ).onChange( function ( value ) { subgraph_edge_material.color = value } )
+// controller.subgraph_edge_opacity = edge_folder.add( conf, 'subgraph_edge_opacity', 0, 1 ).onChange( function ( value ) { subgraph_edge_material.opacity = Number(value) } )
+// controller.subgraph_edge_side = edge_folder.add( conf, 'subgraph_edge_side', side_options ).onChange( function ( value ) { subgraph_edge_material.side = Number(value) } )
+// const size_folder = gui.addFolder( 'size' )
+// controller.outline_ratio = size_folder.add( conf, 'outline_ratio', 0.99, 2 ).onChange( function ( value ) { outline_ratio.value = Number(value) } )
+// controller.vertex_radius_scale = size_folder.add( conf, 'vertex_radius_scale', 0.1, 5 ).onChange( function ( value ) { vertex_radius_scale.value = Number(value) } )
+// controller.edge_radius_scale = size_folder.add( conf, 'edge_radius_scale', 0.1, 10 ).onChange( function ( value ) { edge_radius_scale.value = Number(value) } )
 watch(sizes, () => {
     gui.domElement.style.transform = `scale(${sizes.scale})`
     gui.domElement.style["transform-origin"] = "right top"
@@ -681,14 +650,14 @@ window.current_selected = current_selected
 export const show_hover_effect = ref(true)
 function is_user_data_valid(user_data) {
     if (user_data == null) return false
-    const fusion_data = active_fusion_data.value
-    const snapshot_idx = active_snapshot_idx.value
-    const snapshot = fusion_data.snapshots[snapshot_idx][1]
+    const qecp_data = active_qecp_data.value
+    const case_idx = active_case_idx.value
+    const active_case = qecp_data.cases[case_idx][1]
     if (user_data.type == "vertex") {
-        return user_data.vertex_index < snapshot.vertices.length && snapshot.vertices[user_data.vertex_index] != null
+        return user_data.vertex_index < active_case.vertices.length && active_case.vertices[user_data.vertex_index] != null
     }
     if (user_data.type == "edge") {
-        return user_data.edge_index < snapshot.edges.length && snapshot.edges[user_data.edge_index] != null
+        return user_data.edge_index < active_case.edges.length && active_case.edges[user_data.edge_index] != null
     }
     return false
 }
