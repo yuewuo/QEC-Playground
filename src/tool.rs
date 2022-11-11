@@ -29,6 +29,8 @@ use super::tailored_complete_model_graph::*;
 use super::error_model_builder::*;
 use super::decoder_union_find::*;
 use super::erasure_graph::*;
+use super::visualize::*;
+
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -110,10 +112,11 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
                 },
                 None => None,
             };
+            let enable_visualizer = matches.is_present("enable_visualizer");
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
                 , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge, label
-                , error_model_modifier));
+                , error_model_modifier, enable_visualizer));
         }
         _ => unreachable!()
     }
@@ -256,7 +259,8 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         , parallel: usize, code_type: String, decoder: BenchmarkDecoder, decoder_config: serde_json::Value, ignore_logical_i: bool, ignore_logical_j: bool
         , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
         , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
-        , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String, error_model_modifier: Option<serde_json::Value>) -> String {
+        , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String, error_model_modifier: Option<serde_json::Value>
+        , enable_visualizer: bool) -> String {
     // if parallel = 0, use all CPU resources
     let parallel = if parallel == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel };
     let parallel_init = if parallel_init == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel_init };
@@ -321,6 +325,10 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
     if debug_print.is_none() {  // debug print only will not run simulations
         output = format!("format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>");
         eprintln!("{}", output);  // compatible with old scripts
+    }
+    if enable_visualizer {
+        assert_eq!(configurations.len(), 1, "visualizer can only record a single configuration");
+        print_visualize_link(static_visualize_data_filename());
     }
     // start running simulations
     for &(di, dj, noisy_measurements, p, pe, p_graph, pe_graph) in configurations.iter() {
@@ -485,6 +493,13 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         });
         simulator.compress_error_rates(&mut error_model);  // by default compress all error rates
         let error_model = Arc::new(error_model);  // change mutability of error model
+        let mut visualizer = None;
+        if enable_visualizer {
+            let mut new_visualizer = Visualizer::new(Some(visualize_data_folder() + static_visualize_data_filename().as_str())).unwrap();
+            new_visualizer.add_component(&simulator).unwrap();
+            new_visualizer.add_component(error_model.as_ref()).unwrap();
+            visualizer = Some(Arc::new(Mutex::new(new_visualizer)));
+        }
         // prepare result variables for simulation
         let benchmark_control = Arc::new(Mutex::new(BenchmarkControl::new()));
         // setup progress bar
@@ -500,6 +515,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let error_model = Arc::clone(&error_model);
             let debug_print = Arc::clone(&debug_print);
             let log_runtime_statistics_file = log_runtime_statistics_file.clone();
+            let visualizer = visualizer.clone();
             let mut mwpm_decoder = mwpm_decoder.clone();
             let mut fusion_decoder = fusion_decoder.clone();
             let mut tailored_mwpm_decoder = tailored_mwpm_decoder.clone();
@@ -588,6 +604,23 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                         let to_be_written = format!("{}\n", runtime_statistics.to_string());
                         let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
                         log_runtime_statistics_file.write(to_be_written.as_bytes()).unwrap();
+                    }
+                    // update visualizer
+                    if let Some(visualizer) = &visualizer {
+                        let case = json!({
+                            "error_pattern": simulator.generate_sparse_error_pattern(),
+                            "measurement": sparse_measurement,
+                            "detected_erasures": sparse_detected_erasures,
+                            "correction": correction,
+                            "qec_failed": is_qec_failed,
+                            "elapsed": {
+                                "prepare": prepare_elapsed,
+                                "decode": decode_elapsed,
+                                "validate": validate_elapsed,
+                            },
+                        });
+                        let mut visualizer = visualizer.lock().unwrap();
+                        visualizer.add_case(case).unwrap();
                     }
                     // update simulation counters, then break the loop if benchmark should terminate
                     if benchmark_control.lock().unwrap().update_data_should_terminate(is_qec_failed, max_repeats, min_failed_cases) {

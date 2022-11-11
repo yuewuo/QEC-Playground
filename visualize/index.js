@@ -31,7 +31,7 @@ const is_chrome = navigator.userAgent.toLowerCase().indexOf('chrome/') > -1
 const is_firefox = navigator.userAgent.toLowerCase().indexOf('firefox/') > -1
 const is_browser_supported = ref(is_chrome || is_firefox)
 
-export const snapshot_select = ref(0)
+export const case_select = ref(0)
 
 // create vue3 app
 const App = {
@@ -39,10 +39,10 @@ const App = {
         return {
             error_message: ref(null),
             warning_message: ref(null),
-            snapshot_num: ref(1),
-            snapshot_select: snapshot_select,
-            snapshot_select_label: ref(1),
-            snapshot_labels: ref([]),
+            case_num: ref(1),
+            case_select: case_select,
+            case_select_label: ref(1),
+            case_labels: ref([]),
             use_perspective_camera: gui3d.use_perspective_camera,
             sizes: gui3d.sizes,
             export_scale_selected: ref(1),
@@ -63,7 +63,6 @@ const App = {
     },
     async mounted() {
         gui3d.root.style.setProperty('--control-visibility', 'visible')
-        return
         let response = null
         try {
             response = await fetch('./data/' + filename, { cache: 'no-cache', })
@@ -82,8 +81,8 @@ const App = {
             this.error_message = `fetch file error ${response.status}: ${response.statusText}`
             throw this.error_message
         }
-        // load snapshot
-        this.show_snapshot(0)  // load the first snapshot
+        // load case
+        this.show_case(0)  // load the first case
         this.snapshot_num = qecp_data.snapshots.length
         for (let [idx, [name, _]] of qecp_data.snapshots.entries()) {
             this.snapshot_labels.push(`[${idx}] ${name}`)

@@ -5,8 +5,8 @@ use pyo3::prelude::*;
 use std::cmp::Ordering;
 use super::types::*;
 use serde::{Serialize, Deserialize, Serializer, Deserializer};
-use serde::de::{Visitor, MapAccess};
-use serde::ser::SerializeMap;
+use serde::de::{Visitor, MapAccess, SeqAccess};
+use serde::ser::{SerializeMap, SerializeSeq};
 use super::code_builder::*;
 use super::util_macros::*;
 use super::reproducible_rand::Xoroshiro128StarStar;
@@ -64,7 +64,7 @@ impl QecpVisualizer for Simulator {
                         if self.is_node_exist(position) {
                             let node = self.get_node_unwrap(position);
                             Some(json!({
-                                if abbrev { "p" } else { "position" }: position,
+                                if abbrev { "p" } else { "position" }: position,  // for readability
                                 if abbrev { "q" } else { "qubit_type" }: node.qubit_type,
                                 if abbrev { "gt" } else { "gate_type" }: node.gate_type,
                                 if abbrev { "gp" } else { "gate_peer" }: node.gate_peer,
@@ -151,11 +151,11 @@ impl SimulatorNode {
         }
     }
     #[cfg_attr(feature="python_binding", setter)]
-    pub fn set_gate_peer(&mut self, pos: Position){
+    pub fn set_gate_peer(&mut self, pos: Position) {
         self.gate_peer = Option::Some(pos).map(Arc::new);
     }
     #[cfg_attr(feature="python_binding", getter)]
-    pub fn get_gate_peer(&self) -> Position{
+    pub fn get_gate_peer(&self) -> Position {
        (**self.gate_peer.as_ref().unwrap()).clone()
     }
     /// set error with sanity check
@@ -164,7 +164,7 @@ impl SimulatorNode {
         // TODO: in debug build, check if this error is valid given the error rates
         self.error = *error;
     }
-    pub fn set_error_temp(&mut self, error: &ErrorType){
+    pub fn set_error_temp(&mut self, error: &ErrorType) {
         debug_assert!(!self.is_virtual || error == &I, "should not add errors at virtual nodes");
         // TODO: in debug build, check if this error is valid given the error rates
         self.error = *error;
@@ -857,7 +857,7 @@ impl Simulator {
 
 }
 
-impl Simulator{
+impl Simulator {
     /// get `self.nodes[t][i][j]` without position check when compiled in release mode
     #[inline]
     pub fn get_node(&'_ self, position: &Position) -> &'_ Option<Box<SimulatorNode>> {
@@ -1065,12 +1065,45 @@ impl std::fmt::Display for SimulatorNode {
 }
 
 /// in most cases non-trivial measurements are rare, this sparse structure use `BTreeSet` to store them
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub struct SparseMeasurement {
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub nontrivial: BTreeSet<Position>,
+}
+
+impl Serialize for SparseMeasurement {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer, {
+        let mut seq = serializer.serialize_seq(Some(self.len()))?;  // known length
+        for erasure in self.iter() {
+            seq.serialize_element(erasure)?;
+        }
+        seq.end()
+    }
+}
+
+impl<'de> Visitor<'de> for SparseMeasurement {
+    type Value = SparseMeasurement;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "{}", r#"sparse measurement like ["[0][10][13]","[0][10][7]","[0][10][8]"]"#)
+    }
+
+    fn visit_seq<M>(self, mut access: M) -> Result<Self::Value, M::Error> where M: SeqAccess<'de>, {
+        let mut sparse_measurement = SparseMeasurement::new();
+        while let Some(position) = access.next_element()? {
+            sparse_measurement.insert_nontrivial_measurement(&position);
+        }
+        Ok(sparse_measurement)
+    }
+}
+
+impl<'de> Deserialize<'de> for SparseMeasurement {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>, {
+        // the new-ed error pattern just works like a helper type that implements Visitor trait, not optimized for efficiency
+        deserializer.deserialize_seq(SparseMeasurement::new())
+    }
 }
 
 // #[cfg_attr(feature = "python_binding", pymethods)]
@@ -1111,13 +1144,46 @@ impl SparseMeasurement {
 }
 
 /// detected erasures along with its effected edges
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub struct SparseDetectedErasures {
     /// the position of the erasure errors
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub erasures: BTreeSet<Position>,
+}
+
+impl Serialize for SparseDetectedErasures {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer, {
+        let mut seq = serializer.serialize_seq(Some(self.len()))?;  // known length
+        for erasure in self.iter() {
+            seq.serialize_element(erasure)?;
+        }
+        seq.end()
+    }
+}
+
+impl<'de> Visitor<'de> for SparseDetectedErasures {
+    type Value = SparseDetectedErasures;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "{}", r#"sparse detected erasure like ["[0][10][13]","[0][10][7]","[0][10][8]"]"#)
+    }
+
+    fn visit_seq<M>(self, mut access: M) -> Result<Self::Value, M::Error> where M: SeqAccess<'de>, {
+        let mut sparse_detected_erasures = SparseDetectedErasures::new();
+        while let Some(position) = access.next_element()? {
+            sparse_detected_erasures.insert_erasure(&position);
+        }
+        Ok(sparse_detected_erasures)
+    }
+}
+
+impl<'de> Deserialize<'de> for SparseDetectedErasures {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>, {
+        // the new-ed error pattern just works like a helper type that implements Visitor trait, not optimized for efficiency
+        deserializer.deserialize_seq(SparseDetectedErasures::new())
+    }
 }
 
 impl SparseDetectedErasures {
@@ -1138,6 +1204,11 @@ impl SparseDetectedErasures {
     /// contains element
     pub fn contains(&self, key: &Position) -> bool {
         self.erasures.contains(key)
+    }
+    /// return false if this erasure is already present
+    #[inline]
+    pub fn insert_erasure(&mut self, position: &Position) -> bool {
+        self.erasures.insert(position.clone())
     }
     /// compute the edges that are re-weighted to 0 because of these erasures
     pub fn get_erasure_edges(&self, erasure_graph: &ErasureGraph) -> Vec<ErasureEdge> {

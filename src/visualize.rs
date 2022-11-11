@@ -53,8 +53,6 @@ impl VisualizePosition {
 pub struct Visualizer {
     /// save to file if applicable
     file: Option<File>,
-    /// if waiting for the first case
-    empty_cases: bool,
     /// component sealed
     component_done: bool,
     /// names of the components
@@ -112,7 +110,6 @@ impl Visualizer {
         }
         Ok(Self {
             file,
-            empty_cases: true,
             component_names: BTreeSet::new(),
             component_done: false,
         })
@@ -138,7 +135,20 @@ impl Visualizer {
         self.component_done = true;
         if let Some(file) = self.file.as_mut() {
             file.seek(SeekFrom::End(-1))?;  // move the cursor before the ending }
-            file.write_all(b",\"cases\":[]}")?;
+            file.write_all(b",\"cases\":[")?;
+            file.write_all(json!({
+                "error_pattern": {},
+                "correction": {},
+                "measurement": [],
+                "detected_erasures": [],
+                "qec_failed": false,
+                "elapsed": {
+                    "prepare": 0.,
+                    "decode": 0.,
+                    "validate": 0.,
+                },
+            }).to_string().as_bytes())?;
+            file.write_all(b"]}")?;
             file.sync_all()?;
         }
         Ok(())
@@ -150,10 +160,7 @@ impl Visualizer {
         }
         if let Some(file) = self.file.as_mut() {
             file.seek(SeekFrom::End(-2))?;  // move the cursor before the ending ]}
-            if !self.empty_cases {
-                file.write_all(b",")?;
-            }
-            self.empty_cases = false;
+            file.write_all(b",")?;
             file.write_all(case.to_string().as_bytes())?;
             file.write_all(b"]}")?;
             file.sync_all()?;
@@ -161,6 +168,14 @@ impl Visualizer {
         Ok(())
     }
 
+}
+
+impl Drop for Visualizer {
+    fn drop(&mut self) {
+        if !self.component_done {
+            self.end_component().unwrap();
+        }
+    }
 }
 
 const DEFAULT_VISUALIZE_DATA_FOLDER: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/visualize/data/");
@@ -172,7 +187,7 @@ pub fn visualize_data_folder() -> String {
 
 #[cfg_attr(feature = "python_binding", pyfunction)]
 pub fn static_visualize_data_filename() -> String {
-    "qecp_vis.json".to_string()
+    "visualizer.json".to_string()
 }
 
 #[cfg_attr(feature = "python_binding", pyfunction)]
