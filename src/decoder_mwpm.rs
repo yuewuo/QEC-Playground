@@ -234,7 +234,7 @@ mod tests {
         let p = 0.;
         let pe = 0.1;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::StandardPlanarCode, BuiltinCodeInformation::new(noisy_measurements, d, d));
+        let mut simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);

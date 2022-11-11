@@ -41,10 +41,10 @@ pub enum CodeType {
     Customized,
 }
 
-/// built-in code types' information
+/// code size information
 #[cfg_attr(feature = "python_binding", pyclass)]
 #[derive(Debug, Serialize, Clone)]
-pub struct BuiltinCodeInformation {
+pub struct CodeSize {
     pub noisy_measurements: usize,
     pub di: usize,
     pub dj: usize,
@@ -52,10 +52,10 @@ pub struct BuiltinCodeInformation {
 
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pymethods)]
-impl BuiltinCodeInformation {
+impl CodeSize {
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new(noisy_measurements: usize, di: usize, dj: usize) -> Self{
-        BuiltinCodeInformation{
+        CodeSize {
             noisy_measurements: noisy_measurements,
             di: di,
             dj: dj,
@@ -65,24 +65,9 @@ impl BuiltinCodeInformation {
 
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl CodeType {
-    // pub fn builtin_code_information(&self) -> Option<BuiltinCodeInformation> {
-    //     match &self {
-    //         &CodeType::StandardPlanarCode { noisy_measurements, di, dj } | &CodeType::RotatedPlanarCode { noisy_measurements, dp: di, dn: dj } |
-    //         &CodeType::StandardXZZXCode { noisy_measurements, di, dj } | &CodeType::RotatedXZZXCode { noisy_measurements, dp: di, dn: dj } |
-    //         &CodeType::StandardTailoredCode { noisy_measurements, di, dj } | &CodeType::RotatedTailoredCode { noisy_measurements, dp: di, dn: dj } |
-    //         &CodeType::PeriodicRotatedTailoredCode { noisy_measurements, dp: di, dn: dj } => {
-    //             Some(BuiltinCodeInformation {
-    //                 noisy_measurements: *noisy_measurements,
-    //                 di: *di,
-    //                 dj: *dj,
-    //             })
-    //         },
-    //         _ => None
-    //     }
-    // }
 
     /// get position on the left of (i, j), note that this position may be invalid for open-boundary code if it doesn't exist
-    pub fn get_left(&self, i: usize, j: usize, builtin_code_information: &BuiltinCodeInformation) -> (usize, usize) {
+    pub fn get_left(&self, i: usize, j: usize, code_size: &CodeSize) -> (usize, usize) {
         match self {
             &CodeType::RotatedTailoredCode => {
                 if j > 0 {
@@ -92,8 +77,8 @@ impl CodeType {
                 }
             },
             &CodeType::PeriodicRotatedTailoredCode => {
-                let dp = builtin_code_information.di;
-                let dn = builtin_code_information.dj;
+                let dp = code_size.di;
+                let dn = code_size.dj;
                 let (di, dj) = (dp-1, dn-1);
                 if i + j == dj {
                     (i + (di + 1), j + di)
@@ -108,7 +93,7 @@ impl CodeType {
     }
 
     /// get position up the position (i, j), note that this position may be invalid for open-boundary code if it doesn't exist
-    pub fn get_up(&self, i: usize, j: usize, builtin_code_information: &BuiltinCodeInformation) -> (usize, usize) {
+    pub fn get_up(&self, i: usize, j: usize, code_size: &CodeSize) -> (usize, usize) {
         match self {
             &CodeType::RotatedTailoredCode => {
                 if i > 0 {
@@ -118,8 +103,8 @@ impl CodeType {
                 }
             },
             &CodeType::PeriodicRotatedTailoredCode => {
-                let dp = builtin_code_information.di;
-                let dn = builtin_code_information.dj;
+                let dp = code_size.di;
+                let dn = code_size.dj;
                 let (di, dj) = (dp-1, dn-1);
                 if i == 0 && j == dj {
                     (di + dj + 1, di)
@@ -136,14 +121,14 @@ impl CodeType {
     }
 
     /// get position on the right of (i, j), note that this position may be invalid for open-boundary code if it doesn't exist
-    pub fn get_right(&self, i: usize, j: usize, builtin_code_information: &BuiltinCodeInformation) -> (usize, usize) {
+    pub fn get_right(&self, i: usize, j: usize, code_size: &CodeSize) -> (usize, usize) {
         match self {
             &CodeType::RotatedTailoredCode => {
                 (i, j + 1)
             },
             &CodeType::PeriodicRotatedTailoredCode => {
-                let dp = builtin_code_information.di;
-                let dn = builtin_code_information.dj;
+                let dp = code_size.di;
+                let dn = code_size.dj;
                 let (di, dj) = (dp-1, dn-1);
                 if i + j == 2 * di + dj + 1 {
                     (i - (di + 1), j - di)
@@ -158,14 +143,14 @@ impl CodeType {
     }
 
     /// get position down the position (i, j), note that this position may be invalid for open-boundary code if it doesn't exist
-    pub fn get_down(&self, i: usize, j: usize, builtin_code_information: &BuiltinCodeInformation) -> (usize, usize) {
+    pub fn get_down(&self, i: usize, j: usize, code_size: &CodeSize) -> (usize, usize) {
         match self {
             &CodeType::RotatedTailoredCode => {
                 (i + 1, j)
             },
             &CodeType::PeriodicRotatedTailoredCode => {
-                let dp = builtin_code_information.di;
-                let dn = builtin_code_information.dj;
+                let dp = code_size.di;
+                let dn = code_size.dj;
                 let (di, dj) = (dp-1, dn-1);
                 if i == di + dj + 1 && j == di {
                     (0, dj)
@@ -182,27 +167,27 @@ impl CodeType {
     }
 
     /// convenient call to get diagonal neighbor on the left up
-    pub fn get_left_up(&self, i: usize, j: usize, builtin_code_information: &BuiltinCodeInformation) -> (usize, usize) {
-        let (i, j) = self.get_left(i, j, builtin_code_information);
-        self.get_up(i, j, builtin_code_information)
+    pub fn get_left_up(&self, i: usize, j: usize, code_size: &CodeSize) -> (usize, usize) {
+        let (i, j) = self.get_left(i, j, code_size);
+        self.get_up(i, j, code_size)
     }
 
     /// convenient call to get diagonal neighbor on the left down
-    pub fn get_left_down(&self, i: usize, j: usize, builtin_code_information: &BuiltinCodeInformation) -> (usize, usize) {
-        let (i, j) = self.get_left(i, j, builtin_code_information);
-        self.get_down(i, j, builtin_code_information)
+    pub fn get_left_down(&self, i: usize, j: usize, code_size: &CodeSize) -> (usize, usize) {
+        let (i, j) = self.get_left(i, j, code_size);
+        self.get_down(i, j, code_size)
     }
 
     /// convenient call to get diagonal neighbor on the right up
-    pub fn get_right_up(&self, i: usize, j: usize, builtin_code_information: &BuiltinCodeInformation) -> (usize, usize) {
-        let (i, j) = self.get_right(i, j, builtin_code_information);
-        self.get_up(i, j, builtin_code_information)
+    pub fn get_right_up(&self, i: usize, j: usize, code_size: &CodeSize) -> (usize, usize) {
+        let (i, j) = self.get_right(i, j, code_size);
+        self.get_up(i, j, code_size)
     }
 
     /// convenient call to get diagonal neighbor on the left down
-    pub fn get_right_down(&self, i: usize, j: usize, builtin_code_information: &BuiltinCodeInformation) -> (usize, usize) {
-        let (i, j) = self.get_right(i, j, builtin_code_information);
-        self.get_down(i, j, builtin_code_information)
+    pub fn get_right_down(&self, i: usize, j: usize, code_size: &CodeSize) -> (usize, usize) {
+        let (i, j) = self.get_right(i, j, code_size);
+        self.get_down(i, j, code_size)
     }
 }
 
@@ -231,12 +216,12 @@ impl CodeType{
 
 pub fn build_code(simulator: &mut Simulator) {
     let code_type = &simulator.code_type;
-    let builtin_code_information = &simulator.builtin_code_information;
+    let code_size = &simulator.code_size;
     match code_type {
         &CodeType::StandardPlanarCode| &CodeType::RotatedPlanarCode => {
-            let di = builtin_code_information.di;
-            let dj = builtin_code_information.dj;
-            let noisy_measurements = builtin_code_information.noisy_measurements;
+            let di = code_size.di;
+            let dj = code_size.dj;
+            let noisy_measurements = code_size.noisy_measurements;
             simulator.measurement_cycles = 6;
             assert!(di > 0, "code distance must be positive integer");
             assert!(dj > 0, "code distance must be positive integer");
@@ -403,9 +388,9 @@ pub fn build_code(simulator: &mut Simulator) {
             simulator.nodes = nodes;
         },
         &CodeType::StandardTailoredCode | &CodeType::RotatedTailoredCode => {
-            let di = builtin_code_information.di;
-            let dj = builtin_code_information.dj;
-            let noisy_measurements = builtin_code_information.noisy_measurements;
+            let di = code_size.di;
+            let dj = code_size.dj;
+            let noisy_measurements = code_size.noisy_measurements;
             simulator.measurement_cycles = 6;
             assert!(di > 0, "code distance must be positive integer");
             assert!(dj > 0, "code distance must be positive integer");
@@ -599,9 +584,9 @@ pub fn build_code(simulator: &mut Simulator) {
             simulator.nodes = nodes;
         },
         &CodeType::PeriodicRotatedTailoredCode => {
-            let dp = builtin_code_information.di;
-            let dn = builtin_code_information.dj;
-            let noisy_measurements = builtin_code_information.noisy_measurements;
+            let dp = code_size.di;
+            let dn = code_size.dj;
+            let noisy_measurements = code_size.noisy_measurements;
             simulator.measurement_cycles = 6;
             assert!(dp > 0, "code distance must be positive integer");
             assert!(dn > 0, "code distance must be positive integer");
@@ -650,44 +635,44 @@ pub fn build_code(simulator: &mut Simulator) {
                                 },
                                 2 => {  // gate 1
                                     if qubit_type == QubitType::Data {
-                                        let (pi, pj) = code_type.get_down(i, j, builtin_code_information);
+                                        let (pi, pj) = code_type.get_down(i, j, code_size);
                                         gate_type = if j % 2 == 1 { GateType::CXGateTarget } else { GateType::CYGateTarget };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     } else {
-                                        let (pi, pj) = code_type.get_up(i, j, builtin_code_information);
+                                        let (pi, pj) = code_type.get_up(i, j, code_size);
                                         gate_type = if j % 2 == 1 { GateType::CXGateControl } else { GateType::CYGateControl };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     }
                                 },
                                 3 => {  // gate 2
                                     if j % 2 == 1 {  // operate with right
-                                        let (pi, pj) = code_type.get_right(i, j, builtin_code_information);
+                                        let (pi, pj) = code_type.get_right(i, j, code_size);
                                         gate_type = if qubit_type == QubitType::Data { GateType::CYGateTarget } else { GateType::CXGateControl };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     } else {  // operate with left
-                                        let (pi, pj) = code_type.get_left(i, j, builtin_code_information);
+                                        let (pi, pj) = code_type.get_left(i, j, code_size);
                                         gate_type = if qubit_type == QubitType::Data { GateType::CXGateTarget } else { GateType::CYGateControl };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     }
                                 },
                                 4 => {  // gate 3
                                     if j % 2 == 1 {  // operate with left
-                                        let (pi, pj) = code_type.get_left(i, j, builtin_code_information);
+                                        let (pi, pj) = code_type.get_left(i, j, code_size);
                                         gate_type = if qubit_type == QubitType::Data { GateType::CYGateTarget } else { GateType::CXGateControl };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     } else {  // operate with right
-                                        let (pi, pj) = code_type.get_right(i, j, builtin_code_information);
+                                        let (pi, pj) = code_type.get_right(i, j, code_size);
                                         gate_type = if qubit_type == QubitType::Data { GateType::CXGateTarget } else { GateType::CYGateControl };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     }
                                 },
                                 5 => {  // gate 4
                                     if qubit_type == QubitType::Data {
-                                        let (pi, pj) = code_type.get_up(i, j, builtin_code_information);
+                                        let (pi, pj) = code_type.get_up(i, j, code_size);
                                         gate_type = if j % 2 == 1 { GateType::CXGateTarget } else { GateType::CYGateTarget };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     } else {
-                                        let (pi, pj) = code_type.get_down(i, j, builtin_code_information);
+                                        let (pi, pj) = code_type.get_down(i, j, code_size);
                                         gate_type = if j % 2 == 1 { GateType::CXGateControl } else { GateType::CYGateControl };
                                         gate_peer = Some(pos!(t, pi, pj));
                                     }
@@ -720,9 +705,9 @@ pub fn build_code(simulator: &mut Simulator) {
             // skip user customized code
         },
         &CodeType::StandardXZZXCode | &CodeType::RotatedXZZXCode => {
-            let di = builtin_code_information.di;
-            let dj = builtin_code_information.dj;
-            let noisy_measurements = builtin_code_information.noisy_measurements;
+            let di = code_size.di;
+            let dj = code_size.dj;
+            let noisy_measurements = code_size.noisy_measurements;
             simulator.measurement_cycles = 6;
             assert!(di > 0, "code distance must be positive integer");
             assert!(dj > 0, "code distance must be positive integer");
@@ -968,7 +953,7 @@ pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &
     }
     // validate the result
     let code_type = &simulator.code_type;
-    let builtin_code_information = &simulator.builtin_code_information;
+    let code_size = &simulator.code_size;
     let result = match code_type {
         &CodeType::StandardPlanarCode => {
             // check cardinality of top boundary for logical_i
@@ -993,8 +978,8 @@ pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &
         },
         &CodeType::RotatedPlanarCode => {
             // check cardinality of top boundary for logical_i
-            let dp = builtin_code_information.di;
-            let dn = builtin_code_information.dj;
+            let dp = code_size.di;
+            let dn = code_size.dj;
             let mut top_cardinality = 0;
             for delta in 0..dn {
                 let node = simulator.get_node_unwrap(&pos!(top_t, dn-delta, 1+delta));
@@ -1037,8 +1022,8 @@ pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &
         },
         &CodeType::RotatedTailoredCode => {
             // check cardinality of top boundary for logical_i
-            let dp = builtin_code_information.di;
-            let dn = builtin_code_information.dj;
+            let dp = code_size.di;
+            let dn = code_size.dj;
             let mut top_cardinality = 0;
             for delta in 0..dn {
                 let node = simulator.get_node_unwrap(&pos!(top_t, dn-delta, 1+delta));
@@ -1059,8 +1044,8 @@ pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &
             Some((logical_p, logical_n))
         },
         &CodeType::PeriodicRotatedTailoredCode => {
-            let dp = builtin_code_information.di;
-            let dn = builtin_code_information.dj;
+            let dp = code_size.di;
+            let dn = code_size.dj;
             // check cardinality of top boundary for logical_i
             let mut top_cardinality_y = 0;
             let mut top_cardinality_x = 0;
@@ -1112,8 +1097,8 @@ pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &
             Some((logical_i, logical_j))
         },
         &CodeType::RotatedXZZXCode => {
-            let dp = builtin_code_information.di;
-            let dn = builtin_code_information.dj;
+            let dp = code_size.di;
+            let dn = code_size.dj;
             // check cardinality of top boundary for logical_i
             let mut top_cardinality = 0;
             for delta in 0..dn {
@@ -1185,9 +1170,19 @@ pub fn code_builder_sanity_check_correction(simulator: &mut Simulator, correctio
 
 }
 
+#[cfg(feature="python_binding")]
+#[pyfunction]
+pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_class::<CodeType>()?;
+    m.add_class::<CodeSize>()?;
+    m.add("BuiltinCodeInformation", CodeSize::type_object(py))?;  // backward compatibility
+    Ok(())
+}  
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::visualize::*;
 
     #[macro_export]
     macro_rules! assert_measurement {
@@ -1208,7 +1203,7 @@ mod tests {
         let di = 7;
         let dj = 5;
         let noisy_measurements = 3;
-        let mut simulator = Simulator::new(CodeType::StandardPlanarCode, BuiltinCodeInformation::new(noisy_measurements, di, dj));
+        let mut simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
         {  // count how many nodes
             let mut nodes_count = 0;
@@ -1318,7 +1313,7 @@ mod tests {
         let di = 7;
         let dj = 5;
         let noisy_measurements = 3;
-        let mut simulator = Simulator::new(CodeType::StandardTailoredCode, BuiltinCodeInformation::new(noisy_measurements, di, dj));
+        let mut simulator = Simulator::new(CodeType::StandardTailoredCode, CodeSize::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
         {  // check stabilizer measurements
             // data qubit at corner
@@ -1345,7 +1340,7 @@ mod tests {
         let di = 7;
         let dj = 5;
         let noisy_measurements = 0;
-        let mut simulator = Simulator::new(CodeType::PeriodicRotatedTailoredCode, BuiltinCodeInformation::new(noisy_measurements, di+1, dj+1));
+        let mut simulator = Simulator::new(CodeType::PeriodicRotatedTailoredCode, CodeSize::new(noisy_measurements, di+1, dj+1));
         code_builder_sanity_check(&simulator).unwrap();
         {  // check stabilizer measurements
             // data qubit at center
@@ -1371,12 +1366,17 @@ mod tests {
         }
     }
 
-}
+    #[test]
+    fn code_builder_visualize_standard_planar_code() {  // cargo test code_builder_visualize_standard_planar_code -- --nocapture
+        let visualize_filename = format!("code_builder_visualize_standard_planar_code.json");
+        print_visualize_link(visualize_filename.clone());
+        let di = 7;
+        let dj = 5;
+        let noisy_measurements = 0;
+        let simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, di, dj));
+        code_builder_sanity_check(&simulator).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        visualizer.add_component(&simulator).unwrap();
+    }
 
-#[cfg(feature="python_binding")]
-#[pyfunction]
-pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_class::<CodeType>()?;
-    m.add_class::<BuiltinCodeInformation>()?;
-    Ok(())
-}  
+}

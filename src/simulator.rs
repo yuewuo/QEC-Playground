@@ -16,6 +16,7 @@ use std::sync::Arc;
 use std::collections::{HashMap, HashSet, BTreeSet, BTreeMap};
 use super::serde_hashkey;
 use super::erasure_graph::*;
+use crate::visualize::*;
 
 
 /// general simulator for two-dimensional code with circuit-level implementation of stabilizer measurements
@@ -29,7 +30,7 @@ pub struct Simulator {
     pub code_type: CodeType,
     /// the information fields of CodeType
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
-    pub builtin_code_information: BuiltinCodeInformation,
+    pub code_size: CodeSize,
     /// size of the snapshot, where `nodes` is ensured to be a cube of `height` * `vertical` * `horizontal`
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub height: usize,
@@ -44,6 +45,42 @@ pub struct Simulator {
     /// how many cycles is there a round of measurements; default to 1
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub measurement_cycles: usize,
+}
+
+impl QecpVisualizer for Simulator {
+    fn component_info(&self, abbrev: bool) -> (String, serde_json::Value) {
+        let name = "simulator";
+        let info = json!({
+            "code_type": self.code_type,
+            "code_size": self.code_size,
+            "height": self.height,
+            "vertical": self.vertical,
+            "horizontal": self.horizontal,
+            "measurement_cycles": self.measurement_cycles,
+            "nodes": (0..self.height).map(|t| {
+                (0..self.vertical).map(|i| {
+                    (0..self.horizontal).map(|j| {
+                        let position = &pos!(t, i, j);
+                        if self.is_node_exist(position) {
+                            let node = self.get_node_unwrap(position);
+                            Some(json!({
+                                if abbrev { "p" } else { "position" }: position,
+                                if abbrev { "q" } else { "qubit_type" }: node.qubit_type,
+                                if abbrev { "gt" } else { "gate_type" }: node.gate_type,
+                                if abbrev { "gp" } else { "gate_peer" }: node.gate_peer,
+                                if abbrev { "v" } else { "is_virtual" }: node.is_virtual,
+                                if abbrev { "pv" } else { "is_peer_virtual" }: node.is_peer_virtual,
+                                if abbrev { "m" } else { "miscellaneous" }: node.miscellaneous,
+                            }))
+                        } else {
+                            None
+                        }
+                    }).collect::<Vec<Option<serde_json::Value>>>()
+                }).collect::<Vec<Vec<Option<serde_json::Value>>>>()
+            }).collect::<Vec<Vec<Vec<Option<serde_json::Value>>>>>()
+        });
+        (name.to_string(), info)
+    }
 }
 
 /// when plotting, t is the time axis; looking at the direction of `t=-∞`, the top-left corner is `i=j=0`;
@@ -245,10 +282,10 @@ impl GateType {
 impl Simulator {
     /// given builtin code type, this will automatically build the code structure
     #[cfg_attr(feature = "python_binding", new)]
-    pub fn new(code_type: CodeType, builtin_code_information: BuiltinCodeInformation) -> Self {
+    pub fn new(code_type: CodeType, code_size: CodeSize) -> Self {
         let mut simulator = Self {
             code_type: code_type,
-            builtin_code_information: builtin_code_information,
+            code_size: code_size,
             height: 0,
             vertical: 0,
             horizontal: 0,
@@ -268,7 +305,7 @@ impl Simulator {
     pub fn clone(&self) -> Self {
         Self {
             code_type: self.code_type.clone(),
-            builtin_code_information: self.builtin_code_information.clone(),
+            code_size: self.code_size.clone(),
             height: self.height,
             vertical: self.vertical,
             horizontal: self.horizontal,
@@ -1255,7 +1292,7 @@ mod tests {
         let di = 5;
         let dj = 5;
         let noisy_measurements = 5;
-        let simulator = Simulator::new(CodeType::StandardPlanarCode, BuiltinCodeInformation::new(noisy_measurements, di, dj));
+        let simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, di, dj));
         let invalid_position = pos!(100, 100, 100);
         assert!(!simulator.is_valid_position(&invalid_position), "invalid position");
         let nonexisting_position = pos!(0, 0, 0);

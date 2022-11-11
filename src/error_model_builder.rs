@@ -77,7 +77,7 @@ impl ErrorModelBuilder {
             },
             ErrorModelBuilder::TailoredScBellInitPhenomenological => {
                 let (noisy_measurements, dp, dn) = match simulator.code_type {
-                    CodeType::RotatedTailoredCode => { (simulator.builtin_code_information.noisy_measurements, simulator.builtin_code_information.di, simulator.builtin_code_information.dj) }
+                    CodeType::RotatedTailoredCode => { (simulator.code_size.noisy_measurements, simulator.code_size.di, simulator.code_size.dj) }
                     _ => unimplemented!("tailored surface code with Bell state initialization is only implemented for open-boundary rotated tailored surface code")
                 };
                 assert!(noisy_measurements > 0, "to simulate bell initialization, noisy measurement must be set +1 (e.g. set noisy measurement 1 is equivalent to 0 noisy measurements)");

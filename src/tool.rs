@@ -343,7 +343,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             }, _ => { },
         }
         // prepare simulator
-        let mut simulator = Simulator::new(CodeType::new(&code_type), BuiltinCodeInformation::new(noisy_measurements, di, dj));
+        let mut simulator = Simulator::new(CodeType::new(&code_type), CodeSize::new(noisy_measurements, di, dj));
         let mut error_model_graph = ErrorModel::new(&simulator);
         // first use p_graph and pe_graph to build decoder graph, then revert back to real error model
         let px_graph = p_graph / (1. + bias_eta) / 2.;
