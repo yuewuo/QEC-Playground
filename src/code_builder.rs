@@ -1409,6 +1409,32 @@ mod tests {
     }
 
     #[test]
+    fn code_builder_visualize_standard_planar_code_noisy() {  // cargo test code_builder_visualize_standard_planar_code_noisy -- --nocapture
+        let visualize_filename = format!("code_builder_visualize_standard_planar_code_noisy.json");
+        print_visualize_link(visualize_filename.clone());
+        let di = 5;
+        let dj = 5;
+        let noisy_measurements = 2;
+        let simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, di, dj));
+        code_builder_sanity_check(&simulator).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        visualizer.add_component(&simulator).unwrap();
+    }
+
+    #[test]
+    fn code_builder_visualize_rotated_planar_code_noisy() {  // cargo test code_builder_visualize_rotated_planar_code_noisy -- --nocapture
+        let visualize_filename = format!("code_builder_visualize_rotated_planar_code_noisy.json");
+        print_visualize_link(visualize_filename.clone());
+        let di = 5;
+        let dj = 5;
+        let noisy_measurements = 2;
+        let simulator = Simulator::new(CodeType::RotatedPlanarCode, CodeSize::new(noisy_measurements, di, dj));
+        code_builder_sanity_check(&simulator).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        visualizer.add_component(&simulator).unwrap();
+    }
+
+    #[test]
     fn code_builder_visualize_standard_xzzx_code() {  // cargo test code_builder_visualize_standard_xzzx_code -- --nocapture
         let visualize_filename = format!("code_builder_visualize_standard_xzzx_code.json");
         print_visualize_link(visualize_filename.clone());

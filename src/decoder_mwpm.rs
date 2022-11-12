@@ -249,8 +249,8 @@ mod tests {
         // load errors onto the simulator
         let sparse_error_pattern: SparseErrorPattern = serde_json::from_value(json!({"[0][1][5]":"Z","[0][2][6]":"Z","[0][4][4]":"X","[0][5][7]":"X","[0][9][7]":"Y"})).unwrap();
         let sparse_detected_erasures: SparseDetectedErasures = serde_json::from_value(json!(["[0][1][3]","[0][1][5]","[0][2][6]","[0][4][4]","[0][5][7]","[0][6][6]","[0][9][7]"])).unwrap();
-        simulator.load_sparse_error_pattern(&sparse_error_pattern).expect("success");
-        simulator.load_sparse_detected_erasures(&sparse_detected_erasures).expect("success");
+        simulator.load_sparse_error_pattern(&sparse_error_pattern, &error_model).expect("success");
+        simulator.load_sparse_detected_erasures(&sparse_detected_erasures, &error_model).expect("success");
         simulator.propagate_errors();
         let sparse_measurement = simulator.generate_sparse_measurement();
         println!("sparse_measurement: {:?}", sparse_measurement);

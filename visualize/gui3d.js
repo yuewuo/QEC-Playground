@@ -196,6 +196,10 @@ CY_target_geometries[1].rotateY(- 5 * Math.PI / 6)
 CY_target_geometries[2].rotateX(Math.PI / 2)
 CY_target_geometries[2].rotateY(5 * Math.PI / 6)
 CY_target_geometries[3].rotateX(Math.PI / 2)
+const model_graph_edge_radius = parseFloat(urlParams.get('model_graph_edge_radius') || 0.05)
+const model_graph_edge_scale = ref(1)
+const model_graph_edge_geometry = new THREE.CylinderGeometry( model_graph_edge_radius, model_graph_edge_radius, 1, segment, 1, true )
+model_graph_edge_geometry.translate(0, 0.5, 0)
 
 // measurement bits
 const measurement_radius = parseFloat(urlParams.get('measurement_radius') || 0.06)
@@ -313,6 +317,7 @@ export const error_materials = {
     "Y": build_solid_material(const_color.Y),
     "Z": build_solid_material(const_color.Z),
 }
+export const model_graph_edge_material = build_solid_material(0x000000)
 export const idle_gate_material = new THREE.MeshStandardMaterial({
     color: 0x000000,
     opacity: 0.1,
@@ -363,9 +368,9 @@ export var qubit_meshes = []
 export const outline_ratio = ref(1.2)
 export var qubit_outline_meshes = []
 export var measurement_outline_meshes = []
-
 export var idle_gate_meshes = []
 export var gate_vec_meshes = []
+export var model_graph_vec_meshes = []
 
 // meshes of a specific case
 export var defect_measurement_meshes = []
@@ -381,6 +386,10 @@ watch(qubit_radius_scale, (newVal, oldVal) => {
 watch(idle_gate_radius_scale, (newVal, oldVal) => {
     idle_gate_geometry.scale(1/oldVal, 1, 1/oldVal)
     idle_gate_geometry.scale(newVal, 1, newVal)
+})
+watch(model_graph_edge_scale, (newVal, oldVal) => {
+    model_graph_edge_geometry.scale(1/oldVal, 1, 1/oldVal)
+    model_graph_edge_geometry.scale(newVal, 1, newVal)
 })
 watch(defect_measurement_radius_scale, (newVal, oldVal) => {
     defect_measurement_geometry.scale(1/oldVal, 1/oldVal, 1/oldVal)
@@ -489,7 +498,6 @@ function get_position(position_str) {
 
 function get_url_bool(name, default_value=true) {
     let value = urlParams.get(name)
-    console.log(value)
     if (value == null) {
         return default_value
     }
@@ -576,6 +584,13 @@ watch([display_correction], () => {
             mesh.visible = display_correction.value
         }
     }
+})
+export const existed_model_graph = ref(false)
+export const display_model_graph = ref(get_url_bool("display_model_graph", true))
+export const model_graph_regions = ref(0)
+export const model_graph_region_display = ref([])
+watch(model_graph_region_display, () => {
+    console.log(model_graph_region_display.value)
 })
 
 export async function refresh_qecp_data() {
@@ -766,7 +781,67 @@ export async function refresh_qecp_data() {
                 }
             }
         }
-        // refresh case as well
+        // draw model graph
+        dispose_mesh_3d_array(model_graph_vec_meshes)
+        model_graph_vec_meshes = build_3d_array(height, vertical, horizontal)
+        if (qecp_data.model_graph != null) {
+            existed_model_graph.value = true
+            for (let t=0; t<height; ++t) {
+                for (let i=0; i<vertical; ++i) {
+                    for (let j=0; j<horizontal; ++j) {
+                        const model_graph_node = qecp_data.model_graph.nodes[t][i][j]
+                        if (model_graph_node != null) {
+                            const model_graph_vec_mesh = []
+                            model_graph_vec_meshes[t][i][j] = model_graph_vec_mesh
+                            const position = qecp_data.simulator.positions[i][j]
+                            const display_position = { t: t + t_bias, x: position.x, y: position.y }
+                            for (let [peer_position_str, edge] of Object.entries(model_graph_node.edges)) {
+                                const { i: pi, j: pj, t: pt } = get_position(peer_position_str)
+                                const peer_position = qecp_data.simulator.positions[pi][pj]
+                                const peer_display_position = { t: pt + t_bias, x: peer_position.x, y: peer_position.y }
+                                const line_mesh = new THREE.Mesh( model_graph_edge_geometry, model_graph_edge_material )
+                                const relative = compute_vector3(peer_display_position).add(compute_vector3(display_position).multiplyScalar(-1))
+                                const direction = relative.clone().normalize()
+                                const quaternion = new THREE.Quaternion()
+                                quaternion.setFromUnitVectors(unit_up_vector, direction)
+                                load_position(line_mesh.position, display_position)
+                                line_mesh.scale.set(1, relative.length() / 2, 1)
+                                line_mesh.setRotationFromQuaternion(quaternion)
+                                scene.add( line_mesh )
+                                model_graph_vec_mesh.push(line_mesh)
+                            }
+                            for (let boundary of model_graph_node.all_boundaries)  {
+                                let [vpi, vpj, vpt] = [i, j, t - qecp_data.simulator.measurement_cycles]
+                                if (boundary.v != null) {
+                                    const vp = get_position(boundary.v)
+                                    vpi = vp.i; vpj = vp.j; vpt = vp.t
+                                }
+                                const peer_position = qecp_data.simulator.positions[vpi][vpj]
+                                const peer_display_position = { t: vpt + t_bias, x: peer_position.x, y: peer_position.y }
+                                const line_mesh = new THREE.Mesh( model_graph_edge_geometry, model_graph_edge_material )
+                                const relative = compute_vector3(peer_display_position).add(compute_vector3(display_position).multiplyScalar(-1))
+                                const direction = relative.clone().normalize()
+                                const quaternion = new THREE.Quaternion()
+                                quaternion.setFromUnitVectors(unit_up_vector, direction)
+                                load_position(line_mesh.position, display_position)
+                                line_mesh.scale.set(1, relative.length(), 1)
+                                line_mesh.setRotationFromQuaternion(quaternion)
+                                scene.add( line_mesh )
+                                model_graph_vec_mesh.push(line_mesh)
+                            }
+                        }
+                    }
+                }
+            }
+            // calculate region
+            
+            let default_region_display = []
+            for (let i=0; i<model_graph_regions.value; ++i) default_region_display.push(i)
+            model_graph_region_display.value = default_region_display
+        } else {
+            display_model_graph.value = null  // show intermediate state
+        }
+        // refresh active case as well
         await refresh_case()
     }
 }

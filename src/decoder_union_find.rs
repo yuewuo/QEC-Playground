@@ -1020,12 +1020,11 @@ mod tests {
         let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
         if true || enable_all {  // debug 5
             simulator.clear_all_errors();
-            // {"[0][4][6]":"Z","[0][5][8]":"Z","[0][5][9]":"Z","[0][7][1]":"Z","[0][9][1]":"Z"}
-            simulator.get_node_mut_unwrap(&pos!(0, 4, 6)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 5, 8)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 5, 9)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 7, 1)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 9, 1)).set_error_check(&error_model, &Z);
+            // {"[0][4][6]":"Z","[0][5][9]":"Z","[0][7][1]":"Z","[0][9][1]":"Z"}
+            simulator.set_error_check(&error_model, &pos!(0, 4, 6), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 5, 9), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 7, 1), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 9, 1), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = union_find_decoder.decode(&sparse_measurement);
@@ -1036,13 +1035,11 @@ mod tests {
         }
         if false || enable_all {  // debug 4, should fail
             simulator.clear_all_errors();
-            // {"[0][1][2]":"Z","[0][1][5]":"Z","[0][5][3]":"Z","[0][5][7]":"Z","[0][7][2]":"Z","[0][7][7]":"Z"}
-            simulator.get_node_mut_unwrap(&pos!(0, 1, 2)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 1, 5)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 5, 3)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 5, 7)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 7, 2)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 7, 7)).set_error_check(&error_model, &Z);
+            // {"[0][1][5]":"Z","[0][5][3]":"Z","[0][5][7]":"Z","[0][7][7]":"Z"}
+            simulator.set_error_check(&error_model, &pos!(0, 1, 5), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 5, 3), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 5, 7), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 7, 7), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = union_find_decoder.decode(&sparse_measurement);
@@ -1051,27 +1048,23 @@ mod tests {
         }
         if false || enable_all {  // debug 3
             simulator.clear_all_errors();
-            // {"[0][1][8]":"Z","[0][6][5]":"Z","[0][6][6]":"Z","[0][8][2]":"Z","[0][8][4]":"Z"}
-            simulator.get_node_mut_unwrap(&pos!(0, 1, 8)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 6, 5)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 6, 6)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 8, 2)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 8, 4)).set_error_check(&error_model, &Z);
+            // {"[0][6][6]":"Z","[0][8][2]":"Z","[0][8][4]":"Z"}
+            simulator.set_error_check(&error_model, &pos!(0, 6, 6), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 8, 2), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 8, 4), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = union_find_decoder.decode(&sparse_measurement);
-            // println!("{:?}", correction);
+            println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
         if false || enable_all {  // debug 2
             simulator.clear_all_errors();
-            // {"[0][3][2]":"Z","[0][3][9]":"Z","[0][8][8]":"Z","[0][9][6]":"Z"}
-            simulator.get_node_mut_unwrap(&pos!(0, 3, 2)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 3, 9)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 8, 8)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 9, 6)).set_error_check(&error_model, &Z);
+            // {"[0][3][9]":"Z","[0][8][8]":"Z"}
+            simulator.set_error_check(&error_model, &pos!(0, 3, 9), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 8, 8), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = union_find_decoder.decode(&sparse_measurement);
@@ -1082,9 +1075,9 @@ mod tests {
         }
         if false || enable_all {  // debug 1
             simulator.clear_all_errors();
-            simulator.get_node_mut_unwrap(&pos!(0, 6, 4)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 6, 6)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 5, 7)).set_error_check(&error_model, &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 6, 4), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 6, 6), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 5, 7), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = union_find_decoder.decode(&sparse_measurement);
@@ -1121,7 +1114,7 @@ mod tests {
         let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
         // load errors onto the simulator
         let debug_case: BenchmarkThreadDebugger = serde_json::from_value(json!({"correction":null,"detected_erasures":["[0][1][5]","[0][3][7]","[0][4][2]","[0][4][8]","[0][5][1]","[0][6][8]","[0][7][3]","[0][9][5]"],"error_pattern":{"[0][1][5]":"Y","[0][4][2]":"X","[0][5][1]":"X"},"measurement":null,"thread_counter":451986})).unwrap();
-        debug_case.load_errors(&mut simulator);
+        debug_case.load_errors(&mut simulator, &error_model);
         let sparse_measurement = simulator.generate_sparse_measurement();
         println!("sparse_measurement: {:?}", sparse_measurement);
         let sparse_detected_erasures = simulator.generate_sparse_detected_erasures();
@@ -1154,8 +1147,8 @@ mod tests {
         // load errors onto the simulator
         let sparse_error_pattern: SparseErrorPattern = serde_json::from_value(json!({"[0][1][5]":"Z","[0][2][6]":"Z","[0][4][4]":"X","[0][5][7]":"X","[0][9][7]":"Y"})).unwrap();
         let sparse_detected_erasures: SparseDetectedErasures = serde_json::from_value(json!(["[0][1][3]","[0][1][5]","[0][2][6]","[0][4][4]","[0][5][7]","[0][6][6]","[0][9][7]"])).unwrap();
-        simulator.load_sparse_error_pattern(&sparse_error_pattern).expect("success");
-        simulator.load_sparse_detected_erasures(&sparse_detected_erasures).expect("success");
+        simulator.load_sparse_error_pattern(&sparse_error_pattern, &error_model).expect("success");
+        simulator.load_sparse_detected_erasures(&sparse_detected_erasures, &error_model).expect("success");
         simulator.propagate_errors();
         let sparse_measurement = simulator.generate_sparse_measurement();
         println!("sparse_measurement: {:?}", sparse_measurement);

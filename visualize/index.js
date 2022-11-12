@@ -68,6 +68,9 @@ const App = {
             display_filter_error: gui3d.display_filter_error,
             display_error_pattern: gui3d.display_error_pattern,
             display_correction: gui3d.display_correction,
+            existed_model_graph: gui3d.existed_model_graph,
+            display_model_graph: gui3d.display_model_graph,
+            model_graph_region_display: gui3d.model_graph_region_display,
         }
     },
     async mounted() {
@@ -402,6 +405,14 @@ const App = {
         active_case() {
             if (!this.qecp_data_ready) return
             return qecp_data.cases[this.case_select]
+        },
+        model_graph_region_options() {
+            let regions = gui3d.model_graph_regions.value
+            let options = []
+            for (let i=0; i<regions; ++i) {
+                options.push({ label: (i==0?"region: ":"") + `${i}`, value: i })
+            }
+            return options
         },
     },
 }

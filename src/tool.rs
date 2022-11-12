@@ -115,10 +115,11 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let enable_visualizer = matches.is_present("enable_visualizer");
             let visualizer_skip_success_cases = matches.is_present("visualizer_skip_success_cases");
             let visualizer_filename = matches.value_of_t("visualizer_filename").unwrap_or(static_visualize_data_filename());
+            let visualizer_model_graph = matches.is_present("visualizer_model_graph");
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
                 , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge, label
-                , error_model_modifier, enable_visualizer, visualizer_skip_success_cases, visualizer_filename));
+                , error_model_modifier, enable_visualizer, visualizer_skip_success_cases, visualizer_filename, visualizer_model_graph));
         }
         _ => unreachable!()
     }
@@ -245,12 +246,12 @@ impl BenchmarkThreadDebugger {
     }
     /// load error to simulator, useful when debug specific case
     #[allow(dead_code)]
-    pub fn load_errors(&self, simulator: &mut Simulator) {
+    pub fn load_errors(&self, simulator: &mut Simulator, error_model: &ErrorModel) {
         if self.error_pattern.is_some() {
-            simulator.load_sparse_error_pattern(&self.error_pattern.as_ref().unwrap()).expect("success");
+            simulator.load_sparse_error_pattern(&self.error_pattern.as_ref().unwrap(), error_model).expect("success");
         }
         if self.detected_erasures.is_some() {
-            simulator.load_sparse_detected_erasures(&self.detected_erasures.as_ref().unwrap()).expect("success");
+            simulator.load_sparse_detected_erasures(&self.detected_erasures.as_ref().unwrap(), error_model).expect("success");
         }
         // propagate the errors and erasures
         simulator.propagate_errors();
@@ -262,7 +263,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
         , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
         , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String, error_model_modifier: Option<serde_json::Value>
-        , enable_visualizer: bool, visualizer_skip_success_cases: bool, visualizer_filename: String) -> String {
+        , enable_visualizer: bool, visualizer_skip_success_cases: bool, visualizer_filename: String, visualizer_model_graph: bool) -> String {
     // if parallel = 0, use all CPU resources
     let parallel = if parallel == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel };
     let parallel_init = if parallel_init == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel_init };
@@ -500,6 +501,13 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let mut new_visualizer = Visualizer::new(Some(visualize_data_folder() + visualizer_filename.as_str())).unwrap();
             new_visualizer.add_component(&simulator).unwrap();
             new_visualizer.add_component(error_model.as_ref()).unwrap();
+            if visualizer_model_graph {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut model_graph = ModelGraph::new(&simulator);
+                model_graph.build(&mut simulator, Arc::clone(&error_model_graph), &config.weight_function, parallel_init
+                    , config.use_combined_probability, use_brief_edge);
+                new_visualizer.add_component(&model_graph).unwrap();
+            }
             new_visualizer.end_component().unwrap();  // make sure the visualization file is valid even user exit the benchmark
             visualizer = Some(Arc::new(Mutex::new(new_visualizer)));
         }

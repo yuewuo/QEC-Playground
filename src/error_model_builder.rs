@@ -65,13 +65,14 @@ impl ErrorModelBuilder {
                 }
                 simulator_iter_real!(simulator, position, node, {
                     error_model.set_node(position, Some(noiseless_node.clone()));  // clear existing noise model
-                    if position.t < simulator.height - simulator.measurement_cycles {  // no error at the final perfect measurement round
-                        if position.t % simulator.measurement_cycles == 0 && node.qubit_type == QubitType::Data {
-                            error_model.set_node(position, Some(biased_node.clone()));
-                        }
-                        if (position.t + 1) % simulator.measurement_cycles == 0 && node.qubit_type != QubitType::Data {  // measurement error must happen before measurement round
-                            error_model.set_node(position, Some(pure_measurement_node.clone()));
-                        }
+                    if position.t >= simulator.height - simulator.measurement_cycles {  // no error at the final perfect measurement round
+                        continue
+                    }
+                    if position.t % simulator.measurement_cycles == 0 && node.qubit_type == QubitType::Data {
+                        error_model.set_node(position, Some(biased_node.clone()));
+                    }
+                    if (position.t + 1) % simulator.measurement_cycles == 0 && node.qubit_type != QubitType::Data {  // measurement error must happen before measurement round
+                        error_model.set_node(position, Some(pure_measurement_node.clone()));
                     }
                 });
             },

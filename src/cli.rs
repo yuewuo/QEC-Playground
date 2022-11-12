@@ -57,6 +57,7 @@ pub fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<
                 .arg(clap::Arg::new("enable_visualizer").long("enable_visualizer").help("logging to the default visualizer file at visualize/data/visualizer.json"))
                 .arg(clap::Arg::new("visualizer_filename").long("visualizer_filename").help("visualizer file at visualize/data/<visualizer_filename>.json").takes_value(true))
                 .arg(clap::Arg::new("visualizer_skip_success_cases").long("visualizer_skip_success_cases").help("when visualizer is enabled, only record failed cases; useful when trying to debug rare failed cases, e.g. finding the lowest number of physical errors that causes a logical error"))
+                .arg(clap::Arg::new("visualizer_model_graph").long("visualizer_model_graph").help("include model graph"))
             )
         )
         .subcommand(clap::Command::new("server").about("HTTP server for decoding information")

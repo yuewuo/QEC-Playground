@@ -159,20 +159,13 @@ impl SimulatorNode {
     pub fn get_gate_peer(&self) -> Position {
        (**self.gate_peer.as_ref().unwrap()).clone()
     }
-    /// set error with sanity check
-    pub fn set_error_check(&mut self, _error_model: &ErrorModel, error: &ErrorType) {
-        debug_assert!(!self.is_virtual || error == &I, "should not add errors at virtual nodes");
-        // TODO: in debug build, check if this error is valid given the error rates
-        self.error = *error;
-    }
     pub fn set_error_temp(&mut self, error: &ErrorType) {
         debug_assert!(!self.is_virtual || error == &I, "should not add errors at virtual nodes");
-        // TODO: in debug build, check if this error is valid given the error rates
         self.error = *error;
     }
 }
 
-impl SimulatorNode{
+impl SimulatorNode {
     /// quick initialization function to set virtual bits (if there is any)
     pub fn set_virtual(mut self, is_virtual: bool, is_peer_virtual: bool) -> Self {
         self.is_virtual = is_virtual;
@@ -359,10 +352,84 @@ impl Simulator {
         error_model_node.erasure_error_rate = pe;
         let error_model_node = Arc::new(error_model_node);
         for t in 0 .. self.height - self.measurement_cycles {
-            simulator_iter_mut_real!(self, position, _node, t => t, {  // only add errors on real node
-                error_model.set_node(position, Some(error_model_node.clone()));
+            simulator_iter_mut_real!(self, position, node, t => t, {  // only add errors on real node
+                // bug fix 2022.11.12: the first layer default to no measurement errors
+                if t != 0 || node.qubit_type == QubitType::Data {
+                    error_model.set_node(position, Some(error_model_node.clone()));
+                }
             });
         }
+    }
+
+    pub fn set_error_check_result(&mut self, error_model: &ErrorModel, position: &Position, error: &ErrorType) -> Result<(), String> {
+        if error == &ErrorType::I {
+            self.get_node_mut_unwrap(position).set_error_temp(error);
+            return Ok(())
+        }
+        let mut possible = false;
+        if cfg!(debug_assertions) {
+            let error_model_node = error_model.get_node_unwrap(position);
+            let node = self.get_node_unwrap(position);
+            match error {
+                ErrorType::X => if error_model_node.pauli_error_rates.error_rate_X > 0. { possible = true; },
+                ErrorType::Y => if error_model_node.pauli_error_rates.error_rate_Y > 0. { possible = true; },
+                ErrorType::Z => if error_model_node.pauli_error_rates.error_rate_Z > 0. { possible = true; },
+                _ => unreachable!(),
+            }
+            possible |= error_model_node.erasure_error_rate > 0.;
+            possible |= error_model_node.correlated_pauli_error_rates.is_some();  // weak check
+            possible |= error_model_node.correlated_erasure_error_rates.is_some();  // weak check
+            if !possible {  // check peer only if still not possible
+                if let Some(peer_position) = node.gate_peer.as_ref() {
+                    let peer_error_model_node = error_model.get_node_unwrap(peer_position);
+                    possible |= peer_error_model_node.correlated_pauli_error_rates.is_some();  // weak check
+                    possible |= peer_error_model_node.correlated_erasure_error_rates.is_some();  // weak check
+                }
+            }
+        } else {
+            possible = true;
+        }
+        if !possible {
+            return Err(format!("setting error at {} with 0 probability is forbidden", position));
+        }
+        self.get_node_mut_unwrap(position).set_error_temp(error);
+        Ok(())
+    }
+
+    /// set error with sanity check
+    pub fn set_error_check(&mut self, error_model: &ErrorModel, position: &Position, error: &ErrorType) {
+        self.set_error_check_result(error_model, position, error).unwrap()
+    }
+
+    pub fn set_erasure_check_result(&mut self, error_model: &ErrorModel, position: &Position, has_erasure: bool) -> Result<(), String> {
+        if has_erasure == false {
+            self.get_node_mut_unwrap(position).has_erasure = false;
+            return Ok(())
+        }
+        let mut possible = false;
+        if cfg!(debug_assertions) {
+            let error_model_node = error_model.get_node_unwrap(position);
+            let node = self.get_node_unwrap(position);
+            possible |= error_model_node.erasure_error_rate > 0.;
+            possible |= error_model_node.correlated_erasure_error_rates.is_some();  // weak check
+            if !possible {  // check peer only if still not possible
+                if let Some(peer_position) = node.gate_peer.as_ref() {
+                    let peer_error_model_node = error_model.get_node_unwrap(peer_position);
+                    possible |= peer_error_model_node.correlated_erasure_error_rates.is_some();  // weak check
+                }
+            }
+        } else {
+            possible = true;
+        }
+        if !possible {
+            return Err(format!("setting erasure at {} with 0 probability is forbidden", position));
+        }
+        self.get_node_mut_unwrap(position).has_erasure = has_erasure;
+        Ok(())
+    }
+
+    pub fn set_erasure_check(&mut self, error_model: &ErrorModel, position: &Position, has_erasure: bool) {
+        self.set_erasure_check_result(error_model, position, has_erasure).unwrap()
     }
 
     /// expand the correlated error rates, useful when exporting the data structure for other applications to modify
@@ -426,16 +493,16 @@ impl Simulator {
             let error_model_node = error_model.get_node_unwrap(position);
             let random_pauli = rng.next_f64();
             if random_pauli < error_model_node.pauli_error_rates.error_rate_X {
-                node.set_error_check(error_model, &X);
+                node.set_error_temp(&X);
                 // println!("X error at {} {} {}",node.i, node.j, node.t);
             } else if random_pauli < error_model_node.pauli_error_rates.error_rate_X + error_model_node.pauli_error_rates.error_rate_Z {
-                node.set_error_check(error_model, &Z);
+                node.set_error_temp(&Z);
                 // println!("Z error at {} {} {}",node.i, node.j, node.t);
             } else if random_pauli < error_model_node.pauli_error_rates.error_probability() {
-                node.set_error_check(error_model, &Y);
+                node.set_error_temp(&Y);
                 // println!("Y error at {} {} {}",node.i, node.j, node.t);
             } else {
-                node.set_error_check(error_model, &I);
+                node.set_error_temp(&I);
             }
             if node.error != I {
                 error_count += 1;
@@ -485,7 +552,7 @@ impl Simulator {
             if node.error != I {
                 error_count -= 1;
             }
-            node.set_error_check(error_model, &node.error.multiply(&peer_error));
+            node.set_error_temp(&node.error.multiply(&peer_error));
             if node.error != I {
                 error_count += 1;
             }
@@ -501,7 +568,7 @@ impl Simulator {
                 error_count -= 1;
             }
             let random_erasure = rng.next_f64();
-            node.set_error_check(error_model, &(if random_erasure < 0.25 { X }
+            node.set_error_temp(&(if random_erasure < 0.25 { X }
                 else if random_erasure < 0.5 { Z }
                 else if random_erasure < 0.75 { Y }
                 else { I }
@@ -561,6 +628,9 @@ impl Simulator {
                 self.propagate_error_from(position);
             });
         }
+        simulator_iter_mut!(self, position, node, t => 0, {
+            node.propagated = node.error;  // bug fix 2022.11.12: the 0 layer should be propagated by it's error
+        });
     }
 
     /// calculate propagated errors at one position. in order to correctly propagate every error, the order of propagation must be ascending in `t`s.
@@ -707,6 +777,10 @@ impl Simulator {
             let mut pending_interested_region = Vec::new();
             for &(i, j) in interested_region.iter() {
                 let propagated_neighbor = self.propagate_error_from(&pos!(t - 1, i, j));
+                if min_t == 0 && t == 1 {  // bug fix 2022.11.12: the 0 layer should be propagated by it's error
+                    let node = self.get_node_mut_unwrap(&pos!(t - 1, i, j));
+                    node.propagated = node.error;
+                }
                 match propagated_neighbor {
                     Some(peer) => pending_interested_region.push((peer.i, peer.j)),
                     None => { },
@@ -896,31 +970,33 @@ impl Simulator {
     }
 
     /// load detected erasures back to the simulator
-    pub fn load_sparse_detected_erasures(&mut self, sparse_detected_erasures: &SparseDetectedErasures) -> Result<(), String> {
+    pub fn load_sparse_detected_erasures(&mut self, sparse_detected_erasures: &SparseDetectedErasures, error_model: &ErrorModel) -> Result<(), String> {
+        simulator_iter_mut!(self, position, node, {
+            node.has_erasure = false;
+        });
         for position in sparse_detected_erasures.iter() {
             if !self.is_node_exist(position) {
                 return Err(format!("invalid erasure at position {}", position))
             }
+            self.set_erasure_check_result(error_model, position, true)?;
         }
         simulator_iter_mut!(self, position, node, {
             node.has_erasure = sparse_detected_erasures.contains(position);
         });
         Ok(())
     }
-    
+
     /// load an error pattern
-    pub fn load_sparse_error_pattern(&mut self, sparse_error_pattern: &SparseErrorPattern) -> Result<(), String> {
-        for (position, _error) in sparse_error_pattern.iter() {
+    pub fn load_sparse_error_pattern(&mut self, sparse_error_pattern: &SparseErrorPattern, error_model: &ErrorModel) -> Result<(), String> {
+        simulator_iter_mut!(self, position, node, {
+            node.error = I;
+        });
+        for (position, error) in sparse_error_pattern.iter() {
             if !self.is_node_exist(position) {
                 return Err(format!("invalid error at position {}", position))
             }
+            self.set_error_check_result(error_model, position, error)?;
         }
-        simulator_iter_mut!(self, position, node, {
-            node.error = I;
-            if let Some(error) = sparse_error_pattern.get(position) {
-                node.error = *error;
-            }
-        });
         Ok(())
     }
 
