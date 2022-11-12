@@ -162,9 +162,6 @@ const scaled_qubit_radius = computed(() => {
 const qubit_geometry = new THREE.SphereGeometry( qubit_radius, segment, segment )
 const idle_gate_radius = parseFloat(urlParams.get('idle_gate_radius') || 0.025)
 const idle_gate_radius_scale = ref(1)
-const scaled_idle_gate_radius = computed(() => {
-    return idle_gate_radius * idle_gate_radius_scale.value
-})
 const idle_gate_geometry = new THREE.CylinderGeometry( idle_gate_radius, idle_gate_radius, 1, segment, 1, true )
 idle_gate_geometry.translate(0, 0.5, 0)
 const initialization_geometry = new THREE.ConeBufferGeometry( 0.1, 0.15, 32 )
@@ -181,8 +178,8 @@ const CX_target_geometries = [
 CX_target_geometries[0].rotateX(Math.PI / 2)
 CX_target_geometries[1].rotateX(Math.PI / 2)
 CX_target_geometries[2].rotateZ(Math.PI / 2)
-const CY_target_radius = 0.15
-const CY_target_Y_length = 0.1
+const CY_target_radius = 0.2
+const CY_target_Y_length = 0.12
 const CY_target_geometries = [
     new THREE.TorusBufferGeometry( CY_target_radius, control_line_radius, 16, 4 ),
     new THREE.CylinderBufferGeometry( control_line_radius, control_line_radius, CY_target_Y_length, 6 ),
@@ -203,16 +200,72 @@ CY_target_geometries[3].rotateX(Math.PI / 2)
 // measurement bits
 const measurement_radius = parseFloat(urlParams.get('measurement_radius') || 0.06)
 export const measurement_radius_scale = ref(1)
-const scaled_measurement_radius = computed(() => {
-    return measurement_radius * measurement_radius_scale.value
-})
 const measurement_geometry = new THREE.SphereGeometry( measurement_radius, segment, segment )
-const defect_measurement_radius = parseFloat(urlParams.get('defect_measurement_radius') || 0.1)
+const defect_measurement_radius = parseFloat(urlParams.get('defect_measurement_radius') || 0.15)
 export const defect_measurement_radius_scale = ref(1)
-const scaled_defect_measurement_radius = computed(() => {
-    return defect_measurement_radius * defect_measurement_radius_scale.value
-})
 const defect_measurement_geometry = new THREE.SphereGeometry( defect_measurement_radius, segment, segment )
+
+// error pattern geometries
+const error_line_radius = 0.04
+const error_X_radius = 0.3
+const error_X_geometries = [
+    new THREE.TorusBufferGeometry( error_X_radius, error_line_radius, 16, 32 ),
+    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, 2 * error_X_radius, 6 ),
+    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, 2 * error_X_radius, 6 ),
+]
+error_X_geometries[0].rotateX(Math.PI / 2)
+error_X_geometries[1].rotateX(Math.PI / 2)
+error_X_geometries[1].rotateY(Math.PI / 4)
+error_X_geometries[2].rotateZ(Math.PI / 2)
+error_X_geometries[2].rotateY(Math.PI / 4)
+const error_Y_radius = 0.4
+const error_Y_length = 0.24
+const error_Y_geometries = [
+    new THREE.TorusBufferGeometry( error_Y_radius, error_line_radius, 16, 4 ),
+    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Y_length, 6 ),
+    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Y_length, 6 ),
+    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Y_length, 6 ),
+]
+error_Y_geometries[0].rotateX(Math.PI / 2)
+error_Y_geometries[0].rotateY(Math.PI / 4)
+error_Y_geometries[1].translate(0, error_Y_length/2, 0)
+error_Y_geometries[2].translate(0, error_Y_length/2, 0)
+error_Y_geometries[3].translate(0, error_Y_length/2, 0)
+error_Y_geometries[1].rotateX(Math.PI / 2)
+error_Y_geometries[1].rotateY(- 5 * Math.PI / 6)
+error_Y_geometries[2].rotateX(Math.PI / 2)
+error_Y_geometries[2].rotateY(5 * Math.PI / 6)
+error_Y_geometries[3].rotateX(Math.PI / 2)
+const error_Z_radius = 0.4
+const error_Z_length = 0.3
+const error_Z_geometries = [
+    new THREE.TorusBufferGeometry( error_Z_radius, error_line_radius, 16, 4 ),
+    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Z_length, 6 ),
+    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Z_length, 6 ),
+    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Z_length * Math.sqrt(61)/5, 6 ),
+    // new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Z_length, 6 ),
+    // new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Z_length, 6 ),
+]
+error_Z_geometries[0].rotateX(Math.PI / 2)
+error_Z_geometries[0].rotateY(Math.PI / 4)
+// error_Z_geometries[1].rotateX(Math.PI / 2)
+error_Z_geometries[1].rotateZ(Math.PI / 2)
+error_Z_geometries[1].translate(0, 0, error_Z_length*0.6)
+error_Z_geometries[2].rotateZ(Math.PI / 2)
+error_Z_geometries[2].translate(0, 0, -error_Z_length*0.6)
+error_Z_geometries[3].rotateZ(Math.PI / 2)
+error_Z_geometries[3].rotateY(1.0)
+
+
+
+// error_Z_geometries[1].translate(0, error_Z_length/2, 0)
+// error_Z_geometries[2].translate(0, error_Z_length/2, 0)
+// error_Z_geometries[3].translate(0, error_Z_length/2, 0)
+// error_Z_geometries[1].rotateX(Math.PI / 2)
+// error_Z_geometries[1].rotateY(- 5 * Math.PI / 6)
+// error_Z_geometries[2].rotateX(Math.PI / 2)
+// error_Z_geometries[2].rotateY(5 * Math.PI / 6)
+// error_Z_geometries[3].rotateX(Math.PI / 2)
 
 // create common materials
 function build_solid_material(color) {
@@ -265,6 +318,11 @@ export function get_gate_material(gate_type) {
     }
     return gate_material
 }
+export const error_materials = {
+    "X": build_solid_material(const_color.X),
+    "Y": build_solid_material(const_color.Y),
+    "Z": build_solid_material(const_color.Z),
+}
 export const idle_gate_material = new THREE.MeshStandardMaterial({
     color: 0x000000,
     opacity: 0.1,
@@ -312,19 +370,17 @@ export const selected_material = new THREE.MeshStandardMaterial({  // when mouse
 
 // meshes that can be reused across different cases
 export var qubit_meshes = []
-window.qubit_meshes = qubit_meshes
 export const outline_ratio = ref(1.2)
 export var qubit_outline_meshes = []
-window.qubit_outline_meshes = qubit_outline_meshes
-const scaled_qubit_outline_radius = computed(() => {
-    return scaled_qubit_radius.value * outline_ratio.value
-})
 export var measurement_outline_meshes = []
 
 export var idle_gate_meshes = []
-window.idle_gate_meshes = idle_gate_meshes
 export var gate_vec_meshes = []
-window.gate_vec_meshes = gate_vec_meshes
+
+// meshes of a specific case
+export var defect_measurement_meshes = []
+export var defect_measurement_outline_meshes = []
+export var error_pattern_vec_meshes = []
 
 // update the sizes of objects
 watch(qubit_radius_scale, (newVal, oldVal) => {
@@ -334,6 +390,10 @@ watch(qubit_radius_scale, (newVal, oldVal) => {
 watch(idle_gate_radius_scale, (newVal, oldVal) => {
     idle_gate_geometry.scale(1/oldVal, 1, 1/oldVal)
     idle_gate_geometry.scale(newVal, 1, newVal)
+})
+watch(defect_measurement_radius_scale, (newVal, oldVal) => {
+    defect_measurement_geometry.scale(1/oldVal, 1/oldVal, 1/oldVal)
+    defect_measurement_geometry.scale(newVal, newVal, newVal)
 })
 function update_mesh_outline(mesh) {
     mesh.scale.x = outline_ratio.value
@@ -376,7 +436,6 @@ function dispose_mesh_2d_array(array) {
         for (let mesh of row) {
             if (mesh != null) {
                 scene.remove( mesh )
-                mesh.dispose()
             }
         }
     }
@@ -406,14 +465,24 @@ function dispose_mesh_3d_array(array) {
                     if (Array.isArray(mesh)) {
                         for (let sub_mesh of mesh) {
                             scene.remove( sub_mesh )
-                            sub_mesh.dispose()
                         }
                     } else {
                         scene.remove( mesh )
-                        mesh.dispose()
                     }
                 }
             }
+        }
+    }
+}
+
+function dispose_1d_array(array) {
+    for (let mesh of array) {
+        if (Array.isArray(mesh)) {
+            for (let sub_mesh of mesh) {
+                scene.remove( sub_mesh )
+            }
+        } else {
+            scene.remove( mesh )
         }
     }
 }
@@ -426,6 +495,80 @@ function get_position(position_str) {
         j: parseInt(matched_pos[3]),
     }
 }
+
+// display options
+export const display_qubits = ref((urlParams.get('display_qubits') || "true") == "true")
+watch([display_qubits, outline_ratio], () => {
+    const qecp_data = active_qecp_data.value
+    for (let i=0; i<qecp_data.simulator.vertical; ++i) {
+        for (let j=0; j<qecp_data.simulator.horizontal; ++j) {
+            if (qubit_meshes[i][j]) qubit_meshes[i][j].visible = display_qubits.value
+            if (qubit_outline_meshes[i][j]) {
+                qubit_outline_meshes[i][j].visible = display_qubits.value
+                update_mesh_outline(qubit_outline_meshes[i][j])
+            }
+        }
+    }
+})
+export const display_idle_sticks = ref((urlParams.get('display_idle_sticks') || "true") == "true")
+watch(display_idle_sticks, () => {
+    const qecp_data = active_qecp_data.value
+    for (let t=0; t<qecp_data.simulator.height; ++t) {
+        for (let i=0; i<qecp_data.simulator.vertical; ++i) {
+            for (let j=0; j<qecp_data.simulator.horizontal; ++j) {
+                if (idle_gate_meshes[t][i][j]) idle_gate_meshes[t][i][j].visible = display_idle_sticks.value
+            }
+        }
+    }
+})
+export const display_gates = ref((urlParams.get('display_gates') || "true") == "true")
+watch(display_gates, () => {
+    const qecp_data = active_qecp_data.value
+    for (let t=0; t<qecp_data.simulator.height; ++t) {
+        for (let i=0; i<qecp_data.simulator.vertical; ++i) {
+            for (let j=0; j<qecp_data.simulator.horizontal; ++j) {
+                if (gate_vec_meshes[t][i][j]) {
+                    for (const mesh of gate_vec_meshes[t][i][j]) {
+                        mesh.visible = display_gates.value
+                    }
+                }
+            }
+        }
+    }
+})
+export const display_measurements = ref((urlParams.get('display_measurements') || "true") == "true")
+watch([display_measurements, outline_ratio], () => {
+    for (const mesh of defect_measurement_meshes) {
+        mesh.visible = display_measurements.value
+    }
+    for (const mesh of defect_measurement_outline_meshes) {
+        mesh.visible = display_measurements.value
+        update_mesh_outline(mesh)
+    }
+})
+export const display_error_pattern = ref((urlParams.get('display_error_pattern') || "true") == "true")
+export const display_filter_error = ref((urlParams.get('display_filter_error') || "true") == "true")
+watch([display_filter_error, display_error_pattern], () => {
+    const qecp_data = active_qecp_data.value
+    const case_idx = active_case_idx.value
+    const active_case = qecp_data.cases[case_idx]
+    for (let [idx, [position_str, error]] of Object.entries(active_case.error_pattern).entries()) {
+        const { t, i, j } = get_position(position_str)
+        const error_pattern_vec_mesh = error_pattern_vec_meshes[idx]
+        let visible = display_error_pattern.value
+        if (display_filter_error.value) {
+            if (t == 0 && qecp_data.simulator.nodes[t][i][j].q != "Data") {  // the first measurement is ignored
+                visible = false
+            }
+            if (qecp_data.simulator.nodes[t][i][j].gt.startsWith("Initialize")) {
+                visible = false
+            }
+        }
+        for (const mesh of error_pattern_vec_mesh) {
+            mesh.visible = visible
+        }
+    }
+})
 
 export async function refresh_qecp_data() {
     // console.log("refresh_qecp_data")
@@ -468,13 +611,14 @@ export async function refresh_qecp_data() {
                     }
                     scene.add( qubit_mesh )
                     load_position(qubit_mesh.position, display_position)
+                    qubit_mesh.visible = display_qubits.value
                     qubit_meshes[i][j] = qubit_mesh
-                    qubit_mesh.visible = true
                     // qubit outline
                     const qubit_outline_mesh = new THREE.Mesh( qubit_geometry, qubit_outline_material )
                     load_position(qubit_outline_mesh.position, display_position,)
                     update_mesh_outline(qubit_outline_mesh)
                     scene.add( qubit_outline_mesh )
+                    qubit_outline_mesh.visible = display_qubits.value
                     qubit_outline_meshes[i][j] = qubit_outline_mesh
                 }
             }
@@ -503,6 +647,7 @@ export async function refresh_qecp_data() {
                         load_position(idle_gate_mesh.position, display_position)
                         idle_gate_mesh.scale.set(1, t_scale, 1)
                         scene.add( idle_gate_mesh )
+                        idle_gate_mesh.visible = display_idle_sticks.value
                         idle_gate_meshes[t][i][j] = idle_gate_mesh
                     }
                 }
@@ -592,7 +737,6 @@ export async function refresh_qecp_data() {
                             const quaternion = new THREE.Quaternion()
                             quaternion.setFromUnitVectors(unit_up_vector, direction)
                             let edge_length = relative.length()/2 - CY_target_radius / Math.sqrt(2)
-                            console.log(edge_length)
                             if (edge_length > 0) {
                                 const biased_position = compute_vector3(display_position)
                                     .add(relative.clone().multiplyScalar((relative.length()/2 - edge_length) / relative.length()))
@@ -630,234 +774,85 @@ export async function refresh_case() {
         current_selected.value = null
         await Vue.nextTick()
         await Vue.nextTick()
-        
-        return
-        // draw vertices
-        let subgraph_set = {}
-        if (active_case.subgraph != null) {
-            for (let edge_index of active_case.subgraph) {
-                subgraph_set[edge_index] = true
+        // constants
+        const height = qecp_data.simulator.height
+        const t_bias = -height/2
+        const vertical = qecp_data.simulator.vertical
+        const horizontal = qecp_data.simulator.horizontal
+        // draw measurements
+        dispose_1d_array(defect_measurement_meshes)
+        dispose_1d_array(defect_measurement_outline_meshes)
+        defect_measurement_meshes = []
+        defect_measurement_outline_meshes = []
+        for (let defect_idx=0; defect_idx<active_case.measurement.length; ++defect_idx) {
+            const defect_position = active_case.measurement[defect_idx]
+            const { t, i, j } = get_position(defect_position)
+            const position = qecp_data.simulator.positions[i][j]
+            const display_position = {
+                t: t + t_bias,
+                x: position.x,
+                y: position.y,
             }
+            // defect measurement
+            const defect_measurement_mesh = new THREE.Mesh( defect_measurement_geometry, defect_measurement_material )
+            defect_measurement_mesh.userData = {
+                type: "defect",
+                defect_idx: defect_idx,
+                t: t,
+                i: i,
+                j: j,
+            }
+            scene.add( defect_measurement_mesh )
+            load_position(defect_measurement_mesh.position, display_position)
+            defect_measurement_mesh.visible = display_measurements.value
+            defect_measurement_meshes.push(defect_measurement_mesh)
+            // defect measurement outline
+            const defect_measurement_outline_mesh = new THREE.Mesh( defect_measurement_geometry, defect_measurement_outline_material )
+            load_position(defect_measurement_outline_mesh.position, display_position,)
+            update_mesh_outline(defect_measurement_outline_mesh)
+            scene.add( defect_measurement_outline_mesh )
+            defect_measurement_outline_mesh.visible = display_measurements.value
+            defect_measurement_outline_meshes.push(defect_measurement_outline_mesh)
         }
-        for (let [i, vertex] of active_case.vertices.entries()) {
-            if (vertex == null) {
-                if (i < vertex_meshes.length) {  // hide
-                    vertex_meshes[i].visible = false
-                }
-                continue
+        // draw error pattern
+        dispose_1d_array(error_pattern_vec_meshes)
+        error_pattern_vec_meshes= []
+        for (let [position_str, error] of Object.entries(active_case.error_pattern)) {
+            const { t, i, j } = get_position(position_str)
+            const position = qecp_data.simulator.positions[i][j]
+            const display_position = {
+                t: t + t_bias - 0.5,
+                x: position.x,
+                y: position.y,
             }
-            let position = qecp_data.positions[i]
-            while (vertex_meshes.length <= i) {
-                const vertex_mesh = new THREE.Mesh( vertex_geometry, real_vertex_material )
-                vertex_mesh.visible = false
-                vertex_mesh.userData = {
-                    type: "vertex",
-                    vertex_index: vertex_meshes.length,
-                }
-                scene.add( vertex_mesh )
-                vertex_meshes.push(vertex_mesh)
-            }
-            const vertex_mesh = vertex_meshes[i]
-            load_position(vertex_mesh.position, position)
-            if (vertex.mi != null && vertex.me == 0) {
-                vertex_mesh.material = disabled_mirror_vertex_material
-            } else if (vertex.s) {
-                vertex_mesh.material = defect_vertex_material
-            } else if (vertex.v) {
-                vertex_mesh.material = virtual_vertex_material
+            const error_pattern_vec_mesh = []
+            error_pattern_vec_meshes.push(error_pattern_vec_mesh)
+            let error_geometries = []
+            if (error == "X") {
+                error_geometries = error_X_geometries
+            } else if (error == "Y") {
+                error_geometries = error_Y_geometries
+            } else if (error == "Z") {
+                error_geometries = error_Z_geometries
             } else {
-                vertex_mesh.material = real_vertex_material
+                console.error(`unknown error type: ${error}`)
             }
-            vertex_mesh.visible = true
-        }
-        for (let i = active_case.vertices.length; i < vertex_meshes.length; ++i) {
-            vertex_meshes[i].visible = false
-        }
-        // draw edges
-        let edge_offset = 0
-        if (scaled_edge_radius.value < scaled_vertex_outline_radius.value) {
-            edge_offset = Math.sqrt(Math.pow(scaled_vertex_outline_radius.value, 2) - Math.pow(scaled_edge_radius.value, 2))
-        }
-        edge_caches = []  // clear cache
-        for (let [i, edge] of active_case.edges.entries()) {
-            if (edge == null) {
-                if (i < left_edge_meshes.length) {  // hide
-                    for (let j of [0, 1]) {
-                        left_edge_meshes[i][j].visible = false
-                        right_edge_meshes[i][j].visible = false
-                        middle_edge_meshes[i][j].visible = false
+            for (let k=0; k < error_geometries.length; ++k) {
+                const geometry = error_geometries[k]
+                let mesh = new THREE.Mesh(geometry, error_materials[error])
+                load_position(mesh.position, display_position)
+                let visible = display_error_pattern.value
+                if (display_filter_error.value) {
+                    if (t == 0 && qecp_data.simulator.nodes[t][i][j].q != "Data") {
+                        visible = false
+                    }
+                    if (qecp_data.simulator.nodes[t][i][j].gt.startsWith("Initialize")) {
+                        visible = false
                     }
                 }
-                continue
-            }
-            const left_position = qecp_data.positions[edge.l]
-            const right_position = qecp_data.positions[edge.r]
-            const relative = compute_vector3(right_position).add(compute_vector3(left_position).multiplyScalar(-1))
-            const direction = relative.clone().normalize()
-            // console.log(direction)
-            const quaternion = new THREE.Quaternion()
-            quaternion.setFromUnitVectors(unit_up_vector, direction)
-            const reverse_quaternion = new THREE.Quaternion()
-            reverse_quaternion.setFromUnitVectors(unit_up_vector, direction.clone().multiplyScalar(-1))
-            let local_edge_offset = edge_offset
-            const distance = relative.length()
-            let edge_length = distance - 2 * edge_offset
-            if (edge_length < 0) {  // edge length should be non-negative
-                local_edge_offset = distance / 2
-                edge_length = 0
-            }
-            const left_start = local_edge_offset
-            const [left_grown, right_grown] = translate_edge(edge.lg, edge.rg, edge.w)
-            let left_end = local_edge_offset + edge_length * (edge.w == 0 ? 0.5 : (left_grown / edge.w))  // always show 0-weight edge as fully-grown
-            let right_end = local_edge_offset + edge_length * (edge.w == 0 ? 0.5 : (edge.w - right_grown) / edge.w)  // always show 0-weight edge as fully-grown
-            const right_start = local_edge_offset + edge_length
-            edge_caches.push({
-                position: {
-                    left_start: compute_vector3(left_position).add(relative.clone().multiplyScalar(left_start / distance)),
-                    left_end: compute_vector3(left_position).add(relative.clone().multiplyScalar(left_end / distance)),
-                    right_end: compute_vector3(left_position).add(relative.clone().multiplyScalar(right_end / distance)),
-                    right_start: compute_vector3(left_position).add(relative.clone().multiplyScalar(right_start / distance)),
-                }
-            })
-            // console.log(`${left_start}, ${left_end}, ${right_end}, ${right_start}`)
-            for (let [start, end, edge_meshes, is_grown_part] of [[left_start, left_end, left_edge_meshes, true], [left_end, right_end, middle_edge_meshes, false]
-                    , [right_end, right_start, right_edge_meshes, true]]) {
-                while (edge_meshes.length <= i) {
-                    let two_edges = [null, null]
-                    for (let j of [0, 1]) {
-                        const edge_mesh = new THREE.Mesh( edge_geometry, edge_material )
-                        edge_mesh.userData = {
-                            type: "edge",
-                            edge_index: edge_meshes.length,
-                        }
-                        edge_mesh.visible = false
-                        scene.add( edge_mesh )
-                        two_edges[j] = edge_mesh
-                    }
-                    edge_meshes.push(two_edges)
-                }
-                const start_position = compute_vector3(left_position).add(relative.clone().multiplyScalar(start / distance))
-                const end_position = compute_vector3(left_position).add(relative.clone().multiplyScalar(end / distance))
-                for (let j of [0, 1]) {
-                    const edge_mesh = edge_meshes[i][j]
-                    edge_mesh.position.copy(j == 0 ? start_position : end_position)
-                    edge_mesh.scale.set(1, (end - start) / 2, 1)
-                    edge_mesh.setRotationFromQuaternion(j == 0 ? quaternion : reverse_quaternion)
-                    edge_mesh.visible = true
-                    if (start >= end) {
-                        edge_mesh.visible = false
-                    }
-                    edge_mesh.material = is_grown_part ? grown_edge_material : edge_material
-                    if (active_case.subgraph != null) {
-                        edge_mesh.material = edge_material  // do not display grown edges
-                    }
-                    if (subgraph_set[i]) {
-                        edge_mesh.material = subgraph_edge_material
-                    }
-                }
-            }
-        }
-        for (let i = active_case.edges.length; i < left_edge_meshes.length; ++i) {
-            for (let j of [0, 1]) {
-                left_edge_meshes[i][j].visible = false
-                right_edge_meshes[i][j].visible = false
-                middle_edge_meshes[i][j].visible = false
-            }
-        }
-        // draw vertex outlines
-        for (let [i, vertex] of active_case.vertices.entries()) {
-            if (vertex == null) {
-                if (i < vertex_outline_meshes.length) {  // hide
-                    vertex_outline_meshes[i].visible = false
-                }
-                continue
-            }
-            let position = qecp_data.positions[i]
-            while (vertex_outline_meshes.length <= i) {
-                const vertex_outline_mesh = new THREE.Mesh( vertex_geometry, real_vertex_outline_material )
-                vertex_outline_mesh.visible = false
-                update_mesh_outline(vertex_outline_mesh)
-                scene.add( vertex_outline_mesh )
-                vertex_outline_meshes.push(vertex_outline_mesh)
-            }
-            const vertex_outline_mesh = vertex_outline_meshes[i]
-            load_position(vertex_outline_mesh.position, position)
-            if (vertex.s) {
-                vertex_outline_mesh.material = defect_vertex_outline_material
-            } else if (vertex.v) {
-                vertex_outline_mesh.material = virtual_vertex_outline_material
-            } else {
-                vertex_outline_mesh.material = real_vertex_outline_material
-            }
-            vertex_outline_mesh.visible = true
-        }
-        for (let i = active_case.vertices.length; i < vertex_meshes.length; ++i) {
-            vertex_outline_meshes[i].visible = false
-        }
-        // draw convex
-        for (let blossom_convex_mesh of blossom_convex_meshes) {
-            scene.remove( blossom_convex_mesh )
-            blossom_convex_mesh.geometry.dispose()
-        }
-        for (let [i, dual_node] of active_case.dual_nodes.entries()) {
-            if (dual_node == null) { continue }
-            if (active_case.subgraph != null) { continue }  // do not display convex if subgraph is displayed
-            // for child node in a blossom, this will not display properly; we should avoid plotting child nodes
-            let display_node = dual_node.p == null && (dual_node.d > 0 || dual_node.o != null)
-            if (display_node) {  // no parent and (positive dual variable or it's a blossom)
-                let points = []
-                if (dual_node.b != null) {
-                    for (let [is_left, edge_index] of dual_node.b) {
-                        let cached_position = edge_caches[edge_index].position
-                        const edge = active_case.edges[edge_index]
-                        if (edge.ld == edge.rd && edge.lg + edge.rg >= edge.w) {
-                            continue  // do not draw this edge, this is an internal edge
-                        }
-                        if (is_left) {
-                            if (edge.lg == edge.w) {
-                                points.push(vertex_caches[edge.r].position.center.clone())
-                            } else if (edge.lg == 0) {
-                                points.push(vertex_caches[edge.l].position.center.clone())
-                            } else {
-                                points.push(cached_position.left_end.clone())
-                            }
-                        } else {
-                            if (edge.rg == edge.w) {
-                                points.push(vertex_caches[edge.l].position.center.clone())
-                            } else if (edge.rg == 0) {
-                                points.push(vertex_caches[edge.r].position.center.clone())
-                            } else {
-                                points.push(cached_position.right_end.clone())
-                            }
-                        }
-                    }
-                }
-                if (points.length >= 3) {  // only display if points is more than 3
-                    if (window.is_vertices_2d_plane) {
-                        // special optimization for 2D points, because ConvexGeometry doesn't work well on them
-                        const points_2d = []
-                        for (let point of points) {
-                            points_2d.push([ point.x, point.z ])
-                        }
-                        const hull_points = hull(points_2d, 1)
-                        const shape_points = []
-                        for (let hull_point of hull_points) {
-                            shape_points.push( new THREE.Vector2( hull_point[0], hull_point[1] ) );
-                        }
-                        const shape = new THREE.Shape( shape_points )
-                        const geometry = new THREE.ShapeGeometry( shape )
-                        const blossom_convex_mesh = new THREE.Mesh( geometry, blossom_convex_material_2d )
-                        blossom_convex_mesh.position.set( 0, -0.2, 0 )  // place the plane to slightly below the vertices for better viz
-                        blossom_convex_mesh.rotation.set( Math.PI / 2, 0, 0 );
-                        scene.add( blossom_convex_mesh )
-                        blossom_convex_meshes.push(blossom_convex_mesh)
-                    } else {
-                        const geometry = new ConvexGeometry( points )
-                        const blossom_convex_mesh = new THREE.Mesh( geometry, blossom_convex_material )
-                        scene.add( blossom_convex_mesh )
-                        blossom_convex_meshes.push(blossom_convex_mesh)
-                    }
-                }
+                mesh.visible = visible
+                scene.add( mesh )
+                error_pattern_vec_mesh.push(mesh)
             }
         }
         // reset select
@@ -913,15 +908,20 @@ const conf = {
     // subgraph_edge_color: subgraph_edge_material.color,
     // subgraph_edge_opacity: subgraph_edge_material.opacity,
     // subgraph_edge_side: subgraph_edge_material.side,
-    // outline_ratio: outline_ratio.value,
-    // vertex_radius_scale: vertex_radius_scale.value,
-    // edge_radius_scale: edge_radius_scale.value,
+    outline_ratio: outline_ratio.value,
+    qubit_radius_scale: qubit_radius_scale.value,
+    idle_gate_radius_scale: idle_gate_radius_scale.value,
+    defect_measurement_radius_scale: defect_measurement_radius_scale.value,
 }
 const side_options = { "FrontSide": THREE.FrontSide, "BackSide": THREE.BackSide, "DoubleSide": THREE.DoubleSide } 
 export const controller = {}
 window.controller = controller
 controller.scene_background = gui.addColor( conf, 'scene_background' ).onChange( function ( value ) { scene.background = value } )
-// const vertex_folder = gui.addFolder( 'vertex' )
+const size_folder = gui.addFolder( 'size' )
+controller.outline_ratio = size_folder.add( conf, 'outline_ratio', 0.99, 2 ).onChange( function ( value ) { outline_ratio.value = Number(value) } )
+controller.qubit_radius_scale = size_folder.add( conf, 'qubit_radius_scale', 0.1, 5 ).onChange( function ( value ) { qubit_radius_scale.value = Number(value) } )
+controller.idle_gate_radius_scale = size_folder.add( conf, 'idle_gate_radius_scale', 0.1, 10 ).onChange( function ( value ) { idle_gate_radius_scale.value = Number(value) } )
+controller.defect_measurement_radius_scale = size_folder.add( conf, 'defect_measurement_radius_scale', 0.1, 10 ).onChange( function ( value ) { defect_measurement_radius_scale.value = Number(value) } )
 // controller.defect_vertex_color = vertex_folder.addColor( conf, 'defect_vertex_color' ).onChange( function ( value ) { defect_vertex_material.color = value } )
 // controller.defect_vertex_opacity = vertex_folder.add( conf, 'defect_vertex_opacity', 0, 1 ).onChange( function ( value ) { defect_vertex_material.opacity = Number(value) } )
 // controller.disabled_mirror_vertex_color = vertex_folder.addColor( conf, 'disabled_mirror_vertex_color' ).onChange( function ( value ) { disabled_mirror_vertex_material.color = value } )

@@ -55,6 +55,7 @@ pub fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<
                 .arg(clap::Arg::new("load_error_model_from_temporary_store").long("load_error_model_from_temporary_store").help("if provided, will fetch a Json from temporary store in web module to update error model").takes_value(true))
                 .arg(clap::Arg::new("load_error_model_from_file").long("load_error_model_from_file").help("if provided, will fetch a Json from file to update error model").takes_value(true))
                 .arg(clap::Arg::new("enable_visualizer").long("enable_visualizer").help("logging to the default visualizer file at visualize/data/visualizer.json"))
+                .arg(clap::Arg::new("visualizer_filename").long("visualizer_filename").help("visualizer file at visualize/data/<visualizer_filename>.json").takes_value(true))
                 .arg(clap::Arg::new("visualizer_skip_success_cases").long("visualizer_skip_success_cases").help("when visualizer is enabled, only record failed cases; useful when trying to debug rare failed cases, e.g. finding the lowest number of physical errors that causes a logical error"))
             )
         )

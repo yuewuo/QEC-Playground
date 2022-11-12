@@ -60,6 +60,13 @@ const App = {
             selected_vertex_attributes: ref(""),
             selected_edge: ref(null),
             selected_edge_attributes: ref(""),
+            // display options
+            display_qubits: gui3d.display_qubits,
+            display_idle_sticks: gui3d.display_idle_sticks,
+            display_gates: gui3d.display_gates,
+            display_measurements: gui3d.display_measurements,
+            display_filter_error: gui3d.display_filter_error,
+            display_error_pattern: gui3d.display_error_pattern,
         }
     },
     async mounted() {

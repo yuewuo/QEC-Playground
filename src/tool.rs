@@ -114,10 +114,11 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             };
             let enable_visualizer = matches.is_present("enable_visualizer");
             let visualizer_skip_success_cases = matches.is_present("visualizer_skip_success_cases");
+            let visualizer_filename = matches.value_of_t("visualizer_filename").unwrap_or(static_visualize_data_filename());
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
                 , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge, label
-                , error_model_modifier, enable_visualizer, visualizer_skip_success_cases));
+                , error_model_modifier, enable_visualizer, visualizer_skip_success_cases, visualizer_filename));
         }
         _ => unreachable!()
     }
@@ -261,7 +262,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
         , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
         , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String, error_model_modifier: Option<serde_json::Value>
-        , enable_visualizer: bool, visualizer_skip_success_cases: bool) -> String {
+        , enable_visualizer: bool, visualizer_skip_success_cases: bool, visualizer_filename: String) -> String {
     // if parallel = 0, use all CPU resources
     let parallel = if parallel == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel };
     let parallel_init = if parallel_init == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel_init };
@@ -329,7 +330,6 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
     }
     if enable_visualizer {
         assert_eq!(configurations.len(), 1, "visualizer can only record a single configuration");
-        print_visualize_link(static_visualize_data_filename());
     }
     // start running simulations
     for &(di, dj, noisy_measurements, p, pe, p_graph, pe_graph) in configurations.iter() {
@@ -496,9 +496,11 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         let error_model = Arc::new(error_model);  // change mutability of error model
         let mut visualizer = None;
         if enable_visualizer {
-            let mut new_visualizer = Visualizer::new(Some(visualize_data_folder() + static_visualize_data_filename().as_str())).unwrap();
+            print_visualize_link(visualizer_filename.clone());
+            let mut new_visualizer = Visualizer::new(Some(visualize_data_folder() + visualizer_filename.as_str())).unwrap();
             new_visualizer.add_component(&simulator).unwrap();
             new_visualizer.add_component(error_model.as_ref()).unwrap();
+            new_visualizer.end_component().unwrap();  // make sure the visualization file is valid even user exit the benchmark
             visualizer = Some(Arc::new(Mutex::new(new_visualizer)));
         }
         // prepare result variables for simulation

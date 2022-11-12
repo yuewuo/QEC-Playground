@@ -68,6 +68,17 @@ h3 {
     justify-content: center;
     flex-direction: row;
 }
+.display-options-div {
+    width: 600px;
+    margin-top: 10px;
+}
+.display-options-row {
+    width: 600px;
+    margin-top: 0;
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+}
 .select-info-div {
     width: 580px;
     padding: 10px;
@@ -216,6 +227,18 @@ h3 {
                 <div class="text-subtitle2">Validate Time</div>
             </q-card-section>
         </q-card>
+        <div class="display-options-div">
+            <div class="display-options-row">
+                <div><q-toggle v-model="display_qubits" label="bottom qubits" size="md"/></div>
+                <div><q-toggle v-model="display_idle_sticks" label="idle sticks" size="md"/></div>
+                <div><q-toggle v-model="display_gates" label="gates" size="md"/></div>
+                <div><q-toggle v-model="display_measurements" label="measurements" size="md"/></div>
+            </div>
+            <div class="display-options-row">
+                <div><q-toggle v-model="display_filter_error" label="filter error" size="md"/></div>
+                <div><q-toggle v-model="display_error_pattern" label="error pattern" size="md"/></div>
+            </div>
+        </div>
     </q-scroll-area>
 </div>
 
