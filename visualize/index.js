@@ -67,6 +67,7 @@ const App = {
             display_measurements: gui3d.display_measurements,
             display_filter_error: gui3d.display_filter_error,
             display_error_pattern: gui3d.display_error_pattern,
+            display_correction: gui3d.display_correction,
         }
     },
     async mounted() {
@@ -138,7 +139,7 @@ const App = {
         }
         // get command from url parameters
         await Vue.nextTick()
-        let case_idx = urlParams.get('si') || urlParams.get('case_idx')
+        let case_idx = urlParams.get('ci') || urlParams.get('case_idx')
         if (case_idx != null) {
             case_idx = parseInt(case_idx)
             if (case_idx < 0) {  // iterate from the end, like python list[-1]
@@ -329,6 +330,15 @@ const App = {
         },
         get_case(case_idx) {
             return qecp_data.cases[case_idx]
+        },
+        toggle_error_correction() {
+            if (this.display_error_pattern) {
+                this.display_error_pattern = false
+                this.display_correction = true
+            } else {
+                this.display_error_pattern = true
+                this.display_correction = false
+            }
         },
     },
     watch: {

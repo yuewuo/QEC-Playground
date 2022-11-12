@@ -257,16 +257,6 @@ error_Z_geometries[3].rotateZ(Math.PI / 2)
 error_Z_geometries[3].rotateY(1.0)
 
 
-
-// error_Z_geometries[1].translate(0, error_Z_length/2, 0)
-// error_Z_geometries[2].translate(0, error_Z_length/2, 0)
-// error_Z_geometries[3].translate(0, error_Z_length/2, 0)
-// error_Z_geometries[1].rotateX(Math.PI / 2)
-// error_Z_geometries[1].rotateY(- 5 * Math.PI / 6)
-// error_Z_geometries[2].rotateX(Math.PI / 2)
-// error_Z_geometries[2].rotateY(5 * Math.PI / 6)
-// error_Z_geometries[3].rotateX(Math.PI / 2)
-
 // create common materials
 function build_solid_material(color) {
     return new THREE.MeshStandardMaterial({
@@ -381,6 +371,7 @@ export var gate_vec_meshes = []
 export var defect_measurement_meshes = []
 export var defect_measurement_outline_meshes = []
 export var error_pattern_vec_meshes = []
+export var correction_vec_meshes = []
 
 // update the sizes of objects
 watch(qubit_radius_scale, (newVal, oldVal) => {
@@ -496,8 +487,17 @@ function get_position(position_str) {
     }
 }
 
+function get_url_bool(name, default_value=true) {
+    let value = urlParams.get(name)
+    console.log(value)
+    if (value == null) {
+        return default_value
+    }
+    return value == "true"
+}
+
 // display options
-export const display_qubits = ref((urlParams.get('display_qubits') || "true") == "true")
+export const display_qubits = ref(get_url_bool("display_qubits", true))
 watch([display_qubits, outline_ratio], () => {
     const qecp_data = active_qecp_data.value
     for (let i=0; i<qecp_data.simulator.vertical; ++i) {
@@ -510,7 +510,7 @@ watch([display_qubits, outline_ratio], () => {
         }
     }
 })
-export const display_idle_sticks = ref((urlParams.get('display_idle_sticks') || "true") == "true")
+export const display_idle_sticks = ref(get_url_bool("display_idle_sticks", true))
 watch(display_idle_sticks, () => {
     const qecp_data = active_qecp_data.value
     for (let t=0; t<qecp_data.simulator.height; ++t) {
@@ -521,7 +521,7 @@ watch(display_idle_sticks, () => {
         }
     }
 })
-export const display_gates = ref((urlParams.get('display_gates') || "true") == "true")
+export const display_gates = ref(get_url_bool("display_gates", true))
 watch(display_gates, () => {
     const qecp_data = active_qecp_data.value
     for (let t=0; t<qecp_data.simulator.height; ++t) {
@@ -536,7 +536,7 @@ watch(display_gates, () => {
         }
     }
 })
-export const display_measurements = ref((urlParams.get('display_measurements') || "true") == "true")
+export const display_measurements = ref(get_url_bool("display_measurements", true))
 watch([display_measurements, outline_ratio], () => {
     for (const mesh of defect_measurement_meshes) {
         mesh.visible = display_measurements.value
@@ -546,8 +546,8 @@ watch([display_measurements, outline_ratio], () => {
         update_mesh_outline(mesh)
     }
 })
-export const display_error_pattern = ref((urlParams.get('display_error_pattern') || "true") == "true")
-export const display_filter_error = ref((urlParams.get('display_filter_error') || "true") == "true")
+export const display_error_pattern = ref(get_url_bool("display_error_pattern", false))
+export const display_filter_error = ref(get_url_bool("display_filter_error", true))
 watch([display_filter_error, display_error_pattern], () => {
     const qecp_data = active_qecp_data.value
     const case_idx = active_case_idx.value
@@ -566,6 +566,14 @@ watch([display_filter_error, display_error_pattern], () => {
         }
         for (const mesh of error_pattern_vec_mesh) {
             mesh.visible = visible
+        }
+    }
+})
+export const display_correction = ref(get_url_bool("display_correction", true))
+watch([display_correction], () => {
+    for (let correction_vec_mesh of correction_vec_meshes) {
+        for (const mesh of correction_vec_mesh) {
+            mesh.visible = display_correction.value
         }
     }
 })
@@ -751,6 +759,9 @@ export async function refresh_qecp_data() {
                         } else {
                             console.error(`unknown gate_type: ${node.gt}`)
                         }
+                        for (const mesh of gate_vec_mesh) {
+                            mesh.visible = display_gates.value
+                        }
                     }
                 }
             }
@@ -834,7 +845,7 @@ export async function refresh_case() {
                 error_geometries = error_Y_geometries
             } else if (error == "Z") {
                 error_geometries = error_Z_geometries
-            } else {
+            } else if (error == "I") { } else {
                 console.error(`unknown error type: ${error}`)
             }
             for (let k=0; k < error_geometries.length; ++k) {
@@ -853,6 +864,39 @@ export async function refresh_case() {
                 mesh.visible = visible
                 scene.add( mesh )
                 error_pattern_vec_mesh.push(mesh)
+            }
+        }
+        // draw correction
+        dispose_1d_array(correction_vec_meshes)
+        correction_vec_meshes= []
+        for (let [position_str, error] of Object.entries(active_case.correction)) {
+            const { t, i, j } = get_position(position_str)
+            const position = qecp_data.simulator.positions[i][j]
+            const display_position = {
+                t: t + t_bias + 1,
+                x: position.x,
+                y: position.y,
+            }
+            const correction_vec_mesh = []
+            correction_vec_meshes.push(correction_vec_mesh)
+            let error_geometries = []
+            if (error == "X") {
+                error_geometries = error_X_geometries
+            } else if (error == "Y") {
+                error_geometries = error_Y_geometries
+            } else if (error == "Z") {
+                error_geometries = error_Z_geometries
+            } else if (error == "I") { } else {
+                console.error(`unknown error type: ${error}`)
+            }
+            for (let k=0; k < error_geometries.length; ++k) {
+                const geometry = error_geometries[k]
+                let mesh = new THREE.Mesh(geometry, error_materials[error])
+                load_position(mesh.position, display_position)
+                let visible = display_correction.value
+                mesh.visible = visible
+                scene.add( mesh )
+                correction_vec_mesh.push(mesh)
             }
         }
         // reset select

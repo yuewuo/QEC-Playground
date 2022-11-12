@@ -152,7 +152,7 @@ h3 {
                     <q-badge color="blue" v-if="get_idx_from_label(case_select_label) == 0">error model</q-badge>
                     <q-badge color="red" v-else-if="active_case.qec_failed">failed</q-badge>
                     <q-badge color="green" v-else>success</q-badge>
-                    &nbsp; {{ Object.keys(active_case.error_pattern).length }} errors
+                    &nbsp; {{ Object.keys(active_case.error_pattern).length }} physical errors
                 </template>
                 <template v-slot:option="scope">
                     <q-item v-bind="scope.itemProps" v-if="scope.opt">
@@ -160,7 +160,7 @@ h3 {
                         <q-badge style="height: 20px;" color="blue" v-if="get_idx_from_label(scope.opt) == 0">error model</q-badge>
                         <q-badge style="height: 20px;" color="red" v-else-if="get_case(get_idx_from_label(scope.opt)).qec_failed">failed</q-badge>
                         <q-badge style="height: 20px;" color="green" v-else>success</q-badge>
-                        &nbsp; {{ Object.keys(get_case(get_idx_from_label(scope.opt)).error_pattern).length }} errors
+                        &nbsp; {{ Object.keys(get_case(get_idx_from_label(scope.opt)).error_pattern).length }} physical errors
                     </q-item>
                 </template>
                 <template v-slot:before>
@@ -237,6 +237,9 @@ h3 {
             <div class="display-options-row">
                 <div><q-toggle v-model="display_filter_error" label="filter error" size="md"/></div>
                 <div><q-toggle v-model="display_error_pattern" label="error pattern" size="md"/></div>
+                <div><q-toggle v-model="display_correction" label="correction" size="md"/></div>
+                <q-btn size="md" style="margin-left: 20px;" push no-caps color="white" text-color="primary"
+                    :label="display_error_pattern ? '&nbsp;&nbsp;→ Correction&nbsp;&nbsp;' : '→ Error Pattern'" @click="toggle_error_correction"></q-btn>
             </div>
         </div>
     </q-scroll-area>
