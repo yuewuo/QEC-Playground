@@ -24,13 +24,10 @@ pub trait QecpVisualizer {
 pub struct VisualizePosition {
     /// vertical axis, -i is up, +i is down (left-up corner is smallest i,j)
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
-    pub i: f64,
+    pub x: f64,
     /// horizontal axis, -j is left, +j is right (left-up corner is smallest i,j)
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
-    pub j: f64,
-    /// time axis, top and bottom (orthogonal to the initial view, which looks at -t direction)
-    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
-    pub t: f64,
+    pub y: f64,
 }
 
 #[cfg_attr(feature = "python_binding", cfg_eval)]
@@ -38,9 +35,9 @@ pub struct VisualizePosition {
 impl VisualizePosition {
     /// create a visualization position
     #[cfg_attr(feature = "python_binding", new)]
-    pub fn new(i: f64, j: f64, t: f64) -> Self {
+    pub fn new(x: f64, y: f64) -> Self {
         Self {
-            i, j, t
+            x, y
         }
     }
     #[cfg(feature = "python_binding")]
@@ -58,33 +55,6 @@ pub struct Visualizer {
     /// names of the components
     #[cfg_attr(feature = "python_binding", pyo3(get))]
     pub component_names: BTreeSet<String>,
-}
-
-#[cfg_attr(feature = "python_binding", pyfunction)]
-pub fn center_positions(mut positions: Vec<VisualizePosition>) -> Vec<VisualizePosition> {
-    if !positions.is_empty() {
-        let mut max_i = positions[0].i;
-        let mut min_i = positions[0].i;
-        let mut max_j = positions[0].j;
-        let mut min_j = positions[0].j;
-        let mut max_t = positions[0].t;
-        let mut min_t = positions[0].t;
-        for position in positions.iter_mut() {
-            if position.i > max_i { max_i = position.i; }
-            if position.j > max_j { max_j = position.j; }
-            if position.t > max_t { max_t = position.t; }
-            if position.i < min_i { min_i = position.i; }
-            if position.j < min_j { min_j = position.j; }
-            if position.t < min_t { min_t = position.t; }
-        }
-        let (ci, cj, ct) = ((max_i + min_i) / 2., (max_j + min_j) / 2., (max_t + min_t) / 2.);
-        for position in positions.iter_mut() {
-            position.i -= ci;
-            position.j -= cj;
-            position.t -= ct;
-        }
-    }
-    positions
 }
 
 #[cfg_attr(feature = "python_binding", cfg_eval)]
@@ -226,6 +196,5 @@ pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(auto_visualize_data_filename, m)?)?;
     m.add_function(wrap_pyfunction!(print_visualize_link_with_parameters, m)?)?;
     m.add_function(wrap_pyfunction!(print_visualize_link, m)?)?;
-    m.add_function(wrap_pyfunction!(center_positions, m)?)?;
     Ok(())
 }

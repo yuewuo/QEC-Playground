@@ -15,6 +15,7 @@ use super::types::*;
 use super::util_macros::*;
 use super::clap::{PossibleValue};
 use ErrorType::*;
+use super::visualize::*;
 
 
 /// commonly used code type that has built-in functions to automatically build up the simulator.
@@ -711,7 +712,7 @@ pub fn build_code(simulator: &mut Simulator) {
             simulator.measurement_cycles = 6;
             assert!(di > 0, "code distance must be positive integer");
             assert!(dj > 0, "code distance must be positive integer");
-            let is_rotated = matches!(code_type, CodeType::RotatedPlanarCode { .. });
+            let is_rotated = matches!(code_type, CodeType::RotatedXZZXCode { .. });
             if is_rotated {
                 assert!(di % 2 == 1, "code distance must be odd integer, current: di = {}", di);
                 assert!(dj % 2 == 1, "code distance must be odd integer, current: dj = {}", dj);
@@ -874,6 +875,22 @@ pub fn build_code(simulator: &mut Simulator) {
             simulator.nodes = nodes;
         },
     }
+}
+
+/// 2D position of the qubits; time axis is always pointing up
+pub fn visualize_positions(simulator: &Simulator) -> Vec<Vec<VisualizePosition>> {
+    let positions = (0..simulator.vertical).map(|i| {
+        let x = i as f64 - (simulator.vertical as f64 - 1.) / 2.;
+        (0..simulator.horizontal).map(|j| {
+            let y = j as f64 - (simulator.horizontal as f64 - 1.) / 2.;
+            VisualizePosition::new(x, y)
+        }).collect::<Vec<VisualizePosition>>()
+    }).collect::<Vec<Vec<VisualizePosition>>>();
+    match simulator.code_type {
+        // customize position for special code here
+        _ => { }
+    }
+    positions
 }
 
 /// detect common bugs of code building, e.g. peer gate invalid type, is_virtual not correct, etc...
@@ -1182,7 +1199,6 @@ pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::visualize::*;
 
     #[macro_export]
     macro_rules! assert_measurement {
@@ -1374,6 +1390,71 @@ mod tests {
         let dj = 5;
         let noisy_measurements = 0;
         let simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, di, dj));
+        code_builder_sanity_check(&simulator).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        visualizer.add_component(&simulator).unwrap();
+    }
+
+    #[test]
+    fn code_builder_visualize_rotated_planar_code() {  // cargo test code_builder_visualize_rotated_planar_code -- --nocapture
+        let visualize_filename = format!("code_builder_visualize_rotated_planar_code.json");
+        print_visualize_link(visualize_filename.clone());
+        let di = 7;
+        let dj = 5;
+        let noisy_measurements = 0;
+        let simulator = Simulator::new(CodeType::RotatedPlanarCode, CodeSize::new(noisy_measurements, di, dj));
+        code_builder_sanity_check(&simulator).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        visualizer.add_component(&simulator).unwrap();
+    }
+
+    #[test]
+    fn code_builder_visualize_standard_xzzx_code() {  // cargo test code_builder_visualize_standard_xzzx_code -- --nocapture
+        let visualize_filename = format!("code_builder_visualize_standard_xzzx_code.json");
+        print_visualize_link(visualize_filename.clone());
+        let di = 7;
+        let dj = 5;
+        let noisy_measurements = 0;
+        let simulator = Simulator::new(CodeType::StandardXZZXCode, CodeSize::new(noisy_measurements, di, dj));
+        code_builder_sanity_check(&simulator).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        visualizer.add_component(&simulator).unwrap();
+    }
+
+    #[test]
+    fn code_builder_visualize_rotated_xzzx_code() {  // cargo test code_builder_visualize_rotated_xzzx_code -- --nocapture
+        let visualize_filename = format!("code_builder_visualize_rotated_xzzx_code.json");
+        print_visualize_link(visualize_filename.clone());
+        let di = 7;
+        let dj = 5;
+        let noisy_measurements = 0;
+        let simulator = Simulator::new(CodeType::RotatedXZZXCode, CodeSize::new(noisy_measurements, di, dj));
+        code_builder_sanity_check(&simulator).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        visualizer.add_component(&simulator).unwrap();
+    }
+
+    #[test]
+    fn code_builder_visualize_standard_tailored_code() {  // cargo test code_builder_visualize_standard_tailored_code -- --nocapture
+        let visualize_filename = format!("code_builder_visualize_standard_tailored_code.json");
+        print_visualize_link(visualize_filename.clone());
+        let di = 7;
+        let dj = 5;
+        let noisy_measurements = 0;
+        let simulator = Simulator::new(CodeType::StandardTailoredCode, CodeSize::new(noisy_measurements, di, dj));
+        code_builder_sanity_check(&simulator).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        visualizer.add_component(&simulator).unwrap();
+    }
+
+    #[test]
+    fn code_builder_visualize_rotated_tailored_code() {  // cargo test code_builder_visualize_rotated_tailored_code -- --nocapture
+        let visualize_filename = format!("code_builder_visualize_rotated_tailored_code.json");
+        print_visualize_link(visualize_filename.clone());
+        let di = 7;
+        let dj = 5;
+        let noisy_measurements = 0;
+        let simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
         let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
         visualizer.add_component(&simulator).unwrap();

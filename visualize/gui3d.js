@@ -160,77 +160,147 @@ const scaled_qubit_radius = computed(() => {
     return qubit_radius * qubit_radius_scale.value
 })
 const qubit_geometry = new THREE.SphereGeometry( qubit_radius, segment, segment )
-const idle_gate_radius = parseFloat(urlParams.get('idle_gate_radius') || 0.03)
+const idle_gate_radius = parseFloat(urlParams.get('idle_gate_radius') || 0.025)
 const idle_gate_radius_scale = ref(1)
 const scaled_idle_gate_radius = computed(() => {
     return idle_gate_radius * idle_gate_radius_scale.value
 })
 const idle_gate_geometry = new THREE.CylinderGeometry( idle_gate_radius, idle_gate_radius, 1, segment, 1, true )
 idle_gate_geometry.translate(0, 0.5, 0)
+const initialization_geometry = new THREE.ConeBufferGeometry( 0.1, 0.15, 32 )
+const control_qubit_geometry = new THREE.SphereBufferGeometry( 0.05, 12, 6 )
+const control_line_radius = 0.02
+const control_line_geometry = new THREE.CylinderGeometry( control_line_radius, control_line_radius, 1, segment, 1, true )
+control_line_geometry.translate(0, 0.5, 0)
+const CX_target_radius = 0.15
+const CX_target_geometries = [
+    new THREE.TorusBufferGeometry( CX_target_radius, control_line_radius, 16, 32 ),
+    new THREE.CylinderBufferGeometry( control_line_radius, control_line_radius, 2 * CX_target_radius, 6 ),
+    new THREE.CylinderBufferGeometry( control_line_radius, control_line_radius, 2 * CX_target_radius, 6 ),
+]
+CX_target_geometries[0].rotateX(Math.PI / 2)
+CX_target_geometries[1].rotateX(Math.PI / 2)
+CX_target_geometries[2].rotateZ(Math.PI / 2)
+const CY_target_radius = 0.15
+const CY_target_Y_length = 0.1
+const CY_target_geometries = [
+    new THREE.TorusBufferGeometry( CY_target_radius, control_line_radius, 16, 4 ),
+    new THREE.CylinderBufferGeometry( control_line_radius, control_line_radius, CY_target_Y_length, 6 ),
+    new THREE.CylinderBufferGeometry( control_line_radius, control_line_radius, CY_target_Y_length, 6 ),
+    new THREE.CylinderBufferGeometry( control_line_radius, control_line_radius, CY_target_Y_length, 6 ),
+]
+CY_target_geometries[0].rotateX(Math.PI / 2)
+CY_target_geometries[0].rotateY(Math.PI / 4)
+CY_target_geometries[1].translate(0, CY_target_Y_length/2, 0)
+CY_target_geometries[2].translate(0, CY_target_Y_length/2, 0)
+CY_target_geometries[3].translate(0, CY_target_Y_length/2, 0)
+CY_target_geometries[1].rotateX(Math.PI / 2)
+CY_target_geometries[1].rotateY(- 5 * Math.PI / 6)
+CY_target_geometries[2].rotateX(Math.PI / 2)
+CY_target_geometries[2].rotateY(5 * Math.PI / 6)
+CY_target_geometries[3].rotateX(Math.PI / 2)
 
 // measurement bits
-const meas_radius = parseFloat(urlParams.get('meas_radius') || 0.06)
-export const meas_radius_scale = ref(1)
-const scaled_meas_radius = computed(() => {
-    return meas_radius * meas_radius_scale.value
+const measurement_radius = parseFloat(urlParams.get('measurement_radius') || 0.06)
+export const measurement_radius_scale = ref(1)
+const scaled_measurement_radius = computed(() => {
+    return measurement_radius * measurement_radius_scale.value
 })
-const meas_geometry = new THREE.SphereGeometry( meas_radius, segment, segment )
-const defect_meas_radius = parseFloat(urlParams.get('defect_meas_radius') || 0.1)
-export const defect_meas_radius_scale = ref(1)
-const scaled_defect_meas_radius = computed(() => {
-    return defect_meas_radius * defect_meas_radius_scale.value
+const measurement_geometry = new THREE.SphereGeometry( measurement_radius, segment, segment )
+const defect_measurement_radius = parseFloat(urlParams.get('defect_measurement_radius') || 0.1)
+export const defect_measurement_radius_scale = ref(1)
+const scaled_defect_measurement_radius = computed(() => {
+    return defect_measurement_radius * defect_measurement_radius_scale.value
 })
-const defect_meas_geometry = new THREE.SphereGeometry( defect_meas_radius, segment, segment )
+const defect_measurement_geometry = new THREE.SphereGeometry( defect_measurement_radius, segment, segment )
 
 // create common materials
-export const qubit_material = new THREE.MeshStandardMaterial({
-    color: 0x000000,
-    opacity: 1,
-    transparent: true,
-    side: THREE.FrontSide,
-})
+function build_solid_material(color) {
+    return new THREE.MeshStandardMaterial({
+        color: color,
+        opacity: 1,
+        transparent: true,
+        side: THREE.FrontSide,
+    })
+}
+export const const_color = {
+    "X": 0x00CC00,
+    "Z": 0x00C0FF,
+    "Y": 0xF5B042,
+}
+export const qubit_materials = {
+    "Data": build_solid_material(0x000000),
+    "StabX": build_solid_material(const_color.X),
+    "StabZ": build_solid_material(const_color.Z),
+    "StabXZZXLogicalX": build_solid_material(0xF4CCCC),
+    "StabXZZXLogicalZ": build_solid_material(0xF4CCCC),
+    "StabY": build_solid_material(const_color.Y),
+    "Unknown": build_solid_material(0xFF0000),
+}
+export function get_qubit_material(qubit_type) {
+    const qubit_material = qubit_materials[qubit_type]
+    if (qubit_material == null) {
+        console.error(`unknown qubit_type: ${qubit_type}`)
+        return qubit_materials["Unknown"]
+    }
+    return qubit_material
+}
+export const gate_materials = {
+    "InitializeZ": build_solid_material(const_color.Z),
+    "InitializeX": build_solid_material(const_color.X),
+    "CXGateControl": build_solid_material(0x000000),
+    "CXGateTarget": build_solid_material(0x000000),
+    "CYGateControl": build_solid_material(0x000000),
+    "CYGateTarget": build_solid_material(0x000000),
+    "CZGate": build_solid_material(0x000000),
+    "MeasureZ": build_solid_material(const_color.Z),
+    "MeasureX": build_solid_material(const_color.X),
+    "Unknown": build_solid_material(0xFF0000),
+}
+export function get_gate_material(gate_type) {
+    const gate_material = gate_materials[gate_type]
+    if (gate_material == null) {
+        console.error(`unknown qubit_type: ${qubit_type}`)
+        return gate_materials["Unknown"]
+    }
+    return gate_material
+}
 export const idle_gate_material = new THREE.MeshStandardMaterial({
     color: 0x000000,
     opacity: 0.1,
     transparent: true,
     side: THREE.FrontSide,
 })
-export const meas_material = new THREE.MeshStandardMaterial({
+export const measurement_material = new THREE.MeshStandardMaterial({
     color: 0x000055,
     opacity: 1,
     transparent: true,
     side: THREE.FrontSide,
 })
-export const virtual_meas_material = new THREE.MeshStandardMaterial({
+export const virtual_measurement_material = new THREE.MeshStandardMaterial({
     color: 0xFFFF00,
     opacity: 0.5,
     transparent: true,
     side: THREE.FrontSide,
 })
-export const defect_meas_material = new THREE.MeshStandardMaterial({
+export const defect_measurement_material = new THREE.MeshStandardMaterial({
     color: 0xFF0000,
     opacity: 1,
     transparent: true,
     side: THREE.FrontSide,
 })
-export const meas_outline_material = new THREE.MeshStandardMaterial({
-    color: 0x000000,
-    opacity: 1,
-    transparent: true,
-    side: THREE.BackSide,
-})
-export const virtual_meas_outline_material = new THREE.MeshStandardMaterial({
-    color: 0x000000,
-    opacity: 1,
-    transparent: true,
-    side: THREE.BackSide,
-})
-export const defect_meas_outline_material = new THREE.MeshStandardMaterial({
-    color: 0x000000,
-    opacity: 1,
-    transparent: true,
-    side: THREE.BackSide,
-})
+function build_outline_material(color) {
+    return new THREE.MeshStandardMaterial({
+        color: color,
+        opacity: 1,
+        transparent: true,
+        side: THREE.BackSide,
+    })
+}
+export const qubit_outline_material = build_outline_material(0x000000)
+export const measurement_outline_material = build_outline_material(0x000000)
+export const virtual_measurement_outline_material = build_outline_material(0x000000)
+export const defect_measurement_outline_material = build_outline_material(0x000000)
 export const hover_material = new THREE.MeshStandardMaterial({  // when mouse is on this object (vertex or edge)
     color: 0x6FDFDF,
     side: THREE.DoubleSide,
@@ -249,10 +319,12 @@ window.qubit_outline_meshes = qubit_outline_meshes
 const scaled_qubit_outline_radius = computed(() => {
     return scaled_qubit_radius.value * outline_ratio.value
 })
-export var meas_outline_meshes = []
+export var measurement_outline_meshes = []
 
 export var idle_gate_meshes = []
 window.idle_gate_meshes = idle_gate_meshes
+export var gate_vec_meshes = []
+window.gate_vec_meshes = gate_vec_meshes
 
 // update the sizes of objects
 watch(qubit_radius_scale, (newVal, oldVal) => {
@@ -268,8 +340,8 @@ function update_mesh_outline(mesh) {
     mesh.scale.y = outline_ratio.value
     mesh.scale.z = outline_ratio.value
 }
-watch([outline_ratio, meas_radius_scale], () => {
-    for (let mesh of meas_outline_meshes) {
+watch([outline_ratio, measurement_radius_scale], () => {
+    for (let mesh of measurement_outline_meshes) {
         update_mesh_outline(mesh)
     }
 })
@@ -280,41 +352,286 @@ export function compute_vector3(data_position) {
     load_position(vector, data_position)
     return vector
 }
+export const t_scale = 1/3
 export function load_position(mesh_position, data_position) {
-    mesh_position.z = data_position.i
-    mesh_position.x = data_position.j
-    mesh_position.y = data_position.t
+    mesh_position.z = data_position.x
+    mesh_position.x = data_position.y
+    mesh_position.y = data_position.t * t_scale
 }
 
-export const active_qecp_data = ref(null)
-export const active_case_idx = ref(0)
-window.is_vertices_2d_plane = false  // will be true only if all vertices' t position = 0
-export async function refresh_case() {
-    // console.log("refresh_case")
+function build_2d_array(vertical, horizontal, value=(i,j)=>null) {
+    let array = []
+    for (let i=0; i<vertical; ++i) {
+        let row = []
+        for (let j=0; j<horizontal; ++j) {
+            row.push(value(i,j))
+        }
+        array.push(row)
+    }
+    return array
+}
+
+function dispose_mesh_2d_array(array) {
+    for (let row of array) {
+        for (let mesh of row) {
+            if (mesh != null) {
+                scene.remove( mesh )
+                mesh.dispose()
+            }
+        }
+    }
+}
+
+function build_3d_array(height, vertical, horizontal, value=(t,i,j)=>null) {
+    let array = []
+    for (let t=0; t<height; ++t) {
+        let layer = []
+        for (let i=0; i<vertical; ++i) {
+            let row = []
+            for (let j=0; j<horizontal; ++j) {
+                row.push(value(t,i,j))
+            }
+            layer.push(row)
+        }
+        array.push(layer)
+    }
+    return array
+}
+
+function dispose_mesh_3d_array(array) {
+    for (let layer of array) {
+        for (let row of layer) {
+            for (let mesh of row) {
+                if (mesh != null) {
+                    if (Array.isArray(mesh)) {
+                        for (let sub_mesh of mesh) {
+                            scene.remove( sub_mesh )
+                            sub_mesh.dispose()
+                        }
+                    } else {
+                        scene.remove( mesh )
+                        mesh.dispose()
+                    }
+                }
+            }
+        }
+    }
+}
+
+function get_position(position_str) {
+    const matched_pos = position_str.match(/^\[(\d+)\]\[(\d+)\]\[(\d+)\]$/)
+    return {
+        t: parseInt(matched_pos[1]),
+        i: parseInt(matched_pos[2]),
+        j: parseInt(matched_pos[3]),
+    }
+}
+
+export async function refresh_qecp_data() {
+    // console.log("refresh_qecp_data")
     if (active_qecp_data.value != null) {  // no qecp data provided
         const qecp_data = active_qecp_data.value
-        const case_idx = active_case_idx.value
-        const active_case = qecp_data.cases[case_idx]
-        console.log(active_case)
+        const nodes = qecp_data.simulator.nodes
         // clear hover and select
         current_hover.value = null
         let current_selected_value = JSON.parse(JSON.stringify(current_selected.value))
         current_selected.value = null
         await Vue.nextTick()
         await Vue.nextTick()
-        // update vertex cache
-        vertex_caches = []
-        window.is_vertices_2d_plane = true
-        for (let position of qecp_data.positions) {
-            if (position.t != 0) {
-                window.is_vertices_2d_plane = false
-            }
-            vertex_caches.push({
-                position: {
-                    center: compute_vector3(position),
+        // constants
+        const height = qecp_data.simulator.height
+        const t_bias = -height/2
+        const vertical = qecp_data.simulator.vertical
+        const horizontal = qecp_data.simulator.horizontal
+        // draw qubits at t=-1
+        dispose_mesh_2d_array(qubit_meshes)
+        dispose_mesh_2d_array(qubit_outline_meshes)
+        qubit_meshes = build_2d_array(vertical, horizontal)
+        qubit_outline_meshes = build_2d_array(vertical, horizontal)
+        for (let i=0; i<vertical; ++i) {
+            for (let j=0; j<horizontal; ++j) {
+                const qubit = nodes[0][i][j]
+                if (qubit != null && !qubit.v) {
+                    const position = qecp_data.simulator.positions[i][j]
+                    const display_position = {
+                        t: -1 + t_bias,
+                        x: position.x,
+                        y: position.y,
+                    }
+                    // qubit
+                    const qubit_material = get_qubit_material(qubit.q)
+                    const qubit_mesh = new THREE.Mesh( qubit_geometry, qubit_material )
+                    qubit_mesh.userData = {
+                        type: "qubit",
+                        i: i,
+                        j: j,
+                    }
+                    scene.add( qubit_mesh )
+                    load_position(qubit_mesh.position, display_position)
+                    qubit_meshes[i][j] = qubit_mesh
+                    qubit_mesh.visible = true
+                    // qubit outline
+                    const qubit_outline_mesh = new THREE.Mesh( qubit_geometry, qubit_outline_material )
+                    load_position(qubit_outline_mesh.position, display_position,)
+                    update_mesh_outline(qubit_outline_mesh)
+                    scene.add( qubit_outline_mesh )
+                    qubit_outline_meshes[i][j] = qubit_outline_mesh
                 }
-            })
+            }
         }
+        // draw idle gates
+        dispose_mesh_3d_array(idle_gate_meshes)
+        idle_gate_meshes = build_3d_array(height, vertical, horizontal)
+        for (let t=0; t<height; ++t) {
+            for (let i=0; i<vertical; ++i) {
+                for (let j=0; j<horizontal; ++j) {
+                    const node = nodes[t][i][j]
+                    if (node != null && !node.v && !(node.gt == "InitializeX" || node.gt == "InitializeZ")) {
+                        const position = qecp_data.simulator.positions[i][j]
+                        const display_position = {
+                            t: t-1 + t_bias,  // idle gate is before every real gate
+                            x: position.x,
+                            y: position.y,
+                        }
+                        const idle_gate_mesh = new THREE.Mesh( idle_gate_geometry, idle_gate_material )
+                        idle_gate_mesh.userData = {
+                            type: "idle_gate",
+                            t: t,
+                            i: i,
+                            j: j,
+                        }
+                        load_position(idle_gate_mesh.position, display_position)
+                        idle_gate_mesh.scale.set(1, t_scale, 1)
+                        scene.add( idle_gate_mesh )
+                        idle_gate_meshes[t][i][j] = idle_gate_mesh
+                    }
+                }
+            }
+        }
+        // draw gates
+        dispose_mesh_3d_array(gate_vec_meshes)
+        gate_vec_meshes = build_3d_array(height, vertical, horizontal)
+        for (let t=0; t<height; ++t) {
+            for (let i=0; i<vertical; ++i) {
+                for (let j=0; j<horizontal; ++j) {
+                    const node = nodes[t][i][j]
+                    if (node != null && !node.v && !node.pv && node.gt != "None") {
+                        const gate_material = get_gate_material(node.gt)
+                        const position = qecp_data.simulator.positions[i][j]
+                        const display_position = { t: t + t_bias, x: position.x, y: position.y }
+                        const gate_vec_mesh = []
+                        gate_vec_meshes[t][i][j] = gate_vec_mesh
+                        if (node.gt == "InitializeX" || node.gt == "InitializeZ") {
+                            const gate_mesh = new THREE.Mesh( initialization_geometry, gate_material )
+                            load_position(gate_mesh.position, display_position)
+                            scene.add( gate_mesh )
+                            gate_vec_mesh.push(gate_mesh)
+                        } else if (node.gt == "MeasureX" || node.gt == "MeasureZ") {
+                            const gate_mesh = new THREE.Mesh( measurement_geometry, gate_material )
+                            load_position(gate_mesh.position, display_position)
+                            scene.add( gate_mesh )
+                            gate_vec_mesh.push(gate_mesh)
+                        } else if (node.gt == "CXGateControl" || node.gt == "CYGateControl" || node.gt == "CZGate") {
+                            // dot
+                            const dot_mesh = new THREE.Mesh( control_qubit_geometry, gate_material )
+                            load_position(dot_mesh.position, display_position)
+                            scene.add( dot_mesh )
+                            gate_vec_mesh.push(dot_mesh)
+                            // line
+                            const peer = get_position(node.gp)
+                            const peer_position = qecp_data.simulator.positions[peer.i][peer.j]
+                            const peer_display_position = { t: t + t_bias, x: peer_position.x, y: peer_position.y }
+                            const line_mesh = new THREE.Mesh( control_line_geometry, gate_material )
+                            const relative = compute_vector3(peer_display_position).add(compute_vector3(display_position).multiplyScalar(-1))
+                            const direction = relative.clone().normalize()
+                            const quaternion = new THREE.Quaternion()
+                            quaternion.setFromUnitVectors(unit_up_vector, direction)
+                            load_position(line_mesh.position, display_position)
+                            line_mesh.scale.set(1, relative.length() / 2, 1)
+                            line_mesh.setRotationFromQuaternion(quaternion)
+                            scene.add( line_mesh )
+                            gate_vec_mesh.push(line_mesh)
+                        } else if (node.gt == "CXGateTarget") {
+                            // X gate
+                            for (let k=0; k < CX_target_geometries.length; ++k) {
+                                const geometry = CX_target_geometries[k]
+                                let mesh = new THREE.Mesh(geometry, gate_material)
+                                load_position(mesh.position, display_position)
+                                scene.add( mesh )
+                                gate_vec_mesh.push(mesh)
+                            }
+                            // line
+                            const peer = get_position(node.gp)
+                            const peer_position = qecp_data.simulator.positions[peer.i][peer.j]
+                            const peer_display_position = { t: t + t_bias, x: peer_position.x, y: peer_position.y }
+                            const line_mesh = new THREE.Mesh( control_line_geometry, gate_material )
+                            const relative = compute_vector3(peer_display_position).add(compute_vector3(display_position).multiplyScalar(-1))
+                            const direction = relative.clone().normalize()
+                            const quaternion = new THREE.Quaternion()
+                            quaternion.setFromUnitVectors(unit_up_vector, direction)
+                            load_position(line_mesh.position, display_position)
+                            line_mesh.scale.set(1, relative.length() / 2, 1)
+                            line_mesh.setRotationFromQuaternion(quaternion)
+                            scene.add( line_mesh )
+                            gate_vec_mesh.push(line_mesh)
+                        } else if (node.gt == "CYGateTarget") {
+                            // Y gate
+                            for (let k=0; k < CY_target_geometries.length; ++k) {
+                                const geometry = CY_target_geometries[k]
+                                let mesh = new THREE.Mesh(geometry, gate_material)
+                                load_position(mesh.position, display_position)
+                                scene.add( mesh )
+                                gate_vec_mesh.push(mesh)
+                            }
+                            // line
+                            const peer = get_position(node.gp)
+                            const peer_position = qecp_data.simulator.positions[peer.i][peer.j]
+                            const peer_display_position = { t: t + t_bias, x: peer_position.x, y: peer_position.y }
+                            const relative = compute_vector3(peer_display_position).add(compute_vector3(display_position).multiplyScalar(-1))
+                            const direction = relative.clone().normalize()
+                            const quaternion = new THREE.Quaternion()
+                            quaternion.setFromUnitVectors(unit_up_vector, direction)
+                            let edge_length = relative.length()/2 - CY_target_radius / Math.sqrt(2)
+                            console.log(edge_length)
+                            if (edge_length > 0) {
+                                const biased_position = compute_vector3(display_position)
+                                    .add(relative.clone().multiplyScalar((relative.length()/2 - edge_length) / relative.length()))
+                                // console.log(compute_vector3(display_position), biased_display_position)
+                                const line_mesh = new THREE.Mesh( control_line_geometry, gate_material )
+                                line_mesh.position.copy(biased_position)
+                                line_mesh.scale.set(1, edge_length, 1)
+                                line_mesh.setRotationFromQuaternion(quaternion)
+                                scene.add( line_mesh )
+                                gate_vec_mesh.push(line_mesh)
+                            }
+                        } else {
+                            console.error(`unknown gate_type: ${node.gt}`)
+                        }
+                    }
+                }
+            }
+        }
+        // refresh case as well
+        await refresh_case()
+    }
+}
+
+export const active_qecp_data = ref(null)
+export const active_case_idx = ref(0)
+export async function refresh_case() {
+    // console.log("refresh_case")
+    if (active_qecp_data.value != null) {  // no qecp data provided
+        const qecp_data = active_qecp_data.value
+        const case_idx = active_case_idx.value
+        const active_case = qecp_data.cases[case_idx]
+        // clear hover and select
+        current_hover.value = null
+        let current_selected_value = JSON.parse(JSON.stringify(current_selected.value))
+        current_selected.value = null
+        await Vue.nextTick()
+        await Vue.nextTick()
+        
+        return
         // draw vertices
         let subgraph_set = {}
         if (active_case.subgraph != null) {
@@ -550,7 +867,8 @@ export async function refresh_case() {
         }
     }
 }
-watch([active_qecp_data, active_case_idx, scaled_qubit_outline_radius], refresh_case)
+watch([active_qecp_data], refresh_qecp_data)  // call refresh_case
+watch([active_case_idx], refresh_case)
 export function show_case(case_idx, qecp_data) {
     active_case_idx.value = case_idx
     active_qecp_data.value = qecp_data

@@ -77,7 +77,8 @@ impl QecpVisualizer for Simulator {
                         }
                     }).collect::<Vec<Option<serde_json::Value>>>()
                 }).collect::<Vec<Vec<Option<serde_json::Value>>>>()
-            }).collect::<Vec<Vec<Vec<Option<serde_json::Value>>>>>()
+            }).collect::<Vec<Vec<Vec<Option<serde_json::Value>>>>>(),
+            "positions": visualize_positions(self),
         });
         (name.to_string(), info)
     }
