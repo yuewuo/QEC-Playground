@@ -65,7 +65,6 @@ const App = {
             display_idle_sticks: gui3d.display_idle_sticks,
             display_gates: gui3d.display_gates,
             display_measurements: gui3d.display_measurements,
-            display_filter_error: gui3d.display_filter_error,
             display_error_pattern: gui3d.display_error_pattern,
             display_correction: gui3d.display_correction,
             existed_model_graph: gui3d.existed_model_graph,
@@ -410,7 +409,7 @@ const App = {
             let regions = gui3d.model_graph_regions.value
             let options = []
             for (let i=0; i<regions; ++i) {
-                options.push({ label: (i==0?"region: ":"") + `${i}`, value: i })
+                options.push({ label: (i==0?"regions: ":"") + `${i}`, value: i, color: gui3d.sequential_colors[i][0] })
             }
             return options
         },

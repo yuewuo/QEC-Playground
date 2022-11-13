@@ -200,6 +200,9 @@ const model_graph_edge_radius = parseFloat(urlParams.get('model_graph_edge_radiu
 const model_graph_edge_scale = ref(1)
 const model_graph_edge_geometry = new THREE.CylinderGeometry( model_graph_edge_radius, model_graph_edge_radius, 1, segment, 1, true )
 model_graph_edge_geometry.translate(0, 0.5, 0)
+const model_graph_vertex_radius = parseFloat(urlParams.get('model_graph_vertex_radius') || 0.12)
+const model_graph_vertex_scale = ref(1)
+const model_graph_vertex_geometry = new THREE.SphereGeometry( model_graph_vertex_radius, segment, segment )
 
 // measurement bits
 const measurement_radius = parseFloat(urlParams.get('measurement_radius') || 0.06)
@@ -260,6 +263,34 @@ error_Z_geometries[2].translate(0, 0, -error_Z_length*0.6)
 error_Z_geometries[3].rotateZ(Math.PI / 2)
 error_Z_geometries[3].rotateY(1.0)
 
+export const sequential_colors = [  // https://quasar.dev/style/color-palette
+    ["blue", 0x2196f3],
+    ["green", 0x4caf50],
+    ["deep-purple", 0x673ab7],
+    ["brown", 0x795548],
+    ["lime", 0xcddc39],
+    ["pink", 0xe91e63],
+    ["purple", 0x9c27b0],
+    ["deep-purple", 0x673ab7],
+    ["indigo", 0x3f51b5],
+    ["light-blue", 0x03a9f4],
+    ["cyan", 0x00bcd4],
+    ["teal", 0x009688],
+    ["green", 0x4caf50],
+    ["light-green", 0x8bc34a],
+    ["lime", 0xcddc39],
+    ["yellow", 0xffeb3b],
+    ["amber", 0xffc107],
+    ["orange", 0xff9800],
+    ["deep-orange", 0xff5722],
+    ["grey", 0x9e9e9e],
+    ["blue-grey", 0x607d8b],
+    ["red", 0xf44336],
+]
+export const mapping_colors = {}
+for (const [name, color] of sequential_colors) {
+    mapping_colors[name] = color
+}
 
 // create common materials
 function build_solid_material(color) {
@@ -318,6 +349,12 @@ export const error_materials = {
     "Z": build_solid_material(const_color.Z),
 }
 export const model_graph_edge_material = build_solid_material(0x000000)
+export const model_graph_vertex_material_vec = []
+for (const [name, color] of sequential_colors) {
+    model_graph_vertex_material_vec.push(build_solid_material(color))
+}
+
+build_solid_material(0x006699)
 export const idle_gate_material = new THREE.MeshStandardMaterial({
     color: 0x000000,
     opacity: 0.1,
@@ -370,7 +407,8 @@ export var qubit_outline_meshes = []
 export var measurement_outline_meshes = []
 export var idle_gate_meshes = []
 export var gate_vec_meshes = []
-export var model_graph_vec_meshes = []
+export var model_graph_edge_vec_meshes = []
+export var model_graph_vertex_meshes = []
 
 // meshes of a specific case
 export var defect_measurement_meshes = []
@@ -390,6 +428,10 @@ watch(idle_gate_radius_scale, (newVal, oldVal) => {
 watch(model_graph_edge_scale, (newVal, oldVal) => {
     model_graph_edge_geometry.scale(1/oldVal, 1, 1/oldVal)
     model_graph_edge_geometry.scale(newVal, 1, newVal)
+})
+watch(model_graph_vertex_scale, (newVal, oldVal) => {
+    model_graph_vertex_geometry.scale(1/oldVal, 1, 1/oldVal)
+    model_graph_vertex_geometry.scale(newVal, 1, newVal)
 })
 watch(defect_measurement_radius_scale, (newVal, oldVal) => {
     defect_measurement_geometry.scale(1/oldVal, 1/oldVal, 1/oldVal)
@@ -555,25 +597,14 @@ watch([display_measurements, outline_ratio], () => {
     }
 })
 export const display_error_pattern = ref(get_url_bool("display_error_pattern", false))
-export const display_filter_error = ref(get_url_bool("display_filter_error", true))
-watch([display_filter_error, display_error_pattern], () => {
+watch([display_error_pattern], () => {
     const qecp_data = active_qecp_data.value
     const case_idx = active_case_idx.value
     const active_case = qecp_data.cases[case_idx]
     for (let [idx, [position_str, error]] of Object.entries(active_case.error_pattern).entries()) {
-        const { t, i, j } = get_position(position_str)
         const error_pattern_vec_mesh = error_pattern_vec_meshes[idx]
-        let visible = display_error_pattern.value
-        if (display_filter_error.value) {
-            if (t == 0 && qecp_data.simulator.nodes[t][i][j].q != "Data") {  // the first measurement is ignored
-                visible = false
-            }
-            if (qecp_data.simulator.nodes[t][i][j].gt.startsWith("Initialize")) {
-                visible = false
-            }
-        }
         for (const mesh of error_pattern_vec_mesh) {
-            mesh.visible = visible
+            mesh.visible = display_error_pattern.value
         }
     }
 })
@@ -586,11 +617,27 @@ watch([display_correction], () => {
     }
 })
 export const existed_model_graph = ref(false)
-export const display_model_graph = ref(get_url_bool("display_model_graph", true))
+export const display_model_graph = ref(get_url_bool("display_model_graph", false))
 export const model_graph_regions = ref(0)
 export const model_graph_region_display = ref([])
-watch(model_graph_region_display, () => {
-    console.log(model_graph_region_display.value)
+watch([model_graph_region_display, display_model_graph], () => {
+    const active_regions = {}
+    for (const active_region of Object.values(model_graph_region_display.value)) active_regions[active_region] = true
+    for (let t=0; t<qecp_data.simulator.height; ++t) {
+        for (let i=0; i<qecp_data.simulator.vertical; ++i) {
+            for (let j=0; j<qecp_data.simulator.horizontal; ++j) {
+                const mesh = model_graph_vertex_meshes[t][i][j]
+                if (mesh != null) {
+                    const region_idx = mesh.userData.region_idx
+                    const visible = active_regions[region_idx] == true && display_model_graph.value
+                    mesh.visible = visible
+                    for (const edge_mesh of model_graph_edge_vec_meshes[t][i][j]) {
+                        edge_mesh.visible = visible
+                    }
+                }
+            }
+        }
+    }
 })
 
 export async function refresh_qecp_data() {
@@ -782,24 +829,90 @@ export async function refresh_qecp_data() {
             }
         }
         // draw model graph
-        dispose_mesh_3d_array(model_graph_vec_meshes)
-        model_graph_vec_meshes = build_3d_array(height, vertical, horizontal)
+        dispose_mesh_3d_array(model_graph_edge_vec_meshes)
+        model_graph_edge_vec_meshes = build_3d_array(height, vertical, horizontal)
+        dispose_mesh_3d_array(model_graph_vertex_meshes)
+        model_graph_vertex_meshes = build_3d_array(height, vertical, horizontal)
+        // first calculate region, 
         if (qecp_data.model_graph != null) {
             existed_model_graph.value = true
+            // calculate region
+            let model_graph_vertex_positions = []
+            let model_graph_vertex_indices = {}
             for (let t=0; t<height; ++t) {
                 for (let i=0; i<vertical; ++i) {
                     for (let j=0; j<horizontal; ++j) {
                         const model_graph_node = qecp_data.model_graph.nodes[t][i][j]
                         if (model_graph_node != null) {
-                            const model_graph_vec_mesh = []
-                            model_graph_vec_meshes[t][i][j] = model_graph_vec_mesh
+                            model_graph_vertex_indices[model_graph_node.p] = model_graph_vertex_positions.length
+                            model_graph_vertex_positions.push(model_graph_node.p)
+                        }
+                    }
+                }
+            }
+            let union_find = new UnionFind(model_graph_vertex_positions.length)
+            for (let vertex_index=0; vertex_index < model_graph_vertex_positions.length; ++vertex_index) {
+                let { t, i, j } = get_position(model_graph_vertex_positions[vertex_index])
+                const model_graph_node = qecp_data.model_graph.nodes[t][i][j]
+                for (let [peer_position_str, edge] of Object.entries(model_graph_node.edges)) {
+                    const peer_vertex_index = model_graph_vertex_indices[peer_position_str]
+                    console.assert(peer_vertex_index != null)
+                    union_find.union(vertex_index, peer_vertex_index)
+                }
+            }
+            let regions = []
+            let regions_union_indices = {}
+            for (let vertex_index=0; vertex_index < model_graph_vertex_positions.length; ++vertex_index) {
+                const union_index = union_find.find(vertex_index)
+                if (!(union_index in regions_union_indices)) {
+                    regions_union_indices[union_index] = regions.length
+                    regions.push(union_index)
+                }
+            }
+            model_graph_regions.value = regions.length
+            console.log(regions_union_indices)
+            // add geometries
+            for (let t=0; t<height; ++t) {
+                for (let i=0; i<vertical; ++i) {
+                    for (let j=0; j<horizontal; ++j) {
+                        const model_graph_node = qecp_data.model_graph.nodes[t][i][j]
+                        if (model_graph_node != null) {
                             const position = qecp_data.simulator.positions[i][j]
                             const display_position = { t: t + t_bias, x: position.x, y: position.y }
+                            const node = qecp_data.simulator.nodes[t][i][j]
+                            const vertex_index = model_graph_vertex_indices[node.p]
+                            const union_index = union_find.find(vertex_index)
+                            const region_idx = regions_union_indices[union_index]
+                            model_graph_node.region_idx = region_idx
+                            // vertices
+                            const vertex_mesh = new THREE.Mesh( model_graph_vertex_geometry, model_graph_vertex_material_vec[model_graph_node.region_idx] )
+                            load_position(vertex_mesh.position, display_position)
+                            vertex_mesh.userData = {
+                                type: "model_graph_vertex",
+                                t: t,
+                                i: i,
+                                j: j,
+                                region_idx: model_graph_node.region_idx,
+                            }
+                            scene.add( vertex_mesh )
+                            model_graph_vertex_meshes[t][i][j] = vertex_mesh
+                            // edges
+                            const model_graph_edge_vec_mesh = []
+                            model_graph_edge_vec_meshes[t][i][j] = model_graph_edge_vec_mesh
                             for (let [peer_position_str, edge] of Object.entries(model_graph_node.edges)) {
                                 const { i: pi, j: pj, t: pt } = get_position(peer_position_str)
                                 const peer_position = qecp_data.simulator.positions[pi][pj]
                                 const peer_display_position = { t: pt + t_bias, x: peer_position.x, y: peer_position.y }
                                 const line_mesh = new THREE.Mesh( model_graph_edge_geometry, model_graph_edge_material )
+                                line_mesh.userData = {
+                                    type: "model_graph_edge",
+                                    t: t,
+                                    i: i,
+                                    j: j,
+                                    peer: peer_position_str,
+                                    edge: edge,
+                                    region_idx: model_graph_node.region_idx,
+                                }
                                 const relative = compute_vector3(peer_display_position).add(compute_vector3(display_position).multiplyScalar(-1))
                                 const direction = relative.clone().normalize()
                                 const quaternion = new THREE.Quaternion()
@@ -808,9 +921,9 @@ export async function refresh_qecp_data() {
                                 line_mesh.scale.set(1, relative.length() / 2, 1)
                                 line_mesh.setRotationFromQuaternion(quaternion)
                                 scene.add( line_mesh )
-                                model_graph_vec_mesh.push(line_mesh)
+                                model_graph_edge_vec_mesh.push(line_mesh)
                             }
-                            for (let boundary of model_graph_node.all_boundaries)  {
+                            for (let [boundary_idx, boundary] of model_graph_node.all_boundaries.entries())  {
                                 let [vpi, vpj, vpt] = [i, j, t - qecp_data.simulator.measurement_cycles]
                                 if (boundary.v != null) {
                                     const vp = get_position(boundary.v)
@@ -819,6 +932,15 @@ export async function refresh_qecp_data() {
                                 const peer_position = qecp_data.simulator.positions[vpi][vpj]
                                 const peer_display_position = { t: vpt + t_bias, x: peer_position.x, y: peer_position.y }
                                 const line_mesh = new THREE.Mesh( model_graph_edge_geometry, model_graph_edge_material )
+                                line_mesh.userData = {
+                                    type: "model_graph_boundary",
+                                    t: t,
+                                    i: i,
+                                    j: j,
+                                    boundary_idx: boundary_idx,
+                                    boundary: boundary,
+                                    region_idx: model_graph_node.region_idx,
+                                }
                                 const relative = compute_vector3(peer_display_position).add(compute_vector3(display_position).multiplyScalar(-1))
                                 const direction = relative.clone().normalize()
                                 const quaternion = new THREE.Quaternion()
@@ -827,14 +949,12 @@ export async function refresh_qecp_data() {
                                 line_mesh.scale.set(1, relative.length(), 1)
                                 line_mesh.setRotationFromQuaternion(quaternion)
                                 scene.add( line_mesh )
-                                model_graph_vec_mesh.push(line_mesh)
+                                model_graph_edge_vec_mesh.push(line_mesh)
                             }
                         }
                     }
                 }
             }
-            // calculate region
-            
             let default_region_display = []
             for (let i=0; i<model_graph_regions.value; ++i) default_region_display.push(i)
             model_graph_region_display.value = default_region_display
@@ -927,16 +1047,7 @@ export async function refresh_case() {
                 const geometry = error_geometries[k]
                 let mesh = new THREE.Mesh(geometry, error_materials[error])
                 load_position(mesh.position, display_position)
-                let visible = display_error_pattern.value
-                if (display_filter_error.value) {
-                    if (t == 0 && qecp_data.simulator.nodes[t][i][j].q != "Data") {
-                        visible = false
-                    }
-                    if (qecp_data.simulator.nodes[t][i][j].gt.startsWith("Initialize")) {
-                        visible = false
-                    }
-                }
-                mesh.visible = visible
+                mesh.visible = display_error_pattern.value
                 scene.add( mesh )
                 error_pattern_vec_mesh.push(mesh)
             }
@@ -1267,3 +1378,26 @@ function base64_encode (arraybuffer) {
     }
     return base64;
 }
+
+// https://javascript.plainenglish.io/union-find-97f0036dff93
+class UnionFind {
+    constructor(N) {
+        this.parent = Array.from({ length: N }, (_, i) => i)
+        this.count = new Array(N).fill(1)
+    }
+    find(x) {
+        if (this.parent[x] != x) this.parent[x] = this.find(this.parent[x])
+        return this.parent[x]
+    }
+    union(x, y) {
+        const xp = this.find(x), yp = this.find(y)
+        if (xp == yp) return
+        if (this.count[xp] < this.count[yp]) {
+            this.parent[xp] = yp
+            this.count[yp] += this.count[xp]
+        } else {
+            this.parent[yp] = xp
+            this.count[xp] += this.count[yp]
+        }
+    }
+  }
