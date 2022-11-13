@@ -628,9 +628,6 @@ impl Simulator {
                 self.propagate_error_from(position);
             });
         }
-        simulator_iter_mut!(self, position, node, t => 0, {
-            node.propagated = node.error;  // bug fix 2022.11.12: the 0 layer should be propagated by it's error
-        });
     }
 
     /// calculate propagated errors at one position. in order to correctly propagate every error, the order of propagation must be ascending in `t`s.
@@ -777,10 +774,6 @@ impl Simulator {
             let mut pending_interested_region = Vec::new();
             for &(i, j) in interested_region.iter() {
                 let propagated_neighbor = self.propagate_error_from(&pos!(t - 1, i, j));
-                if min_t == 0 && t == 1 {  // bug fix 2022.11.12: the 0 layer should be propagated by it's error
-                    let node = self.get_node_mut_unwrap(&pos!(t - 1, i, j));
-                    node.propagated = node.error;
-                }
                 match propagated_neighbor {
                     Some(peer) => pending_interested_region.push((peer.i, peer.j)),
                     None => { },

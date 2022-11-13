@@ -696,14 +696,14 @@ export async function refresh_qecp_data() {
         // draw idle gates
         dispose_mesh_3d_array(idle_gate_meshes)
         idle_gate_meshes = build_3d_array(height, vertical, horizontal)
-        for (let t=0; t<height; ++t) {
+        for (let t=0; t<height-1; ++t) {
             for (let i=0; i<vertical; ++i) {
                 for (let j=0; j<horizontal; ++j) {
-                    const node = nodes[t][i][j]
-                    if (node != null && !node.v && !(node.gt == "InitializeX" || node.gt == "InitializeZ")) {
+                    const next_node = nodes[t+1][i][j]
+                    if (next_node != null && !next_node.v && !(next_node.gt == "InitializeX" || next_node.gt == "InitializeZ")) {
                         const position = qecp_data.simulator.positions[i][j]
                         const display_position = {
-                            t: t-1 + t_bias,  // idle gate is before every real gate
+                            t: t + t_bias,  // idle gate is before every real gate
                             x: position.x,
                             y: position.y,
                         }
@@ -742,10 +742,12 @@ export async function refresh_qecp_data() {
                             scene.add( gate_mesh )
                             gate_vec_mesh.push(gate_mesh)
                         } else if (node.gt == "MeasureX" || node.gt == "MeasureZ") {
-                            const gate_mesh = new THREE.Mesh( measurement_geometry, gate_material )
-                            load_position(gate_mesh.position, display_position)
-                            scene.add( gate_mesh )
-                            gate_vec_mesh.push(gate_mesh)
+                            if (t != 0) {  // the first measurement is always noiseless, thus no need to draw it
+                                const gate_mesh = new THREE.Mesh( measurement_geometry, gate_material )
+                                load_position(gate_mesh.position, display_position)
+                                scene.add( gate_mesh )
+                                gate_vec_mesh.push(gate_mesh)
+                            }
                         } else if (node.gt == "CXGateControl" || node.gt == "CYGateControl" || node.gt == "CZGate") {
                             // dot
                             const dot_mesh = new THREE.Mesh( control_qubit_geometry, gate_material )

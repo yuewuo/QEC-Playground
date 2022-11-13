@@ -957,4 +957,40 @@ mod tests {
         }
     }
 
+    #[test]
+    fn tailored_mwpm_decoder_debug_1() {  // cargo test tailored_mwpm_decoder_debug_1 -- --nocapture
+        let d = 5;
+        let noisy_measurements = 0;
+        let p = 0.05;
+        let bias_eta = 1e300;
+        // build simulator
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, d, d));
+        code_builder_sanity_check(&simulator).unwrap();
+        // build error model
+        let mut error_model = ErrorModel::new(&simulator);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = p - 2. * px;
+        simulator.set_error_rates(&mut error_model, px, py, pz, 0.);
+        simulator.compress_error_rates(&mut error_model);
+        error_model_sanity_check(&simulator, &error_model).unwrap();
+        let error_model = Arc::new(error_model);
+        // build decoder
+        let decoder_config = json!({
+            "precompute_complete_model_graph": true,
+        });
+        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
+        let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[0][1][5]":"Z","[0][2][4]":"Z","[0][5][1]":"Z","[0][5][9]":"Z","[0][8][4]":"Z","[0][9][5]":"Z"}"#).unwrap();
+        // println!("{:?}", error_pattern);
+        simulator.load_sparse_error_pattern(&error_pattern, &error_model).unwrap();
+        simulator.propagate_errors();
+        let sparse_measurement = simulator.generate_sparse_measurement();
+        let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
+        println!("{:?}", correction);
+        code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
+        // the logical error makes sense... it is the decoder design itself that causes this problem
+        // let (logical_i, logical_j) = simulator.validate_correction(&correction);
+        // assert!(!logical_i && !logical_j);
+    }
+
 }
