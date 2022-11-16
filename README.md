@@ -109,6 +109,7 @@ Guojun Chen: collaborator of CPSC 559 course project: design GUI. design and imp
 
 Namitha Godawatte Liyanage: implement approximate MWPM decoder and FPGA related functionalities.
 
+Neil He: bind library to Python.
 
 ## Attribution
 
