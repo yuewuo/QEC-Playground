@@ -1,7 +1,7 @@
 //! General purpose Pauli group simulator optimized for surface code
 //! 
 #[cfg(feature="python_binding")]
-use pyo3::prelude::*;
+use crate::pyo3::prelude::*;
 use std::cmp::Ordering;
 use super::types::*;
 use serde::{Serialize, Deserialize, Serializer, Deserializer};
@@ -91,7 +91,6 @@ impl QecpVisualizer for Simulator {
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub struct Position {
-    // pub index: [usize; 3],
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub t: usize,
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
@@ -361,71 +360,9 @@ impl Simulator {
         }
     }
 
-    pub fn set_error_check_result(&mut self, error_model: &ErrorModel, position: &Position, error: &ErrorType) -> Result<(), String> {
-        if error == &ErrorType::I {
-            self.get_node_mut_unwrap(position).set_error_temp(error);
-            return Ok(())
-        }
-        let mut possible = false;
-        if cfg!(debug_assertions) {
-            let error_model_node = error_model.get_node_unwrap(position);
-            let node = self.get_node_unwrap(position);
-            match error {
-                ErrorType::X => if error_model_node.pauli_error_rates.error_rate_X > 0. { possible = true; },
-                ErrorType::Y => if error_model_node.pauli_error_rates.error_rate_Y > 0. { possible = true; },
-                ErrorType::Z => if error_model_node.pauli_error_rates.error_rate_Z > 0. { possible = true; },
-                _ => unreachable!(),
-            }
-            possible |= error_model_node.erasure_error_rate > 0.;
-            possible |= error_model_node.correlated_pauli_error_rates.is_some();  // weak check
-            possible |= error_model_node.correlated_erasure_error_rates.is_some();  // weak check
-            if !possible {  // check peer only if still not possible
-                if let Some(peer_position) = node.gate_peer.as_ref() {
-                    let peer_error_model_node = error_model.get_node_unwrap(peer_position);
-                    possible |= peer_error_model_node.correlated_pauli_error_rates.is_some();  // weak check
-                    possible |= peer_error_model_node.correlated_erasure_error_rates.is_some();  // weak check
-                }
-            }
-        } else {
-            possible = true;
-        }
-        if !possible {
-            return Err(format!("setting error at {} with 0 probability is forbidden", position));
-        }
-        self.get_node_mut_unwrap(position).set_error_temp(error);
-        Ok(())
-    }
-
     /// set error with sanity check
     pub fn set_error_check(&mut self, error_model: &ErrorModel, position: &Position, error: &ErrorType) {
         self.set_error_check_result(error_model, position, error).unwrap()
-    }
-
-    pub fn set_erasure_check_result(&mut self, error_model: &ErrorModel, position: &Position, has_erasure: bool) -> Result<(), String> {
-        if has_erasure == false {
-            self.get_node_mut_unwrap(position).has_erasure = false;
-            return Ok(())
-        }
-        let mut possible = false;
-        if cfg!(debug_assertions) {
-            let error_model_node = error_model.get_node_unwrap(position);
-            let node = self.get_node_unwrap(position);
-            possible |= error_model_node.erasure_error_rate > 0.;
-            possible |= error_model_node.correlated_erasure_error_rates.is_some();  // weak check
-            if !possible {  // check peer only if still not possible
-                if let Some(peer_position) = node.gate_peer.as_ref() {
-                    let peer_error_model_node = error_model.get_node_unwrap(peer_position);
-                    possible |= peer_error_model_node.correlated_erasure_error_rates.is_some();  // weak check
-                }
-            }
-        } else {
-            possible = true;
-        }
-        if !possible {
-            return Err(format!("setting erasure at {} with 0 probability is forbidden", position));
-        }
-        self.get_node_mut_unwrap(position).has_erasure = has_erasure;
-        Ok(())
     }
 
     pub fn set_erasure_check(&mut self, error_model: &ErrorModel, position: &Position, has_erasure: bool) {
@@ -965,6 +902,33 @@ impl Simulator {
         self.get_node(position).as_ref().unwrap()
     }
 
+    pub fn set_erasure_check_result(&mut self, error_model: &ErrorModel, position: &Position, has_erasure: bool) -> Result<(), String> {
+        if has_erasure == false {
+            self.get_node_mut_unwrap(position).has_erasure = false;
+            return Ok(())
+        }
+        let mut possible = false;
+        if cfg!(debug_assertions) {
+            let error_model_node = error_model.get_node_unwrap(position);
+            let node = self.get_node_unwrap(position);
+            possible |= error_model_node.erasure_error_rate > 0.;
+            possible |= error_model_node.correlated_erasure_error_rates.is_some();  // weak check
+            if !possible {  // check peer only if still not possible
+                if let Some(peer_position) = node.gate_peer.as_ref() {
+                    let peer_error_model_node = error_model.get_node_unwrap(peer_position);
+                    possible |= peer_error_model_node.correlated_erasure_error_rates.is_some();  // weak check
+                }
+            }
+        } else {
+            possible = true;
+        }
+        if !possible {
+            return Err(format!("setting erasure at {} with 0 probability is forbidden", position));
+        }
+        self.get_node_mut_unwrap(position).has_erasure = has_erasure;
+        Ok(())
+    }
+
     /// load detected erasures back to the simulator
     pub fn load_sparse_detected_erasures(&mut self, sparse_detected_erasures: &SparseDetectedErasures, error_model: &ErrorModel) -> Result<(), String> {
         simulator_iter_mut!(self, position, node, {
@@ -979,6 +943,41 @@ impl Simulator {
         simulator_iter_mut!(self, position, node, {
             node.has_erasure = sparse_detected_erasures.contains(position);
         });
+        Ok(())
+    }
+
+    pub fn set_error_check_result(&mut self, error_model: &ErrorModel, position: &Position, error: &ErrorType) -> Result<(), String> {
+        if error == &ErrorType::I {
+            self.get_node_mut_unwrap(position).set_error_temp(error);
+            return Ok(())
+        }
+        let mut possible = false;
+        if cfg!(debug_assertions) {
+            let error_model_node = error_model.get_node_unwrap(position);
+            let node = self.get_node_unwrap(position);
+            match error {
+                ErrorType::X => if error_model_node.pauli_error_rates.error_rate_X > 0. { possible = true; },
+                ErrorType::Y => if error_model_node.pauli_error_rates.error_rate_Y > 0. { possible = true; },
+                ErrorType::Z => if error_model_node.pauli_error_rates.error_rate_Z > 0. { possible = true; },
+                _ => unreachable!(),
+            }
+            possible |= error_model_node.erasure_error_rate > 0.;
+            possible |= error_model_node.correlated_pauli_error_rates.is_some();  // weak check
+            possible |= error_model_node.correlated_erasure_error_rates.is_some();  // weak check
+            if !possible {  // check peer only if still not possible
+                if let Some(peer_position) = node.gate_peer.as_ref() {
+                    let peer_error_model_node = error_model.get_node_unwrap(peer_position);
+                    possible |= peer_error_model_node.correlated_pauli_error_rates.is_some();  // weak check
+                    possible |= peer_error_model_node.correlated_erasure_error_rates.is_some();  // weak check
+                }
+            }
+        } else {
+            possible = true;
+        }
+        if !possible {
+            return Err(format!("setting error at {} with 0 probability is forbidden", position));
+        }
+        self.get_node_mut_unwrap(position).set_error_temp(error);
         Ok(())
     }
 

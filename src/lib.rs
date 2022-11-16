@@ -3,36 +3,6 @@
     feature(cfg_eval)
 )]
 
-#[cfg(feature="python_binding")]
-use pyo3::prelude::*;
-pub mod util;
-pub mod test;
-pub mod tool;
-pub mod types;
-pub mod web;
-pub mod cli;
-pub mod blossom_v;
-pub mod reproducible_rand;
-// pub mod distributed_uf_decoder;  TODO: migrate back
-// pub mod fpga_generator;  TODO: migrate back
-// pub mod fast_benchmark;  TODO: migrate back
-pub mod simulator;
-pub mod code_builder;
-#[macro_use] pub mod util_macros;
-pub mod model_graph;
-pub mod complete_model_graph;
-pub mod error_model;
-pub mod decoder_mwpm;
-pub mod decoder_tailored_mwpm;
-pub mod decoder_union_find;
-pub mod tailored_model_graph;
-pub mod tailored_complete_model_graph;
-pub mod error_model_builder;
-pub mod union_find;
-pub mod erasure_graph;
-pub mod decoder_fusion;
-pub mod visualize;
-
 extern crate clap;
 #[macro_use] extern crate serde_json;
 extern crate ndarray;
@@ -63,6 +33,37 @@ extern crate fusion_blossom;
 extern crate chrono;
 extern crate urlencoding;
 
+pub mod util;
+pub mod test;
+pub mod tool;
+pub mod types;
+pub mod web;
+pub mod cli;
+pub mod blossom_v;
+pub mod reproducible_rand;
+// pub mod distributed_uf_decoder;  TODO: migrate back
+// pub mod fpga_generator;  TODO: migrate back
+// pub mod fast_benchmark;  TODO: migrate back
+pub mod simulator;
+pub mod code_builder;
+#[macro_use] pub mod util_macros;
+pub mod model_graph;
+pub mod complete_model_graph;
+pub mod error_model;
+pub mod decoder_mwpm;
+pub mod decoder_tailored_mwpm;
+pub mod decoder_union_find;
+pub mod tailored_model_graph;
+pub mod tailored_complete_model_graph;
+pub mod error_model_builder;
+pub mod union_find;
+pub mod erasure_graph;
+pub mod decoder_fusion;
+pub mod visualize;
+#[cfg(feature="python_binding")]
+use pyo3::prelude::*;
+
+
 #[cfg(feature="python_binding")]
 #[pymodule]
 fn qecp(py: Python<'_>, m: &PyModule) -> PyResult<()> {
@@ -71,5 +72,6 @@ fn qecp(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     types::register(py, m)?;
     code_builder::register(py, m)?;
     error_model::register(py, m)?;
+    visualize::register(py, m)?;
     Ok(())
 }
