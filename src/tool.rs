@@ -29,6 +29,8 @@ use super::tailored_complete_model_graph::*;
 use super::error_model_builder::*;
 use super::decoder_union_find::*;
 use super::erasure_graph::*;
+use super::visualize::*;
+
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
     match matches.subcommand() {
@@ -110,10 +112,14 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
                 },
                 None => None,
             };
+            let enable_visualizer = matches.is_present("enable_visualizer");
+            let visualizer_skip_success_cases = matches.is_present("visualizer_skip_success_cases");
+            let visualizer_filename = matches.value_of_t("visualizer_filename").unwrap_or(static_visualize_data_filename());
+            let visualizer_model_graph = matches.is_present("visualizer_model_graph");
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
                 , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge, label
-                , error_model_modifier));
+                , error_model_modifier, enable_visualizer, visualizer_skip_success_cases, visualizer_filename, visualizer_model_graph));
         }
         _ => unreachable!()
     }
@@ -240,12 +246,12 @@ impl BenchmarkThreadDebugger {
     }
     /// load error to simulator, useful when debug specific case
     #[allow(dead_code)]
-    pub fn load_errors(&self, simulator: &mut Simulator) {
+    pub fn load_errors(&self, simulator: &mut Simulator, error_model: &ErrorModel) {
         if self.error_pattern.is_some() {
-            simulator.load_sparse_error_pattern(&self.error_pattern.as_ref().unwrap()).expect("success");
+            simulator.load_sparse_error_pattern(&self.error_pattern.as_ref().unwrap(), error_model).expect("success");
         }
         if self.detected_erasures.is_some() {
-            simulator.load_sparse_detected_erasures(&self.detected_erasures.as_ref().unwrap()).expect("success");
+            simulator.load_sparse_detected_erasures(&self.detected_erasures.as_ref().unwrap(), error_model).expect("success");
         }
         // propagate the errors and erasures
         simulator.propagate_errors();
@@ -256,7 +262,8 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         , parallel: usize, code_type: String, decoder: BenchmarkDecoder, decoder_config: serde_json::Value, ignore_logical_i: bool, ignore_logical_j: bool
         , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
         , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
-        , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String, error_model_modifier: Option<serde_json::Value>) -> String {
+        , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String, error_model_modifier: Option<serde_json::Value>
+        , enable_visualizer: bool, visualizer_skip_success_cases: bool, visualizer_filename: String, visualizer_model_graph: bool) -> String {
     // if parallel = 0, use all CPU resources
     let parallel = if parallel == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel };
     let parallel_init = if parallel_init == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel_init };
@@ -322,6 +329,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         output = format!("format: <p> <di> <nm> <total_repeats> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent> <pe>");
         eprintln!("{}", output);  // compatible with old scripts
     }
+    if enable_visualizer {
+        assert_eq!(configurations.len(), 1, "visualizer can only record a single configuration");
+    }
     // start running simulations
     for &(di, dj, noisy_measurements, p, pe, p_graph, pe_graph) in configurations.iter() {
         // append runtime statistics data
@@ -343,7 +353,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             }, _ => { },
         }
         // prepare simulator
-        let mut simulator = Simulator::new(CodeType::new(&code_type), BuiltinCodeInformation::new(noisy_measurements, di, dj));
+        let mut simulator = Simulator::new(CodeType::new(&code_type), CodeSize::new(noisy_measurements, di, dj));
         let mut error_model_graph = ErrorModel::new(&simulator);
         // first use p_graph and pe_graph to build decoder graph, then revert back to real error model
         let px_graph = p_graph / (1. + bias_eta) / 2.;
@@ -485,6 +495,22 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         });
         simulator.compress_error_rates(&mut error_model);  // by default compress all error rates
         let error_model = Arc::new(error_model);  // change mutability of error model
+        let mut visualizer = None;
+        if enable_visualizer {
+            print_visualize_link(visualizer_filename.clone());
+            let mut new_visualizer = Visualizer::new(Some(visualize_data_folder() + visualizer_filename.as_str())).unwrap();
+            new_visualizer.add_component(&simulator).unwrap();
+            new_visualizer.add_component(error_model.as_ref()).unwrap();
+            if visualizer_model_graph {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut model_graph = ModelGraph::new(&simulator);
+                model_graph.build(&mut simulator, Arc::clone(&error_model_graph), &config.weight_function, parallel_init
+                    , config.use_combined_probability, use_brief_edge);
+                new_visualizer.add_component(&model_graph).unwrap();
+            }
+            new_visualizer.end_component().unwrap();  // make sure the visualization file is valid even user exit the benchmark
+            visualizer = Some(Arc::new(Mutex::new(new_visualizer)));
+        }
         // prepare result variables for simulation
         let benchmark_control = Arc::new(Mutex::new(BenchmarkControl::new()));
         // setup progress bar
@@ -500,6 +526,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let error_model = Arc::clone(&error_model);
             let debug_print = Arc::clone(&debug_print);
             let log_runtime_statistics_file = log_runtime_statistics_file.clone();
+            let visualizer = visualizer.clone();
             let mut mwpm_decoder = mwpm_decoder.clone();
             let mut fusion_decoder = fusion_decoder.clone();
             let mut tailored_mwpm_decoder = tailored_mwpm_decoder.clone();
@@ -531,7 +558,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     }
                     let sparse_measurement = if error_count != 0 { simulator.generate_sparse_measurement() } else { SparseMeasurement::new() };
                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().measurement = Some(sparse_measurement.clone()); }  // runtime debug: find deadlock cases
-                    let prepare_elapsed = begin.elapsed().as_secs_f64();
+                    let simulate_elapsed = begin.elapsed().as_secs_f64();
                     // decode
                     let begin = Instant::now();
                     let (correction, mut runtime_statistics) = match decoder {
@@ -581,13 +608,32 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                             runtime_statistics["error_pattern"] = json!(simulator.generate_sparse_error_pattern());
                         }
                         runtime_statistics["elapsed"] = json!({
-                            "prepare": prepare_elapsed,
+                            "simulate": simulate_elapsed,
                             "decode": decode_elapsed,
                             "validate": validate_elapsed,
                         });
                         let to_be_written = format!("{}\n", runtime_statistics.to_string());
                         let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
                         log_runtime_statistics_file.write(to_be_written.as_bytes()).unwrap();
+                    }
+                    // update visualizer
+                    if let Some(visualizer) = &visualizer {
+                        if !visualizer_skip_success_cases || is_qec_failed {
+                            let case = json!({
+                                "error_pattern": simulator.generate_sparse_error_pattern(),
+                                "measurement": sparse_measurement,
+                                "detected_erasures": sparse_detected_erasures,
+                                "correction": correction,
+                                "qec_failed": is_qec_failed,
+                                "elapsed": {
+                                    "simulate": simulate_elapsed,
+                                    "decode": decode_elapsed,
+                                    "validate": validate_elapsed,
+                                },
+                            });
+                            let mut visualizer = visualizer.lock().unwrap();
+                            visualizer.add_case(case).unwrap();
+                        }
                     }
                     // update simulation counters, then break the loop if benchmark should terminate
                     if benchmark_control.lock().unwrap().update_data_should_terminate(is_qec_failed, max_repeats, min_failed_cases) {

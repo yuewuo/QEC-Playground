@@ -600,7 +600,7 @@ mod tests {
         let p = 0.02;
         let bias_eta = 1e200;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, BuiltinCodeInformation::new(noisy_measurements, d, d));
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -619,9 +619,9 @@ mod tests {
         let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
         if true || enable_all {  // debug 11: why cannot code distance 3 correct only 3 Z errors?
             simulator.clear_all_errors();
-            simulator.get_node_mut_unwrap(&pos!(0, 1, 3)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 3, 1)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 3, 5)).set_error_check(&error_model, &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 1, 3), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 3, 1), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 3, 5), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
@@ -640,7 +640,7 @@ mod tests {
         let p = 0.005;
         let bias_eta = 1e6;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, BuiltinCodeInformation::new(noisy_measurements, d, d));
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -659,8 +659,8 @@ mod tests {
         let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
         if false || enable_all {  // debug 7: residual decoding
             simulator.clear_all_errors();
-            simulator.get_node_mut_unwrap(&pos!(0, 7, 5)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 5, 5)).set_error_check(&error_model, &Y);
+            simulator.set_error_check(&error_model, &pos!(0, 7, 5), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 5, 5), &Y);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
@@ -671,8 +671,8 @@ mod tests {
         }
         if false || enable_all {  // debug 5: no edges in residual graph
             simulator.clear_all_errors();
-            simulator.get_node_mut_unwrap(&pos!(0, 1, 5)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 2, 4)).set_error_check(&error_model, &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 1, 5), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 2, 4), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
@@ -683,10 +683,10 @@ mod tests {
         }
         if false || enable_all {  // debug 4
             simulator.clear_all_errors();
-            simulator.get_node_mut_unwrap(&pos!(0, 5, 5)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 6, 4)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 7, 3)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 8, 4)).set_error_check(&error_model, &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 5, 5), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 6, 4), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 7, 3), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 8, 4), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
@@ -697,9 +697,9 @@ mod tests {
         }
         if false || enable_all {  // debug 3
             simulator.clear_all_errors();
-            simulator.get_node_mut_unwrap(&pos!(0, 1, 5)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 2, 6)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 6, 8)).set_error_check(&error_model, &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 1, 5), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 2, 6), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 6, 8), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
@@ -710,10 +710,10 @@ mod tests {
         }
         if false || enable_all {  // debug 2.5
             simulator.clear_all_errors();
-            simulator.get_node_mut_unwrap(&pos!(0, 7, 7)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 6, 6)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 5, 5)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 4, 4)).set_error_check(&error_model, &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 7, 7), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 6, 6), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 5, 5), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 4, 4), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
@@ -724,9 +724,9 @@ mod tests {
         }
         if false || enable_all {  // debug 2
             simulator.clear_all_errors();
-            simulator.get_node_mut_unwrap(&pos!(0, 6, 6)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 6, 8)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 8, 6)).set_error_check(&error_model, &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 6, 6), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 6, 8), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 8, 6), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             assert_eq!(sparse_measurement.to_vec(), vec![pos!(6, 5, 6), pos!(6, 5, 8), pos!(6, 6, 5), pos!(6, 7, 8), pos!(6, 8, 5), pos!(6, 9, 6)]);
@@ -738,8 +738,8 @@ mod tests {
         }
         if false || enable_all {  // debug 1
             simulator.clear_all_errors();
-            simulator.get_node_mut_unwrap(&pos!(0, 4, 4)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 5, 3)).set_error_check(&error_model, &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 4, 4), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 5, 3), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             assert_eq!(sparse_measurement.to_vec(), vec![pos!(6, 3, 4), pos!(6, 4, 5), pos!(6, 5, 2), pos!(6, 6, 3)]);
@@ -758,7 +758,7 @@ mod tests {
         let p = 0.01;
         let bias_eta = 10.;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, BuiltinCodeInformation::new(noisy_measurements, d, d));
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -776,8 +776,8 @@ mod tests {
         let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
         {  // debug 9: failing case: {"[0][7][5]":"Y","[0][8][4]":"Z"}
             simulator.clear_all_errors();
-            simulator.get_node_mut_unwrap(&pos!(0, 7, 5)).set_error_check(&error_model, &Y);
-            simulator.get_node_mut_unwrap(&pos!(0, 8, 4)).set_error_check(&error_model, &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 7, 5), &Y);
+            simulator.set_error_check(&error_model, &pos!(0, 8, 4), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             println!("sparse_measurement: {:?}", sparse_measurement);
@@ -789,9 +789,9 @@ mod tests {
         }
         if false {  // debug 8: residual decoding with charged node
             simulator.clear_all_errors();
-            simulator.get_node_mut_unwrap(&pos!(0, 6, 4)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 5, 5)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 4, 6)).set_error_check(&error_model, &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 6, 4), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 5, 5), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 4, 6), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             println!("sparse_measurement: {:?}", sparse_measurement);
@@ -811,7 +811,7 @@ mod tests {
         let p = 0.05;
         let bias_eta = 10.;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, BuiltinCodeInformation::new(noisy_measurements, d, d));
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -829,11 +829,11 @@ mod tests {
         let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
         {  // debug 10: infinite loop case
             simulator.clear_all_errors();
-            simulator.get_node_mut_unwrap(&pos!(0, 6, 4)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 6, 8)).set_error_check(&error_model, &Y);
-            simulator.get_node_mut_unwrap(&pos!(0, 8, 6)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 10, 8)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 11, 9)).set_error_check(&error_model, &Y);
+            simulator.set_error_check(&error_model, &pos!(0, 6, 4), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 6, 8), &Y);
+            simulator.set_error_check(&error_model, &pos!(0, 8, 6), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 10, 8), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 11, 9), &Y);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             println!("sparse_measurement: {:?}", sparse_measurement);
@@ -852,7 +852,7 @@ mod tests {
         let p = 1.99053585e-01;
         let bias_eta = 1e200;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, BuiltinCodeInformation::new(noisy_measurements, d, d));
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -868,10 +868,10 @@ mod tests {
             "precompute_complete_model_graph": true,
         });
         let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
-        // let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[0][10][13]":"Z","[0][10][7]":"Z","[0][10][8]":"Z","[0][11][11]":"Z","[0][11][1]":"Z","[0][11][5]":"Z","[0][11][7]":"Z","[0][11][9]":"Z","[0][12][12]":"Z","[0][12][14]":"Z","[0][12][5]":"Z","[0][13][20]":"Z","[0][14][11]":"Z","[0][14][12]":"Z","[0][14][14]":"Z","[0][14][17]":"Z","[0][15][10]":"Z","[0][15][14]":"Z","[0][15][15]":"Z","[0][15][7]":"Z","[0][16][16]":"Z","[0][16][5]":"Z","[0][17][11]":"Z","[0][17][14]":"Z","[0][17][15]":"Z","[0][18][11]":"Z","[0][18][8]":"Z","[0][19][10]":"Z","[0][19][12]":"Z","[0][4][8]":"Z","[0][5][12]":"Z","[0][5][13]":"Z","[0][5][14]":"Z","[0][6][13]":"Z","[0][6][14]":"Z","[0][6][6]":"Z","[0][6][8]":"Z","[0][6][9]":"Z","[0][7][11]":"Z","[0][7][15]":"Z","[0][8][15]":"Z","[0][8][17]":"Z","[0][8][6]":"Z","[0][8][7]":"Z","[0][9][12]":"Z","[0][9][15]":"Z","[0][9][16]":"Z","[0][9][17]":"Z","[0][9][18]":"Z","[0][9][2]":"Z","[0][9][3]":"Z","[0][9][5]":"Z","[0][9][6]":"Z"}"#).unwrap();
-        let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[0][10][17]":"Z","[0][10][9]":"Z","[0][11][13]":"Z","[0][11][15]":"Z","[0][11][16]":"Z","[0][11][3]":"Z","[0][12][12]":"Z","[0][12][16]":"Z","[0][12][18]":"Z","[0][12][9]":"Z","[0][13][10]":"Z","[0][13][11]":"Z","[0][13][20]":"Z","[0][13][7]":"Z","[0][13][9]":"Z","[0][14][10]":"Z","[0][14][14]":"Z","[0][14][18]":"Z","[0][14][4]":"Z","[0][14][6]":"Z","[0][14][7]":"Z","[0][15][10]":"Z","[0][15][11]":"Z","[0][15][15]":"Z","[0][15][18]":"Z","[0][15][6]":"Z","[0][16][10]":"Z","[0][16][14]":"Z","[0][16][15]":"Z","[0][17][11]":"Z","[0][17][14]":"Z","[0][17][8]":"Z","[0][17][9]":"Z","[0][19][10]":"Z","[0][1][10]":"Z","[0][1][11]":"Z","[0][20][12]":"Z","[0][21][11]":"Z","[0][21][12]":"Z","[0][4][10]":"Z","[0][5][12]":"Z","[0][6][12]":"Z","[0][6][15]":"Z","[0][7][15]":"Z","[0][7][4]":"Z","[0][7][9]":"Z","[0][8][11]":"Z","[0][8][12]":"Z","[0][8][15]":"Z","[0][9][10]":"Z","[0][9][14]":"Z","[0][9][15]":"Z","[0][9][16]":"Z"}"#).unwrap();
+        // let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[0][10][13]":"Z","[0][10][7]":"Z","[0][10][8]":"Z","[0][11][11]":"Z","[0][11][1]":"Z","[0][11][5]":"Z","[0][11][7]":"Z","[0][11][9]":"Z","[0][12][12]":"Z","[0][12][14]":"Z","[0][12][5]":"Z","[0][13][20]":"Z","[0][14][11]":"Z","[0][14][12]":"Z","[0][14][14]":"Z","[0][14][17]":"Z","[0][15][10]":"Z","[0][15][14]":"Z","[0][15][15]":"Z","[0][15][7]":"Z","[0][16][16]":"Z","[0][16][5]":"Z","[0][17][11]":"Z","[0][17][14]":"Z","[0][17][15]":"Z","[0][18][11]":"Z","[0][18][8]":"Z","[0][19][10]":"Z","[0][19][12]":"Z","[0][4][8]":"Z",,"[0][5][13]":"Z","[0][5][14]":"Z","[0][6][13]":"Z","[0][6][14]":"Z","[0][6][6]":"Z","[0][6][8]":"Z","[0][6][9]":"Z","[0][7][11]":"Z","[0][7][15]":"Z","[0][8][15]":"Z","[0][8][17]":"Z","[0][8][6]":"Z","[0][8][7]":"Z","[0][9][12]":"Z","[0][9][15]":"Z","[0][9][16]":"Z","[0][9][17]":"Z","[0][9][18]":"Z","[0][9][2]":"Z","[0][9][3]":"Z","[0][9][5]":"Z","[0][9][6]":"Z"}"#).unwrap();
+        let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[0][11][13]":"Z","[0][11][15]":"Z","[0][11][3]":"Z","[0][12][12]":"Z","[0][12][16]":"Z","[0][12][18]":"Z","[0][13][11]":"Z","[0][13][7]":"Z","[0][13][9]":"Z","[0][14][10]":"Z","[0][14][14]":"Z","[0][14][18]":"Z","[0][14][4]":"Z","[0][14][6]":"Z","[0][15][11]":"Z","[0][15][15]":"Z","[0][16][10]":"Z","[0][16][14]":"Z","[0][17][11]":"Z","[0][17][9]":"Z","[0][1][11]":"Z","[0][20][12]":"Z","[0][21][11]":"Z","[0][4][10]":"Z","[0][6][12]":"Z","[0][7][15]":"Z","[0][7][9]":"Z","[0][8][12]":"Z","[0][9][15]":"Z"}"#).unwrap();
         // println!("{:?}", error_pattern);
-        simulator.load_sparse_error_pattern(&error_pattern).unwrap();
+        simulator.load_sparse_error_pattern(&error_pattern, &error_model).unwrap();
         simulator.propagate_errors();
         let sparse_measurement = simulator.generate_sparse_measurement();
         let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
@@ -888,7 +888,7 @@ mod tests {
         let p = 0.005;
         let bias_eta = 1e6;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::PeriodicRotatedTailoredCode, BuiltinCodeInformation::new(noisy_measurements, d+1, d+1));
+        let mut simulator = Simulator::new(CodeType::PeriodicRotatedTailoredCode, CodeSize::new(noisy_measurements, d+1, d+1));
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -906,10 +906,10 @@ mod tests {
         let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
         {
             simulator.clear_all_errors();
-            simulator.get_node_mut_unwrap(&pos!(0, 7, 7)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 6, 6)).set_error_check(&error_model, &Z);
-            // simulator.get_node_mut_unwrap(&pos!(0, 5, 5)).set_error_check(&error_model, &Z);
-            // simulator.get_node_mut_unwrap(&pos!(0, 4, 4)).set_error_check(&error_model, &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 7, 7), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 6, 6), &Z);
+            // simulator.set_error_check(&error_model, &pos!(0, 5, 5), &Z);
+            // simulator.set_error_check(&error_model, &pos!(0, 4, 4), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
@@ -927,7 +927,7 @@ mod tests {
         let p = 0.001;
         let bias_eta = 1e200;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::PeriodicRotatedTailoredCode, BuiltinCodeInformation::new(noisy_measurements, d+1, d+1));
+        let mut simulator = Simulator::new(CodeType::PeriodicRotatedTailoredCode, CodeSize::new(noisy_measurements, d+1, d+1));
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -945,8 +945,8 @@ mod tests {
         let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
         {  // debug: why 2 Z errors can cause logical error?
             simulator.clear_all_errors();
-            simulator.get_node_mut_unwrap(&pos!(0, 4, 4)).set_error_check(&error_model, &Z);
-            simulator.get_node_mut_unwrap(&pos!(0, 8, 0)).set_error_check(&error_model, &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 4, 4), &Z);
+            simulator.set_error_check(&error_model, &pos!(0, 8, 0), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
@@ -955,6 +955,42 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
+    }
+
+    #[test]
+    fn tailored_mwpm_decoder_debug_1() {  // cargo test tailored_mwpm_decoder_debug_1 -- --nocapture
+        let d = 5;
+        let noisy_measurements = 0;
+        let p = 0.05;
+        let bias_eta = 1e300;
+        // build simulator
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, d, d));
+        code_builder_sanity_check(&simulator).unwrap();
+        // build error model
+        let mut error_model = ErrorModel::new(&simulator);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = p - 2. * px;
+        simulator.set_error_rates(&mut error_model, px, py, pz, 0.);
+        simulator.compress_error_rates(&mut error_model);
+        error_model_sanity_check(&simulator, &error_model).unwrap();
+        let error_model = Arc::new(error_model);
+        // build decoder
+        let decoder_config = json!({
+            "precompute_complete_model_graph": true,
+        });
+        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
+        let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[0][1][5]":"Z","[0][2][4]":"Z","[0][5][1]":"Z","[0][5][9]":"Z","[0][8][4]":"Z","[0][9][5]":"Z"}"#).unwrap();
+        // println!("{:?}", error_pattern);
+        simulator.load_sparse_error_pattern(&error_pattern, &error_model).unwrap();
+        simulator.propagate_errors();
+        let sparse_measurement = simulator.generate_sparse_measurement();
+        let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
+        println!("{:?}", correction);
+        code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
+        // the logical error makes sense... it is the decoder design itself that causes this problem
+        // let (logical_i, logical_j) = simulator.validate_correction(&correction);
+        // assert!(!logical_i && !logical_j);
     }
 
 }

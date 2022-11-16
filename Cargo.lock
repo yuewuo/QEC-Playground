@@ -1215,6 +1215,7 @@ dependencies = [
  "bytes",
  "cc",
  "cfg-if",
+ "chrono",
  "clap",
  "derivative",
  "derive_more",
@@ -1238,6 +1239,7 @@ dependencies = [
  "serde-hashkey",
  "serde_json",
  "shlex",
+ "urlencoding",
 ]
 
 [[package]]

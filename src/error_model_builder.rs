@@ -65,19 +65,20 @@ impl ErrorModelBuilder {
                 }
                 simulator_iter_real!(simulator, position, node, {
                     error_model.set_node(position, Some(noiseless_node.clone()));  // clear existing noise model
-                    if position.t < simulator.height - simulator.measurement_cycles {  // no error at the final perfect measurement round
-                        if position.t % simulator.measurement_cycles == 0 && node.qubit_type == QubitType::Data {
-                            error_model.set_node(position, Some(biased_node.clone()));
-                        }
-                        if (position.t + 1) % simulator.measurement_cycles == 0 && node.qubit_type != QubitType::Data {  // measurement error must happen before measurement round
-                            error_model.set_node(position, Some(pure_measurement_node.clone()));
-                        }
+                    if position.t >= simulator.height - simulator.measurement_cycles {  // no error at the final perfect measurement round
+                        continue
+                    }
+                    if position.t % simulator.measurement_cycles == 0 && node.qubit_type == QubitType::Data {
+                        error_model.set_node(position, Some(biased_node.clone()));
+                    }
+                    if (position.t + 1) % simulator.measurement_cycles == 0 && node.qubit_type != QubitType::Data {  // measurement error must happen before measurement round
+                        error_model.set_node(position, Some(pure_measurement_node.clone()));
                     }
                 });
             },
             ErrorModelBuilder::TailoredScBellInitPhenomenological => {
                 let (noisy_measurements, dp, dn) = match simulator.code_type {
-                    CodeType::RotatedTailoredCode => { (simulator.builtin_code_information.noisy_measurements, simulator.builtin_code_information.di, simulator.builtin_code_information.dj) }
+                    CodeType::RotatedTailoredCode => { (simulator.code_size.noisy_measurements, simulator.code_size.di, simulator.code_size.dj) }
                     _ => unimplemented!("tailored surface code with Bell state initialization is only implemented for open-boundary rotated tailored surface code")
                 };
                 assert!(noisy_measurements > 0, "to simulate bell initialization, noisy measurement must be set +1 (e.g. set noisy measurement 1 is equivalent to 0 noisy measurements)");

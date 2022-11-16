@@ -4,8 +4,8 @@ di = 7
 dj = 5
 noisy_measurements = 3
 code_type = qecp.CodeType.StandardPlanarCode
-builtin_code_info = qecp.BuiltinCodeInformation(noisy_measurements, di+1, dj+1)
-simulator = qecp.Simulator(code_type, builtin_code_info)
+code_size = qecp.CodeSize(noisy_measurements, di+1, dj+1)
+simulator = qecp.Simulator(code_type, code_size)
 simulator.set_nodes(qecp.Position(0, 1, 1), qecp.ErrorType.Z)
 simulator.propagate_errors()
 measurement = simulator.generate_sparse_measurement()

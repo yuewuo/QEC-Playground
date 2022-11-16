@@ -234,7 +234,7 @@ mod tests {
         let p = 0.;
         let pe = 0.1;
         // build simulator
-        let mut simulator = Simulator::new(CodeType::StandardPlanarCode, BuiltinCodeInformation::new(noisy_measurements, d, d));
+        let mut simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build error model
         let mut error_model = ErrorModel::new(&simulator);
@@ -248,9 +248,9 @@ mod tests {
         let mut mwpm_decoder = MWPMDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
         // load errors onto the simulator
         let sparse_error_pattern: SparseErrorPattern = serde_json::from_value(json!({"[0][1][5]":"Z","[0][2][6]":"Z","[0][4][4]":"X","[0][5][7]":"X","[0][9][7]":"Y"})).unwrap();
-        let sparse_detected_erasures: SparseDetectedErasures = serde_json::from_value(json!({"erasures":["[0][1][3]","[0][1][5]","[0][2][6]","[0][4][4]","[0][5][7]","[0][6][6]","[0][9][7]"]})).unwrap();
-        simulator.load_sparse_error_pattern(&sparse_error_pattern).expect("success");
-        simulator.load_sparse_detected_erasures(&sparse_detected_erasures).expect("success");
+        let sparse_detected_erasures: SparseDetectedErasures = serde_json::from_value(json!(["[0][1][3]","[0][1][5]","[0][2][6]","[0][4][4]","[0][5][7]","[0][6][6]","[0][9][7]"])).unwrap();
+        simulator.load_sparse_error_pattern(&sparse_error_pattern, &error_model).expect("success");
+        simulator.load_sparse_detected_erasures(&sparse_detected_erasures, &error_model).expect("success");
         simulator.propagate_errors();
         let sparse_measurement = simulator.generate_sparse_measurement();
         println!("sparse_measurement: {:?}", sparse_measurement);

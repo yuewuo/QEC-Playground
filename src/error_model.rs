@@ -11,6 +11,8 @@ use super::types::*;
 use serde::{Serialize, Deserialize};
 use super::code_builder::*;
 use std::sync::Arc;
+use crate::visualize::*;
+
 
 /// describing an error model, strictly corresponding to an instance of `Simulator`
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -18,6 +20,34 @@ use std::sync::Arc;
 pub struct ErrorModel {
     /// each error model node corresponds to a simulator node, this allows immutable sharing between threads
     pub nodes: Vec::< Vec::< Vec::< Option<Arc <ErrorModelNode> > > > >,
+}
+
+impl QecpVisualizer for ErrorModel {
+    fn component_info(&self, abbrev: bool) -> (String, serde_json::Value) {
+        let name = "error_model";
+        let info = json!({
+            "nodes": (0..self.nodes.len()).map(|t| {
+                (0..self.nodes[t].len()).map(|i| {
+                    (0..self.nodes[t][i].len()).map(|j| {
+                        let position = &pos!(t, i, j);
+                        if self.is_node_exist(position) {
+                            let node = self.get_node_unwrap(position);
+                            Some(json!({
+                                if abbrev { "p" } else { "position" }: position,  // for readability
+                                if abbrev { "pp" } else { "pauli_error_rates" }: node.pauli_error_rates,
+                                if abbrev { "pe" } else { "erasure_error_rate" }: node.erasure_error_rate,
+                                if abbrev { "corr_pp" } else { "correlated_pauli_error_rates" }: node.correlated_pauli_error_rates,
+                                if abbrev { "corr_pe" } else { "correlated_erasure_error_rates" }: node.correlated_erasure_error_rates,
+                            }))
+                        } else {
+                            None
+                        }
+                    }).collect::<Vec<Option<serde_json::Value>>>()
+                }).collect::<Vec<Vec<Option<serde_json::Value>>>>()
+            }).collect::<Vec<Vec<Vec<Option<serde_json::Value>>>>>()
+        });
+        (name.to_string(), info)
+    }
 }
 
 /// error model node corresponds to 
@@ -89,7 +119,26 @@ impl ErrorModel {
     }
 }
 
-impl ErrorModel{
+impl ErrorModel {
+
+    /// judge if `[t][i][j]` is valid index of `self.nodes`
+    #[inline]
+    pub fn is_valid_position(&self, position: &Position) -> bool {
+        position.t < self.nodes.len() && position.i < self.nodes[position.t].len() && position.j < self.nodes[position.t][position.i].len()
+    }
+
+    /// judge if `self.nodes[t][i][j]` is `Some(_)`
+    #[inline]
+    pub fn is_node_exist(&self, position: &Position) -> bool {
+        self.is_valid_position(position) && self.get_node(position).is_some()
+    }
+
+    /// get `self.nodes[t][i][j]` without position check when compiled in release mode
+    #[inline]
+    pub fn get_node(&'_ self, position: &Position) -> &'_ Option<Arc<ErrorModelNode>> {
+        &self.nodes[position.t][position.i][position.j]
+    }
+
     /// get reference `self.nodes[t][i][j]` and then unwrap
     pub fn get_node_unwrap(&'_ self, position: &Position) -> &'_ ErrorModelNode {
         self.nodes[position.t][position.i][position.j].as_ref().unwrap()
@@ -109,8 +158,8 @@ impl ErrorModel{
 /// check if error rates are not zero at perfect measurement ranges or at (always) virtual nodes,
 /// also check for error rate constrains on virtual nodes
 pub fn error_model_sanity_check(simulator: &Simulator, error_model: &ErrorModel) -> Result<(), String> {
-    match simulator.builtin_code_information {
-        BuiltinCodeInformation{ noisy_measurements, .. } => {
+    match simulator.code_size {
+        CodeSize { noisy_measurements, .. } => {
             // check that no errors present in the final perfect measurement rounds
             let expected_height = simulator.measurement_cycles * (noisy_measurements + 1) + 1;
             if simulator.height != expected_height {
