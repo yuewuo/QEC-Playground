@@ -7,8 +7,6 @@
 //! for how to embed picture in cargo doc
 //! 
 
-#[cfg(feature="python_binding")]
-use super::pyo3::prelude::*;
 use super::simulator::*;
 use serde::{Serialize, Deserialize};
 use super::types::*;
@@ -16,6 +14,8 @@ use super::util_macros::*;
 use super::clap::{PossibleValue};
 use ErrorType::*;
 use super::visualize::*;
+#[cfg(feature="python_binding")]
+use pyo3::prelude::*;
 
 
 /// commonly used code type that has built-in functions to automatically build up the simulator.
@@ -45,11 +45,15 @@ pub enum CodeType {
 }
 
 /// code size information
+#[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pyclass)]
 #[derive(Debug, Serialize, Clone)]
 pub struct CodeSize {
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub noisy_measurements: usize,
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub di: usize,
+    #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub dj: usize,
 }
 
@@ -1284,9 +1288,10 @@ pub fn code_builder_sanity_check_correction(simulator: &mut Simulator, correctio
 
 #[cfg(feature="python_binding")]
 #[pyfunction]
-pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+pub(crate) fn register(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<CodeType>()?;
     m.add_class::<CodeSize>()?;
+    use crate::pyo3::PyTypeInfo;
     m.add("BuiltinCodeInformation", CodeSize::type_object(py))?;  // backward compatibility
     Ok(())
 }  

@@ -85,21 +85,6 @@ impl Visualizer {
         })
     }
 
-    /// add component to the visualizer; each component should be independent
-    pub fn add_component(&mut self, component: &impl QecpVisualizer) -> std::io::Result<()> {
-        assert!(!self.component_done);
-        let abbrev = true;
-        if let Some(file) = self.file.as_mut() {
-            file.seek(SeekFrom::End(-1))?;  // move the cursor before the ending }
-            let (name, component_info) = component.component_info(abbrev);
-            file.write_all(format!(",\"{}\":", name).as_bytes())?;
-            file.write_all(json!(component_info).to_string().as_bytes())?;
-            file.write_all(b"}")?;
-            file.sync_all()?;
-        }
-        Ok(())
-    }
-
     pub fn end_component(&mut self) -> std::io::Result<()> {
         assert!(!self.component_done);
         self.component_done = true;
@@ -119,6 +104,25 @@ impl Visualizer {
                 },
             }).to_string().as_bytes())?;
             file.write_all(b"]}")?;
+            file.sync_all()?;
+        }
+        Ok(())
+    }
+
+}
+
+impl Visualizer {
+
+    /// add component to the visualizer; each component should be independent
+    pub fn add_component(&mut self, component: &impl QecpVisualizer) -> std::io::Result<()> {
+        assert!(!self.component_done);
+        let abbrev = true;
+        if let Some(file) = self.file.as_mut() {
+            file.seek(SeekFrom::End(-1))?;  // move the cursor before the ending }
+            let (name, component_info) = component.component_info(abbrev);
+            file.write_all(format!(",\"{}\":", name).as_bytes())?;
+            file.write_all(json!(component_info).to_string().as_bytes())?;
+            file.write_all(b"}")?;
             file.sync_all()?;
         }
         Ok(())
