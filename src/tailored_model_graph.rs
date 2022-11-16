@@ -190,7 +190,9 @@ impl TailoredModelGraph {
                     }
                     // println!("{:?} at {} will cause measurement errors: real {:?} and virtual {:?}", error, position, sparse_measurement_real, sparse_measurement_virtual);
                     let sparse_measurement: Vec<&Position> = sparse_measurement_real.iter().chain(sparse_measurement_virtual.iter()).collect();
-                    assert!(sparse_measurement.len() == 2 || sparse_measurement.len() == 4, "I don't know how to handle other cases, so strictly check it");
+                    // println!("sparse_measurement.len(): {}", sparse_measurement.len());
+                    // assert!(sparse_measurement.len() == 2 || sparse_measurement.len() == 4, "I don't know how to handle other cases, so strictly check it");
+                    // Yue 2022.7.11: Bell init with circuit-level noise may generate 6 or 8 non-trivial measurements, so I removed this assertion
                     if sparse_measurement.len() == 2 {
                         let position1 = &sparse_measurement[0];
                         let position2 = &sparse_measurement[1];

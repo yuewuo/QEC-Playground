@@ -24,9 +24,9 @@ use super::visualize::*;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum CodeType {
-    ///noisy measurement rounds (excluding the final perfect measurement cap), vertical code dsitance, horizontal code distance
+    ///noisy measurement rounds (excluding the final perfect measurement cap), vertical code distance, horizontal code distance
     StandardPlanarCode,
-    /// noisy meausrement rounds (excluding the final perfect emasurement cap), +i+j axis code distance, +i-j axis code dsitance
+    /// noisy measurement rounds (excluding the final perfect measurement cap), +i+j axis code distance, +i-j axis code distance
     RotatedPlanarCode,
     /// noisy measurement rounds (excluding the final perfect measurement cap), vertical code distance, horizontal code distance
     StandardXZZXCode,
@@ -36,6 +36,8 @@ pub enum CodeType {
     StandardTailoredCode,
     /// noisy measurement rounds (excluding the final perfect measurement cap), +i+j axis code distance, +i-j axis code distance
     RotatedTailoredCode,
+    /// same as RotatedTailoredCode but with first measurement cycle modified for bell state initialization
+    RotatedTailoredCodeBellInit,
     /// periodic boundary condition of rotated tailored surface code, code distances must be even number
     PeriodicRotatedTailoredCode,
     /// unknown code type, user must provide necessary information and build circuit-level implementation
@@ -70,7 +72,7 @@ impl CodeType {
     /// get position on the left of (i, j), note that this position may be invalid for open-boundary code if it doesn't exist
     pub fn get_left(&self, i: usize, j: usize, code_size: &CodeSize) -> (usize, usize) {
         match self {
-            &CodeType::RotatedTailoredCode => {
+            &CodeType::RotatedTailoredCode | &CodeType::RotatedTailoredCodeBellInit => {
                 if j > 0 {
                     (i, j - 1)
                 } else {
@@ -96,7 +98,7 @@ impl CodeType {
     /// get position up the position (i, j), note that this position may be invalid for open-boundary code if it doesn't exist
     pub fn get_up(&self, i: usize, j: usize, code_size: &CodeSize) -> (usize, usize) {
         match self {
-            &CodeType::RotatedTailoredCode => {
+            &CodeType::RotatedTailoredCode | &CodeType::RotatedTailoredCodeBellInit => {
                 if i > 0 {
                     (i - 1, j)
                 } else {
@@ -124,7 +126,7 @@ impl CodeType {
     /// get position on the right of (i, j), note that this position may be invalid for open-boundary code if it doesn't exist
     pub fn get_right(&self, i: usize, j: usize, code_size: &CodeSize) -> (usize, usize) {
         match self {
-            &CodeType::RotatedTailoredCode => {
+            &CodeType::RotatedTailoredCode | &CodeType::RotatedTailoredCodeBellInit => {
                 (i, j + 1)
             },
             &CodeType::PeriodicRotatedTailoredCode => {
@@ -146,7 +148,7 @@ impl CodeType {
     /// get position down the position (i, j), note that this position may be invalid for open-boundary code if it doesn't exist
     pub fn get_down(&self, i: usize, j: usize, code_size: &CodeSize) -> (usize, usize) {
         match self {
-            &CodeType::RotatedTailoredCode => {
+            &CodeType::RotatedTailoredCode | &CodeType::RotatedTailoredCodeBellInit => {
                 (i + 1, j)
             },
             &CodeType::PeriodicRotatedTailoredCode => {
@@ -388,14 +390,15 @@ pub fn build_code(simulator: &mut Simulator) {
             simulator.height = height;
             simulator.nodes = nodes;
         },
-        &CodeType::StandardTailoredCode | &CodeType::RotatedTailoredCode => {
+        &CodeType::StandardTailoredCode | &CodeType::RotatedTailoredCode | &CodeType::RotatedTailoredCodeBellInit => {
             let di = code_size.di;
             let dj = code_size.dj;
             let noisy_measurements = code_size.noisy_measurements;
             simulator.measurement_cycles = 6;
             assert!(di > 0, "code distance must be positive integer");
             assert!(dj > 0, "code distance must be positive integer");
-            let is_rotated = matches!(code_type, CodeType::RotatedTailoredCode { .. });
+            let is_rotated = matches!(code_type, CodeType::RotatedTailoredCode { .. }) || matches!(code_type, CodeType::RotatedTailoredCodeBellInit { .. });
+            let is_bell_init = matches!(code_type, CodeType::RotatedTailoredCodeBellInit { .. });
             if is_rotated {
                 assert!(di % 2 == 1, "code distance must be odd integer, current: di = {}", di);
                 assert!(dj % 2 == 1, "code distance must be odd integer, current: dj = {}", dj);
@@ -459,6 +462,33 @@ pub fn build_code(simulator: &mut Simulator) {
                 assert!(!(is_this_real && is_this_virtual), "a position cannot be both real and virtual");
                 is_this_real || is_this_virtual
             };
+            // some criteria for bell init 
+            let is_bell_init_anc = |i: usize, j: usize| -> bool { 
+                is_real(i, j) 
+                && i - j < dj - 3 
+                && ((i % 4 == 1 && j % 4 == 0) || (i % 4 == 3 && j % 4 == 2))
+            };
+            let is_bell_init_top = |i: usize, j: usize| -> bool { 
+                is_real(i, j) 
+                && i - j < dj - 1
+                && ((i % 4 == 0 && j % 4 == 0) || (i % 4 == 2 && j % 4 == 2)) 
+            };
+            let is_bell_init_left = |i: usize, j: usize| -> bool {
+                is_real(i, j) 
+                && i - j < dj - 1
+                && ((i % 4 == 1 && j % 4 == 3) || (i % 4 == 3 && j % 4 == 1))  
+            };
+            let is_bell_init_right = |i: usize, j: usize| -> bool {
+                is_real(i, j) 
+                && i - j < dj - 1
+                && ((i % 4 == 1 && j % 4 == 1) || (i % 4 == 3 && j % 4 == 3))  
+            };
+            let is_bell_init_bot = |i: usize, j: usize| -> bool { 
+                is_real(i, j) 
+                && i - j < dj - 1
+                && ((i % 4 == 2 && j % 4 == 0) || (i % 4 == 0 && j % 4 == 2))  
+            };
+
             for t in 0..height {
                 let mut row_i = Vec::with_capacity(vertical);
                 for i in 0..vertical {
@@ -497,76 +527,141 @@ pub fn build_code(simulator: &mut Simulator) {
                                     (false, None)
                                 }
                             };
-                            match t % simulator.measurement_cycles {
-                                1 => {  // initialization
-                                    match qubit_type {
-                                        QubitType::StabY => { gate_type = GateType::InitializeX; }
-                                        QubitType::StabX => { gate_type = GateType::InitializeX; }
-                                        QubitType::Data => { }
-                                        _ => { unreachable!() }
-                                    }
-                                },
-                                2 => {  // gate 1
-                                    if qubit_type == QubitType::Data {
-                                        if i+1 < vertical && is_present(i+1, j) {
-                                            gate_type = if j % 2 == 1 { GateType::CXGateTarget } else { GateType::CYGateTarget };
+                            if is_bell_init && t > 0 && t <= simulator.measurement_cycles {
+                                 // code_type is BellInit and t < measurement_cycle for init circuit
+                                match t % simulator.measurement_cycles {
+                                    1 => { // anc to top
+                                        if is_bell_init_anc(i, j) && is_bell_init_top(i-1, j) {
+                                            gate_type = GateType::CXGateControl;
+                                            gate_peer = Some(pos!(t, i-1, j));
+                                        } else if is_bell_init_top(i, j) && is_bell_init_anc(i+1, j) {
+                                            gate_type = GateType::CXGateTarget;
+                                            gate_peer = Some(pos!(t, i+1, j));
+                                        } else {
+                                            match qubit_type {
+                                                QubitType::StabY => { gate_type = GateType::InitializeX; }
+                                                QubitType::StabX => { gate_type = GateType::InitializeX; }
+                                                QubitType::Data => { }
+                                                _ => { unreachable!() }
+                                            }
+                                        }
+                                    },
+                                    2 => { // anc to left
+                                        if is_bell_init_anc(i, j) && is_bell_init_left(i, j-1) {
+                                                gate_type = GateType::CXGateControl;
+                                                gate_peer = Some(pos!(t, i, j-1));
+                                        }
+                                        if is_bell_init_left(i, j) && is_bell_init_anc(i, j+1) {
+                                                gate_type = GateType::CXGateTarget;
+                                                gate_peer = Some(pos!(t, i, j+1));
+                                        }
+                                    },
+                                    3 => { // anc to right
+                                        if is_bell_init_anc(i, j) && is_bell_init_right(i, j+1) {
+                                                gate_type = GateType::CXGateControl;
+                                                gate_peer = Some(pos!(t, i, j+1));
+                                        }
+                                        if is_bell_init_right(i, j) && is_bell_init_anc(i, j-1) {
+                                                gate_type = GateType::CXGateTarget;
+                                                gate_peer = Some(pos!(t, i, j-1));
+                                        }
+                                    },
+                                    4 | 0 => { // anc to bot
+                                        if is_bell_init_anc(i, j) && is_bell_init_bot(i+1, j) {
+                                            gate_type = GateType::CXGateControl;
                                             gate_peer = Some(pos!(t, i+1, j));
                                         }
-                                    } else {
-                                        if i >= 1 && is_present(i-1, j) {
-                                            gate_type = if j % 2 == 1 { GateType::CXGateControl } else { GateType::CYGateControl };
+                                        if is_bell_init_bot(i, j) && is_bell_init_anc(i-1, j) {
+                                            gate_type = GateType::CXGateTarget;
                                             gate_peer = Some(pos!(t, i-1, j));
                                         }
-                                    }
-                                },
-                                3 => {  // gate 2
-                                    if j % 2 == 1 {  // operate with right
-                                        if is_present(i, j+1) {
-                                            gate_type = if qubit_type == QubitType::Data { GateType::CYGateTarget } else { GateType::CXGateControl };
-                                            gate_peer = Some(pos!(t, i, j+1));
-                                        }
-                                    } else {  // operate with left
-                                        if j >= 1 && is_present(i, j-1) {
-                                            gate_type = if qubit_type == QubitType::Data { GateType::CXGateTarget } else { GateType::CYGateControl };
-                                            gate_peer = Some(pos!(t, i, j-1));
-                                        }
-                                    }
-                                },
-                                4 => {  // gate 3
-                                    if j % 2 == 1 {  // operate with left
-                                        if j >= 1 && is_present(i, j-1) {
-                                            gate_type = if qubit_type == QubitType::Data { GateType::CYGateTarget } else { GateType::CXGateControl };
-                                            gate_peer = Some(pos!(t, i, j-1));
-                                        }
-                                    } else {  // operate with right
-                                        if is_present(i, j+1) {
-                                            gate_type = if qubit_type == QubitType::Data { GateType::CXGateTarget } else { GateType::CYGateControl };
-                                            gate_peer = Some(pos!(t, i, j+1));
-                                        }
-                                    }
-                                },
-                                5 => {  // gate 4
-                                    if qubit_type == QubitType::Data {
-                                        if i >= 1 && is_present(i-1, j) {
-                                            gate_type = if j % 2 == 1 { GateType::CXGateTarget } else { GateType::CYGateTarget };
-                                            gate_peer = Some(pos!(t, i-1, j));
-                                        }
-                                    } else {
-                                        if i+1 < vertical && is_present(i+1, j) {
-                                            gate_type = if j % 2 == 1 { GateType::CXGateControl } else { GateType::CYGateControl };
+                                    },
+                                    5 => { // bot to anc
+                                        if is_bell_init_anc(i, j) && is_bell_init_bot(i+1, j) {
+                                            gate_type = GateType::CXGateTarget;
                                             gate_peer = Some(pos!(t, i+1, j));
                                         }
-                                    }
-                                },
-                                0 => {  // measurement
-                                    match qubit_type {
-                                        QubitType::StabY => { gate_type = GateType::MeasureX; }
-                                        QubitType::StabX => { gate_type = GateType::MeasureX; }
-                                        QubitType::Data => { }
-                                        _ => { unreachable!() }
-                                    }
-                                },
-                                _ => unreachable!()
+                                        if is_bell_init_bot(i, j) && is_bell_init_anc(i-1, j) {
+                                            gate_type = GateType::CXGateControl;
+                                            gate_peer = Some(pos!(t, i-1, j));
+                                        }
+                                    },
+                                    _ => {
+                                        unreachable!()
+                                    },
+                                }
+                            } else { // normal cycles
+                                match t % simulator.measurement_cycles {
+                                    1 => {  // initialization
+                                        match qubit_type {
+                                            QubitType::StabY => { gate_type = GateType::InitializeX; }
+                                            QubitType::StabX => { gate_type = GateType::InitializeX; }
+                                            QubitType::Data => { }
+                                            _ => { unreachable!() }
+                                        }
+                                    },
+                                    2 => {  // gate 1
+                                        if qubit_type == QubitType::Data {
+                                            if i+1 < vertical && is_present(i+1, j) {
+                                                gate_type = if j % 2 == 1 { GateType::CXGateTarget } else { GateType::CYGateTarget };
+                                                gate_peer = Some(pos!(t, i+1, j));
+                                            }
+                                        } else {
+                                            if i >= 1 && is_present(i-1, j) {
+                                                gate_type = if j % 2 == 1 { GateType::CXGateControl } else { GateType::CYGateControl };
+                                                gate_peer = Some(pos!(t, i-1, j));
+                                            }
+                                        }
+                                    },
+                                    3 => {  // gate 2
+                                        if j % 2 == 1 {  // operate with right
+                                            if is_present(i, j+1) {
+                                                gate_type = if qubit_type == QubitType::Data { GateType::CYGateTarget } else { GateType::CXGateControl };
+                                                gate_peer = Some(pos!(t, i, j+1));
+                                            }
+                                        } else {  // operate with left
+                                            if j >= 1 && is_present(i, j-1) {
+                                                gate_type = if qubit_type == QubitType::Data { GateType::CXGateTarget } else { GateType::CYGateControl };
+                                                gate_peer = Some(pos!(t, i, j-1));
+                                            }
+                                        }
+                                    },
+                                    4 => {  // gate 3
+                                        if j % 2 == 1 {  // operate with left
+                                            if j >= 1 && is_present(i, j-1) {
+                                                gate_type = if qubit_type == QubitType::Data { GateType::CYGateTarget } else { GateType::CXGateControl };
+                                                gate_peer = Some(pos!(t, i, j-1));
+                                            }
+                                        } else {  // operate with right
+                                            if is_present(i, j+1) {
+                                                gate_type = if qubit_type == QubitType::Data { GateType::CXGateTarget } else { GateType::CYGateControl };
+                                                gate_peer = Some(pos!(t, i, j+1));
+                                            }
+                                        }
+                                    },
+                                    5 => {  // gate 4
+                                        if qubit_type == QubitType::Data {
+                                            if i >= 1 && is_present(i-1, j) {
+                                                gate_type = if j % 2 == 1 { GateType::CXGateTarget } else { GateType::CYGateTarget };
+                                                gate_peer = Some(pos!(t, i-1, j));
+                                            }
+                                        } else {
+                                            if i+1 < vertical && is_present(i+1, j) {
+                                                gate_type = if j % 2 == 1 { GateType::CXGateControl } else { GateType::CYGateControl };
+                                                gate_peer = Some(pos!(t, i+1, j));
+                                            }
+                                        }
+                                    },
+                                    0 => {  // measurement
+                                        match qubit_type {
+                                            QubitType::StabY => { gate_type = GateType::MeasureX; }
+                                            QubitType::StabX => { gate_type = GateType::MeasureX; }
+                                            QubitType::Data => { }
+                                            _ => { unreachable!() }
+                                        }
+                                    },
+                                    _ => unreachable!()
+                                }
                             }
                             row_j.push(Some(Box::new(SimulatorNode::new(qubit_type, gate_type, gate_peer.clone())
                                 .set_virtual(is_virtual(i, j), gate_peer.map_or(false, |peer| is_virtual(peer.i, peer.j)))
@@ -1037,7 +1132,7 @@ pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &
             let logical_j = left_cardinality % 2 != 0;  // odd cardinality means there is a logical X error
             Some((logical_i, logical_j))
         },
-        &CodeType::RotatedTailoredCode => {
+        &CodeType::RotatedTailoredCode | &CodeType::RotatedTailoredCodeBellInit => {
             // check cardinality of top boundary for logical_i
             let dp = code_size.di;
             let dn = code_size.dj;

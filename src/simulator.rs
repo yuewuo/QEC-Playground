@@ -686,7 +686,8 @@ impl Simulator {
                             }
                             break
                         }
-                        println!("[warning] no measurement found in previous round, continue searching...")
+                        // println!("[warning] no measurement found in previous round, continue searching...")
+                        // Yue 2022.7.11 removed warning, because some code may just remove measurement in the middle
                     }
                 }
             });
@@ -715,7 +716,8 @@ impl Simulator {
                             }
                             break
                         }
-                        println!("[warning] no measurement found in previous round, continue searching...")
+                        // println!("[warning] no measurement found in previous round, continue searching...")
+                        // Yue 2022.7.11 removed warning, because some code may just remove measurement in the middle
                     }
                 }
             });
@@ -808,7 +810,8 @@ impl Simulator {
                                 }
                                 break
                             }
-                            println!("[warning] no measurement found in previous round, continue searching...")
+                            // println!("[warning] no measurement found in previous round, continue searching...")
+                            // Yue 2022.7.11 removed warning, because some code may just remove measurement in the middle
                         }
                     }
                 }
