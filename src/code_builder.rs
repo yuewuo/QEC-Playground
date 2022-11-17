@@ -57,6 +57,30 @@ pub struct CodeSize {
     pub dj: usize,
 }
 
+impl CodeType{
+    pub fn new(code_type: &String) -> Self {
+        match code_type.as_str() {
+            "StandardPlanarCode" => Self::StandardPlanarCode,
+            "RotatedPlanarCode" => Self::RotatedPlanarCode,
+            "StandardXZZXCode" => Self::StandardXZZXCode,
+            "RotatedXZZXCode" => Self::RotatedXZZXCode,
+            "StandardTailoredCode" => Self::StandardTailoredCode,
+            "RotatedTailoredCode" => Self::RotatedTailoredCode,
+            "RotatedTailoredCodeBellInit" => Self::RotatedTailoredCodeBellInit,
+            "PeriodicRotatedTailoredCode" => Self::PeriodicRotatedTailoredCode,
+            _ => unimplemented!()
+        }
+    }    
+
+    pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
+        static VARIANTS: &'static [&str] = &[
+            "StandardPlanarCode", "RotatedPlanarCode", "StandardXZZXCode", "RotatedXZZXCode", "StandardTailoredCode"
+            , "RotatedTailoredCode", "RotatedTailoredCodeBellInit", "PeriodicRotatedTailoredCode"
+        ];
+        VARIANTS.iter().map(|x| PossibleValue::new(x))
+    }
+}
+
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl CodeSize {
@@ -195,29 +219,6 @@ impl CodeType {
     pub fn get_right_down(&self, i: usize, j: usize, code_size: &CodeSize) -> (usize, usize) {
         let (i, j) = self.get_right(i, j, code_size);
         self.get_down(i, j, code_size)
-    }
-}
-
-
-impl CodeType{
-    pub fn new(code_type: &String) -> Self {
-        match code_type.as_str() {
-            "StandardPlanarCode" => Self::StandardPlanarCode,
-            "RotatedPlanarCode" => Self::RotatedPlanarCode,
-            "StandardTailoredCode" => Self::StandardTailoredCode,
-            "RotatedTailoredCode" => Self::RotatedTailoredCode,
-            "PeriodicRotatedTailoredCode" => Self::PeriodicRotatedTailoredCode,
-            "StandardXZZXCode" => Self::StandardXZZXCode,
-            "RotatedXZZXCode" => Self::RotatedXZZXCode,
-            _ => unimplemented!()
-        }
-    }    
-
-    pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
-        static VARIANTS: &'static [&str] = &[
-            "StandardPlanarCode", "RotatedPlanarCode", "StandardTailoredCode", "RotatedTailoredCode", "PeriodicRotatedTailoredCode", "StandardXZZXCode", "RotatedXZZXCode"
-        ];
-        VARIANTS.iter().map(|x| PossibleValue::new(x))
     }
 }
 
@@ -469,27 +470,27 @@ pub fn build_code(simulator: &mut Simulator) {
             // some criteria for bell init 
             let is_bell_init_anc = |i: usize, j: usize| -> bool { 
                 is_real(i, j) 
-                && i - j < dj - 3 
+                && i < j + dj - 3 
                 && ((i % 4 == 1 && j % 4 == 0) || (i % 4 == 3 && j % 4 == 2))
             };
-            let is_bell_init_top = |i: usize, j: usize| -> bool { 
+            let is_bell_init_top = |i: usize, j: usize| -> bool {
                 is_real(i, j) 
-                && i - j < dj - 1
+                && i < j + dj - 1
                 && ((i % 4 == 0 && j % 4 == 0) || (i % 4 == 2 && j % 4 == 2)) 
             };
             let is_bell_init_left = |i: usize, j: usize| -> bool {
                 is_real(i, j) 
-                && i - j < dj - 1
+                && i < j + dj - 1
                 && ((i % 4 == 1 && j % 4 == 3) || (i % 4 == 3 && j % 4 == 1))  
             };
             let is_bell_init_right = |i: usize, j: usize| -> bool {
                 is_real(i, j) 
-                && i - j < dj - 1
+                && i < j + dj - 1
                 && ((i % 4 == 1 && j % 4 == 1) || (i % 4 == 3 && j % 4 == 3))  
             };
             let is_bell_init_bot = |i: usize, j: usize| -> bool { 
                 is_real(i, j) 
-                && i - j < dj - 1
+                && i < j + dj - 1
                 && ((i % 4 == 2 && j % 4 == 0) || (i % 4 == 0 && j % 4 == 2))  
             };
 

@@ -236,27 +236,27 @@ impl NoiseModelBuilder {
                 // some criteria for bell init 
                 let is_bell_init_anc = |i: usize, j: usize| -> bool { 
                     is_real(i, j) 
-                    && i - j < dj - 3 
+                    && i < j + dj - 3 
                     && ((i % 4 == 1 && j % 4 == 0) || (i % 4 == 3 && j % 4 == 2))
                 };
                 let is_bell_init_top = |i: usize, j: usize| -> bool { 
-                is_real(i, j) 
-                && i - j < dj - 1
-                && ((i % 4 == 0 && j % 4 == 0) || (i % 4 == 2 && j % 4 == 2)) 
+                    is_real(i, j) 
+                    && i < j + dj - 1
+                    && ((i % 4 == 0 && j % 4 == 0) || (i % 4 == 2 && j % 4 == 2)) 
                 };
                 let is_bell_init_left = |i: usize, j: usize| -> bool {
                     is_real(i, j) 
-                    && i - j < dj - 1
+                    && i < j + dj - 1
                     && ((i % 4 == 1 && j % 4 == 3) || (i % 4 == 3 && j % 4 == 1))  
                 };
                 let is_bell_init_right = |i: usize, j: usize| -> bool {
                     is_real(i, j) 
-                    && i - j < dj - 1
+                    && i < j + dj - 1
                     && ((i % 4 == 1 && j % 4 == 1) || (i % 4 == 3 && j % 4 == 3))  
                 };
                 let is_bell_init_bot = |i: usize, j: usize| -> bool { 
                     is_real(i, j) 
-                    && i - j < dj - 1
+                    && i < j + dj - 1
                     && ((i % 4 == 2 && j % 4 == 0) || (i % 4 == 0 && j % 4 == 2))  
                 };
                 let is_bell_init_unfixed = |i: usize, j: usize| -> bool {
