@@ -70,6 +70,9 @@ const App = {
             existed_model_graph: gui3d.existed_model_graph,
             display_model_graph: gui3d.display_model_graph,
             model_graph_region_display: gui3d.model_graph_region_display,
+            existed_noise_model: gui3d.existed_noise_model,
+            display_noise_model_pauli: gui3d.display_noise_model_pauli,
+            display_noise_model_erasure: gui3d.display_noise_model_erasure,
         }
     },
     async mounted() {

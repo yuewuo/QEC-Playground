@@ -151,6 +151,7 @@ export function animate() {
 // commonly used vectors
 const zero_vector = new THREE.Vector3( 0, 0, 0 )
 const unit_up_vector = new THREE.Vector3( 0, 1, 0 )
+export const t_scale = parseFloat(urlParams.get('t_scale') || 1/3)
 
 // create common geometries
 const segment = parseInt(urlParams.get('segment') || 128)  // higher segment will consume more GPU resources
@@ -203,6 +204,10 @@ model_graph_edge_geometry.translate(0, 0.5, 0)
 const model_graph_vertex_radius = parseFloat(urlParams.get('model_graph_vertex_radius') || 0.12)
 const model_graph_vertex_scale = ref(1)
 const model_graph_vertex_geometry = new THREE.SphereGeometry( model_graph_vertex_radius, segment, segment )
+const noise_model_pauli_geometry = new THREE.CapsuleGeometry( 0.05, 0.04, 8, 16 )
+noise_model_pauli_geometry.translate(0, t_scale * 0.3, 0)
+const noise_model_erasure_geometry = new THREE.CapsuleGeometry( 0.05, 0.04, 8, 16 )
+noise_model_erasure_geometry.translate(0, t_scale * 0.65, 0)
 
 // measurement bits
 const measurement_radius = parseFloat(urlParams.get('measurement_radius') || 0.06)
@@ -353,6 +358,8 @@ export const model_graph_vertex_material_vec = []
 for (const [name, color] of sequential_colors) {
     model_graph_vertex_material_vec.push(build_solid_material(color))
 }
+export const noise_model_pauli_material = build_solid_material(0xFF0000)
+export const noise_model_erasure_material = build_solid_material("purple")
 
 build_solid_material(0x006699)
 export const idle_gate_material = new THREE.MeshStandardMaterial({
@@ -409,6 +416,8 @@ export var idle_gate_meshes = []
 export var gate_vec_meshes = []
 export var model_graph_edge_vec_meshes = []
 export var model_graph_vertex_meshes = []
+export var noise_model_pauli_meshes = []
+export var noise_model_erasure_meshes = []
 
 // meshes of a specific case
 export var defect_measurement_meshes = []
@@ -454,7 +463,6 @@ export function compute_vector3(data_position) {
     load_position(vector, data_position)
     return vector
 }
-export const t_scale = 1/3
 export function load_position(mesh_position, data_position) {
     mesh_position.z = data_position.x
     mesh_position.x = data_position.y
@@ -634,6 +642,25 @@ watch([model_graph_region_display, display_model_graph], () => {
                     for (const edge_mesh of model_graph_edge_vec_meshes[t][i][j]) {
                         edge_mesh.visible = visible
                     }
+                }
+            }
+        }
+    }
+})
+export const existed_noise_model = ref(false)
+export const display_noise_model_pauli = ref(get_url_bool("display_noise_model_pauli", true))
+export const display_noise_model_erasure = ref(get_url_bool("display_noise_model_erasure", true))
+watch([display_noise_model_pauli, display_noise_model_erasure], () => {
+    for (let t=0; t<qecp_data.simulator.height; ++t) {
+        for (let i=0; i<qecp_data.simulator.vertical; ++i) {
+            for (let j=0; j<qecp_data.simulator.horizontal; ++j) {
+                const pauli_mesh = noise_model_pauli_meshes[t][i][j]
+                if (pauli_mesh != null) {
+                    pauli_mesh.visible = display_noise_model_pauli.value
+                }
+                const erasure_mesh = noise_model_erasure_meshes[t][i][j]
+                if (erasure_mesh != null) {
+                    erasure_mesh.visible = display_noise_model_pauli.value
                 }
             }
         }
@@ -872,7 +899,6 @@ export async function refresh_qecp_data() {
                 }
             }
             model_graph_regions.value = regions.length
-            console.log(regions_union_indices)
             // add geometries
             for (let t=0; t<height; ++t) {
                 for (let i=0; i<vertical; ++i) {
@@ -962,6 +988,100 @@ export async function refresh_qecp_data() {
             model_graph_region_display.value = default_region_display
         } else {
             display_model_graph.value = null  // show intermediate state
+        }
+        // draw noise model: Pauli and erasure errors probabilities
+        dispose_mesh_3d_array(noise_model_pauli_meshes)
+        noise_model_pauli_meshes = build_3d_array(height, vertical, horizontal)
+        dispose_mesh_3d_array(noise_model_erasure_meshes)
+        noise_model_erasure_meshes = build_3d_array(height, vertical, horizontal)
+        if (qecp_data.noise_model != null) {
+            existed_noise_model.value = true
+            // first calculate whether to display it
+            function sum_error_rate(obj) {
+                if (obj == null) return 0
+                let sum = 0
+                if (obj != null) {
+                    for (const name in obj) {
+                        sum += parseFloat(obj[name])
+                    }
+                }
+                return sum
+            }
+            for (let t=0; t<height; ++t) {
+                for (let i=0; i<vertical; ++i) {
+                    for (let j=0; j<horizontal; ++j) {
+                        const noise_model_node = qecp_data.noise_model.nodes[t][i][j]
+                        if (noise_model_node != null) {
+                            // 1e-300 is typically used for supporting decoding erasure errors or mimic infinitely small error rate
+                            if (noise_model_node.pp.px > 2e-300 || noise_model_node.pp.pz > 2e-300 || noise_model_node.pp.py > 2e-300) {
+                                noise_model_node.display_pauli = true
+                            }
+                            if (noise_model_node.pe > 2e-300) {
+                                noise_model_node.display_erasure = true
+                            }
+                            // correlated ones
+                            const node = qecp_data.simulator.nodes[t][i][j]
+                            const gate_peer = node.gp
+                            let sum_correlated_pauli = sum_error_rate(noise_model_node.corr_pp)
+                            if (sum_correlated_pauli > 0) {
+                                noise_model_node.display_pauli = true
+                                if (gate_peer != null) {
+                                    const peer = get_position(gate_peer)
+                                    qecp_data.noise_model.nodes[peer.t][peer.i][peer.j].display_pauli = true
+                                }
+                            }
+                            let sum_correlated_erasure = sum_error_rate(noise_model_node.corr_pe)
+                            if (sum_correlated_erasure > 0) {
+                                noise_model_node.display_erasure = true
+                                if (gate_peer != null) {
+                                    const peer = get_position(gate_peer)
+                                    qecp_data.noise_model.nodes[peer.t][peer.i][peer.j].display_erasure = true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // add geometries
+            for (let t=0; t<height; ++t) {
+                for (let i=0; i<vertical; ++i) {
+                    for (let j=0; j<horizontal; ++j) {
+                        const noise_model_node = qecp_data.noise_model.nodes[t][i][j]
+                        if (noise_model_node != null) {
+                            const position = qecp_data.simulator.positions[i][j]
+                            const display_position = { t: t + t_bias, x: position.x, y: position.y }
+                            // non-zero Pauli errors
+                            if (noise_model_node.display_pauli) {
+                                const pauli_mesh = new THREE.Mesh( noise_model_pauli_geometry, noise_model_pauli_material )
+                                load_position(pauli_mesh.position, display_position)
+                                pauli_mesh.userData = {
+                                    type: "noise_model_node",
+                                    t: t,
+                                    i: i,
+                                    j: j,
+                                }
+                                scene.add( pauli_mesh )
+                                pauli_mesh.visible = display_noise_model_pauli.value
+                                noise_model_pauli_meshes[t][i][j] = pauli_mesh
+                            }
+                            // non-zero erasure errors
+                            if (noise_model_node.display_erasure) {
+                                const erasure_mesh = new THREE.Mesh( noise_model_erasure_geometry, noise_model_erasure_material )
+                                load_position(erasure_mesh.position, display_position)
+                                erasure_mesh.userData = {
+                                    type: "noise_model_node",
+                                    t: t,
+                                    i: i,
+                                    j: j,
+                                }
+                                scene.add( erasure_mesh )
+                                pauli_mesh.visible = display_noise_model_erasure.value
+                                noise_model_erasure_meshes[t][i][j] = erasure_mesh
+                            }
+                        }
+                    }
+                }
+            }
         }
         // refresh active case as well
         await refresh_case()
