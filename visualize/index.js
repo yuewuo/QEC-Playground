@@ -73,6 +73,8 @@ const App = {
             existed_noise_model: gui3d.existed_noise_model,
             display_noise_model_pauli: gui3d.display_noise_model_pauli,
             display_noise_model_erasure: gui3d.display_noise_model_erasure,
+            t_range: gui3d.t_range,
+            t_length: gui3d.t_length,
         }
     },
     async mounted() {
@@ -136,6 +138,20 @@ const App = {
                 } else if (event.key == "ArrowLeft") {
                     if (this.case_select > 0) {
                         this.case_select -= 1
+                    }
+                } else if (event.key == "ArrowUp") {
+                    if (this.t_range.max < this.t_length) {
+                        this.t_range.max += 1
+                    }
+                    if (this.t_range.min < this.t_range.max - 1) {
+                        this.t_range.min += 1
+                    }
+                } else if (event.key == "ArrowDown") {
+                    if (this.t_range.min > 0) {
+                        this.t_range.min -= 1
+                    }
+                    if (this.t_range.max > this.t_range.min + 1) {
+                        this.t_range.max -= 1
                     }
                 } else {
                     return  // unrecognized, propagate to other listeners

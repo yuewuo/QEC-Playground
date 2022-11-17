@@ -153,6 +153,13 @@ const zero_vector = new THREE.Vector3( 0, 0, 0 )
 const unit_up_vector = new THREE.Vector3( 0, 1, 0 )
 export const t_scale = parseFloat(urlParams.get('t_scale') || 1/3)
 
+// currently displaying elements within a range
+export const t_length = ref(1)
+export const t_range = ref({ min: 0, max: 0 })
+export function in_t_range(t) {
+    return t >= t_range.value.min && t < t_range.value.max
+}
+
 // create common geometries
 const segment = parseInt(urlParams.get('segment') || 128)  // higher segment will consume more GPU resources
 const qubit_radius = parseFloat(urlParams.get('qubit_radius') || 0.15)
@@ -556,7 +563,7 @@ function get_url_bool(name, default_value=true) {
 
 // display options
 export const display_qubits = ref(get_url_bool("display_qubits", true))
-watch([display_qubits, outline_ratio], () => {
+export function update_visible_qubit() {
     const qecp_data = active_qecp_data.value
     for (let i=0; i<qecp_data.simulator.vertical; ++i) {
         for (let j=0; j<qecp_data.simulator.horizontal; ++j) {
@@ -567,68 +574,77 @@ watch([display_qubits, outline_ratio], () => {
             }
         }
     }
-})
+}
+watch([display_qubits, outline_ratio], update_visible_qubit)
 export const display_idle_sticks = ref(get_url_bool("display_idle_sticks", true))
-watch(display_idle_sticks, () => {
+export function update_visible_idle_sticks() {
     const qecp_data = active_qecp_data.value
     for (let t=0; t<qecp_data.simulator.height; ++t) {
         for (let i=0; i<qecp_data.simulator.vertical; ++i) {
             for (let j=0; j<qecp_data.simulator.horizontal; ++j) {
-                if (idle_gate_meshes[t][i][j]) idle_gate_meshes[t][i][j].visible = display_idle_sticks.value
+                if (idle_gate_meshes[t][i][j]) idle_gate_meshes[t][i][j].visible = display_idle_sticks.value && in_t_range(t)
             }
         }
     }
-})
+}
+watch([display_idle_sticks, t_range], update_visible_idle_sticks, { deep: true })
 export const display_gates = ref(get_url_bool("display_gates", true))
-watch(display_gates, () => {
+export function update_visible_gates() {
     const qecp_data = active_qecp_data.value
     for (let t=0; t<qecp_data.simulator.height; ++t) {
         for (let i=0; i<qecp_data.simulator.vertical; ++i) {
             for (let j=0; j<qecp_data.simulator.horizontal; ++j) {
                 if (gate_vec_meshes[t][i][j]) {
                     for (const mesh of gate_vec_meshes[t][i][j]) {
-                        mesh.visible = display_gates.value
+                        mesh.visible = display_gates.value && in_t_range(t)
                     }
                 }
             }
         }
     }
-})
+}
+watch([display_gates, t_range], update_visible_gates, { deep: true })
 export const display_measurements = ref(get_url_bool("display_measurements", true))
-watch([display_measurements, outline_ratio], () => {
-    for (const mesh of defect_measurement_meshes) {
-        mesh.visible = display_measurements.value
+export function update_visible_defect_measurement() {
+    console.assert(defect_measurement_meshes.length == defect_measurement_outline_meshes.length)
+    for (let i=0; i<defect_measurement_meshes.length; ++i) {
+        const mesh = defect_measurement_meshes[i]
+        const outline_mesh = defect_measurement_outline_meshes[i]
+        const t = mesh.userData.t
+        mesh.visible = display_measurements.value && in_t_range(t)
+        outline_mesh.visible = display_measurements.value && in_t_range(t)
+        update_mesh_outline(outline_mesh)
     }
-    for (const mesh of defect_measurement_outline_meshes) {
-        mesh.visible = display_measurements.value
-        update_mesh_outline(mesh)
-    }
-})
+}
+watch([display_measurements, outline_ratio, t_range], update_visible_defect_measurement, { deep: true })
 export const display_error_pattern = ref(get_url_bool("display_error_pattern", false))
-watch([display_error_pattern], () => {
+export function update_visible_error_pattern() {
     const qecp_data = active_qecp_data.value
     const case_idx = active_case_idx.value
     const active_case = qecp_data.cases[case_idx]
     for (let [idx, [position_str, error]] of Object.entries(active_case.error_pattern).entries()) {
+        const position = get_position(position_str)
         const error_pattern_vec_mesh = error_pattern_vec_meshes[idx]
         for (const mesh of error_pattern_vec_mesh) {
-            mesh.visible = display_error_pattern.value
+            mesh.visible = display_error_pattern.value && in_t_range(position.t)
         }
     }
-})
+}
+watch([display_error_pattern, t_range], update_visible_error_pattern, { deep: true })
 export const display_correction = ref(get_url_bool("display_correction", true))
-watch([display_correction], () => {
+export function update_visible_correction() {
     for (let correction_vec_mesh of correction_vec_meshes) {
         for (const mesh of correction_vec_mesh) {
             mesh.visible = display_correction.value
         }
     }
-})
+}
+watch([display_correction], update_visible_correction)
 export const existed_model_graph = ref(false)
 export const display_model_graph = ref(get_url_bool("display_model_graph", false))
 export const model_graph_regions = ref(0)
 export const model_graph_region_display = ref([])
-watch([model_graph_region_display, display_model_graph], () => {
+export function update_visible_model_graph() {
     const active_regions = {}
     for (const active_region of Object.values(model_graph_region_display.value)) active_regions[active_region] = true
     for (let t=0; t<qecp_data.simulator.height; ++t) {
@@ -638,34 +654,36 @@ watch([model_graph_region_display, display_model_graph], () => {
                 if (mesh != null) {
                     const region_idx = mesh.userData.region_idx
                     const visible = active_regions[region_idx] == true && display_model_graph.value
-                    mesh.visible = visible
+                    mesh.visible = visible && in_t_range(t)
                     for (const edge_mesh of model_graph_edge_vec_meshes[t][i][j]) {
-                        edge_mesh.visible = visible
+                        edge_mesh.visible = visible && in_t_range(t)
                     }
                 }
             }
         }
     }
-})
+}
+watch([model_graph_region_display, display_model_graph, t_range], update_visible_model_graph, { deep: true })
 export const existed_noise_model = ref(false)
 export const display_noise_model_pauli = ref(get_url_bool("display_noise_model_pauli", true))
 export const display_noise_model_erasure = ref(get_url_bool("display_noise_model_erasure", true))
-watch([display_noise_model_pauli, display_noise_model_erasure], () => {
+export function update_visible_noise_model() {
     for (let t=0; t<qecp_data.simulator.height; ++t) {
         for (let i=0; i<qecp_data.simulator.vertical; ++i) {
             for (let j=0; j<qecp_data.simulator.horizontal; ++j) {
                 const pauli_mesh = noise_model_pauli_meshes[t][i][j]
                 if (pauli_mesh != null) {
-                    pauli_mesh.visible = display_noise_model_pauli.value
+                    pauli_mesh.visible = display_noise_model_pauli.value && in_t_range(t)
                 }
                 const erasure_mesh = noise_model_erasure_meshes[t][i][j]
                 if (erasure_mesh != null) {
-                    erasure_mesh.visible = display_noise_model_pauli.value
+                    erasure_mesh.visible = display_noise_model_pauli.value && in_t_range(t)
                 }
             }
         }
     }
-})
+}
+watch([display_noise_model_pauli, display_noise_model_erasure, t_range], update_visible_noise_model, { deep: true })
 
 export async function refresh_qecp_data() {
     // console.log("refresh_qecp_data")
@@ -683,6 +701,10 @@ export async function refresh_qecp_data() {
         const t_bias = -height/2
         const vertical = qecp_data.simulator.vertical
         const horizontal = qecp_data.simulator.horizontal
+        // update t range
+        t_length.value = height
+        t_range.value.max = parseFloat(urlParams.get('t_max') || height)
+        t_range.value.min = parseFloat(urlParams.get('t_min') || 0)
         // draw qubits at t=-1
         dispose_mesh_2d_array(qubit_meshes)
         dispose_mesh_2d_array(qubit_outline_meshes)
@@ -708,18 +730,17 @@ export async function refresh_qecp_data() {
                     }
                     scene.add( qubit_mesh )
                     load_position(qubit_mesh.position, display_position)
-                    qubit_mesh.visible = display_qubits.value
                     qubit_meshes[i][j] = qubit_mesh
                     // qubit outline
                     const qubit_outline_mesh = new THREE.Mesh( qubit_geometry, qubit_outline_material )
                     load_position(qubit_outline_mesh.position, display_position,)
                     update_mesh_outline(qubit_outline_mesh)
                     scene.add( qubit_outline_mesh )
-                    qubit_outline_mesh.visible = display_qubits.value
                     qubit_outline_meshes[i][j] = qubit_outline_mesh
                 }
             }
         }
+        update_visible_qubit()
         // draw idle gates
         dispose_mesh_3d_array(idle_gate_meshes)
         idle_gate_meshes = build_3d_array(height, vertical, horizontal)
@@ -744,12 +765,12 @@ export async function refresh_qecp_data() {
                         load_position(idle_gate_mesh.position, display_position)
                         idle_gate_mesh.scale.set(1, t_scale, 1)
                         scene.add( idle_gate_mesh )
-                        idle_gate_mesh.visible = display_idle_sticks.value
                         idle_gate_meshes[t][i][j] = idle_gate_mesh
                     }
                 }
             }
         }
+        update_visible_idle_sticks()
         // draw gates
         dispose_mesh_3d_array(gate_vec_meshes)
         gate_vec_meshes = build_3d_array(height, vertical, horizontal)
@@ -850,22 +871,19 @@ export async function refresh_qecp_data() {
                         } else {
                             console.error(`unknown gate_type: ${node.gt}`)
                         }
-                        for (const mesh of gate_vec_mesh) {
-                            mesh.visible = display_gates.value
-                        }
                     }
                 }
             }
         }
+        update_visible_gates()
         // draw model graph
         dispose_mesh_3d_array(model_graph_edge_vec_meshes)
         model_graph_edge_vec_meshes = build_3d_array(height, vertical, horizontal)
         dispose_mesh_3d_array(model_graph_vertex_meshes)
         model_graph_vertex_meshes = build_3d_array(height, vertical, horizontal)
-        // first calculate region, 
         if (qecp_data.model_graph != null) {
             existed_model_graph.value = true
-            // calculate region
+            // first calculate region
             let model_graph_vertex_positions = []
             let model_graph_vertex_indices = {}
             for (let t=0; t<height; ++t) {
@@ -989,6 +1007,7 @@ export async function refresh_qecp_data() {
         } else {
             display_model_graph.value = null  // show intermediate state
         }
+        update_visible_model_graph()
         // draw noise model: Pauli and erasure errors probabilities
         dispose_mesh_3d_array(noise_model_pauli_meshes)
         noise_model_pauli_meshes = build_3d_array(height, vertical, horizontal)
@@ -1061,7 +1080,6 @@ export async function refresh_qecp_data() {
                                     j: j,
                                 }
                                 scene.add( pauli_mesh )
-                                pauli_mesh.visible = display_noise_model_pauli.value
                                 noise_model_pauli_meshes[t][i][j] = pauli_mesh
                             }
                             // non-zero erasure errors
@@ -1075,7 +1093,6 @@ export async function refresh_qecp_data() {
                                     j: j,
                                 }
                                 scene.add( erasure_mesh )
-                                pauli_mesh.visible = display_noise_model_erasure.value
                                 noise_model_erasure_meshes[t][i][j] = erasure_mesh
                             }
                         }
@@ -1083,6 +1100,7 @@ export async function refresh_qecp_data() {
                 }
             }
         }
+        update_visible_noise_model()
         // refresh active case as well
         await refresh_case()
     }
@@ -1132,16 +1150,15 @@ export async function refresh_case() {
             }
             scene.add( defect_measurement_mesh )
             load_position(defect_measurement_mesh.position, display_position)
-            defect_measurement_mesh.visible = display_measurements.value
             defect_measurement_meshes.push(defect_measurement_mesh)
             // defect measurement outline
             const defect_measurement_outline_mesh = new THREE.Mesh( defect_measurement_geometry, defect_measurement_outline_material )
             load_position(defect_measurement_outline_mesh.position, display_position,)
             update_mesh_outline(defect_measurement_outline_mesh)
             scene.add( defect_measurement_outline_mesh )
-            defect_measurement_outline_mesh.visible = display_measurements.value
             defect_measurement_outline_meshes.push(defect_measurement_outline_mesh)
         }
+        update_visible_defect_measurement()
         // draw error pattern
         dispose_1d_array(error_pattern_vec_meshes)
         error_pattern_vec_meshes= []
@@ -1149,7 +1166,7 @@ export async function refresh_case() {
             const { t, i, j } = get_position(position_str)
             const position = qecp_data.simulator.positions[i][j]
             const display_position = {
-                t: t + t_bias - 0.5,
+                t: t + t_bias + 0.5,
                 x: position.x,
                 y: position.y,
             }
@@ -1169,11 +1186,11 @@ export async function refresh_case() {
                 const geometry = error_geometries[k]
                 let mesh = new THREE.Mesh(geometry, error_materials[error])
                 load_position(mesh.position, display_position)
-                mesh.visible = display_error_pattern.value
                 scene.add( mesh )
                 error_pattern_vec_mesh.push(mesh)
             }
         }
+        update_visible_error_pattern()
         // draw correction
         dispose_1d_array(correction_vec_meshes)
         correction_vec_meshes= []
@@ -1201,12 +1218,11 @@ export async function refresh_case() {
                 const geometry = error_geometries[k]
                 let mesh = new THREE.Mesh(geometry, error_materials[error])
                 load_position(mesh.position, display_position)
-                let visible = display_correction.value
-                mesh.visible = visible
                 scene.add( mesh )
                 correction_vec_mesh.push(mesh)
             }
         }
+        update_visible_correction()
         // reset select
         await Vue.nextTick()
         if (is_user_data_valid(current_selected_value)) {
