@@ -2,13 +2,15 @@
 //! 
 
 use super::simulator::*;
-use serde::{Serialize};
+use serde::Serialize;
 use super::types::*;
 use super::util_macros::*;
 use super::noise_model::*;
 use super::clap::{ArgEnum, PossibleValue};
 use super::code_builder::*;
-use std::sync::{Arc};
+use std::sync::Arc;
+use std::collections::BTreeSet;
+
 
 /// commonly used noise models
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum, Serialize, Debug)]
@@ -57,7 +59,7 @@ impl NoiseModelBuilder {
         let noiseless_node = Arc::new(NoiseModelNode::new());
         // noise model builder
         match self {
-            NoiseModelBuilder::Phenomenological => {
+            Self::Phenomenological => {
                 let simulator = &*simulator;  // force simulator to be immutable, to avoid unexpected changes
                 assert!(px + py + pz <= 1. && px >= 0. && py >= 0. && pz >= 0.);
                 assert!(pe == 0.);  // phenomenological noise model doesn't support erasure errors
@@ -77,7 +79,7 @@ impl NoiseModelBuilder {
                     }
                 });
             },
-            NoiseModelBuilder::TailoredScBellInitPhenomenological => {
+            Self::TailoredScBellInitPhenomenological => {
                 let (noisy_measurements, dp, dn) = match simulator.code_type {
                     CodeType::RotatedTailoredCode => { (simulator.code_size.noisy_measurements, simulator.code_size.di, simulator.code_size.dj) }
                     _ => unimplemented!("tailored surface code with Bell state initialization is only implemented for open-boundary rotated tailored surface code")
@@ -125,7 +127,7 @@ impl NoiseModelBuilder {
                     }
                 });
             },
-            NoiseModelBuilder::GenericBiasedWithBiasedCX | NoiseModelBuilder::GenericBiasedWithStandardCX => {
+            Self::GenericBiasedWithBiasedCX | Self::GenericBiasedWithStandardCX => {
                 // (here) FIRST qubit: anc; SECOND: data, due to circuit design
                 let mut initialization_error_rate = p;  // by default initialization error rate is the same as p
                 let mut measurement_error_rate = p;
@@ -157,13 +159,13 @@ impl NoiseModelBuilder {
                 cx_node.correlated_pauli_error_rates = Some(CorrelatedPauliErrorRates::default_with_probability(p / bias_eta));
                 cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZI = p;
                 match self {
-                    NoiseModelBuilder::GenericBiasedWithStandardCX => {
+                    Self::GenericBiasedWithStandardCX => {
                         cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IZ = 0.375 * p;
                         cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZZ = 0.375 * p;
                         cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IY = 0.125 * p;
                         cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZY = 0.125 * p;
                     },
-                    NoiseModelBuilder::GenericBiasedWithBiasedCX => {
+                    Self::GenericBiasedWithBiasedCX => {
                         cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IZ = 0.5 * p;
                         cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZZ = 0.5 * p;
                     },
@@ -209,7 +211,7 @@ impl NoiseModelBuilder {
                     }
                 });
             },
-            NoiseModelBuilder::TailoredScBellInitCircuit => {
+            Self::TailoredScBellInitCircuit => {
                 let CodeSize { noisy_measurements, di: dp, dj: _dn } = match simulator.code_type {
                     CodeType::RotatedTailoredCodeBellInit => { simulator.code_size.clone() }
                     _ => unimplemented!("tailored surface code with Bell state initialization is only implemented for open-boundary rotated tailored surface code")
@@ -389,7 +391,7 @@ impl NoiseModelBuilder {
                     }
                 });
             },
-            NoiseModelBuilder::ErasureOnlyPhenomenological => {
+            Self::ErasureOnlyPhenomenological => {
                 assert_eq!(p, 0., "pauli error should be 0 in this noise model");
                 let mut erasure_node = NoiseModelNode::new();
                 // erasure node must have some non-zero pauli error rate for the decoder to work properly
@@ -416,13 +418,14 @@ impl NoiseModelBuilder {
                     }
                 });
             },
-            NoiseModelBuilder::OnlyGateErrorCircuitLevel => {
+            Self::OnlyGateErrorCircuitLevel => {
                 assert_eq!(bias_eta, 0.5, "bias not supported yet, please use the default value 0.5");
                 let mut initialization_error_rate = 0.;
                 let mut measurement_error_rate = 0.;
                 let mut use_correlated_erasure = false;
                 let mut use_correlated_pauli = false;
                 let mut before_pauli_bug_fix = false;
+                let mut erasure_delay_cycle = 0;
                 let mut config_cloned = noise_model_configuration.clone();
                 let config = config_cloned.as_object_mut().expect("noise_model_configuration must be JSON object");
                 config.remove("initialization_error_rate").map(|value| initialization_error_rate = value.as_f64().expect("f64"));
@@ -430,13 +433,24 @@ impl NoiseModelBuilder {
                 config.remove("use_correlated_erasure").map(|value| use_correlated_erasure = value.as_bool().expect("bool"));
                 config.remove("use_correlated_pauli").map(|value| use_correlated_pauli = value.as_bool().expect("bool"));
                 config.remove("before_pauli_bug_fix").map(|value| before_pauli_bug_fix = value.as_bool().expect("bool"));
+                config.remove("erasure_delay_cycle").map(|value| erasure_delay_cycle = value.as_u64().expect("u64") as usize); // erasures that are not corrected immediately, instead an erasure may stay for `delay_cycle` cycles and all qubits that are related will be effected.
                 if !config.is_empty() { panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>()); }
                 // initialization node
                 let mut initialization_node = NoiseModelNode::new();
                 initialization_node.pauli_error_rates.error_rate_X = initialization_error_rate / 3.;
                 initialization_node.pauli_error_rates.error_rate_Z = initialization_error_rate / 3.;
                 initialization_node.pauli_error_rates.error_rate_Y = initialization_error_rate / 3.;
+                if erasure_delay_cycle > 0 {
+                    initialization_node.erasure_error_rate = 1e-300;
+                }
                 let initialization_node = Arc::new(initialization_node);
+                // noiseless node
+                let mut erasure_noiseless_node = noiseless_node.clone();
+                if erasure_delay_cycle > 0 {  // otherwise erasure graph will not contain enough information
+                    let mut erasure_noiseless = NoiseModelNode::new();
+                    erasure_noiseless.erasure_error_rate = 1e-300;
+                    erasure_noiseless_node = Arc::new(erasure_noiseless);
+                }
                 // iterate over all nodes
                 simulator_iter_real!(simulator, position, node, {
                     // first clear error rate
@@ -444,6 +458,7 @@ impl NoiseModelBuilder {
                     if position.t >= simulator.height - simulator.measurement_cycles {  // no error on the top, as a perfect measurement round
                         continue
                     }
+                    noise_model.set_node(position, Some(erasure_noiseless_node.clone()));
                     // do different things for each stage
                     match position.t % simulator.measurement_cycles {
                         1 => {  // initialization
@@ -465,18 +480,66 @@ impl NoiseModelBuilder {
                                     }
                                 }
                             }
-                            if use_correlated_erasure {
-                                if node.gate_type.is_two_qubit_gate() {
-                                    if node.qubit_type != QubitType::Data {  // this is ancilla
-                                        // better check whether peer is indeed data qubit, but it's hard here due to Rust's borrow check
-                                        let mut correlated_erasure_error_rates = CorrelatedErasureErrorRates::default_with_probability(0.);
-                                        correlated_erasure_error_rates.error_rate_EE = pe;
-                                        correlated_erasure_error_rates.sanity_check();
-                                        error_node.correlated_erasure_error_rates = Some(correlated_erasure_error_rates);
+                            if erasure_delay_cycle > 0 {
+                                error_node.erasure_error_rate = 1e-300;  // single erasure exists, but just never triggered; for decoders
+                                let mut erased_qubits = BTreeSet::new();
+                                if use_correlated_erasure {
+                                    if node.gate_type.is_two_qubit_gate() && node.qubit_type != QubitType::Data {
+                                        let gate_peer = node.gate_peer.as_ref().unwrap();
+                                        erased_qubits.insert((position.i, position.j));
+                                        erased_qubits.insert((gate_peer.i, gate_peer.j));
                                     }
+                                } else {
+                                    erased_qubits.insert((position.i, position.j));
+                                }
+                                if !erased_qubits.is_empty() {
+                                    let mut erasures = SparseErasures::new();
+                                    let t = position.t;
+                                    for dt in 0..erasure_delay_cycle+1 {
+                                        for &(i, j) in erased_qubits.iter() {
+                                            erasures.insert_erasure(&pos!(t + dt, i, j));
+                                        }
+                                        if dt == erasure_delay_cycle {
+                                            break
+                                        }
+                                        // calculate what are the effected qubits in the next round
+                                        let nt = t + dt + 1;
+                                        if nt >= simulator.height - simulator.measurement_cycles {
+                                            break
+                                        }
+                                        let mut next_erased_qubits = BTreeSet::new();
+                                        for &(i, j) in erased_qubits.iter() {
+                                            let next_node = simulator.get_node_unwrap(&pos!(nt, i, j));
+                                            if !next_node.gate_type.is_initialization() {
+                                                next_erased_qubits.insert((i, j));
+                                            }
+                                            if next_node.gate_type.is_two_qubit_gate() {
+                                                let gate_peer = next_node.gate_peer.as_ref().unwrap();
+                                                next_erased_qubits.insert((gate_peer.i, gate_peer.j));
+                                            }
+                                        }
+                                        erased_qubits = next_erased_qubits;
+                                    }
+                                    noise_model.additional_noise.push(AdditionalNoise {
+                                        probability: pe,
+                                        pauli_errors: SparseErrorPattern::new(),
+                                        erasures: erasures,
+                                    })
                                 }
                             } else {
-                                error_node.erasure_error_rate = pe;
+                                if use_correlated_erasure {
+                                    if node.gate_type.is_two_qubit_gate() {
+                                        if node.qubit_type != QubitType::Data {  // this is ancilla
+                                            // better check whether peer is indeed data qubit, but it's hard here due to Rust's borrow check
+                                            let mut correlated_erasure_error_rates = CorrelatedErasureErrorRates::default_with_probability(0.);
+                                            correlated_erasure_error_rates.error_rate_EE = pe;
+                                            correlated_erasure_error_rates.sanity_check();
+                                            error_node.correlated_erasure_error_rates = Some(correlated_erasure_error_rates);
+                                        }
+                                    }
+                                } else {
+                                    error_node.erasure_error_rate = pe;
+                                }
                             }
                             // this bug is hard to find without visualization tool...
                             // so I develop such a tool at https://qec.wuyue98.cn/NoiseModelViewer2D.html
