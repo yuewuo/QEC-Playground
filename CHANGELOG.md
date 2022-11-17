@@ -72,12 +72,12 @@ This project is under development for 1.5 years as an internal tool to learn, im
 - single-qubit Pauli errors (pX, pY, pZ) and erasure errors (pE)
 - two-qubit correlated Pauli errors (pXI, pXX, pXZ, pXY, pYI, pYX, ...) and erasure errors (pEI, pIE, pEE)
 
-) with highly configurable error model (including
+) with highly configurable noise model (including
 
-- code capacity error model (errors only on data qubits, without any measurement errors)
-- phenomenological error model (errors only on data qubits and pure measurement errors)
-- circuit-level error model (errors on both data qubits and ancilla qubits and between any gates)
-- any error model, not limited to i.i.d. ones
+- code capacity noise model (errors only on data qubits, without any measurement errors)
+- phenomenological noise model (errors only on data qubits and pure measurement errors)
+- circuit-level noise model (errors on both data qubits and ancilla qubits and between any gates)
+- any noise model, not limited to i.i.d. ones
 
 ). But, when I tried to implement an improved MWPM decoder for tailored surface code, I found I need a major upgrade of the code structure to implement it. Also, we need to isolate the functionality of surface code simulator and decoders, for better code structure and to ease maintenance.
 

@@ -181,7 +181,7 @@ for real_weighted in [True, False]:
 
             parallel_init = 10
 
-            UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model generic-biased-with-biased-cx --bias_eta {bias_eta} --decoder union-find --decoder_config {{\"use_real_weighted\":{'true' if real_weighted else 'false'},\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true,\"use_combined_probability\":false}} --parallel_init {parallel_init} --use_brief_edge".split(" ")
+            UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --noise_model generic-biased-with-biased-cx --bias_eta {bias_eta} --decoder union-find --decoder_config {{\"use_real_weighted\":{'true' if real_weighted else 'false'},\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true,\"use_combined_probability\":false}} --parallel_init {parallel_init} --use_brief_edge".split(" ")
             UF_command = qec_playground_benchmark_simulator_runner_vec_command([p], [d], [d], [T], UF_parameters + ["--log_runtime_statistics", log_filepath], max_N=max_N, min_error_cases=max_N)
             print(" ".join(UF_command))
 

@@ -425,18 +425,18 @@ impl std::fmt::Display for DecoderType {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum ErrorModelName {
+pub enum NoiseModelName {
     GenericBiasedWithBiasedCX,  // arXiv:2104.09539v1 Sec.IV.A
     GenericBiasedWithStandardCX,  // arXiv:2104.09539v1 Sec.IV.A
     ErasureOnlyPhenomenological,  // 100% erasure errors only on the data qubits before the gates happen and on the ancilla qubits after the gates finish
-    PauliZandErasurePhenomenological,  // this error model is from https://arxiv.org/pdf/1709.06218v3.pdf
+    PauliZandErasurePhenomenological,  // this noise model is from https://arxiv.org/pdf/1709.06218v3.pdf
     OnlyGateErrorCircuitLevel,  // errors happen at 4 stages in each measurement round (although removed errors happening at initialization and measurement stage, measurement errors can still occur when curtain error applies on the ancilla after the last gate)
     OnlyGateErrorCircuitLevelCorrelatedErasure,  // the same as `OnlyGateErrorCircuitLevel`, just the erasures are correlated
     Arxiv200404693,  // Huang 2020 paper https://arxiv.org/pdf/2004.04693.pdf (note that periodic boundary condition is currently not supported)
     TailoredPhenomenological,  // arXiv:1907.02554v2 Biased noise models
 }
 
-impl From<String> for ErrorModelName {
+impl From<String> for NoiseModelName {
     fn from(name: String) -> Self {
         match name.as_str() {
             "GenericBiasedWithBiasedCX" => Self::GenericBiasedWithBiasedCX,
@@ -447,12 +447,12 @@ impl From<String> for ErrorModelName {
             "OnlyGateErrorCircuitLevelCorrelatedErasure" => Self::OnlyGateErrorCircuitLevelCorrelatedErasure,
             "Arxiv200404693" => Self::Arxiv200404693,
             "TailoredPhenomenological" => Self::TailoredPhenomenological,
-            _ => panic!("unrecognized error model"),
+            _ => panic!("unrecognized noise model"),
         }
     }
 }
 
-impl std::fmt::Display for ErrorModelName {
+impl std::fmt::Display for NoiseModelName {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         fmt.write_str(match self {
             Self::GenericBiasedWithBiasedCX => "GenericBiasedWithBiasedCX",

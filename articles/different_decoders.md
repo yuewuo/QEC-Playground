@@ -7,7 +7,7 @@ Clarify at first: the complexity of decoding problem depends on:
 3. How many errors in each round: $n$
    1. so the total number of errors $N = m n$
    2. fixed physical error rate, $n=O(d^2)$, $N=O(md^2)$
-4. error model:
+4. noise model:
    1. whether it's perfect measurement or not
    2. whether it's biased noise or not
    3. other special attributes that will change the graph structure
@@ -26,7 +26,7 @@ Here I give some decoder's **worst case complexity** (their average complexity i
   - $O(md^2 md^2 d)=O(m^2 d^5)$ when imperfect measurement
   - $O(md^2 d^2)=O(md^4)$ when perfect measurement
   - $O(md^2 d)=O(md^3)$ when perfect mesurement + biased noise
-- D: Lin's assumed decoder (which is always $O(N^2)$ complexity, taking no information of error model):
+- D: Lin's assumed decoder (which is always $O(N^2)$ complexity, taking no information of noise model):
   - $O(N^2)=O(m^2d^4)$ when imperfect measurement
   - $O(N^2)=O(m^2d^4)$ when perfect measurement
   - $O(N^2)=O(m^2d^4)$ when perfect measurement + biased noise

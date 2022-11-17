@@ -19,7 +19,7 @@ min_error_cases = 1000
 
 max_N = 100000000
 
-UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")  # a maximum 20min for each point
+UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")  # a maximum 20min for each point
 
 results = []
 for di in di_vec:

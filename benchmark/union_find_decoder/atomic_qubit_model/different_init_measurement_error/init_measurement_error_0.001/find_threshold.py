@@ -7,7 +7,7 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import AutomatedThresholdEvaluator, qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command, run_qec_playground_command_get_stdout
 
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
-parameters = "-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")
+parameters = "-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")
 
 # result:
 """
@@ -24,7 +24,7 @@ configuration 2:
 0.000846202481 15 15 386493 26532 0.06864807383316128 15 1.2e-2 0.0414639215716212 0.04231012405267469 0.001
 0.000850422968 15 15 382569 28036 0.07328351225530558 15 1.1e-2 0.04167072545587045 0.0425211484243576 0.001
 pair: [(11, 11, 11), (15, 15, 15)]
-parameters: ['-p0', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevelCorrelatedErasure']
+parameters: ['-p0', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevelCorrelatedErasure']
 threshold = 0.042256200790648235
 relative_confidence_interval = 0.002595218418433777
 """
@@ -37,8 +37,8 @@ def simulator_runner(p, pair_one, parameters, is_rough_test, verbose, use_fake_r
     min_error_cases = min_error_cases if is_rough_test else max_N
     p_pauli = p * 0.02
     p_erasure = p * 0.98
-    error_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate},"use_correlated_pauli":true}}'
-    command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [dj], [T], parameters + ["--pes", f"[{p_erasure}]", "--error_model_configuration", error_model_configuration], max_N, min_error_cases)
+    noise_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate},"use_correlated_pauli":true}}'
+    command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [dj], [T], parameters + ["--pes", f"[{p_erasure}]", "--noise_model_configuration", noise_model_configuration], max_N, min_error_cases)
     if verbose:
         print(" ".join(command))
     stdout, returncode = run_qec_playground_command_get_stdout(command)

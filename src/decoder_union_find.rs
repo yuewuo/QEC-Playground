@@ -3,7 +3,7 @@
 
 use serde::{Serialize, Deserialize};
 use super::simulator::*;
-use super::error_model::*;
+use super::noise_model::*;
 use super::model_graph::*;
 use super::complete_model_graph::*;
 use super::serde_json;
@@ -150,7 +150,7 @@ pub struct UnionFindDecoderConfig {
     #[serde(alias = "wf")]  // abbreviation
     #[serde(default = "mwpm_default_configs::weight_function")]
     pub weight_function: WeightFunction,
-    /// combined probability can improve accuracy, but will cause probabilities differ a lot even in the case of i.i.d. error model
+    /// combined probability can improve accuracy, but will cause probabilities differ a lot even in the case of i.i.d. noise model
     #[serde(alias = "ucp")]  // abbreviation
     #[serde(default = "mwpm_default_configs::use_combined_probability")]
     pub use_combined_probability: bool,
@@ -177,7 +177,7 @@ pub mod union_find_default_configs {
 
 impl UnionFindDecoder {
     /// create a new MWPM decoder with decoder configuration
-    pub fn new(simulator: &Simulator, error_model: Arc<ErrorModel>, decoder_configuration: &serde_json::Value, parallel: usize, use_brief_edge: bool) -> Self {
+    pub fn new(simulator: &Simulator, noise_model: Arc<NoiseModel>, decoder_configuration: &serde_json::Value, parallel: usize, use_brief_edge: bool) -> Self {
         // read attribute of decoder configuration
         let config: UnionFindDecoderConfig = serde_json::from_value(decoder_configuration.clone()).unwrap();
         if config.use_real_weighted {
@@ -186,11 +186,11 @@ impl UnionFindDecoder {
         // build model graph
         let mut simulator = simulator.clone();
         let mut model_graph = ModelGraph::new(&simulator);
-        model_graph.build(&mut simulator, Arc::clone(&error_model), &config.weight_function, parallel, config.use_combined_probability, use_brief_edge);
+        model_graph.build(&mut simulator, Arc::clone(&noise_model), &config.weight_function, parallel, config.use_combined_probability, use_brief_edge);
         let model_graph = Arc::new(model_graph);
         // build erasure graph
         let mut erasure_graph = ErasureGraph::new(&simulator);
-        erasure_graph.build(&mut simulator, Arc::clone(&error_model), parallel);
+        erasure_graph.build(&mut simulator, Arc::clone(&noise_model), parallel);
         let erasure_graph = Arc::new(erasure_graph);
         // build complete model graph
         let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
@@ -995,7 +995,7 @@ mod tests {
     use super::*;
     use super::super::code_builder::*;
     use super::super::types::ErrorType::*;
-    use super::super::error_model_builder::*;
+    use super::super::noise_model_builder::*;
     use super::super::tool::*;
 
     #[test]
@@ -1006,25 +1006,25 @@ mod tests {
         // build simulator
         let mut simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
-        // build error model
-        let mut error_model = ErrorModel::new(&simulator);
-        simulator.set_error_rates(&mut error_model, p, p, p, 0.);
-        simulator.compress_error_rates(&mut error_model);
-        error_model_sanity_check(&simulator, &error_model).unwrap();
-        let error_model = Arc::new(error_model);
+        // build noise model
+        let mut noise_model = NoiseModel::new(&simulator);
+        simulator.set_error_rates(&mut noise_model, p, p, p, 0.);
+        simulator.compress_error_rates(&mut noise_model);
+        noise_model_sanity_check(&simulator, &noise_model).unwrap();
+        let noise_model = Arc::new(noise_model);
         // build decoder
         let decoder_config = json!({
             "precompute_complete_model_graph": true,
         });
         let enable_all = true;
-        let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
+        let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&noise_model), &decoder_config, 1, false);
         if true || enable_all {  // debug 5
             simulator.clear_all_errors();
             // {"[0][4][6]":"Z","[0][5][9]":"Z","[0][7][1]":"Z","[0][9][1]":"Z"}
-            simulator.set_error_check(&error_model, &pos!(0, 4, 6), &Z);
-            simulator.set_error_check(&error_model, &pos!(0, 5, 9), &Z);
-            simulator.set_error_check(&error_model, &pos!(0, 7, 1), &Z);
-            simulator.set_error_check(&error_model, &pos!(0, 9, 1), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 4, 6), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 5, 9), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 7, 1), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 9, 1), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = union_find_decoder.decode(&sparse_measurement);
@@ -1036,10 +1036,10 @@ mod tests {
         if false || enable_all {  // debug 4, should fail
             simulator.clear_all_errors();
             // {"[0][1][5]":"Z","[0][5][3]":"Z","[0][5][7]":"Z","[0][7][7]":"Z"}
-            simulator.set_error_check(&error_model, &pos!(0, 1, 5), &Z);
-            simulator.set_error_check(&error_model, &pos!(0, 5, 3), &Z);
-            simulator.set_error_check(&error_model, &pos!(0, 5, 7), &Z);
-            simulator.set_error_check(&error_model, &pos!(0, 7, 7), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 1, 5), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 5, 3), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 5, 7), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 7, 7), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = union_find_decoder.decode(&sparse_measurement);
@@ -1049,9 +1049,9 @@ mod tests {
         if false || enable_all {  // debug 3
             simulator.clear_all_errors();
             // {"[0][6][6]":"Z","[0][8][2]":"Z","[0][8][4]":"Z"}
-            simulator.set_error_check(&error_model, &pos!(0, 6, 6), &Z);
-            simulator.set_error_check(&error_model, &pos!(0, 8, 2), &Z);
-            simulator.set_error_check(&error_model, &pos!(0, 8, 4), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 6, 6), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 8, 2), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 8, 4), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = union_find_decoder.decode(&sparse_measurement);
@@ -1063,8 +1063,8 @@ mod tests {
         if false || enable_all {  // debug 2
             simulator.clear_all_errors();
             // {"[0][3][9]":"Z","[0][8][8]":"Z"}
-            simulator.set_error_check(&error_model, &pos!(0, 3, 9), &Z);
-            simulator.set_error_check(&error_model, &pos!(0, 8, 8), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 3, 9), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 8, 8), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = union_find_decoder.decode(&sparse_measurement);
@@ -1075,9 +1075,9 @@ mod tests {
         }
         if false || enable_all {  // debug 1
             simulator.clear_all_errors();
-            simulator.set_error_check(&error_model, &pos!(0, 6, 4), &Z);
-            simulator.set_error_check(&error_model, &pos!(0, 6, 6), &Z);
-            simulator.set_error_check(&error_model, &pos!(0, 5, 7), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 6, 4), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 6, 6), &Z);
+            simulator.set_error_check(&noise_model, &pos!(0, 5, 7), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             let (correction, _runtime_statistics) = union_find_decoder.decode(&sparse_measurement);
@@ -1090,7 +1090,7 @@ mod tests {
     
     // 2022.6.15: found an infinite-loop case
     // {"correction":null,"detected_erasures":{"erasures":["[0][1][5]","[0][3][7]","[0][4][2]","[0][4][8]","[0][5][1]","[0][6][8]","[0][7][3]","[0][9][5]"]},"error_pattern":{"[0][1][5]":"Y","[0][4][2]":"X","[0][5][1]":"X"},"measurement":null,"thread_counter":451986}
-    // cargo run --release -- tool benchmark [5] [0] [0] --pes [0.1] --max_repeats 0 --min_failed_cases 0 --time_budget 60 --decoder union-find --decoder_config=\{\"pcmg\":true\} --code_type StandardPlanarCode --error_model erasure-only-phenomenological
+    // cargo run --release -- tool benchmark [5] [0] [0] --pes [0.1] --max_repeats 0 --min_failed_cases 0 --time_budget 60 --decoder union-find --decoder_config=\{\"pcmg\":true\} --code_type StandardPlanarCode --noise_model erasure-only-phenomenological
     #[test]
     fn union_find_decoder_debug_1() {  // cargo test union_find_decoder_debug_1 -- --nocapture
         let d = 5;
@@ -1100,21 +1100,21 @@ mod tests {
         // build simulator
         let mut simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
-        // build error model
-        let mut error_model = ErrorModel::new(&simulator);
-        let error_model_builder = ErrorModelBuilder::ErasureOnlyPhenomenological;
-        error_model_builder.apply(&mut simulator, &mut error_model, &json!({}), p, 1., pe);
-        simulator.compress_error_rates(&mut error_model);
-        error_model_sanity_check(&simulator, &error_model).unwrap();
-        let error_model = Arc::new(error_model);
+        // build noise model
+        let mut noise_model = NoiseModel::new(&simulator);
+        let noise_model_builder = NoiseModelBuilder::ErasureOnlyPhenomenological;
+        noise_model_builder.apply(&mut simulator, &mut noise_model, &json!({}), p, 1., pe);
+        simulator.compress_error_rates(&mut noise_model);
+        noise_model_sanity_check(&simulator, &noise_model).unwrap();
+        let noise_model = Arc::new(noise_model);
         // build decoder
         let decoder_config = json!({
             "precompute_complete_model_graph": true,
         });
-        let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
+        let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&noise_model), &decoder_config, 1, false);
         // load errors onto the simulator
         let debug_case: BenchmarkThreadDebugger = serde_json::from_value(json!({"correction":null,"detected_erasures":["[0][1][5]","[0][3][7]","[0][4][2]","[0][4][8]","[0][5][1]","[0][6][8]","[0][7][3]","[0][9][5]"],"error_pattern":{"[0][1][5]":"Y","[0][4][2]":"X","[0][5][1]":"X"},"measurement":null,"thread_counter":451986})).unwrap();
-        debug_case.load_errors(&mut simulator, &error_model);
+        debug_case.load_errors(&mut simulator, &noise_model);
         let sparse_measurement = simulator.generate_sparse_measurement();
         println!("sparse_measurement: {:?}", sparse_measurement);
         let sparse_detected_erasures = simulator.generate_sparse_detected_erasures();
@@ -1134,21 +1134,21 @@ mod tests {
         // build simulator
         let mut simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
-        // build error model
-        let mut error_model = ErrorModel::new(&simulator);
-        let error_model_builder = ErrorModelBuilder::ErasureOnlyPhenomenological;
-        error_model_builder.apply(&mut simulator, &mut error_model, &json!({}), p, 1., pe);
-        simulator.compress_error_rates(&mut error_model);
-        error_model_sanity_check(&simulator, &error_model).unwrap();
-        let error_model = Arc::new(error_model);
+        // build noise model
+        let mut noise_model = NoiseModel::new(&simulator);
+        let noise_model_builder = NoiseModelBuilder::ErasureOnlyPhenomenological;
+        noise_model_builder.apply(&mut simulator, &mut noise_model, &json!({}), p, 1., pe);
+        simulator.compress_error_rates(&mut noise_model);
+        noise_model_sanity_check(&simulator, &noise_model).unwrap();
+        let noise_model = Arc::new(noise_model);
         // build decoder
         let decoder_config = json!({});
-        let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
+        let mut union_find_decoder = UnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&noise_model), &decoder_config, 1, false);
         // load errors onto the simulator
         let sparse_error_pattern: SparseErrorPattern = serde_json::from_value(json!({"[0][1][5]":"Z","[0][2][6]":"Z","[0][4][4]":"X","[0][5][7]":"X","[0][9][7]":"Y"})).unwrap();
         let sparse_detected_erasures: SparseDetectedErasures = serde_json::from_value(json!(["[0][1][3]","[0][1][5]","[0][2][6]","[0][4][4]","[0][5][7]","[0][6][6]","[0][9][7]"])).unwrap();
-        simulator.load_sparse_error_pattern(&sparse_error_pattern, &error_model).expect("success");
-        simulator.load_sparse_detected_erasures(&sparse_detected_erasures, &error_model).expect("success");
+        simulator.load_sparse_error_pattern(&sparse_error_pattern, &noise_model).expect("success");
+        simulator.load_sparse_detected_erasures(&sparse_detected_erasures, &noise_model).expect("success");
         simulator.propagate_errors();
         let sparse_measurement = simulator.generate_sparse_measurement();
         println!("sparse_measurement: {:?}", sparse_measurement);

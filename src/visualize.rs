@@ -1,6 +1,6 @@
 //! Visualizer
 //! 
-//! This module helps visualize the circuit, error model, model graph, error patterns, corrections, etc.
+//! This module helps visualize the circuit, noise model, model graph, error patterns, corrections, etc.
 //! 
 
 use crate::serde_json;

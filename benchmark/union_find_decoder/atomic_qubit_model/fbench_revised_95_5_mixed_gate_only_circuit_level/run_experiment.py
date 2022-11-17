@@ -23,7 +23,7 @@ max_N = 0  # +inf
 
 time_budget = 10 * 3600  # 10 hours max
 # time_budget = 10  # debug
-UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {time_budget} --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --use_fast_benchmark --fbench_target_dev 1e-2".split(" ")
+UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {time_budget} --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --use_fast_benchmark --fbench_target_dev 1e-2".split(" ")
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run(os.path.dirname(__file__))

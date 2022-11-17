@@ -49,13 +49,13 @@ pub mod code_builder;
 #[macro_use] pub mod util_macros;
 pub mod model_graph;
 pub mod complete_model_graph;
-pub mod error_model;
+pub mod noise_model;
 pub mod decoder_mwpm;
 pub mod decoder_tailored_mwpm;
 pub mod decoder_union_find;
 pub mod tailored_model_graph;
 pub mod tailored_complete_model_graph;
-pub mod error_model_builder;
+pub mod noise_model_builder;
 pub mod union_find;
 pub mod erasure_graph;
 pub mod decoder_fusion;
@@ -71,7 +71,7 @@ fn qecp(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     simulator::register(py, m)?;
     types::register(py, m)?;
     code_builder::register(py, m)?;
-    error_model::register(py, m)?;
+    noise_model::register(py, m)?;
     visualize::register(py, m)?;
     Ok(())
 }

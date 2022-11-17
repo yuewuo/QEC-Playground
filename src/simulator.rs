@@ -10,7 +10,7 @@ use serde::ser::{SerializeMap, SerializeSeq};
 use super::code_builder::*;
 use super::util_macros::*;
 use super::reproducible_rand::Xoroshiro128StarStar;
-use super::error_model::*;
+use super::noise_model::*;
 use ErrorType::*;
 use std::sync::Arc;
 use std::collections::{HashMap, HashSet, BTreeSet, BTreeMap};
@@ -25,7 +25,6 @@ use crate::visualize::*;
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub struct Simulator {
     /// information of the preferred code
-    // #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub code_type: CodeType,
     /// the information fields of CodeType
@@ -338,62 +337,62 @@ impl Simulator {
     }
 
     /// check if this node is a virtual node, i.e. non-existing but just work as a virtual boundary
-    pub fn set_error_rates(&mut self, error_model: &mut ErrorModel, px: f64, py: f64, pz: f64, pe: f64) {
+    pub fn set_error_rates(&mut self, noise_model: &mut NoiseModel, px: f64, py: f64, pz: f64, pe: f64) {
         assert!(px + py + pz <= 1. && px >= 0. && py >= 0. && pz >= 0.);
         assert!(pe <= 1. && pe >= 0.);
         if self.measurement_cycles == 1 {
             println!("[warning] setting error rates of unknown code, no perfect measurement protection is enabled");
         }
-        let mut error_model_node = ErrorModelNode::new();
-        error_model_node.pauli_error_rates.error_rate_X = px;
-        error_model_node.pauli_error_rates.error_rate_Y = py;
-        error_model_node.pauli_error_rates.error_rate_Z = pz;
-        error_model_node.erasure_error_rate = pe;
-        let error_model_node = Arc::new(error_model_node);
+        let mut noise_model_node = NoiseModelNode::new();
+        noise_model_node.pauli_error_rates.error_rate_X = px;
+        noise_model_node.pauli_error_rates.error_rate_Y = py;
+        noise_model_node.pauli_error_rates.error_rate_Z = pz;
+        noise_model_node.erasure_error_rate = pe;
+        let noise_model_node = Arc::new(noise_model_node);
         for t in 0 .. self.height - self.measurement_cycles {
             simulator_iter_mut_real!(self, position, node, t => t, {  // only add errors on real node
                 // bug fix 2022.11.12: the first layer default to no measurement errors
                 if t != 0 || node.qubit_type == QubitType::Data {
-                    error_model.set_node(position, Some(error_model_node.clone()));
+                    noise_model.set_node(position, Some(noise_model_node.clone()));
                 }
             });
         }
     }
 
     /// set error with sanity check
-    pub fn set_error_check(&mut self, error_model: &ErrorModel, position: &Position, error: &ErrorType) {
-        self.set_error_check_result(error_model, position, error).unwrap()
+    pub fn set_error_check(&mut self, noise_model: &NoiseModel, position: &Position, error: &ErrorType) {
+        self.set_error_check_result(noise_model, position, error).unwrap()
     }
 
-    pub fn set_erasure_check(&mut self, error_model: &ErrorModel, position: &Position, has_erasure: bool) {
-        self.set_erasure_check_result(error_model, position, has_erasure).unwrap()
+    pub fn set_erasure_check(&mut self, noise_model: &NoiseModel, position: &Position, has_erasure: bool) {
+        self.set_erasure_check_result(noise_model, position, has_erasure).unwrap()
     }
 
     /// expand the correlated error rates, useful when exporting the data structure for other applications to modify
-    pub fn expand_error_rates(&mut self, error_model: &mut ErrorModel) {
+    pub fn expand_error_rates(&mut self, noise_model: &mut NoiseModel) {
         simulator_iter_mut!(self, position, _node, {
-            let mut error_model_node: ErrorModelNode = error_model.get_node_unwrap(position).clone();
-            if error_model_node.correlated_pauli_error_rates.is_none() {
-                error_model_node.correlated_pauli_error_rates = Some(CorrelatedPauliErrorRates::default());
+            let mut noise_model_node: NoiseModelNode = noise_model.get_node_unwrap(position).clone();
+            if noise_model_node.correlated_pauli_error_rates.is_none() {
+                noise_model_node.correlated_pauli_error_rates = Some(CorrelatedPauliErrorRates::default());
             }
-            if error_model_node.correlated_erasure_error_rates.is_none() {
-                error_model_node.correlated_erasure_error_rates = Some(CorrelatedErasureErrorRates::default());
+            if noise_model_node.correlated_erasure_error_rates.is_none() {
+                noise_model_node.correlated_erasure_error_rates = Some(CorrelatedErasureErrorRates::default());
             }
-            error_model.set_node(position, Some(Arc::new(error_model_node)));
+            noise_model.set_node(position, Some(Arc::new(noise_model_node)));
         });
     }
 
     /// compress error rates by trying to find same error rates and use the same pointer to reduce memory usage and improve memory coherence.
-    /// note that when building error model with rust, one should directly use this optimization, so that this function execute fast.
-    /// when taking error model data from other programs, this function will have to hash every one of them and it might take a while to do so.
+    /// note that when building noise model with rust, one should directly use this optimization, so that this function execute fast.
+    /// when taking noise model data from other programs, this function will have to hash every one of them and it might take a while to do so.
     #[inline(never)]
-    pub fn compress_error_rates(&mut self, error_model: &mut ErrorModel) {
-        let mut arc_set: HashSet<*const ErrorModelNode> = HashSet::new();
+    pub fn compress_error_rates(&mut self, noise_model: &mut NoiseModel) {
+        let mut arc_set: HashSet<*const NoiseModelNode> = HashSet::new();
         // since f64 typed error rates are not hashable by default, here I first serialize the them and then use OrderedFloatPolicy for hashing
-        let mut node_map: HashMap<serde_hashkey::Key<serde_hashkey::OrderedFloatPolicy>, Arc<ErrorModelNode>> = HashMap::new();
+        let mut node_map: HashMap<serde_hashkey::Key<serde_hashkey::OrderedFloatPolicy>, Arc<NoiseModelNode>> = HashMap::new();
         simulator_iter_mut!(self, position, _node, {
-            let node_arc: Arc<ErrorModelNode> = error_model.get_node_unwrap_arc(position);
-            let node_pointer: *const ErrorModelNode = Arc::as_ptr(&node_arc);
+            let node_arc: Arc<NoiseModelNode> = noise_model.get_node_unwrap_arc(position);
+            let node_pointer: *const NoiseModelNode = Arc::as_ptr(&node_arc);
             if arc_set.contains(&node_pointer) {  // already found this pointer, good!
                 continue
             }
@@ -401,21 +400,21 @@ impl Simulator {
             let hash_key = serde_hashkey::to_key_with_ordered_float(&node_arc).expect("hash");
             match node_map.get(&hash_key) {
                 Some(existing_arc) => {
-                    // println!("found same error model node, compressing it...");
-                    error_model.set_node(position, Some(existing_arc.clone()));
+                    // println!("found same noise model node, compressing it...");
+                    noise_model.set_node(position, Some(existing_arc.clone()));
                     continue
                 }, None => { }
             }
             // if not found, this is a new value
             arc_set.insert(node_pointer);
             node_map.insert(hash_key, node_arc.clone());
-            // println!("found new error model and added");
+            // println!("found new noise model and added");
         });
     }
 
     /// generate random errors according to the given error rates
     #[inline(never)]
-    pub fn generate_random_errors(&mut self, error_model: &ErrorModel) -> (usize, usize) {
+    pub fn generate_random_errors(&mut self, noise_model: &NoiseModel) -> (usize, usize) {
         // this size is small compared to the simulator itself
         let allocate_size = self.height * self.vertical * self.horizontal;
         let mut pending_pauli_errors = Vec::<(Position, ErrorType)>::with_capacity(allocate_size);
@@ -427,15 +426,15 @@ impl Simulator {
         let mut erasure_count = 0;
         // first apply single-qubit errors
         simulator_iter_mut!(self, position, node, {
-            let error_model_node = error_model.get_node_unwrap(position);
+            let noise_model_node = noise_model.get_node_unwrap(position);
             let random_pauli = rng.next_f64();
-            if random_pauli < error_model_node.pauli_error_rates.error_rate_X {
+            if random_pauli < noise_model_node.pauli_error_rates.error_rate_X {
                 node.set_error_temp(&X);
                 // println!("X error at {} {} {}",node.i, node.j, node.t);
-            } else if random_pauli < error_model_node.pauli_error_rates.error_rate_X + error_model_node.pauli_error_rates.error_rate_Z {
+            } else if random_pauli < noise_model_node.pauli_error_rates.error_rate_X + noise_model_node.pauli_error_rates.error_rate_Z {
                 node.set_error_temp(&Z);
                 // println!("Z error at {} {} {}",node.i, node.j, node.t);
-            } else if random_pauli < error_model_node.pauli_error_rates.error_probability() {
+            } else if random_pauli < noise_model_node.pauli_error_rates.error_probability() {
                 node.set_error_temp(&Y);
                 // println!("Y error at {} {} {}",node.i, node.j, node.t);
             } else {
@@ -447,10 +446,10 @@ impl Simulator {
             let random_erasure = rng.next_f64();
             node.has_erasure = false;
             node.propagated = I;  // clear propagated errors
-            if random_erasure < error_model_node.erasure_error_rate {
+            if random_erasure < noise_model_node.erasure_error_rate {
                 pending_erasure_errors.push(position.clone());
             }
-            match &error_model_node.correlated_pauli_error_rates {
+            match &noise_model_node.correlated_pauli_error_rates {
                 Some(correlated_pauli_error_rates) => {
                     let random_pauli = rng.next_f64();
                     let correlated_pauli_error_type = correlated_pauli_error_rates.generate_random_error(random_pauli);
@@ -466,7 +465,7 @@ impl Simulator {
                 },
                 None => { },
             }
-            match &error_model_node.correlated_erasure_error_rates {
+            match &noise_model_node.correlated_erasure_error_rates {
                 Some(correlated_erasure_error_rates) => {
                     let random_erasure = rng.next_f64();
                     let correlated_erasure_error_type = correlated_erasure_error_rates.generate_random_erasure_error(random_erasure);
@@ -902,21 +901,21 @@ impl Simulator {
         self.get_node(position).as_ref().unwrap()
     }
 
-    pub fn set_erasure_check_result(&mut self, error_model: &ErrorModel, position: &Position, has_erasure: bool) -> Result<(), String> {
+    pub fn set_erasure_check_result(&mut self, noise_model: &NoiseModel, position: &Position, has_erasure: bool) -> Result<(), String> {
         if has_erasure == false {
             self.get_node_mut_unwrap(position).has_erasure = false;
             return Ok(())
         }
         let mut possible = false;
         if cfg!(debug_assertions) {
-            let error_model_node = error_model.get_node_unwrap(position);
+            let noise_model_node = noise_model.get_node_unwrap(position);
             let node = self.get_node_unwrap(position);
-            possible |= error_model_node.erasure_error_rate > 0.;
-            possible |= error_model_node.correlated_erasure_error_rates.is_some();  // weak check
+            possible |= noise_model_node.erasure_error_rate > 0.;
+            possible |= noise_model_node.correlated_erasure_error_rates.is_some();  // weak check
             if !possible {  // check peer only if still not possible
                 if let Some(peer_position) = node.gate_peer.as_ref() {
-                    let peer_error_model_node = error_model.get_node_unwrap(peer_position);
-                    possible |= peer_error_model_node.correlated_erasure_error_rates.is_some();  // weak check
+                    let peer_noise_model_node = noise_model.get_node_unwrap(peer_position);
+                    possible |= peer_noise_model_node.correlated_erasure_error_rates.is_some();  // weak check
                 }
             }
         } else {
@@ -930,7 +929,7 @@ impl Simulator {
     }
 
     /// load detected erasures back to the simulator
-    pub fn load_sparse_detected_erasures(&mut self, sparse_detected_erasures: &SparseDetectedErasures, error_model: &ErrorModel) -> Result<(), String> {
+    pub fn load_sparse_detected_erasures(&mut self, sparse_detected_erasures: &SparseDetectedErasures, noise_model: &NoiseModel) -> Result<(), String> {
         simulator_iter_mut!(self, position, node, {
             node.has_erasure = false;
         });
@@ -938,7 +937,7 @@ impl Simulator {
             if !self.is_node_exist(position) {
                 return Err(format!("invalid erasure at position {}", position))
             }
-            self.set_erasure_check_result(error_model, position, true)?;
+            self.set_erasure_check_result(noise_model, position, true)?;
         }
         simulator_iter_mut!(self, position, node, {
             node.has_erasure = sparse_detected_erasures.contains(position);
@@ -946,29 +945,29 @@ impl Simulator {
         Ok(())
     }
 
-    pub fn set_error_check_result(&mut self, error_model: &ErrorModel, position: &Position, error: &ErrorType) -> Result<(), String> {
+    pub fn set_error_check_result(&mut self, noise_model: &NoiseModel, position: &Position, error: &ErrorType) -> Result<(), String> {
         if error == &ErrorType::I {
             self.get_node_mut_unwrap(position).set_error_temp(error);
             return Ok(())
         }
         let mut possible = false;
         if cfg!(debug_assertions) {
-            let error_model_node = error_model.get_node_unwrap(position);
+            let noise_model_node = noise_model.get_node_unwrap(position);
             let node = self.get_node_unwrap(position);
             match error {
-                ErrorType::X => if error_model_node.pauli_error_rates.error_rate_X > 0. { possible = true; },
-                ErrorType::Y => if error_model_node.pauli_error_rates.error_rate_Y > 0. { possible = true; },
-                ErrorType::Z => if error_model_node.pauli_error_rates.error_rate_Z > 0. { possible = true; },
+                ErrorType::X => if noise_model_node.pauli_error_rates.error_rate_X > 0. { possible = true; },
+                ErrorType::Y => if noise_model_node.pauli_error_rates.error_rate_Y > 0. { possible = true; },
+                ErrorType::Z => if noise_model_node.pauli_error_rates.error_rate_Z > 0. { possible = true; },
                 _ => unreachable!(),
             }
-            possible |= error_model_node.erasure_error_rate > 0.;
-            possible |= error_model_node.correlated_pauli_error_rates.is_some();  // weak check
-            possible |= error_model_node.correlated_erasure_error_rates.is_some();  // weak check
+            possible |= noise_model_node.erasure_error_rate > 0.;
+            possible |= noise_model_node.correlated_pauli_error_rates.is_some();  // weak check
+            possible |= noise_model_node.correlated_erasure_error_rates.is_some();  // weak check
             if !possible {  // check peer only if still not possible
                 if let Some(peer_position) = node.gate_peer.as_ref() {
-                    let peer_error_model_node = error_model.get_node_unwrap(peer_position);
-                    possible |= peer_error_model_node.correlated_pauli_error_rates.is_some();  // weak check
-                    possible |= peer_error_model_node.correlated_erasure_error_rates.is_some();  // weak check
+                    let peer_noise_model_node = noise_model.get_node_unwrap(peer_position);
+                    possible |= peer_noise_model_node.correlated_pauli_error_rates.is_some();  // weak check
+                    possible |= peer_noise_model_node.correlated_erasure_error_rates.is_some();  // weak check
                 }
             }
         } else {
@@ -982,7 +981,7 @@ impl Simulator {
     }
 
     /// load an error pattern
-    pub fn load_sparse_error_pattern(&mut self, sparse_error_pattern: &SparseErrorPattern, error_model: &ErrorModel) -> Result<(), String> {
+    pub fn load_sparse_error_pattern(&mut self, sparse_error_pattern: &SparseErrorPattern, noise_model: &NoiseModel) -> Result<(), String> {
         simulator_iter_mut!(self, position, node, {
             node.error = I;
         });
@@ -990,13 +989,13 @@ impl Simulator {
             if !self.is_node_exist(position) {
                 return Err(format!("invalid error at position {}", position))
             }
-            self.set_error_check_result(error_model, position, error)?;
+            self.set_error_check_result(noise_model, position, error)?;
         }
         Ok(())
     }
 
     /// create json object for debugging and viewing
-    pub fn to_json(&self, error_model: &ErrorModel) -> serde_json::Value {
+    pub fn to_json(&self, noise_model: &NoiseModel) -> serde_json::Value {
         json!({
             "code_type": self.code_type,
             "height": self.height,
@@ -1008,7 +1007,7 @@ impl Simulator {
                         let position = &pos!(t, i, j);
                         if self.is_node_exist(position) {
                             let node = self.get_node_unwrap(position);
-                            let error_model_node = error_model.get_node_unwrap(position);
+                            let noise_model_node = noise_model.get_node_unwrap(position);
                             Some(json!({
                                 "position": position,
                                 "qubit_type": node.qubit_type,
@@ -1016,7 +1015,7 @@ impl Simulator {
                                 "gate_peer": node.gate_peer,
                                 "is_virtual": node.is_virtual,
                                 "is_peer_virtual": node.is_peer_virtual,
-                                "error_model": error_model_node,
+                                "noise_model": noise_model_node,
                             }))
                         } else {
                             None
@@ -1442,7 +1441,7 @@ mod tests {
         assert!(simulator.is_valid_position(&nonexisting_position), "valid position");
         assert!(!simulator.is_node_exist(&nonexisting_position), "nonexisting position");
         println!("std::mem::size_of::<SimulatorNode>() = {}", std::mem::size_of::<SimulatorNode>());
-        println!("std::mem::size_of::<ErrorModelNode>() = {}", std::mem::size_of::<ErrorModelNode>());
+        println!("std::mem::size_of::<NoiseModelNode>() = {}", std::mem::size_of::<NoiseModelNode>());
         if std::mem::size_of::<SimulatorNode>() > 32 {  // ArmV8 data cache line is 64 bytes
             panic!("SimulatorNode which is unexpectedly large, check if anything wrong");
         }

@@ -17,7 +17,7 @@ use super::code_builder::*;
 use super::simulator::*;
 use super::clap::{ArgEnum, PossibleValue};
 use std::sync::atomic::{AtomicBool, Ordering};
-use super::error_model::*;
+use super::noise_model::*;
 use serde::{Serialize, Deserialize};
 use super::decoder_mwpm::*;
 use super::decoder_fusion::*;
@@ -26,7 +26,7 @@ use super::complete_model_graph::*;
 use super::decoder_tailored_mwpm::*;
 use super::tailored_model_graph::*;
 use super::tailored_complete_model_graph::*;
-use super::error_model_builder::*;
+use super::noise_model_builder::*;
 use super::decoder_union_find::*;
 use super::erasure_graph::*;
 use super::visualize::*;
@@ -81,34 +81,34 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let time_budget: Option<f64> = matches.value_of_t("time_budget").ok();
             let log_runtime_statistics: Option<String> = matches.value_of_t("log_runtime_statistics").ok();
             let log_error_pattern_when_logical_error = matches.is_present("log_error_pattern_when_logical_error");
-            let error_model_builder = matches.value_of_t::<ErrorModelBuilder>("error_model").ok();
-            let error_model_configuration = matches.value_of_t::<serde_json::Value>("error_model_configuration").unwrap();
+            let noise_model_builder = matches.value_of_t::<NoiseModelBuilder>("noise_model").ok();
+            let noise_model_configuration = matches.value_of_t::<serde_json::Value>("noise_model_configuration").unwrap();
             let thread_timeout: f64 = matches.value_of_t("thread_timeout").unwrap();
             let use_brief_edge = matches.is_present("use_brief_edge");
             let label: String = matches.value_of_t("label").unwrap_or(format!(""));
-            let mut error_model_modifier_str: Option<String> = None;
-            match matches.value_of_t::<usize>("load_error_model_from_temporary_store") {
-                Ok(error_model_temporary_id) => {
-                    match local_get_temporary_store(error_model_temporary_id) {
-                        Some(value) => { error_model_modifier_str = Some(value); },
-                        None => { return Some(format!("[error] temporary id not found (may expire): {}", error_model_temporary_id)) }
+            let mut noise_model_modifier_str: Option<String> = None;
+            match matches.value_of_t::<usize>("load_noise_model_from_temporary_store") {
+                Ok(noise_model_temporary_id) => {
+                    match local_get_temporary_store(noise_model_temporary_id) {
+                        Some(value) => { noise_model_modifier_str = Some(value); },
+                        None => { return Some(format!("[error] temporary id not found (may expire): {}", noise_model_temporary_id)) }
                     }
                 },
                 Err(_) => { },
             }
-            match matches.value_of_t::<String>("load_error_model_from_file") {
-                Ok(error_model_filepath) => {
-                    match fs::read_to_string(error_model_filepath.clone()) {
-                        Ok(value) => { error_model_modifier_str = Some(value); },
-                        Err(_) => { return Some(format!("[error] error model file cannot open: {}", error_model_filepath)) }
+            match matches.value_of_t::<String>("load_noise_model_from_file") {
+                Ok(noise_model_filepath) => {
+                    match fs::read_to_string(noise_model_filepath.clone()) {
+                        Ok(value) => { noise_model_modifier_str = Some(value); },
+                        Err(_) => { return Some(format!("[error] noise model file cannot open: {}", noise_model_filepath)) }
                     }
                 },
                 Err(_) => { },
             }
-            let error_model_modifier: Option<serde_json::Value> = match error_model_modifier_str {
+            let noise_model_modifier: Option<serde_json::Value> = match noise_model_modifier_str {
                 Some(value) => match serde_json::from_str(&value) {
-                    Ok(error_model_modifier) => Some(error_model_modifier),
-                    Err(_) => { return Some(format!("[error] error model cannot recognize, please check file format")) }
+                    Ok(noise_model_modifier) => Some(noise_model_modifier),
+                    Err(_) => { return Some(format!("[error] noise model cannot recognize, please check file format")) }
                 },
                 None => None,
             };
@@ -118,8 +118,8 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let visualizer_model_graph = matches.is_present("visualizer_model_graph");
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
-                , error_model_builder, error_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge, label
-                , error_model_modifier, enable_visualizer, visualizer_skip_success_cases, visualizer_filename, visualizer_model_graph));
+                , noise_model_builder, noise_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge, label
+                , noise_model_modifier, enable_visualizer, visualizer_skip_success_cases, visualizer_filename, visualizer_model_graph));
         }
         _ => unreachable!()
     }
@@ -129,10 +129,10 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub enum BenchmarkDebugPrint {
-    /// the original error model
-    ErrorModel,
+    /// the original noise model
+    NoiseModel,
     /// including every possible error rate (correlated ones), but initialize them as 0
-    FullErrorModel,
+    FullNoiseModel,
     /// model graph, supporting decoder config `weight_function` or `wf`
     ModelGraph,
     /// complete model graph, supporting decoder config `weight_function` or `wf`, `precompute_complete_model_graph` or `pcmg`
@@ -161,7 +161,7 @@ pub struct BenchmarkDebugPrintDecoderConfig {
     #[serde(alias = "wf")]  // abbreviation
     #[serde(default = "mwpm_default_configs::weight_function")]
     pub weight_function: WeightFunction,
-    /// combined probability can improve accuracy, but will cause probabilities differ a lot even in the case of i.i.d. error model
+    /// combined probability can improve accuracy, but will cause probabilities differ a lot even in the case of i.i.d. noise model
     #[serde(alias = "ucp")]  // abbreviation
     #[serde(default = "mwpm_default_configs::use_combined_probability")]
     pub use_combined_probability: bool,
@@ -246,12 +246,12 @@ impl BenchmarkThreadDebugger {
     }
     /// load error to simulator, useful when debug specific case
     #[allow(dead_code)]
-    pub fn load_errors(&self, simulator: &mut Simulator, error_model: &ErrorModel) {
+    pub fn load_errors(&self, simulator: &mut Simulator, noise_model: &NoiseModel) {
         if self.error_pattern.is_some() {
-            simulator.load_sparse_error_pattern(&self.error_pattern.as_ref().unwrap(), error_model).expect("success");
+            simulator.load_sparse_error_pattern(&self.error_pattern.as_ref().unwrap(), noise_model).expect("success");
         }
         if self.detected_erasures.is_some() {
-            simulator.load_sparse_detected_erasures(&self.detected_erasures.as_ref().unwrap(), error_model).expect("success");
+            simulator.load_sparse_detected_erasures(&self.detected_erasures.as_ref().unwrap(), noise_model).expect("success");
         }
         // propagate the errors and erasures
         simulator.propagate_errors();
@@ -261,8 +261,8 @@ impl BenchmarkThreadDebugger {
 fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_repeats: usize, min_failed_cases: usize
         , parallel: usize, code_type: String, decoder: BenchmarkDecoder, decoder_config: serde_json::Value, ignore_logical_i: bool, ignore_logical_j: bool
         , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
-        , error_model_builder: Option<ErrorModelBuilder>, error_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
-        , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String, error_model_modifier: Option<serde_json::Value>
+        , noise_model_builder: Option<NoiseModelBuilder>, noise_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
+        , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String, noise_model_modifier: Option<serde_json::Value>
         , enable_visualizer: bool, visualizer_skip_success_cases: bool, visualizer_filename: String, visualizer_model_graph: bool) -> String {
     // if parallel = 0, use all CPU resources
     let parallel = if parallel == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel };
@@ -293,7 +293,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         "log_error_pattern_when_logical_error": log_error_pattern_when_logical_error,
         "use_brief_edge": use_brief_edge,
         "label": label,
-        "error_model_modifier": error_model_modifier,
+        "noise_model_modifier": noise_model_modifier,
     });
     match &log_runtime_statistics_file {  // append runtime statistics data
         Some(log_runtime_statistics_file) => {
@@ -354,23 +354,23 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         }
         // prepare simulator
         let mut simulator = Simulator::new(CodeType::new(&code_type), CodeSize::new(noisy_measurements, di, dj));
-        let mut error_model_graph = ErrorModel::new(&simulator);
-        // first use p_graph and pe_graph to build decoder graph, then revert back to real error model
+        let mut noise_model_graph = NoiseModel::new(&simulator);
+        // first use p_graph and pe_graph to build decoder graph, then revert back to real noise model
         let px_graph = p_graph / (1. + bias_eta) / 2.;
         let py_graph = px_graph;
         let pz_graph = p_graph - 2. * px_graph;
-        simulator.set_error_rates(&mut error_model_graph, px_graph, py_graph, pz_graph, pe_graph);
-        // apply customized error model
-        if let Some(error_model_builder) = &error_model_builder {
-            error_model_builder.apply(&mut simulator, &mut error_model_graph, &error_model_configuration, p_graph, bias_eta, pe_graph);
+        simulator.set_error_rates(&mut noise_model_graph, px_graph, py_graph, pz_graph, pe_graph);
+        // apply customized noise model
+        if let Some(noise_model_builder) = &noise_model_builder {
+            noise_model_builder.apply(&mut simulator, &mut noise_model_graph, &noise_model_configuration, p_graph, bias_eta, pe_graph);
         }
-        // apply error model modifier
-        match &error_model_modifier {
+        // apply noise model modifier
+        match &noise_model_modifier {
             Some(modifier) => {
-                match ErrorModelBuilder::apply_error_model_modifier(&mut simulator, &mut error_model_graph, &modifier) {
+                match NoiseModelBuilder::apply_noise_model_modifier(&mut simulator, &mut noise_model_graph, &modifier) {
                     Ok(_) => { },
                     Err(reason) => {
-                        panic!("[error] apply error model failed: {}", reason);
+                        panic!("[error] apply noise model failed: {}", reason);
                     },
                 }
             },
@@ -384,33 +384,33 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             sanity_check_result.is_ok()
         });
         assert!({  // this assertion is cheap, check it in release mode as well
-            let sanity_check_result = error_model_sanity_check(&simulator, &error_model_graph);
+            let sanity_check_result = noise_model_sanity_check(&simulator, &noise_model_graph);
             if let Err(message) = &sanity_check_result {
-                println!("[error] error_model_sanity_check: {}", message)
+                println!("[error] noise_model_sanity_check: {}", message)
             }
             sanity_check_result.is_ok()
         });
-        simulator.compress_error_rates(&mut error_model_graph);  // by default compress all error rates
+        simulator.compress_error_rates(&mut noise_model_graph);  // by default compress all error rates
         match debug_print {
-            Some(BenchmarkDebugPrint::ErrorModel) => {
-                return format!("{}\n", serde_json::to_string(&simulator.to_json(&error_model_graph)).expect("serialize should success"));
+            Some(BenchmarkDebugPrint::NoiseModel) => {
+                return format!("{}\n", serde_json::to_string(&simulator.to_json(&noise_model_graph)).expect("serialize should success"));
             },
-            Some(BenchmarkDebugPrint::FullErrorModel) => {
-                simulator.expand_error_rates(&mut error_model_graph);  // expand all optional error rates
-                return format!("{}\n", serde_json::to_string(&simulator.to_json(&error_model_graph)).expect("serialize should success"));
+            Some(BenchmarkDebugPrint::FullNoiseModel) => {
+                simulator.expand_error_rates(&mut noise_model_graph);  // expand all optional error rates
+                return format!("{}\n", serde_json::to_string(&simulator.to_json(&noise_model_graph)).expect("serialize should success"));
             },
             Some(BenchmarkDebugPrint::ModelGraph) => {
                 let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
                 let mut model_graph = ModelGraph::new(&simulator);
-                let error_model_graph = Arc::new(error_model_graph);
-                model_graph.build(&mut simulator, error_model_graph, &config.weight_function, parallel_init, config.use_combined_probability, use_brief_edge);
+                let noise_model_graph = Arc::new(noise_model_graph);
+                model_graph.build(&mut simulator, noise_model_graph, &config.weight_function, parallel_init, config.use_combined_probability, use_brief_edge);
                 return format!("{}\n", serde_json::to_string(&model_graph.to_json(&simulator)).expect("serialize should success"));
             },
             Some(BenchmarkDebugPrint::CompleteModelGraph) => {
                 let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
                 let mut model_graph = ModelGraph::new(&simulator);
-                let error_model_graph = Arc::new(error_model_graph);
-                model_graph.build(&mut simulator, error_model_graph, &config.weight_function, parallel_init, config.use_combined_probability, use_brief_edge);
+                let noise_model_graph = Arc::new(noise_model_graph);
+                model_graph.build(&mut simulator, noise_model_graph, &config.weight_function, parallel_init, config.use_combined_probability, use_brief_edge);
                 let model_graph = Arc::new(model_graph);
                 let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
                 complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph, parallel_init);
@@ -419,13 +419,13 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             Some(BenchmarkDebugPrint::TailoredModelGraph) => {
                 let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
                 let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
-                tailored_model_graph.build(&mut simulator, &error_model_graph, &config.weight_function);
+                tailored_model_graph.build(&mut simulator, &noise_model_graph, &config.weight_function);
                 return format!("{}\n", serde_json::to_string(&tailored_model_graph.to_json(&simulator)).expect("serialize should success"));
             },
             Some(BenchmarkDebugPrint::TailoredCompleteModelGraph) => {
                 let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
                 let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
-                tailored_model_graph.build(&mut simulator, &error_model_graph, &config.weight_function);
+                tailored_model_graph.build(&mut simulator, &noise_model_graph, &config.weight_function);
                 let tailored_model_graph = Arc::new(tailored_model_graph);
                 let mut complete_tailored_model_graph = TailoredCompleteModelGraph::new(&simulator, Arc::clone(&tailored_model_graph));
                 complete_tailored_model_graph.precompute(&simulator, config.precompute_complete_model_graph, parallel_init);
@@ -433,47 +433,47 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             },
             Some(BenchmarkDebugPrint::ErasureGraph) => {
                 let mut erasure_graph = ErasureGraph::new(&simulator);
-                let error_model_graph = Arc::new(error_model_graph);
-                erasure_graph.build(&mut simulator, error_model_graph, parallel_init);
+                let noise_model_graph = Arc::new(noise_model_graph);
+                erasure_graph.build(&mut simulator, noise_model_graph, parallel_init);
                 return format!("{}\n", serde_json::to_string(&erasure_graph.to_json(&simulator)).expect("serialize should success"));
             },
             _ => { }
         }
         let debug_print = Arc::new(debug_print);  // share it across threads
-        let error_model_graph = Arc::new(error_model_graph);  // change mutability of error model
+        let noise_model_graph = Arc::new(noise_model_graph);  // change mutability of noise model
         // build decoder precomputed data which is shared between threads
         if decoder == BenchmarkDecoder::None {
             assert!(decoder_config.is_object() && decoder_config.as_object().unwrap().len() == 0, "this decoder doesn't support decoder configuration");
         }
         let mwpm_decoder = if decoder == BenchmarkDecoder::MWPM {
-            Some(MWPMDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init, use_brief_edge))
+            Some(MWPMDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
         } else { None };
         let fusion_decoder = if decoder == BenchmarkDecoder::Fusion {
-            Some(FusionDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init, use_brief_edge))
+            Some(FusionDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
         } else { None };
         let tailored_mwpm_decoder = if decoder == BenchmarkDecoder::TailoredMWPM {
-            Some(TailoredMWPMDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init, use_brief_edge))
+            Some(TailoredMWPMDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
         } else { None };
         let union_find_decoder = if decoder == BenchmarkDecoder::UnionFind {
-            Some(UnionFindDecoder::new(&simulator, Arc::clone(&error_model_graph), &decoder_config, parallel_init, use_brief_edge))
+            Some(UnionFindDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
         } else { None };
-        // then prepare the real error model
-        let mut error_model = ErrorModel::new(&simulator);
+        // then prepare the real noise model
+        let mut noise_model = NoiseModel::new(&simulator);
         let px = p / (1. + bias_eta) / 2.;
         let py = px;
         let pz = p - 2. * px;
-        simulator.set_error_rates(&mut error_model, px, py, pz, pe);
-        // apply customized error model
-        if let Some(error_model_builder) = &error_model_builder {
-            error_model_builder.apply(&mut simulator, &mut error_model, &error_model_configuration, p, bias_eta, pe);
+        simulator.set_error_rates(&mut noise_model, px, py, pz, pe);
+        // apply customized noise model
+        if let Some(noise_model_builder) = &noise_model_builder {
+            noise_model_builder.apply(&mut simulator, &mut noise_model, &noise_model_configuration, p, bias_eta, pe);
         }
-        // apply error model modifier
-        match &error_model_modifier {
+        // apply noise model modifier
+        match &noise_model_modifier {
             Some(modifier) => {
-                match ErrorModelBuilder::apply_error_model_modifier(&mut simulator, &mut error_model, &modifier) {
+                match NoiseModelBuilder::apply_noise_model_modifier(&mut simulator, &mut noise_model, &modifier) {
                     Ok(_) => { },
                     Err(reason) => {
-                        panic!("[error] apply error model failed: {}", reason);
+                        panic!("[error] apply noise model failed: {}", reason);
                     },
                 }
             },
@@ -487,24 +487,24 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             sanity_check_result.is_ok()
         });
         assert!({  // this assertion is cheap, check it in release mode as well
-            let sanity_check_result = error_model_sanity_check(&simulator, &error_model);
+            let sanity_check_result = noise_model_sanity_check(&simulator, &noise_model);
             if let Err(message) = &sanity_check_result {
-                println!("[error] error_model_sanity_check: {}", message)
+                println!("[error] noise_model_sanity_check: {}", message)
             }
             sanity_check_result.is_ok()
         });
-        simulator.compress_error_rates(&mut error_model);  // by default compress all error rates
-        let error_model = Arc::new(error_model);  // change mutability of error model
+        simulator.compress_error_rates(&mut noise_model);  // by default compress all error rates
+        let noise_model = Arc::new(noise_model);  // change mutability of noise model
         let mut visualizer = None;
         if enable_visualizer {
             print_visualize_link(visualizer_filename.clone());
             let mut new_visualizer = Visualizer::new(Some(visualize_data_folder() + visualizer_filename.as_str())).unwrap();
             new_visualizer.add_component(&simulator).unwrap();
-            new_visualizer.add_component(error_model.as_ref()).unwrap();
+            new_visualizer.add_component(noise_model.as_ref()).unwrap();
             if visualizer_model_graph {
                 let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
                 let mut model_graph = ModelGraph::new(&simulator);
-                model_graph.build(&mut simulator, Arc::clone(&error_model_graph), &config.weight_function, parallel_init
+                model_graph.build(&mut simulator, Arc::clone(&noise_model_graph), &config.weight_function, parallel_init
                     , config.use_combined_probability, use_brief_edge);
                 new_visualizer.add_component(&model_graph).unwrap();
             }
@@ -523,7 +523,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         for _parallel_idx in 0..parallel {
             let benchmark_control = Arc::clone(&benchmark_control);
             let mut simulator: Simulator = simulator.clone();
-            let error_model = Arc::clone(&error_model);
+            let noise_model = Arc::clone(&noise_model);
             let debug_print = Arc::clone(&debug_print);
             let log_runtime_statistics_file = log_runtime_statistics_file.clone();
             let visualizer = visualizer.clone();
@@ -540,7 +540,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().update_thread_counter(thread_counter); }
                     // generate random errors and the corresponding measurement
                     let begin = Instant::now();
-                    let (error_count, erasure_count) = simulator.generate_random_errors(&error_model);
+                    let (error_count, erasure_count) = simulator.generate_random_errors(&noise_model);
                     let sparse_detected_erasures = if erasure_count != 0 { simulator.generate_sparse_detected_erasures() } else { SparseDetectedErasures::new() };
                     if thread_timeout >= 0. {
                         let mut thread_debugger = thread_debugger.lock().unwrap();

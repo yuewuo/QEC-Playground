@@ -1,4 +1,4 @@
-/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.004560352363123884] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.008469225817230072]
+/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.004560352363123884] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.008469225817230072]
 0.004560352363123884 19 19 252618 34304 0.13579396559231727 19 9.8e-3 252647 / 252647  100.00 % 163.23/s 76m
 format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>
 0.004560352363123884 19 19 252707 34319 0.13580549806693126 19 9.8e-3
@@ -16,13 +16,13 @@ configuration 2:
 0.004515421687454984 19 19 260093 32240 0.12395566201320297 19 1.0e-2 0.012901204821299955 0.35
 0.004560352363123884 19 19 252707 34319 0.13580549806693126 19 9.8e-3 0.013029578180353956 0.35
 pair: [(15, 15, 15), (19, 19, 19)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.012853235703574828
 relative_confidence_interval = 0.0037354612191575877
 
 
 
-/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0042953621856399475] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.01002251176649321]
+/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0042953621856399475] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.01002251176649321]
 0.0042953621856399475 19 19 257662 32922 0.12777204244320078 19 1.0e-2 257697 / 257697  100.00 % 166.41/s 74m
 format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>
 0.0042953621856399475 19 19 257757 32931 0.12775986685133672 19 1.0e-2
@@ -40,14 +40,14 @@ configuration 2:
 0.004253042314306311 19 19 258958 30008 0.11587979517914102 19 1.1e-2 0.01417680771435437 0.3
 0.0042953621856399475 19 19 257757 32931 0.12775986685133672 19 1.0e-2 0.014317873952133159 0.3
 pair: [(15, 15, 15), (19, 19, 19)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.014210637392857037
 relative_confidence_interval = 0.005097534700163125
 
 
 
 
-/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.004038350634364697] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.01211505190309409]
+/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.004038350634364697] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.01211505190309409]
 0.004038350634364697 19 19 259456 35923 0.13845507523433645 19 9.6e-3 259487 / 259487  100.00 % 165.24/s 75m
 format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>
 0.004038350634364697 19 19 259547 35938 0.13846432438055536 19 9.6e-3
@@ -65,14 +65,14 @@ configuration 2:
 0.003998562958294498 19 19 259152 32540 0.1255633759338149 19 1.0e-2 0.015994251833177993 0.25
 0.004038350634364697 19 19 259547 35938 0.13846432438055536 19 9.6e-3 0.016153402537458787 0.25
 pair: [(15, 15, 15), (19, 19, 19)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.015844803128544357
 relative_confidence_interval = 0.003404761970594661
 
 
 
 
-/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.003651063669998388] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.014604254679993552]
+/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.003651063669998388] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.014604254679993552]
 0.003651063669998388 19 19 256009 33429 0.13057744063685262 19 1.0e-2 256040 / 256040  100.00 % 163.87/s 76m
 format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>
 0.003651063669998388 19 19 256100 33450 0.13061304178055447 19 1.0e-2
@@ -90,7 +90,7 @@ configuration 2:
 0.0036150917221003023 19 19 264505 31482 0.11902232471975956 19 1.0e-2 0.01807545861050151 0.2
 0.003651063669998388 19 19 256100 33450 0.13061304178055447 19 1.0e-2 0.018255318349991938 0.2
 pair: [(15, 15, 15), (19, 19, 19)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.018061656841420075
 relative_confidence_interval = 0.0034322101080683613
 
@@ -98,7 +98,7 @@ relative_confidence_interval = 0.0034322101080683613
 
 
 
-/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0031765952655346645] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.018000706504696432]
+/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0031765952655346645] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.018000706504696432]
 0.0031765952655346645 19 19 254091 33107 0.13029583889236535 19 1.0e-2 254130 / 254130  100.00 % 162.76/s 76m
 format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>
 0.0031765952655346645 19 19 254190 33111 0.13026082851410362 19 1.0e-2
@@ -116,14 +116,14 @@ configuration 2:
 0.0031452979972004837 19 19 252564 29559 0.11703568204494702 19 1.1e-2 0.02096865331466989 0.15
 0.0031765952655346645 19 19 254190 33111 0.13026082851410362 19 1.0e-2 0.021177301770231097 0.15
 pair: [(15, 15, 15), (19, 19, 19)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.020926955672318056
 relative_confidence_interval = 0.004126561493370966
 
 
 
 
-/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0025313012919513443] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.022781711627562096]
+/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0025313012919513443] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.022781711627562096]
 0.0025313012919513443 19 19 251411 31840 0.1266452144098707 19 1.0e-2 251442 / 251442  100.00 % 159.65/s 78mmm
 format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>
 0.0025313012919513443 19 19 251502 31856 0.12666300864406646 19 1.0e-2
@@ -141,14 +141,14 @@ configuration 2:
 0.0025063617547593045 19 19 248347 27780 0.11185961577953428 19 1.1e-2 0.025063617547593044 0.1
 0.0025313012919513443 19 19 251502 31856 0.12666300864406646 19 1.0e-2 0.02531301291951344 0.1
 pair: [(15, 15, 15), (19, 19, 19)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.0250146843338531
 relative_confidence_interval = 0.004051443911411346
 
 
 
 
-/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0015977366710304072] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.030356996749577737]
+/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0015977366710304072] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.030356996749577737]
 0.0015977366710304072 19 19 236027 27680 0.11727471857033306 19 1.1e-2 236055 / 236055  100.00 % 148.96/s 85mm
 format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>
 0.0015977366710304072 19 19 236115 27689 0.11726912733202041 19 1.1e-2
@@ -166,13 +166,13 @@ configuration 2:
 0.0015819950391444883 19 19 243612 24942 0.10238411900891582 19 1.2e-2 0.031639900782889765 0.05
 0.0015977366710304072 19 19 236115 27689 0.11726912733202041 19 1.1e-2 0.031954733420608145 0.05
 pair: [(15, 15, 15), (19, 19, 19)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.03152660003152218
 relative_confidence_interval = 0.0038145227338262622
 
 
 
-/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0013615055614175197] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.03267613347402047]
+/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0013615055614175197] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.03267613347402047]
 0.0013615055614175195 19 19 236315 28425 0.12028436620612318 19 1.1e-2 236340 / 236340  100.00 % 151.50/s 84mm
 format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>
 0.0013615055614175195 19 19 236400 28437 0.12029187817258884 19 1.1e-2
@@ -190,13 +190,13 @@ configuration 2:
 0.0013480913863866343 19 19 221248 23218 0.10494106161411629 19 1.2e-2 0.03370228465966586 0.04
 0.0013615055614175195 19 19 236400 28437 0.12029187817258884 19 1.1e-2 0.034037639035437994 0.04
 pair: [(15, 15, 15), (19, 19, 19)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.03337123966452624
 relative_confidence_interval = 0.0029361545572370836
 
 
 
-/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0010933465745818702] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.0353515392448138]
+/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0010933465745818702] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.0353515392448138]
 0.0010933465745818702 19 19 249927 29717 0.11890271959412148 19 1.1e-2 249963 / 249963  100.00 % 153.57/s 81mm
 format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>
 0.0010933465745818702 19 19 250023 29726 0.11889306183831087 19 1.1e-2
@@ -214,14 +214,14 @@ configuration 2:
 0.0010825744244442018 19 19 248370 25596 0.10305592462857834 19 1.2e-2 0.036085814148140063 0.03
 0.0010933465745818702 19 19 250023 29726 0.11889306183831087 19 1.1e-2 0.03644488581939567 0.03
 pair: [(15, 15, 15), (19, 19, 19)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.03580010825375253
 relative_confidence_interval = 0.0025895953193545204
 
 
 
 
-/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0007890332646731486] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.038662629968984286]
+/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0007890332646731486] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.038662629968984286]
 0.0007890332646731486 19 19 249749 28948 0.11590837200549352 19 1.1e-2 249783 / 249783  100.00 % 155.96/s 80mm
 format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>
 0.0007890332646731486 19 19 249843 28957 0.11590078569341547 19 1.1e-2
@@ -239,14 +239,14 @@ configuration 2:
 0.0007812593483429819 19 19 246652 24799 0.10054246468708951 19 1.2e-2 0.0390629674171491 0.02
 0.0007890332646731486 19 19 249843 28957 0.11590078569341547 19 1.1e-2 0.03945166323365743 0.02
 pair: [(15, 15, 15), (19, 19, 19)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.0385345764490502
 relative_confidence_interval = 0.003475180479421092
 
 
 
 
-/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0004412865638251874] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.04368736981869355]
+/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0004412865638251874] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.04368736981869355]
 0.0004412865638251874 19 19 243085 31931 0.13135734413888145 19 1.0e-2 243117 / 243117  100.00 % 150.19/s 84mm
 format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>
 0.0004412865638251874 19 19 243177 31939 0.13134054618652258 19 1.0e-2
@@ -264,13 +264,13 @@ configuration 2:
 0.0004369388069201286 19 19 246645 28227 0.11444383628291674 19 1.1e-2 0.043693880692012854 0.01
 0.0004412865638251874 19 19 243177 31939 0.13134054618652258 19 1.0e-2 0.044128656382518734 0.01
 pair: [(15, 15, 15), (19, 19, 19)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.042744709490003176
 relative_confidence_interval = 0.003560810793341652
 
 
 
-/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.0529873080652182]
+/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [19] --djs [19] [19] -m1000000 -e1000000 [0.0] -p60 --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --time_budget 1500 --pes [0.0529873080652182]
 0 19 19 20895 6138 0.2937544867193108 19 2.1e-2 20899 / 20899  100.00 % 12.85/s 1270mm
 format: <p> <di> <T> <total_rounds> <qec_failed> <error_rate> <dj> <confidence_interval_95_percent>
 0 19 19 20959 6161 0.29395486425879097 19 2.1e-2
@@ -288,7 +288,7 @@ configuration 2:
 0 19 19 20630 5141 0.24920019389238973 19 2.4e-2 0.052465252889723916 0.0
 0 19 19 20959 6161 0.29395486425879097 19 2.1e-2 0.0529873080652182 0.0
 pair: [(15, 15, 15), (19, 19, 19)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.051948892758815576
 relative_confidence_interval = 0.005506852990020573
 

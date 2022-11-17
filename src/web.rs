@@ -16,7 +16,7 @@ pub async fn run_server(port: i32, addr: String, root_url: String) -> std::io::R
                 web::scope(root_url.as_str().trim_end_matches('/'))  // must remove trailing slashes from scope, see https://actix.rs/actix-web/actix_web/struct.Scope.html
                     .service(web::resource("hello").route(web::get().to(get_hello)))
                     .service(web::resource("version").route(web::get().to(get_version)))
-                    .service(web::resource("view_error_model").route(web::get().to(view_error_model)))
+                    .service(web::resource("view_noise_model").route(web::get().to(view_noise_model)))
                     .service(web::resource("new_temporary_store").route(web::post().to(new_temporary_store)))
                     .service(web::resource("get_temporary_store/{resource_id}").route(web::get().to(get_temporary_store)))
             )
@@ -44,7 +44,7 @@ fn default_resource_id() -> usize {
 }
 
 #[derive(Deserialize)]
-struct ViewErrorModelQuery {
+struct ViewNoiseModelQuery {
     #[serde(default = "default_parameters")]
     parameters: String,
     #[serde(default = "default_probability")]
@@ -52,11 +52,11 @@ struct ViewErrorModelQuery {
     #[serde(default = "default_probability")]
     pe: f64,
     #[serde(default = "default_resource_id")]
-    error_model_temporary_id: usize,
+    noise_model_temporary_id: usize,
 }
 
 /// call `tool benchmark` with code distance 5x5x5
-async fn view_error_model(info: web::Query<ViewErrorModelQuery>) -> Result<HttpResponse, Error> {
+async fn view_noise_model(info: web::Query<ViewNoiseModelQuery>) -> Result<HttpResponse, Error> {
     let di = 5;
     let dj = di;
     let T = di;
@@ -65,15 +65,15 @@ async fn view_error_model(info: web::Query<ViewErrorModelQuery>) -> Result<HttpR
         , format!("[{}]", di), format!("--djs"), format!("[{}]", dj)
         , format!("[{}]", T), format!("[{}]", info.p), format!("--pes"), format!("[{}]", info.pe)];
     let temporary_store = TEMPORARY_STORE.read().unwrap();  // must acquire a reader lock, so that tool.rs is definitely; will slow down requests a little bit, but safety worth it
-    if info.error_model_temporary_id > 0 {
-        match local_get_temporary_store(info.error_model_temporary_id) {
+    if info.noise_model_temporary_id > 0 {
+        match local_get_temporary_store(info.noise_model_temporary_id) {
             Some(_) => { },
             None => {
-                return Ok(HttpResponse::NotFound().body(format!("error_model_temporary_id={} not found, might be expired", info.error_model_temporary_id)))
+                return Ok(HttpResponse::NotFound().body(format!("noise_model_temporary_id={} not found, might be expired", info.noise_model_temporary_id)))
             },
         }
-        tokens.push(format!("--load_error_model_from_temporary_store"));
-        tokens.push(format!("{}", info.error_model_temporary_id));
+        tokens.push(format!("--load_noise_model_from_temporary_store"));
+        tokens.push(format!("{}", info.noise_model_temporary_id));
     }
     tokens.append(&mut match crate::shlex::split(&info.parameters) {
         Some(mut t) => t,
@@ -123,7 +123,7 @@ async fn get_temporary_store(req: HttpRequest) -> Result<HttpResponse, Error> {
     };
     match local_get_temporary_store(resource_id) {
         Some(value) => Ok(HttpResponse::Ok().body(value.clone())),
-        None => Ok(HttpResponse::NotFound().body(format!("error_model_temporary_id={} not found, might be expired", resource_id))),
+        None => Ok(HttpResponse::NotFound().body(format!("noise_model_temporary_id={} not found, might be expired", resource_id))),
     }
 }
 

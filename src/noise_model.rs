@@ -1,4 +1,4 @@
-//! # Error Model
+//! # Noise Model
 //!
 //! customized error rate with high flexibility
 //! 
@@ -14,17 +14,17 @@ use std::sync::Arc;
 use crate::visualize::*;
 
 
-/// describing an error model, strictly corresponding to an instance of `Simulator`
+/// describing an noise model, strictly corresponding to an instance of `Simulator`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "python_binding", pyclass)]
-pub struct ErrorModel {
-    /// each error model node corresponds to a simulator node, this allows immutable sharing between threads
-    pub nodes: Vec::< Vec::< Vec::< Option<Arc <ErrorModelNode> > > > >,
+pub struct NoiseModel {
+    /// each noise model node corresponds to a simulator node, this allows immutable sharing between threads
+    pub nodes: Vec::< Vec::< Vec::< Option<Arc <NoiseModelNode> > > > >,
 }
 
-impl QecpVisualizer for ErrorModel {
+impl QecpVisualizer for NoiseModel {
     fn component_info(&self, abbrev: bool) -> (String, serde_json::Value) {
-        let name = "error_model";
+        let name = "noise_model";
         let info = json!({
             "nodes": (0..self.nodes.len()).map(|t| {
                 (0..self.nodes[t].len()).map(|i| {
@@ -50,10 +50,10 @@ impl QecpVisualizer for ErrorModel {
     }
 }
 
-/// error model node corresponds to 
+/// noise model node corresponds to 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "python_binding", pyclass)]
-pub struct ErrorModelNode {
+pub struct NoiseModelNode {
     /// without losing generality, errors are applied after the gate
     #[serde(rename = "pp")]
     pub pauli_error_rates: PauliErrorRates,
@@ -67,7 +67,7 @@ pub struct ErrorModelNode {
 
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pymethods)]
-impl ErrorModelNode {
+impl NoiseModelNode {
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new() -> Self {
         Self {
@@ -98,17 +98,17 @@ impl ErrorModelNode {
 
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pymethods)]
-impl ErrorModel {
+impl NoiseModel {
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new(simulator: &Simulator) -> Self {
-        assert!(simulator.volume() > 0, "cannot build error model out of zero-sized simulator");
-        let default_error_model_node = Arc::new(ErrorModelNode::new());
+        assert!(simulator.volume() > 0, "cannot build noise model out of zero-sized simulator");
+        let default_noise_model_node = Arc::new(NoiseModelNode::new());
         Self {
             nodes: (0..simulator.height).map(|t| {
                 (0..simulator.vertical).map(|i| {
                     (0..simulator.horizontal).map(|j| {
                         if simulator.is_node_exist(&pos!(t, i, j)) {
-                            Some(default_error_model_node.clone())
+                            Some(default_noise_model_node.clone())
                         } else {
                             None
                         }
@@ -119,7 +119,7 @@ impl ErrorModel {
     }
 }
 
-impl ErrorModel {
+impl NoiseModel {
 
     /// judge if `[t][i][j]` is valid index of `self.nodes`
     #[inline]
@@ -135,29 +135,29 @@ impl ErrorModel {
 
     /// get `self.nodes[t][i][j]` without position check when compiled in release mode
     #[inline]
-    pub fn get_node(&'_ self, position: &Position) -> &'_ Option<Arc<ErrorModelNode>> {
+    pub fn get_node(&'_ self, position: &Position) -> &'_ Option<Arc<NoiseModelNode>> {
         &self.nodes[position.t][position.i][position.j]
     }
 
     /// get reference `self.nodes[t][i][j]` and then unwrap
-    pub fn get_node_unwrap(&'_ self, position: &Position) -> &'_ ErrorModelNode {
+    pub fn get_node_unwrap(&'_ self, position: &Position) -> &'_ NoiseModelNode {
         self.nodes[position.t][position.i][position.j].as_ref().unwrap()
     }
 
     /// get reference `self.nodes[t][i][j]` and then unwrap, returning a clone of the arc
-    pub fn get_node_unwrap_arc(&'_ self, position: &Position) -> Arc<ErrorModelNode> {
+    pub fn get_node_unwrap_arc(&'_ self, position: &Position) -> Arc<NoiseModelNode> {
         self.nodes[position.t][position.i][position.j].as_ref().unwrap().clone()
     }
 
     /// each node is immutable, but one can assign a new node
-    pub fn set_node(&mut self, position: &Position, node: Option<Arc<ErrorModelNode>>) {
+    pub fn set_node(&mut self, position: &Position, node: Option<Arc<NoiseModelNode>>) {
         self.nodes[position.t][position.i][position.j] = node;
     }
 }
 
 /// check if error rates are not zero at perfect measurement ranges or at (always) virtual nodes,
 /// also check for error rate constrains on virtual nodes
-pub fn error_model_sanity_check(simulator: &Simulator, error_model: &ErrorModel) -> Result<(), String> {
+pub fn noise_model_sanity_check(simulator: &Simulator, noise_model: &NoiseModel) -> Result<(), String> {
     match simulator.code_size {
         CodeSize { noisy_measurements, .. } => {
             // check that no errors present in the final perfect measurement rounds
@@ -167,48 +167,48 @@ pub fn error_model_sanity_check(simulator: &Simulator, error_model: &ErrorModel)
             }
             for t in simulator.height - simulator.measurement_cycles .. simulator.height {
                 simulator_iter!(simulator, position, _node, t => t, {
-                    let error_model_node = error_model.get_node_unwrap(position);
-                    if !error_model_node.is_noiseless() {
+                    let noise_model_node = noise_model.get_node_unwrap(position);
+                    if !noise_model_node.is_noiseless() {
                         return Err(format!("detected noisy position {} within final perfect measurement", position))
                     }
                 });
             }
             // check all no error rate at virtual nodes
             simulator_iter_virtual!(simulator, position, _node, {  // only check for virtual nodes
-                let error_model_node = error_model.get_node_unwrap(position);
-                if !error_model_node.is_noiseless() {
+                let noise_model_node = noise_model.get_node_unwrap(position);
+                if !noise_model_node.is_noiseless() {
                     return Err(format!("detected noisy position {} which is virtual node", position))
                 }
             });
         }
     }
     simulator_iter!(simulator, position, node, {
-        let error_model_node = error_model.get_node_unwrap(position);
+        let noise_model_node = noise_model.get_node_unwrap(position);
         if node.is_virtual {  // no errors on virtual node is allowed, because they don't physically exist
-            if error_model_node.pauli_error_rates.error_probability() > 0. {
-                return Err(format!("virtual position at {} have non-zero pauli_error_rates: {:?}", position, error_model_node.pauli_error_rates))
+            if noise_model_node.pauli_error_rates.error_probability() > 0. {
+                return Err(format!("virtual position at {} have non-zero pauli_error_rates: {:?}", position, noise_model_node.pauli_error_rates))
             }
-            if error_model_node.erasure_error_rate > 0. {
-                return Err(format!("virtual position at {} have non-zero erasure_error_rate: {}", position, error_model_node.erasure_error_rate))
+            if noise_model_node.erasure_error_rate > 0. {
+                return Err(format!("virtual position at {} have non-zero erasure_error_rate: {}", position, noise_model_node.erasure_error_rate))
             }
-            if let Some(correlated_pauli_error_rates) = &error_model_node.correlated_pauli_error_rates {
+            if let Some(correlated_pauli_error_rates) = &noise_model_node.correlated_pauli_error_rates {
                 if correlated_pauli_error_rates.error_probability() > 0. {
                     return Err(format!("virtual position at {} have non-zero correlated_pauli_error_rates: {:?}", position, correlated_pauli_error_rates))
                 }
             }
-            if let Some(correlated_erasure_error_rates) = &error_model_node.correlated_erasure_error_rates {
+            if let Some(correlated_erasure_error_rates) = &noise_model_node.correlated_erasure_error_rates {
                 if correlated_erasure_error_rates.error_probability() > 0. {
                     return Err(format!("virtual position at {} have non-zero correlated_erasure_error_rates: {:?}", position, correlated_erasure_error_rates))
                 }
             }
         }
         if node.is_peer_virtual {  // no correlated errors if peer position is virtual, because this two-qubit gate doesn't physically exist
-            if let Some(correlated_pauli_error_rates) = &error_model_node.correlated_pauli_error_rates {
+            if let Some(correlated_pauli_error_rates) = &noise_model_node.correlated_pauli_error_rates {
                 if correlated_pauli_error_rates.error_probability() > 0. {
                     return Err(format!("position at {} have virtual peer but non-zero correlated_pauli_error_rates: {:?}", position, correlated_pauli_error_rates))
                 }
             }
-            if let Some(correlated_erasure_error_rates) = &error_model_node.correlated_erasure_error_rates {
+            if let Some(correlated_erasure_error_rates) = &noise_model_node.correlated_erasure_error_rates {
                 if correlated_erasure_error_rates.error_probability() > 0. {
                     return Err(format!("position at {} have virtual peer but non-zero correlated_erasure_error_rates: {:?}", position, correlated_erasure_error_rates))
                 }
@@ -221,7 +221,7 @@ pub fn error_model_sanity_check(simulator: &Simulator, error_model: &ErrorModel)
 #[cfg(feature="python_binding")]
 #[pyfunction]
 pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_class::<ErrorModel>()?;
-    m.add_class::<ErrorModelNode>()?;
+    m.add_class::<NoiseModel>()?;
+    m.add_class::<NoiseModelNode>()?;
     Ok(())
 }

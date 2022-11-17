@@ -3,7 +3,7 @@
 
 use serde::{Serialize, Deserialize};
 use super::simulator::*;
-use super::error_model::*;
+use super::noise_model::*;
 use super::model_graph::*;
 use super::serde_json;
 use std::sync::{Arc};
@@ -70,7 +70,7 @@ pub struct FusionDecoderConfig {
     #[serde(alias = "wf")]  // abbreviation
     #[serde(default = "mwpm_default_configs::weight_function")]
     pub weight_function: WeightFunction,
-    /// combined probability can improve accuracy, but will cause probabilities differ a lot even in the case of i.i.d. error model
+    /// combined probability can improve accuracy, but will cause probabilities differ a lot even in the case of i.i.d. noise model
     #[serde(alias = "ucp")]  // abbreviation
     #[serde(default = "mwpm_default_configs::use_combined_probability")]
     pub use_combined_probability: bool,
@@ -82,17 +82,17 @@ pub mod fusion_default_configs {
 
 impl FusionDecoder {
     /// create a new MWPM decoder with decoder configuration
-    pub fn new(simulator: &Simulator, error_model: Arc<ErrorModel>, decoder_configuration: &serde_json::Value, parallel: usize, use_brief_edge: bool) -> Self {
+    pub fn new(simulator: &Simulator, noise_model: Arc<NoiseModel>, decoder_configuration: &serde_json::Value, parallel: usize, use_brief_edge: bool) -> Self {
         // read attribute of decoder configuration
         let config: FusionDecoderConfig = serde_json::from_value(decoder_configuration.clone()).unwrap();
         // build model graph
         let mut simulator = simulator.clone();
         let mut model_graph = ModelGraph::new(&simulator);
-        model_graph.build(&mut simulator, Arc::clone(&error_model), &config.weight_function, parallel, config.use_combined_probability, use_brief_edge);
+        model_graph.build(&mut simulator, Arc::clone(&noise_model), &config.weight_function, parallel, config.use_combined_probability, use_brief_edge);
         let model_graph = Arc::new(model_graph);
         // build erasure graph
         let mut erasure_graph = ErasureGraph::new(&simulator);
-        erasure_graph.build(&mut simulator, Arc::clone(&error_model), parallel);
+        erasure_graph.build(&mut simulator, Arc::clone(&noise_model), parallel);
         let erasure_graph = Arc::new(erasure_graph);
         // build fusion decoder shared information
         let mut shared_data = FusionDecoderSharedData {
@@ -209,7 +209,7 @@ impl FusionDecoder {
 mod tests {
     use super::*;
     use super::super::code_builder::*;
-    use super::super::error_model_builder::*;
+    use super::super::noise_model_builder::*;
 
     #[test]
     fn fusion_decoder_debug_1() {  // cargo test fusion_decoder_debug_1 -- --nocapture
@@ -220,20 +220,20 @@ mod tests {
         // build simulator
         let mut simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
-        // build error model
-        let mut error_model = ErrorModel::new(&simulator);
-        let error_model_builder = ErrorModelBuilder::ErasureOnlyPhenomenological;
-        error_model_builder.apply(&mut simulator, &mut error_model, &json!({}), p, 1., pe);
-        simulator.compress_error_rates(&mut error_model);
-        error_model_sanity_check(&simulator, &error_model).unwrap();
-        let error_model = Arc::new(error_model);
+        // build noise model
+        let mut noise_model = NoiseModel::new(&simulator);
+        let noise_model_builder = NoiseModelBuilder::ErasureOnlyPhenomenological;
+        noise_model_builder.apply(&mut simulator, &mut noise_model, &json!({}), p, 1., pe);
+        simulator.compress_error_rates(&mut noise_model);
+        noise_model_sanity_check(&simulator, &noise_model).unwrap();
+        let noise_model = Arc::new(noise_model);
         // build decoder
         let decoder_config = json!({});
-        let mut fusion_decoder = FusionDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
+        let mut fusion_decoder = FusionDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&noise_model), &decoder_config, 1, false);
         // load errors onto the simulator
         let sparse_error_pattern: SparseErrorPattern = serde_json::from_value(json!({"[0][1][5]":"Z","[0][2][6]":"Z","[0][4][4]":"X","[0][5][7]":"X","[0][9][7]":"Y"})).unwrap();
         // let sparse_detected_erasures: SparseDetectedErasures = serde_json::from_value(json!({"erasures":["[0][1][3]","[0][1][5]","[0][2][6]","[0][4][4]","[0][5][7]","[0][6][6]","[0][9][7]"]})).unwrap();
-        simulator.load_sparse_error_pattern(&sparse_error_pattern, &error_model).expect("success");
+        simulator.load_sparse_error_pattern(&sparse_error_pattern, &noise_model).expect("success");
         // simulator.load_sparse_detected_erasures(&sparse_detected_erasures).expect("success");
         simulator.propagate_errors();
         let sparse_measurement = simulator.generate_sparse_measurement();
@@ -254,17 +254,17 @@ mod tests {
         // build simulator
         let mut simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
-        // build error model
-        let mut error_model = ErrorModel::new(&simulator);
-        simulator.set_error_rates(&mut error_model, p/3., p/3., p/3., 0.);
-        error_model_sanity_check(&simulator, &error_model).unwrap();
-        let error_model = Arc::new(error_model);
+        // build noise model
+        let mut noise_model = NoiseModel::new(&simulator);
+        simulator.set_error_rates(&mut noise_model, p/3., p/3., p/3., 0.);
+        noise_model_sanity_check(&simulator, &noise_model).unwrap();
+        let noise_model = Arc::new(noise_model);
         // build decoder
         let decoder_config = json!({});
-        let mut fusion_decoder = FusionDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&error_model), &decoder_config, 1, false);
+        let mut fusion_decoder = FusionDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&noise_model), &decoder_config, 1, false);
         // load errors onto the simulator
         let sparse_error_pattern: SparseErrorPattern = serde_json::from_value(json!({"[0][1][9]":"X","[0][4][8]":"Y","[0][5][9]":"Z","[0][6][10]":"Z","[0][7][11]":"Z","[0][8][6]":"X","[0][8][12]":"Z","[0][9][5]":"Y","[0][12][2]":"Y","[0][12][6]":"X"})).unwrap();
-        simulator.load_sparse_error_pattern(&sparse_error_pattern, &error_model).expect("success");
+        simulator.load_sparse_error_pattern(&sparse_error_pattern, &noise_model).expect("success");
         // simulator.load_sparse_detected_erasures(&sparse_detected_erasures).expect("success");
         simulator.propagate_errors();
         let sparse_measurement = simulator.generate_sparse_measurement();

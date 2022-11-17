@@ -71,7 +71,7 @@ ARGS:
     <nms>    [nm1,nm2,nm3,...,nmn] number of noisy measurement rounds, must have exactly the
              same length as `dis`; note that a perfect measurement is always capped at the end,
              so to simulate a single round of perfect measurement you should set this to 0
-    <ps>     [p1,p2,p3,...,pm] p = px + py + pz unless error model has special interpretation of
+    <ps>     [p1,p2,p3,...,pm] p = px + py + pz unless noise model has special interpretation of
              this value
 
 OPTIONS:

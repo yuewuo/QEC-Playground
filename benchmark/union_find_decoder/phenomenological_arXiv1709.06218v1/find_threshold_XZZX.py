@@ -7,8 +7,8 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import AutomatedThresholdEvaluator, qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command, run_qec_playground_command_get_stdout
 
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
-error_model_configuration = f'{{"also_include_pauli_x":true}}'
-parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model PauliZandErasurePhenomenological".split(" ") + ["--error_model_configuration", error_model_configuration]
+noise_model_configuration = f'{{"also_include_pauli_x":true}}'
+parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --noise_model PauliZandErasurePhenomenological".split(" ") + ["--noise_model_configuration", noise_model_configuration]
 
 # result:
 """
@@ -25,7 +25,7 @@ configuration 2:
 0.0258149927 15 15 442352 57196 0.12929974319094295 15 7.6e-3 0 0.02581499269589125
 0.0259437466 15 15 442183 60062 0.1358306402552789 15 7.4e-3 0 0.025943746575385136
 pair: [(11, 11, 11), (15, 15, 15)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'PauliZandErasurePhenomenological', '--error_model_configuration', '{"also_include_pauli_x":true}']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--noise_model', 'PauliZandErasurePhenomenological', '--noise_model_configuration', '{"also_include_pauli_x":true}']
 threshold = 0.025714973122800536
 relative_confidence_interval = 0.0014916472761219658
 """

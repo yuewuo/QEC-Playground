@@ -22,7 +22,7 @@ slurm_distribute.SLURM_DISTRIBUTE_TIME = "4:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '16G'
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # for more usuable machines, use `SLURM_USE_SCAVENGE_PARTITION=1` flag
 def generate_parameters(bias_eta):
-    return f"-p{STO(0)} --code_type RotatedTailoredCode --bias_eta {bias_eta} --decoder tailored-mwpm --decoder_config {{\"pcmg\":true}} --error_model tailored-sc-bell-init-phenomenological".split(" ")
+    return f"-p{STO(0)} --code_type RotatedTailoredCode --bias_eta {bias_eta} --decoder tailored-mwpm --decoder_config {{\"pcmg\":true}} --noise_model tailored-sc-bell-init-phenomenological".split(" ")
 
 PRECISE_RESULT_FILE = os.path.join(os.path.dirname(__file__), f"precise_result.hjson")
 RESULT_FILE = os.path.join(os.path.dirname(__file__), f"result.hjson")

@@ -15,13 +15,13 @@ min_error_cases = 50000
 """
 test commands:
 
-RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [9] [9] [0.00115] -p1 -m100000000 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel -e10 --decoder UF --max_half_weight 10 --time_budget 3600 --pes [0.02185] --log_runtime_statistics target/study_error_pattern_causing_logical_error_d_9.txt --log_error_pattern_into_statistics_when_has_logical_error
+RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [9] [9] [0.00115] -p1 -m100000000 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel -e10 --decoder UF --max_half_weight 10 --time_budget 3600 --pes [0.02185] --log_runtime_statistics target/study_error_pattern_causing_logical_error_d_9.txt --log_error_pattern_into_statistics_when_has_logical_error
 """
 
 
 max_N = 100000000
 
-UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 3600 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel".split(" ")  # a maximum 20min for each point
+UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 3600 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel".split(" ")  # a maximum 20min for each point
 
 results = []
 for di in di_vec:

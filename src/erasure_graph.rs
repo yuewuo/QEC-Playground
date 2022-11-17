@@ -10,7 +10,7 @@
 use super::simulator::*;
 use super::util_macros::*;
 use std::sync::{Arc, Mutex};
-use super::error_model::*;
+use super::noise_model::*;
 use super::types::*;
 use serde::{Serialize};
 
@@ -70,8 +70,8 @@ impl ErasureGraph {
         &mut self.nodes[position.t][position.i][position.j]
     }
 
-    /// build erasure graph given the simulator and the error model in a specific region, for parallel initialization
-    pub fn build_with_region(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, t_start: usize, t_end: usize) {
+    /// build erasure graph given the simulator and the noise model in a specific region, for parallel initialization
+    pub fn build_with_region(&mut self, simulator: &mut Simulator, noise_model: Arc<NoiseModel>, t_start: usize, t_end: usize) {
         let all_possible_errors = ErrorType::all_possible_errors();
         // clear the states in simulator including pauli, erasure errors and propagated errors
         simulator.clear_all_errors();
@@ -80,13 +80,13 @@ impl ErasureGraph {
             if position.t < t_start || position.t >= t_end {
                 continue
             }
-            let error_model_node = error_model.get_node_unwrap(position);
+            let noise_model_node = noise_model.get_node_unwrap(position);
             // whether it's possible to have erasure error at this node
-            let possible_erasure_error = error_model_node.erasure_error_rate > 0. || error_model_node.correlated_erasure_error_rates.is_some() || {
+            let possible_erasure_error = noise_model_node.erasure_error_rate > 0. || noise_model_node.correlated_erasure_error_rates.is_some() || {
                 let node = simulator.get_node_unwrap(position);
                 if let Some(gate_peer) = node.gate_peer.as_ref() {
-                    let peer_error_model_node = error_model.get_node_unwrap(gate_peer);
-                    if let Some(correlated_erasure_error_rates) = &peer_error_model_node.correlated_erasure_error_rates {
+                    let peer_noise_model_node = noise_model.get_node_unwrap(gate_peer);
+                    if let Some(correlated_erasure_error_rates) = &peer_noise_model_node.correlated_erasure_error_rates {
                         correlated_erasure_error_rates.error_probability() > 0.
                     } else { false }
                 } else { false }
@@ -126,8 +126,8 @@ impl ErasureGraph {
         });
     }
 
-    /// build erasure graph given the simulator and the error model
-    pub fn build(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, parallel: usize) {
+    /// build erasure graph given the simulator and the noise model
+    pub fn build(&mut self, simulator: &mut Simulator, noise_model: Arc<NoiseModel>, parallel: usize) {
         debug_assert!({
             let mut state_clean = true;
             simulator_iter!(simulator, position, _node, {
@@ -142,7 +142,7 @@ impl ErasureGraph {
             state_clean
         });
         if parallel <= 1 {
-            self.build_with_region(simulator, error_model, 0, simulator.height);
+            self.build_with_region(simulator, noise_model, 0, simulator.height);
         } else {
             // spawn `parallel` threads to compute in parallel
             let mut handlers = Vec::new();
@@ -157,10 +157,10 @@ impl ErasureGraph {
                 if parallel_idx == parallel - 1 {
                     t_end = simulator.height;  // to make sure every part is included
                 }
-                let error_model = Arc::clone(&error_model);
+                let noise_model = Arc::clone(&noise_model);
                 handlers.push(std::thread::spawn(move || {
                     let mut instance = instance.lock().unwrap();
-                    instance.build_with_region(&mut simulator, error_model, t_start, t_end);
+                    instance.build_with_region(&mut simulator, noise_model, t_start, t_end);
                 }));
             }
             for handler in handlers.drain(..) {

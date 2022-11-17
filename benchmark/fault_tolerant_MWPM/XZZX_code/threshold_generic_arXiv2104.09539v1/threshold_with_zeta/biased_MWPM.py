@@ -8,7 +8,7 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import AutomatedThresholdEvaluator
 
 pair = [ (5, 15, 15), (6, 18, 18) ]  # (di, dj, T)
-basic_parameters = "-p0 --use_xzzx_code --error_model GenericBiasedWithBiasedCX".split(" ")
+basic_parameters = "-p0 --use_xzzx_code --noise_model GenericBiasedWithBiasedCX".split(" ")
 
 bias_eta_vec = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, "+inf"]
 for bias_eta in bias_eta_vec:

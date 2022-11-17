@@ -63,8 +63,8 @@ for p in p_vec:
 
     parallel_init = os.cpu_count() - 2  # initialization step can take full advantage of multiple cores
 
-    UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --error_model generic-biased-with-biased-cx --bias_eta 100 --decoder union-find --decoder_config {{\"use_real_weighted\":true,\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true,\"use_combined_probability\":false}} --parallel_init {parallel_init} --use_brief_edge".split(" ")
-    # UF_parameters = f"-p{num_threads} --error_model phenomenological --decoder union-find --decoder_config {{\"use_real_weighted\":true,\"max_half_weight\":1000000,\"benchmark_skip_building_correction\":true}}".split(" ")
+    UF_parameters = f"-p{num_threads} --code_type StandardXZZXCode --noise_model generic-biased-with-biased-cx --bias_eta 100 --decoder union-find --decoder_config {{\"use_real_weighted\":true,\"max_half_weight\":{max_half_weight},\"benchmark_skip_building_correction\":true,\"use_combined_probability\":false}} --parallel_init {parallel_init} --use_brief_edge".split(" ")
+    # UF_parameters = f"-p{num_threads} --noise_model phenomenological --decoder union-find --decoder_config {{\"use_real_weighted\":true,\"max_half_weight\":1000000,\"benchmark_skip_building_correction\":true}}".split(" ")
     UF_command = qec_playground_benchmark_simulator_runner_vec_command([p], di_vec, dj_vec, T_vec, UF_parameters + ["--log_runtime_statistics", log_filepath], max_N=max_N, min_error_cases=max_N)
     print(" ".join(UF_command))
 

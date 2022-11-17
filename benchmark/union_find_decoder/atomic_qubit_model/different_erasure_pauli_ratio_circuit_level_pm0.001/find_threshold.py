@@ -16,8 +16,8 @@ slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 36
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
 # original time: 60 cores for 5min, which is 60*5/60 = 5 CPU hours
 init_measurement_error_rate = 0.001
-error_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate},"use_correlated_pauli":true}}'
-parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {CH(5)} --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ") + ["--error_model_configuration", error_model_configuration]
+noise_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate},"use_correlated_pauli":true}}'
+parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {CH(5)} --use_xzzx_code --noise_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ") + ["--noise_model_configuration", noise_model_configuration]
 
 run_specific_pauli_ratio = None
 if len(sys.argv) > 1:

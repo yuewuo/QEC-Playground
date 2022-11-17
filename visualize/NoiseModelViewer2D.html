@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Error Model Viewer 2D</title>
+    <title>Noise Model Viewer 2D</title>
     <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
 </head>
 <style>
@@ -70,7 +70,7 @@ textarea {
         </div>
         <div class="abs" style="right: 0; top: 0;" :style="{ width: (main_width-main_height*1.15)+'px', height: main_height+'px' }">
             <div :style="{ margin: (20*scale)+'px', 'font-size': (18*scale)+'px' }">
-                <p style="font-size: 160%; font-weight: bold;">Error Model<span v-if="data_ready" style="font-weight: normal;"> ({{ Object.keys(data.code_type)[0] }})</span></p>
+                <p style="font-size: 160%; font-weight: bold;">Noise Model<span v-if="data_ready" style="font-weight: normal;"> ({{ Object.keys(data.code_type)[0] }})</span></p>
                 <p style="font-size: 100%; max-width: 100%;" :style="{ 'margin-top': (20*scale)+'px' }">parameters: \( d_i = d_j = T = \;\){{di}}, \( p_{\small\text{Pauli}} = \;\){{p_str}}, \(p_{\small\text{erasure}} = \;\){{pe_str}}</p>
                 <textarea style="width: 95%; resize: none;" :style="{ padding: (10*scale)+'px', 'margin-top': (10*scale)+'px', 'font-size': (14*scale)+'px' }" id="parameters-textarea" rows="3" v-model="full_parameters" v-on:keypress="textarea_keypress" v-on:blur="textarea_updated"></textarea>
                 <div style="font-size: 80%; font-family: arial; color: grey;">
@@ -87,29 +87,29 @@ textarea {
                         <div v-if="node != null">
                             <p style="font-size: 150%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">{{ qubit_type_name(node.qubit_type) }} Qubit at [{{t}}][{{si}}][{{sj}}]</p>
                             <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">Single-Qubit Pauli Error:
-                                <p :style="{ color: node.error_model.pp.px > 2e-300 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small X} = \;\)<span>{{ node.error_model.pp.px }}</span></p>
-                                <p :style="{ color: node.error_model.pp.pz > 2e-300 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small Z} = \;\)<span>{{ node.error_model.pp.pz }}</span></p>
-                                <p :style="{ color: node.error_model.pp.py > 2e-300 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small Y} = \;\)<span>{{ node.error_model.pp.py }}</span></p></p>
-                                <p :style="{ color: node.error_model.pp.px + node.error_model.pp.pz + node.error_model.pp.py > 4e-300 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">
-                                    \( p_{\small X} + p_{\small Z} + p_{\small Y} = \;\)<span>{{ node.error_model.pp.px + node.error_model.pp.pz + node.error_model.pp.py }}</span></p></p>
+                                <p :style="{ color: node.noise_model.pp.px > 2e-300 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small X} = \;\)<span>{{ node.noise_model.pp.px }}</span></p>
+                                <p :style="{ color: node.noise_model.pp.pz > 2e-300 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small Z} = \;\)<span>{{ node.noise_model.pp.pz }}</span></p>
+                                <p :style="{ color: node.noise_model.pp.py > 2e-300 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small Y} = \;\)<span>{{ node.noise_model.pp.py }}</span></p></p>
+                                <p :style="{ color: node.noise_model.pp.px + node.noise_model.pp.pz + node.noise_model.pp.py > 4e-300 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">
+                                    \( p_{\small X} + p_{\small Z} + p_{\small Y} = \;\)<span>{{ node.noise_model.pp.px + node.noise_model.pp.pz + node.noise_model.pp.py }}</span></p></p>
                             <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">Single-Qubit Erasure Error: 
-                                <p :style="{ color: node.error_model.pe > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small\text{erasure}} = \;\)<span>{{ node.error_model.pe }}</span></p></p>
+                                <p :style="{ color: node.noise_model.pe > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small\text{erasure}} = \;\)<span>{{ node.noise_model.pe }}</span></p></p>
                             <div v-show="node.gate_peer != null">
                                 <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">Peer Qubit of this Two-Qubit Gate: {{ node.gate_peer }}</p>
                                 <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">Correlated Two-Qubit Pauli Error: (this \(\otimes\) peer)
-                                    <p v-for="name of all_correlated_pauli_names" :style="{ color: (node.error_model.corr_pp||all_zero_correlated_pauli)[`p${name.toLowerCase()}`] > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">
-                                        \( p_{\small {{ name[0] }} \otimes {{ name[1] }}} = \;\)<span>{{ (node.error_model.corr_pp||all_zero_correlated_pauli)[`p${name.toLowerCase()}`] }}</span></p></p>
+                                    <p v-for="name of all_correlated_pauli_names" :style="{ color: (node.noise_model.corr_pp||all_zero_correlated_pauli)[`p${name.toLowerCase()}`] > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">
+                                        \( p_{\small {{ name[0] }} \otimes {{ name[1] }}} = \;\)<span>{{ (node.noise_model.corr_pp||all_zero_correlated_pauli)[`p${name.toLowerCase()}`] }}</span></p></p>
                                     <p :style="{ color: sum_correlated_pauli(node) > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( \sum p_{\small \cdots \otimes \cdots} = \;\)<span>{{ sum_correlated_pauli(node) }}</span></p>
                                 <p style="font-size: 100%; font-weight: bold;" :style="{ 'margin-top': (10*scale)+'px' }">Correlated Two-Qubit Erasure Error: (this \(\otimes\) peer)
-                                    <p v-for="name of all_correlated_erasure_names" :style="{ color: (node.error_model.corr_pe||all_zero_correlated_erasure)[`p${name.toLowerCase()}`] > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">
-                                        \( p_{\small {{ name[0] }} \otimes {{ name[1] }}} = \;\)<span>{{ (node.error_model.corr_pe||all_zero_correlated_erasure)[`p${name.toLowerCase()}`] }}</span></p></p>
+                                    <p v-for="name of all_correlated_erasure_names" :style="{ color: (node.noise_model.corr_pe||all_zero_correlated_erasure)[`p${name.toLowerCase()}`] > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">
+                                        \( p_{\small {{ name[0] }} \otimes {{ name[1] }}} = \;\)<span>{{ (node.noise_model.corr_pe||all_zero_correlated_erasure)[`p${name.toLowerCase()}`] }}</span></p></p>
                                     <p :style="{ color: sum_correlated_erasure(node) > 0 ? non_zero_color : zero_color, 'margin-left': (40*scale)+'px' }">\( p_{\small I \otimes E} + p_{\small E \otimes I} + p_{\small E \otimes E} = \;\)<span>{{ sum_correlated_erasure(node) }}</span></p>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div v-if="selected == null">
-                    <p style="font-size: 100%; font-weight: bold; color: blue;" :style="{ 'margin-top': (20*scale)+'px' }">👈 Click qubit on the left to view error model</p>
+                    <p style="font-size: 100%; font-weight: bold; color: blue;" :style="{ 'margin-top': (20*scale)+'px' }">👈 Click qubit on the left to view noise model</p>
                 </div>
             </div>
         </div>
@@ -118,16 +118,16 @@ textarea {
 
 <script>
 
-var base_url = "https://qec.wuyue98.cn/api/view_error_model"
+var base_url = "https://qec.wuyue98.cn/api/view_noise_model"
 if (window.location.href.startsWith("file://")) {
     console.log("[info] detected you're using local file, development url is used. start local server using `cargo run -- server`.")
-    base_url = "http://127.0.0.1:8066/view_error_model"  // start local server using `cargo run -- server`
+    base_url = "http://127.0.0.1:8066/view_noise_model"  // start local server using `cargo run -- server`
 }
 
-// debug url: ?p=0.01&pe=0.05&parameters=--code_type StandardXZZXCode --error_model only-gate-error-circuit-level --error_model_configuration '{"use_correlated_pauli":true,"use_correlated_erasure":true}'
-// debug url: ?p=0.01&pe=0.05&parameters=--code_type StandardXZZXCode --error_model only-gate-error-circuit-level --error_model_configuration '{"use_correlated_pauli":true,"use_correlated_erasure":true,"initialization_error_rate":0.005,"measurement_error_rate":0.005}'
+// debug url: ?p=0.01&pe=0.05&parameters=--code_type StandardXZZXCode --noise_model only-gate-error-circuit-level --noise_model_configuration '{"use_correlated_pauli":true,"use_correlated_erasure":true}'
+// debug url: ?p=0.01&pe=0.05&parameters=--code_type StandardXZZXCode --noise_model only-gate-error-circuit-level --noise_model_configuration '{"use_correlated_pauli":true,"use_correlated_erasure":true,"initialization_error_rate":0.005,"measurement_error_rate":0.005}'
 
-async function get_error_model_data() {
+async function get_noise_model_data() {
     const url = base_url + window.location.search
     // console.log(url)
     const response = await axios.get(url)
@@ -148,7 +148,7 @@ const di = 5
 const urlParams = new URLSearchParams(window.location.search)
 const p_str = urlParams.get('p') || 0
 const pe_str = urlParams.get('pe') || 0
-const error_model_temporary_id = urlParams.get('error_model_temporary_id') || 0
+const noise_model_temporary_id = urlParams.get('noise_model_temporary_id') || 0
 const parameters = urlParams.get('parameters') || ""
 const full_parameters = `"[${di}]" --djs "[${di}]" "[${di}]" "[${p_str}]" --pes "[${pe_str}]" ${parameters}`
 
@@ -214,9 +214,9 @@ var app = new Vue({
         }
     },
     async mounted() {
-        if (error_model_temporary_id > 0) {
+        if (noise_model_temporary_id > 0) {
             this.$message({
-                message: "You're viewing a temporary error model, which might be removed soon",
+                message: "You're viewing a temporary noise model, which might be removed soon",
                 type: "warning",
             })
         }
@@ -233,7 +233,7 @@ var app = new Vue({
         }
         // fetch data from server
         try {
-            this.data = await get_error_model_data()
+            this.data = await get_noise_model_data()
         } catch (e) {
             if (e == undefined) {
                 this.data_error = `server failed, please contact admin`
@@ -303,8 +303,8 @@ var app = new Vue({
             let composed_configure = `[${di}] --djs [${di}] [${di}] [${p_str}] --pes [${pe_str}] ${parameters_str}`
             if (confirm(`apply new configuration and refresh? ${composed_configure}`)) {
                 let new_url = window.location.origin + window.location.pathname + `?p=${encodeURIComponent(p_str)}&pe=${encodeURIComponent(pe_str)}&parameters=${encodeURIComponent(parameters_str)}`
-                if (error_model_temporary_id > 0) {
-                    new_url += `&error_model_temporary_id=${error_model_temporary_id}`
+                if (noise_model_temporary_id > 0) {
+                    new_url += `&noise_model_temporary_id=${noise_model_temporary_id}`
                 }
                 console.log(new_url)
                 window.location.href = new_url
@@ -382,22 +382,22 @@ var app = new Vue({
             this.selected = [node.i, node.j]
         },
         sum_correlated_pauli(node) {
-            if (node == null || node.error_model == null || node.error_model.corr_pp == null) {
+            if (node == null || node.noise_model == null || node.noise_model.corr_pp == null) {
                 return 0
             }
             let sum = 0
             for (name of this.all_correlated_pauli_names) {
-                sum += node.error_model.corr_pp[`p${name.toLowerCase()}`]
+                sum += node.noise_model.corr_pp[`p${name.toLowerCase()}`]
             }
             return sum
         },
         sum_correlated_erasure(node) {
-            if (node == null || node.error_model.corr_pe == null) {
+            if (node == null || node.noise_model.corr_pe == null) {
                 return 0
             }
             let sum = 0
             for (name of this.all_correlated_erasure_names) {
-                sum += node.error_model.corr_pe[`p${name.toLowerCase()}`]
+                sum += node.noise_model.corr_pe[`p${name.toLowerCase()}`]
             }
             return sum
         },
@@ -510,14 +510,14 @@ var app = new Vue({
                         if (node == null) continue
                         context.lineWidth = 0
                         // 1e-300 is used for supporting decoding erasure errors
-                        if (node.error_model.pp.px > 2e-300 || node.error_model.pp.pz > 2e-300 || node.error_model.pp.py > 2e-300) {
+                        if (node.noise_model.pp.px > 2e-300 || node.noise_model.pp.pz > 2e-300 || node.noise_model.pp.py > 2e-300) {
                             const circle_radius = this.qubit_radius * 1.5
                             context.beginPath()
                             context.arc(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius, circle_radius, 0, 2 * Math.PI)
                             context.fillStyle = this.pauli_color
                             context.fill()
                         }
-                        if (node.error_model.pe > 0) {
+                        if (node.noise_model.pe > 0) {
                             const circle_radius = this.qubit_radius * 1.25
                             context.beginPath()
                             context.arc(this.pos(j) + this.qubit_radius, this.pos(i) + this.qubit_radius, circle_radius, 0, 2 * Math.PI)

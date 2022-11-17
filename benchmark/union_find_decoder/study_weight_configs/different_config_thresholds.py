@@ -15,7 +15,7 @@ slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 36
 
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
 # original time: 60 cores for 10min, which is 60*10/60 = 10 CPU hours
-common_parameters = f"-p{STO(0)} --time_budget {CH(10)} --error_model Arxiv200404693".split(" ")
+common_parameters = f"-p{STO(0)} --time_budget {CH(10)} --noise_model Arxiv200404693".split(" ")
 
 run_specific_idx = None
 if len(sys.argv) > 1:
@@ -56,8 +56,8 @@ for UF_decoder in [False, True]:
             for use_combined_probability in [False, True]:
                 for use_nature_initialization_error in [False]:  # no need to iterate for now
                     for use_nature_measurement_error in [False]:  # no need to iterate for now
-                        error_model_configuration = f'{{"use_nature_initialization_error":{"true" if use_nature_initialization_error else "false"},"use_nature_measurement_error":{"true" if use_nature_measurement_error else "false"}}}'
-                        parameters = common_parameters + ["--error_model_configuration", error_model_configuration]
+                        noise_model_configuration = f'{{"use_nature_initialization_error":{"true" if use_nature_initialization_error else "false"},"use_nature_measurement_error":{"true" if use_nature_measurement_error else "false"}}}'
+                        parameters = common_parameters + ["--noise_model_configuration", noise_model_configuration]
                         if UF_decoder:
                             parameters += ["--decoder", "UF", "--max_half_weight", "20"]
                         if no_autotune:

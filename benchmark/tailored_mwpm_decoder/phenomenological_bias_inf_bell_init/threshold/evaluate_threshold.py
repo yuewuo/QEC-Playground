@@ -23,7 +23,7 @@ slurm_distribute.SLURM_DISTRIBUTE_TIME = "10:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '70G'  # necessary only for large code distances like 19 and 21
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 20
 def generate_parameters(bias_eta):
-    return f"-p{STO(0)} --code_type RotatedTailoredCode --bias_eta {bias_eta} --decoder tailored-mwpm --decoder_config {{\"pcmg\":true}} --error_model tailored-sc-bell-init-phenomenological".split(" ")
+    return f"-p{STO(0)} --code_type RotatedTailoredCode --bias_eta {bias_eta} --decoder tailored-mwpm --decoder_config {{\"pcmg\":true}} --noise_model tailored-sc-bell-init-phenomenological".split(" ")
 
 PRECISE_RESULT_FILE = os.path.join(os.path.dirname(__file__), f"precise_result.hjson")
 RESULT_FILE = os.path.join(os.path.dirname(__file__), f"result.hjson")

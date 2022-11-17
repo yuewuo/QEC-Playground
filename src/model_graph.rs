@@ -6,7 +6,7 @@ use super::util_macros::*;
 use std::collections::{BTreeMap};
 use super::either::Either;
 use super::types::*;
-use super::error_model::*;
+use super::noise_model::*;
 use std::sync::{Arc, Mutex};
 use serde::{Serialize, Deserialize};
 use super::float_cmp;
@@ -124,7 +124,7 @@ impl ModelGraphBoundary {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum WeightFunction {
-    /// Autotune: compute weight based on error model
+    /// Autotune: compute weight based on noise model
     Autotune,
     /// Autotune improved for large physical error rate p
     AutotuneImproved,
@@ -197,16 +197,16 @@ impl ModelGraph {
     }
 
     /// build model graph given the simulator
-    pub fn build(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_function: &WeightFunction, parallel: usize, use_combined_probability: bool, use_brief_edge: bool) {
+    pub fn build(&mut self, simulator: &mut Simulator, noise_model: Arc<NoiseModel>, weight_function: &WeightFunction, parallel: usize, use_combined_probability: bool, use_brief_edge: bool) {
         match weight_function {
-            WeightFunction::Autotune => self.build_with_weight_function(simulator, error_model, weight_function::autotune, parallel, use_combined_probability, use_brief_edge),
-            WeightFunction::AutotuneImproved => self.build_with_weight_function(simulator, error_model, weight_function::autotune_improved, parallel, use_combined_probability, use_brief_edge),
-            WeightFunction::Unweighted => self.build_with_weight_function(simulator, error_model, weight_function::unweighted, parallel, use_combined_probability, use_brief_edge),
+            WeightFunction::Autotune => self.build_with_weight_function(simulator, noise_model, weight_function::autotune, parallel, use_combined_probability, use_brief_edge),
+            WeightFunction::AutotuneImproved => self.build_with_weight_function(simulator, noise_model, weight_function::autotune_improved, parallel, use_combined_probability, use_brief_edge),
+            WeightFunction::Unweighted => self.build_with_weight_function(simulator, noise_model, weight_function::unweighted, parallel, use_combined_probability, use_brief_edge),
         }
     }
 
     /// single-thread computation with region
-    fn build_with_weight_function_region<F>(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_of: F, t_start: usize, t_end: usize, use_brief_edge: bool) where F: Fn(f64) -> f64 + Copy {
+    fn build_with_weight_function_region<F>(&mut self, simulator: &mut Simulator, noise_model: Arc<NoiseModel>, weight_of: F, t_start: usize, t_end: usize, use_brief_edge: bool) where F: Fn(f64) -> f64 + Copy {
         // calculate all possible errors to be iterated
         let mut all_possible_errors: Vec<Either<ErrorType, CorrelatedPauliErrorType>> = Vec::new();
         for error_type in ErrorType::all_possible_errors().drain(..) {
@@ -222,13 +222,13 @@ impl ModelGraph {
             if position.t < t_start || position.t >= t_end {
                 continue
             }
-            let error_model_node = error_model.get_node_unwrap(position);
+            let noise_model_node = noise_model.get_node_unwrap(position);
             // whether it's possible to have erasure error at this node
-            let possible_erasure_error = error_model_node.erasure_error_rate > 0. || error_model_node.correlated_erasure_error_rates.is_some() || {
+            let possible_erasure_error = noise_model_node.erasure_error_rate > 0. || noise_model_node.correlated_erasure_error_rates.is_some() || {
                 let node = simulator.get_node_unwrap(position);
                 if let Some(gate_peer) = node.gate_peer.as_ref() {
-                    let peer_error_model_node = error_model.get_node_unwrap(gate_peer);
-                    if let Some(correlated_erasure_error_rates) = &peer_error_model_node.correlated_erasure_error_rates {
+                    let peer_noise_model_node = noise_model.get_node_unwrap(gate_peer);
+                    if let Some(correlated_erasure_error_rates) = &peer_noise_model_node.correlated_erasure_error_rates {
                         correlated_erasure_error_rates.error_probability() > 0.
                     } else { false }
                 } else { false }
@@ -236,10 +236,10 @@ impl ModelGraph {
             for error in all_possible_errors.iter() {
                 let p = match error {
                     Either::Left(error_type) => {
-                        error_model_node.pauli_error_rates.error_rate(error_type)
+                        noise_model_node.pauli_error_rates.error_rate(error_type)
                     },
                     Either::Right(error_type) => {
-                        match &error_model_node.correlated_pauli_error_rates {
+                        match &noise_model_node.correlated_pauli_error_rates {
                             Some(correlated_pauli_error_rates) => {
                                 correlated_pauli_error_rates.error_rate(error_type)
                             },
@@ -306,7 +306,7 @@ impl ModelGraph {
 
     /// build model graph given the simulator with customized weight function;
     /// if `optimize_memory_usage` is set to True, then not all edges are recorded but only the optimal one
-    pub fn build_with_weight_function<F>(&mut self, simulator: &mut Simulator, error_model: Arc<ErrorModel>, weight_of: F, parallel: usize, use_combined_probability: bool, use_brief_edge: bool) where F: Fn(f64) -> f64 + Copy + Send + Sync + 'static {
+    pub fn build_with_weight_function<F>(&mut self, simulator: &mut Simulator, noise_model: Arc<NoiseModel>, weight_of: F, parallel: usize, use_combined_probability: bool, use_brief_edge: bool) where F: Fn(f64) -> f64 + Copy + Send + Sync + 'static {
         debug_assert!({
             let mut state_clean = true;
             simulator_iter!(simulator, position, node, {
@@ -324,7 +324,7 @@ impl ModelGraph {
             state_clean
         });
         if parallel <= 1 {
-            self.build_with_weight_function_region(simulator, error_model, weight_of, 0, simulator.height, use_brief_edge);
+            self.build_with_weight_function_region(simulator, noise_model, weight_of, 0, simulator.height, use_brief_edge);
         } else {
             // spawn `parallel` threads to compute in parallel
             let mut handlers = Vec::new();
@@ -339,10 +339,10 @@ impl ModelGraph {
                 if parallel_idx == parallel - 1 {
                     t_end = simulator.height;  // to make sure every part is included
                 }
-                let error_model = Arc::clone(&error_model);
+                let noise_model = Arc::clone(&noise_model);
                 handlers.push(std::thread::spawn(move || {
                     let mut instance = instance.lock().unwrap();
-                    instance.build_with_weight_function_region(&mut simulator, error_model, weight_of, t_start, t_end, use_brief_edge);
+                    instance.build_with_weight_function_region(&mut simulator, noise_model, weight_of, t_start, t_end, use_brief_edge);
                 }));
             }
             for handler in handlers.drain(..) {

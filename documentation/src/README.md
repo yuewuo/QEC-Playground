@@ -9,17 +9,17 @@ It integrates the whole workflow from simulating surface code to decoding the sy
 Every component in this workflow can be customized independently, so that user can explore different codes or decoders with minimum effort.
 
 On top of this library, we provide a Python binding so that you don't have to learn Rust programming language while enjoying the speed gain of Rust.
-You can implement your own surface code, error model or decoder in Python, while letting other components to run at full speed in Rust.
+You can implement your own surface code, noise model or decoder in Python, while letting other components to run at full speed in Rust.
 
 - **Simulator**
   - generates random qubit errors and simulates the measurement outcome (syndrome), given the Clifford gate implementation of a surface code
   - **Code Builder**
     - builds the Clifford gate implementation of a supported surface code, given a few parameters like code distances and how many rounds of measurements
     - <strong style="color:red;">TODO:</strong> *Python: full customization supported*
-- **Error Model**
+- **Noise Model**
   - describes the error distribution, supporting single-qubit and two-qubit correlated Pauli errors and erasure errors
-  - **Error Model Builder**
-    - builds a supported error model, given customized parameters like initialization error rate, measurement error rate, noise bias, etc.
+  - **Noise Model Builder**
+    - builds a supported noise model, given customized parameters like initialization error rate, measurement error rate, noise bias, etc.
     - <strong style="color:red;">TODO:</strong> *Python: full customization supported*
 - **Decoder**
   - computes the correction pattern that tries to minimize the logical error rate of the logical qubit encoded in this surface code, given a measurement result

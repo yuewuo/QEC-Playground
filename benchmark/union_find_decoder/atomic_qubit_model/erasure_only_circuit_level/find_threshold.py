@@ -7,26 +7,26 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import AutomatedThresholdEvaluator, qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command, run_qec_playground_command_get_stdout
 
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
-parameters = "-p0 --decoder UF --max_half_weight 100 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel".split(" ")
+parameters = "-p0 --decoder UF --max_half_weight 100 --time_budget 1200 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel".split(" ")
 
 # result:
 """
 pair: [(11, 11, 11), (15, 15, 15)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.0521552531515007
 relative_confidence_interval = 0.0018684947952710184
 """
 
 """
 pair: [(11, 11, 11), (15, 15, 15)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.051895288694551185
 relative_confidence_interval = 0.0022811123548325306
 """
 
 """
 pair: [(11, 11, 11), (15, 15, 15)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '7200', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '7200', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.05194834124040999
 relative_confidence_interval = 0.0016630552900613054
 """

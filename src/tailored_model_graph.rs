@@ -6,7 +6,7 @@ use super::util_macros::*;
 use std::collections::{BTreeMap};
 use super::either::Either;
 use super::types::*;
-use super::error_model::*;
+use super::noise_model::*;
 use std::sync::{Arc};
 use serde::{Serialize};
 use super::model_graph::*;
@@ -96,16 +96,16 @@ impl TailoredModelGraph {
     }
 
     /// build model graph given the simulator
-    pub fn build(&mut self, simulator: &mut Simulator, error_model: &ErrorModel, weight_function: &WeightFunction) {
+    pub fn build(&mut self, simulator: &mut Simulator, noise_model: &NoiseModel, weight_function: &WeightFunction) {
         match weight_function {
-            WeightFunction::Autotune => self.build_with_weight_function(simulator, error_model, weight_function::autotune),
-            WeightFunction::AutotuneImproved => self.build_with_weight_function(simulator, error_model, weight_function::autotune_improved),
-            WeightFunction::Unweighted => self.build_with_weight_function(simulator, error_model, weight_function::unweighted),
+            WeightFunction::Autotune => self.build_with_weight_function(simulator, noise_model, weight_function::autotune),
+            WeightFunction::AutotuneImproved => self.build_with_weight_function(simulator, noise_model, weight_function::autotune_improved),
+            WeightFunction::Unweighted => self.build_with_weight_function(simulator, noise_model, weight_function::unweighted),
         }
     }
 
     /// build model graph given the simulator with customized weight function
-    pub fn build_with_weight_function<F>(&mut self, simulator: &mut Simulator, error_model: &ErrorModel, weight_of: F) where F: Fn(f64) -> f64 + Copy {
+    pub fn build_with_weight_function<F>(&mut self, simulator: &mut Simulator, noise_model: &NoiseModel, weight_of: F) where F: Fn(f64) -> f64 + Copy {
         debug_assert!({
             let mut state_clean = true;
             simulator_iter!(simulator, position, node, {
@@ -140,13 +140,13 @@ impl TailoredModelGraph {
         simulator.clear_all_errors();
         // iterate over all possible errors at all possible positions
         simulator_iter!(simulator, position, {
-            let error_model_node = error_model.get_node_unwrap(position);
+            let noise_model_node = noise_model.get_node_unwrap(position);
             // whether it's possible to have erasure error at this node
-            let possible_erasure_error = error_model_node.erasure_error_rate > 0. || error_model_node.correlated_erasure_error_rates.is_some() || {
+            let possible_erasure_error = noise_model_node.erasure_error_rate > 0. || noise_model_node.correlated_erasure_error_rates.is_some() || {
                 let node = simulator.get_node_unwrap(position);
                 if let Some(gate_peer) = node.gate_peer.as_ref() {
-                    let peer_error_model_node = error_model.get_node_unwrap(gate_peer);
-                    if let Some(correlated_erasure_error_rates) = &peer_error_model_node.correlated_erasure_error_rates {
+                    let peer_noise_model_node = noise_model.get_node_unwrap(gate_peer);
+                    if let Some(correlated_erasure_error_rates) = &peer_noise_model_node.correlated_erasure_error_rates {
                         correlated_erasure_error_rates.error_probability() > 0.
                     } else { false }
                 } else { false }
@@ -154,10 +154,10 @@ impl TailoredModelGraph {
             for error in all_possible_errors.iter() {
                 let p = match error {
                     Either::Left(error_type) => {
-                        error_model_node.pauli_error_rates.error_rate(error_type)
+                        noise_model_node.pauli_error_rates.error_rate(error_type)
                     },
                     Either::Right(error_type) => {
-                        match &error_model_node.correlated_pauli_error_rates {
+                        match &noise_model_node.correlated_pauli_error_rates {
                             Some(correlated_pauli_error_rates) => {
                                 correlated_pauli_error_rates.error_rate(error_type)
                             },

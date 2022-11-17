@@ -9,7 +9,7 @@ from automated_threshold_evaluation import run_qec_playground_command_get_stdout
 
 di_vec = [di for di in range(3, 25 +1, 2)]
 
-parameters = f"--debug_print_only --decoder UF --max_half_weight 10 --use_xzzx_code --error_model GenericBiasedWithBiasedCX".split(" ")
+parameters = f"--debug_print_only --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model GenericBiasedWithBiasedCX".split(" ")
 
 for di in di_vec:
 

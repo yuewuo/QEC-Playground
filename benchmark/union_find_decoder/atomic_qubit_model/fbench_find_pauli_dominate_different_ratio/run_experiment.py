@@ -29,7 +29,7 @@ min_error_cases = 0  # +inf
 max_N = 0  # +inf
 
 # 2 hour for each task on 12 CPUs, which is 24 CPU hours
-UF_parameters = f"-p{STO(0)} --time_budget {CH(24)} --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --use_fast_benchmark --fbench_use_fake_decoder --fbench_disable_additional_error --fbench_target_dev 1e-3".split(" ")
+UF_parameters = f"-p{STO(0)} --time_budget {CH(24)} --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --use_fast_benchmark --fbench_use_fake_decoder --fbench_disable_additional_error --fbench_target_dev 1e-3".split(" ")
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run(os.path.dirname(__file__))

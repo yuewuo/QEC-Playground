@@ -28,7 +28,7 @@ max_N = 100000000
 
 # original was 20min for 60 cores, if using 12 CPUs for each task then it should be 100min which is 6000sec
 # this is 20 CPU hours
-UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {CH(20)} --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")  # a maximum 20min for each point
+UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {CH(20)} --use_xzzx_code --noise_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")  # a maximum 20min for each point
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run(os.path.dirname(__file__))
