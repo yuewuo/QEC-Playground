@@ -274,6 +274,10 @@ error_Z_geometries[2].rotateZ(Math.PI / 2)
 error_Z_geometries[2].translate(0, 0, -error_Z_length*0.6)
 error_Z_geometries[3].rotateZ(Math.PI / 2)
 error_Z_geometries[3].rotateY(1.0)
+const detected_erasure_radius = 0.5
+const detected_erasure_geometry = new THREE.TorusBufferGeometry( detected_erasure_radius, error_line_radius, 16, 4 )
+detected_erasure_geometry.rotateX(Math.PI / 2)
+detected_erasure_geometry.rotateY(Math.PI / 4)
 
 export const sequential_colors = [  // https://quasar.dev/style/color-palette
     ["blue", 0x2196f3],
@@ -360,6 +364,7 @@ export const error_materials = {
     "Y": build_solid_material(const_color.Y),
     "Z": build_solid_material(const_color.Z),
 }
+export const detected_erasure_material = build_solid_material("purple")
 export const model_graph_edge_material = build_solid_material(0x000000)
 export const model_graph_vertex_material_vec = []
 for (const [name, color] of sequential_colors) {
@@ -432,6 +437,7 @@ export var defect_measurement_outline_meshes = []
 export var error_pattern_vec_meshes = []
 export var correction_vec_meshes = []
 export var contributed_noise_sources = []
+export var detected_erasure_meshes = []
 
 // update the sizes of objects
 watch(qubit_radius_scale, (newVal, oldVal) => {
@@ -629,6 +635,11 @@ export function update_visible_error_pattern() {
         for (const mesh of error_pattern_vec_mesh) {
             mesh.visible = display_error_pattern.value && in_t_range(position.t)
         }
+    }
+    for (let [idx, position_str] of Object.entries(active_case.detected_erasures)) {
+        const position = get_position(position_str)
+        const mesh = detected_erasure_meshes[idx]
+        mesh.visible = display_error_pattern.value && in_t_range(position.t)
     }
 }
 watch([display_error_pattern, t_range], update_visible_error_pattern, { deep: true })
@@ -1195,9 +1206,11 @@ export async function refresh_case() {
             defect_measurement_outline_meshes.push(defect_measurement_outline_mesh)
         }
         update_visible_defect_measurement()
-        // draw error pattern
+        // draw error pattern and detected erasures
         dispose_1d_array(error_pattern_vec_meshes)
         error_pattern_vec_meshes = []
+        dispose_1d_array(detected_erasure_meshes)
+        detected_erasure_meshes = []
         for (let [idx, [position_str, error]] of Object.entries(active_case.error_pattern).entries()) {
             const { t, i, j } = get_position(position_str)
             const position = qecp_data.simulator.positions[i][j]
@@ -1232,6 +1245,26 @@ export async function refresh_case() {
                 scene.add( mesh )
                 error_pattern_vec_mesh.push(mesh)
             }
+        }
+        for (let [idx, position_str] of Object.entries(active_case.detected_erasures)) {
+            const { t, i, j } = get_position(position_str)
+            const position = qecp_data.simulator.positions[i][j]
+            const display_position = {
+                t: t + t_bias + 0.5,
+                x: position.x,
+                y: position.y,
+            }
+            let mesh = new THREE.Mesh(detected_erasure_geometry, detected_erasure_material)
+            load_position(mesh.position, display_position)
+            mesh.userData = {
+                type: "erasure",
+                idx: idx,
+                t: t,
+                i: i,
+                j: j,
+            }
+            scene.add( mesh )
+            detected_erasure_meshes.push(mesh)
         }
         update_visible_error_pattern()
         // draw correction
