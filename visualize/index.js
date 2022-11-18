@@ -276,14 +276,23 @@ const App = {
             for (let i=0; i<100; ++i) await Vue.nextTick()
             await MathJax.typesetPromise()
         },
+        build_data_pos(pos_str) {
+            const data = gui3d.get_position(pos_str)
+            const qecp_data = gui3d.active_qecp_data.value
+            const node = qecp_data.simulator.nodes?.[data.t]?.[data.i]?.[data.j]
+            if (node != null) {
+                data.gate_peer = node.gp
+            }
+            return data
+        },
         async ref_btn_hover(pos_str) {
-            await this.jump_to("idle_gate", gui3d.get_position(pos_str), false)
+            await this.jump_to("idle_gate", this.build_data_pos(pos_str), false)
         },
         async ref_btn_leave(pos_str) {
             await this.jump_to(null, null, false)
         },
         async ref_btn_click(pos_str) {
-            await this.jump_to("idle_gate", gui3d.get_position(pos_str), true)
+            await this.jump_to("idle_gate", this.build_data_pos(pos_str), true)
         },
         async jump_to(type, data, is_click=true) {
             let current_ref = is_click ? gui3d.current_selected : gui3d.current_hover
@@ -296,12 +305,6 @@ const App = {
                 current_ref.value = data
                 await Vue.nextTick()
             }
-        },
-        mouseenter(type, data) {
-            this.jump_to(type, data, false)
-        },
-        mouseleave() {
-            gui3d.current_hover.value = null
         },
         update_export_resolutions() {
             this.export_resolution_options.splice(0, this.export_resolution_options.length)
