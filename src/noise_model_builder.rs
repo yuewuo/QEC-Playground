@@ -513,7 +513,7 @@ impl NoiseModelBuilder {
                                             if !next_node.gate_type.is_initialization() {
                                                 next_erased_qubits.insert((i, j));
                                             }
-                                            if next_node.gate_type.is_two_qubit_gate() {
+                                            if next_node.gate_type.is_two_qubit_gate() && !next_node.is_peer_virtual {
                                                 let gate_peer = next_node.gate_peer.as_ref().unwrap();
                                                 next_erased_qubits.insert((gate_peer.i, gate_peer.j));
                                             }

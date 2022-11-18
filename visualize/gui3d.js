@@ -16,7 +16,7 @@ if (typeof window === 'undefined' || typeof document === 'undefined') {
 if (typeof Vue === 'undefined') {
     global.Vue = await import('vue')
 }
-const { ref, reactive, watch, computed } = Vue
+const { ref, shallowRef, reactive, watch, computed } = Vue
 
 const urlParams = new URLSearchParams(window.location.search)
 export const root = document.documentElement
@@ -319,7 +319,7 @@ export const const_color = {
     "Y": 0xF5B042,
 }
 export const qubit_materials = {
-    "Data": build_solid_material(0x000000),
+    "Data": build_solid_material(0xAAAAAA),
     "StabX": build_solid_material(const_color.X),
     "StabZ": build_solid_material(const_color.Z),
     "StabXZZXLogicalX": build_solid_material(0xF4CCCC),
@@ -431,6 +431,7 @@ export var defect_measurement_meshes = []
 export var defect_measurement_outline_meshes = []
 export var error_pattern_vec_meshes = []
 export var correction_vec_meshes = []
+export var contributed_noise_sources = []
 
 // update the sizes of objects
 watch(qubit_radius_scale, (newVal, oldVal) => {
@@ -544,7 +545,7 @@ function dispose_1d_array(array) {
     }
 }
 
-function get_position(position_str) {
+export function get_position(position_str) {
     const matched_pos = position_str.match(/^\[(\d+)\]\[(\d+)\]\[(\d+)\]$/)
     return {
         t: parseInt(matched_pos[1]),
@@ -677,7 +678,7 @@ export function update_visible_noise_model() {
                 }
                 const erasure_mesh = noise_model_erasure_meshes[t][i][j]
                 if (erasure_mesh != null) {
-                    erasure_mesh.visible = display_noise_model_pauli.value && in_t_range(t)
+                    erasure_mesh.visible = display_noise_model_erasure.value && in_t_range(t)
                 }
             }
         }
@@ -725,6 +726,7 @@ export async function refresh_qecp_data() {
                     const qubit_mesh = new THREE.Mesh( qubit_geometry, qubit_material )
                     qubit_mesh.userData = {
                         type: "qubit",
+                        qubit_type: qubit.q,
                         i: i,
                         j: j,
                     }
@@ -747,6 +749,7 @@ export async function refresh_qecp_data() {
         for (let t=0; t<height-1; ++t) {
             for (let i=0; i<vertical; ++i) {
                 for (let j=0; j<horizontal; ++j) {
+                    const node = nodes[t][i][j]
                     const next_node = nodes[t+1][i][j]
                     if (next_node != null && !next_node.v && !(next_node.gt == "InitializeX" || next_node.gt == "InitializeZ")) {
                         const position = qecp_data.simulator.positions[i][j]
@@ -761,6 +764,7 @@ export async function refresh_qecp_data() {
                             t: t,
                             i: i,
                             j: j,
+                            gate_peer: node.gp,
                         }
                         load_position(idle_gate_mesh.position, display_position)
                         idle_gate_mesh.scale.set(1, t_scale, 1)
@@ -1013,6 +1017,7 @@ export async function refresh_qecp_data() {
         noise_model_pauli_meshes = build_3d_array(height, vertical, horizontal)
         dispose_mesh_3d_array(noise_model_erasure_meshes)
         noise_model_erasure_meshes = build_3d_array(height, vertical, horizontal)
+        contributed_noise_sources = build_3d_array(height, vertical, horizontal, () => [])
         if (qecp_data.noise_model != null) {
             existed_noise_model.value = true
             // first calculate whether to display it
@@ -1026,6 +1031,7 @@ export async function refresh_qecp_data() {
                 }
                 return sum
             }
+            // iterate through in-place noises
             for (let t=0; t<height; ++t) {
                 for (let i=0; i<vertical; ++i) {
                     for (let j=0; j<horizontal; ++j) {
@@ -1034,9 +1040,11 @@ export async function refresh_qecp_data() {
                             // 1e-300 is typically used for supporting decoding erasure errors or mimic infinitely small error rate
                             if (noise_model_node.pp.px > 2e-300 || noise_model_node.pp.pz > 2e-300 || noise_model_node.pp.py > 2e-300) {
                                 noise_model_node.display_pauli = true
+                                contributed_noise_sources[t][i][j].push({ source: "pp", t, i, j })
                             }
                             if (noise_model_node.pe > 2e-300) {
                                 noise_model_node.display_erasure = true
+                                contributed_noise_sources[t][i][j].push({ source: "pe", t, i, j })
                             }
                             // correlated ones
                             const node = qecp_data.simulator.nodes[t][i][j]
@@ -1044,20 +1052,42 @@ export async function refresh_qecp_data() {
                             let sum_correlated_pauli = sum_error_rate(noise_model_node.corr_pp)
                             if (sum_correlated_pauli > 0) {
                                 noise_model_node.display_pauli = true
+                                contributed_noise_sources[t][i][j].push({ source: "corr_pp", t, i, j })
                                 if (gate_peer != null) {
                                     const peer = get_position(gate_peer)
                                     qecp_data.noise_model.nodes[peer.t][peer.i][peer.j].display_pauli = true
+                                    contributed_noise_sources[peer.t][peer.i][peer.j].push({ source: "corr_pp", others: true, t, i, j })
                                 }
                             }
                             let sum_correlated_erasure = sum_error_rate(noise_model_node.corr_pe)
                             if (sum_correlated_erasure > 0) {
                                 noise_model_node.display_erasure = true
+                                contributed_noise_sources[t][i][j].push({ source: "corr_pe", t, i, j })
                                 if (gate_peer != null) {
                                     const peer = get_position(gate_peer)
                                     qecp_data.noise_model.nodes[peer.t][peer.i][peer.j].display_erasure = true
+                                    contributed_noise_sources[peer.t][peer.i][peer.j].push({ source: "corr_pe", others: true, t, i, j })
                                 }
                             }
                         }
+                    }
+                }
+            }
+            // iterate through additional noises
+            for (let ai=0; ai<qecp_data.noise_model.additional_noise.length; ++ai) {
+                const noise = qecp_data.noise_model.additional_noise[ai]
+                if (noise.p > 2e-300) {
+                    for (const position_str in noise.pe) {  // pe: { pos1: err1, pos2: err2 }
+                        const { t, i, j } = get_position(position_str)
+                        const noise_model_node = qecp_data.noise_model.nodes[t][i][j]
+                        noise_model_node.display_pauli = true
+                        contributed_noise_sources[t][i][j].push({ source: "add_p", others: true, add_idx: ai, t, i, j })
+                    }
+                    for (const position_str of noise.ee) {  // ee: [pos1, pos2]
+                        const { t, i, j } = get_position(position_str)
+                        const noise_model_node = qecp_data.noise_model.nodes[t][i][j]
+                        noise_model_node.display_erasure = true
+                        contributed_noise_sources[t][i][j].push({ source: "add_e", others: true, add_idx: ai, t, i, j })
                     }
                 }
             }
@@ -1065,6 +1095,7 @@ export async function refresh_qecp_data() {
             for (let t=0; t<height; ++t) {
                 for (let i=0; i<vertical; ++i) {
                     for (let j=0; j<horizontal; ++j) {
+                        const node = qecp_data.simulator.nodes[t][i][j]
                         const noise_model_node = qecp_data.noise_model.nodes[t][i][j]
                         if (noise_model_node != null) {
                             const position = qecp_data.simulator.positions[i][j]
@@ -1074,10 +1105,11 @@ export async function refresh_qecp_data() {
                                 const pauli_mesh = new THREE.Mesh( noise_model_pauli_geometry, noise_model_pauli_material )
                                 load_position(pauli_mesh.position, display_position)
                                 pauli_mesh.userData = {
-                                    type: "noise_model_node",
+                                    type: "noise_model_node_pauli",
                                     t: t,
                                     i: i,
                                     j: j,
+                                    gate_peer: node.gp,
                                 }
                                 scene.add( pauli_mesh )
                                 noise_model_pauli_meshes[t][i][j] = pauli_mesh
@@ -1087,10 +1119,11 @@ export async function refresh_qecp_data() {
                                 const erasure_mesh = new THREE.Mesh( noise_model_erasure_geometry, noise_model_erasure_material )
                                 load_position(erasure_mesh.position, display_position)
                                 erasure_mesh.userData = {
-                                    type: "noise_model_node",
+                                    type: "noise_model_node_erasure",
                                     t: t,
                                     i: i,
                                     j: j,
+                                    gate_peer: node.gp,
                                 }
                                 scene.add( erasure_mesh )
                                 noise_model_erasure_meshes[t][i][j] = erasure_mesh
@@ -1103,10 +1136,13 @@ export async function refresh_qecp_data() {
         update_visible_noise_model()
         // refresh active case as well
         await refresh_case()
+        // if provided in url, then apply the selection
+        for (let i=0; i<3; ++i) await Vue.nextTick()
+        current_selected.value = JSON.parse(urlParams.get('current_selected'))
     }
 }
 
-export const active_qecp_data = ref(null)
+export const active_qecp_data = shallowRef(null)
 export const active_case_idx = ref(0)
 export async function refresh_case() {
     // console.log("refresh_case")
@@ -1161,8 +1197,8 @@ export async function refresh_case() {
         update_visible_defect_measurement()
         // draw error pattern
         dispose_1d_array(error_pattern_vec_meshes)
-        error_pattern_vec_meshes= []
-        for (let [position_str, error] of Object.entries(active_case.error_pattern)) {
+        error_pattern_vec_meshes = []
+        for (let [idx, [position_str, error]] of Object.entries(active_case.error_pattern).entries()) {
             const { t, i, j } = get_position(position_str)
             const position = qecp_data.simulator.positions[i][j]
             const display_position = {
@@ -1186,6 +1222,13 @@ export async function refresh_case() {
                 const geometry = error_geometries[k]
                 let mesh = new THREE.Mesh(geometry, error_materials[error])
                 load_position(mesh.position, display_position)
+                mesh.userData = {
+                    type: "error",
+                    idx: idx,
+                    t: t,
+                    i: i,
+                    j: j,
+                }
                 scene.add( mesh )
                 error_pattern_vec_mesh.push(mesh)
             }
@@ -1193,8 +1236,8 @@ export async function refresh_case() {
         update_visible_error_pattern()
         // draw correction
         dispose_1d_array(correction_vec_meshes)
-        correction_vec_meshes= []
-        for (let [position_str, error] of Object.entries(active_case.correction)) {
+        correction_vec_meshes = []
+        for (let [idx, [position_str, error]] of Object.entries(active_case.correction).entries()) {
             const { t, i, j } = get_position(position_str)
             const position = qecp_data.simulator.positions[i][j]
             const display_position = {
@@ -1218,6 +1261,13 @@ export async function refresh_case() {
                 const geometry = error_geometries[k]
                 let mesh = new THREE.Mesh(geometry, error_materials[error])
                 load_position(mesh.position, display_position)
+                mesh.userData = {
+                    type: "correction",
+                    idx: idx,
+                    t: t,
+                    i: i,
+                    j: j,
+                }
                 scene.add( mesh )
                 correction_vec_mesh.push(mesh)
             }
@@ -1328,49 +1378,83 @@ watch(sizes, () => {
 const raycaster = new THREE.Raycaster()
 const mouse = new THREE.Vector2()
 var previous_hover_material = null
-export const current_hover = ref(null)
+export const current_hover = shallowRef(null)
 window.current_hover = current_hover
 var previous_selected_material = null
-export const current_selected = ref(null)
+export const current_selected = shallowRef(null)
 window.current_selected = current_selected
 export const show_hover_effect = ref(true)
 function is_user_data_valid(user_data) {
-    if (user_data == null) return false
     const qecp_data = active_qecp_data.value
     const case_idx = active_case_idx.value
+    if (user_data == null || qecp_data == null || case_idx == null) return false
     const active_case = qecp_data.cases[case_idx][1]
-    if (user_data.type == "vertex") {
-        return user_data.vertex_index < active_case.vertices.length && active_case.vertices[user_data.vertex_index] != null
+    // constants
+    const height = qecp_data.simulator.height
+    const vertical = qecp_data.simulator.vertical
+    const horizontal = qecp_data.simulator.horizontal
+    if (user_data.type == "qubit") {
+        const { i, j } = user_data
+        return i < vertical && j < horizontal && qecp_data.simulator.nodes[0][i][j] != null
     }
-    if (user_data.type == "edge") {
-        return user_data.edge_index < active_case.edges.length && active_case.edges[user_data.edge_index] != null
+    if (user_data.type == "idle_gate") {
+        const { t, i, j } = user_data
+        return t < height && i < vertical && j < horizontal && qecp_data.simulator.nodes[t][i][j] != null
     }
+    if (user_data.type == "noise_model_node_pauli") {
+        const { t, i, j } = user_data
+        return t < height && i < vertical && j < horizontal && qecp_data.simulator.nodes[t][i][j] != null
+    }
+    if (user_data.type == "noise_model_node_erasure") {
+        const { t, i, j } = user_data
+        return t < height && i < vertical && j < horizontal && qecp_data.simulator.nodes[t][i][j] != null
+    }
+    // defect, correction, ... are random between cases, no need to recover
     return false
 }
 function set_material_with_user_data(user_data, material) {  // return the previous material
-    if (user_data.type == "vertex") {
-        let vertex_index = user_data.vertex_index
-        let vertex_mesh = vertex_meshes[vertex_index]
-        let previous_material = vertex_mesh.material
-        vertex_mesh.material = material
+    if (user_data.type == "qubit") {
+        const { i, j } = user_data
+        const mesh = qubit_meshes[i][j]
+        let previous_material = mesh.material
+        mesh.material = material
         return previous_material
     }
-    if (user_data.type == "edge") {
+    if (user_data.type == "idle_gate") {
+        const { t, i, j } = user_data
+        const mesh = idle_gate_meshes[t][i][j]
+        let previous_material = mesh.material
+        mesh.material = material
+        return previous_material
+    }
+    if (user_data.type == "noise_model_node_pauli") {
+        const { t, i, j } = user_data
+        const mesh = noise_model_pauli_meshes[t][i][j]
+        let previous_material = mesh.material
+        mesh.material = material
+        return previous_material
+    }
+    if (user_data.type == "noise_model_node_erasure") {
+        const { t, i, j } = user_data
+        const mesh = noise_model_erasure_meshes[t][i][j]
+        let previous_material = mesh.material
+        mesh.material = material
+        return previous_material
+    }
+    if (user_data.type == "defect") {
+        const { defect_idx, t, i, j } = user_data
+        const mesh = defect_measurement_meshes[defect_idx]
+        let previous_material = mesh.material
+        mesh.material = material
+        return previous_material
+    }
+    if (user_data.type == "correction") {
+        const { idx, t, i, j } = user_data
+        const vec_mesh = correction_vec_meshes[idx]
+        let previous_material = vec_mesh.map(x => x.material)
         let expanded_material = material
-        if (!Array.isArray(material)) {
-            expanded_material = [[material, material], [material, material], [material, material]]
-        }
-        let edge_index = user_data.edge_index
-        let meshes_lists = [left_edge_meshes, right_edge_meshes, middle_edge_meshes]
-        let previous_material = [[null,null],[null,null],[null,null]]
-        for (let i = 0; i < meshes_lists.length; ++i) {
-            let meshes_list = meshes_lists[i][edge_index]
-            for (let j of [0, 1]) {
-                let edge_mesh = meshes_list[j]
-                previous_material[i][j] = edge_mesh.material
-                edge_mesh.material = expanded_material[i][j]
-            }
-        }
+        if (!Array.isArray(material)) expanded_material = Array(vec_mesh.length).fill(material)
+        Object.entries(expanded_material).map(([idx, material]) => { vec_mesh[idx].material = material })
         return previous_material
     }
     console.error(`unknown type ${user_data.type}`)
@@ -1538,4 +1622,4 @@ class UnionFind {
             this.count[xp] += this.count[yp]
         }
     }
-  }
+}

@@ -60,6 +60,7 @@ const App = {
             selected_vertex_attributes: ref(""),
             selected_edge: ref(null),
             selected_edge_attributes: ref(""),
+            noise_model_info: ref(null),
             // display options
             display_qubits: gui3d.display_qubits,
             display_idle_sticks: gui3d.display_idle_sticks,
@@ -75,6 +76,8 @@ const App = {
             display_noise_model_erasure: gui3d.display_noise_model_erasure,
             t_range: gui3d.t_range,
             t_length: gui3d.t_length,
+            non_zero_color: "red",
+            zero_color: "grey",
         }
     },
     async mounted() {
@@ -199,6 +202,7 @@ const App = {
             }
             patch_done.value = true
         }, 100);
+        await this.update_mathjax()
     },
     methods: {
         show_case(case_idx) {
@@ -214,99 +218,83 @@ const App = {
         reset_camera(direction) {
             gui3d.reset_camera_position(direction)
         },
-        update_selected_display() {
-            if (this.current_selected == null) return
-            if (this.current_selected.type == "vertex") {
-                let vertex_index = this.current_selected.vertex_index
-                let vertex = this.active_case.vertices[vertex_index]
-                this.selected_vertex_attributes = ""
-                if (vertex.s == 1) {
-                    this.selected_vertex_attributes += "(syndrome) "
-                } else if (vertex.v == 1) {
-                    this.selected_vertex_attributes += "(virtual) "
-                }
-                if (vertex.p != null) {
-                    this.selected_vertex_attributes += `(node ${vertex.p}) `
-                }
-                if (vertex.pg != null) {
-                    this.selected_vertex_attributes += `(grandson ${vertex.pg}) `
-                }
-                console.assert(!(vertex.s == 1 && vertex.v == 1), "a vertex cannot be both syndrome and virtual")
-                // fetch edge list
-                let neighbor_edges = []
-                for (let [edge_index, edge] of this.active_case.edges.entries()) {
-                    if (edge == null) {
-                        continue
+        qubit_type_name(qubit_type) {
+            if (qubit_type == "StabX") { return "X Ancilla" }
+            if (qubit_type == "StabZ") { return "Z Ancilla" }
+            if (qubit_type == "StabXZZXLogicalX") { return "XZZX Ancilla" }
+            if (qubit_type == "StabXZZXLogicalZ") { return "XZZX Ancilla" }
+            if (qubit_type == "StabY") { return "Y Ancilla" }
+            return qubit_type
+        },
+        is_error_position(selected_type) {
+            return selected_type == "idle_gate" || selected_type == "noise_model_node_pauli" || selected_type == "noise_model_node_erasure"
+        },
+        async update_selected_display() {
+            this.noise_model_info = null
+            const qecp_data = gui3d.active_qecp_data.value
+            const case_idx = gui3d.active_case_idx.value
+            if (this.current_selected == null || qecp_data == null || case_idx == null) return false
+            if (this.is_error_position(this.current_selected.type)) {
+                // compute information about the error position: including error rates, etc.
+                const { t, i, j } = this.current_selected
+                const node = qecp_data.simulator.nodes?.[t]?.[i]?.[j]
+                const noise_model_node = qecp_data.noise_model.nodes?.[t]?.[i]?.[j]
+                const contributed_vec = gui3d.contributed_noise_sources?.[t]?.[i]?.[j]
+                if (node != null && noise_model_node != null && contributed_vec != null) {
+                    let noise_model_info = {}
+                    Object.assign(noise_model_info, noise_model_node)
+                    noise_model_info.pp.sum = noise_model_info.pp.px + noise_model_info.pp.py + noise_model_info.pp.pz
+                    if (noise_model_info.corr_pe != null) {
+                        noise_model_info.corr_pe.sum = noise_model_info.corr_pe.pie + noise_model_info.corr_pe.pei + noise_model_info.corr_pe.pee
                     }
-                    if (edge.l == vertex_index) {
-                        const [translated_left_grown, translated_right_grown] = gui3d.translate_edge(edge.lg, edge.rg, edge.w)
-                        const translated_unexplored = edge.w - translated_left_grown - translated_right_grown
-                        neighbor_edges.push({
-                            edge_index: edge_index,
-                            left_grown: edge.lg,
-                            unexplored: edge.w - edge.lg - edge.rg,
-                            right_grown: edge.rg,
-                            weight: edge.w,
-                            vertex_index: edge.r,
-                            translated_left_grown,
-                            translated_right_grown,
-                            translated_unexplored,
-                        })
-                    } else if (edge.r == vertex_index) {
-                        const [translated_left_grown, translated_right_grown] = gui3d.translate_edge(edge.rg, edge.lg, edge.w)
-                        const translated_unexplored = edge.w - translated_left_grown - translated_right_grown
-                        neighbor_edges.push({
-                            edge_index: edge_index,
-                            left_grown: edge.rg,
-                            unexplored: edge.w - edge.lg - edge.rg,
-                            right_grown: edge.lg,
-                            weight: edge.w,
-                            vertex_index: edge.l,
-                            translated_left_grown,
-                            translated_right_grown,
-                            translated_unexplored,
-                        })
+                    if (noise_model_info.corr_pp != null) {
+                        noise_model_info.corr_pp.sum = noise_model_info.corr_pp.pix + noise_model_info.corr_pp.piy + noise_model_info.corr_pp.piz
+                            + noise_model_info.corr_pp.pxi + noise_model_info.corr_pp.pxx + noise_model_info.corr_pp.pxy + noise_model_info.corr_pp.pxz
+                            + noise_model_info.corr_pp.pyi + noise_model_info.corr_pp.pyx + noise_model_info.corr_pp.pyy + noise_model_info.corr_pp.pyz
+                            + noise_model_info.corr_pp.pzi + noise_model_info.corr_pp.pzx + noise_model_info.corr_pp.pzy + noise_model_info.corr_pp.pzz
                     }
+                    // add contributed noise sources
+                    noise_model_info.additional = []
+                    for (const contributed of contributed_vec) {
+                        if (contributed.others != true) continue
+                        const ad = {}
+                        Object.assign(ad, contributed)
+                        if (ad.add_idx != null) {
+                            const noise = qecp_data.noise_model.additional_noise[ad.add_idx]
+                            ad.noise = noise
+                        }
+                        noise_model_info.additional.push(ad)
+                    }
+
+                    this.noise_model_info = noise_model_info
                 }
-                this.selected_vertex_neighbor_edges = neighbor_edges
-            }
-            if (this.current_selected.type == "edge") {
-                const edge_index = this.current_selected.edge_index
-                const edge = this.active_case.edges[edge_index]
-                const [translated_left_grown, translated_right_grown] = gui3d.translate_edge(edge.lg, edge.rg, edge.w)
-                const translated_unexplored = edge.w - translated_left_grown - translated_right_grown
-                this.selected_edge = {
-                    edge_index: edge_index,
-                    left_grown: edge.lg,
-                    unexplored: edge.w - edge.lg - edge.rg,
-                    right_grown: edge.rg,
-                    weight: edge.w,
-                    left_vertex_index: edge.l,
-                    right_vertex_index: edge.r,
-                    translated_left_grown,
-                    translated_right_grown,
-                    translated_unexplored,
-                }
-                this.selected_edge_attributes = ""
-                if (edge.ld != null || edge.rd != null) {
-                    this.selected_edge_attributes += `(node l: ${edge.ld}, r: ${edge.rd}) `
-                }
-                if (edge.lgd != null || edge.rgd != null) {
-                    this.selected_edge_attributes += `(grandson l: ${edge.lgd}, r: ${edge.rgd}) `
-                }
+                await Vue.nextTick()
+                await this.update_mathjax()
             }
         },
-        jump_to(type, data, is_click=true) {
+        async update_mathjax() {
+            for (let i=0; i<100; ++i) await Vue.nextTick()
+            await MathJax.typesetPromise()
+        },
+        async ref_btn_hover(pos_str) {
+            await this.jump_to("idle_gate", gui3d.get_position(pos_str), false)
+        },
+        async ref_btn_leave(pos_str) {
+            await this.jump_to(null, null, false)
+        },
+        async ref_btn_click(pos_str) {
+            await this.jump_to("idle_gate", gui3d.get_position(pos_str), true)
+        },
+        async jump_to(type, data, is_click=true) {
             let current_ref = is_click ? gui3d.current_selected : gui3d.current_hover
-            if (type == "edge") {
-                current_ref.value = {
-                    type, edge_index: data
-                }
-            }
-            if (type == "vertex") {
-                current_ref.value = {
-                    type, vertex_index: data
-                }
+            await Vue.nextTick()
+            if (type == null) {
+                current_ref.value = null
+                await Vue.nextTick()
+            } else {
+                data.type = type
+                current_ref.value = data
+                await Vue.nextTick()
             }
         },
         mouseenter(type, data) {
@@ -370,13 +358,13 @@ const App = {
             this.show_case(this.case_select)  // load the case
             this.case_select_label = this.case_labels[this.case_select]
             for (const _ of Array(4).keys()) await Vue.nextTick()
-            this.update_selected_display()
+            await this.update_selected_display()
         },
         case_select_label() {
             this.case_select = this.get_idx_from_label(this.case_select_label)
         },
-        current_selected() {
-            this.update_selected_display()
+        async current_selected() {
+            await this.update_selected_display()
         },
         lock_view() {
             gui3d.enable_control.value = !this.lock_view
