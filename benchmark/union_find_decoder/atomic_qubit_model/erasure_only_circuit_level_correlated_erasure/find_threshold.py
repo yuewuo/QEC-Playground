@@ -7,7 +7,7 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import AutomatedThresholdEvaluator, qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command, run_qec_playground_command_get_stdout
 
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
-parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration {{\"use_correlated_pauli\":true}}".split(" ")
+parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevelCorrelatedErasure --noise_model_configuration {{\"use_correlated_pauli\":true}}".split(" ")
 
 # result:
 """
@@ -24,7 +24,7 @@ configuration 2:
 0 15 15 20501 3184 0.15530949709770256 15 3.2e-2 0.05135126554724577
 0 15 15 20643 3447 0.16698154338032262 15 3.0e-2 0.051607383173697036
 pair: [(11, 11, 11), (15, 15, 15)]
-parameters: ['-p0', '--decoder', 'UF', '--max_half_weight', '100', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevelCorrelatedErasure']
+parameters: ['-p0', '--decoder', 'UF', '--max_half_weight', '100', '--time_budget', '1200', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevelCorrelatedErasure']
 threshold = 0.05130317876711061
 relative_confidence_interval = 0.004698230713000575
 """

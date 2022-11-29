@@ -7,9 +7,9 @@ set size 1,1.1
 
 # roughly test threshold commands:
 # biased CX: <0.0006 >0.0005
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.0005]-p0 -m100000 -e3000 --use_xzzx_code --bias_eta 1 --error_model GenericBiasedWithBiasedCX --no_stop_if_next_model_is_not_prepared --decoder UF --max_half_weight 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.0005]-p0 -m100000 -e3000 --use_xzzx_code --bias_eta 1 --noise_model GenericBiasedWithBiasedCX --no_stop_if_next_model_is_not_prepared --decoder UF --max_half_weight 10
 # standard CX: 
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.0008]-p0 -m100000 -e3000 --use_xzzx_code --bias_eta 1 --error_model GenericBiasedWithStandardCX --no_stop_if_next_model_is_not_prepared --decoder UF --max_half_weight 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.0008]-p0 -m100000 -e3000 --use_xzzx_code --bias_eta 1 --noise_model GenericBiasedWithStandardCX --no_stop_if_next_model_is_not_prepared --decoder UF --max_half_weight 10
 
 
 # data range:
@@ -18,9 +18,9 @@ set size 1,1.1
 
 # data generating commands:
 # biased CX
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.00050,0.00055,0.00060,0.00065,0.00070]-p0 -m100000 -e100000 --use_xzzx_code --bias_eta 1 --error_model GenericBiasedWithBiasedCX --decoder UF --max_half_weight 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.00050,0.00055,0.00060,0.00065,0.00070]-p0 -m100000 -e100000 --use_xzzx_code --bias_eta 1 --noise_model GenericBiasedWithBiasedCX --decoder UF --max_half_weight 10
 # standard CX
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.00050,0.00055,0.00060,0.00065,0.00070,0.00075,0.00080,0.00085,0.00090]-p0 -m100000 -e100000 --use_xzzx_code --bias_eta 1 --error_model GenericBiasedWithStandardCX --decoder UF --max_half_weight 10
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.00050,0.00055,0.00060,0.00065,0.00070,0.00075,0.00080,0.00085,0.00090]-p0 -m100000 -e100000 --use_xzzx_code --bias_eta 1 --noise_model GenericBiasedWithStandardCX --decoder UF --max_half_weight 10
 
 set logscale x
 set xrange [0.00035:0.00095]

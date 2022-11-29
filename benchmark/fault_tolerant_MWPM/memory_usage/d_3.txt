@@ -1,4 +1,4 @@
-	Command being timed: "/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [3] --djs [3] [3] -m100000 -e3000 [1.00000000e-02] --debug_print_only --decoder UF --max_half_weight 10 --use_xzzx_code --error_model GenericBiasedWithBiasedCX"
+	Command being timed: "/home/yuewu/QEC-Playground/backend/rust/target/release/rust_qecp tool fault_tolerant_benchmark [3] --djs [3] [3] -m100000 -e3000 [1.00000000e-02] --debug_print_only --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model GenericBiasedWithBiasedCX"
 	User time (seconds): 0.01
 	System time (seconds): 0.00
 	Percent of CPU this job got: 46%

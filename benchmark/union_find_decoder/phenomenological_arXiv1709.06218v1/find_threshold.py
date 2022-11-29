@@ -7,7 +7,7 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import AutomatedThresholdEvaluator, qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command, run_qec_playground_command_get_stdout
 
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
-parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --error_model PauliZandErasurePhenomenological".split(" ")
+parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --noise_model PauliZandErasurePhenomenological".split(" ")
 
 # result:
 """
@@ -24,7 +24,7 @@ configuration 2:
 0.02597906 15 15 366961 25914 0.07061785857352688 15 1.2e-2 0 0.025979059968710964
 0.0261086321 15 15 366920 26882 0.07326392674152404 15 1.2e-2 0 0.0261086321439186
 pair: [(11, 11, 11), (15, 15, 15)]
-parameters: ['-p0', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '2400', '--error_model', 'PauliZandErasurePhenomenological']
+parameters: ['-p0', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '2400', '--noise_model', 'PauliZandErasurePhenomenological']
 threshold = 0.025703777374466955
 relative_confidence_interval = 0.004468744146356419
 """

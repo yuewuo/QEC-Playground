@@ -47,7 +47,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
 
             log_filepath = os.path.join(os.path.dirname(__file__), f"runtime_statistics_{di}_{max_half_weight}.txt")
 
-            parameters = f"-p{num_threads} --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta 100 --decoder UF --max_half_weight {max_half_weight}".split(" ")
+            parameters = f"-p{num_threads} --use_xzzx_code --noise_model GenericBiasedWithBiasedCX --bias_eta 100 --decoder UF --max_half_weight {max_half_weight}".split(" ")
             command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p], [di], [dj], [T], parameters + ["--log_runtime_statistics", log_filepath], max_N=max_N, min_error_cases=min_error_cases)
             if slurm_commands_vec is not None:
                 slurm_commands_vec.sanity_checked_append(command)

@@ -10,7 +10,7 @@ pair = [ (15, 15, 15), (19, 19, 19) ]  # (di, dj, T)
 # the speed of 15 and 19 is about 1:3, thus the time for them is different
 # I have time budgets of 3 days, which is 259200s; there are 25 points, each point requires 5 different p, that's 125 cases, each has 2000s
 # d=15 has 500s budget, d=19 has 1500s budget
-parameters_basic = "-p0 --decoder UF --max_half_weight 10 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")
+parameters_basic = "-p0 --decoder UF --max_half_weight 10 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ")
 parameters_15 = parameters_basic + ["--time_budget", "500"]
 parameters_19 = parameters_basic + ["--time_budget", "1500"]
 

@@ -30,8 +30,8 @@ compile_code_if_necessary()
 def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playground_command_get_stdout):
 
     collected_results = {}
-    # for (filename_prefix, parameters, error_model) in [("UF_biased", UF_parameters, "GenericBiasedWithBiasedCX"), ("UF_standard", UF_parameters, "GenericBiasedWithStandardCX"), ("MWPM_biased", MWPM_parameters, "GenericBiasedWithBiasedCX"), ("MWPM_standard", MWPM_parameters, "GenericBiasedWithStandardCX")]:
-    for (filename_prefix, parameters, error_model) in [("UF_biased", UF_parameters, "GenericBiasedWithBiasedCX"), ("MWPM_biased", MWPM_parameters, "GenericBiasedWithBiasedCX")]:
+    # for (filename_prefix, parameters, noise_model) in [("UF_biased", UF_parameters, "GenericBiasedWithBiasedCX"), ("UF_standard", UF_parameters, "GenericBiasedWithStandardCX"), ("MWPM_biased", MWPM_parameters, "GenericBiasedWithBiasedCX"), ("MWPM_standard", MWPM_parameters, "GenericBiasedWithStandardCX")]:
+    for (filename_prefix, parameters, noise_model) in [("UF_biased", UF_parameters, "GenericBiasedWithBiasedCX"), ("MWPM_biased", MWPM_parameters, "GenericBiasedWithBiasedCX")]:
         collected_results[filename_prefix] = {}
         for di in di_vec:
             collected_results[filename_prefix][di] = {}
@@ -39,7 +39,7 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
 
             results = []
             for bias_zeta in bias_zeta_vec:
-                command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p], [di], [3 * di], [3 * di], parameters + ["--error_model", f"{error_model}", "--bias_eta", f"{bias_zeta}"], max_N=max_N, min_error_cases=min_error_cases)
+                command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p], [di], [3 * di], [3 * di], parameters + ["--noise_model", f"{noise_model}", "--bias_eta", f"{bias_zeta}"], max_N=max_N, min_error_cases=min_error_cases)
                 if slurm_commands_vec is not None:
                     slurm_commands_vec.sanity_checked_append(command)
                     continue

@@ -7,12 +7,12 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import AutomatedThresholdEvaluator, qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command, run_qec_playground_command_get_stdout
 
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
-parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration {{\"use_correlated_pauli\":true}}".split(" ")
+parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 1200 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevelCorrelatedErasure --noise_model_configuration {{\"use_correlated_pauli\":true}}".split(" ")
 
 # result:
 """
 pair: [(11, 11, 11), (15, 15, 15)]
-parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--error_model', 'OnlyGateErrorCircuitLevel']
+parameters: ['-p60', '--decoder', 'UF', '--max_half_weight', '10', '--time_budget', '1200', '--use_xzzx_code', '--noise_model', 'OnlyGateErrorCircuitLevel']
 threshold = 0.03149750906360633
 relative_confidence_interval = 0.0038001285503755367
 """

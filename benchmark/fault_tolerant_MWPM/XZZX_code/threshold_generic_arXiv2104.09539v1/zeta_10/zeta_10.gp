@@ -7,9 +7,9 @@ set size 1,1.1
 
 # roughly test threshold commands:
 # biased CX: >0.0006 <0.004 >0.003
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.003]-p0 -m100000 -e3000 --use_xzzx_code --bias_eta 10 --error_model GenericBiasedWithBiasedCX --no_stop_if_next_model_is_not_prepared
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.003]-p0 -m100000 -e3000 --use_xzzx_code --bias_eta 10 --noise_model GenericBiasedWithBiasedCX --no_stop_if_next_model_is_not_prepared
 # standard CX: >0.003 <0.004
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.004]-p0 -m100000 -e3000 --use_xzzx_code --bias_eta 10 --error_model GenericBiasedWithStandardCX --no_stop_if_next_model_is_not_prepared
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.004]-p0 -m100000 -e3000 --use_xzzx_code --bias_eta 10 --noise_model GenericBiasedWithStandardCX --no_stop_if_next_model_is_not_prepared
 
 
 # data range:
@@ -18,9 +18,9 @@ set size 1,1.1
 
 # data generating commands:
 # biased CX
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.0025,0.0030,0.0035,0.0040,0.0045]-p0 -m100000 -e100000 --use_xzzx_code --bias_eta 10 --error_model GenericBiasedWithBiasedCX
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.0025,0.0030,0.0035,0.0040,0.0045]-p0 -m100000 -e100000 --use_xzzx_code --bias_eta 10 --noise_model GenericBiasedWithBiasedCX
 # standard CX
-# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.0025,0.0030,0.0035,0.0040,0.0045]-p0 -m100000 -e100000 --use_xzzx_code --bias_eta 10 --error_model GenericBiasedWithStandardCX
+# RUST_BACKTRACE=full cargo run --release -- tool fault_tolerant_benchmark [4,5,6] --djs [12,15,18] [12,15,18] [0.0025,0.0030,0.0035,0.0040,0.0045]-p0 -m100000 -e100000 --use_xzzx_code --bias_eta 10 --noise_model GenericBiasedWithStandardCX
 
 # set logscale x
 set xrange [0.002:0.005]

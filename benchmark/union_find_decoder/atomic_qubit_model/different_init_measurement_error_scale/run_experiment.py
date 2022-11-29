@@ -37,8 +37,8 @@ def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playgro
             p_pauli = p * 0.02
             p_erasure = p * 0.98
             init_measurement_error_rate = p
-            error_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate},"use_correlated_pauli":true}}'
-            parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {3600*3} --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ") + ["--error_model_configuration", error_model_configuration]  # a maximum 20min for each point
+            noise_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate},"use_correlated_pauli":true}}'
+            parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {3600*3} --use_xzzx_code --noise_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ") + ["--noise_model_configuration", noise_model_configuration]  # a maximum 20min for each point
             command = qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command([p_pauli], [di], [di], [di], parameters + ["--pes", f"[{p_erasure}]"], max_N=max_N, min_error_cases=min_error_cases)
             if slurm_commands_vec is not None:
                 slurm_commands_vec.sanity_checked_append(command)

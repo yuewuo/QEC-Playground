@@ -13,7 +13,7 @@ pair_ones = [((3, 9, 9), 400.), ((5, 15, 15), 100.), ((7, 21, 21), 40.)]
 def get_result_with_bias_eta(bias_eta, pair_one, is_MWPM=True):
     pCX = 0.006  # fix pCX instead of fix p=pz
     p = pCX / (2 + 12 / float(bias_eta))
-    parameters = "-p0 --use_xzzx_code --error_model GenericBiasedWithBiasedCX".split(" ")
+    parameters = "-p0 --use_xzzx_code --noise_model GenericBiasedWithBiasedCX".split(" ")
     parameters = parameters + f"--bias_eta {bias_eta}".split(" ")
     if not is_MWPM:
         parameters = parameters + "--decoder UF --max_half_weight 10".split(" ")

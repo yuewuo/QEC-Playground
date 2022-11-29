@@ -24,13 +24,13 @@ rust_dir = os.path.join(qec_playground_root_dir, "backend", "rust")
 
 def main():
     # # test basic command runner
-    # random_error_rate, confidence_interval, full_result = qec_playground_fault_tolerant_MWPM_simulator_runner(0.005, (5, 5, 5), "-b10 -p0 --use_xzzx_code --bias_eta 100 --error_model GenericBiasedWithBiasedCX".split(" "), True, True)
+    # random_error_rate, confidence_interval, full_result = qec_playground_fault_tolerant_MWPM_simulator_runner(0.005, (5, 5, 5), "-b10 -p0 --use_xzzx_code --bias_eta 100 --noise_model GenericBiasedWithBiasedCX".split(" "), True, True)
     # print(random_error_rate, confidence_interval, full_result)
     # exit(0)
 
     # UnionFind Decoder (max_half_weight = 10), XZZX code, 
     pair = [ (4, 12, 12), (5, 15, 15) ]  # (di, dj, T)
-    parameters = "-p0 --use_xzzx_code --bias_eta 10 --error_model GenericBiasedWithBiasedCX".split(" ")
+    parameters = "-p0 --use_xzzx_code --bias_eta 10 --noise_model GenericBiasedWithBiasedCX".split(" ")
     evaluator = AutomatedThresholdEvaluator(pair, parameters=parameters)
     threshold, relative_confidence_interval = evaluator.evaluate_threshold()
     print("\n\nresult:")

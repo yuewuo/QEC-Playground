@@ -76,7 +76,7 @@ def profile_XZZX_complex_noise_model_decoding():
             command += ["--decoder_config", '{"precompute_complete_model_graph":true}']
         elif decoder == "union-find":
             command += ["--decoder_config", '{"precompute_complete_model_graph":true,"max_half_weight":10}']
-        command += ["--code_type", "StandardXZZXCode", "--error_model", "only-gate-error-circuit-level", "--error_model_configuration", "{\"use_correlated_pauli\":true,\"use_correlated_erasure\":true}"]
+        command += ["--code_type", "StandardXZZXCode", "--noise_model", "only-gate-error-circuit-level", "--noise_model_configuration", "{\"use_correlated_pauli\":true,\"use_correlated_erasure\":true}"]
         qp.run_flamegraph_qecp_profile_command(name, command)
 
         @qp.compare_qecp_profile(name)

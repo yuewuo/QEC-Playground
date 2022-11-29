@@ -20,7 +20,7 @@ min_error_cases = 3000
 
 max_N = 100000000
 
-UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 2400 --use_xzzx_code --error_model OnlyGateErrorCircuitLevel".split(" ")  # a maximum 20min for each point
+UF_parameters = f"-p0 --decoder UF --max_half_weight 10 --time_budget 2400 --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel".split(" ")  # a maximum 20min for each point
 
 global_results = []
 

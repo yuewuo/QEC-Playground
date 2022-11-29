@@ -39,7 +39,7 @@ slurm_distribute.SLURM_DISTRIBUTE_TIME = "05:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '4G'
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # use fewer cores for more available resources (use `SLURM_USE_SCAVENGE_PARTITION` option to speed up)
 # 18000 sec for 12 cores, that is 60 CPU hours
-parameters = f"-p{STO(0)} --decoder UF --max_half_weight 100 --time_budget {CH(60)} --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration {{\"use_correlated_pauli\":true}}".split(" ")  # a maximum 60min for each point
+parameters = f"-p{STO(0)} --decoder UF --max_half_weight 100 --time_budget {CH(60)} --use_xzzx_code --noise_model OnlyGateErrorCircuitLevelCorrelatedErasure --noise_model_configuration {{\"use_correlated_pauli\":true}}".split(" ")  # a maximum 60min for each point
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run(os.path.dirname(__file__))

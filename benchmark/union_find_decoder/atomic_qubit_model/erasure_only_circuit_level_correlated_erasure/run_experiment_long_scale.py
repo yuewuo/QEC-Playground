@@ -27,7 +27,7 @@ min_error_cases = 1000
 max_N = 100000000
 
 # origin: 60 cores, 1200 sec = 20CPU hours
-UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {CH(20)} --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure --error_model_configuration {{\"use_correlated_pauli\":true}}".split(" ")  # a maximum 20min for each point
+UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {CH(20)} --use_xzzx_code --noise_model OnlyGateErrorCircuitLevelCorrelatedErasure --noise_model_configuration {{\"use_correlated_pauli\":true}}".split(" ")  # a maximum 20min for each point
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run(os.path.dirname(__file__))

@@ -98,11 +98,11 @@ export default {
 			type: Number,
 			default: 480
         },
-        errorModel: {
+        noiseModel: {
             type: String,
             default: "depolarizing",
         },
-        depolarErrorRate: {  // used when errorModel = "depolarizing", (1-3p) + pX + pZ + pY, px = 2p, pz = 2p
+        depolarErrorRate: {  // used when noiseModel = "depolarizing", (1-3p) + pX + pZ + pY, px = 2p, pz = 2p
             type: Number,
             default: 0.001,  // also used as normalization in computing weight
         },
@@ -566,7 +566,7 @@ export default {
                                 qubit.error_rate_z = 0
                                 qubit.error_rate_y = 0
                             } else {
-                                if (this.errorModel == "depolarizing") {
+                                if (this.noiseModel == "depolarizing") {
                                     qubit.error_rate_x = 2 * this.depolarErrorRate  // X error rate
                                     qubit.error_rate_z = 2 * this.depolarErrorRate  // Z error rate
                                     qubit.error_rate_y = 2 * this.depolarErrorRate  // Y error rate
@@ -769,7 +769,7 @@ export default {
                                 qubit.error_rate_z = 0
                                 qubit.error_rate_y = 0
                             } else {
-                                if (this.errorModel == "depolarizing") {
+                                if (this.noiseModel == "depolarizing") {
                                     qubit.error_rate_x = 2 * this.depolarErrorRate  // X error rate
                                     qubit.error_rate_z = 2 * this.depolarErrorRate  // Z error rate
                                     qubit.error_rate_y = 2 * this.depolarErrorRate  // Y error rate

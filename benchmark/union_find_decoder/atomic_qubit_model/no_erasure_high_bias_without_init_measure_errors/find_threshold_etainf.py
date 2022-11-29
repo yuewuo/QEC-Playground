@@ -7,8 +7,8 @@ sys.path.insert(0, fault_toleran_MWPM_dir)
 from automated_threshold_evaluation import AutomatedThresholdEvaluator, qec_playground_fault_tolerant_MWPM_simulator_runner_vec_command, run_qec_playground_command_get_stdout
 
 pair = [ (11, 11, 11), (15, 15, 15) ]  # (di, dj, T)
-error_model_configuration = f'{{"initialization_error_rate":0,"measurement_error_rate":0}}'
-parameters = "-p0 --decoder UF --max_half_weight 100 --time_budget 3600 --use_xzzx_code --error_model GenericBiasedWithBiasedCX --bias_eta +inf".split(" ") + ["--error_model_configuration", error_model_configuration]
+noise_model_configuration = f'{{"initialization_error_rate":0,"measurement_error_rate":0}}'
+parameters = "-p0 --decoder UF --max_half_weight 100 --time_budget 3600 --use_xzzx_code --noise_model GenericBiasedWithBiasedCX --bias_eta +inf".split(" ") + ["--noise_model_configuration", noise_model_configuration]
 
 # result:
 """
@@ -25,7 +25,7 @@ configuration 2:
 0.0184028036 15 15 1000112 229084 0.22905834546530787 15 3.6e-3 0 0.01840280360770141
 0.0184945887 15 15 1000142 233980 0.23394677955730286 15 3.5e-3 0 0.018494588733731394
 pair: [(11, 11, 11), (15, 15, 15)]
-parameters: ['-p30', '--decoder', 'UF', '--max_half_weight', '100', '--time_budget', '7200', '--use_xzzx_code', '--error_model', 'GenericBiasedWithBiasedCX', '--bias_eta', '+inf', '--error_model_configuration', '{"initialization_error_rate":0,"measurement_error_rate":0}']
+parameters: ['-p30', '--decoder', 'UF', '--max_half_weight', '100', '--time_budget', '7200', '--use_xzzx_code', '--noise_model', 'GenericBiasedWithBiasedCX', '--bias_eta', '+inf', '--noise_model_configuration', '{"initialization_error_rate":0,"measurement_error_rate":0}']
 threshold = 0.018460486769687697
 relative_confidence_interval = 0.0039811089995457575
 """

@@ -25,7 +25,7 @@ slurm_distribute.SLURM_DISTRIBUTE_TIME = "06:30:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '4G'
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # for more usable machines, use `SLURM_USE_SCAVENGE_PARTITION=1` flag
 time_budget = 6 * 3600  # 6 hour
-parameters = f"-p{STO(0)} --time_budget {time_budget} --code_type StandardXZZXCode --error_model generic-biased-with-biased-cx --decoder union-find".split(" ")
+parameters = f"-p{STO(0)} --time_budget {time_budget} --code_type StandardXZZXCode --noise_model generic-biased-with-biased-cx --decoder union-find".split(" ")
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run(os.path.dirname(__file__))

@@ -27,8 +27,8 @@ slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '4G'
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # use `SLURM_USE_SCAVENGE_PARTITION=1` for more available resources
 
 init_measurement_error_rate = 0.001
-error_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate},"use_correlated_pauli":true}}'
-UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {3600*3} --use_xzzx_code --error_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ") + ["--error_model_configuration", error_model_configuration]  # a maximum 20min for each point
+noise_model_configuration = f'{{"initialization_error_rate":{init_measurement_error_rate},"measurement_error_rate":{init_measurement_error_rate},"use_correlated_pauli":true}}'
+UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {3600*3} --use_xzzx_code --noise_model OnlyGateErrorCircuitLevelCorrelatedErasure".split(" ") + ["--noise_model_configuration", noise_model_configuration]  # a maximum 20min for each point
 
 compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run(os.path.dirname(__file__))

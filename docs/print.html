@@ -155,7 +155,7 @@
 It integrates the whole workflow from simulating surface code to decoding the syndrome and validating the decoding results.
 Every component in this workflow can be customized independently, so that user can explore different codes or decoders with minimum effort.</p>
 <p>On top of this library, we provide a Python binding so that you don't have to learn Rust programming language while enjoying the speed gain of Rust.
-You can implement your own surface code, error model or decoder in Python, while letting other components to run at full speed in Rust.</p>
+You can implement your own surface code, noise model or decoder in Python, while letting other components to run at full speed in Rust.</p>
 <ul>
 <li><strong>Simulator</strong>
 <ul>
@@ -168,12 +168,12 @@ You can implement your own surface code, error model or decoder in Python, while
 </li>
 </ul>
 </li>
-<li><strong>Error Model</strong>
+<li><strong>Noise Model</strong>
 <ul>
 <li>describes the error distribution, supporting single-qubit and two-qubit correlated Pauli errors and erasure errors</li>
-<li><strong>Error Model Builder</strong>
+<li><strong>Noise Model Builder</strong>
 <ul>
-<li>builds a supported error model, given customized parameters like initialization error rate, measurement error rate, noise bias, etc.</li>
+<li>builds a supported noise model, given customized parameters like initialization error rate, measurement error rate, noise bias, etc.</li>
 <li><strong style="color:red;">TODO:</strong> <em>Python: full customization supported</em></li>
 </ul>
 </li>

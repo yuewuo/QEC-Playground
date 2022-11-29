@@ -27,13 +27,13 @@ compile_code_if_necessary()
 @slurm_distribute.slurm_distribute_run(os.path.dirname(__file__))
 def experiment(slurm_commands_vec = None, run_command_get_stdout=run_qec_playground_command_get_stdout):
 
-    for (name, error_model) in [("biased", "generic-biased-with-biased-cx"), ("standard", "generic-biased-with-standard-cx")]:
+    for (name, noise_model) in [("biased", "generic-biased-with-biased-cx"), ("standard", "generic-biased-with-standard-cx")]:
         for di in di_vec:
             filename = os.path.join(os.path.dirname(__file__), f"{name}_{di}.txt")
             
             results = []
             for p in p_vec:
-                command = qec_playground_benchmark_simulator_runner_vec_command([p], [di], [3 * di], [3 * di], parameters + ["--error_model", f"{error_model}"], max_N=max_N, min_error_cases=min_error_cases)
+                command = qec_playground_benchmark_simulator_runner_vec_command([p], [di], [3 * di], [3 * di], parameters + ["--noise_model", f"{noise_model}"], max_N=max_N, min_error_cases=min_error_cases)
                 if slurm_commands_vec is not None:
                     slurm_commands_vec.sanity_checked_append(command)
                     continue

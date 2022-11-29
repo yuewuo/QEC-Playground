@@ -20,7 +20,7 @@ max_N = 0  # +inf
 
 time_budget = 30 * 60  # 30min
 # time_budget = 10  # debug
-UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {time_budget} --use_xzzx_code --error_model OnlyGateErrorCircuitLevel --use_fast_benchmark".split(" ")
+UF_parameters = f"-p{STO(0)} --decoder UF --max_half_weight 10 --time_budget {time_budget} --use_xzzx_code --noise_model OnlyGateErrorCircuitLevel --use_fast_benchmark".split(" ")
 
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # it doesn't rely on too much CPUs
 slurm_distribute.SLURM_DISTRIBUTE_TIME = "02:00:00"
