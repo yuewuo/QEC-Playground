@@ -10,11 +10,11 @@ from threshold_analyzer import run_qecp_command_get_stdout, compile_code_if_nece
 from threshold_analyzer import ThresholdAnalyzer
 
 def rough_code_distances(bias_eta):
-    return [4, 6] if bias_eta < 1000 else [6, 8] # larger code distance is necessary for high code distance
+    return [5, 7] if bias_eta < 1000 else [7, 9] # larger code distance is necessary for high code distance
 def rough_runtime_budgets(bias_eta):
     return [(6000, 600), (6000, 2400)] if bias_eta < 1000 else [(6000, 3600), (6000, 3600)]
-rough_init_search_start_p = 0.1  # already know all possible threshold is below 15%
-code_distances = [6, 8, 10, 12]
+rough_init_search_start_p = 0.15  # already know all possible threshold is below 15%
+code_distances = [5, 7, 9]
 runtime_budgets = [(180000, 3600 * 4)] * len(code_distances)  # each given one hour
 bias_eta_vec = [10, 100] #[10, 30, 100, 300, 1000, 1e200]  # only one bias
 
@@ -22,7 +22,7 @@ slurm_distribute.SLURM_DISTRIBUTE_TIME = "4:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '16G'
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12  # for more usuable machines, use `SLURM_USE_SCAVENGE_PARTITION=1` flag
 def generate_parameters(bias_eta):
-    return f"-p{STO(0)} --code_type RotatedTailoredCode --bias_eta {bias_eta} --decoder tailored-mwpm --decoder_config {{\"pcmg\":true}} --error_model tailored-sc-bell-init-phenomenological".split(" ")
+    return f"-p{STO(0)} --code_type RotatedTailoredCode --bias_eta {bias_eta} --decoder tailored-mwpm --decoder_config {{\"pcmg\":true,\"naive_residual_decoding\":true}} --error_model tailored-sc-bell-init-phenomenological".split(" ")
 
 PRECISE_RESULT_FILE = os.path.join(os.path.dirname(__file__), f"precise_result.hjson")
 RESULT_FILE = os.path.join(os.path.dirname(__file__), f"result.hjson")

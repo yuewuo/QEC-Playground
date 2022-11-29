@@ -553,7 +553,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                         let sparse_error_pattern = simulator.generate_sparse_error_pattern();
                         eprint!("{}", serde_json::to_string(&sparse_error_pattern).expect("serialize should success"));
                         if sparse_detected_erasures.len() > 0 {  // has detected erasures, report as well
-                            eprintln!(", {}", serde_json::to_string(&sparse_detected_erasures).expect("serialize should success"));
+                            eprintln!(", erasure: {}", serde_json::to_string(&sparse_detected_erasures).expect("serialize should success"));
                         } else {
                             eprintln!("");
                         }
