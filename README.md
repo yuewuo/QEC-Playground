@@ -2,6 +2,8 @@
 
 A research tool to explore Quantum Error Correction (QEC), primarily surface codes.
 
+![](visualize/demo.jpg)
+
 <strong style="color:red;">[Error] we're working on the documentation of this project, please wait for a formal release (1.0.0) before you want to use this project.</strong>
 
 ## Installation

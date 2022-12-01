@@ -158,11 +158,11 @@ impl FusionDecoder {
     /// decode given measurement results
     #[allow(dead_code)]
     pub fn decode(&mut self, sparse_measurement: &SparseMeasurement) -> (SparseCorrection, serde_json::Value) {
-        self.decode_with_erasure(sparse_measurement, &SparseDetectedErasures::new())
+        self.decode_with_erasure(sparse_measurement, &SparseErasures::new())
     }
 
     /// decode given measurement results and detected erasures
-    pub fn decode_with_erasure(&mut self, sparse_measurement: &SparseMeasurement, sparse_detected_erasures: &SparseDetectedErasures) -> (SparseCorrection, serde_json::Value) {
+    pub fn decode_with_erasure(&mut self, sparse_measurement: &SparseMeasurement, sparse_detected_erasures: &SparseErasures) -> (SparseCorrection, serde_json::Value) {
         assert!(sparse_detected_erasures.len() == 0, "fusion decoder doesn't support erasure error yet: we'll do it in the next version to support 0-weight edges and dynamic setting");
         let mut correction = SparseCorrection::new();
         // list nontrivial measurements to be matched
@@ -232,7 +232,7 @@ mod tests {
         let mut fusion_decoder = FusionDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&noise_model), &decoder_config, 1, false);
         // load errors onto the simulator
         let sparse_error_pattern: SparseErrorPattern = serde_json::from_value(json!({"[0][1][5]":"Z","[0][2][6]":"Z","[0][4][4]":"X","[0][5][7]":"X","[0][9][7]":"Y"})).unwrap();
-        // let sparse_detected_erasures: SparseDetectedErasures = serde_json::from_value(json!({"erasures":["[0][1][3]","[0][1][5]","[0][2][6]","[0][4][4]","[0][5][7]","[0][6][6]","[0][9][7]"]})).unwrap();
+        // let sparse_detected_erasures: SparseErasures = serde_json::from_value(json!({"erasures":["[0][1][3]","[0][1][5]","[0][2][6]","[0][4][4]","[0][5][7]","[0][6][6]","[0][9][7]"]})).unwrap();
         simulator.load_sparse_error_pattern(&sparse_error_pattern, &noise_model).expect("success");
         // simulator.load_sparse_detected_erasures(&sparse_detected_erasures).expect("success");
         simulator.propagate_errors();

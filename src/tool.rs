@@ -222,7 +222,7 @@ pub struct BenchmarkThreadDebugger {
     thread_counter: usize,
     error_pattern: Option<SparseErrorPattern>,
     measurement: Option<SparseMeasurement>,
-    detected_erasures: Option<SparseDetectedErasures>,
+    detected_erasures: Option<SparseErasures>,
     correction: Option<SparseCorrection>,
 }
 
@@ -541,7 +541,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     // generate random errors and the corresponding measurement
                     let begin = Instant::now();
                     let (error_count, erasure_count) = simulator.generate_random_errors(&noise_model);
-                    let sparse_detected_erasures = if erasure_count != 0 { simulator.generate_sparse_detected_erasures() } else { SparseDetectedErasures::new() };
+                    let sparse_detected_erasures = if erasure_count != 0 { simulator.generate_sparse_detected_erasures() } else { SparseErasures::new() };
                     if thread_timeout >= 0. {
                         let mut thread_debugger = thread_debugger.lock().unwrap();
                         thread_debugger.error_pattern = Some(simulator.generate_sparse_error_pattern());
