@@ -1099,7 +1099,9 @@ impl Serialize for Position {
     }
 }
 
-impl<'de> Visitor<'de> for Position {
+pub struct PositionVisitor {}
+
+impl<'de> Visitor<'de> for PositionVisitor {
     type Value = Position;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -1136,7 +1138,7 @@ impl<'de> Visitor<'de> for Position {
 impl<'de> Deserialize<'de> for Position {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>, {
         // the new-ed position just works like a helper type that implements Visitor trait, not optimized for efficiency
-        deserializer.deserialize_str(Position::new(usize::MAX, usize::MAX, usize::MAX))
+        deserializer.deserialize_str(PositionVisitor{})
     }
 }
 

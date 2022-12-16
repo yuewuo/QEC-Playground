@@ -60,6 +60,7 @@ pub mod union_find;
 pub mod erasure_graph;
 pub mod decoder_fusion;
 pub mod visualize;
+pub mod model_hypergraph;
 #[cfg(feature="python_binding")]
 use pyo3::prelude::*;
 
