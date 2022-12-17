@@ -61,6 +61,7 @@ const App = {
             selected_edge: ref(null),
             selected_edge_attributes: ref(""),
             noise_model_info: ref(null),
+            selected_hypergraph_info: ref(null),
             // display options
             display_qubits: gui3d.display_qubits,
             display_idle_sticks: gui3d.display_idle_sticks,
@@ -273,6 +274,69 @@ const App = {
                 await Vue.nextTick()
                 await this.update_mathjax()
             }
+            if (this.current_selected.type == "model_hypergraph_vertex") {
+                let vertex_index = this.current_selected.vertex_index
+                let incident_edges = qecp_data.model_hypergraph.incident_edges[vertex_index]
+                // fetch edge list
+                let neighbor_edges = []
+                for (let edge_index of incident_edges) {
+                    const [defect_vertices_str, hyperedge_group] = qecp_data.model_hypergraph.weighted_edges[edge_index]
+                    const defect_vertices = gui3d.get_defect_vertices(defect_vertices_str).map(x => { return {
+                        vertex_index: qecp_data.model_hypergraph.vertex_indices[gui3d.to_position_str(x)],
+                        position_str: gui3d.to_position_str(x),
+                        tij: x,
+                    }})
+                    neighbor_edges.push({
+                        edge_index: edge_index,
+                        probability: hyperedge_group.hyperedge.p,
+                        weight: hyperedge_group.hyperedge.w,
+                        defect_vertices: defect_vertices,
+                    })
+                }
+                this.selected_hypergraph_info = {
+                    vertex_position: qecp_data.model_hypergraph.vertex_positions[vertex_index],
+                    neighbor_edges: neighbor_edges,
+                }
+            }
+            if (this.current_selected.type == "model_hypergraph_edge") {
+                let edge_index = this.current_selected.edge_index
+                let [defect_vertices_str, hyperedge_group] = qecp_data.model_hypergraph.weighted_edges[edge_index]
+                const defect_vertices = gui3d.get_defect_vertices(defect_vertices_str).map(x => { return {
+                    vertex_index: qecp_data.model_hypergraph.vertex_indices[gui3d.to_position_str(x)],
+                    position_str: gui3d.to_position_str(x),
+                    tij: x,
+                }})
+                let all_hyperedges = []
+                for (const hyperedge of hyperedge_group.all_hyperedges) {
+                    let error_pattern = []
+                    for (const position_str in hyperedge.e) {
+                        error_pattern.push({
+                            position_str: position_str,
+                            type: hyperedge.e[position_str],
+                        })
+                    }
+                    let correction = []
+                    for (const position_str in hyperedge.c) {
+                        correction.push({
+                            position_str: position_str,
+                            type: hyperedge.c[position_str],
+                        })
+                    }
+                    all_hyperedges.push({
+                        probability: hyperedge.p,
+                        weight: hyperedge.w,
+                        error_pattern: error_pattern,
+                        correction: correction,
+                    })
+                }
+                this.selected_hypergraph_info = {
+                    edge_index: edge_index,
+                    probability: hyperedge_group.hyperedge.p,
+                    weight: hyperedge_group.hyperedge.w,
+                    defect_vertices: defect_vertices,
+                    all_hyperedges: all_hyperedges,
+                }
+            }
         },
         async update_mathjax() {
             for (let i=0; i<100; ++i) await Vue.nextTick()
@@ -290,7 +354,10 @@ const App = {
         async ref_btn_hover(pos_str) {
             await this.jump_to("idle_gate", this.build_data_pos(pos_str), false)
         },
-        async ref_btn_leave(pos_str) {
+        async ref_btn_hover_general(type, data) {
+            await this.jump_to(type, data, false)
+        },
+        async ref_btn_leave() {
             await this.jump_to(null, null, false)
         },
         async ref_btn_click(pos_str) {

@@ -376,22 +376,78 @@ h5 {
                     <div v-for="(ad, index) in noise_model_info.additional" style="margin-top: 5px;">
                         <span>> </span>
                         <span v-if="ad.source == 'corr_pp'">two-qubit Pauli from 
-                            <q-btn class="ref-position-btn" size="md" dense :label="`[${ad.t}][${ad.i}][${ad.j}]`" color="red" glossy @mouseover="ref_btn_hover(`[${ad.t}][${ad.i}][${ad.j}]`)" @mouseleave="ref_btn_leave(`[${ad.t}][${ad.i}][${ad.j}]`)" @click="ref_btn_click(`[${ad.t}][${ad.i}][${ad.j}]`)"/>
+                            <q-btn class="ref-position-btn" size="md" dense :label="`[${ad.t}][${ad.i}][${ad.j}]`" color="red" glossy @mouseover="ref_btn_hover(`[${ad.t}][${ad.i}][${ad.j}]`)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(`[${ad.t}][${ad.i}][${ad.j}]`)"/>
                         </span>
                         <span v-if="ad.source == 'corr_pe'">two-qubit erasure from 
-                            <q-btn class="ref-position-btn" size="md" dense :label="`[${ad.t}][${ad.i}][${ad.j}]`" color="purple" glossy @mouseover="ref_btn_hover(`[${ad.t}][${ad.i}][${ad.j}]`)" @mouseleave="ref_btn_leave(`[${ad.t}][${ad.i}][${ad.j}]`)" @click="ref_btn_click(`[${ad.t}][${ad.i}][${ad.j}]`)"></q-btn>
+                            <q-btn class="ref-position-btn" size="md" dense :label="`[${ad.t}][${ad.i}][${ad.j}]`" color="purple" glossy @mouseover="ref_btn_hover(`[${ad.t}][${ad.i}][${ad.j}]`)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(`[${ad.t}][${ad.i}][${ad.j}]`)"></q-btn>
                         </span>
                         <span v-if="ad.source == 'add_p' || ad.source == 'add_e'">{{ ad.source == 'add_p' ? "Pauli": "erasure" }} from additional noise [{{ ad.add_idx }}], probability: <span :style="{ color: non_zero_color }">{{ Number.parseFloat(ad.noise.p).toExponential(2) }}</span>
                             <span v-if="Object.entries(ad.noise.pe).length > 0">
                                 <br/><span style="margin-left: 20px;">Pauli: </span>
-                                <q-btn v-for="(error, pos_str) in ad.noise.pe" class="ref-position-btn" size="md" dense :label="pos_str + ':' + error.toUpperCase()" color="red" glossy @mouseover="ref_btn_hover(pos_str)" @mouseleave="ref_btn_leave(pos_str)" @click="ref_btn_click(pos_str)"></q-btn>
+                                <q-btn v-for="(error, pos_str) in ad.noise.pe" class="ref-position-btn" size="md" dense :label="pos_str + ':' + error.toUpperCase()" color="red" glossy @mouseover="ref_btn_hover(pos_str)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(pos_str)"></q-btn>
                             </span>
                             <span v-if="ad.noise.ee.length > 0">
                                 <br/><span style="margin-left: 20px;">erasures: </span>
-                                <q-btn v-for="pos_str in ad.noise.ee" class="ref-position-btn" size="md" dense :label="pos_str" color="purple" glossy @mouseover="ref_btn_hover(pos_str)" @mouseleave="ref_btn_leave(pos_str)" @click="ref_btn_click(pos_str)"></q-btn>
+                                <q-btn v-for="pos_str in ad.noise.ee" class="ref-position-btn" size="md" dense :label="pos_str" color="purple" glossy @mouseover="ref_btn_hover(pos_str)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(pos_str)"></q-btn>
                             </span>
                         </span>
                     </div>
+                </div>
+            </q-card-section>
+        </q-card>
+        <q-card bordered class="select-info-div" v-if="current_selected != null && current_selected.type == 'model_hypergraph_vertex'">
+            <q-card-section class="bg-green text-white">
+                <div class="text-h6">Vertex {{ current_selected.vertex_index }} at {{ selected_hypergraph_info.vertex_position }}</div>
+            </q-card-section>
+            <q-separator inset></q-separator>
+            <q-card-section>
+                <div v-for="edge of selected_hypergraph_info.neighbor_edges" style="margin-top: 15px;">
+                    <q-btn color="teal" no-caps size="12px" rounded padding="none md" @mouseenter="ref_btn_hover_general('model_hypergraph_edge', { edge_index: edge.edge_index })" 
+                            @mouseleave="ref_btn_leave()" @click="jump_to('model_hypergraph_edge', { edge_index: edge.edge_index })">
+                        <div class="text-center">
+                            Edge</span><br>{{ edge.edge_index }}
+                        </div>
+                    </q-btn>
+                    &nbsp;&nbsp;p: {{ Number.parseFloat(edge.probability).toExponential(2) }},
+                    <span class="bg-green-2" style="padding: 14px 5px; border-radius: 5px; line-height: 45px;">V = 
+                        [<q-btn color="green" no-caps unelevated v-for="vertex of edge.defect_vertices" style="margin-left: 5px; position: relative; bottom: 2px;"
+                            padding="2px 4px" size="12px" @mouseenter="ref_btn_hover_general('model_hypergraph_vertex', { vertex_index: vertex.vertex_index })" 
+                            @mouseleave="ref_btn_leave()"
+                            @click="jump_to('model_hypergraph_vertex', { vertex_index: vertex.vertex_index })">Vid: {{ vertex.vertex_index }}<br>{{ vertex.position_str }}</q-btn>
+                    ]</span>
+                </div>
+            </q-card-section>
+        </q-card>
+        <q-card bordered class="select-info-div" v-if="current_selected != null && current_selected.type == 'model_hypergraph_edge'">
+            <q-card-section class="bg-teal text-white">
+                <div class="text-h6">Edge {{ current_selected.edge_index }}</div>
+            </q-card-section>
+            <q-separator inset></q-separator>
+            <q-card-section>
+                <div>
+                    p: {{ Number.parseFloat(selected_hypergraph_info.probability).toExponential(2) }},
+                    <span class="bg-green-2" style="padding: 14px 5px; border-radius: 5px; line-height: 45px;">V = 
+                        [<q-btn color="green" no-caps unelevated v-for="vertex of selected_hypergraph_info.defect_vertices" style="margin-left: 5px; position: relative; bottom: 2px;"
+                            padding="2px 4px" size="12px" @mouseenter="ref_btn_hover_general('model_hypergraph_vertex', { vertex_index: vertex.vertex_index })" 
+                            @mouseleave="ref_btn_leave()"
+                            @click="jump_to('model_hypergraph_vertex', { vertex_index: vertex.vertex_index })">Vid: {{ vertex.vertex_index }}<br>{{ vertex.position_str }}</q-btn>
+                    ]</span>
+                </div>
+                <div class="text-h6">Contributing Independent Errors:</div>
+                <div v-for="hyperedge of selected_hypergraph_info.all_hyperedges" style="margin-top: 15px;">
+                    p: {{ Number.parseFloat(hyperedge.probability).toExponential(2) }},
+                    <span class="bg-red-2" style="padding: 14px 5px; border-radius: 5px; line-height: 45px;">Error = 
+                        [<q-btn color="red" no-caps unelevated v-for="error of hyperedge.error_pattern" style="margin-left: 5px; position: relative; bottom: 2px;"
+                            padding="2px 4px" size="12px"
+                            @mouseover="ref_btn_hover(error.position_str)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(error.position_str)"
+                            >{{ error.position_str }}<br>{{ error.type }}</q-btn>
+                    ]</span>,
+                    <span class="bg-orange-2" style="padding: 14px 5px; border-radius: 5px; line-height: 45px;">Correction = 
+                        [<q-btn color="orange" no-caps unelevated v-for="correction of hyperedge.correction" style="margin-left: 5px; position: relative; bottom: 2px;"
+                            padding="2px 4px" size="12px"
+                            @mouseover="ref_btn_hover(correction.position_str)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(correction.position_str)"
+                            >{{ correction.position_str }}<br>{{ correction.type }}</q-btn>
+                    ]</span>,
                 </div>
             </q-card-section>
         </q-card>

@@ -586,6 +586,10 @@ export function get_position(position_str) {
     }
 }
 
+export function to_position_str(position) {
+    return `[${position.t}][${position.i}][${position.j}]`
+}
+
 export function get_defect_vertices(defect_vertices_str) {
     const defect_vertices = []
     for (let position_str of defect_vertices_str.split("+")) {
@@ -726,7 +730,11 @@ export function update_visible_model_hypergraph() {
         mesh.visible = display_model_hypergraph.value && in_t_range(tij.t)
     }
     for (let edge_index=0; edge_index<qecp_data.model_hypergraph.weighted_edges.length; ++edge_index) {
-
+        const [min_t, max_t] = qecp_data.model_hypergraph.edge_min_max_t[edge_index]
+        const visible = display_model_hypergraph.value && min_t <= t_range.value.max && max_t >= t_range.value.min
+        for (let mesh of model_hypergraph_edge_vec_meshes[edge_index]) {
+            mesh.visible = visible
+        }
     }
 }
 watch([display_model_hypergraph, t_range], update_visible_model_hypergraph, { deep: true })
@@ -812,12 +820,12 @@ export async function refresh_qecp_data() {
         // draw idle gates
         dispose_mesh_3d_array(idle_gate_meshes)
         idle_gate_meshes = build_3d_array(height, vertical, horizontal)
-        for (let t=0; t<height-1; ++t) {
+        for (let t=0; t<height; ++t) {
             for (let i=0; i<vertical; ++i) {
                 for (let j=0; j<horizontal; ++j) {
                     const node = nodes[t][i][j]
-                    const next_node = nodes[t+1][i][j]
-                    if (next_node != null && !next_node.v && !(next_node.gt == "InitializeX" || next_node.gt == "InitializeZ")) {
+                    const next_node = nodes[t+1]?.[i]?.[j]
+                    if ((t == height-1 && node != null && !node.v) || (next_node != null && !next_node.v && !(next_node.gt == "InitializeX" || next_node.gt == "InitializeZ"))) {
                         const position = qecp_data.simulator.positions[i][j]
                         const display_position = {
                             t: t + t_bias,  // idle gate is before every real gate
@@ -1084,12 +1092,14 @@ export async function refresh_qecp_data() {
             // add geometry for each vertex in the model hypergraph
             dispose_mesh_1d_array(model_hypergraph_vertex_meshes)
             model_hypergraph_vertex_meshes = []
+            qecp_data.model_hypergraph.incident_edges = []  // compute incident edges for each vertex for visualization
             for (let vertex_index=0; vertex_index<qecp_data.model_hypergraph.vertex_positions.length; ++vertex_index) {
+                qecp_data.model_hypergraph.incident_edges.push([])
                 let position_str = qecp_data.model_hypergraph.vertex_positions[vertex_index]
                 const tij = get_position(position_str)
                 const position = qecp_data.simulator.positions[tij.i][tij.j]
                 const display_position = { t: tij.t + t_bias, x: position.x, y: position.y }
-                const vertex_mesh = new THREE.Mesh( model_graph_vertex_geometry, model_graph_vertex_material_vec[0] )
+                const vertex_mesh = new THREE.Mesh( model_graph_vertex_geometry, model_graph_vertex_material_vec[1] )
                 load_position(vertex_mesh.position, display_position)
                 vertex_mesh.userData = {
                     type: "model_hypergraph_vertex",
@@ -1101,6 +1111,7 @@ export async function refresh_qecp_data() {
             // add geometries for each hyperedge
             dispose_mesh_1d_array(model_hypergraph_edge_vec_meshes)
             model_hypergraph_edge_vec_meshes = []
+            qecp_data.model_hypergraph.edge_min_max_t = []
             for (let edge_index=0; edge_index<qecp_data.model_hypergraph.weighted_edges.length; ++edge_index) {
                 let [defect_vertices_str, hyperedge_group] = qecp_data.model_hypergraph.weighted_edges[edge_index]
                 const defect_vertices = get_defect_vertices(defect_vertices_str)
@@ -1108,15 +1119,24 @@ export async function refresh_qecp_data() {
                 // calculate hyperedge center
                 let sum_position = new THREE.Vector3( 0, 0, 0 )
                 let visual_positions = []
+                let max_t = null
+                let min_t = null
                 for (let j=0; j<defect_vertices.length; ++j) {
                     const tij = defect_vertices[j]
+                    if (j == 0) max_t = tij.t
+                    if (j == 0) min_t = tij.t
+                    if (tij.t > max_t) max_t = tij.t
+                    if (tij.t < min_t) min_t = tij.t
                     const position = qecp_data.simulator.positions[tij.i][tij.j]
                     const display_position = { t: tij.t + t_bias, x: position.x, y: position.y }
                     let visual_position = compute_vector3(display_position)
                     visual_positions.push(visual_position)
                     // console.log(visual_position)
                     sum_position = sum_position.add(visual_position)
+                    const vertex_index = qecp_data.model_hypergraph.vertex_indices[to_position_str(tij)]
+                    qecp_data.model_hypergraph.incident_edges[vertex_index].push(edge_index)
                 }
+                qecp_data.model_hypergraph.edge_min_max_t.push([min_t, max_t])
                 const center_position = sum_position.multiplyScalar(1 / defect_vertices.length)
                 for (let j=0; j<defect_vertices.length; ++j) {
                     const edge_mesh = new THREE.Mesh( get_hyperedge_geometry(defect_vertices.length), model_hypergraph_edge_material )
@@ -1612,6 +1632,22 @@ function set_material_with_user_data(user_data, material) {  // return the previ
         let expanded_material = material
         if (!Array.isArray(material)) expanded_material = Array(vec_mesh.length).fill(material)
         Object.entries(expanded_material).map(([idx, material]) => { vec_mesh[idx].material = material })
+        return previous_material
+    }
+    if (user_data.type == "model_hypergraph_vertex") {
+        const { vertex_index } = user_data
+        let vertex_mesh = model_hypergraph_vertex_meshes[vertex_index]
+        let previous_material = vertex_mesh.material
+        vertex_mesh.material = material
+        return previous_material
+    }
+    if (user_data.type == "model_hypergraph_edge") {
+        const { edge_index } = user_data
+        let edge_vec_mesh = model_hypergraph_edge_vec_meshes[edge_index]
+        let previous_material = edge_vec_mesh[0].material
+        for (let mesh of edge_vec_mesh) {
+            mesh.material = material
+        }
         return previous_material
     }
     console.error(`unknown type ${user_data.type}`)
