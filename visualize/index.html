@@ -278,6 +278,9 @@ h5 {
                         color="green" type="toggle" inline left-label dense/>
                 </div>
             </div>
+            <div class="display-options-row-left" v-if="existed_model_hypergraph">
+                <div><q-toggle left-label v-model="display_model_hypergraph" label="Model Hypergraph: " size="md"/></div>
+            </div>
             <div class="display-options-row-left" v-if="case_select > 0">
                 <span style="line-height: 42px;">Case [{{ case_select }}]: </span>
                 <div><q-toggle v-model="display_error_pattern" label="actual error" size="md"/></div>
