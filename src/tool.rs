@@ -31,6 +31,7 @@ use super::decoder_union_find::*;
 use super::erasure_graph::*;
 use super::visualize::*;
 use super::model_hypergraph::*;
+use super::decoder_hyper_union_find::*;
 
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
@@ -184,6 +185,8 @@ pub enum BenchmarkDecoder {
     TailoredMWPM,
     /// union-find decoder
     UnionFind,
+    /// hypergraph union-find decoder
+    HyperUnionFind,
 }
 
 /// progress variable shared between threads to update information
@@ -461,6 +464,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         let union_find_decoder = if decoder == BenchmarkDecoder::UnionFind {
             Some(UnionFindDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
         } else { None };
+        let hyper_union_find_decoder = if decoder == BenchmarkDecoder::HyperUnionFind {
+            Some(HyperUnionFindDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
+        } else { None };
         // then prepare the real noise model
         let mut noise_model = NoiseModel::new(&simulator);
         let px = p / (1. + bias_eta) / 2.;
@@ -542,6 +548,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let mut fusion_decoder = fusion_decoder.clone();
             let mut tailored_mwpm_decoder = tailored_mwpm_decoder.clone();
             let mut union_find_decoder = union_find_decoder.clone();
+            let mut hyper_union_find_decoder = hyper_union_find_decoder.clone();
             let thread_ended = Arc::new(AtomicBool::new(false));
             threads_ended.push(Arc::clone(&thread_ended));
             let thread_debugger = Arc::new(Mutex::new(BenchmarkThreadDebugger::new()));
@@ -588,6 +595,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                         },
                         BenchmarkDecoder::UnionFind => {
                             union_find_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
+                        }
+                        BenchmarkDecoder::HyperUnionFind => {
+                            hyper_union_find_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
                         }
                     };
                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().correction = Some(correction.clone()); }  // runtime debug: find deadlock cases
