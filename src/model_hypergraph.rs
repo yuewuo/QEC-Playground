@@ -372,7 +372,7 @@ impl ModelHypergraph {
             if hyperedge_group.hyperedge.probability > 0. {  // only add those possible edges; for erasures, handle later
                 let scaled_weight = hyperedge_group.hyperedge.weight * max_weight as f64 / maximum_weight;
                 let int_weight = scaled_weight.round();
-                assert!(int_weight.is_normal(), "weight must be normal");
+                assert!(int_weight.is_finite(), "weight must be normal");
                 assert!(int_weight >= 0., "weight must be non-negative");
                 assert!(int_weight <= max_weight as f64, "weight must be smaller than max weight");
                 let vertex_indices: Vec<_> = defect_vertices.0.iter().map(|x| self.vertex_indices[x]).collect();
