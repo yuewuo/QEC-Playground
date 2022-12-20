@@ -137,6 +137,8 @@ const App = {
                     this.use_perspective_camera = true
                 } else if (event.key == "e" || event.key == "E") {
                     this.toggle_error_correction()
+                } else if (event.key == "h" || event.key == "H") {
+                    this.display_model_hypergraph = !this.display_model_hypergraph
                 } else if (event.key == "ArrowRight") {
                     if (this.case_select < this.case_num - 1) {
                         this.case_select += 1

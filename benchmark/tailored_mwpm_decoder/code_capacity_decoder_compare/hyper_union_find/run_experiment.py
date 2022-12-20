@@ -11,8 +11,7 @@ import slurm_distribute
 from slurm_distribute import slurm_threads_or as STO
 
 di_vec = [3,5,7,9,11,13]  # rotated surface code only supports odd number code distances
-p_vec = [0.5 * (10 ** (- i / 5)) for i in range(5 * 4 + 1)] + [0.41 + i * 0.01 for i in range(10)]
-p_vec[0] = 0.4
+p_vec = [0.4 + i * 0.01 for i in range(11)][::-1] + [0.5 * (10 ** (- i / 5)) for i in range(1, 5 * 4 + 1)]
 print(p_vec)
 min_error_cases = 40000
 max_N = 100000000
