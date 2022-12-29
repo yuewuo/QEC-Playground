@@ -30,6 +30,8 @@ use super::noise_model_builder::*;
 use super::decoder_union_find::*;
 use super::erasure_graph::*;
 use super::visualize::*;
+use super::model_hypergraph::*;
+use super::decoder_hyper_union_find::*;
 
 
 pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
@@ -116,10 +118,12 @@ pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
             let visualizer_skip_success_cases = matches.is_present("visualizer_skip_success_cases");
             let visualizer_filename = matches.value_of_t("visualizer_filename").unwrap_or(static_visualize_data_filename());
             let visualizer_model_graph = matches.is_present("visualizer_model_graph");
+            let visualizer_model_hypergraph = matches.is_present("visualizer_model_hypergraph");
             return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
                 , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
                 , noise_model_builder, noise_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge, label
-                , noise_model_modifier, enable_visualizer, visualizer_skip_success_cases, visualizer_filename, visualizer_model_graph));
+                , noise_model_modifier, enable_visualizer, visualizer_skip_success_cases, visualizer_filename, visualizer_model_graph
+                , visualizer_model_hypergraph));
         }
         _ => unreachable!()
     }
@@ -181,6 +185,8 @@ pub enum BenchmarkDecoder {
     TailoredMWPM,
     /// union-find decoder
     UnionFind,
+    /// hypergraph union-find decoder
+    HyperUnionFind,
 }
 
 /// progress variable shared between threads to update information
@@ -222,7 +228,7 @@ pub struct BenchmarkThreadDebugger {
     thread_counter: usize,
     error_pattern: Option<SparseErrorPattern>,
     measurement: Option<SparseMeasurement>,
-    detected_erasures: Option<SparseDetectedErasures>,
+    detected_erasures: Option<SparseErasures>,
     correction: Option<SparseCorrection>,
 }
 
@@ -263,7 +269,8 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
         , noise_model_builder: Option<NoiseModelBuilder>, noise_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
         , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String, noise_model_modifier: Option<serde_json::Value>
-        , enable_visualizer: bool, visualizer_skip_success_cases: bool, visualizer_filename: String, visualizer_model_graph: bool) -> String {
+        , enable_visualizer: bool, visualizer_skip_success_cases: bool, visualizer_filename: String, visualizer_model_graph: bool
+        , visualizer_model_hypergraph: bool) -> String {
     // if parallel = 0, use all CPU resources
     let parallel = if parallel == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel };
     let parallel_init = if parallel_init == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel_init };
@@ -457,6 +464,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         let union_find_decoder = if decoder == BenchmarkDecoder::UnionFind {
             Some(UnionFindDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
         } else { None };
+        let hyper_union_find_decoder = if decoder == BenchmarkDecoder::HyperUnionFind {
+            Some(HyperUnionFindDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
+        } else { None };
         // then prepare the real noise model
         let mut noise_model = NoiseModel::new(&simulator);
         let px = p / (1. + bias_eta) / 2.;
@@ -508,6 +518,13 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     , config.use_combined_probability, use_brief_edge);
                 new_visualizer.add_component(&model_graph).unwrap();
             }
+            if visualizer_model_hypergraph {
+                let config: BenchmarkDebugPrintDecoderConfig = serde_json::from_value(decoder_config.clone()).unwrap();
+                let mut model_hypergraph = ModelHypergraph::new(&simulator);
+                model_hypergraph.build(&mut simulator, Arc::clone(&noise_model_graph), &config.weight_function, parallel_init
+                    , config.use_combined_probability, use_brief_edge);
+                new_visualizer.add_component(&model_hypergraph).unwrap();
+            }
             new_visualizer.end_component().unwrap();  // make sure the visualization file is valid even user exit the benchmark
             visualizer = Some(Arc::new(Mutex::new(new_visualizer)));
         }
@@ -531,6 +548,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let mut fusion_decoder = fusion_decoder.clone();
             let mut tailored_mwpm_decoder = tailored_mwpm_decoder.clone();
             let mut union_find_decoder = union_find_decoder.clone();
+            let mut hyper_union_find_decoder = hyper_union_find_decoder.clone();
             let thread_ended = Arc::new(AtomicBool::new(false));
             threads_ended.push(Arc::clone(&thread_ended));
             let thread_debugger = Arc::new(Mutex::new(BenchmarkThreadDebugger::new()));
@@ -541,7 +559,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     // generate random errors and the corresponding measurement
                     let begin = Instant::now();
                     let (error_count, erasure_count) = simulator.generate_random_errors(&noise_model);
-                    let sparse_detected_erasures = if erasure_count != 0 { simulator.generate_sparse_detected_erasures() } else { SparseDetectedErasures::new() };
+                    let sparse_detected_erasures = if erasure_count != 0 { simulator.generate_sparse_detected_erasures() } else { SparseErasures::new() };
                     if thread_timeout >= 0. {
                         let mut thread_debugger = thread_debugger.lock().unwrap();
                         thread_debugger.error_pattern = Some(simulator.generate_sparse_error_pattern());
@@ -577,6 +595,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                         },
                         BenchmarkDecoder::UnionFind => {
                             union_find_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
+                        }
+                        BenchmarkDecoder::HyperUnionFind => {
+                            hyper_union_find_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
                         }
                     };
                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().correction = Some(correction.clone()); }  // runtime debug: find deadlock cases

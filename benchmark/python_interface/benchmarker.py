@@ -587,7 +587,7 @@ class NoiseModelName:
 
 def fetch_noise_model(di, dj, noisy_measurement_rounds, p=0, pe=0, configuration=[]):
     qecp_path = os.path.join(rust_dir, "target", "release", "qecp")
-    command = [qecp_path, "tool", "benchmark"] + [f"[{di}]", "--djs", f"[{dj}]", f"[{noisy_measurement_rounds}]", f"[{p}]", "--pes", f"[{pe}]"]  + configuration + ["--debug_print", "full-error-model"]
+    command = [qecp_path, "tool", "benchmark"] + [f"[{di}]", "--djs", f"[{dj}]", f"[{noisy_measurement_rounds}]", f"[{p}]", "--pes", f"[{pe}]"]  + configuration + ["--debug_print", "full-noise-model"]
     stdout, returncode = run_qec_playground_command_get_stdout(command)
     if returncode != 0:
         print("[error] failed command:", " ".join(command))

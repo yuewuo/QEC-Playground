@@ -424,7 +424,7 @@ impl Simulator {
         let mut rng = self.rng.clone();  // avoid mutable borrow
         let mut error_count = 0;
         let mut erasure_count = 0;
-        // first apply single-qubit errors
+        // first apply single-qubit and two-qubit correlated errors
         simulator_iter_mut!(self, position, node, {
             let noise_model_node = noise_model.get_node_unwrap(position);
             let random_pauli = rng.next_f64();
@@ -482,6 +482,18 @@ impl Simulator {
                 None => { },
             }
         });
+        // then apply additional noises
+        for additional_noise in noise_model.additional_noise.iter() {
+            let random_num = rng.next_f64();
+            if random_num < additional_noise.probability {
+                for position in additional_noise.erasures.iter() {
+                    pending_erasure_errors.push(position.clone());
+                }
+                for (position, error) in additional_noise.pauli_errors.iter() {
+                    pending_pauli_errors.push((position.clone(), *error));
+                }
+            }
+        }
         // apply pending pauli errors
         for (position, peer_error) in pending_pauli_errors.iter() {
             let node = self.get_node_mut_unwrap(&position);
@@ -493,7 +505,7 @@ impl Simulator {
                 error_count += 1;
             }
         }
-        // apply pending erasure errors, amd generate random pauli error
+        // apply pending erasure errors, amd generate random pauli error because of those erasures
         for position in pending_erasure_errors.iter() {
             let mut node = self.get_node_mut_unwrap(&position);
             if !node.has_erasure {  // only counts new erasures; there might be duplicated pending erasure
@@ -663,8 +675,8 @@ impl Simulator {
 
     /// generate detected erasures
     #[inline(never)]
-    pub fn generate_sparse_detected_erasures(&self) -> SparseDetectedErasures {
-        let mut sparse_detected_erasures = SparseDetectedErasures::new();
+    pub fn generate_sparse_detected_erasures(&self) -> SparseErasures {
+        let mut sparse_detected_erasures = SparseErasures::new();
         simulator_iter_real!(self, position, node, {
             if node.has_erasure {
                 sparse_detected_erasures.erasures.insert(position.clone());
@@ -929,7 +941,7 @@ impl Simulator {
     }
 
     /// load detected erasures back to the simulator
-    pub fn load_sparse_detected_erasures(&mut self, sparse_detected_erasures: &SparseDetectedErasures, noise_model: &NoiseModel) -> Result<(), String> {
+    pub fn load_sparse_detected_erasures(&mut self, sparse_detected_erasures: &SparseErasures, noise_model: &NoiseModel) -> Result<(), String> {
         simulator_iter_mut!(self, position, node, {
             node.has_erasure = false;
         });
@@ -1087,7 +1099,9 @@ impl Serialize for Position {
     }
 }
 
-impl<'de> Visitor<'de> for Position {
+pub struct PositionVisitor {}
+
+impl<'de> Visitor<'de> for PositionVisitor {
     type Value = Position;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -1124,7 +1138,7 @@ impl<'de> Visitor<'de> for Position {
 impl<'de> Deserialize<'de> for Position {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>, {
         // the new-ed position just works like a helper type that implements Visitor trait, not optimized for efficiency
-        deserializer.deserialize_str(Position::new(usize::MAX, usize::MAX, usize::MAX))
+        deserializer.deserialize_str(PositionVisitor{})
     }
 }
 
@@ -1218,13 +1232,13 @@ impl SparseMeasurement {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pyclass)]
-pub struct SparseDetectedErasures {
+pub struct SparseErasures {
     /// the position of the erasure errors
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub erasures: BTreeSet<Position>,
 }
 
-impl Serialize for SparseDetectedErasures {
+impl Serialize for SparseErasures {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer, {
         let mut seq = serializer.serialize_seq(Some(self.len()))?;  // known length
         for erasure in self.iter() {
@@ -1234,15 +1248,15 @@ impl Serialize for SparseDetectedErasures {
     }
 }
 
-impl<'de> Visitor<'de> for SparseDetectedErasures {
-    type Value = SparseDetectedErasures;
+impl<'de> Visitor<'de> for SparseErasures {
+    type Value = SparseErasures;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(formatter, "{}", r#"sparse detected erasure like ["[0][10][13]","[0][10][7]","[0][10][8]"]"#)
     }
 
     fn visit_seq<M>(self, mut access: M) -> Result<Self::Value, M::Error> where M: SeqAccess<'de>, {
-        let mut sparse_detected_erasures = SparseDetectedErasures::new();
+        let mut sparse_detected_erasures = SparseErasures::new();
         while let Some(position) = access.next_element()? {
             sparse_detected_erasures.insert_erasure(&position);
         }
@@ -1250,14 +1264,14 @@ impl<'de> Visitor<'de> for SparseDetectedErasures {
     }
 }
 
-impl<'de> Deserialize<'de> for SparseDetectedErasures {
+impl<'de> Deserialize<'de> for SparseErasures {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>, {
         // the new-ed error pattern just works like a helper type that implements Visitor trait, not optimized for efficiency
-        deserializer.deserialize_seq(SparseDetectedErasures::new())
+        deserializer.deserialize_seq(SparseErasures::new())
     }
 }
 
-impl SparseDetectedErasures {
+impl SparseErasures {
     /// create a new clean measurement without nontrivial measurements
     pub fn new() -> Self {
         Self {
@@ -1457,7 +1471,7 @@ pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<Position>()?;
     m.add_class::<GateType>()?;
     m.add_class::<SparseMeasurement>()?;
-    m.add_class::<SparseDetectedErasures>()?;
+    m.add_class::<SparseErasures>()?;
     m.add_class::<SparseErrorPattern>()?;
     m.add_class::<SparseCorrection>()?;
     Ok(())

@@ -61,7 +61,7 @@ async fn view_noise_model(info: web::Query<ViewNoiseModelQuery>) -> Result<HttpR
     let dj = di;
     let T = di;
     let mut tokens = vec![format!("qecp"), format!("tool"), format!("benchmark")
-        , format!("--debug_print"), format!("full-error-model")
+        , format!("--debug_print"), format!("full-noise-model")
         , format!("[{}]", di), format!("--djs"), format!("[{}]", dj)
         , format!("[{}]", T), format!("[{}]", info.p), format!("--pes"), format!("[{}]", info.pe)];
     let temporary_store = TEMPORARY_STORE.read().unwrap();  // must acquire a reader lock, so that tool.rs is definitely; will slow down requests a little bit, but safety worth it

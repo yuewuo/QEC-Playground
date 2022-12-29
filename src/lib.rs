@@ -32,6 +32,7 @@ extern crate parking_lot;
 extern crate fusion_blossom;
 extern crate chrono;
 extern crate urlencoding;
+extern crate mwps;
 
 pub mod util;
 pub mod test;
@@ -60,6 +61,8 @@ pub mod union_find;
 pub mod erasure_graph;
 pub mod decoder_fusion;
 pub mod visualize;
+pub mod model_hypergraph;
+pub mod decoder_hyper_union_find;
 #[cfg(feature="python_binding")]
 use pyo3::prelude::*;
 

@@ -61,6 +61,12 @@ h3 {
     line-height: 25px;
     font-weight: bold;
 }
+h5 {
+    margin: 0;
+    font-size: 20px;
+    line-height: 20px;
+    font-weight: bold;
+}
 .flex-center-div {
     width: 550px;
     margin-top: 10px;
@@ -87,7 +93,7 @@ h3 {
     justify-content: left;
     flex-direction: row;
 }
-.select-info-div {
+.select-info-div-center {
     width: 530px;
     padding: 10px;
     margin: 10px;
@@ -95,40 +101,14 @@ h3 {
     justify-content: center;
     flex-direction: row;
 }
+.select-info-div {
+    width: 530px;
+    padding: 10px;
+    margin: 10px;
+}
 .select-info-time {
     width: 190px;
     margin: 0 10px 0 10px;
-}
-.edge-visualizer {
-    display: inline-block;
-    height: 40px;
-    background-color: black;
-    margin: 0 10px 0 10px;
-}
-.left-grown, .unexplored, .right-grown {
-    margin: 0;
-    padding: 0;
-    display: inline-block;
-    height: 100%;
-    text-align: center;
-    font-size: 18px;
-    line-height: 40px;
-    transition: width 0.5s;
-}
-.left-grown {
-    background-color: #E8630A;
-}
-.unexplored {
-    background-color: grey;
-}
-.right-grown {
-    background-color: #FCD900;
-}
-.primal-div {
-    background-color: white;
-    width: 580px;
-    height: 580px;
-    margin: 10px;
 }
 .range-select {
     position: fixed;
@@ -151,11 +131,31 @@ h3 {
     height: 95%;
     margin-top: 30px;
 }
+.noise-model-row {
+    width: 508px;
+    margin-top: 0;
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+}
+.noise-model-element {
+    width: 120px;
+    margin: 5px;
+}
+.noise-model-element-p {
+    font-size: 80%;
+}
+.ref-position-btn {
+    margin-left: 5px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
 </style>
 </head>
 <body>
 <script src="https://cdn.jsdelivr.net/npm/vue@3.2.33/dist/vue.global.prod.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/quasar@2.6.6/dist/quasar.umd.prod.js"></script>
+<script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
 
 <div id="app">
@@ -245,7 +245,7 @@ h3 {
             <q-btn push color="brown-5" rounded label="preview" style="margin-left: 10px;" no-caps @click="preview_image"></q-btn>
             <q-btn push color="brown-5" rounded label="download" style="margin-left: 10px;" no-caps @click="download_image"></q-btn>
         </div>
-        <q-card bordered class="select-info-div" v-if="active_case">
+        <q-card bordered class="select-info-div-center" v-if="active_case">
             <q-card-section class="bg-cyan text-white select-info-time">
                 <div class="text-h6">{{ Number.parseFloat(active_case.elapsed.simulate).toExponential(3) }} (s)</div>
                 <div class="text-subtitle2">Simulate Time</div>
@@ -278,6 +278,9 @@ h3 {
                         color="green" type="toggle" inline left-label dense/>
                 </div>
             </div>
+            <div class="display-options-row-left" v-if="existed_model_hypergraph">
+                <div><q-toggle left-label v-model="display_model_hypergraph" label="Model Hypergraph: " size="md"/></div>
+            </div>
             <div class="display-options-row-left" v-if="case_select > 0">
                 <span style="line-height: 42px;">Case [{{ case_select }}]: </span>
                 <div><q-toggle v-model="display_error_pattern" label="actual error" size="md"/></div>
@@ -286,11 +289,173 @@ h3 {
                     :label="display_error_pattern ? '&nbsp;→ Correction&nbsp;' : '→ Actual Error'" @click="toggle_error_correction"></q-btn>
             </div>
         </div>
+        <q-card bordered class="select-info-div" v-if="current_selected != null && current_selected.type == 'qubit'">
+            <q-card-section class="bg-teal text-white">
+                <div class="text-h6">{{ qubit_type_name(current_selected.qubit_type) }} Qubit 
+                    at [...][{{ current_selected.i }}][{{ current_selected.j }}]</div>
+            </q-card-section>
+        </q-card>
+        <q-card bordered class="select-info-div" v-if="current_selected != null && is_error_position(current_selected.type)">
+            <q-card-section class="bg-teal text-white">
+                <div class="text-h6">Noise Model at [{{ current_selected.t }}][{{ current_selected.i }}][{{ current_selected.j }}]
+                    <span v-if="current_selected.gate_peer != null">, Gate Peer: {{ current_selected.gate_peer }}</span>
+                </div>
+            </q-card-section>
+            <q-separator inset v-if="noise_model_info != null"></q-separator>
+            <q-card-section v-if="noise_model_info != null" style="padding: 0;">
+                <div class="noise-model-row">
+                    <span style="line-height: 30px; position: relative; top: 5px; width: 50px;">Pauli: </span>
+                    <div class="noise-model-element" :style="{ color: noise_model_info.pp.px > 2e-300 ? non_zero_color : zero_color }">\( p_{\small X}\): 
+                        <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.pp.px).toExponential(2) }}</span></div>
+                    <div class="noise-model-element" :style="{ color: noise_model_info.pp.py > 2e-300 ? non_zero_color : zero_color }">\( p_{\small Y}\): 
+                        <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.pp.py).toExponential(2) }}</span></div>
+                    <div class="noise-model-element" :style="{ color: noise_model_info.pp.pz > 2e-300 ? non_zero_color : zero_color }">\( p_{\small Z}\): 
+                        <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.pp.pz).toExponential(2) }}</span></div>
+                </div>
+                <div class="noise-model-row">
+                    <span style="line-height: 30px; position: relative; top: 5px; width: 70px;">Erasure: </span>
+                    <div class="noise-model-element" :style="{ color: noise_model_info.pe > 2e-300 ? non_zero_color : zero_color }">\( p_{\small E}\): 
+                        <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.pe).toExponential(2) }}</span></div>
+                    <div class="noise-model-element" :style="{ width: '220px', 'margin-left': '56px', color: noise_model_info.pp.sum > 6e-300 ? non_zero_color : zero_color }">\( p_{\small X} {\small+} p_{\small Y} {\small+} p_{\small Z} \):
+                        <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.pp.sum).toExponential(2) }}</span></div>
+                </div>
+                <div class="noise-model-row" v-if="noise_model_info.corr_pe != null" style="border: 1px dashed grey;">
+                    <div class="noise-model-element" :style="{ color: noise_model_info.corr_pe.sum > 2e-300 ? non_zero_color : zero_color, 'background-color': 'lightgrey' }">\( \sum p_{\small ee}\): 
+                        <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pe.sum).toExponential(2) }}</div>
+                    <div class="noise-model-element" :style="{ color: noise_model_info.corr_pe.pie > 2e-300 ? non_zero_color : zero_color }">\( p_{\small I\otimes E}\): 
+                        <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pe.pie).toExponential(2) }}</div>
+                    <div class="noise-model-element" :style="{ color: noise_model_info.corr_pe.pei > 2e-300 ? non_zero_color : zero_color }">\( p_{\small E\otimes I}\): 
+                        <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pe.pei).toExponential(2) }}</div>
+                    <div class="noise-model-element" :style="{ color: noise_model_info.corr_pe.pee > 2e-300 ? non_zero_color : zero_color }">\( p_{\small E\otimes E}\): 
+                        <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pe.pee).toExponential(2) }}</div>
+                </div>
+                <div v-if="noise_model_info.corr_pp != null" style="border: 1px dashed grey;">
+                    <div class="noise-model-row">
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.sum > 30e-300 ? non_zero_color : zero_color, 'background-color': 'lightgrey' }">\( \sum p_{\small pp}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.sum).toExponential(2) }}</div>
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.pix > 30e-300 ? non_zero_color : zero_color }">\( p_{\small I\otimes X}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.pix).toExponential(2) }}</div>
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.piy > 30e-300 ? non_zero_color : zero_color }">\( p_{\small I\otimes Y}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.piy).toExponential(2) }}</div>
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.piz > 30e-300 ? non_zero_color : zero_color }">\( p_{\small I\otimes Z}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.piz).toExponential(2) }}</div>
+                    </div>
+                    <div class="noise-model-row">
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.pxi > 30e-300 ? non_zero_color : zero_color }">\( p_{\small X\otimes I}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.pxi).toExponential(2) }}</div>
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.pxx > 30e-300 ? non_zero_color : zero_color }">\( p_{\small X\otimes X}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.pxx).toExponential(2) }}</div>
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.pxy > 30e-300 ? non_zero_color : zero_color }">\( p_{\small X\otimes Y}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.pxy).toExponential(2) }}</div>
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.pxz > 30e-300 ? non_zero_color : zero_color }">\( p_{\small X\otimes Z}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.pxz).toExponential(2) }}</div>
+                    </div>
+                    <div class="noise-model-row">
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.pyi > 30e-300 ? non_zero_color : zero_color }">\( p_{\small Y\otimes I}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.pyi).toExponential(2) }}</div>
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.pyx > 30e-300 ? non_zero_color : zero_color }">\( p_{\small Y\otimes X}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.pyx).toExponential(2) }}</div>
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.pyy > 30e-300 ? non_zero_color : zero_color }">\( p_{\small Y\otimes Y}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.pyy).toExponential(2) }}</div>
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.pyz > 30e-300 ? non_zero_color : zero_color }">\( p_{\small Y\otimes Z}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.pyz).toExponential(2) }}</div>
+                    </div>
+                    <div class="noise-model-row">
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.pzi > 30e-300 ? non_zero_color : zero_color }">\( p_{\small Z\otimes I}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.pzi).toExponential(2) }}</div>
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.pzx > 30e-300 ? non_zero_color : zero_color }">\( p_{\small Z\otimes X}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.pzx).toExponential(2) }}</div>
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.pzy > 30e-300 ? non_zero_color : zero_color }">\( p_{\small Z\otimes Y}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.pzy).toExponential(2) }}</div>
+                        <div class="noise-model-element" :style="{ color: noise_model_info.corr_pp.pzz > 30e-300 ? non_zero_color : zero_color }">\( p_{\small Z\otimes Z}\): 
+                            <span class="noise-model-element-p">{{ Number.parseFloat(noise_model_info.corr_pp.pzz).toExponential(2) }}</div>
+                    </div>
+                </div>
+                <div v-if="noise_model_info.additional.length > 0" style="margin-top: 10px;">
+                    <h5>Other Contributing Noise:</h5>
+                    <div v-for="(ad, index) in noise_model_info.additional" style="margin-top: 5px;">
+                        <span>> </span>
+                        <span v-if="ad.source == 'corr_pp'">two-qubit Pauli from 
+                            <q-btn class="ref-position-btn" size="md" dense :label="`[${ad.t}][${ad.i}][${ad.j}]`" color="red" glossy @mouseover="ref_btn_hover(`[${ad.t}][${ad.i}][${ad.j}]`)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(`[${ad.t}][${ad.i}][${ad.j}]`)"/>
+                        </span>
+                        <span v-if="ad.source == 'corr_pe'">two-qubit erasure from 
+                            <q-btn class="ref-position-btn" size="md" dense :label="`[${ad.t}][${ad.i}][${ad.j}]`" color="purple" glossy @mouseover="ref_btn_hover(`[${ad.t}][${ad.i}][${ad.j}]`)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(`[${ad.t}][${ad.i}][${ad.j}]`)"></q-btn>
+                        </span>
+                        <span v-if="ad.source == 'add_p' || ad.source == 'add_e'">{{ ad.source == 'add_p' ? "Pauli": "erasure" }} from additional noise [{{ ad.add_idx }}], probability: <span :style="{ color: non_zero_color }">{{ Number.parseFloat(ad.noise.p).toExponential(2) }}</span>
+                            <span v-if="Object.entries(ad.noise.pe).length > 0">
+                                <br/><span style="margin-left: 20px;">Pauli: </span>
+                                <q-btn v-for="(error, pos_str) in ad.noise.pe" class="ref-position-btn" size="md" dense :label="pos_str + ':' + error.toUpperCase()" color="red" glossy @mouseover="ref_btn_hover(pos_str)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(pos_str)"></q-btn>
+                            </span>
+                            <span v-if="ad.noise.ee.length > 0">
+                                <br/><span style="margin-left: 20px;">erasures: </span>
+                                <q-btn v-for="pos_str in ad.noise.ee" class="ref-position-btn" size="md" dense :label="pos_str" color="purple" glossy @mouseover="ref_btn_hover(pos_str)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(pos_str)"></q-btn>
+                            </span>
+                        </span>
+                    </div>
+                </div>
+            </q-card-section>
+        </q-card>
+        <q-card bordered class="select-info-div" v-if="current_selected != null && current_selected.type == 'model_hypergraph_vertex'">
+            <q-card-section class="bg-green text-white">
+                <div class="text-h6">Vertex {{ current_selected.vertex_index }} at {{ selected_hypergraph_info.vertex_position }}</div>
+            </q-card-section>
+            <q-separator inset></q-separator>
+            <q-card-section>
+                <div v-for="edge of selected_hypergraph_info.neighbor_edges" style="margin-top: 15px;">
+                    <q-btn color="teal" no-caps size="12px" rounded padding="none md" @mouseenter="ref_btn_hover_general('model_hypergraph_edge', { edge_index: edge.edge_index })" 
+                            @mouseleave="ref_btn_leave()" @click="jump_to('model_hypergraph_edge', { edge_index: edge.edge_index })">
+                        <div class="text-center">
+                            Edge</span><br>{{ edge.edge_index }}
+                        </div>
+                    </q-btn>
+                    &nbsp;&nbsp;p: {{ Number.parseFloat(edge.probability).toExponential(2) }},
+                    <span class="bg-green-2" style="padding: 14px 5px; border-radius: 5px; line-height: 45px;">V = 
+                        [<q-btn color="green" no-caps unelevated v-for="vertex of edge.defect_vertices" style="margin-left: 5px; position: relative; bottom: 2px;"
+                            padding="2px 4px" size="12px" @mouseenter="ref_btn_hover_general('model_hypergraph_vertex', { vertex_index: vertex.vertex_index })" 
+                            @mouseleave="ref_btn_leave()"
+                            @click="jump_to('model_hypergraph_vertex', { vertex_index: vertex.vertex_index })">Vid: {{ vertex.vertex_index }}<br>{{ vertex.position_str }}</q-btn>
+                    ]</span>
+                </div>
+            </q-card-section>
+        </q-card>
+        <q-card bordered class="select-info-div" v-if="current_selected != null && current_selected.type == 'model_hypergraph_edge'">
+            <q-card-section class="bg-teal text-white">
+                <div class="text-h6">Edge {{ current_selected.edge_index }}</div>
+            </q-card-section>
+            <q-separator inset></q-separator>
+            <q-card-section>
+                <div>
+                    p: {{ Number.parseFloat(selected_hypergraph_info.probability).toExponential(2) }},
+                    <span class="bg-green-2" style="padding: 14px 5px; border-radius: 5px; line-height: 45px;">V = 
+                        [<q-btn color="green" no-caps unelevated v-for="vertex of selected_hypergraph_info.defect_vertices" style="margin-left: 5px; position: relative; bottom: 2px;"
+                            padding="2px 4px" size="12px" @mouseenter="ref_btn_hover_general('model_hypergraph_vertex', { vertex_index: vertex.vertex_index })" 
+                            @mouseleave="ref_btn_leave()"
+                            @click="jump_to('model_hypergraph_vertex', { vertex_index: vertex.vertex_index })">Vid: {{ vertex.vertex_index }}<br>{{ vertex.position_str }}</q-btn>
+                    ]</span>
+                </div>
+                <div class="text-h6">Contributing Independent Errors:</div>
+                <div v-for="hyperedge of selected_hypergraph_info.all_hyperedges" style="margin-top: 15px;">
+                    p: {{ Number.parseFloat(hyperedge.probability).toExponential(2) }},
+                    <span class="bg-red-2" style="padding: 14px 5px; border-radius: 5px; line-height: 45px;">Error = 
+                        [<q-btn color="red" no-caps unelevated v-for="error of hyperedge.error_pattern" style="margin-left: 5px; position: relative; bottom: 2px;"
+                            padding="2px 4px" size="12px"
+                            @mouseover="ref_btn_hover(error.position_str)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(error.position_str)"
+                            >{{ error.position_str }}<br>{{ error.type }}</q-btn>
+                    ]</span>,
+                    <span class="bg-orange-2" style="padding: 14px 5px; border-radius: 5px; line-height: 45px;">Correction = 
+                        [<q-btn color="orange" no-caps unelevated v-for="correction of hyperedge.correction" style="margin-left: 5px; position: relative; bottom: 2px;"
+                            padding="2px 4px" size="12px"
+                            @mouseover="ref_btn_hover(correction.position_str)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(correction.position_str)"
+                            >{{ correction.position_str }}<br>{{ correction.type }}</q-btn>
+                    ]</span>,
+                </div>
+            </q-card-section>
+        </q-card>
     </q-scroll-area>
 </div>
 <div class="range-select">
     <div class="range-select-inner">
-        <q-range class="range-select-qrange" v-model="t_range" :min="0" :max="t_length" vertical label snap label-always dense markers color="teal-10"
+        <q-range class="range-select-qrange" v-model="t_range" :min="0" :max="t_length" vertical label snap label-always dense markers color="teal-4"
             track-size="8px" style="margin-left: 37px;" switch-label-side thumb-size="30px" drag-range reverse/>
     </div>
 </div>

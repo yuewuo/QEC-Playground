@@ -20,6 +20,19 @@ use crate::visualize::*;
 pub struct NoiseModel {
     /// each noise model node corresponds to a simulator node, this allows immutable sharing between threads
     pub nodes: Vec::< Vec::< Vec::< Option<Arc <NoiseModelNode> > > > >,
+    /// additional noise that are unknown to the decoder, could be anything
+    pub additional_noise: Vec<AdditionalNoise>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "python_binding", pyclass)]
+pub struct AdditionalNoise {
+    #[serde(rename = "p")]
+    pub probability: f64,
+    #[serde(rename = "ee")]
+    pub erasures: SparseErasures,
+    #[serde(rename = "pe")]
+    pub pauli_errors: SparseErrorPattern,
 }
 
 impl QecpVisualizer for NoiseModel {
@@ -44,7 +57,8 @@ impl QecpVisualizer for NoiseModel {
                         }
                     }).collect::<Vec<Option<serde_json::Value>>>()
                 }).collect::<Vec<Vec<Option<serde_json::Value>>>>()
-            }).collect::<Vec<Vec<Vec<Option<serde_json::Value>>>>>()
+            }).collect::<Vec<Vec<Vec<Option<serde_json::Value>>>>>(),
+            "additional_noise": self.additional_noise,
         });
         (name.to_string(), info)
     }
@@ -114,7 +128,8 @@ impl NoiseModel {
                         }
                     }).collect()
                 }).collect()
-            }).collect()
+            }).collect(),
+            additional_noise: vec![],
         }
     }
 }
@@ -223,5 +238,6 @@ pub fn noise_model_sanity_check(simulator: &Simulator, noise_model: &NoiseModel)
 pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<NoiseModel>()?;
     m.add_class::<NoiseModelNode>()?;
+    m.add_class::<AdditionalNoise>()?;
     Ok(())
 }
