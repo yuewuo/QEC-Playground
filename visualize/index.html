@@ -245,7 +245,7 @@ h5 {
             <q-btn push color="brown-5" rounded label="preview" style="margin-left: 10px;" no-caps @click="preview_image"></q-btn>
             <q-btn push color="brown-5" rounded label="download" style="margin-left: 10px;" no-caps @click="download_image"></q-btn>
         </div>
-        <q-card bordered class="select-info-div-center" v-if="active_case">
+        <q-card bordered class="select-info-div-center" v-if="active_case && active_case.elapsed">
             <q-card-section class="bg-cyan text-white select-info-time">
                 <div class="text-h6">{{ Number.parseFloat(active_case.elapsed.simulate).toExponential(3) }} (s)</div>
                 <div class="text-subtitle2">Simulate Time</div>

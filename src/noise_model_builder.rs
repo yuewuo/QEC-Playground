@@ -30,6 +30,8 @@ pub enum NoiseModelBuilder {
     ErasureOnlyPhenomenological,
     /// errors happen at 4 stages in each measurement round (although removed errors happening at initialization and measurement stage, measurement errors can still occur when curtain error applies on the ancilla after the last gate)
     OnlyGateErrorCircuitLevel,
+    /// mixed erasure error and Pauli errors only on the data qubits before the gates happen and on the ancilla qubits before the measurement
+    MixedPhenomenological,
 }
 
 impl NoiseModelBuilder {
@@ -464,6 +466,33 @@ impl NoiseModelBuilder {
                     } else if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1 {  // the round before measurement, add erasures
                         if node.qubit_type != QubitType::Data {
                             noise_model.set_node(position, Some(erasure_node.clone()));
+                        }
+                    }
+                });
+            },
+            Self::MixedPhenomenological => {
+                let mut noise_node = biased_node.as_ref().clone();
+                // erasure node must have some non-zero pauli error rate for the decoder to work properly
+                if p == 0. && pe != 0. {
+                    noise_node.pauli_error_rates.error_rate_X = 1e-300;  // f64::MIN_POSITIVE ~= 2.22e-308
+                    noise_node.pauli_error_rates.error_rate_Z = 1e-300;
+                    noise_node.pauli_error_rates.error_rate_Y = 1e-300;
+                }
+                let noise_node = Arc::new(noise_node);
+                // iterate over all nodes
+                simulator_iter_real!(simulator, position, node, {
+                    // first clear error rate
+                    noise_model.set_node(position, Some(noiseless_node.clone()));
+                    if position.t >= simulator.height - simulator.measurement_cycles {  // no error on the top, as a perfect measurement round
+                        continue
+                    }
+                    if position.t % simulator.measurement_cycles == 0 {  // add data qubit erasure at the beginning
+                        if node.qubit_type == QubitType::Data {
+                            noise_model.set_node(position, Some(noise_node.clone()));
+                        }
+                    } else if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1 {  // the round before measurement, add erasures
+                        if node.qubit_type != QubitType::Data {
+                            noise_model.set_node(position, Some(noise_node.clone()));
                         }
                     }
                 });
