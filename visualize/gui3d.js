@@ -677,10 +677,12 @@ export function update_visible_error_pattern() {
             mesh.visible = display_error_pattern.value && in_t_range(position.t)
         }
     }
-    for (let [idx, position_str] of Object.entries(active_case.detected_erasures)) {
-        const position = get_position(position_str)
-        const mesh = detected_erasure_meshes[idx]
-        mesh.visible = display_error_pattern.value && in_t_range(position.t)
+    if (active_case.detected_erasures) {
+        for (let [idx, position_str] of Object.entries(active_case.detected_erasures)) {
+            const position = get_position(position_str)
+            const mesh = detected_erasure_meshes[idx]
+            mesh.visible = display_error_pattern.value && in_t_range(position.t)
+        }
     }
 }
 watch([display_error_pattern, t_range], update_visible_error_pattern, { deep: true })
@@ -723,6 +725,7 @@ watch([model_graph_region_display, display_model_graph, t_range], update_visible
 export const existed_model_hypergraph = ref(false)
 export const display_model_hypergraph = ref(get_url_bool("display_model_hypergraph", false))
 export function update_visible_model_hypergraph() {
+    if (qecp_data.model_hypergraph == null) return
     // if any defect vertices is in the range, display the corresponding edge
     for (let vertex_index=0; vertex_index<qecp_data.model_hypergraph.vertex_positions.length; ++vertex_index) {
         let mesh = model_hypergraph_vertex_meshes[vertex_index]
@@ -1390,63 +1393,67 @@ export async function refresh_case() {
                 error_pattern_vec_mesh.push(mesh)
             }
         }
-        for (let [idx, position_str] of Object.entries(active_case.detected_erasures)) {
-            const { t, i, j } = get_position(position_str)
-            const position = qecp_data.simulator.positions[i][j]
-            const display_position = {
-                t: t + t_bias + 0.5,
-                x: position.x,
-                y: position.y,
-            }
-            let mesh = new THREE.Mesh(detected_erasure_geometry, detected_erasure_material)
-            load_position(mesh.position, display_position)
-            mesh.userData = {
-                type: "erasure",
-                idx: idx,
-                t: t,
-                i: i,
-                j: j,
-            }
-            scene.add( mesh )
-            detected_erasure_meshes.push(mesh)
-        }
-        update_visible_error_pattern()
-        // draw correction
-        dispose_mesh_1d_array(correction_vec_meshes)
-        correction_vec_meshes = []
-        for (let [idx, [position_str, error]] of Object.entries(active_case.correction).entries()) {
-            const { t, i, j } = get_position(position_str)
-            const position = qecp_data.simulator.positions[i][j]
-            const display_position = {
-                t: t + t_bias + 1,
-                x: position.x,
-                y: position.y,
-            }
-            const correction_vec_mesh = []
-            correction_vec_meshes.push(correction_vec_mesh)
-            let error_geometries = []
-            if (error == "X") {
-                error_geometries = error_X_geometries
-            } else if (error == "Y") {
-                error_geometries = error_Y_geometries
-            } else if (error == "Z") {
-                error_geometries = error_Z_geometries
-            } else if (error == "I") { } else {
-                console.error(`unknown error type: ${error}`)
-            }
-            for (let k=0; k < error_geometries.length; ++k) {
-                const geometry = error_geometries[k]
-                let mesh = new THREE.Mesh(geometry, error_materials[error])
+        if (active_case.detected_erasures) {
+            for (let [idx, position_str] of Object.entries(active_case.detected_erasures)) {
+                const { t, i, j } = get_position(position_str)
+                const position = qecp_data.simulator.positions[i][j]
+                const display_position = {
+                    t: t + t_bias + 0.5,
+                    x: position.x,
+                    y: position.y,
+                }
+                let mesh = new THREE.Mesh(detected_erasure_geometry, detected_erasure_material)
                 load_position(mesh.position, display_position)
                 mesh.userData = {
-                    type: "correction",
+                    type: "erasure",
                     idx: idx,
                     t: t,
                     i: i,
                     j: j,
                 }
                 scene.add( mesh )
-                correction_vec_mesh.push(mesh)
+                detected_erasure_meshes.push(mesh)
+            }
+        }
+        update_visible_error_pattern()
+        // draw correction
+        dispose_mesh_1d_array(correction_vec_meshes)
+        correction_vec_meshes = []
+        if (active_case.correction) {
+            for (let [idx, [position_str, error]] of Object.entries(active_case.correction).entries()) {
+                const { t, i, j } = get_position(position_str)
+                const position = qecp_data.simulator.positions[i][j]
+                const display_position = {
+                    t: t + t_bias + 1,
+                    x: position.x,
+                    y: position.y,
+                }
+                const correction_vec_mesh = []
+                correction_vec_meshes.push(correction_vec_mesh)
+                let error_geometries = []
+                if (error == "X") {
+                    error_geometries = error_X_geometries
+                } else if (error == "Y") {
+                    error_geometries = error_Y_geometries
+                } else if (error == "Z") {
+                    error_geometries = error_Z_geometries
+                } else if (error == "I") { } else {
+                    console.error(`unknown error type: ${error}`)
+                }
+                for (let k=0; k < error_geometries.length; ++k) {
+                    const geometry = error_geometries[k]
+                    let mesh = new THREE.Mesh(geometry, error_materials[error])
+                    load_position(mesh.position, display_position)
+                    mesh.userData = {
+                        type: "correction",
+                        idx: idx,
+                        t: t,
+                        i: i,
+                        j: j,
+                    }
+                    scene.add( mesh )
+                    correction_vec_mesh.push(mesh)
+                }
             }
         }
         update_visible_correction()
