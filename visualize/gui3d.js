@@ -1026,6 +1026,7 @@ export async function refresh_qecp_data() {
                             // edges
                             const model_graph_edge_vec_mesh = []
                             model_graph_edge_vec_meshes[t][i][j] = model_graph_edge_vec_mesh
+                            let vec_mesh_idx = 0
                             for (let [peer_position_str, edge] of Object.entries(model_graph_node.edges)) {
                                 const { i: pi, j: pj, t: pt } = get_position(peer_position_str)
                                 const peer_position = qecp_data.simulator.positions[pi][pj]
@@ -1039,6 +1040,7 @@ export async function refresh_qecp_data() {
                                     peer: peer_position_str,
                                     edge: edge,
                                     region_idx: model_graph_node.region_idx,
+                                    vec_mesh_idx: vec_mesh_idx,
                                 }
                                 const relative = compute_vector3(peer_display_position).add(compute_vector3(display_position).multiplyScalar(-1))
                                 const direction = relative.clone().normalize()
@@ -1049,13 +1051,21 @@ export async function refresh_qecp_data() {
                                 line_mesh.setRotationFromQuaternion(quaternion)
                                 scene.add( line_mesh )
                                 model_graph_edge_vec_mesh.push(line_mesh)
+                                vec_mesh_idx += 1
                             }
+                            // there might be some duplicate boundary edges, deduplicate them
+                            let boundary_peers = {}
                             for (let [boundary_idx, boundary] of model_graph_node.all_boundaries.entries())  {
                                 let [vpi, vpj, vpt] = [i, j, t - qecp_data.simulator.measurement_cycles]
                                 if (boundary.v != null) {
                                     const vp = get_position(boundary.v)
                                     vpi = vp.i; vpj = vp.j; vpt = vp.t
                                 }
+                                const id = `[${vpt}][${vpi}][${vpj}]`
+                                if (boundary_peers[id] != null) {
+                                    continue
+                                }
+                                boundary_peers[id] = true  // mark exist
                                 const peer_position = qecp_data.simulator.positions[vpi][vpj]
                                 const peer_display_position = { t: vpt + t_bias, x: peer_position.x, y: peer_position.y }
                                 const line_mesh = new THREE.Mesh( model_graph_edge_geometry, model_graph_edge_material )
@@ -1067,6 +1077,7 @@ export async function refresh_qecp_data() {
                                     boundary_idx: boundary_idx,
                                     boundary: boundary,
                                     region_idx: model_graph_node.region_idx,
+                                    vec_mesh_idx: vec_mesh_idx,
                                 }
                                 const relative = compute_vector3(peer_display_position).add(compute_vector3(display_position).multiplyScalar(-1))
                                 const direction = relative.clone().normalize()
@@ -1077,6 +1088,7 @@ export async function refresh_qecp_data() {
                                 line_mesh.setRotationFromQuaternion(quaternion)
                                 scene.add( line_mesh )
                                 model_graph_edge_vec_mesh.push(line_mesh)
+                                vec_mesh_idx += 1
                             }
                         }
                     }
@@ -1655,6 +1667,20 @@ function set_material_with_user_data(user_data, material) {  // return the previ
         for (let mesh of edge_vec_mesh) {
             mesh.material = material
         }
+        return previous_material
+    }
+    if (user_data.type == "model_graph_edge" || user_data.type == "model_graph_boundary") {
+        const { t, i, j, vec_mesh_idx } = user_data
+        let mesh = model_graph_edge_vec_meshes[t][i][j][vec_mesh_idx]
+        let previous_material = mesh.material
+        mesh.material = material
+        return previous_material
+    }
+    if (user_data.type == "model_graph_vertex") {
+        const { t, i, j } = user_data
+        let mesh = model_graph_vertex_meshes[t][i][j]
+        let previous_material = mesh.material
+        mesh.material = material
         return previous_material
     }
     console.error(`unknown type ${user_data.type}`)

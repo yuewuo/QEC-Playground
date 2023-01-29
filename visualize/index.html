@@ -451,6 +451,50 @@ h5 {
                 </div>
             </q-card-section>
         </q-card>
+        <q-card bordered class="select-info-div" v-if="current_selected != null && current_selected.type == 'model_graph_vertex'">
+            <q-card-section class="bg-green text-white">
+                <div class="text-h6">Vertex [{{ current_selected.t }}][{{ current_selected.i }}][{{ current_selected.j }}] (region {{ current_selected.region_idx }})</div>
+            </q-card-section>
+            <q-separator inset></q-separator>
+            <q-card-section>
+                <div v-for="(edge, peer_position_str) of selected_model_graph_info.edges" style="margin-top: 5px;">
+                    <q-btn color="teal" no-caps size="12px" rounded padding="none md" @mouseenter="ref_btn_hover_general('model_graph_edge', edge.userData)" 
+                            @mouseleave="ref_btn_leave()" @click="jump_to('model_graph_edge', edge.userData)">
+                        <div class="text-center">
+                            Edge</span><br>{{ peer_position_str }}
+                        </div>
+                    </q-btn>
+                    <div class="text-center" style="display: inline-block; font-size: 15px; position: relative; top: 10px; margin-left: 10px;">
+                        probability: {{ Number.parseFloat(edge.p).toExponential(3) }}<br>weight: {{ Number.parseFloat(edge.w).toExponential(3) }}
+                    </div>,
+                    <div style="display: inline-block; font-size: 15px; position: relative; top: 10px; margin-left: 10px;">
+                        error pattern: <span v-for="(error_type, position_str) of edge.e" @mouseover="ref_btn_hover(position_str)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(position_str)">
+                            {{ error_type }}({{ position_str }})
+                        </span><br>correction: <span v-for="(error_type, position_str) of edge.c" @mouseover="ref_btn_hover(position_str)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(position_str)">
+                            {{ error_type }}({{ position_str }})
+                        </span>
+                    </div>
+                </div>
+                <div style="margin-top: 5px;" v-if="selected_model_graph_info.boundary != null">
+                    <q-btn color="teal-9" no-caps size="12px" rounded padding="none md">
+                        <div class="text-center">
+                            Boundary
+                        </div>
+                    </q-btn>
+                    <div class="text-center" style="display: inline-block; font-size: 15px; position: relative; top: 10px; margin-left: 10px;">
+                        probability: {{ Number.parseFloat(selected_model_graph_info.boundary.p).toExponential(3) }}<br>
+                        weight: {{ Number.parseFloat(selected_model_graph_info.boundary.w).toExponential(3) }}
+                    </div>,
+                    <div style="display: inline-block; font-size: 15px; position: relative; top: 10px; margin-left: 10px;">
+                        error pattern: <span v-for="(error_type, position_str) of selected_model_graph_info.boundary.e" @mouseover="ref_btn_hover(position_str)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(position_str)">
+                            {{ error_type }}({{ position_str }})
+                        </span><br>correction: <span v-for="(error_type, position_str) of selected_model_graph_info.boundary.c" @mouseover="ref_btn_hover(position_str)" @mouseleave="ref_btn_leave()" @click="ref_btn_click(position_str)">
+                            {{ error_type }}({{ position_str }})
+                        </span>
+                    </div>
+                </div>
+            </q-card-section>
+        </q-card>
     </q-scroll-area>
 </div>
 <div class="range-select">
