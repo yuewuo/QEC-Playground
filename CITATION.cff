@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Wu"
+  given-names: "Yue"
+  orcid: "https://orcid.org/0000-0002-1400-0402"
+- family-names: "Liyanage"
+  given-names: "Namitha"
+- family-names: "Liyanage"
+  given-names: "Namitha"
+title: "QEC-Playground"
+version: 0.1.9
+date-released: 2023-02-10
+url: "https://github.com/yuewuo/QEC-Playground"
