@@ -244,6 +244,8 @@ class ThresholdAnalyzer:
         if self.verbose:
             print(f"[info] fit result: A = {popt[0]} \u00B1 {perr[0]}, B = {popt[1]} \u00B1 {perr[1]} C = {popt[2]} \u00B1 {perr[2]}")
             print(f"                   pc0 = {popt[3]} \u00B1 {perr[3]}, v0 = {popt[4]} \u00B1 {perr[4]}")
+            print(f"    popt: {list(popt)}")
+            print(f"    perr: {list(perr)}")
         return popt, perr  # [A, B, C, pc0, v0]
 
     def rough_estimate(self):

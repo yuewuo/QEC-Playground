@@ -30,6 +30,8 @@ pub enum NoiseModelBuilder {
     OnlyGateErrorCircuitLevel,
     /// mixed erasure error and Pauli errors only on the data qubits before the gates happen and on the ancilla qubits before the measurement
     MixedPhenomenological,
+    /// Fault-tolerant weighted union-find decoding on the toric code
+    DepolarizingNoise,
 }
 
 impl NoiseModelBuilder {
@@ -606,6 +608,64 @@ impl NoiseModelBuilder {
                                 error_node.correlated_pauli_error_rates = Some(correlated_pauli_error_rates);
                             }
                             noise_model.set_node(position, Some(Arc::new(error_node)));
+                        },
+                    }
+                });
+            },
+            Self::DepolarizingNoise => {
+                let mut config_cloned = noise_model_configuration.clone();
+                let config = config_cloned.as_object_mut().expect("noise_model_configuration must be JSON object");
+                if !config.is_empty() { panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>()); }
+                // depolarizing node
+                let mut depolarizing_node = NoiseModelNode::new();
+                depolarizing_node.pauli_error_rates.error_rate_X = p / 3.;
+                depolarizing_node.pauli_error_rates.error_rate_Z = p / 3.;
+                depolarizing_node.pauli_error_rates.error_rate_Y = p / 3.;
+                let depolarizing_node = Arc::new(depolarizing_node);
+                // double depolarizing node
+                let mut double_depolarizing_node = NoiseModelNode::new();
+                double_depolarizing_node.pauli_error_rates.error_rate_X = 2. * p / 3.;
+                double_depolarizing_node.pauli_error_rates.error_rate_Z = 2. * p / 3.;
+                double_depolarizing_node.pauli_error_rates.error_rate_Y = 2. * p / 3.;
+                let double_depolarizing_node = Arc::new(double_depolarizing_node);
+                // two qubit depolarizing node
+                let mut correlated_depolarizing_node = NoiseModelNode::new();
+                let correlated_pauli_error_rates = CorrelatedPauliErrorRates::default_with_probability(p / 15.);  // 15 possible errors equally probable
+                correlated_depolarizing_node.correlated_pauli_error_rates = Some(correlated_pauli_error_rates);
+                let correlated_depolarizing_node = Arc::new(correlated_depolarizing_node);
+                // iterate over all nodes
+                simulator_iter_real!(simulator, position, node, {
+                    // first clear error rate
+                    noise_model.set_node(position, Some(noiseless_node.clone()));
+                    if position.t == 0 || position.t >= simulator.height - simulator.measurement_cycles {  // no error on the top, as a perfect measurement round
+                        continue
+                    }
+                    // do different things for each stage
+                    match position.t % simulator.measurement_cycles {
+                        1 => {  // initialization
+                            noise_model.set_node(position, Some(depolarizing_node.clone()));
+                        },
+                        0 => {  // measurement
+                            // do nothing
+                            if node.qubit_type == QubitType::Data {
+                                noise_model.set_node(position, Some(depolarizing_node.clone()));
+                            }
+                        },
+                        _ => {
+                            if node.is_peer_virtual || node.gate_peer.is_none() {
+                                if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1 && node.qubit_type != QubitType::Data {
+                                    noise_model.set_node(position, Some(double_depolarizing_node.clone()));
+                                } else {
+                                    noise_model.set_node(position, Some(depolarizing_node.clone()));
+                                }
+                            } else {
+                                if node.qubit_type == QubitType::Data {
+                                    noise_model.set_node(position, Some(correlated_depolarizing_node.clone()));
+                                }
+                                if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1 && node.qubit_type != QubitType::Data {
+                                    noise_model.set_node(position, Some(depolarizing_node.clone()));  // measurement error
+                                }
+                            }
                         },
                     }
                 });
