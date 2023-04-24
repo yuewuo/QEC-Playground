@@ -62,11 +62,11 @@ bytes = "1.1.0"
 serde = { version = "1.0.117", features = ["derive", "rc"] }
 serde_json = "1.0.59"
 serde-hashkey = { version = "0.4.0", features = ["ordered-float"] }
-clap = { version = "3.1.6", features = ["cargo", "derive"] }
+clap = { version = "4.2.4", features = ["cargo", "derive"] }
 ndarray = "0.15.4"
 actix-web = "4.0.1"
 actix-cors = "0.6.1"
-pyo3 = { version =  "0.17.2", features = ["extension-module", "multiple-pymethods", "abi3-py37"], optional = true }
+pyo3 = { version =  "0.18.3", features = ["extension-module", "multiple-pymethods", "abi3-py37"], optional = true }
 libc = "0.2.81"
 petgraph = "0.6.0"
 pbr = "1.0.4"

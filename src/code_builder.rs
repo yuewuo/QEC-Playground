@@ -11,7 +11,7 @@ use super::simulator::*;
 use serde::{Serialize, Deserialize};
 use super::types::*;
 use super::util_macros::*;
-use super::clap::{PossibleValue};
+use clap::{ValueEnum};
 use ErrorType::*;
 use super::visualize::*;
 #[cfg(feature="python_binding")]
@@ -21,7 +21,7 @@ use pyo3::prelude::*;
 /// commonly used code type that has built-in functions to automatically build up the simulator.
 /// other type of code type is also feasible, but one needs to implement the generation of code patch.
 #[cfg_attr(feature = "python_binding", pyclass)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ValueEnum, PartialEq, Eq, PartialOrd, Ord, Copy)]
 #[serde(deny_unknown_fields)]
 pub enum CodeType {
     ///noisy measurement rounds (excluding the final perfect measurement cap), vertical code distance, horizontal code distance
@@ -55,30 +55,6 @@ pub struct CodeSize {
     pub di: usize,
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub dj: usize,
-}
-
-impl CodeType{
-    pub fn new(code_type: &String) -> Self {
-        match code_type.as_str() {
-            "StandardPlanarCode" => Self::StandardPlanarCode,
-            "RotatedPlanarCode" => Self::RotatedPlanarCode,
-            "StandardXZZXCode" => Self::StandardXZZXCode,
-            "RotatedXZZXCode" => Self::RotatedXZZXCode,
-            "StandardTailoredCode" => Self::StandardTailoredCode,
-            "RotatedTailoredCode" => Self::RotatedTailoredCode,
-            "RotatedTailoredCodeBellInit" => Self::RotatedTailoredCodeBellInit,
-            "PeriodicRotatedTailoredCode" => Self::PeriodicRotatedTailoredCode,
-            _ => unimplemented!()
-        }
-    }    
-
-    pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
-        static VARIANTS: &'static [&str] = &[
-            "StandardPlanarCode", "RotatedPlanarCode", "StandardXZZXCode", "RotatedXZZXCode", "StandardTailoredCode"
-            , "RotatedTailoredCode", "RotatedTailoredCodeBellInit", "PeriodicRotatedTailoredCode"
-        ];
-        VARIANTS.iter().map(|x| PossibleValue::new(x))
-    }
 }
 
 #[cfg_attr(feature = "python_binding", cfg_eval)]

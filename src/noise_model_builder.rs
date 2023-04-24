@@ -6,14 +6,14 @@ use serde::Serialize;
 use super::types::*;
 use super::util_macros::*;
 use super::noise_model::*;
-use super::clap::{ArgEnum, PossibleValue};
+use super::clap::ValueEnum;
 use super::code_builder::*;
 use std::sync::Arc;
 use std::collections::BTreeSet;
 
 
 /// commonly used noise models
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum, Serialize, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Debug)]
 pub enum NoiseModelBuilder {
     /// add data qubit errors and measurement errors individually
     Phenomenological,
@@ -35,9 +35,6 @@ pub enum NoiseModelBuilder {
 }
 
 impl NoiseModelBuilder {
-    pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
-        Self::value_variants().iter().filter_map(ArgEnum::to_possible_value)
-    }
 
     /// apply noise model
     pub fn apply(&self, simulator: &mut Simulator, noise_model: &mut NoiseModel, noise_model_configuration: &serde_json::Value, p: f64, bias_eta: f64, pe: f64) {

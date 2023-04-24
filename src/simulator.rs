@@ -1407,13 +1407,10 @@ impl SparseCorrection {
     /// add an correction Pauli operator at some position, if an error already presents, then multiply them
     pub fn add(&mut self, position: Position, operator: ErrorType) {
         debug_assert!({  // check `t` are the same
-            let mut check_passed = true;
-            for (key, _value) in self.0.iter() {
-                if key.t != position.t {
-                    println!("correction should also have the same `t`, violating: {} and {}", key, position);
-                    check_passed = false;
-                }
-                break  // no need to iterate them all, because every call to this function will be checked
+            // no need to iterate them all, because every call to this function will be checked
+            let check_passed = self.0.iter().next().map(|(key, _value)| key.t == position.t).unwrap_or(true);
+            if !check_passed {
+                eprintln!("correction should also have the same `t`, violating: {} and {}", self.0.iter().next().unwrap().0, position);
             }
             check_passed
         }, "correction must have the same t");

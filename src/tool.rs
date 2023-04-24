@@ -15,7 +15,7 @@ use super::util::local_get_temporary_store;
 use std::fs;
 use super::code_builder::*;
 use super::simulator::*;
-use super::clap::{ArgEnum, PossibleValue};
+use super::clap::ValueEnum;
 use std::sync::atomic::{AtomicBool, Ordering};
 use super::noise_model::*;
 use serde::{Serialize, Deserialize};
@@ -32,104 +32,20 @@ use super::erasure_graph::*;
 use super::visualize::*;
 use super::model_hypergraph::*;
 use super::decoder_hyper_union_find::*;
+use crate::cli::*;
 
 
-pub fn run_matched_tool(matches: &clap::ArgMatches) -> Option<String> {
-    match matches.subcommand() {
-        Some(("benchmark", matches)) => {
-            let dis: String = matches.value_of_t("dis").expect("required");
-            let djs: String = matches.value_of_t("djs").unwrap_or(dis.clone());
-            let dis: Vec<usize> = serde_json::from_str(&dis).expect("dis should be [di1,di2,di3,...,din]");
-            let djs: Vec<usize> = serde_json::from_str(&djs).expect("djs should be [dj1,dj2,dj3,...,djn]");
-            let nms: String = matches.value_of_t("nms").expect("required");
-            let nms: Vec<usize> = serde_json::from_str(&nms).expect("nms should be [nm1,nm2,nm3,...,nmn]");
-            assert!(nms.len() == dis.len(), "nms and dis should be paired");
-            assert!(dis.len() == djs.len(), "dis and djs should be paired");
-            let ps: String = matches.value_of_t("ps").expect("required");
-            let ps: Vec<f64> = serde_json::from_str(&ps).expect("ps should be [p1,p2,p3,...,pm]");
-            let ps_graph: Option<String> = matches.value_of_t("ps_graph").ok();
-            let ps_graph: Vec<f64> = match ps_graph {
-                Some(ps_graph) => serde_json::from_str(&ps_graph).expect("ps_graph should be [p1,p2,p3,...,pm]"),
-                None => ps.clone(),
-            };
-            let pes: Option<String> = matches.value_of_t("pes").ok();
-            let pes: Vec<f64> = match pes {
-                Some(pes) => serde_json::from_str(&pes).expect("pes should be [pe1,pe2,pe3,...,pem]"),
-                None => vec![0.; ps.len()],  // by default no erasure errors
-            };
-            let pes_graph: Option<String> = matches.value_of_t("pes_graph").ok();
-            let pes_graph: Vec<f64> = match pes_graph {
-                Some(pes_graph) => serde_json::from_str(&pes_graph).expect("pes_graph should be [pe1,pe2,pe3,...,pem]"),
-                None => pes.clone(),
-            };
-            let bias_eta: f64 = matches.value_of_t("bias_eta").unwrap();
-            assert_eq!(pes.len(), ps.len(), "pe and p should be paired");
-            let mut max_repeats: usize = matches.value_of_t("max_repeats").unwrap();
-            if max_repeats == 0 {
-                max_repeats = usize::MAX;
+impl ToolCommands {
+    pub fn run(self) -> Option<String> {
+        match self {
+            Self::Benchmark(benchmark_parameters) => {
+                Some(benchmark_parameters.run())
             }
-            let mut min_failed_cases: usize = matches.value_of_t("min_failed_cases").unwrap();
-            if min_failed_cases == 0 {
-                min_failed_cases = usize::MAX;
-            }
-            let parallel: usize = matches.value_of_t("parallel").unwrap();
-            let parallel_init: usize = matches.value_of_t("parallel_init").unwrap_or(parallel);
-            let code_type: String = matches.value_of_t("code_type").unwrap_or("StandardPlanarCode".to_string());
-            let decoder = matches.value_of_t::<BenchmarkDecoder>("decoder").unwrap();
-            let decoder_config = matches.value_of_t::<serde_json::Value>("decoder_config").unwrap();
-            let ignore_logical_i = matches.is_present("ignore_logical_i");
-            let ignore_logical_j = matches.is_present("ignore_logical_j");
-            let debug_print = matches.value_of_t::<BenchmarkDebugPrint>("debug_print").ok();
-            let time_budget: Option<f64> = matches.value_of_t("time_budget").ok();
-            let log_runtime_statistics: Option<String> = matches.value_of_t("log_runtime_statistics").ok();
-            let log_error_pattern_when_logical_error = matches.is_present("log_error_pattern_when_logical_error");
-            let noise_model_builder = matches.value_of_t::<NoiseModelBuilder>("noise_model").ok();
-            let noise_model_configuration = matches.value_of_t::<serde_json::Value>("noise_model_configuration").unwrap();
-            let thread_timeout: f64 = matches.value_of_t("thread_timeout").unwrap();
-            let use_brief_edge = matches.is_present("use_brief_edge");
-            let label: String = matches.value_of_t("label").unwrap_or(format!(""));
-            let mut noise_model_modifier_str: Option<String> = None;
-            match matches.value_of_t::<usize>("load_noise_model_from_temporary_store") {
-                Ok(noise_model_temporary_id) => {
-                    match local_get_temporary_store(noise_model_temporary_id) {
-                        Some(value) => { noise_model_modifier_str = Some(value); },
-                        None => { return Some(format!("[error] temporary id not found (may expire): {}", noise_model_temporary_id)) }
-                    }
-                },
-                Err(_) => { },
-            }
-            match matches.value_of_t::<String>("load_noise_model_from_file") {
-                Ok(noise_model_filepath) => {
-                    match fs::read_to_string(noise_model_filepath.clone()) {
-                        Ok(value) => { noise_model_modifier_str = Some(value); },
-                        Err(_) => { return Some(format!("[error] noise model file cannot open: {}", noise_model_filepath)) }
-                    }
-                },
-                Err(_) => { },
-            }
-            let noise_model_modifier: Option<serde_json::Value> = match noise_model_modifier_str {
-                Some(value) => match serde_json::from_str(&value) {
-                    Ok(noise_model_modifier) => Some(noise_model_modifier),
-                    Err(_) => { return Some(format!("[error] noise model cannot recognize, please check file format")) }
-                },
-                None => None,
-            };
-            let enable_visualizer = matches.is_present("enable_visualizer");
-            let visualizer_skip_success_cases = matches.is_present("visualizer_skip_success_cases");
-            let visualizer_filename = matches.value_of_t("visualizer_filename").unwrap_or(static_visualize_data_filename());
-            let visualizer_model_graph = matches.is_present("visualizer_model_graph");
-            let visualizer_model_hypergraph = matches.is_present("visualizer_model_hypergraph");
-            return Some(benchmark(&dis, &djs, &nms, &ps, &pes, bias_eta, max_repeats, min_failed_cases, parallel, code_type, decoder, decoder_config
-                , ignore_logical_i, ignore_logical_j, debug_print, time_budget, log_runtime_statistics, log_error_pattern_when_logical_error
-                , noise_model_builder, noise_model_configuration, thread_timeout, &ps_graph, &pes_graph, parallel_init, use_brief_edge, label
-                , noise_model_modifier, enable_visualizer, visualizer_skip_success_cases, visualizer_filename, visualizer_model_graph
-                , visualizer_model_hypergraph));
         }
-        _ => unreachable!()
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum, Serialize)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize)]
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub enum BenchmarkDebugPrint {
@@ -171,7 +87,7 @@ pub struct BenchmarkDebugPrintDecoderConfig {
     pub use_combined_probability: bool,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum, Serialize)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize)]
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub enum BenchmarkDecoder {
@@ -264,8 +180,67 @@ impl BenchmarkThreadDebugger {
     }
 }
 
+impl BenchmarkParameters {
+    pub fn run(self) -> String {
+        let dis: Vec<usize> = serde_json::from_str(&self.dis).expect("dis should be [di1,di2,di3,...,din]");
+        let djs: Vec<usize> = serde_json::from_str(&self.djs.unwrap_or(self.dis.clone())).expect("djs should be [dj1,dj2,dj3,...,djn]");
+        let nms: Vec<usize> = serde_json::from_str(&self.nms).expect("nms should be [nm1,nm2,nm3,...,nmn]");
+        assert!(nms.len() == dis.len(), "nms and dis should be paired");
+        assert!(dis.len() == djs.len(), "dis and djs should be paired");
+        let ps: Vec<f64> = serde_json::from_str(&self.ps).expect("ps should be [p1,p2,p3,...,pm]");
+        let ps_graph: Vec<f64> = self.ps_graph.map(|ps_graph| serde_json::from_str(&ps_graph).expect("ps_graph should be [p1,p2,p3,...,pm]")).unwrap_or(ps.clone());
+        let pes: Vec<f64> = self.pes.map(|pes| serde_json::from_str(&pes).expect("pes should be [pe1,pe2,pe3,...,pem]")).unwrap_or(vec![0.; ps.len()]);  // by default no erasure errors
+        let pes_graph: Vec<f64> = self.pes_graph.map(|pes_graph| serde_json::from_str(&pes_graph).expect("pes_graph should be [pe1,pe2,pe3,...,pem]")).unwrap_or(pes.clone());
+        assert_eq!(pes.len(), ps.len(), "pe and p should be paired");
+        let mut max_repeats: usize = self.max_repeats;
+        if max_repeats == 0 {
+            max_repeats = usize::MAX;
+        }
+        let mut min_failed_cases: usize = self.min_failed_cases;
+        if min_failed_cases == 0 {
+            min_failed_cases = usize::MAX;
+        }
+        let parallel_init: usize = self.parallel_init.clone().unwrap_or(self.parallel);
+        let decoder_config: serde_json::Value = serde_json::from_str(&self.decoder_config).unwrap();
+        let noise_model_configuration: serde_json::Value = serde_json::from_str(&self.noise_model_configuration).unwrap();
+        let mut noise_model_modifier_str: Option<String> = None;
+        match self.load_noise_model_from_temporary_store {
+            Some(noise_model_temporary_id) => {
+                match local_get_temporary_store(noise_model_temporary_id) {
+                    Some(value) => { noise_model_modifier_str = Some(value); },
+                    None => { return format!("[error] temporary id not found (may expire): {}", noise_model_temporary_id) }
+                }
+            },
+            None => { },
+        }
+        match self.load_noise_model_from_file {
+            Some(noise_model_filepath) => {
+                match fs::read_to_string(noise_model_filepath.clone()) {
+                    Ok(value) => { noise_model_modifier_str = Some(value); },
+                    Err(_) => { return format!("[error] noise model file cannot open: {}", noise_model_filepath) }
+                }
+            },
+            None => { },
+        }
+        let noise_model_modifier: Option<serde_json::Value> = match noise_model_modifier_str {
+            Some(value) => match serde_json::from_str(&value) {
+                Ok(noise_model_modifier) => Some(noise_model_modifier),
+                Err(_) => { return format!("[error] noise model cannot recognize, please check file format") }
+            },
+            None => None,
+        };
+        let visualizer_filename = self.visualizer_filename.unwrap_or(static_visualize_data_filename());
+        benchmark(&dis, &djs, &nms, &ps, &pes, self.bias_eta, max_repeats, min_failed_cases, self.parallel, self.code_type, self.decoder, decoder_config
+            , self.ignore_logical_i, self.ignore_logical_j, self.debug_print, self.time_budget, self.log_runtime_statistics, self.log_error_pattern_when_logical_error
+            , self.noise_model, noise_model_configuration, self.thread_timeout, &ps_graph, &pes_graph, parallel_init, self.use_brief_edge
+            , self.label, noise_model_modifier, self.enable_visualizer, self.visualizer_skip_success_cases, visualizer_filename, self.visualizer_model_graph
+            , self.visualizer_model_hypergraph)
+    }
+}
+
+
 fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>, pes: &Vec<f64>, bias_eta: f64, max_repeats: usize, min_failed_cases: usize
-        , parallel: usize, code_type: String, decoder: BenchmarkDecoder, decoder_config: serde_json::Value, ignore_logical_i: bool, ignore_logical_j: bool
+        , parallel: usize, code_type: CodeType, decoder: BenchmarkDecoder, decoder_config: serde_json::Value, ignore_logical_i: bool, ignore_logical_j: bool
         , debug_print: Option<BenchmarkDebugPrint>, time_budget: Option<f64>, log_runtime_statistics: Option<String>, log_error_pattern_when_logical_error: bool
         , noise_model_builder: Option<NoiseModelBuilder>, noise_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
         , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String, noise_model_modifier: Option<serde_json::Value>
@@ -305,9 +280,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
     match &log_runtime_statistics_file {  // append runtime statistics data
         Some(log_runtime_statistics_file) => {
             let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
-            log_runtime_statistics_file.write(b"#f ").unwrap();
-            log_runtime_statistics_file.write(fixed_configuration.to_string().as_bytes()).unwrap();
-            log_runtime_statistics_file.write(b"\n").unwrap();
+            log_runtime_statistics_file.write_all(b"#f ").unwrap();
+            log_runtime_statistics_file.write_all(fixed_configuration.to_string().as_bytes()).unwrap();
+            log_runtime_statistics_file.write_all(b"\n").unwrap();
             log_runtime_statistics_file.sync_data().unwrap();
         }, _ => { },
     }
@@ -345,8 +320,8 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         match &log_runtime_statistics_file {
             Some(log_runtime_statistics_file) => {
                 let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
-                log_runtime_statistics_file.write(b"# ").unwrap();
-                log_runtime_statistics_file.write(json!({
+                log_runtime_statistics_file.write_all(b"# ").unwrap();
+                log_runtime_statistics_file.write_all(json!({
                     "di": di,
                     "dj": dj,
                     "noisy_measurements": noisy_measurements,
@@ -355,12 +330,12 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     "p_graph": p_graph,
                     "pe_graph": pe_graph,
                 }).to_string().as_bytes()).unwrap();
-                log_runtime_statistics_file.write(b"\n").unwrap();
+                log_runtime_statistics_file.write_all(b"\n").unwrap();
                 log_runtime_statistics_file.sync_data().unwrap();
             }, _ => { },
         }
         // prepare simulator
-        let mut simulator = Simulator::new(CodeType::new(&code_type), CodeSize::new(noisy_measurements, di, dj));
+        let mut simulator = Simulator::new(code_type, CodeSize::new(noisy_measurements, di, dj));
         let mut noise_model_graph = NoiseModel::new(&simulator);
         // first use p_graph and pe_graph to build decoder graph, then revert back to real noise model
         let px_graph = p_graph / (1. + bias_eta) / 2.;
@@ -635,7 +610,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                         });
                         let to_be_written = format!("{}\n", runtime_statistics.to_string());
                         let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
-                        log_runtime_statistics_file.write(to_be_written.as_bytes()).unwrap();
+                        log_runtime_statistics_file.write_all(to_be_written.as_bytes()).unwrap();
                     }
                     // update visualizer
                     if let Some(visualizer) = &visualizer {
@@ -768,40 +743,4 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         output += &format!("\n{}", progress_information());
     }
     output
-}
-
-impl BenchmarkDebugPrint {
-    pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
-        Self::value_variants().iter().filter_map(ArgEnum::to_possible_value)
-    }
-}
-
-impl std::str::FromStr for BenchmarkDebugPrint {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        for variant in Self::value_variants() {
-            if variant.to_possible_value().unwrap().matches(s, false) {
-                return Ok(*variant);
-            }
-        }
-        Err(format!("Invalid variant: {}", s))
-    }
-}
-
-impl BenchmarkDecoder {
-    pub fn possible_values<'a>() -> impl Iterator<Item = PossibleValue<'a>> {
-        Self::value_variants().iter().filter_map(ArgEnum::to_possible_value)
-    }
-}
-
-impl std::str::FromStr for BenchmarkDecoder {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        for variant in Self::value_variants() {
-            if variant.to_possible_value().unwrap().matches(s, false) {
-                return Ok(*variant);
-            }
-        }
-        Err(format!("Invalid variant: {}", s))
-    }
 }
