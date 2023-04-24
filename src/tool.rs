@@ -20,6 +20,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use super::noise_model::*;
 use serde::{Serialize, Deserialize};
 use super::decoder_mwpm::*;
+#[cfg(feature="fusion_blossom")]
 use super::decoder_fusion::*;
 use super::model_graph::*;
 use super::complete_model_graph::*;
@@ -31,6 +32,7 @@ use super::decoder_union_find::*;
 use super::erasure_graph::*;
 use super::visualize::*;
 use super::model_hypergraph::*;
+#[cfg(feature="hyperion")]
 use super::decoder_hyper_union_find::*;
 use crate::cli::*;
 
@@ -430,18 +432,34 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         let mwpm_decoder = if decoder == BenchmarkDecoder::MWPM {
             Some(MWPMDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
         } else { None };
-        let fusion_decoder = if decoder == BenchmarkDecoder::Fusion {
-            Some(FusionDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
-        } else { None };
+        cfg_if::cfg_if! {
+            if #[cfg(feature="fusion_blossom")] {
+                let fusion_decoder = if decoder == BenchmarkDecoder::Fusion {
+                    Some(FusionDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
+                } else { None };
+            } else {
+                if decoder == BenchmarkDecoder::Fusion {
+                    panic!("fusion blossom is not available; try enable the feature `fusion_blossom`")
+                }
+            }
+        }
         let tailored_mwpm_decoder = if decoder == BenchmarkDecoder::TailoredMWPM {
             Some(TailoredMWPMDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
         } else { None };
         let union_find_decoder = if decoder == BenchmarkDecoder::UnionFind {
             Some(UnionFindDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
         } else { None };
-        let hyper_union_find_decoder = if decoder == BenchmarkDecoder::HyperUnionFind {
-            Some(HyperUnionFindDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
-        } else { None };
+        cfg_if::cfg_if! {
+            if #[cfg(feature="hyperion")] {
+                let hyper_union_find_decoder = if decoder == BenchmarkDecoder::HyperUnionFind {
+                    Some(HyperUnionFindDecoder::new(&simulator, Arc::clone(&noise_model_graph), &decoder_config, parallel_init, use_brief_edge))
+                } else { None };
+            } else {
+                if decoder == BenchmarkDecoder::HyperUnionFind {
+                    panic!("hypergraph union-find decoder is not available; try enable the feature `hyperion`")
+                }
+            }
+        }
         // then prepare the real noise model
         let mut noise_model = NoiseModel::new(&simulator);
         let px = p / (1. + bias_eta) / 2.;
@@ -520,10 +538,14 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let log_runtime_statistics_file = log_runtime_statistics_file.clone();
             let visualizer = visualizer.clone();
             let mut mwpm_decoder = mwpm_decoder.clone();
-            let mut fusion_decoder = fusion_decoder.clone();
+            cfg_if::cfg_if! { if #[cfg(feature="fusion_blossom")] {
+                let mut fusion_decoder = fusion_decoder.clone();
+            } }
             let mut tailored_mwpm_decoder = tailored_mwpm_decoder.clone();
             let mut union_find_decoder = union_find_decoder.clone();
-            let mut hyper_union_find_decoder = hyper_union_find_decoder.clone();
+            cfg_if::cfg_if! { if #[cfg(feature="hyperion")] {
+                let mut hyper_union_find_decoder = hyper_union_find_decoder.clone();
+            } }
             let thread_ended = Arc::new(AtomicBool::new(false));
             threads_ended.push(Arc::clone(&thread_ended));
             let thread_debugger = Arc::new(Mutex::new(BenchmarkThreadDebugger::new()));
@@ -562,7 +584,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                             mwpm_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
                         },
                         BenchmarkDecoder::Fusion => {
-                            fusion_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
+                            cfg_if::cfg_if! { if #[cfg(feature="fusion_blossom")] {
+                                fusion_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
+                            } else { unreachable!() } }
                         },
                         BenchmarkDecoder::TailoredMWPM => {
                             assert!(sparse_detected_erasures.len() == 0, "tailored MWPM decoder doesn't support erasures");
@@ -572,7 +596,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                             union_find_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
                         }
                         BenchmarkDecoder::HyperUnionFind => {
-                            hyper_union_find_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
+                            cfg_if::cfg_if! { if #[cfg(feature="hyperion")] {
+                                hyper_union_find_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
+                            } else { unreachable!() } }
                         }
                     };
                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().correction = Some(correction.clone()); }  // runtime debug: find deadlock cases
