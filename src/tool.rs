@@ -69,6 +69,8 @@ pub enum BenchmarkDebugPrint {
     FailedErrorPattern,
     /// erasure graph
     ErasureGraph,
+    /// syndrome file for fusion-blossom library to use, output to `output_filename`
+    FusionBlossomSyndromeFile,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -193,6 +195,7 @@ impl BenchmarkParameters {
         let ps_graph: Vec<f64> = self.ps_graph.map(|ps_graph| serde_json::from_str(&ps_graph).expect("ps_graph should be [p1,p2,p3,...,pm]")).unwrap_or(ps.clone());
         let pes: Vec<f64> = self.pes.map(|pes| serde_json::from_str(&pes).expect("pes should be [pe1,pe2,pe3,...,pem]")).unwrap_or(vec![0.; ps.len()]);  // by default no erasure errors
         let pes_graph: Vec<f64> = self.pes_graph.map(|pes_graph| serde_json::from_str(&pes_graph).expect("pes_graph should be [pe1,pe2,pe3,...,pem]")).unwrap_or(pes.clone());
+        let fusion_blossom_syndrome_export_config: serde_json::Value = serde_json::from_str(&self.fusion_blossom_syndrome_export_config).expect("json object");
         assert_eq!(pes.len(), ps.len(), "pe and p should be paired");
         let mut max_repeats: usize = self.max_repeats;
         if max_repeats == 0 {
@@ -236,7 +239,7 @@ impl BenchmarkParameters {
             , self.ignore_logical_i, self.ignore_logical_j, self.debug_print, self.time_budget, self.log_runtime_statistics, self.log_error_pattern_when_logical_error
             , self.noise_model, noise_model_configuration, self.thread_timeout, &ps_graph, &pes_graph, parallel_init, self.use_brief_edge
             , self.label, noise_model_modifier, self.enable_visualizer, self.visualizer_skip_success_cases, visualizer_filename, self.visualizer_model_graph
-            , self.visualizer_model_hypergraph)
+            , self.visualizer_model_hypergraph, fusion_blossom_syndrome_export_config)
     }
 }
 
@@ -247,7 +250,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         , noise_model_builder: Option<NoiseModelBuilder>, noise_model_configuration: serde_json::Value, thread_timeout: f64, ps_graph: &Vec<f64>
         , pes_graph: &Vec<f64>, parallel_init: usize, use_brief_edge: bool, label: String, noise_model_modifier: Option<serde_json::Value>
         , enable_visualizer: bool, visualizer_skip_success_cases: bool, visualizer_filename: String, visualizer_model_graph: bool
-        , visualizer_model_hypergraph: bool) -> String {
+        , visualizer_model_hypergraph: bool, fusion_blossom_syndrome_export_config: serde_json::Value) -> String {
     // if parallel = 0, use all CPU resources
     let parallel = if parallel == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel };
     let parallel_init = if parallel_init == 0 { std::cmp::max(num_cpus::get() - 1, 1) } else { parallel_init };
@@ -278,6 +281,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
         "use_brief_edge": use_brief_edge,
         "label": label,
         "noise_model_modifier": noise_model_modifier,
+        "fusion_blossom_syndrome_export_config": fusion_blossom_syndrome_export_config,
     });
     match &log_runtime_statistics_file {  // append runtime statistics data
         Some(log_runtime_statistics_file) => {
@@ -375,6 +379,9 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             sanity_check_result.is_ok()
         });
         simulator.compress_error_rates(&mut noise_model_graph);  // by default compress all error rates
+        cfg_if::cfg_if! { if #[cfg(feature="fusion_blossom")] {
+            let mut fusion_blossom_syndrome_exporter = None;
+        } }
         match debug_print {
             Some(BenchmarkDebugPrint::NoiseModel) => {
                 return format!("{}\n", serde_json::to_string(&simulator.to_json(&noise_model_graph)).expect("serialize should success"));
@@ -421,8 +428,15 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                 erasure_graph.build(&mut simulator, noise_model_graph, parallel_init);
                 return format!("{}\n", serde_json::to_string(&erasure_graph.to_json(&simulator)).expect("serialize should success"));
             },
+            Some(BenchmarkDebugPrint::FusionBlossomSyndromeFile) => {
+                cfg_if::cfg_if! { if #[cfg(feature="fusion_blossom")] {
+                    fusion_blossom_syndrome_exporter = Some(crate::util::FusionBlossomSyndromeExporter::new(&fusion_blossom_syndrome_export_config, &mut simulator, Arc::new(noise_model_graph.clone()), parallel_init, use_brief_edge));
+                } else { panic!("fusion_blossom feature required") } }
+            },
             _ => { }
         }
+        #[cfg(feature="fusion_blossom")]
+        let fusion_blossom_syndrome_exporter = Arc::new(fusion_blossom_syndrome_exporter);
         let debug_print = Arc::new(debug_print);  // share it across threads
         let noise_model_graph = Arc::new(noise_model_graph);  // change mutability of noise model
         // build decoder precomputed data which is shared between threads
@@ -539,6 +553,7 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
             let visualizer = visualizer.clone();
             let mut mwpm_decoder = mwpm_decoder.clone();
             cfg_if::cfg_if! { if #[cfg(feature="fusion_blossom")] {
+                let fusion_blossom_syndrome_exporter = fusion_blossom_syndrome_exporter.clone();
                 let mut fusion_decoder = fusion_decoder.clone();
             } }
             let mut tailored_mwpm_decoder = tailored_mwpm_decoder.clone();
@@ -574,6 +589,11 @@ fn benchmark(dis: &Vec<usize>, djs: &Vec<usize>, nms: &Vec<usize>, ps: &Vec<f64>
                     let sparse_measurement = if error_count != 0 { simulator.generate_sparse_measurement() } else { SparseMeasurement::new() };
                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().measurement = Some(sparse_measurement.clone()); }  // runtime debug: find deadlock cases
                     let simulate_elapsed = begin.elapsed().as_secs_f64();
+                    cfg_if::cfg_if! { if #[cfg(feature="fusion_blossom")] {
+                        if let Some(fusion_blossom_syndrome_exporter) = fusion_blossom_syndrome_exporter.as_ref() {
+                            fusion_blossom_syndrome_exporter.add_syndrome(&sparse_measurement, &sparse_detected_erasures);
+                        }
+                    } }
                     // decode
                     let begin = Instant::now();
                     let (correction, mut runtime_statistics) = match decoder {

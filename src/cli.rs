@@ -140,7 +140,7 @@ pub struct BenchmarkParameters {
     /// logging to the default visualizer file at visualize/data/visualizer.json
     #[clap(long, action)]
     pub enable_visualizer: bool,
-    /// visualizer file at visualize/data/<visualizer_filename>.json
+    /// visualizer file at visualize/data/<visualizer_filename.json>
     #[clap(long)]
     pub visualizer_filename: Option<String>,
     /// when visualizer is enabled, only record failed cases; useful when trying to debug rare failed cases, e.g. finding the lowest number of physical errors that causes a logical error
@@ -152,6 +152,9 @@ pub struct BenchmarkParameters {
     /// include model hypergraph in the visualizer file
     #[clap(long, action)]
     pub visualizer_model_hypergraph: bool,
+    /// fusion blossom syndrome export configuration
+    #[clap(long, default_value_t = ("{}").to_string())]
+    pub fusion_blossom_syndrome_export_config: String,
 }
 
 #[derive(Parser, Clone)]

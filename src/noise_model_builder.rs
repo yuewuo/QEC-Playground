@@ -32,6 +32,9 @@ pub enum NoiseModelBuilder {
     MixedPhenomenological,
     /// Fault-tolerant weighted union-find decoding on the toric code
     DepolarizingNoise,
+    /// the noise model in stim: after_clifford_depolarization, before_round_data_depolarization, before_measure_flip_probability, after_reset_flip_probability;
+    /// see https://github.com/quantumlib/Stim/blob/main/doc/python_api_reference_vDev.md#stim.Circuit.generated
+    StimNoiseModel,
 }
 
 impl NoiseModelBuilder {
@@ -605,6 +608,84 @@ impl NoiseModelBuilder {
                                 error_node.correlated_pauli_error_rates = Some(correlated_pauli_error_rates);
                             }
                             noise_model.set_node(position, Some(Arc::new(error_node)));
+                        },
+                    }
+                });
+            },
+            Self::StimNoiseModel => {
+                let mut after_clifford_depolarization = p;
+                let mut before_round_data_depolarization = p;
+                let mut before_measure_flip_probability = p;
+                let mut after_reset_flip_probability = p;
+                let mut config_cloned = noise_model_configuration.clone();
+                let config = config_cloned.as_object_mut().expect("noise_model_configuration must be JSON object");
+                config.remove("after_clifford_depolarization").map(|value| after_clifford_depolarization = value.as_f64().expect("f64"));
+                config.remove("before_round_data_depolarization").map(|value| before_round_data_depolarization = value.as_f64().expect("f64"));
+                config.remove("before_measure_flip_probability").map(|value| before_measure_flip_probability = value.as_f64().expect("f64"));
+                config.remove("after_reset_flip_probability").map(|value| after_reset_flip_probability = value.as_f64().expect("f64"));
+                if !config.is_empty() { panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>()); }
+                // correlated depolarize_2 node
+                let mut depolarize_2_node = NoiseModelNode::new();
+                let correlated_pauli_error_rates = CorrelatedPauliErrorRates::default_with_probability(after_clifford_depolarization / 15.);  // 15 possible errors equally probable
+                correlated_pauli_error_rates.sanity_check();
+                depolarize_2_node.correlated_pauli_error_rates = Some(correlated_pauli_error_rates);
+                let depolarize_2_node = Arc::new(depolarize_2_node);
+                // data qubit before round depolarization node
+                let mut data_qubit_depolarize_node = NoiseModelNode::new();
+                data_qubit_depolarize_node.pauli_error_rates.error_rate_X = before_round_data_depolarization / 3.;
+                data_qubit_depolarize_node.pauli_error_rates.error_rate_Y = before_round_data_depolarization / 3.;
+                data_qubit_depolarize_node.pauli_error_rates.error_rate_Z = before_round_data_depolarization / 3.;
+                let data_qubit_depolarize_node = Arc::new(data_qubit_depolarize_node);
+                // measurement flip node: whatever basis is the stabilizer, there is always `before_measure_flip_probability` probability to be flipped
+                let mut measure_flip_node = NoiseModelNode::new();
+                measure_flip_node.pauli_error_rates.error_rate_X = before_measure_flip_probability / 2.;
+                measure_flip_node.pauli_error_rates.error_rate_Y = before_measure_flip_probability / 2.;
+                measure_flip_node.pauli_error_rates.error_rate_Z = before_measure_flip_probability / 2.;
+                let measure_flip_node = Arc::new(measure_flip_node);
+                // reset flip node: whatever basis is the stabilizer, there is always `after_reset_flip_probability` probability to be flipped
+                let mut reset_flip_node = NoiseModelNode::new();
+                reset_flip_node.pauli_error_rates.error_rate_X = after_reset_flip_probability / 2.;
+                reset_flip_node.pauli_error_rates.error_rate_Y = after_reset_flip_probability / 2.;
+                reset_flip_node.pauli_error_rates.error_rate_Z = after_reset_flip_probability / 2.;
+                let reset_flip_node = Arc::new(reset_flip_node);
+                // iterate over all nodes
+                simulator_iter_real!(simulator, position, node, {
+                    // first clear error rate
+                    noise_model.set_node(position, Some(noiseless_node.clone()));
+                    if position.t >= simulator.height - simulator.measurement_cycles {  // no error on the top, as a perfect measurement round
+                        continue
+                    }
+                    // do different things for each stage
+                    match position.t % simulator.measurement_cycles {
+                        1 => {  // initialization
+                            if node.qubit_type != QubitType::Data {
+                                noise_model.set_node(position, Some(reset_flip_node.clone()));
+                            } else {
+                                noise_model.set_node(position, Some(data_qubit_depolarize_node.clone()));
+                            }
+                        },
+                        0 => {  // measurement
+                            // do nothing; measurement errors need to be added before this round...
+                        },
+                        _ => {
+                            let mut error_node = noiseless_node.clone();
+                            if node.gate_type.is_two_qubit_gate() {
+                                if node.qubit_type == QubitType::Data && !node.is_peer_virtual {  // this is data qubit with actual 2-qubit gate
+                                    error_node = depolarize_2_node.clone();
+                                }
+                            }
+                            if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1 {
+                                if node.qubit_type != QubitType::Data {
+                                    error_node = measure_flip_node.clone();
+                                } else {
+                                    if position.t == simulator.height - simulator.measurement_cycles - 2 {
+                                        let mut new_error_node = error_node.as_ref().clone();
+                                        new_error_node.pauli_error_rates = data_qubit_depolarize_node.pauli_error_rates.clone();
+                                        error_node = Arc::new(new_error_node);
+                                    }
+                                }
+                            }
+                            noise_model.set_node(position, Some(error_node));
                         },
                     }
                 });
