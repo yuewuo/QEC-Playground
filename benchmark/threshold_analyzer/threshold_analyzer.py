@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 import subprocess, sys
 qec_playground_root_dir = subprocess.run("git rev-parse --show-toplevel", cwd=os.path.dirname(os.path.abspath(__file__)), shell=True, check=True, capture_output=True).stdout.decode(sys.stdout.encoding).strip(" \r\n")
-rust_dir = os.path.join(qec_playground_root_dir, "backend", "rust")
+rust_dir = qec_playground_root_dir
 
 example_default_rough_runtime_budget = (3000, 60)  # runtime_budget can be any format, here example is (min error case, max time)
 example_default_runtime_budget = (18000, 3600)  # 1 hours or 18000 samples
@@ -81,7 +81,7 @@ def qecp_benchmark_simulate_func_command_vec(p, di, dj, T, parameters, max_repea
     di_str = f"[{str(di)}]"
     dj_str = f"[{str(dj)}]"
     T_str = f"[{str(T)}]"
-    qecp_path = os.path.join(rust_dir, "target", "release", "qecp")
+    qecp_path = os.path.join(rust_dir, "target", "release", "qecp-cli")
     command = [qecp_path, "tool", "benchmark", di_str, "--djs", dj_str, T_str, f"-m{max_repeats}", f"-e{min_error_cases}", p_str] + parameters
     if time_budget is not None:
         command += ["--time_budget", f"{time_budget}"]
@@ -244,6 +244,8 @@ class ThresholdAnalyzer:
         if self.verbose:
             print(f"[info] fit result: A = {popt[0]} \u00B1 {perr[0]}, B = {popt[1]} \u00B1 {perr[1]} C = {popt[2]} \u00B1 {perr[2]}")
             print(f"                   pc0 = {popt[3]} \u00B1 {perr[3]}, v0 = {popt[4]} \u00B1 {perr[4]}")
+            print(f"    popt: {list(popt)}")
+            print(f"    perr: {list(perr)}")
         return popt, perr  # [A, B, C, pc0, v0]
 
     def rough_estimate(self):
@@ -282,6 +284,8 @@ class ThresholdAnalyzer:
         rough_v0 = rough_popt[4]
         radius = pl_center * self.target_relative_diff / abs((d_low ** (1. / rough_v0)) - (d_high ** (1. / rough_v0)))
         p_list = [p_center - radius + radius * 2 * i / (self.fit_samples - 1) for i in range(self.fit_samples)]
+        if self.verbose:
+            print(f"[info] p_list={p_list}")
         # collect all data from simulation
         collected_parameters = []
         for i, d in enumerate(self.code_distances):

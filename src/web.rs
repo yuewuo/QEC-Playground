@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use clap::FromArgMatches;
 use crate::serde::Deserialize;
 use crate::actix_web::{web, App, HttpServer, HttpRequest, HttpResponse, Error};
 use super::util::{local_get_temporary_store, local_put_temporary_store, TEMPORARY_STORE};
@@ -82,15 +83,20 @@ async fn view_noise_model(info: web::Query<ViewNoiseModelQuery>) -> Result<HttpR
         }
     });
     // println!("full_command: {:?}", tokens);
-    let matches = match super::cli::create_clap_parser(clap::ColorChoice::Never).try_get_matches_from(tokens) {
-        Ok(matches) => matches,
+    use crate::clap::CommandFactory;
+    use crate::cli::*;
+    let cli = match Cli::command().color(clap::ColorChoice::Never).try_get_matches_from(tokens) {
+        Ok(matches) => match Cli::from_arg_matches(&matches) {
+            Ok(cli) => cli,
+            Err(error) => { return Ok(HttpResponse::BadRequest().body(format!("{:?}", error))) }
+        },
         Err(error) => { return Ok(HttpResponse::BadRequest().body(format!("{:?}", error))) }
     };
-    let output = match matches.subcommand() {
-        Some(("tool", matches)) => {
-            super::tool::run_matched_tool(&matches).expect("benchmark always gives output")
+    let output = match cli.command {
+        Commands::Tool { command } => {
+            command.run().expect("benchmark always gives output")
         }
-        _ => unreachable!()
+        _ => unreachable!()  // forbid the web to access other commands
     };
     drop(temporary_store);  // force the lifetime of locked temporary store to be more than `tool::run_matched_tool`
     Ok(HttpResponse::Ok().body(output))

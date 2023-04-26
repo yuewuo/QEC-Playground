@@ -416,22 +416,27 @@ impl TailoredMWPMDecoder {
                                     }
                                 }
                             }
-                            assert!(stab_x_min_weight != f64::MAX, "there should be at least one neutral edge between two clusters we're considering");
-                            assert!(stab_y_min_weight != f64::MAX, "there should be at least one neutral edge between two clusters we're considering");
-                            // take the bigger one as the final weight (this should benefit)
-                            let min_weight = if self.config.original_residual_weighting {
-                                // "weighted by minimum Manhattan distance between any pairing of defects drawn one from each cluster;
-                                if stab_x_min_weight < stab_y_min_weight {
-                                    stab_x_min_weight
+                            // it's ok that some corner clusters may not connect to all charged clusters
+                            if j < residual_real_cluster_len {
+                                assert!(stab_x_min_weight != f64::MAX, "there should be at least one neutral edge between two clusters we're considering");
+                                assert!(stab_y_min_weight != f64::MAX, "there should be at least one neutral edge between two clusters we're considering");
+                            }
+                            if stab_x_min_weight != f64::MAX && stab_y_min_weight != f64::MAX {
+                                // take the bigger one as the final weight (this should benefit)
+                                let min_weight = if self.config.original_residual_weighting {
+                                    // "weighted by minimum Manhattan distance between any pairing of defects drawn one from each cluster;
+                                    if stab_x_min_weight < stab_y_min_weight {
+                                        stab_x_min_weight
+                                    } else {
+                                        stab_y_min_weight
+                                    }
                                 } else {
-                                    stab_y_min_weight
-                                }
-                            } else {
-                                stab_x_min_weight + stab_y_min_weight
-                            };
-                            // let min_weight = if stab_x_min_weight < stab_y_min_weight { stab_x_min_weight } else { stab_y_min_weight };
-                            // let min_weight = if stab_x_min_weight > stab_y_min_weight { stab_x_min_weight } else { stab_y_min_weight };
-                            residual_weighted_edges.push((i, j, min_weight));
+                                    stab_x_min_weight + stab_y_min_weight
+                                };
+                                // let min_weight = if stab_x_min_weight < stab_y_min_weight { stab_x_min_weight } else { stab_y_min_weight };
+                                // let min_weight = if stab_x_min_weight > stab_y_min_weight { stab_x_min_weight } else { stab_y_min_weight };
+                                residual_weighted_edges.push((i, j, min_weight));
+                            }
                         }
                     }
                     // those corner clusters should be connected with zero weight: this is not in the paper but otherwise they'll mess up the weights
@@ -592,6 +597,8 @@ mod tests {
     use super::*;
     use super::super::code_builder::*;
     use super::super::types::ErrorType::*;
+    use super::super::noise_model_builder::*;
+    use super::super::visualize::*;
 
     #[test]
     fn tailored_mwpm_decoder_code_capacity_inf_bias_d_3() {  // cargo test tailored_mwpm_decoder_code_capacity_inf_bias_d_3 -- --nocapture
@@ -987,6 +994,58 @@ mod tests {
         let sparse_measurement = simulator.generate_sparse_measurement();
         let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
         println!("{:?}", correction);
+        code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
+        // the logical error makes sense... it is the decoder design itself that causes this problem
+        // let (logical_i, logical_j) = simulator.validate_correction(&correction);
+        // assert!(!logical_i && !logical_j);
+    }
+
+    #[test]
+    fn tailored_mwpm_decoder_debug_2() {  // cargo test tailored_mwpm_decoder_debug_2 -- --nocapture
+        let visualizer_filename = "tailored_mwpm_decoder_debug_2".to_string();
+        print_visualize_link(visualizer_filename.clone());
+        let d = 5;
+        let noisy_measurements = 2;
+        let p = 0.00001;
+        let bias_eta = 100.;
+        // build simulator
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCodeBellInit, CodeSize::new(noisy_measurements, d, d));
+        code_builder_sanity_check(&simulator).unwrap();
+        // build noise model
+        let mut noise_model = NoiseModel::new(&simulator);
+        let px = p / (1. + bias_eta) / 2.;
+        let py = px;
+        let pz = p - 2. * px;
+        simulator.set_error_rates(&mut noise_model, px, py, pz, 0.);
+        let noise_model_builder = NoiseModelBuilder::TailoredScBellInitCircuit;
+        let noise_model_configuration: serde_json::Value = json!({});
+        noise_model_builder.apply(&mut simulator, &mut noise_model, &noise_model_configuration, p, bias_eta, 0.);
+        simulator.compress_error_rates(&mut noise_model);
+        noise_model_sanity_check(&simulator, &noise_model).unwrap();
+        let noise_model = Arc::new(noise_model);
+        // visualize
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualizer_filename.as_str())).unwrap();
+        visualizer.add_component(&simulator).unwrap();
+        visualizer.add_component(noise_model.as_ref()).unwrap();
+        visualizer.end_component().unwrap();  // make sure the visualization file is valid even user exit the benchmark
+        // build decoder
+        let decoder_config = json!({
+            "precompute_complete_model_graph": true,
+        });
+        let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&noise_model), &decoder_config, 1, false);
+        let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[7][5][9]":"Z"}"#).unwrap();
+        // println!("{:?}", error_pattern);
+        simulator.load_sparse_error_pattern(&error_pattern, &noise_model).unwrap();
+        simulator.propagate_errors();
+        let sparse_measurement = simulator.generate_sparse_measurement();
+        let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
+        println!("{:?}", correction);
+        let case = json!({
+            "error_pattern": simulator.generate_sparse_error_pattern(),
+            "measurement": sparse_measurement,
+            "correction": correction,
+        });
+        visualizer.add_case(case).unwrap();
         code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
         // the logical error makes sense... it is the decoder design itself that causes this problem
         // let (logical_i, logical_j) = simulator.validate_correction(&correction);

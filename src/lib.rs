@@ -29,9 +29,12 @@ extern crate float_cmp;
 extern crate priority_queue;
 extern crate float_ord;
 extern crate parking_lot;
+#[cfg(feature="fusion_blossom")]
 extern crate fusion_blossom;
 extern crate chrono;
 extern crate urlencoding;
+#[cfg(feature="hyperion")]
+extern crate mwps;
 
 pub mod util;
 pub mod test;
@@ -58,8 +61,12 @@ pub mod tailored_complete_model_graph;
 pub mod noise_model_builder;
 pub mod union_find;
 pub mod erasure_graph;
+#[cfg(feature="fusion_blossom")]
 pub mod decoder_fusion;
 pub mod visualize;
+pub mod model_hypergraph;
+#[cfg(feature="hyperion")]
+pub mod decoder_hyper_union_find;
 #[cfg(feature="python_binding")]
 use pyo3::prelude::*;
 
