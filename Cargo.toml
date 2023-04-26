@@ -45,7 +45,7 @@ default = ["fusion_blossom"]
 python_binding = ["pyo3"]  # by default to avoid using python interface, which includes `fpga_generator.rs`,
 blossom_v = []  # automatically enabled when file `blossomV/PerfectMatching.h` exists
 MWPM_reverse_order = []  # test the logical error rate arbitrariness of MWPM decoders, see articles/UFandMWPM.md
-hyperion = ["mwps"]
+# hyperion = ["mwps"]
 fusion_blossom = ["fusion-blossom"]
 
 [lib]
@@ -88,7 +88,7 @@ fusion-blossom = { version = "0.2.3", optional = true }
 # fusion-blossom = { path = "../fusion-blossom", default-features = false, optional = true }
 chrono = "0.4.19"
 urlencoding = "2.1.0"
-mwps = { path = "../mwps", optional = true }
+# mwps = { path = "../mwps", optional = true }
 
 
 [build-dependencies]
