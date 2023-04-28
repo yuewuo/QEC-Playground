@@ -289,7 +289,7 @@ impl SimulatorCompact {
         }
         for index in 0..self.error_sources.len() {
             if self.error_sources[index] != other.error_sources[index] {
-                return Err(format!("the {}-th error source differs\n    {:?}\n    {:?}"
+                return Err(format!("the {}-th error source differs: {:?} != {:?}"
                     , index, self.error_sources[index], other.error_sources[index]));
             }
         }
@@ -369,7 +369,7 @@ impl SimulatorCompactExtender {
         };
         // use the second simulator to verify the correctness (partially)
         second.assert_eq(&extender.generate(noisy_measurements + 1)).unwrap();
-        // return the verified 
+        // return the verified extender
         extender
     }
 
@@ -410,7 +410,6 @@ mod tests {
     use super::*;
     use crate::code_builder::*;
     use crate::noise_model_builder::*;
-
 
     #[test]
     fn simulator_compact_extender() {  // cargo test simulator_compact_extender -- --nocapture

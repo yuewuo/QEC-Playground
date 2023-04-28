@@ -36,6 +36,8 @@ use super::model_hypergraph::*;
 use super::decoder_hyper_union_find::*;
 use crate::cli::*;
 use crate::simulator_compact::*;
+#[cfg(feature="fusion_blossom")]
+use crate::util_fusion::*;
 
 
 impl ToolCommands {
@@ -421,7 +423,7 @@ impl BenchmarkParameters {
                 },
                 Some(BenchmarkDebugPrint::FusionBlossomSyndromeFile) => {
                     cfg_if::cfg_if! { if #[cfg(feature="fusion_blossom")] {
-                        fusion_blossom_syndrome_exporter = Some(crate::util::FusionBlossomSyndromeExporter::new(&fusion_blossom_syndrome_export_config, &mut simulator, Arc::new(noise_model_graph.clone()), parallel_init, use_brief_edge));
+                        fusion_blossom_syndrome_exporter = Some(FusionBlossomSyndromeExporter::new(&fusion_blossom_syndrome_export_config, &mut simulator, Arc::new(noise_model_graph.clone()), parallel_init, use_brief_edge));
                     } else { panic!("fusion_blossom feature required") } }
                 },
                 _ => { }
