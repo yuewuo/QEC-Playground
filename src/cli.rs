@@ -155,6 +155,9 @@ pub struct BenchmarkParameters {
     /// fusion blossom syndrome export configuration
     #[clap(long, default_value_t = ("{}").to_string())]
     pub fusion_blossom_syndrome_export_config: String,
+    /// use compact simulator to generate syndromes instead
+    #[clap(long, action)]
+    pub use_compact_simulator: bool,
 }
 
 #[derive(Parser, Clone)]

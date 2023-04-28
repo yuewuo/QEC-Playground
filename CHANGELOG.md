@@ -81,3 +81,11 @@ This project is under development for 1.5 years as an internal tool to learn, im
 
 ). But, when I tried to implement an improved MWPM decoder for tailored surface code, I found I need a major upgrade of the code structure to implement it. Also, we need to isolate the functionality of surface code simulator and decoders, for better code structure and to ease maintenance.
 
+## 0.2.0 (2023.4.27)
+
+**Release Highlights**
+
+- Integrate [Fusion Blossom](https://github.com/yuewuo/fusion-blossom)
+- upgraded the naming of several APIs
+- upgrade the dependencies, especially `clap`, for better code readability
+- add new `CompactSimulator` for faster simulation and also for exporting to external tools for simulation

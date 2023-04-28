@@ -17,7 +17,25 @@ use std::collections::{HashMap, HashSet, BTreeSet, BTreeMap};
 use super::serde_hashkey;
 use super::erasure_graph::*;
 use crate::visualize::*;
+use crate::simulator_compact::*;
 
+
+#[enum_dispatch]
+#[derive(Clone)]
+pub enum GeneralSimulator {
+    SimulatorCompact,
+    Simulator,
+}
+
+#[enum_dispatch(GeneralSimulator)]
+/// any struct that implements this generic can be used in the simulation cli
+pub trait SimulatorGenerics: Clone {
+    fn generate_random_errors(&mut self, noise_model: &NoiseModel) -> (usize, usize);
+    fn generate_sparse_detected_erasures(&self) -> SparseErasures;
+    fn generate_sparse_error_pattern(&self) -> SparseErrorPattern;
+    fn generate_sparse_measurement(&self) -> SparseMeasurement;
+    fn validate_correction(&mut self, correction: &SparseCorrection) -> (bool, bool);
+}
 
 /// general simulator for two-dimensional code with circuit-level implementation of stabilizer measurements
 #[derive(Debug, Serialize)]
@@ -271,6 +289,41 @@ impl GateType {
 
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pymethods)]
+impl SimulatorGenerics for Simulator {
+    fn generate_random_errors(&mut self, noise_model: &NoiseModel) -> (usize, usize) {
+        self.generate_random_errors(noise_model)
+    }
+    fn generate_sparse_detected_erasures(&self) -> SparseErasures {
+        self.generate_sparse_detected_erasures()
+    }
+    fn generate_sparse_error_pattern(&self) -> SparseErrorPattern {
+        self.generate_sparse_error_pattern()
+    }
+    fn generate_sparse_measurement(&self) -> SparseMeasurement {
+        self.generate_sparse_measurement()
+    }
+    fn validate_correction(&mut self, correction: &SparseCorrection) -> (bool, bool) {
+        self.validate_correction(correction)
+    }
+}
+
+impl Clone for Simulator {
+    fn clone(&self) -> Self {
+        Self {
+            code_type: self.code_type.clone(),
+            code_size: self.code_size.clone(),
+            height: self.height,
+            vertical: self.vertical,
+            horizontal: self.horizontal,
+            nodes: self.nodes.clone(),
+            rng: Xoroshiro128StarStar::new(),  // do not copy random number generator, otherwise parallel simulation may give same result
+            measurement_cycles: self.measurement_cycles,
+        }
+    }
+}
+
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl Simulator {
     /// given builtin code type, this will automatically build the code structure
     #[cfg_attr(feature = "python_binding", new)]
@@ -295,16 +348,7 @@ impl Simulator {
     }
 
     pub fn clone(&self) -> Self {
-        Self {
-            code_type: self.code_type.clone(),
-            code_size: self.code_size.clone(),
-            height: self.height,
-            vertical: self.vertical,
-            horizontal: self.horizontal,
-            nodes: self.nodes.clone(),
-            rng: Xoroshiro128StarStar::new(),  // do not copy random number generator, otherwise parallel simulation may give same result
-            measurement_cycles: self.measurement_cycles,
-        }
+       Clone::clone(self)
     }
 
     pub fn volume(&self) -> usize {
@@ -613,7 +657,7 @@ impl Simulator {
         None
     }
 
-    /// use sparse measurement to efficiently iterate over non-trivial measurements
+    /// use sparse measurement to efficiently iterate over defect measurements
     #[inline(never)]
     pub fn generate_sparse_measurement(&self) -> SparseMeasurement {
         let mut sparse_measurement = SparseMeasurement::new();
@@ -630,7 +674,7 @@ impl Simulator {
                         if previous_node.gate_type.is_measurement() {  // found previous measurement
                             let previous_result = previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
                             if this_result != previous_result {
-                                sparse_measurement.insert_nontrivial_measurement(position);
+                                sparse_measurement.insert_defect_measurement(position);
                             }
                             break
                         }
@@ -660,7 +704,7 @@ impl Simulator {
                         if previous_node.gate_type.is_measurement() {  // found previous measurement
                             let previous_result = previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
                             if this_result != previous_result {
-                                sparse_measurement_virtual.insert_nontrivial_measurement(position);
+                                sparse_measurement_virtual.insert_defect_measurement(position);
                             }
                             break
                         }
@@ -750,9 +794,9 @@ impl Simulator {
                                 let previous_result = previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
                                 if this_result != previous_result {
                                     if node.is_virtual {
-                                        sparse_measurement_virtual.insert_nontrivial_measurement(position);
+                                        sparse_measurement_virtual.insert_defect_measurement(position);
                                     } else {
-                                        sparse_measurement_real.insert_nontrivial_measurement(position);
+                                        sparse_measurement_real.insert_defect_measurement(position);
                                     }
                                     accumulated_clean_measurements = 0;
                                 }
@@ -766,7 +810,7 @@ impl Simulator {
             }
             if t > max_t {
                 max_t = t;
-                // if no more non-trivial measurements, break early
+                // if no more defect measurements, break early
                 if accumulated_clean_measurements >= early_break_accumulated_clean_measurements {
                     break
                 }
@@ -812,19 +856,19 @@ impl Simulator {
             self.clear_all_errors();
             // println!("sparse_measurement_real: {:?}, standard_measurements_real: {:?}", sparse_measurement_real, standard_measurements_real);
             // println!("sparse_measurement_virtual: {:?}, standard_measurements_virtual: {:?}", sparse_measurement_virtual, standard_measurements_virtual);
-            let mut measurements_equal = sparse_measurement_real.nontrivial.len() == standard_measurements_real.nontrivial.len()
-                && sparse_measurement_virtual.nontrivial.len() == standard_measurements_virtual.nontrivial.len();
+            let mut measurements_equal = sparse_measurement_real.defect.len() == standard_measurements_real.defect.len()
+                && sparse_measurement_virtual.defect.len() == standard_measurements_virtual.defect.len();
             if measurements_equal {  // further check for each element
-                for position in standard_measurements_real.nontrivial.iter() {
-                    if !sparse_measurement_real.nontrivial.contains(position) {
+                for position in standard_measurements_real.defect.iter() {
+                    if !sparse_measurement_real.defect.contains(position) {
                         measurements_equal = false;
-                        println!("[error] nontrivial measurement happens at {} but optimized code doesn't correctly detect it", position);
+                        println!("[error] defect measurement happens at {} but optimized code doesn't correctly detect it", position);
                     }
                 }
-                for position in standard_measurements_virtual.nontrivial.iter() {
-                    if !sparse_measurement_virtual.nontrivial.contains(position) {
+                for position in standard_measurements_virtual.defect.iter() {
+                    if !sparse_measurement_virtual.defect.contains(position) {
                         measurements_equal = false;
-                        println!("[error] nontrivial measurement happens at {} but optimized code doesn't correctly detect it", position);
+                        println!("[error] defect measurement happens at {} but optimized code doesn't correctly detect it", position);
                     }
                 }
             }
@@ -1149,13 +1193,13 @@ impl std::fmt::Display for SimulatorNode {
     }
 }
 
-/// in most cases non-trivial measurements are rare, this sparse structure use `BTreeSet` to store them
+/// in most cases defect measurements are rare, this sparse structure use `BTreeSet` to store them
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub struct SparseMeasurement {
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
-    pub nontrivial: BTreeSet<Position>,
+    pub defect: BTreeSet<Position>,
 }
 
 impl Serialize for SparseMeasurement {
@@ -1178,7 +1222,7 @@ impl<'de> Visitor<'de> for SparseMeasurement {
     fn visit_seq<M>(self, mut access: M) -> Result<Self::Value, M::Error> where M: SeqAccess<'de>, {
         let mut sparse_measurement = SparseMeasurement::new();
         while let Some(position) = access.next_element()? {
-            sparse_measurement.insert_nontrivial_measurement(&position);
+            sparse_measurement.insert_defect_measurement(&position);
         }
         Ok(sparse_measurement)
     }
@@ -1193,38 +1237,43 @@ impl<'de> Deserialize<'de> for SparseMeasurement {
 
 // #[cfg_attr(feature = "python_binding", pymethods)]
 impl SparseMeasurement {
-    /// create a new clean measurement without nontrivial measurements
+    /// create a new clean measurement without defect measurements
     // #[cfg_attr(feature = "python_binding", new)]
     pub fn new() -> Self {
         Self {
-            nontrivial: BTreeSet::new(),
+            defect: BTreeSet::new(),
         }
     }
-    /// return false if this nontrivial measurement is already present
+    pub fn new_set(defect: BTreeSet<Position>) -> Self {
+        Self {
+            defect
+        }
+    }
+    /// return false if this defect measurement is already present
     #[inline]
-    pub fn insert_nontrivial_measurement(&mut self, position: &Position) -> bool {
-        self.nontrivial.insert(position.clone())
+    pub fn insert_defect_measurement(&mut self, position: &Position) -> bool {
+        self.defect.insert(position.clone())
     }
     /// iterator
     pub fn iter<'a>(&'a self) -> std::collections::btree_set::Iter<'a, Position> {
-        self.nontrivial.iter()
+        self.defect.iter()
     }
     /// convert to vector in ascending order
     pub fn to_vec(&self) -> Vec<Position> {
         self.iter().map(|position| (*position).clone()).collect()
     }
     /// convert vector to sparse measurement
-    pub fn from_vec(nontrivial: &Vec<Position>) -> Self {
+    pub fn from_vec(defect: &Vec<Position>) -> Self {
         let mut sparse_measurement = Self::new();
-        for position in nontrivial.iter() {
-            debug_assert!(!sparse_measurement.nontrivial.contains(position), "duplicate nontrivial measurement forbidden");
-            sparse_measurement.insert_nontrivial_measurement(position);
+        for position in defect.iter() {
+            debug_assert!(!sparse_measurement.defect.contains(position), "duplicate defect measurement forbidden");
+            sparse_measurement.insert_defect_measurement(position);
         }
         sparse_measurement
     }
-    /// the length of non-trivial measurements
+    /// the length of defect measurements
     pub fn len(&self) -> usize {
-        self.nontrivial.len()
+        self.defect.len()
     }
 }
 
@@ -1272,7 +1321,7 @@ impl<'de> Deserialize<'de> for SparseErasures {
 }
 
 impl SparseErasures {
-    /// create a new clean measurement without nontrivial measurements
+    /// create a new clean measurement without defect measurements
     pub fn new() -> Self {
         Self {
             erasures: BTreeSet::new(),
@@ -1282,7 +1331,7 @@ impl SparseErasures {
     pub fn iter<'a>(&'a self) -> std::collections::btree_set::Iter<'a, Position> {
         self.erasures.iter()
     }
-    /// the length of non-trivial measurements
+    /// the length of defect measurements
     pub fn len(&self) -> usize {
         self.erasures.len()
     }
@@ -1325,6 +1374,11 @@ impl SparseErrorPattern {
             errors: BTreeMap::new(),
         }
     }
+    pub fn new_map(errors: BTreeMap<Position, ErrorType>) -> Self {
+        Self {
+            errors,
+        }
+    }
     /// extend an error pattern using another error pattern
     #[allow(dead_code)]
     pub fn extend(&mut self, next: &Self) {
@@ -1351,6 +1405,9 @@ impl SparseErrorPattern {
     /// get element
     pub fn get(&self, key: &Position) -> Option<&ErrorType> {
         self.errors.get(key)
+    }
+    pub fn to_vec(&self) -> Vec<(Position, ErrorType)> {
+        self.iter().map(|(position, error)| ((*position).clone(), *error)).collect()
     }
 }
 
@@ -1427,6 +1484,9 @@ impl SparseCorrection {
     /// get element
     pub fn get(&self, key: &Position) -> Option<&ErrorType> {
         self.0.get(key)
+    }
+    pub fn to_vec(&self) -> Vec<(Position, ErrorType)> {
+        self.0.to_vec()
     }
 }
 

@@ -35,6 +35,7 @@ extern crate chrono;
 extern crate urlencoding;
 #[cfg(feature="hyperion")]
 extern crate mwps;
+#[macro_use] extern crate enum_dispatch;
 
 pub mod util;
 pub mod test;
@@ -69,6 +70,7 @@ pub mod model_hypergraph;
 pub mod decoder_hyper_union_find;
 #[cfg(feature="python_binding")]
 use pyo3::prelude::*;
+pub mod simulator_compact;
 
 
 #[cfg(feature="python_binding")]
