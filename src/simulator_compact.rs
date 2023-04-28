@@ -13,24 +13,41 @@ use ErrorType::*;
 use super::reproducible_rand::Xoroshiro128StarStar;
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SimulatorCompact {
     /// each error source is an independent probabilistic Pauli or erasure error
     pub error_sources: Vec<ErrorSource>,
     /// use embedded random number generator
+    #[serde(skip)]
     pub rng: Xoroshiro128StarStar,
     /// the actual happening errors
+    #[serde(skip)]
     errors: BTreeMap<Position, ErrorType>,
     /// the desired correction of the actual error
+    #[serde(skip)]
     corrections: BTreeMap<Position, ErrorType>,
     /// the measured defects
+    #[serde(skip)]
     defects: BTreeSet<Position>,
     /// optional simulator for the purpose of validate the correction
     #[serde(skip)]
     simulator: Option<Simulator>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+impl Clone for SimulatorCompact {
+    fn clone(&self) -> Self {
+        Self {
+            error_sources: self.error_sources.clone(),
+            rng: Xoroshiro128StarStar::new(),
+            errors: BTreeMap::new(),
+            corrections: BTreeMap::new(),
+            defects: BTreeSet::new(),
+            simulator: self.simulator.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ErrorSource {
     Pauli {
         p: f64,
@@ -38,6 +55,39 @@ pub enum ErrorSource {
         errors: Vec<(Position, ErrorType)>,
         correction: Vec<(Position, ErrorType)>,
     },
+}
+
+impl ErrorSource {
+    pub fn get_error_t(&self) -> usize {
+        match self {
+            Self::Pauli { errors, .. } => {
+                let t = errors[0].0.t;
+                debug_assert!(errors.iter().all(|(position, _)| position.t == t), "an error source cannot happen at multiple time point...");
+                t
+            },
+        }
+    }
+    pub fn shift_error_t(&mut self, delta_t: usize) {
+        match self {
+            Self::Pauli { defects, errors, .. } => {
+                for position in defects.iter_mut() {
+                    position.t += delta_t;
+                }
+                for (position, _) in errors.iter_mut() {
+                    position.t += delta_t;
+                }
+            },
+        }
+    }
+    pub fn shift_correction_t(&mut self, delta_height: usize) {
+        match self {
+            Self::Pauli { correction, .. } => {
+                for (position, _) in correction.iter_mut() {
+                    position.t += delta_height;
+                }
+            },
+        }
+    }
 }
 
 #[cfg_attr(feature = "python_binding", cfg_eval)]
@@ -231,6 +281,161 @@ impl SimulatorCompact {
         self.errors.clear();
         self.corrections.clear();
         self.defects.clear();
+    }
+
+    pub fn assert_eq(&self, other: &Self) -> Result<(), String> {
+        if self.error_sources.len() != other.error_sources.len() {
+            return Err(format!("the length differs {} != {}", self.error_sources.len(), other.error_sources.len()));
+        }
+        for index in 0..self.error_sources.len() {
+            if self.error_sources[index] != other.error_sources[index] {
+                return Err(format!("the {}-th error source differs\n    {:?}\n    {:?}"
+                    , index, self.error_sources[index], other.error_sources[index]));
+            }
+        }
+        debug_assert_eq!(self, other, "up to this step, they should be equal");
+        Ok(())
+    }
+
+}
+
+impl PartialEq for SimulatorCompact {
+    fn eq(&self, other: &Self) -> bool {
+        self.error_sources == other.error_sources
+    }
+}
+
+/// The extender takes two `SimulatorCompact` as input, assuming the first one has T and the second one has T+1 noisy measurement rounds.
+/// It works by finding an efficient representation that can generate a `SimulatorCompact` for arbitrarily large T.
+/// Usually `noisy_measurements = 4` is good enough, e.g., when `measurement_cycle = 6`, the whole graph is 0<=t<=24, and the repeated region is 12<=t<=18.
+pub struct SimulatorCompactExtender {
+    pub base: SimulatorCompact,
+    /// the number of noisy_measurements of the first
+    pub noisy_measurements: usize,
+    /// repeat region, indices of the repeat region
+    pub repeat_region: (usize, usize),
+    /// measurement cycle, `t` will be biased by repeat * measurement_cycle
+    pub measurement_cycle: usize,
+}
+
+impl SimulatorCompactExtender {
+
+    pub fn new(first: SimulatorCompact, second: SimulatorCompact, noisy_measurements: usize) -> Self {
+        // find a rule
+        // first check how many error sources differed by the two
+        assert!(second.error_sources.len() > first.error_sources.len(), "must differ");
+        let error_sources_differ = second.error_sources.len() - first.error_sources.len();
+        // then check whether the error sources are monotonic, this is essential for finding a rule
+        #[derive(Debug)]
+        struct RangeT {
+            t: usize,
+            start: usize,  // index, include
+            end: usize,  // index, exclude
+        }
+        let mut first_t_ranges: Vec<RangeT> = vec![];
+        let mut second_t_ranges: Vec<RangeT> = vec![];
+        for (t_ranges, simulator_compact) in [(&mut first_t_ranges, &first), (&mut second_t_ranges, &second)] {
+            let mut last_t = simulator_compact.error_sources[0].get_error_t();
+            let mut start = 0;
+            for (index, error_source) in simulator_compact.error_sources.iter().enumerate() {
+                let t = error_source.get_error_t();
+                assert!(t >= last_t, "t must be monotonically increasing");
+                if t != last_t {
+                    t_ranges.push(RangeT { t, start, end: index });
+                    start = index;
+                    last_t = t;
+                }
+            }
+            t_ranges.push(RangeT { t: last_t, start, end: simulator_compact.error_sources.len() });
+        }
+        let measurement_cycle = second_t_ranges.last().unwrap().t - first_t_ranges.last().unwrap().t;
+        assert!(measurement_cycle > 0);
+        let repeat_t_start = (first_t_ranges.last().unwrap().t / measurement_cycle + 1) / 2 * measurement_cycle;
+        let mut repeat_start = usize::MAX;
+        let mut repeat_end = 0;
+        for range in first_t_ranges.iter() {
+            if range.t >= repeat_t_start && range.t < repeat_t_start + measurement_cycle {
+                repeat_start = repeat_start.min(range.start);
+                repeat_end = repeat_end.max(range.end);
+            }
+        }
+        assert!(repeat_start != usize::MAX, "no error sources found in t range of [{}, {})", repeat_t_start, repeat_t_start + measurement_cycle);
+        assert_eq!(repeat_end - repeat_start, error_sources_differ, "the repeat region should have the differed number of error sources");
+        let extender = Self {
+            base: first,
+            noisy_measurements,
+            repeat_region: (repeat_start, repeat_end),
+            measurement_cycle,
+        };
+        // use the second simulator to verify the correctness (partially)
+        second.assert_eq(&extender.generate(noisy_measurements + 1)).unwrap();
+        // return the verified 
+        extender
+    }
+
+    pub fn generate(&self, noisy_measurements: usize) -> SimulatorCompact {
+        let base = &self.base;
+        let (repeat_start, repeat_end) = self.repeat_region;
+        let mut simulator_compact = base.clone();
+        assert!(noisy_measurements >= self.noisy_measurements);
+        if noisy_measurements == self.noisy_measurements {
+            return simulator_compact
+        }
+        let repeat: usize = noisy_measurements - self.noisy_measurements;
+        simulator_compact.error_sources.drain(repeat_end..);
+        simulator_compact.error_sources.reserve_exact(repeat * (repeat_end - repeat_start));
+        for i in 1..repeat+1 {
+            for index in repeat_start..repeat_end {
+                let mut error_source = base.error_sources[index].clone();
+                error_source.shift_error_t(i * self.measurement_cycle);
+                simulator_compact.error_sources.push(error_source);
+            }
+        }
+        for index in repeat_end..base.error_sources.len() {
+            let mut error_source = base.error_sources[index].clone();
+            error_source.shift_error_t(repeat * self.measurement_cycle);
+            simulator_compact.error_sources.push(error_source);
+        }
+        for error_source in simulator_compact.error_sources.iter_mut() {
+            error_source.shift_correction_t(repeat * self.measurement_cycle);
+        }
+        simulator_compact
+    }
+
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::code_builder::*;
+    use crate::noise_model_builder::*;
+
+
+    #[test]
+    fn simulator_compact_extender() {  // cargo test simulator_compact_extender -- --nocapture
+        let di = 3;
+        let dj = 3;
+        let p = 0.001;
+        let build_simulator = |noisy_measurements: usize| -> (Simulator, NoiseModel, SimulatorCompact) {
+            let mut simulator = Simulator::new(CodeType::RotatedPlanarCode, CodeSize::new(noisy_measurements, di, dj));
+            let mut noise_model = NoiseModel::new(&simulator);
+            NoiseModelBuilder::StimNoiseModel.apply(&mut simulator, &mut noise_model, &json!({}), p, 0.5, 0.);
+            code_builder_sanity_check(&simulator).unwrap();
+            noise_model_sanity_check(&simulator, &noise_model).unwrap();
+            let simulator_compact = SimulatorCompact::from_simulator(simulator.clone(), Arc::new(noise_model.clone()), 1);
+            (simulator, noise_model, simulator_compact)
+        };
+        let noisy_measurements = 4;
+        let (_, _, first) = build_simulator(noisy_measurements);
+        let (_, _, second) = build_simulator(noisy_measurements + 1);
+        let extender = SimulatorCompactExtender::new(first, second, noisy_measurements);
+        println!("extender built successfully");
+        // test a larger instance
+        let test_noisy_measurement = 7;
+        let generated = extender.generate(test_noisy_measurement);
+        let (_, _, ground_truth) = build_simulator(test_noisy_measurement);
+        generated.assert_eq(&ground_truth).unwrap();
     }
 
 }

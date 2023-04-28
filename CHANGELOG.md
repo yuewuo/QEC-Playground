@@ -89,3 +89,4 @@ This project is under development for 1.5 years as an internal tool to learn, im
 - upgraded the naming of several APIs
 - upgrade the dependencies, especially `clap`, for better code readability
 - add new `CompactSimulator` for faster simulation and also for exporting to external tools for simulation
+- add new `CompactSimulatorExtender` for extending a small `T` to arbitrarily large `T` efficiently.

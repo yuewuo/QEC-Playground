@@ -333,7 +333,7 @@ impl BenchmarkParameters {
             }
             // prepare simulator
             let mut simulator = Simulator::new(self.code_type, CodeSize::new(noisy_measurements, di, dj));
-            let mut noise_model_graph = NoiseModel::new(&simulator);
+            let mut noise_model_graph: NoiseModel = NoiseModel::new(&simulator);
             // first use p_graph and pe_graph to build decoder graph, then revert back to real noise model
             let px_graph = p_graph / (1. + self.bias_eta) / 2.;
             let py_graph = px_graph;
