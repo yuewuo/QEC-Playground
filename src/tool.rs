@@ -36,8 +36,6 @@ use super::model_hypergraph::*;
 use super::decoder_hyper_union_find::*;
 use crate::cli::*;
 use crate::simulator_compact::*;
-#[cfg(feature="fusion_blossom")]
-use crate::util_fusion::*;
 
 
 impl ToolCommands {
@@ -214,7 +212,6 @@ impl BenchmarkParameters {
 
     pub fn run(&self) -> Result<String, String> {
         let configs = self.fill_in_default_parameters()?;
-        let configurations = self.extract_simulation_configurations(&configs);
         // create runtime statistics file object if given file path
         let log_runtime_statistics_file = self.log_runtime_statistics.clone().map(|filename| 
             Arc::new(Mutex::new(File::create(filename.as_str()).expect("cannot create file"))));
@@ -238,9 +235,10 @@ impl BenchmarkParameters {
             eprintln!("{}", output);  // compatible with old scripts
         }
         if self.enable_visualizer {
-            assert_eq!(configurations.len(), 1, "visualizer can only record a single configuration");
+            self.assert_single_configuration(&configs)?;
         }
         // start running simulations
+        let configurations = self.extract_simulation_configurations(&configs);
         for config in configurations.iter() {
             // append runtime statistics data
             match &log_runtime_statistics_file {
@@ -311,6 +309,13 @@ impl BenchmarkParameters {
             None => None,
         };
         Ok(SimulationConfigs::new(dis, djs, nms, ps, pes, ps_graph, pes_graph, max_repeats, min_failed_cases, parallel, parallel_init, noise_model_modifier))
+    }
+
+    pub fn assert_single_configuration(&self, configs: &SimulationConfigs) -> Result<(), String> {
+        if configs.dis.len() != 1 || configs.ps.len() != 1 {
+            return Err("only single configuration is allowed".to_string());
+        }
+        Ok(())
     }
 
     pub fn extract_simulation_configurations(&self, configs: &SimulationConfigs) -> Vec<SingleSimulationConfig> {
@@ -458,16 +463,20 @@ impl BenchmarkParameters {
         if let Some(terminate_message) = self.execute_debug_print(configs, &mut simulator, &noise_model_graph)? {
             return Ok(terminate_message);  // debug print terminates
         }
+        // build decoder instances
+        let general_decoder = GeneralDecoder::from_parameters(self, configs, config, &simulator, &noise_model_graph)?;
         // prepare fusion blossom exporter
         cfg_if::cfg_if! { if #[cfg(feature="fusion_blossom")] {
             let mut fusion_blossom_syndrome_exporter = None;
             if matches!(self.debug_print, Some(BenchmarkDebugPrint::FusionBlossomSyndromeFile)) {
-                fusion_blossom_syndrome_exporter = Some(FusionBlossomSyndromeExporter::new(&self.fusion_blossom_syndrome_export_config, &mut simulator, noise_model_graph.clone(), configs.parallel_init, self.use_brief_edge));
+                if let GeneralDecoder::Fusion(fusion_decoder) = &general_decoder {
+                    fusion_blossom_syndrome_exporter = Some(FusionBlossomSyndromeExporter::new(&fusion_decoder, self.fusion_blossom_syndrome_export_filename.clone()));
+                } else {
+                    return Err("need `fusion` decoder to export".to_string())
+                }
             }
             let fusion_blossom_syndrome_exporter = Arc::new(fusion_blossom_syndrome_exporter);
         } }
-        // build decoder instances
-        let general_decoder = GeneralDecoder::from_parameters(self, configs, &simulator, &noise_model_graph)?;
         // then prepare the real noise model
         let noise_model = self.construct_noise_model(&mut simulator, configs, config, false)?;
         // prepare visualizer
@@ -482,7 +491,26 @@ impl BenchmarkParameters {
         let mut threads_debugger: Vec<Arc<Mutex<BenchmarkThreadDebugger>>> = Vec::new();
         let mut threads_ended = Vec::new();  // keep updating progress bar until all threads ends
         let general_simulator: GeneralSimulator = if self.use_compact_simulator {
-            GeneralSimulator::SimulatorCompact(SimulatorCompact::from_simulator(simulator, noise_model.clone(), configs.parallel_init))
+            let first = SimulatorCompact::from_simulator(simulator, noise_model.clone(), configs.parallel_init);
+            if let Some(simulator_compact_extender_noisy_measurements) = self.simulator_compact_extender_noisy_measurements {
+                self.assert_single_configuration(&configs)?;
+                if simulator_compact_extender_noisy_measurements < config.noisy_measurements {
+                    return Err(format!("extender only works for larger noisy_measurement than nms[0], now {simulator_compact_extender_noisy_measurements} < {}", config.noisy_measurements));
+                } else {
+                    let mut second_simulator = Simulator::new(self.code_type, CodeSize::new(config.noisy_measurements + 1, config.di, config.dj));
+                    let second_noise_model = self.construct_noise_model(&mut second_simulator, configs, config, false)?;
+                    let second = SimulatorCompact::from_simulator(second_simulator, second_noise_model, configs.parallel_init);
+                    let extender = SimulatorCompactExtender::new(first, second, config.noisy_measurements);
+                    if self.use_compact_simulator_compressed {
+                        GeneralSimulator::SimulatorCompactCompressed(SimulatorCompactCompressed::new(extender, simulator_compact_extender_noisy_measurements))
+                    } else {
+                        let generated = extender.generate(simulator_compact_extender_noisy_measurements);
+                        GeneralSimulator::SimulatorCompact(generated)
+                    }
+                }
+            } else {
+                GeneralSimulator::SimulatorCompact(first)
+            }
         } else {
             GeneralSimulator::Simulator(simulator)
         };
@@ -628,12 +656,12 @@ pub enum GeneralDecoder {
 }
 
 impl GeneralDecoder {
-    pub fn from_parameters(parameters: &BenchmarkParameters, configs: &SimulationConfigs, simulator: &Simulator, noise_model_graph: &Arc<NoiseModel>) -> Result<Self, String> {
+    pub fn from_parameters(parameters: &BenchmarkParameters, configs: &SimulationConfigs, config: &SingleSimulationConfig, simulator: &Simulator, noise_model_graph: &Arc<NoiseModel>) -> Result<Self, String> {
         Ok(match parameters.decoder {
             BenchmarkDecoder::None => {
-                if parameters.decoder_config.is_object() && parameters.decoder_config.as_object().ok_or("decoder config is not json object")?.len() != 0 {
-                    return Err("`None` decoder doesn't support decoder configuration".to_string());
-                }
+                // if parameters.decoder_config.is_object() && parameters.decoder_config.as_object().ok_or("decoder config is not json object")?.len() != 0 {
+                //     return Err("`None` decoder doesn't support decoder configuration".to_string());
+                // }
                 GeneralDecoder::None
             },
             BenchmarkDecoder::MWPM => {
@@ -641,7 +669,32 @@ impl GeneralDecoder {
             },
             #[cfg(feature="fusion_blossom")]
             BenchmarkDecoder::Fusion => {
-                GeneralDecoder::Fusion(FusionDecoder::new(&simulator, noise_model_graph.clone(), &parameters.decoder_config, configs.parallel_init, parameters.use_brief_edge))
+                let first = FusionDecoder::new(&simulator, noise_model_graph.clone(), &parameters.decoder_config, configs.parallel_init, parameters.use_brief_edge);
+                if let Some(simulator_compact_extender_noisy_measurements) = parameters.simulator_compact_extender_noisy_measurements {
+                    parameters.assert_single_configuration(&configs)?;
+                    if simulator_compact_extender_noisy_measurements < config.noisy_measurements {
+                        return Err(format!("extender only works for larger noisy_measurement than nms[0], now {simulator_compact_extender_noisy_measurements} < {}", config.noisy_measurements));
+                    } else {
+                        // use extender to build decoder
+                        let mut second_simulator = Simulator::new(parameters.code_type, CodeSize::new(config.noisy_measurements + 1, config.di, config.dj));
+                        let mut second_config = config.clone();
+                        second_config.noisy_measurements += 1;
+                        let second_noise_model_graph = parameters.construct_noise_model(&mut second_simulator, configs, &second_config, true)?;
+                        let second = FusionDecoder::new(&second_simulator, second_noise_model_graph.clone(), &parameters.decoder_config, configs.parallel_init, parameters.use_brief_edge);
+                        let skip_decoding = first.config.skip_decoding;
+                        let extender = FusionBlossomAdaptorExtender::new(Arc::try_unwrap(first.adaptor).unwrap()
+                            , Arc::try_unwrap(second.adaptor).unwrap(), config.noisy_measurements);
+                        let generated = extender.generate(simulator_compact_extender_noisy_measurements, skip_decoding);
+                        let fusion_solver = if first.config.skip_decoding {
+                            fusion_blossom::mwpm_solver::SolverSerial::new(&extender.base.initializer)  // no need to generate a large solver
+                        } else {
+                            fusion_blossom::mwpm_solver::SolverSerial::new(&generated.initializer)
+                        };
+                        GeneralDecoder::Fusion(FusionDecoder { adaptor: Arc::new(generated), fusion_solver, config: first.config })
+                    }
+                } else {
+                    GeneralDecoder::Fusion(first)
+                }
             },
             #[cfg(not(feature="fusion_blossom"))]
             BenchmarkDecoder::Fusion => {
@@ -663,6 +716,7 @@ impl GeneralDecoder {
             },
         })
     }
+
     pub fn decode_with_erasure(&mut self, sparse_measurement: &SparseMeasurement, sparse_detected_erasures: &SparseErasures) -> (SparseCorrection, serde_json::Value) {
         match self {
             Self::None => {
@@ -688,6 +742,7 @@ impl GeneralDecoder {
             }
         }
     }
+
 }
 
 pub struct SimulationWorker {

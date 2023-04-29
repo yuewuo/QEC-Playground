@@ -226,11 +226,20 @@ pub struct BenchmarkParameters {
     #[clap(long, action)]
     pub visualizer_model_hypergraph: bool,
     /// fusion blossom syndrome export configuration
-    #[clap(long, default_value_t = json!({}), value_parser = ValueParser::new(SerdeJsonParser))]
-    pub fusion_blossom_syndrome_export_config: serde_json::Value,
+    #[clap(long, default_value_t = ("./tmp/fusion.syndromes").to_string())]
+    pub fusion_blossom_syndrome_export_filename: String,
+    /// when provided, it will override the default nms[0] value and generate a compact simulator using `SimulatorCompactExtender`;
+    /// note that not all decoders can adapt to this, because they still use the original simulator to construct their decoding structure.
+    /// the only supported decoder is `fusion`.
+    #[clap(long, requires = "use_compact_simulator")]
+    pub simulator_compact_extender_noisy_measurements: Option<usize>,
     /// use compact simulator to generate syndromes instead
     #[clap(long, action)]
     pub use_compact_simulator: bool,
+    /// use compressed compact simulator, further reducing the memory requirement;
+    /// note that this optimizes memory but sacrifices speed, since all the error sources are generated dynamically on the fly
+    #[clap(long, requires = "use_compact_simulator")]
+    pub use_compact_simulator_compressed: bool,
 }
 
 #[derive(Parser, Clone)]

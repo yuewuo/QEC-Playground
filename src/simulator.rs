@@ -23,6 +23,7 @@ use crate::simulator_compact::*;
 #[enum_dispatch]
 #[derive(Clone)]
 pub enum GeneralSimulator {
+    SimulatorCompactCompressed,
     SimulatorCompact,
     Simulator,
 }
@@ -1398,6 +1399,10 @@ impl SparseErrorPattern {
     pub fn iter<'a>(&'a self) -> std::collections::btree_map::Iter<'a, Position, ErrorType> {
         self.errors.iter()
     }
+    /// iterator
+    pub fn iter_mut<'a>(&'a mut self) -> std::collections::btree_map::IterMut<'a, Position, ErrorType> {
+        self.errors.iter_mut()
+    }
     /// length
     pub fn len(&self) -> usize {
         self.errors.len()
@@ -1476,6 +1481,10 @@ impl SparseCorrection {
     /// iterator
     pub fn iter<'a>(&'a self) -> std::collections::btree_map::Iter<'a, Position, ErrorType> {
         self.0.iter()
+    }
+    /// iterator
+    pub fn iter_mut<'a>(&'a mut self) -> std::collections::btree_map::IterMut<'a, Position, ErrorType> {
+        self.0.iter_mut()
     }
     /// length
     pub fn len(&self) -> usize {

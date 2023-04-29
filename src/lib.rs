@@ -71,8 +71,6 @@ pub mod decoder_hyper_union_find;
 #[cfg(feature="python_binding")]
 use pyo3::prelude::*;
 pub mod simulator_compact;
-#[cfg(feature="fusion_blossom")]
-pub mod util_fusion;
 
 
 #[cfg(feature="python_binding")]
