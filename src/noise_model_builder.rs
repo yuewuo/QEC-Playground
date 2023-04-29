@@ -2,7 +2,7 @@
 //! 
 
 use super::simulator::*;
-use serde::Serialize;
+use crate::serde::{Serialize, Deserialize};
 use super::types::*;
 use super::util_macros::*;
 use super::noise_model::*;
@@ -13,7 +13,7 @@ use std::collections::BTreeSet;
 
 
 /// commonly used noise models
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Deserialize, Debug)]
 pub enum NoiseModelBuilder {
     /// add data qubit errors and measurement errors individually
     Phenomenological,
