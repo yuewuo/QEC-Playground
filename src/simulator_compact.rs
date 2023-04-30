@@ -67,6 +67,15 @@ impl ErrorSource {
             },
         }
     }
+    pub fn get_correction_t(&self) -> usize {
+        match self {
+            Self::Pauli { correction, .. } => {
+                let t = correction[0].0.t;
+                debug_assert!(correction.iter().all(|(position, _)| position.t == t), "an correction cannot happen at multiple time point...");
+                t
+            },
+        }
+    }
     pub fn shift_error_t(&mut self, delta_t: usize) {
         match self {
             Self::Pauli { defects, errors, .. } => {
@@ -354,14 +363,16 @@ impl SimulatorGenerics for SimulatorCompactCompressed {
         let mut base_errors = self.extender.base.errors.clone();
         let mut base_corrections: BTreeMap<Position, ErrorType> = self.extender.base.corrections.clone();
         let mut base_defects = self.extender.base.defects.clone();
-        for error_source in self.extender.iter(self.noisy_measurements) {
+        for (error_source, delta_t) in self.extender.iter(self.noisy_measurements) {
             match &error_source {
                 ErrorSource::Pauli { p, errors, defects, correction } => {
                     let random_value = rng.next_f64();
                     if random_value < *p {
                         // apply error
                         for (position, error) in errors.iter() {
-                            if let Some(existing_error) = base_errors.get_mut(position) {
+                            let mut position = position.clone();
+                            position.t += delta_t;
+                            if let Some(existing_error) = base_errors.get_mut(&position) {
                                 if *existing_error != I { error_count -= 1; }
                                 *existing_error = existing_error.multiply(error);
                                 if *existing_error != I { error_count += 1; }
@@ -380,10 +391,12 @@ impl SimulatorGenerics for SimulatorCompactCompressed {
                         }
                         // apply defect measurements
                         for position in defects.iter() {
-                            if base_defects.contains(position) {
-                                base_defects.remove(position);
+                            let mut position = position.clone();
+                            position.t += delta_t;
+                            if base_defects.contains(&position) {
+                                base_defects.remove(&position);
                             } else {
-                                base_defects.insert(position.clone());
+                                base_defects.insert(position);
                             }
                         }
                     }
@@ -433,7 +446,9 @@ pub struct SimulatorCompactExtenderIter<'a> {
 }
 
 impl<'a> Iterator for SimulatorCompactExtenderIter<'a> {
-    type Item = ErrorSource;
+    // to avoid memory allocation & deallocation if just iterating them.
+    // profiling shows malloc and free takes 90% of the simulation time
+    type Item = (&'a ErrorSource, usize);
     fn next(&mut self) -> Option<Self::Item> {
         let error_source_index = self.error_source_index;
         self.error_source_index += 1;
@@ -441,7 +456,7 @@ impl<'a> Iterator for SimulatorCompactExtenderIter<'a> {
         let base = &extender.base;
         if self.noisy_measurements == extender.noisy_measurements {
             if error_source_index < base.error_sources.len() {
-                return Some(base.error_sources[error_source_index].clone());
+                return Some((&base.error_sources[error_source_index], 0));
             } else {
                 return None;
             }
@@ -449,25 +464,17 @@ impl<'a> Iterator for SimulatorCompactExtenderIter<'a> {
         let (repeat_start, repeat_end) = extender.repeat_region;
         let repeat: usize = self.noisy_measurements - extender.noisy_measurements;
         if error_source_index < repeat_end {
-            let mut error_source = base.error_sources[error_source_index].clone();
-            error_source.shift_correction_t(repeat * extender.measurement_cycle);
-            return Some(error_source);
+            return Some((&base.error_sources[error_source_index], 0));
         }
         if error_source_index >= repeat_end && error_source_index < repeat_end + repeat * (repeat_end - repeat_start) {
             let i = (error_source_index - repeat_start) / (repeat_end - repeat_start);
             debug_assert!(i >= 1 && i <= repeat);
             let index: usize = (error_source_index - repeat_start) % (repeat_end - repeat_start) + repeat_start;
-            let mut error_source = base.error_sources[index].clone();
-            error_source.shift_error_t(i * extender.measurement_cycle);
-            error_source.shift_correction_t(repeat * extender.measurement_cycle);
-            return Some(error_source);
+            return Some((&base.error_sources[index], i * extender.measurement_cycle));
         }
         if error_source_index < base.error_sources.len() + repeat * (repeat_end - repeat_start) {
             let index = error_source_index - repeat * (repeat_end - repeat_start);
-            let mut error_source = base.error_sources[index].clone();
-            error_source.shift_error_t(repeat * extender.measurement_cycle);
-            error_source.shift_correction_t(repeat * extender.measurement_cycle);
-            return Some(error_source);
+            return Some((&base.error_sources[index], repeat * extender.measurement_cycle));
         }
         None
     }
@@ -530,7 +537,12 @@ impl SimulatorCompactExtender {
 
     pub fn generate(&self, noisy_measurements: usize) -> SimulatorCompact {
         let mut simulator_compact = self.base.clone();
-        simulator_compact.error_sources = self.iter(noisy_measurements).collect();
+        simulator_compact.error_sources = self.iter(noisy_measurements).map(|(error_source, delta_t)| {
+            let mut error_source = error_source.clone();
+            error_source.shift_error_t(delta_t);
+            error_source.shift_correction_t((noisy_measurements - self.noisy_measurements) * self.measurement_cycle);
+            error_source
+        }).collect();
         simulator_compact
     }
 

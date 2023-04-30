@@ -90,7 +90,8 @@ This project is under development for 1.5 years as an internal tool to learn, im
 - upgrade the dependencies, especially `clap`, for better code readability
 - add new `CompactSimulator` for faster simulation and also for exporting to external tools for simulation
 
-## 0.2.1 (2023.4.29)
+## 0.2.1/0.2.2 (2023.4.29)
 
 - add new `CompactSimulatorExtender` for extending a small `T` to arbitrarily large `T` efficiently.
 - add new `InitializerExtender` for extending a small `T` to arbitrarily large `T` efficiently.
+- add new `CompactSimulatorCompressed` capable of running `T = 100000` and `d = 21` with only ~5GB memory on 10 threads.
