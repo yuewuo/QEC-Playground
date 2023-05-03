@@ -230,9 +230,10 @@ impl BenchmarkParameters {
         }
         // first list all configurations and validate them at the beginning
         let mut output = format!("");
-        if self.debug_print.is_none() {  // debug print only will not run simulations
-            output = format!("format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>");
-            eprintln!("{}", output);  // compatible with old scripts
+        let titles = format!("format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>");
+        eprintln!("{}", titles);  // compatible with old scripts
+        if self.debug_print.is_none() {  // debug print only, outputs user specified debug info
+            output = titles + "\n";
         }
         if self.enable_visualizer {
             self.assert_single_configuration(&configs)?;
@@ -250,7 +251,7 @@ impl BenchmarkParameters {
                     log_runtime_statistics_file.sync_data().unwrap();
                 }, _ => { },
             }
-            output += &self.run_single(&configs, &config, &log_runtime_statistics_file)?;
+            output += &(self.run_single(&configs, &config, &log_runtime_statistics_file)? + "\n");
         }
         Ok(output)
     }

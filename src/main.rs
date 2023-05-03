@@ -15,7 +15,7 @@ async fn main() -> std::io::Result<()> {
         }
         Commands::Tool { command } => {
             let output = command.run().unwrap();
-            println!("{}", output);
+            print!("{}", output);  // outputs normally comes with \n
         }
         Commands::Server(server_parameters) => {
             let port = server_parameters.port;
