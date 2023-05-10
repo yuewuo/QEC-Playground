@@ -22,7 +22,7 @@ extern crate either;
 extern crate shlex;
 extern crate cfg_if;
 #[cfg(feature="python_binding")]
-extern crate pyo3;
+#[macro_use] extern crate pyo3;
 extern crate platform_dirs;
 extern crate serde_hashkey;
 extern crate float_cmp;

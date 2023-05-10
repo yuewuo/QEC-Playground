@@ -38,6 +38,28 @@ pub trait SimulatorGenerics: Clone {
     fn validate_correction(&mut self, correction: &SparseCorrection) -> (bool, bool);
 }
 
+#[cfg(feature="python_binding")]
+#[macro_export]
+macro_rules! bind_trait_simulator_generics {
+    ($struct_name:ident) => {
+        #[pymethods]
+        impl $struct_name {
+            fn __repr__(&self) -> String { format!("{:?}", self) }
+            #[pyo3(name = "generate_random_errors")]
+            fn trait_generate_random_errors(&mut self, noise_model: &NoiseModel) -> (usize, usize) { self.generate_random_errors(noise_model) }
+            #[pyo3(name = "generate_sparse_detected_erasures")]
+            fn trait_generate_sparse_detected_erasures(&mut self) -> SparseErasures { self.generate_sparse_detected_erasures() }
+            #[pyo3(name = "generate_sparse_error_pattern")]
+            fn trait_generate_sparse_error_pattern(&mut self) -> SparseErrorPattern { self.generate_sparse_error_pattern() }
+            #[pyo3(name = "generate_sparse_measurement")]
+            fn trait_generate_sparse_measurement(&mut self) -> SparseMeasurement { self.generate_sparse_measurement() }
+            #[pyo3(name = "validate_correction")]
+            fn trait_validate_correction(&mut self, correction: &SparseCorrection) -> (bool, bool) { self.validate_correction(correction) }
+        }
+    };
+}
+#[allow(unused_imports)] pub use bind_trait_simulator_generics;
+
 /// general simulator for two-dimensional code with circuit-level implementation of stabilizer measurements
 #[derive(Debug, Serialize)]
 #[cfg_attr(feature = "python_binding", cfg_eval)]
@@ -288,25 +310,8 @@ impl GateType {
     }
 }
 
-#[cfg_attr(feature = "python_binding", cfg_eval)]
-#[cfg_attr(feature = "python_binding", pymethods)]
-impl SimulatorGenerics for Simulator {
-    fn generate_random_errors(&mut self, noise_model: &NoiseModel) -> (usize, usize) {
-        self.generate_random_errors(noise_model)
-    }
-    fn generate_sparse_detected_erasures(&self) -> SparseErasures {
-        self.generate_sparse_detected_erasures()
-    }
-    fn generate_sparse_error_pattern(&self) -> SparseErrorPattern {
-        self.generate_sparse_error_pattern()
-    }
-    fn generate_sparse_measurement(&self) -> SparseMeasurement {
-        self.generate_sparse_measurement()
-    }
-    fn validate_correction(&mut self, correction: &SparseCorrection) -> (bool, bool) {
-        self.validate_correction(correction)
-    }
-}
+#[cfg(feature="python_binding")]
+bind_trait_simulator_generics!{Simulator}
 
 impl Clone for Simulator {
     fn clone(&self) -> Self {
@@ -457,131 +462,6 @@ impl Simulator {
         });
     }
 
-    /// generate random errors according to the given error rates
-    #[inline(never)]
-    pub fn generate_random_errors(&mut self, noise_model: &NoiseModel) -> (usize, usize) {
-        // this size is small compared to the simulator itself
-        let allocate_size = self.height * self.vertical * self.horizontal;
-        let mut pending_pauli_errors = Vec::<(Position, ErrorType)>::with_capacity(allocate_size);
-        let mut pending_erasure_errors = Vec::<Position>::with_capacity(allocate_size);
-        // let mut pending_pauli_errors = Vec::<(Position, ErrorType)>::new();
-        // let mut pending_erasure_errors = Vec::<Position>::new();
-        let mut rng = self.rng.clone();  // avoid mutable borrow
-        let mut error_count = 0;
-        let mut erasure_count = 0;
-        // first apply single-qubit and two-qubit correlated errors
-        simulator_iter_mut!(self, position, node, {
-            let noise_model_node = noise_model.get_node_unwrap(position);
-            let random_pauli = rng.next_f64();
-            if random_pauli < noise_model_node.pauli_error_rates.error_rate_X {
-                node.set_error_temp(&X);
-                // println!("X error at {} {} {}",node.i, node.j, node.t);
-            } else if random_pauli < noise_model_node.pauli_error_rates.error_rate_X + noise_model_node.pauli_error_rates.error_rate_Z {
-                node.set_error_temp(&Z);
-                // println!("Z error at {} {} {}",node.i, node.j, node.t);
-            } else if random_pauli < noise_model_node.pauli_error_rates.error_probability() {
-                node.set_error_temp(&Y);
-                // println!("Y error at {} {} {}",node.i, node.j, node.t);
-            } else {
-                node.set_error_temp(&I);
-            }
-            if node.error != I {
-                error_count += 1;
-            }
-            let random_erasure = rng.next_f64();
-            node.has_erasure = false;
-            node.propagated = I;  // clear propagated errors
-            if random_erasure < noise_model_node.erasure_error_rate {
-                pending_erasure_errors.push(position.clone());
-            }
-            match &noise_model_node.correlated_pauli_error_rates {
-                Some(correlated_pauli_error_rates) => {
-                    let random_pauli = rng.next_f64();
-                    let correlated_pauli_error_type = correlated_pauli_error_rates.generate_random_error(random_pauli);
-                    let my_error = correlated_pauli_error_type.my_error();
-                    if my_error != I {
-                        pending_pauli_errors.push((position.clone(), my_error));
-                    }
-                    let peer_error = correlated_pauli_error_type.peer_error();
-                    if peer_error != I {
-                        let gate_peer = node.gate_peer.as_ref().expect("correlated pauli error must corresponds to a two-qubit gate");
-                        pending_pauli_errors.push(((**gate_peer).clone(), peer_error));
-                    }
-                },
-                None => { },
-            }
-            match &noise_model_node.correlated_erasure_error_rates {
-                Some(correlated_erasure_error_rates) => {
-                    let random_erasure = rng.next_f64();
-                    let correlated_erasure_error_type = correlated_erasure_error_rates.generate_random_erasure_error(random_erasure);
-                    let my_error = correlated_erasure_error_type.my_error();
-                    if my_error {
-                        pending_erasure_errors.push(position.clone());
-                    }
-                    let peer_error = correlated_erasure_error_type.peer_error();
-                    if peer_error {
-                        let gate_peer = node.gate_peer.as_ref().expect("correlated erasure error must corresponds to a two-qubit gate");
-                        pending_erasure_errors.push((**gate_peer).clone());
-                    }
-                },
-                None => { },
-            }
-        });
-        // then apply additional noises
-        for additional_noise in noise_model.additional_noise.iter() {
-            let random_num = rng.next_f64();
-            if random_num < additional_noise.probability {
-                for position in additional_noise.erasures.iter() {
-                    pending_erasure_errors.push(position.clone());
-                }
-                for (position, error) in additional_noise.pauli_errors.iter() {
-                    pending_pauli_errors.push((position.clone(), *error));
-                }
-            }
-        }
-        // apply pending pauli errors
-        for (position, peer_error) in pending_pauli_errors.iter() {
-            let node = self.get_node_mut_unwrap(&position);
-            if node.error != I {
-                error_count -= 1;
-            }
-            node.set_error_temp(&node.error.multiply(&peer_error));
-            if node.error != I {
-                error_count += 1;
-            }
-        }
-        // apply pending erasure errors, amd generate random pauli error because of those erasures
-        for position in pending_erasure_errors.iter() {
-            let mut node = self.get_node_mut_unwrap(&position);
-            if !node.has_erasure {  // only counts new erasures; there might be duplicated pending erasure
-                erasure_count += 1;
-            }
-            node.has_erasure = true;
-            if node.error != I {
-                error_count -= 1;
-            }
-            let random_erasure = rng.next_f64();
-            node.set_error_temp(&(if random_erasure < 0.25 { X }
-                else if random_erasure < 0.5 { Z }
-                else if random_erasure < 0.75 { Y }
-                else { I }
-            ));
-            if node.error != I {
-                error_count += 1;
-            };
-        }
-        debug_assert!({  // the above code avoids iterating the code multiple times when error rate is low (~1%), check correctness in debug mode
-            let sparse_error_pattern = self.generate_sparse_error_pattern();
-            sparse_error_pattern.len() == error_count
-        });
-        debug_assert!({
-            let sparse_detected_erasures = self.generate_sparse_detected_erasures();
-            sparse_detected_erasures.len() == erasure_count
-        });
-        self.rng = rng;  // save the random number generator
-        self.propagate_errors();
-        (error_count, erasure_count)
-    }
 
     /// clear all pauli and erasure errors and also propagated errors, returning to a clean state
     pub fn clear_all_errors(&mut self) {
@@ -658,36 +538,6 @@ impl Simulator {
         None
     }
 
-    /// use sparse measurement to efficiently iterate over defect measurements
-    #[inline(never)]
-    pub fn generate_sparse_measurement(&self) -> SparseMeasurement {
-        let mut sparse_measurement = SparseMeasurement::new();
-        for t in (self.measurement_cycles..self.height).step_by(self.measurement_cycles) {
-            // only iterate over real stabilizers, excluding those non-existing virtual stabilizers
-            simulator_iter_real!(self, position, node, t => t, {
-                if node.gate_type.is_measurement() {
-                    let this_result = node.gate_type.stabilizer_measurement(&node.propagated);
-                    let mut previous_position = position.clone();
-                    loop {  // usually this loop execute only once because the previous measurement is found immediately
-                        debug_assert!(previous_position.t >= self.measurement_cycles, "cannot find the previous measurement cycle");
-                        previous_position.t -= self.measurement_cycles;
-                        let previous_node = self.get_node_unwrap(&previous_position);
-                        if previous_node.gate_type.is_measurement() {  // found previous measurement
-                            let previous_result = previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
-                            if this_result != previous_result {
-                                sparse_measurement.insert_defect_measurement(position);
-                            }
-                            break
-                        }
-                        // println!("[warning] no measurement found in previous round, continue searching...")
-                        // Yue 2022.7.11 removed warning, because some code may just remove measurement in the middle
-                    }
-                }
-            });
-        }
-        sparse_measurement
-    }
-
     /// including virtual measurements in the result as an extension to [`Simulator::generate_sparse_measurement`]
     #[inline(never)]
     pub fn generate_sparse_measurement_virtual(&self) -> SparseMeasurement {
@@ -716,18 +566,6 @@ impl Simulator {
             });
         }
         sparse_measurement_virtual
-    }
-
-    /// generate detected erasures
-    #[inline(never)]
-    pub fn generate_sparse_detected_erasures(&self) -> SparseErasures {
-        let mut sparse_detected_erasures = SparseErasures::new();
-        simulator_iter_real!(self, position, node, {
-            if node.has_erasure {
-                sparse_detected_erasures.erasures.insert(position.clone());
-            }
-        });
-        sparse_detected_erasures
     }
 
     #[inline(never)]
@@ -888,17 +726,6 @@ impl Simulator {
         (sparse_correction, sparse_measurement_real, sparse_measurement_virtual)
     }
 
-    /// generate error pattern
-    pub fn generate_sparse_error_pattern(&self) -> SparseErrorPattern {
-        let mut sparse_error_pattern = SparseErrorPattern::new();
-        simulator_iter!(self, position, node, {
-            if node.error != I {
-                sparse_error_pattern.add(position.clone(), node.error);
-            }
-        });
-        sparse_error_pattern
-    }
-
     /// generate correction pattern using errors only at the top layer
     pub fn generate_sparse_correction(&self) -> SparseCorrection {
         let mut sparse_correction = SparseCorrection::new();
@@ -910,9 +737,190 @@ impl Simulator {
         sparse_correction
     }
 
+}
+
+impl SimulatorGenerics for Simulator {
+
+    fn generate_random_errors(&mut self, noise_model: &NoiseModel) -> (usize, usize) {
+        // this size is small compared to the simulator itself
+        let allocate_size = self.height * self.vertical * self.horizontal;
+        let mut pending_pauli_errors = Vec::<(Position, ErrorType)>::with_capacity(allocate_size);
+        let mut pending_erasure_errors = Vec::<Position>::with_capacity(allocate_size);
+        // let mut pending_pauli_errors = Vec::<(Position, ErrorType)>::new();
+        // let mut pending_erasure_errors = Vec::<Position>::new();
+        let mut rng = self.rng.clone();  // avoid mutable borrow
+        let mut error_count = 0;
+        let mut erasure_count = 0;
+        // first apply single-qubit and two-qubit correlated errors
+        simulator_iter_mut!(self, position, node, {
+            let noise_model_node = noise_model.get_node_unwrap(position);
+            let random_pauli = rng.next_f64();
+            if random_pauli < noise_model_node.pauli_error_rates.error_rate_X {
+                node.set_error_temp(&X);
+                // println!("X error at {} {} {}",node.i, node.j, node.t);
+            } else if random_pauli < noise_model_node.pauli_error_rates.error_rate_X + noise_model_node.pauli_error_rates.error_rate_Z {
+                node.set_error_temp(&Z);
+                // println!("Z error at {} {} {}",node.i, node.j, node.t);
+            } else if random_pauli < noise_model_node.pauli_error_rates.error_probability() {
+                node.set_error_temp(&Y);
+                // println!("Y error at {} {} {}",node.i, node.j, node.t);
+            } else {
+                node.set_error_temp(&I);
+            }
+            if node.error != I {
+                error_count += 1;
+            }
+            let random_erasure = rng.next_f64();
+            node.has_erasure = false;
+            node.propagated = I;  // clear propagated errors
+            if random_erasure < noise_model_node.erasure_error_rate {
+                pending_erasure_errors.push(position.clone());
+            }
+            match &noise_model_node.correlated_pauli_error_rates {
+                Some(correlated_pauli_error_rates) => {
+                    let random_pauli = rng.next_f64();
+                    let correlated_pauli_error_type = correlated_pauli_error_rates.generate_random_error(random_pauli);
+                    let my_error = correlated_pauli_error_type.my_error();
+                    if my_error != I {
+                        pending_pauli_errors.push((position.clone(), my_error));
+                    }
+                    let peer_error = correlated_pauli_error_type.peer_error();
+                    if peer_error != I {
+                        let gate_peer = node.gate_peer.as_ref().expect("correlated pauli error must corresponds to a two-qubit gate");
+                        pending_pauli_errors.push(((**gate_peer).clone(), peer_error));
+                    }
+                },
+                None => { },
+            }
+            match &noise_model_node.correlated_erasure_error_rates {
+                Some(correlated_erasure_error_rates) => {
+                    let random_erasure = rng.next_f64();
+                    let correlated_erasure_error_type = correlated_erasure_error_rates.generate_random_erasure_error(random_erasure);
+                    let my_error = correlated_erasure_error_type.my_error();
+                    if my_error {
+                        pending_erasure_errors.push(position.clone());
+                    }
+                    let peer_error = correlated_erasure_error_type.peer_error();
+                    if peer_error {
+                        let gate_peer = node.gate_peer.as_ref().expect("correlated erasure error must corresponds to a two-qubit gate");
+                        pending_erasure_errors.push((**gate_peer).clone());
+                    }
+                },
+                None => { },
+            }
+        });
+        // then apply additional noises
+        for additional_noise in noise_model.additional_noise.iter() {
+            let random_num = rng.next_f64();
+            if random_num < additional_noise.probability {
+                for position in additional_noise.erasures.iter() {
+                    pending_erasure_errors.push(position.clone());
+                }
+                for (position, error) in additional_noise.pauli_errors.iter() {
+                    pending_pauli_errors.push((position.clone(), *error));
+                }
+            }
+        }
+        // apply pending pauli errors
+        for (position, peer_error) in pending_pauli_errors.iter() {
+            let node = self.get_node_mut_unwrap(&position);
+            if node.error != I {
+                error_count -= 1;
+            }
+            node.set_error_temp(&node.error.multiply(&peer_error));
+            if node.error != I {
+                error_count += 1;
+            }
+        }
+        // apply pending erasure errors, amd generate random pauli error because of those erasures
+        for position in pending_erasure_errors.iter() {
+            let mut node = self.get_node_mut_unwrap(&position);
+            if !node.has_erasure {  // only counts new erasures; there might be duplicated pending erasure
+                erasure_count += 1;
+            }
+            node.has_erasure = true;
+            if node.error != I {
+                error_count -= 1;
+            }
+            let random_erasure = rng.next_f64();
+            node.set_error_temp(&(if random_erasure < 0.25 { X }
+                else if random_erasure < 0.5 { Z }
+                else if random_erasure < 0.75 { Y }
+                else { I }
+            ));
+            if node.error != I {
+                error_count += 1;
+            };
+        }
+        debug_assert!({  // the above code avoids iterating the code multiple times when error rate is low (~1%), check correctness in debug mode
+            let sparse_error_pattern = self.generate_sparse_error_pattern();
+            sparse_error_pattern.len() == error_count
+        });
+        debug_assert!({
+            let sparse_detected_erasures = self.generate_sparse_detected_erasures();
+            sparse_detected_erasures.len() == erasure_count
+        });
+        self.rng = rng;  // save the random number generator
+        self.propagate_errors();
+        (error_count, erasure_count)
+    }
+
+    /// use sparse measurement to efficiently iterate over defect measurements
+    #[inline(never)]
+    fn generate_sparse_measurement(&self) -> SparseMeasurement {
+        let mut sparse_measurement = SparseMeasurement::new();
+        for t in (self.measurement_cycles..self.height).step_by(self.measurement_cycles) {
+            // only iterate over real stabilizers, excluding those non-existing virtual stabilizers
+            simulator_iter_real!(self, position, node, t => t, {
+                if node.gate_type.is_measurement() {
+                    let this_result = node.gate_type.stabilizer_measurement(&node.propagated);
+                    let mut previous_position = position.clone();
+                    loop {  // usually this loop execute only once because the previous measurement is found immediately
+                        debug_assert!(previous_position.t >= self.measurement_cycles, "cannot find the previous measurement cycle");
+                        previous_position.t -= self.measurement_cycles;
+                        let previous_node = self.get_node_unwrap(&previous_position);
+                        if previous_node.gate_type.is_measurement() {  // found previous measurement
+                            let previous_result = previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
+                            if this_result != previous_result {
+                                sparse_measurement.insert_defect_measurement(position);
+                            }
+                            break
+                        }
+                        // println!("[warning] no measurement found in previous round, continue searching...")
+                        // Yue 2022.7.11 removed warning, because some code may just remove measurement in the middle
+                    }
+                }
+            });
+        }
+        sparse_measurement
+    }
+
+    /// generate detected erasures
+    #[inline(never)]
+    fn generate_sparse_detected_erasures(&self) -> SparseErasures {
+        let mut sparse_detected_erasures = SparseErasures::new();
+        simulator_iter_real!(self, position, node, {
+            if node.has_erasure {
+                sparse_detected_erasures.erasures.insert(position.clone());
+            }
+        });
+        sparse_detected_erasures
+    }
+
+    /// generate error pattern
+    fn generate_sparse_error_pattern(&self) -> SparseErrorPattern {
+        let mut sparse_error_pattern = SparseErrorPattern::new();
+        simulator_iter!(self, position, node, {
+            if node.error != I {
+                sparse_error_pattern.add(position.clone(), node.error);
+            }
+        });
+        sparse_error_pattern
+    }
+
     /// test if correction successfully recover the logical information
     #[inline(never)]
-    pub fn validate_correction(&mut self, correction: &SparseCorrection) -> (bool, bool) {
+    fn validate_correction(&mut self, correction: &SparseCorrection) -> (bool, bool) {
         if let Some((logical_i, logical_j)) = code_builder_validate_correction(self, correction) {
             return (logical_i, logical_j)
         }

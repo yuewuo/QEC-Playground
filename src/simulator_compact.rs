@@ -13,6 +13,8 @@ use ErrorType::*;
 use super::reproducible_rand::Xoroshiro128StarStar;
 
 
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SimulatorCompact {
     /// each error source is an independent probabilistic Pauli or erasure error
@@ -99,8 +101,10 @@ impl ErrorSource {
     }
 }
 
-#[cfg_attr(feature = "python_binding", cfg_eval)]
-#[cfg_attr(feature = "python_binding", pymethods)]
+
+#[cfg(feature="python_binding")]
+bind_trait_simulator_generics!{SimulatorCompact}
+
 impl SimulatorGenerics for SimulatorCompact {
     fn generate_random_errors(&mut self, _noise_model: &NoiseModel) -> (usize, usize) {
         self.clear();
@@ -322,6 +326,8 @@ impl PartialEq for SimulatorCompact {
 }
 
 /// this is a compressed version of compact simulator, by not expanding all the layers and only dynamically generate the layers
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SimulatorCompactCompressed {
     /// the extender, without ever expanding it
@@ -353,8 +359,9 @@ impl SimulatorCompactCompressed {
 
 }
 
-#[cfg_attr(feature = "python_binding", cfg_eval)]
-#[cfg_attr(feature = "python_binding", pymethods)]
+#[cfg(feature="python_binding")]
+bind_trait_simulator_generics!{SimulatorCompactCompressed}
+
 impl SimulatorGenerics for SimulatorCompactCompressed {
     fn generate_random_errors(&mut self, _noise_model: &NoiseModel) -> (usize, usize) {
         self.clear();
