@@ -2,7 +2,7 @@
 //! 
 
 use super::simulator::*;
-use serde::Serialize;
+use crate::serde::{Serialize, Deserialize};
 use super::types::*;
 use super::util_macros::*;
 use super::noise_model::*;
@@ -10,10 +10,13 @@ use super::clap::ValueEnum;
 use super::code_builder::*;
 use std::sync::Arc;
 use std::collections::BTreeSet;
+#[cfg(feature="python_binding")]
+use pyo3::prelude::*;
 
 
 /// commonly used noise models
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Deserialize, Debug)]
+#[cfg_attr(feature = "python_binding", pyclass)]
 pub enum NoiseModelBuilder {
     /// add data qubit errors and measurement errors individually
     Phenomenological,
@@ -35,6 +38,16 @@ pub enum NoiseModelBuilder {
     /// the noise model in stim: after_clifford_depolarization, before_round_data_depolarization, before_measure_flip_probability, after_reset_flip_probability;
     /// see https://github.com/quantumlib/Stim/blob/main/doc/python_api_reference_vDev.md#stim.Circuit.generated
     StimNoiseModel,
+}
+
+#[cfg(feature = "python_binding")]
+#[pymethods]
+impl NoiseModelBuilder {
+    #[pyo3(name = "apply", signature = (simulator, noise_model, p, noise_model_configuration=None, bias_eta=0.5, pe=0.))]
+    fn trait_apply(&self, simulator: &mut Simulator, noise_model: &mut NoiseModel, p: f64, noise_model_configuration: Option<PyObject>, bias_eta: f64, pe: f64) {
+        let noise_model_configuration = noise_model_configuration.map(|v| crate::util::pyobject_to_json(v)).unwrap_or(json!({}));
+        self.apply(simulator, noise_model, &noise_model_configuration, p, bias_eta, pe)
+    }
 }
 
 impl NoiseModelBuilder {
@@ -826,4 +839,11 @@ impl std::str::FromStr for NoiseModelBuilder {
         }
         Err(format!("Invalid variant: {}", s))
     }
+}
+
+#[cfg(feature="python_binding")]
+#[pyfunction]
+pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_class::<NoiseModelBuilder>()?;
+    Ok(())
 }

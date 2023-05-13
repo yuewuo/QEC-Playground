@@ -84,9 +84,9 @@ def qecp_benchmark_simulate_func_command_vec(p, di, dj, T, parameters, max_repea
     qecp_path = os.path.join(rust_dir, "target", "release", "qecp-cli")
     command = [qecp_path, "tool", "benchmark", di_str, "--djs", dj_str, T_str, f"-m{max_repeats}", f"-e{min_error_cases}", p_str] + parameters
     if time_budget is not None:
-        command += ["--time_budget", f"{time_budget}"]
+        command += ["--time-budget", f"{time_budget}"]
     if p_graph is not None:
-        command += ["--ps_graph", f"[{p_graph:.8e}]"]
+        command += ["--ps-graph", f"[{p_graph:.8e}]"]
     return command
 
 # example of how to wrap qecp_benchmark_simulate_func_basic: CSS surface code with single round of perfect measurement

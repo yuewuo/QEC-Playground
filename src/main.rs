@@ -14,11 +14,8 @@ async fn main() -> std::io::Result<()> {
             command.run();
         }
         Commands::Tool { command } => {
-            let output = command.run();
-            match output {
-                Some(to_print) => { println!("{}", to_print); }
-                None => { }
-            }
+            let output = command.run().unwrap();
+            print!("{}", output);  // outputs normally comes with \n
         }
         Commands::Server(server_parameters) => {
             let port = server_parameters.port;
