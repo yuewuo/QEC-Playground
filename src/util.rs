@@ -6,6 +6,8 @@ use super::lazy_static::lazy_static;
 use std::sync::{RwLock};
 use std::collections::{BTreeMap};
 use std::path::{Path, PathBuf};
+#[cfg(feature="python_binding")]
+use pyo3::prelude::*;
 
 
 /// filename should contain .py, folders should end with slash
@@ -164,6 +166,134 @@ pub fn local_put_temporary_store(value: String) -> Option<usize> {
         temporary_store.memory_store.insert(insert_key, value);
     }
     Some(insert_key)
+}
+
+/**
+ * If you want to modify a field of a Rust struct, it will return a copy of it to avoid memory unsafety.
+ * Thus, typical way of modifying a python field doesn't work, e.g. `obj.a.b.c = 1` won't actually modify `obj`.
+ * This helper class is used to modify a field easier; but please note this can be very time consuming if not optimized well.
+ * 
+ * Example:
+ * with PyMut(code, "vertices") as vertices:
+ *     with fb.PyMut(vertices[0], "position") as position:
+ *         position.i = 100
+*/
+#[cfg(feature="python_binding")]
+#[pyclass]
+pub struct PyMut {
+    /// the python object that provides getter and setter function for the attribute
+    #[pyo3(get, set)]
+    object: PyObject,
+    /// the name of the attribute
+    #[pyo3(get, set)]
+    attr_name: String,
+    /// the python attribute object that is taken from `object[attr_name]`
+    #[pyo3(get, set)]
+    attr_object: Option<PyObject>,
+}
+
+#[cfg(feature="python_binding")]
+#[pymethods]
+impl PyMut {
+    #[new]
+    pub fn new(object: PyObject, attr_name: String) -> Self {
+        Self {
+            object,
+            attr_name,
+            attr_object: None,
+        }
+    }
+    pub fn __enter__(&mut self) -> PyObject {
+        assert!(self.attr_object.is_none(), "do not enter twice");
+        Python::with_gil(|py| {
+            let attr_object = self.object.getattr(py, self.attr_name.as_str()).unwrap();
+            self.attr_object = Some(attr_object.clone_ref(py));
+            attr_object
+        })
+    }
+    pub fn __exit__(&mut self, _exc_type: PyObject, _exc_val: PyObject, _exc_tb: PyObject) {
+        Python::with_gil(|py| {
+            self.object.setattr(py, self.attr_name.as_str(), self.attr_object.take().unwrap()).unwrap()
+        })
+    }
+}
+
+#[cfg(feature="python_binding")]
+pub fn json_to_pyobject_locked<'py>(value: serde_json::Value, py: Python<'py>) -> PyObject {
+    match value {
+        serde_json::Value::Null => py.None(),
+        serde_json::Value::Bool(value) => value.to_object(py).into(),
+        serde_json::Value::Number(value) => {
+            if value.is_i64() {
+                value.as_i64().to_object(py).into()
+            } else {
+                value.as_f64().to_object(py).into()
+            }
+        },
+        serde_json::Value::String(value) => value.to_object(py).into(),
+        serde_json::Value::Array(array) => {
+            let elements: Vec<PyObject> = array.into_iter().map(|value| json_to_pyobject_locked(value, py)).collect();
+            pyo3::types::PyList::new(py, elements).into()
+        },
+        serde_json::Value::Object(map) => {
+            let pydict = pyo3::types::PyDict::new(py);
+            for (key, value) in map.into_iter() {
+                let pyobject = json_to_pyobject_locked(value, py);
+                pydict.set_item(key, pyobject).unwrap();
+            }
+            pydict.into()
+        },
+    }
+}
+
+#[cfg(feature="python_binding")]
+pub fn json_to_pyobject(value: serde_json::Value) -> PyObject {
+    Python::with_gil(|py| {
+        json_to_pyobject_locked(value, py)
+    })
+}
+
+#[cfg(feature="python_binding")]
+pub fn pyobject_to_json_locked<'py>(value: PyObject, py: Python<'py>) -> serde_json::Value {
+    let value: &PyAny = value.as_ref(py);
+    if value.is_none() {
+        serde_json::Value::Null
+    } else if value.is_instance_of::<pyo3::types::PyBool>().unwrap() {
+        json!(value.extract::<bool>().unwrap())
+    } else if value.is_instance_of::<pyo3::types::PyInt>().unwrap() {
+        json!(value.extract::<i64>().unwrap())
+    } else if value.is_instance_of::<pyo3::types::PyFloat>().unwrap() {
+        json!(value.extract::<f64>().unwrap())
+    } else if value.is_instance_of::<pyo3::types::PyString>().unwrap() {
+        json!(value.extract::<String>().unwrap())
+    } else if value.is_instance_of::<pyo3::types::PyList>().unwrap() {
+        let elements: Vec<serde_json::Value> = value.extract::<Vec<PyObject>>().unwrap()
+            .into_iter().map(|object| pyobject_to_json_locked(object, py)).collect();
+        json!(elements)
+    } else if value.is_instance_of::<pyo3::types::PyDict>().unwrap() {
+        let map: &pyo3::types::PyDict = value.downcast().unwrap();
+        let mut json_map = serde_json::Map::new();
+        for (key, value) in map.iter() {
+            json_map.insert(key.extract::<String>().unwrap(), pyobject_to_json_locked(value.to_object(py), py));
+        }
+        serde_json::Value::Object(json_map)
+    } else {
+        unimplemented!("unsupported python type, should be (cascaded) dict, list and basic numerical types")
+    }
+}
+
+#[cfg(feature="python_binding")]
+pub fn pyobject_to_json(value: PyObject) -> serde_json::Value {
+    Python::with_gil(|py| {
+        pyobject_to_json_locked(value, py)
+    })
+}
+
+#[cfg(feature="python_binding")]
+#[pyfunction]
+pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_class::<PyMut>()?;
+    Ok(())
 }
 
 #[cfg(test)]

@@ -427,8 +427,6 @@ impl BenchmarkParameters {
         Ok(None)
     }
 
-    
-
     pub fn prepare_visualizer(&self, simulator: &mut Simulator, noise_model: &Arc<NoiseModel>, noise_model_graph: &Arc<NoiseModel>, configs: &SimulationConfigs) -> Result<Option<Arc<Mutex<Visualizer>>>, String> {
         let mut visualizer = None;
         if self.enable_visualizer {

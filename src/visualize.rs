@@ -111,6 +111,29 @@ impl Visualizer {
 
 }
 
+#[cfg(feature = "python_binding")]
+#[pymethods]
+impl Visualizer {
+    pub fn add_component_simulator(&mut self, simulator: &crate::simulator::Simulator) -> std::io::Result<()> {
+        self.add_component(simulator)
+    }
+    pub fn add_component_noise_model(&mut self, noise_model: &crate::noise_model::NoiseModel) -> std::io::Result<()> {
+        self.add_component(noise_model)
+    }
+    pub fn add_component_model_graph(&mut self, model_graph: &crate::model_graph::ModelGraph) -> std::io::Result<()> {
+        self.add_component(model_graph)
+    }
+    pub fn add_component_model_hypergraph(&mut self, model_hypergraph: &crate::model_hypergraph::ModelHypergraph) -> std::io::Result<()> {
+        self.add_component(model_hypergraph)
+    }
+    #[pyo3(name = "add_case")]
+    pub fn py_add_case(&mut self, case: PyObject) -> std::io::Result<()> {
+        use crate::util::*;
+        let case = pyobject_to_json(case);
+        self.add_case(case)
+    }
+}
+
 impl Visualizer {
 
     /// add component to the visualizer; each component should be independent

@@ -76,11 +76,41 @@ pub mod simulator_compact;
 #[cfg(feature="python_binding")]
 #[pymodule]
 fn qecp(py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    //panic!("hi");
     simulator::register(py, m)?;
     types::register(py, m)?;
     code_builder::register(py, m)?;
     noise_model::register(py, m)?;
+    noise_model_builder::register(py, m)?;
     visualize::register(py, m)?;
+    util::register(py, m)?;
+    let helper_code = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/helper.py"));
+    let helper_module = PyModule::from_code(py, helper_code, "helper", "helper")?;
+    helper_module.add("visualizer_website", generate_visualizer_website(py))?;
+    let bottle_code = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/bottle.py"));  // embed bottle
+    helper_module.add_submodule(PyModule::from_code(py, bottle_code, "bottle", "bottle")?)?;
+    m.add_submodule(helper_module)?;
+    let helper_register = helper_module.getattr("register")?;
+    helper_register.call1((m, ))?;
     Ok(())
+}
+
+#[cfg(feature="python_binding")]
+macro_rules! include_visualize_file {
+    ($mapping:ident, $filepath:expr) => {
+        $mapping.insert($filepath.to_string(), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/visualize/", $filepath)).to_string());
+    };
+    ($mapping:ident, $filepath:expr, $($other_filepath:expr),+) => {
+        include_visualize_file!($mapping, $filepath);
+        include_visualize_file!($mapping, $($other_filepath),+);
+    };
+}
+
+#[cfg(feature="python_binding")]
+fn generate_visualizer_website(py: Python<'_>) -> &pyo3::types::PyDict {
+    use pyo3::types::IntoPyDict;
+    let mut mapping = std::collections::BTreeMap::<String, String>::new();
+    include_visualize_file!(mapping, "gui3d.js", "index.js", "patches.js", "cmd.js", "mocker.js");
+    include_visualize_file!(mapping, "index.html", "icon.svg");
+    include_visualize_file!(mapping, "package.json", "package-lock.json");
+    mapping.into_py_dict(py)
 }

@@ -58,6 +58,7 @@ macro_rules! bind_trait_simulator_generics {
         }
     };
 }
+#[cfg(feature="python_binding")]
 #[allow(unused_imports)] pub use bind_trait_simulator_generics;
 
 /// general simulator for two-dimensional code with circuit-level implementation of stabilizer measurements
@@ -127,7 +128,7 @@ impl QecpVisualizer for Simulator {
 /// when plotting, t is the time axis; looking at the direction of `t=-∞`, the top-left corner is `i=j=0`;
 /// `i` is vertical position, which increases when moving from top to bottom;
 /// `j` is horizontal position, which increases when moving from left to right
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(PartialEq, Eq, Clone, Hash)]
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub struct Position {
@@ -175,6 +176,8 @@ pub struct SimulatorNode {
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl SimulatorNode {
+    #[cfg(feature = "python_binding")]
+    fn __repr__(&self) -> String { format!("{:?}", self) }
     /// create a new simulator node
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new(qubit_type: QubitType, gate_type: GateType, gate_peer: Option<Position>) -> Self {
@@ -248,6 +251,9 @@ pub enum GateType {
 
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl GateType {
+    #[cfg(feature = "python_binding")]
+    fn __repr__(&self) -> String { format!("{:?}", self) }
+
     pub fn is_initialization(&self) -> bool {
         self == &GateType::InitializeZ || self == &GateType::InitializeX
     }
@@ -695,17 +701,17 @@ impl Simulator {
             self.clear_all_errors();
             // println!("sparse_measurement_real: {:?}, standard_measurements_real: {:?}", sparse_measurement_real, standard_measurements_real);
             // println!("sparse_measurement_virtual: {:?}, standard_measurements_virtual: {:?}", sparse_measurement_virtual, standard_measurements_virtual);
-            let mut measurements_equal = sparse_measurement_real.defect.len() == standard_measurements_real.defect.len()
-                && sparse_measurement_virtual.defect.len() == standard_measurements_virtual.defect.len();
+            let mut measurements_equal = sparse_measurement_real.defects.len() == standard_measurements_real.defects.len()
+                && sparse_measurement_virtual.defects.len() == standard_measurements_virtual.defects.len();
             if measurements_equal {  // further check for each element
-                for position in standard_measurements_real.defect.iter() {
-                    if !sparse_measurement_real.defect.contains(position) {
+                for position in standard_measurements_real.defects.iter() {
+                    if !sparse_measurement_real.defects.contains(position) {
                         measurements_equal = false;
                         println!("[error] defect measurement happens at {} but optimized code doesn't correctly detect it", position);
                     }
                 }
-                for position in standard_measurements_virtual.defect.iter() {
-                    if !sparse_measurement_virtual.defect.contains(position) {
+                for position in standard_measurements_virtual.defects.iter() {
+                    if !sparse_measurement_virtual.defects.contains(position) {
                         measurements_equal = false;
                         println!("[error] defect measurement happens at {} but optimized code doesn't correctly detect it", position);
                     }
@@ -1127,6 +1133,8 @@ impl PartialOrd for Position {
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl Position {
+    #[cfg(feature = "python_binding")]
+    fn __repr__(&self) -> String { format!("{:?}", self) }
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new(t: usize, i: usize, j: usize) -> Self {
         Self {
@@ -1143,6 +1151,12 @@ impl Position {
 impl std::fmt::Display for Position {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "[{}][{}][{}]", self.t, self.i, self.j)
+    }
+}
+
+impl std::fmt::Debug for Position {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self)
     }
 }
 
@@ -1208,7 +1222,7 @@ impl std::fmt::Display for SimulatorNode {
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub struct SparseMeasurement {
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
-    pub defect: BTreeSet<Position>,
+    pub defects: BTreeSet<Position>,
 }
 
 impl Serialize for SparseMeasurement {
@@ -1244,45 +1258,53 @@ impl<'de> Deserialize<'de> for SparseMeasurement {
     }
 }
 
-// #[cfg_attr(feature = "python_binding", pymethods)]
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl SparseMeasurement {
+    #[cfg(feature = "python_binding")]
+    fn __repr__(&self) -> String { format!("{:?}", self) }
+    #[cfg(feature = "python_binding")]
+    fn to_json(&self) -> PyObject { crate::util::json_to_pyobject(json!(self)) }
     /// create a new clean measurement without defect measurements
-    // #[cfg_attr(feature = "python_binding", new)]
+    #[cfg_attr(feature = "python_binding", new)]
     pub fn new() -> Self {
         Self {
-            defect: BTreeSet::new(),
-        }
-    }
-    pub fn new_set(defect: BTreeSet<Position>) -> Self {
-        Self {
-            defect
+            defects: BTreeSet::new(),
         }
     }
     /// return false if this defect measurement is already present
     #[inline]
     pub fn insert_defect_measurement(&mut self, position: &Position) -> bool {
-        self.defect.insert(position.clone())
-    }
-    /// iterator
-    pub fn iter<'a>(&'a self) -> std::collections::btree_set::Iter<'a, Position> {
-        self.defect.iter()
+        self.defects.insert(position.clone())
     }
     /// convert to vector in ascending order
     pub fn to_vec(&self) -> Vec<Position> {
         self.iter().map(|position| (*position).clone()).collect()
     }
+    /// the length of defect measurements
+    pub fn len(&self) -> usize {
+        self.defects.len()
+    }
+}
+
+impl SparseMeasurement {
+    pub fn new_set(defects: BTreeSet<Position>) -> Self {
+        Self {
+            defects
+        }
+    }
     /// convert vector to sparse measurement
-    pub fn from_vec(defect: &Vec<Position>) -> Self {
+    pub fn from_vec(defects: &Vec<Position>) -> Self {
         let mut sparse_measurement = Self::new();
-        for position in defect.iter() {
-            debug_assert!(!sparse_measurement.defect.contains(position), "duplicate defect measurement forbidden");
+        for position in defects.iter() {
+            debug_assert!(!sparse_measurement.defects.contains(position), "duplicate defect measurement forbidden");
             sparse_measurement.insert_defect_measurement(position);
         }
         sparse_measurement
     }
-    /// the length of defect measurements
-    pub fn len(&self) -> usize {
-        self.defect.len()
+    /// iterator
+    pub fn iter<'a>(&'a self) -> std::collections::btree_set::Iter<'a, Position> {
+        self.defects.iter()
     }
 }
 
@@ -1329,16 +1351,19 @@ impl<'de> Deserialize<'de> for SparseErasures {
     }
 }
 
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl SparseErasures {
+    #[cfg(feature = "python_binding")]
+    fn __repr__(&self) -> String { format!("{:?}", self) }
+    #[cfg(feature = "python_binding")]
+    fn to_json(&self) -> PyObject { crate::util::json_to_pyobject(json!(self)) }
     /// create a new clean measurement without defect measurements
+    #[cfg_attr(feature = "python_binding", new)]
     pub fn new() -> Self {
         Self {
             erasures: BTreeSet::new(),
         }
-    }
-    /// iterator
-    pub fn iter<'a>(&'a self) -> std::collections::btree_set::Iter<'a, Position> {
-        self.erasures.iter()
     }
     /// the length of defect measurements
     pub fn len(&self) -> usize {
@@ -1352,6 +1377,13 @@ impl SparseErasures {
     #[inline]
     pub fn insert_erasure(&mut self, position: &Position) -> bool {
         self.erasures.insert(position.clone())
+    }
+}
+
+impl SparseErasures {
+    /// iterator
+    pub fn iter<'a>(&'a self) -> std::collections::btree_set::Iter<'a, Position> {
+        self.erasures.iter()
     }
     /// compute the edges that are re-weighted to 0 because of these erasures
     pub fn get_erasure_edges(&self, erasure_graph: &ErasureGraph) -> Vec<ErasureEdge> {
@@ -1376,16 +1408,18 @@ pub struct SparseErrorPattern {
     pub errors: BTreeMap<Position, ErrorType>,
 }
 
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl SparseErrorPattern {
+    #[cfg(feature = "python_binding")]
+    fn __repr__(&self) -> String { format!("{:?}", self) }
+    #[cfg(feature = "python_binding")]
+    fn to_json(&self) -> PyObject { crate::util::json_to_pyobject(json!(self)) }
     /// create an empty error pattern
+    #[cfg_attr(feature = "python_binding", new)]
     pub fn new() -> Self {
         Self {
             errors: BTreeMap::new(),
-        }
-    }
-    pub fn new_map(errors: BTreeMap<Position, ErrorType>) -> Self {
-        Self {
-            errors,
         }
     }
     /// extend an error pattern using another error pattern
@@ -1403,6 +1437,21 @@ impl SparseErrorPattern {
             self.errors.insert(position, error);
         }
     }
+    /// length
+    pub fn len(&self) -> usize {
+        self.errors.len()
+    }
+    pub fn to_vec(&self) -> Vec<(Position, ErrorType)> {
+        self.iter().map(|(position, error)| ((*position).clone(), *error)).collect()
+    }
+}
+
+impl SparseErrorPattern {
+    pub fn new_map(errors: BTreeMap<Position, ErrorType>) -> Self {
+        Self {
+            errors,
+        }
+    }
     /// iterator
     pub fn iter<'a>(&'a self) -> std::collections::btree_map::Iter<'a, Position, ErrorType> {
         self.errors.iter()
@@ -1411,16 +1460,9 @@ impl SparseErrorPattern {
     pub fn iter_mut<'a>(&'a mut self) -> std::collections::btree_map::IterMut<'a, Position, ErrorType> {
         self.errors.iter_mut()
     }
-    /// length
-    pub fn len(&self) -> usize {
-        self.errors.len()
-    }
     /// get element
     pub fn get(&self, key: &Position) -> Option<&ErrorType> {
         self.errors.get(key)
-    }
-    pub fn to_vec(&self) -> Vec<(Position, ErrorType)> {
-        self.iter().map(|(position, error)| ((*position).clone(), *error)).collect()
     }
 }
 
@@ -1463,8 +1505,15 @@ impl<'de> Deserialize<'de> for SparseErrorPattern {
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub struct SparseCorrection(SparseErrorPattern);
 
+#[cfg_attr(feature = "python_binding", cfg_eval)]
+#[cfg_attr(feature = "python_binding", pymethods)]
 impl SparseCorrection {
+    #[cfg(feature = "python_binding")]
+    fn __repr__(&self) -> String { format!("{:?}", self) }
+    #[cfg(feature = "python_binding")]
+    fn to_json(&self) -> PyObject { crate::util::json_to_pyobject(json!(self)) }
     /// create an empty correction
+    #[cfg_attr(feature = "python_binding", new)]
     pub fn new() -> Self {
         Self(SparseErrorPattern::new())
     }
@@ -1486,6 +1535,16 @@ impl SparseCorrection {
         }, "correction must have the same t");
         self.0.add(position, operator);
     }
+    /// length
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    pub fn to_vec(&self) -> Vec<(Position, ErrorType)> {
+        self.0.to_vec()
+    }
+}
+
+impl SparseCorrection {
     /// iterator
     pub fn iter<'a>(&'a self) -> std::collections::btree_map::Iter<'a, Position, ErrorType> {
         self.0.iter()
@@ -1494,16 +1553,9 @@ impl SparseCorrection {
     pub fn iter_mut<'a>(&'a mut self) -> std::collections::btree_map::IterMut<'a, Position, ErrorType> {
         self.0.iter_mut()
     }
-    /// length
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
     /// get element
     pub fn get(&self, key: &Position) -> Option<&ErrorType> {
         self.0.get(key)
-    }
-    pub fn to_vec(&self) -> Vec<(Position, ErrorType)> {
-        self.0.to_vec()
     }
 }
 
