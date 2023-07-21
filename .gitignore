@@ -1,8 +1,10 @@
 *.pyc
 __pycache__
 .DS_Store
+._.DS_Store
 history.tmp
 .env
+.vscode
 
 target/
 tmp/

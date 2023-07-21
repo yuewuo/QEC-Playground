@@ -63,7 +63,7 @@ impl Visualizer {
 
     /// create a new visualizer with target filename and node layout
     #[cfg_attr(feature = "python_binding", new)]
-    #[cfg_attr(feature = "python_binding", args(positions = "vec![]", center = "true"))]
+    #[cfg_attr(feature = "python_binding", pyo3(signature = (filepath)))]
     pub fn new(mut filepath: Option<String>) -> std::io::Result<Self> {
         if cfg!(feature = "disable_visualizer") {
             filepath = None;  // do not open file
@@ -109,6 +109,29 @@ impl Visualizer {
         Ok(())
     }
 
+}
+
+#[cfg(feature = "python_binding")]
+#[pymethods]
+impl Visualizer {
+    pub fn add_component_simulator(&mut self, simulator: &crate::simulator::Simulator) -> std::io::Result<()> {
+        self.add_component(simulator)
+    }
+    pub fn add_component_noise_model(&mut self, noise_model: &crate::noise_model::NoiseModel) -> std::io::Result<()> {
+        self.add_component(noise_model)
+    }
+    pub fn add_component_model_graph(&mut self, model_graph: &crate::model_graph::ModelGraph) -> std::io::Result<()> {
+        self.add_component(model_graph)
+    }
+    pub fn add_component_model_hypergraph(&mut self, model_hypergraph: &crate::model_hypergraph::ModelHypergraph) -> std::io::Result<()> {
+        self.add_component(model_hypergraph)
+    }
+    #[pyo3(name = "add_case")]
+    pub fn py_add_case(&mut self, case: PyObject) -> std::io::Result<()> {
+        use crate::util::*;
+        let case = pyobject_to_json(case);
+        self.add_case(case)
+    }
 }
 
 impl Visualizer {

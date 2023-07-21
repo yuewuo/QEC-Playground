@@ -1,25 +1,27 @@
 #![allow(non_snake_case)]
 
-use super::clap;
 #[cfg(feature="python_binding")]
 use super::pyo3::prelude::*;
 #[cfg(feature="python_binding")]
 use super::pyo3::types::{IntoPyDict};
 use super::blossom_v;
+use crate::cli::*;
 
-pub fn run_matched_test(matches: &clap::ArgMatches) {
-    match matches.subcommand() {
-        Some(("debug_tests", _)) => {
-            debug_tests()
+
+impl TestCommands {
+    pub fn run(self) {
+        match self {
+            Self::DebugTests => {
+                debug_tests()
+            },
+            Self::ArchivedDebugTests => {
+                archived_debug_tests()
+            },
+            Self::All => {  // remember to add new test functions here
+                debug_tests();
+                archived_debug_tests();
+            },
         }
-        Some(("archived_debug_tests", _)) => {
-            archived_debug_tests()
-        }
-        Some(("all", _)) => {  // remember to add new test functions here
-            debug_tests();
-            archived_debug_tests();
-        }
-        _ => unreachable!()
     }
 }
 

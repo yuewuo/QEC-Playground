@@ -1,69 +1,256 @@
-use crate::clap;
 use crate::code_builder;
 use crate::noise_model_builder;
 use crate::tool;
+use crate::clap::{Parser, Subcommand};
+use crate::clap::builder::{ValueParser, TypedValueParser, StringValueParser};
+use crate::clap::error::{ErrorKind, ContextKind, ContextValue};
+use crate::serde::{Serialize, Deserialize};
+use crate::serde_json;
 
+#[derive(Parser, Clone)]
+#[clap(author = clap::crate_authors!(", "))]
+#[clap(version = env!("CARGO_PKG_VERSION"))]
+#[clap(about = "Quantum Error Correction Playground")]
+#[clap(color = clap::ColorChoice::Auto)]
+#[clap(propagate_version = true)]
+#[clap(subcommand_required = true)]
+#[clap(arg_required_else_help = true)]
+pub struct Cli {
+    #[clap(subcommand)]
+    pub command: Commands,
+}
 
-pub fn create_clap_parser<'a>(color_choice: clap::ColorChoice) -> clap::Command<'a> {
-    clap::Command::new("QECPlayground")
-        .version(env!("CARGO_PKG_VERSION"))
-        .author(clap::crate_authors!(", "))
-        .about("Quantum Error Correction Playground")
-        .color(color_choice)
-        .propagate_version(true)
-        .subcommand_required(true)
-        .arg_required_else_help(true)
-        .subcommand(clap::Command::new("test")
-            .about("testing features")
-            .subcommand_required(true)
-            .arg_required_else_help(true)
-            .subcommand(clap::Command::new("debug_tests").about("test for debug"))
-            .subcommand(clap::Command::new("archived_debug_tests").about("archived debug tests"))
-            .subcommand(clap::Command::new("all").about("run all tests"))
-        )
-        .subcommand(clap::Command::new("tool")
-            .about("tools")
-            .subcommand_required(true)
-            .arg_required_else_help(true)
-            .subcommand(clap::Command::new("benchmark").about("benchmark surface code decoders")
-                .arg(clap::Arg::new("dis").help("[di1,di2,di3,...,din] code distance of vertical axis").takes_value(true).required(true))
-                .arg(clap::Arg::new("djs").long("djs").help("[dj1,dj2,dj3,...,djn] code distance of horizontal axis, will use `dis` if not provided, otherwise must have exactly the same length as `dis`").takes_value(true))
-                .arg(clap::Arg::new("nms").help("[nm1,nm2,nm3,...,nmn] number of noisy measurement rounds, must have exactly the same length as `dis`; note that a perfect measurement is always capped at the end, so to simulate a single round of perfect measurement you should set this to 0").takes_value(true).required(true))
-                .arg(clap::Arg::new("ps").help("[p1,p2,p3,...,pm] p = px + py + pz unless noise model has special interpretation of this value").takes_value(true).required(true))
-                .arg(clap::Arg::new("ps_graph").long("ps_graph").help("[p1,p2,p3,...,pm] defaults to ps, used to build the decoding graph").takes_value(true))
-                .arg(clap::Arg::new("pes").long("pes").help("[pe1,pe2,pe3,...,pem] erasure error rate, default to all 0").takes_value(true))
-                .arg(clap::Arg::new("pes_graph").long("pes_graph").help("[pe1,pe2,pe3,...,pem] defaults to pes, used to build the decoding graph").takes_value(true))
-                .arg(clap::Arg::new("bias_eta").long("bias_eta").help("bias_eta = pz / (px + py) and px = py, px + py + pz = p. default to 1/2, which means px = pz = py").takes_value(true).default_value("0.5"))
-                .arg(clap::Arg::new("max_repeats").short('m').long("max_repeats").help("maximum total repeats (previously known as `max_N`); 0 for infinity").takes_value(true).default_value("100000000"))
-                .arg(clap::Arg::new("min_failed_cases").short('e').long("min_failed_cases").help("minimum failed cases; 0 for infinity").takes_value(true).default_value("10000"))
-                .arg(clap::Arg::new("parallel").short('p').long("parallel").help("how many parallel threads to use. 0 means using number of CPUs - 1, by default single thread").takes_value(true).default_value("1"))
-                .arg(clap::Arg::new("parallel_init").long("parallel_init").help("how many parallel threads to use when initializing decoders, default to be the same with `parallel`").takes_value(true))
-                .arg(clap::Arg::new("code_type").short('c').long("code_type").help("code type, see code_builder.rs for more information").possible_values(code_builder::CodeType::possible_values()).default_value("StandardPlanarCode").takes_value(true))
-                .arg(clap::Arg::new("decoder").long("decoder").help("select the benchmarked decoder").takes_value(true).possible_values(tool::BenchmarkDecoder::possible_values()).default_value("mwpm"))
-                .arg(clap::Arg::new("decoder_config").long("decoder_config").help("decoder configuration json, panic if any field is not recognized").takes_value(true).default_value("{}"))
-                .arg(clap::Arg::new("ignore_logical_i").long("ignore_logical_i").help("ignore the logical error of i axis, e.g. logical Z error in standard CSS surface code"))
-                .arg(clap::Arg::new("ignore_logical_j").long("ignore_logical_j").help("ignore the logical error of j axis, e.g. logical X error in standard CSS surface code"))
-                .arg(clap::Arg::new("debug_print").long("debug_print").help("only print requested information without running the benchmark").takes_value(true).possible_values(tool::BenchmarkDebugPrint::possible_values()))
-                .arg(clap::Arg::new("time_budget").long("time_budget").help("for each configuration, give a maximum time to run (in second)").takes_value(true))
-                .arg(clap::Arg::new("log_runtime_statistics").long("log_runtime_statistics").help("log the runtime statistical information, given the path of the statistics log file").takes_value(true))
-                .arg(clap::Arg::new("log_error_pattern_when_logical_error").long("log_error_pattern_when_logical_error").help("log the error pattern in the statistics log file, which is useful when debugging rare cases but it can make the log file much larger"))
-                .arg(clap::Arg::new("noise_model").long("noise_model").help("possible noise models see noise_model_builder.rs").possible_values(noise_model_builder::NoiseModelBuilder::possible_values()).takes_value(true))
-                .arg(clap::Arg::new("noise_model_configuration").long("noise_model_configuration").help("a json object describing the noise model details").takes_value(true).default_value("{}"))
-                .arg(clap::Arg::new("thread_timeout").long("thread_timeout").help("wait for some time for threads to end, otherwise print out the unstopped threads and detach them; useful when debugging rare deadlock cases; if set to negative value, no timeout and no thread debug information recording for maximum performance").takes_value(true).default_value("60"))
-                .arg(clap::Arg::new("use_brief_edge").long("use_brief_edge").help("use brief edges in model graph to save memories; it will drop the error pattern and correction as long as another one is more probable"))
-                .arg(clap::Arg::new("label").long("label").help("arbitrary label information").takes_value(true))
-                .arg(clap::Arg::new("load_noise_model_from_temporary_store").long("load_noise_model_from_temporary_store").help("if provided, will fetch a Json from temporary store in web module to update noise model").takes_value(true))
-                .arg(clap::Arg::new("load_noise_model_from_file").long("load_noise_model_from_file").help("if provided, will fetch a Json from file to update noise model").takes_value(true))
-                .arg(clap::Arg::new("enable_visualizer").long("enable_visualizer").help("logging to the default visualizer file at visualize/data/visualizer.json"))
-                .arg(clap::Arg::new("visualizer_filename").long("visualizer_filename").help("visualizer file at visualize/data/<visualizer_filename>.json").takes_value(true))
-                .arg(clap::Arg::new("visualizer_skip_success_cases").long("visualizer_skip_success_cases").help("when visualizer is enabled, only record failed cases; useful when trying to debug rare failed cases, e.g. finding the lowest number of physical errors that causes a logical error"))
-                .arg(clap::Arg::new("visualizer_model_graph").long("visualizer_model_graph").help("include model graph"))
-                .arg(clap::Arg::new("visualizer_model_hypergraph").long("visualizer_model_hypergraph").help("include model hypergraph"))
-            )
-        )
-        .subcommand(clap::Command::new("server").about("HTTP server for decoding information")
-            .arg(clap::Arg::new("port").short('p').long("port").help("listening on <addr>:<port>, default to 8066").takes_value(true))
-            .arg(clap::Arg::new("addr").short('a').long("addr").help("listening on <addr>:<port>, default to \"127.0.0.1\"").takes_value(true))
-            .arg(clap::Arg::new("root_url").short('r').long("root_url").help("root url").takes_value(true))
-        )
+#[derive(Subcommand, Clone)]
+#[allow(clippy::large_enum_variant)]
+pub enum Commands {
+    /// testing features
+    Test {
+        #[clap(subcommand)]
+        command: TestCommands,
+    },
+    /// built-in tests
+    Tool {
+        #[clap(subcommand)]
+        command: ToolCommands,
+    },
+    /// HTTP server for decoding information
+    Server(ServerParameters),
+}
+
+#[derive(Subcommand, Clone)]
+#[allow(clippy::large_enum_variant)]
+pub enum TestCommands {
+    /// test for debug
+    DebugTests,
+    /// archived debug tests
+    ArchivedDebugTests,
+    /// run all tests
+    All,
+}
+
+#[derive(Subcommand, Clone)]
+#[allow(clippy::large_enum_variant)]
+pub enum ToolCommands {
+    /// built-in tests
+    Benchmark(BenchmarkParameters),
+}
+
+#[derive(Clone)]
+struct VecUsizeParser;
+impl TypedValueParser for VecUsizeParser {
+    type Value = Vec<usize>;
+    fn parse_ref(&self, cmd: &clap::Command, arg: Option<&clap::Arg>, value: &std::ffi::OsStr) -> Result<Self::Value, clap::Error> {
+        let inner = StringValueParser::new();
+        let val = inner.parse_ref(cmd, arg, value)?;
+        match serde_json::from_str::<Vec<usize>>(&val) {
+            Ok(vector) => Ok(vector),
+            Err(error) => {
+                let mut err = clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
+                if let Some(arg) = arg {
+                    err.insert(ContextKind::InvalidArg, ContextValue::String(arg.to_string()));
+                }
+                err.insert(ContextKind::InvalidValue, ContextValue::String(
+                    format!("should be like [1,2,3], parse error: {}", error.to_string())
+                ));
+                Err(err)
+            },
+        }
+    }
+}
+
+#[derive(Clone)]
+struct VecF64Parser;
+impl TypedValueParser for VecF64Parser {
+    type Value = Vec<f64>;
+    fn parse_ref(&self, cmd: &clap::Command, arg: Option<&clap::Arg>, value: &std::ffi::OsStr) -> Result<Self::Value, clap::Error> {
+        let inner = StringValueParser::new();
+        let val = inner.parse_ref(cmd, arg, value)?;
+        match serde_json::from_str::<Vec<f64>>(&val) {
+            Ok(vector) => Ok(vector),
+            Err(error) => {
+                let mut err = clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
+                if let Some(arg) = arg {
+                    err.insert(ContextKind::InvalidArg, ContextValue::String(arg.to_string()));
+                }
+                err.insert(ContextKind::InvalidValue, ContextValue::String(
+                    format!("should be like [0.1,0.2,0.3], parse error: {}", error.to_string())
+                ));
+                Err(err)
+            },
+        }
+    }
+}
+
+#[derive(Clone)]
+struct SerdeJsonParser;
+impl TypedValueParser for SerdeJsonParser {
+    type Value = serde_json::Value;
+    fn parse_ref(&self, cmd: &clap::Command, arg: Option<&clap::Arg>, value: &std::ffi::OsStr) -> Result<Self::Value, clap::Error> {
+        let inner = StringValueParser::new();
+        let val = inner.parse_ref(cmd, arg, value)?;
+        match serde_json::from_str::<serde_json::Value>(&val) {
+            Ok(vector) => Ok(vector),
+            Err(error) => {
+                let mut err = clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
+                if let Some(arg) = arg {
+                    err.insert(ContextKind::InvalidArg, ContextValue::String(arg.to_string()));
+                }
+                err.insert(ContextKind::InvalidValue, ContextValue::String(
+                    format!("should be like {{\"a\":1}}, parse error: {}", error.to_string())
+                ));
+                Err(err)
+            },
+        }
+    }
+}
+
+#[derive(Parser, Clone, Serialize, Deserialize)]
+pub struct BenchmarkParameters {
+    /// [di1,di2,di3,...,din] code distance of vertical axis
+    #[clap(value_parser = ValueParser::new(VecUsizeParser))]
+    pub dis: std::vec::Vec<usize>,
+    /// [dj1,dj2,dj3,...,djn] code distance of horizontal axis, will use `dis` if not provided, otherwise must have exactly the same length as `dis`
+    #[clap(long, value_parser = ValueParser::new(VecUsizeParser))]
+    pub djs: Option<std::vec::Vec<usize>>,
+    /// [nm1,nm2,nm3,...,nmn] number of noisy measurement rounds, must have exactly the same length as `dis`; note that a perfect measurement is always capped at the end, so to simulate a single round of perfect measurement you should set this to 0
+    #[clap(value_parser = ValueParser::new(VecUsizeParser))]
+    pub nms: std::vec::Vec<usize>,
+    /// [p1,p2,p3,...,pm] p = px + py + pz unless noise model has special interpretation of this value
+    #[clap(value_parser = ValueParser::new(VecF64Parser))]
+    pub ps: std::vec::Vec<f64>,
+    /// [p1,p2,p3,...,pm] defaults to ps, used to build the decoding graph
+    #[clap(long, value_parser = ValueParser::new(VecF64Parser))]
+    pub ps_graph: Option<std::vec::Vec<f64>>,
+    /// [pe1,pe2,pe3,...,pem] erasure error rate, default to all 0
+    #[clap(long, value_parser = ValueParser::new(VecF64Parser))]
+    pub pes: Option<std::vec::Vec<f64>>,
+    /// [pe1,pe2,pe3,...,pem] defaults to pes, used to build the decoding graph
+    #[clap(long, value_parser = ValueParser::new(VecF64Parser))]
+    pub pes_graph: Option<std::vec::Vec<f64>>,
+    /// bias_eta = pz / (px + py) and px = py, px + py + pz = p. default to 1/2, which means px = pz = py
+    #[clap(long, default_value_t = 0.5)]
+    pub bias_eta: f64,
+    /// maximum total repeats (previously known as `max_N`); 0 for infinity
+    #[clap(short = 'm', long, default_value_t = 100000000)]
+    pub max_repeats: usize,
+    /// minimum failed cases; 0 for infinity
+    #[clap(short = 'e', long, default_value_t = 10000)]
+    pub min_failed_cases: usize,
+    /// how many parallel threads to use. 0 means using number of CPUs - 1, by default single thread
+    #[clap(short = 'p', long, default_value_t = 1)]
+    pub parallel: usize,
+    /// how many parallel threads to use when initializing decoders, default to be the same with `parallel`
+    #[clap(long)]
+    pub parallel_init: Option<usize>,
+    /// code type, see code_builder.rs for more information
+    #[clap(short = 'c', long, value_enum, default_value_t = code_builder::CodeType::StandardPlanarCode)]
+    pub code_type: code_builder::CodeType,
+    /// select the benchmarked decoder
+    #[clap(long, value_enum, default_value_t = tool::BenchmarkDecoder::MWPM)]
+    pub decoder: tool::BenchmarkDecoder,
+    /// decoder configuration json, panic if any field is not recognized
+    #[clap(long, default_value_t = json!({}), value_parser = ValueParser::new(SerdeJsonParser))]
+    pub decoder_config: serde_json::Value,
+    /// ignore the logical error of i axis, e.g. logical Z error in standard CSS surface code
+    #[clap(long, action)]
+    pub ignore_logical_i: bool,
+    /// ignore the logical error of j axis, e.g. logical X error in standard CSS surface code
+    #[clap(long, action)]
+    pub ignore_logical_j: bool,
+    /// only print requested information without running the benchmark
+    #[clap(long)]
+    pub debug_print: Option<tool::BenchmarkDebugPrint>,
+    /// for each configuration, give a maximum time to run (in second)
+    #[clap(long)]
+    pub time_budget: Option<f64>,
+    /// log the runtime statistical information, given the path of the statistics log file
+    #[clap(long)]
+    pub log_runtime_statistics: Option<String>,
+    /// log the error pattern in the statistics log file, which is useful when debugging rare cases but it can make the log file much larger
+    #[clap(long, action)]
+    pub log_error_pattern_when_logical_error: bool,
+    /// possible noise models see noise_model_builder.rs
+    #[clap(long, alias = "noise-model")]
+    pub noise_model_builder: Option<noise_model_builder::NoiseModelBuilder>,
+    /// a json object describing the noise model details
+    #[clap(long, default_value_t = json!({}), value_parser = ValueParser::new(SerdeJsonParser))]
+    pub noise_model_configuration: serde_json::Value,
+    /// wait for some time for threads to end, otherwise print out the unstopped threads and detach them; useful when debugging rare deadlock cases; if set to negative value, no timeout and no thread debug information recording for maximum performance
+    #[clap(long, default_value_t = 60.)]
+    pub thread_timeout: f64,
+    /// use brief edges in model graph to save memories; it will drop the error pattern and correction as long as another one is more probable
+    #[clap(long, action)]
+    pub use_brief_edge: bool,
+    /// arbitrary label information
+    #[clap(long, default_value_t = ("").to_string())]
+    pub label: String,
+    /// if provided, will fetch a Json from temporary store in web module to update noise model
+    #[clap(long)]
+    pub load_noise_model_from_temporary_store: Option<usize>,
+    /// if provided, will fetch a Json from file to update noise model
+    #[clap(long)]
+    pub load_noise_model_from_file: Option<String>,
+    /// logging to the default visualizer file at visualize/data/visualizer.json
+    #[clap(long, action)]
+    pub enable_visualizer: bool,
+    /// visualizer file at visualize/data/<visualizer_filename.json>
+    #[clap(long, default_value_t = crate::visualize::static_visualize_data_filename())]
+    pub visualizer_filename: String,
+    /// when visualizer is enabled, only record failed cases; useful when trying to debug rare failed cases, e.g. finding the lowest number of physical errors that causes a logical error
+    #[clap(long, action)]
+    pub visualizer_skip_success_cases: bool,
+    /// include model graph in the visualizer file
+    #[clap(long, action)]
+    pub visualizer_model_graph: bool,
+    /// include model hypergraph in the visualizer file
+    #[clap(long, action)]
+    pub visualizer_model_hypergraph: bool,
+    /// fusion blossom syndrome export configuration
+    #[clap(long, default_value_t = ("./tmp/fusion.syndromes").to_string())]
+    pub fusion_blossom_syndrome_export_filename: String,
+    /// when provided, it will override the default nms[0] value and generate a compact simulator using `SimulatorCompactExtender`;
+    /// note that not all decoders can adapt to this, because they still use the original simulator to construct their decoding structure.
+    /// the only supported decoder is `fusion`.
+    #[clap(long, requires = "use_compact_simulator")]
+    pub simulator_compact_extender_noisy_measurements: Option<usize>,
+    /// use compact simulator to generate syndromes instead
+    #[clap(long, action)]
+    pub use_compact_simulator: bool,
+    /// use compressed compact simulator, further reducing the memory requirement;
+    /// note that this optimizes memory but sacrifices speed, since all the error sources are generated dynamically on the fly
+    #[clap(long, requires = "use_compact_simulator")]
+    pub use_compact_simulator_compressed: bool,
+}
+
+#[derive(Parser, Clone)]
+pub struct ServerParameters {
+    /// listening on <addr>:<port>, default to 8066
+    #[clap(short = 'p', long, default_value_t = 8066)]
+    pub port: i32,
+    /// listening on <addr>:<port>, default to "127.0.0.1"
+    #[clap(short = 'a', long, default_value_t = ("127.0.0.1").to_string())]
+    pub addr: String,
+    /// root url
+    #[clap(short = 'r', long, default_value_t = ("/").to_string())]
+    pub root_url: String,
 }

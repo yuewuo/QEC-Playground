@@ -17,6 +17,12 @@ pub struct Xoroshiro128StarStar {
     s1: u64,
 }
 
+impl Default for Xoroshiro128StarStar {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Xoroshiro128StarStar {
     #[inline]
     pub fn next_f64(&mut self) -> f64 {

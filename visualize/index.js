@@ -62,6 +62,7 @@ const App = {
             selected_edge_attributes: ref(""),
             noise_model_info: ref(null),
             selected_hypergraph_info: ref(null),
+            selected_model_graph_info: ref(null),
             // display options
             display_qubits: gui3d.display_qubits,
             display_idle_sticks: gui3d.display_idle_sticks,
@@ -337,6 +338,22 @@ const App = {
                     weight: hyperedge_group.hyperedge.w,
                     defect_vertices: defect_vertices,
                     all_hyperedges: all_hyperedges,
+                }
+            }
+            if (this.current_selected.type == "model_graph_vertex") {
+                const { t, i, j } = this.current_selected
+                const model_graph_node = qecp_data.model_graph.nodes[t][i][j]
+                let edges = {}
+                let vec_mesh_idx = 0
+                for (let [peer_position_str, edge] of Object.entries(model_graph_node.edges)) {
+                    edges[peer_position_str] = { ...model_graph_node.edges[peer_position_str] }
+                    edges[peer_position_str].userData = gui3d.model_graph_edge_vec_meshes[t][i][j][vec_mesh_idx].userData
+                    console.log(edges[peer_position_str].userData)
+                    vec_mesh_idx += 1
+                }
+                let boundary = { ...model_graph_node.boundary }
+                this.selected_model_graph_info = {
+                    edges, boundary
                 }
             }
         },

@@ -84,9 +84,9 @@ def qecp_benchmark_simulate_func_command_vec(p, di, dj, T, parameters, max_repea
     qecp_path = os.path.join(rust_dir, "target", "release", "qecp-cli")
     command = [qecp_path, "tool", "benchmark", di_str, "--djs", dj_str, T_str, f"-m{max_repeats}", f"-e{min_error_cases}", p_str] + parameters
     if time_budget is not None:
-        command += ["--time_budget", f"{time_budget}"]
+        command += ["--time-budget", f"{time_budget}"]
     if p_graph is not None:
-        command += ["--ps_graph", f"[{p_graph:.8e}]"]
+        command += ["--ps-graph", f"[{p_graph:.8e}]"]
     return command
 
 # example of how to wrap qecp_benchmark_simulate_func_basic: CSS surface code with single round of perfect measurement
@@ -244,6 +244,8 @@ class ThresholdAnalyzer:
         if self.verbose:
             print(f"[info] fit result: A = {popt[0]} \u00B1 {perr[0]}, B = {popt[1]} \u00B1 {perr[1]} C = {popt[2]} \u00B1 {perr[2]}")
             print(f"                   pc0 = {popt[3]} \u00B1 {perr[3]}, v0 = {popt[4]} \u00B1 {perr[4]}")
+            print(f"    popt: {list(popt)}")
+            print(f"    perr: {list(perr)}")
         return popt, perr  # [A, B, C, pc0, v0]
 
     def rough_estimate(self):
