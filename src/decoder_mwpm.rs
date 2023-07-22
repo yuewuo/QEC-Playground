@@ -43,6 +43,8 @@ pub struct MWPMDecoderConfig {
     #[serde(alias = "ucp")] // abbreviation
     #[serde(default = "mwpm_default_configs::use_combined_probability")]
     pub use_combined_probability: bool,
+    #[serde(default = "mwpm_default_configs::log_matchings")]
+    pub log_matchings: bool,
 }
 
 pub mod mwpm_default_configs {
@@ -56,6 +58,9 @@ pub mod mwpm_default_configs {
     pub fn use_combined_probability() -> bool {
         true
     } // default use combined probability for better accuracy
+    pub fn log_matchings() -> bool {
+        false
+    }
 }
 
 impl MWPMDecoder {
@@ -95,10 +100,10 @@ impl MWPMDecoder {
             parallel,
         );
         Self {
-            model_graph: model_graph,
-            erasure_graph: erasure_graph,
-            complete_model_graph: complete_model_graph,
-            config: config,
+            model_graph,
+            erasure_graph,
+            complete_model_graph,
+            config,
             simulator: Arc::new(simulator),
         }
     }
@@ -127,6 +132,7 @@ impl MWPMDecoder {
         let mut time_prepare_graph = 0.;
         let mut time_blossom_v = 0.;
         let mut time_build_correction = 0.;
+        let mut matching_edges: Vec<(Position, Position)> = Vec::with_capacity(0);
         if to_be_matched.len() > 0 {
             // println!{"to_be_matched: {:?}", to_be_matched};
             let begin = Instant::now();
@@ -218,7 +224,7 @@ impl MWPMDecoder {
             let begin = Instant::now();
             for i in 0..m_len {
                 let j = matching[i];
-                let a = &to_be_matched[i];
+                let a: &Position = &to_be_matched[i];
                 if j < i {
                     // only add correction if j < i, so that the same correction is not applied twice
                     // println!("match peer {:?} {:?}", to_be_matched[i], to_be_matched[j]);
@@ -232,6 +238,29 @@ impl MWPMDecoder {
                     let boundary_correction =
                         self.complete_model_graph.build_correction_boundary(a);
                     correction.extend(&boundary_correction);
+                }
+                if self.config.log_matchings {
+                    let peer_position = if j < i {
+                        Some(to_be_matched[j].clone())
+                    } else if j >= m_len {
+                        Some(
+                            self.complete_model_graph
+                                .get_node_unwrap(a)
+                                .precomputed
+                                .as_ref()
+                                .unwrap()
+                                .boundary
+                                .as_ref()
+                                .unwrap()
+                                .next
+                                .clone(),
+                        )
+                    } else {
+                        None
+                    };
+                    if let Some(peer_position) = peer_position {
+                        matching_edges.push((a.clone(), peer_position));
+                    }
                 }
             }
             time_build_correction += begin.elapsed().as_secs_f64();
@@ -283,15 +312,24 @@ impl MWPMDecoder {
                     .model_graph_changed(&self.simulator);
             }
         }
-        (
-            correction,
-            json!({
-                "to_be_matched": to_be_matched.len(),
-                "time_prepare_graph": time_prepare_graph,
-                "time_blossom_v": time_blossom_v,
-                "time_build_correction": time_build_correction,
-            }),
-        )
+        let mut runtime_statistics = json!({
+            "to_be_matched": to_be_matched.len(),
+            "time_prepare_graph": time_prepare_graph,
+            "time_blossom_v": time_blossom_v,
+            "time_build_correction": time_build_correction,
+        });
+        if self.config.log_matchings {
+            let runtime_statistics = runtime_statistics.as_object_mut().unwrap();
+            runtime_statistics.insert(
+                "log_matchings".to_string(),
+                json!([{
+                    "name": "matching",
+                    "description": "minimum-weight perfect matching",
+                    "edges": matching_edges,
+                }]),
+            );
+        }
+        (correction, runtime_statistics)
     }
 }
 

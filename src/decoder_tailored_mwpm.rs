@@ -61,6 +61,8 @@ pub struct TailoredMWPMDecoderConfig {
     /// whether use the original residual decoding weighting of corner clusters: use the Manhattan distance
     #[serde(default = "tailored_mwpm_default_configs::original_residual_corner_weights")]
     pub original_residual_corner_weights: bool,
+    #[serde(default = "tailored_mwpm_default_configs::log_matchings")]
+    pub log_matchings: bool,
 }
 
 pub mod tailored_mwpm_default_configs {
@@ -74,6 +76,9 @@ pub mod tailored_mwpm_default_configs {
         false
     }
     pub fn original_residual_corner_weights() -> bool {
+        false
+    }
+    pub fn log_matchings() -> bool {
         false
     }
 }
@@ -115,6 +120,7 @@ impl TailoredMWPMDecoder {
             &json!({
                 "precompute_complete_model_graph": config.precompute_complete_model_graph,
                 "weight_function": config.weight_function,
+                "log_matchings": config.log_matchings,
             }),
             parallel,
             use_brief_edge,
@@ -141,6 +147,7 @@ impl TailoredMWPMDecoder {
         let mut time_neutral_prepare_graph = 0.;
         let mut time_residual_decoding = 0.;
         let mut time_build_correction = 0.;
+        let mut log_matchings = Vec::with_capacity(0);
         if to_be_matched.len() > 0 {
             let begin = Instant::now();
             // vertices layout: [positive real nodes] [positive virtual nodes] [negative real nodes] [negative virtual nodes]
@@ -208,6 +215,27 @@ impl TailoredMWPMDecoder {
                 tailored_len * 2,
                 tailored_weighted_edges,
             );
+            if self.config.log_matchings {
+                // log the tailored matching
+                for graph_index in 0..2 {
+                    let mut graphs_edges = vec![];
+                    for i in 0..real_len {
+                        let j = tailored_matching[i + graph_index * tailored_len] % tailored_len;
+                        if i < j {
+                            // do not print matchings between virtual nodes
+                            let position_i = tailored_to_be_matched[i].clone();
+                            let position_j = tailored_to_be_matched[j].clone();
+                            graphs_edges.push((position_i, position_j));
+                        }
+                    }
+                    let name = ["positive", "negative"][graph_index];
+                    log_matchings.push(json!({
+                        "name": name,
+                        "description": format!("tailored matching of {name} graph"),
+                        "edges": graphs_edges,
+                    }));
+                }
+            }
             time_tailored_blossom_v += begin.elapsed().as_secs_f64();
             // union-find tailored clusters
             let begin = Instant::now();
@@ -357,9 +385,29 @@ impl TailoredMWPMDecoder {
                 }
                 // eprintln!("residual_to_be_matched: {:?}", residual_to_be_matched);
                 if residual_to_be_matched.len() > 0 {
-                    let (correction, _) = self
+                    let (correction, mwpm_runtime_statistics) = self
                         .mwpm_decoder
                         .decode(&SparseMeasurement::from_vec(&residual_to_be_matched));
+                    if self.config.log_matchings {
+                        let matching_edges = mwpm_runtime_statistics
+                            .as_object()
+                            .unwrap()
+                            .get("log_matchings")
+                            .unwrap()
+                            .as_array()
+                            .unwrap()
+                            .get(0).expect("since residual is not empty, mwpm should give at least one matching")
+                            .as_object()
+                            .unwrap()
+                            .get("edges")
+                            .unwrap();
+                        // log the tailored matching
+                        log_matchings.push(json!({
+                            "name": "naive",
+                            "description": "naive residual decoding",
+                            "edges": matching_edges,
+                        }));
+                    }
                     correction
                 } else {
                     SparseCorrection::new()
@@ -720,18 +768,20 @@ impl TailoredMWPMDecoder {
             correction.extend(&residual_correction);
             time_build_correction += begin.elapsed().as_secs_f64();
         }
-        (
-            correction,
-            json!({
-                "to_be_matched": to_be_matched.len(),
-                "time_tailored_prepare_graph": time_tailored_prepare_graph,
-                "time_tailored_blossom_v": time_tailored_blossom_v,
-                "time_tailored_union": time_tailored_union,
-                "time_neutral_prepare_graph": time_neutral_prepare_graph,
-                "time_residual_decoding": time_residual_decoding,
-                "time_build_correction": time_build_correction,
-            }),
-        )
+        let mut runtime_statistics = json!({
+            "to_be_matched": to_be_matched.len(),
+            "time_tailored_prepare_graph": time_tailored_prepare_graph,
+            "time_tailored_blossom_v": time_tailored_blossom_v,
+            "time_tailored_union": time_tailored_union,
+            "time_neutral_prepare_graph": time_neutral_prepare_graph,
+            "time_residual_decoding": time_residual_decoding,
+            "time_build_correction": time_build_correction,
+        });
+        if self.config.log_matchings {
+            let runtime_statistics = runtime_statistics.as_object_mut().unwrap();
+            runtime_statistics.insert("log_matchings".to_string(), json!(log_matchings));
+        }
+        (correction, runtime_statistics)
     }
 }
 
