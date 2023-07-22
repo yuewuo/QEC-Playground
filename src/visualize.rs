@@ -1,18 +1,17 @@
 //! Visualizer
-//! 
+//!
 //! This module helps visualize the circuit, noise model, model graph, error patterns, corrections, etc.
-//! 
+//!
 
-use crate::serde_json;
-use std::fs::File;
-use crate::serde::{Serialize, Deserialize};
-use std::io::{Write, Seek, SeekFrom};
 use crate::chrono::Local;
+use crate::serde::{Deserialize, Serialize};
+use crate::serde_json;
 use crate::urlencoding;
-#[cfg(feature="python_binding")]
+#[cfg(feature = "python_binding")]
 use pyo3::prelude::*;
 use std::collections::BTreeSet;
-
+use std::fs::File;
+use std::io::{Seek, SeekFrom, Write};
 
 pub trait QecpVisualizer {
     fn component_info(&self, abbrev: bool) -> (String, serde_json::Value);
@@ -36,12 +35,12 @@ impl VisualizePosition {
     /// create a visualization position
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new(x: f64, y: f64) -> Self {
-        Self {
-            x, y
-        }
+        Self { x, y }
     }
     #[cfg(feature = "python_binding")]
-    fn __repr__(&self) -> String { format!("{:?}", self) }
+    fn __repr__(&self) -> String {
+        format!("{:?}", self)
+    }
 }
 
 #[derive(Debug)]
@@ -60,21 +59,20 @@ pub struct Visualizer {
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl Visualizer {
-
     /// create a new visualizer with target filename and node layout
     #[cfg_attr(feature = "python_binding", new)]
     #[cfg_attr(feature = "python_binding", pyo3(signature = (filepath)))]
     pub fn new(mut filepath: Option<String>) -> std::io::Result<Self> {
         if cfg!(feature = "disable_visualizer") {
-            filepath = None;  // do not open file
+            filepath = None; // do not open file
         }
         let mut file = match filepath {
             Some(filepath) => Some(File::create(filepath)?),
             None => None,
         };
         if let Some(file) = file.as_mut() {
-            file.set_len(0)?;  // truncate the file
-            file.seek(SeekFrom::Start(0))?;  // move the cursor to the front
+            file.set_len(0)?; // truncate the file
+            file.seek(SeekFrom::Start(0))?; // move the cursor to the front
             file.write_all(format!("{{\"format\":\"qecp\",\"version\":\"{}\"}}", env!("CARGO_PKG_VERSION")).as_bytes())?;
             file.sync_all()?;
         }
@@ -89,26 +87,29 @@ impl Visualizer {
         assert!(!self.component_done);
         self.component_done = true;
         if let Some(file) = self.file.as_mut() {
-            file.seek(SeekFrom::End(-1))?;  // move the cursor before the ending }
+            file.seek(SeekFrom::End(-1))?; // move the cursor before the ending }
             file.write_all(b",\"cases\":[")?;
-            file.write_all(json!({
-                "error_pattern": {},
-                "correction": {},
-                "measurement": [],
-                "detected_erasures": [],
-                "qec_failed": false,
-                "elapsed": {
-                    "simulate": 0.,
-                    "decode": 0.,
-                    "validate": 0.,
-                },
-            }).to_string().as_bytes())?;
+            file.write_all(
+                json!({
+                    "error_pattern": {},
+                    "correction": {},
+                    "measurement": [],
+                    "detected_erasures": [],
+                    "qec_failed": false,
+                    "elapsed": {
+                        "simulate": 0.,
+                        "decode": 0.,
+                        "validate": 0.,
+                    },
+                })
+                .to_string()
+                .as_bytes(),
+            )?;
             file.write_all(b"]}")?;
             file.sync_all()?;
         }
         Ok(())
     }
-
 }
 
 #[cfg(feature = "python_binding")]
@@ -123,7 +124,10 @@ impl Visualizer {
     pub fn add_component_model_graph(&mut self, model_graph: &crate::model_graph::ModelGraph) -> std::io::Result<()> {
         self.add_component(model_graph)
     }
-    pub fn add_component_model_hypergraph(&mut self, model_hypergraph: &crate::model_hypergraph::ModelHypergraph) -> std::io::Result<()> {
+    pub fn add_component_model_hypergraph(
+        &mut self,
+        model_hypergraph: &crate::model_hypergraph::ModelHypergraph,
+    ) -> std::io::Result<()> {
         self.add_component(model_hypergraph)
     }
     #[pyo3(name = "add_case")]
@@ -135,13 +139,12 @@ impl Visualizer {
 }
 
 impl Visualizer {
-
     /// add component to the visualizer; each component should be independent
     pub fn add_component(&mut self, component: &impl QecpVisualizer) -> std::io::Result<()> {
         assert!(!self.component_done);
         let abbrev = true;
         if let Some(file) = self.file.as_mut() {
-            file.seek(SeekFrom::End(-1))?;  // move the cursor before the ending }
+            file.seek(SeekFrom::End(-1))?; // move the cursor before the ending }
             let (name, component_info) = component.component_info(abbrev);
             file.write_all(format!(",\"{}\":", name).as_bytes())?;
             file.write_all(json!(component_info).to_string().as_bytes())?;
@@ -156,7 +159,7 @@ impl Visualizer {
             self.end_component()?;
         }
         if let Some(file) = self.file.as_mut() {
-            file.seek(SeekFrom::End(-2))?;  // move the cursor before the ending ]}
+            file.seek(SeekFrom::End(-2))?; // move the cursor before the ending ]}
             file.write_all(b",")?;
             file.write_all(case.to_string().as_bytes())?;
             file.write_all(b"]}")?;
@@ -164,7 +167,6 @@ impl Visualizer {
         }
         Ok(())
     }
-
 }
 
 impl Drop for Visualizer {
@@ -203,7 +205,10 @@ pub fn print_visualize_link_with_parameters(filename: String, parameters: Vec<(S
         link.push_str(&urlencoding::encode(value));
     }
     if cfg!(feature = "python_binding") {
-        println!("opening link {} (use `fusion_blossom.open_visualizer(filename)` to start a server and open it in browser)", link)
+        println!(
+            "opening link {} (use `fusion_blossom.open_visualizer(filename)` to start a server and open it in browser)",
+            link
+        )
     } else {
         println!("opening link {} (start local server by running ./visualize/server.sh) or call `node index.js <link>` to render locally", link)
     }
@@ -214,7 +219,7 @@ pub fn print_visualize_link(filename: String) {
     print_visualize_link_with_parameters(filename, Vec::new())
 }
 
-#[cfg(feature="python_binding")]
+#[cfg(feature = "python_binding")]
 #[pyfunction]
 pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<VisualizePosition>()?;

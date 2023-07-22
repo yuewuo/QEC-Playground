@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
-#[cfg(feature="python_binding")]
+#[cfg(feature = "python_binding")]
 use pyo3::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Qubit type, corresponds to `QTYPE` in `FaultTolerantView.vue`
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, Copy)]
@@ -12,10 +12,10 @@ pub enum QubitType {
     StabZ,
     StabXZZXLogicalX,
     StabXZZXLogicalZ,
-    StabY,  // in tailored surface code
+    StabY, // in tailored surface code
 }
 
-#[cfg(feature="python_binding")]
+#[cfg(feature = "python_binding")]
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl QubitType {
     /// if measure in Z basis, it's prepared in |0> state, otherwise it's measuring X basis and prepared in |+> state; data qubit will return None
@@ -29,30 +29,29 @@ impl QubitType {
 }
 
 /// Error type, corresponds to `ETYPE` in `FaultTolerantView.vue`
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Default, PartialEq, Clone, Copy, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub enum ErrorType {
+    #[default]
     I,
     X,
     Z,
     Y,
 }
 
-impl Default for ErrorType {
-    fn default() -> Self {
-        ErrorType::I  // default to identity
-    }
-}
-
 impl std::fmt::Display for ErrorType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Self::I => "I",
-            Self::X => "X",
-            Self::Z => "Z",
-            Self::Y => "Y",
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::I => "I",
+                Self::X => "X",
+                Self::Z => "Z",
+                Self::Y => "Y",
+            }
+        )
     }
 }
 
@@ -81,7 +80,7 @@ impl ErrorType {
         }
     }
     //#[staticmethod]
-    pub fn all_possible_errors() -> Vec::<Self> {
+    pub fn all_possible_errors() -> Vec<Self> {
         vec![Self::X, Self::Z, Self::Y]
     }
     //#[classmethod]
@@ -136,20 +135,51 @@ impl CorrelatedPauliErrorType {
             Self::IY | Self::XY | Self::ZY | Self::YY => ErrorType::Y,
         }
     }
-    pub fn all_possible_errors() -> Vec::<Self> {
-        vec![           Self::IX, Self::IZ, Self::IY, Self::XI, Self::XX, Self::XZ, Self::XY,
-             Self::ZI, Self::ZX, Self::ZZ, Self::ZY, Self::YI, Self::YX, Self::YZ, Self::YY,]
+    pub fn all_possible_errors() -> Vec<Self> {
+        vec![
+            Self::IX,
+            Self::IZ,
+            Self::IY,
+            Self::XI,
+            Self::XX,
+            Self::XZ,
+            Self::XY,
+            Self::ZI,
+            Self::ZX,
+            Self::ZZ,
+            Self::ZY,
+            Self::YI,
+            Self::YX,
+            Self::YZ,
+            Self::YY,
+        ]
     }
 }
 
 impl std::fmt::Display for CorrelatedPauliErrorType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Self::II => "II", Self::IX => "IX", Self::IZ => "IZ", Self::IY => "IY",
-            Self::XI => "XI", Self::XX => "XX", Self::XZ => "XZ", Self::XY => "XY",
-            Self::ZI => "ZI", Self::ZX => "ZX", Self::ZZ => "ZZ", Self::ZY => "ZY",
-            Self::YI => "YI", Self::YX => "YX", Self::YZ => "YZ", Self::YY => "YY",
-        }.to_string())
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::II => "II",
+                Self::IX => "IX",
+                Self::IZ => "IZ",
+                Self::IY => "IY",
+                Self::XI => "XI",
+                Self::XX => "XX",
+                Self::XZ => "XZ",
+                Self::XY => "XY",
+                Self::ZI => "ZI",
+                Self::ZX => "ZX",
+                Self::ZZ => "ZZ",
+                Self::ZY => "ZY",
+                Self::YI => "YI",
+                Self::YX => "YX",
+                Self::YZ => "YZ",
+                Self::YY => "YY",
+            }
+        )
     }
 }
 
@@ -163,10 +193,13 @@ pub struct PauliErrorRates {
     pub error_rate_Z: f64,
 }
 
-impl PauliErrorRates {
-    pub fn default() -> Self {
+impl Default for PauliErrorRates {
+    fn default() -> Self {
         Self::default_with_probability(0.)
     }
+}
+
+impl PauliErrorRates {
     pub fn default_with_probability(p: f64) -> Self {
         Self {
             error_rate_X: p,
@@ -190,7 +223,6 @@ impl PauliErrorRates {
         }
     }
 }
-
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct CorrelatedPauliErrorRates {
@@ -226,10 +258,13 @@ pub struct CorrelatedPauliErrorRates {
     pub error_rate_YY: f64,
 }
 
-impl CorrelatedPauliErrorRates {
-    pub fn default() -> Self {
+impl Default for CorrelatedPauliErrorRates {
+    fn default() -> Self {
         Self::default_with_probability(0.)
     }
+}
+
+impl CorrelatedPauliErrorRates {
     pub fn default_with_probability(p: f64) -> Self {
         Self {
             error_rate_IX: p,
@@ -250,10 +285,21 @@ impl CorrelatedPauliErrorRates {
         }
     }
     pub fn error_probability(&self) -> f64 {
-                               self.error_rate_IX + self.error_rate_IZ + self.error_rate_IY
-        + self.error_rate_XI + self.error_rate_XX + self.error_rate_XZ + self.error_rate_XY
-        + self.error_rate_ZI + self.error_rate_ZX + self.error_rate_ZZ + self.error_rate_ZY
-        + self.error_rate_YI + self.error_rate_YX + self.error_rate_YZ + self.error_rate_YY
+        self.error_rate_IX
+            + self.error_rate_IZ
+            + self.error_rate_IY
+            + self.error_rate_XI
+            + self.error_rate_XX
+            + self.error_rate_XZ
+            + self.error_rate_XY
+            + self.error_rate_ZI
+            + self.error_rate_ZX
+            + self.error_rate_ZZ
+            + self.error_rate_ZY
+            + self.error_rate_YI
+            + self.error_rate_YX
+            + self.error_rate_YZ
+            + self.error_rate_YY
     }
     pub fn no_error_probability(&self) -> f64 {
         1. - self.error_probability()
@@ -279,7 +325,10 @@ impl CorrelatedPauliErrorRates {
         }
     }
     pub fn sanity_check(&self) {
-        assert!(self.no_error_probability() >= 0., "sum of error rate should be no more than 1");
+        assert!(
+            self.no_error_probability() >= 0.,
+            "sum of error rate should be no more than 1"
+        );
         assert!(self.error_rate_IX >= 0., "error rate should be greater than 0");
         assert!(self.error_rate_IZ >= 0., "error rate should be greater than 0");
         assert!(self.error_rate_IY >= 0., "error rate should be greater than 0");
@@ -298,21 +347,65 @@ impl CorrelatedPauliErrorRates {
     }
     pub fn generate_random_error(&self, random_number: f64) -> CorrelatedPauliErrorType {
         let mut random_number = random_number;
-        if random_number < self.error_rate_IX { return CorrelatedPauliErrorType::IX; } random_number -= self.error_rate_IX;
-        if random_number < self.error_rate_IZ { return CorrelatedPauliErrorType::IZ; } random_number -= self.error_rate_IZ;
-        if random_number < self.error_rate_IY { return CorrelatedPauliErrorType::IY; } random_number -= self.error_rate_IY;
-        if random_number < self.error_rate_XI { return CorrelatedPauliErrorType::XI; } random_number -= self.error_rate_XI;
-        if random_number < self.error_rate_XX { return CorrelatedPauliErrorType::XX; } random_number -= self.error_rate_XX;
-        if random_number < self.error_rate_XZ { return CorrelatedPauliErrorType::XZ; } random_number -= self.error_rate_XZ;
-        if random_number < self.error_rate_XY { return CorrelatedPauliErrorType::XY; } random_number -= self.error_rate_XY;
-        if random_number < self.error_rate_ZI { return CorrelatedPauliErrorType::ZI; } random_number -= self.error_rate_ZI;
-        if random_number < self.error_rate_ZX { return CorrelatedPauliErrorType::ZX; } random_number -= self.error_rate_ZX;
-        if random_number < self.error_rate_ZZ { return CorrelatedPauliErrorType::ZZ; } random_number -= self.error_rate_ZZ;
-        if random_number < self.error_rate_ZY { return CorrelatedPauliErrorType::ZY; } random_number -= self.error_rate_ZY;
-        if random_number < self.error_rate_YI { return CorrelatedPauliErrorType::YI; } random_number -= self.error_rate_YI;
-        if random_number < self.error_rate_YX { return CorrelatedPauliErrorType::YX; } random_number -= self.error_rate_YX;
-        if random_number < self.error_rate_YZ { return CorrelatedPauliErrorType::YZ; } random_number -= self.error_rate_YZ;
-        if random_number < self.error_rate_YY { return CorrelatedPauliErrorType::YY; }
+        if random_number < self.error_rate_IX {
+            return CorrelatedPauliErrorType::IX;
+        }
+        random_number -= self.error_rate_IX;
+        if random_number < self.error_rate_IZ {
+            return CorrelatedPauliErrorType::IZ;
+        }
+        random_number -= self.error_rate_IZ;
+        if random_number < self.error_rate_IY {
+            return CorrelatedPauliErrorType::IY;
+        }
+        random_number -= self.error_rate_IY;
+        if random_number < self.error_rate_XI {
+            return CorrelatedPauliErrorType::XI;
+        }
+        random_number -= self.error_rate_XI;
+        if random_number < self.error_rate_XX {
+            return CorrelatedPauliErrorType::XX;
+        }
+        random_number -= self.error_rate_XX;
+        if random_number < self.error_rate_XZ {
+            return CorrelatedPauliErrorType::XZ;
+        }
+        random_number -= self.error_rate_XZ;
+        if random_number < self.error_rate_XY {
+            return CorrelatedPauliErrorType::XY;
+        }
+        random_number -= self.error_rate_XY;
+        if random_number < self.error_rate_ZI {
+            return CorrelatedPauliErrorType::ZI;
+        }
+        random_number -= self.error_rate_ZI;
+        if random_number < self.error_rate_ZX {
+            return CorrelatedPauliErrorType::ZX;
+        }
+        random_number -= self.error_rate_ZX;
+        if random_number < self.error_rate_ZZ {
+            return CorrelatedPauliErrorType::ZZ;
+        }
+        random_number -= self.error_rate_ZZ;
+        if random_number < self.error_rate_ZY {
+            return CorrelatedPauliErrorType::ZY;
+        }
+        random_number -= self.error_rate_ZY;
+        if random_number < self.error_rate_YI {
+            return CorrelatedPauliErrorType::YI;
+        }
+        random_number -= self.error_rate_YI;
+        if random_number < self.error_rate_YX {
+            return CorrelatedPauliErrorType::YX;
+        }
+        random_number -= self.error_rate_YX;
+        if random_number < self.error_rate_YZ {
+            return CorrelatedPauliErrorType::YZ;
+        }
+        random_number -= self.error_rate_YZ;
+        if random_number < self.error_rate_YY {
+            return CorrelatedPauliErrorType::YY;
+        }
         CorrelatedPauliErrorType::II
     }
 }
@@ -355,10 +448,13 @@ pub struct CorrelatedErasureErrorRates {
     pub error_rate_EE: f64,
 }
 
-impl CorrelatedErasureErrorRates {
-    pub fn default() -> Self {
+impl Default for CorrelatedErasureErrorRates {
+    fn default() -> Self {
         Self::default_with_probability(0.)
     }
+}
+
+impl CorrelatedErasureErrorRates {
     pub fn default_with_probability(p: f64) -> Self {
         Self {
             error_rate_IE: p,
@@ -381,16 +477,27 @@ impl CorrelatedErasureErrorRates {
     //     }
     // }
     pub fn sanity_check(&self) {
-        assert!(self.no_error_probability() >= 0., "sum of error rate should be no more than 1");
+        assert!(
+            self.no_error_probability() >= 0.,
+            "sum of error rate should be no more than 1"
+        );
         assert!(self.error_rate_IE >= 0., "error rate should be greater than 0");
         assert!(self.error_rate_EI >= 0., "error rate should be greater than 0");
         assert!(self.error_rate_EE >= 0., "error rate should be greater than 0");
     }
     pub fn generate_random_erasure_error(&self, random_number: f64) -> CorrelatedErasureErrorType {
         let mut random_number = random_number;
-        if random_number < self.error_rate_IE { return CorrelatedErasureErrorType::IE; } random_number -= self.error_rate_IE;
-        if random_number < self.error_rate_EI { return CorrelatedErasureErrorType::EI; } random_number -= self.error_rate_EI;
-        if random_number < self.error_rate_EE { return CorrelatedErasureErrorType::EE; }
+        if random_number < self.error_rate_IE {
+            return CorrelatedErasureErrorType::IE;
+        }
+        random_number -= self.error_rate_IE;
+        if random_number < self.error_rate_EI {
+            return CorrelatedErasureErrorType::EI;
+        }
+        random_number -= self.error_rate_EI;
+        if random_number < self.error_rate_EE {
+            return CorrelatedErasureErrorType::EE;
+        }
         CorrelatedErasureErrorType::II
     }
 }
@@ -426,14 +533,14 @@ impl std::fmt::Display for DecoderType {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum NoiseModelName {
-    GenericBiasedWithBiasedCX,  // arXiv:2104.09539v1 Sec.IV.A
-    GenericBiasedWithStandardCX,  // arXiv:2104.09539v1 Sec.IV.A
-    ErasureOnlyPhenomenological,  // 100% erasure errors only on the data qubits before the gates happen and on the ancilla qubits after the gates finish
-    PauliZandErasurePhenomenological,  // this noise model is from https://arxiv.org/pdf/1709.06218v3.pdf
-    OnlyGateErrorCircuitLevel,  // errors happen at 4 stages in each measurement round (although removed errors happening at initialization and measurement stage, measurement errors can still occur when curtain error applies on the ancilla after the last gate)
-    OnlyGateErrorCircuitLevelCorrelatedErasure,  // the same as `OnlyGateErrorCircuitLevel`, just the erasures are correlated
-    Arxiv200404693,  // Huang 2020 paper https://arxiv.org/pdf/2004.04693.pdf (note that periodic boundary condition is currently not supported)
-    TailoredPhenomenological,  // arXiv:1907.02554v2 Biased noise models
+    GenericBiasedWithBiasedCX,                  // arXiv:2104.09539v1 Sec.IV.A
+    GenericBiasedWithStandardCX,                // arXiv:2104.09539v1 Sec.IV.A
+    ErasureOnlyPhenomenological, // 100% erasure errors only on the data qubits before the gates happen and on the ancilla qubits after the gates finish
+    PauliZandErasurePhenomenological, // this noise model is from https://arxiv.org/pdf/1709.06218v3.pdf
+    OnlyGateErrorCircuitLevel, // errors happen at 4 stages in each measurement round (although removed errors happening at initialization and measurement stage, measurement errors can still occur when curtain error applies on the ancilla after the last gate)
+    OnlyGateErrorCircuitLevelCorrelatedErasure, // the same as `OnlyGateErrorCircuitLevel`, just the erasures are correlated
+    Arxiv200404693, // Huang 2020 paper https://arxiv.org/pdf/2004.04693.pdf (note that periodic boundary condition is currently not supported)
+    TailoredPhenomenological, // arXiv:1907.02554v2 Biased noise models
 }
 
 impl From<String> for NoiseModelName {
@@ -468,7 +575,7 @@ impl std::fmt::Display for NoiseModelName {
     }
 }
 
-#[cfg(feature="python_binding")]
+#[cfg(feature = "python_binding")]
 #[pyfunction]
 pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<ErrorType>()?;

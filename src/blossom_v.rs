@@ -1,8 +1,7 @@
 use super::cfg_if;
 use super::libc;
-use libc::{c_int};
+use libc::c_int;
 use std::collections::BTreeSet;
-
 
 cfg_if::cfg_if! {
     if #[cfg(feature="blossom_v")] {
@@ -21,12 +20,16 @@ cfg_if::cfg_if! {
     }
 }
 
-pub fn safe_minimum_weight_perfect_matching_integer_weights(node_num: usize, input_weighted_edges: Vec<(usize, usize, c_int)>) -> Vec<usize> {
+pub fn safe_minimum_weight_perfect_matching_integer_weights(
+    node_num: usize,
+    input_weighted_edges: Vec<(usize, usize, c_int)>,
+) -> Vec<usize> {
     // reverse the nodes' indices
-    let weighted_edges = if cfg!(feature="MWPM_reverse_order") {
-        input_weighted_edges.iter().map(|(a, b, cost)| {
-            (node_num - 1 - a, node_num - 1 - b, *cost)
-        }).collect()
+    let weighted_edges = if cfg!(feature = "MWPM_reverse_order") {
+        input_weighted_edges
+            .iter()
+            .map(|(a, b, cost)| (node_num - 1 - a, node_num - 1 - b, *cost))
+            .collect()
     } else {
         input_weighted_edges
     };
@@ -37,8 +40,7 @@ pub fn safe_minimum_weight_perfect_matching_integer_weights(node_num: usize, inp
     debug_assert!({
         let mut existing_edges = BTreeSet::new();
         let mut sanity_check_passed = true;
-        for idx in 0..edge_num {
-            let (i, j, _weight) = weighted_edges[idx];
+        for &(i, j, _weight) in weighted_edges.iter() {
             if i == j {
                 eprintln!("invalid edge between the same vertex {}", i);
                 sanity_check_passed = false;
@@ -53,8 +55,7 @@ pub fn safe_minimum_weight_perfect_matching_integer_weights(node_num: usize, inp
         }
         sanity_check_passed
     });
-    for idx in 0..edge_num {
-        let (i, j, weight) = weighted_edges[idx];
+    for &(i, j, weight) in weighted_edges.iter() {
         edges.push(i as c_int);
         edges.push(j as c_int);
         assert!(i < node_num && j < node_num);
@@ -62,15 +63,19 @@ pub fn safe_minimum_weight_perfect_matching_integer_weights(node_num: usize, inp
     }
     let mut output = Vec::with_capacity(node_num);
     unsafe {
-        minimum_weight_perfect_matching(node_num as c_int, edge_num as c_int, edges.as_ptr(), weights.as_ptr(), output.as_mut_ptr());
+        minimum_weight_perfect_matching(
+            node_num as c_int,
+            edge_num as c_int,
+            edges.as_ptr(),
+            weights.as_ptr(),
+            output.as_mut_ptr(),
+        );
         output.set_len(node_num);
     }
     let output: Vec<usize> = output.iter().map(|x| *x as usize).collect();
     // recover the nodes' indices
-    if cfg!(feature="MWPM_reverse_order") {
-        let mut result = output.iter().map(|a| {
-            node_num - 1 - a
-        }).collect::<Vec<_>>();
+    if cfg!(feature = "MWPM_reverse_order") {
+        let mut result = output.iter().map(|a| node_num - 1 - a).collect::<Vec<_>>();
         result.reverse();
         result
     } else {
@@ -95,16 +100,18 @@ pub fn safe_minimum_weight_perfect_matching(node_num: usize, input_weighted_edge
 }
 
 // important: only takes non-positive inputs
-pub fn maximum_weight_perfect_matching_compatible(node_num: usize, weighted_edges: Vec<(usize, usize, f64)>) -> std::collections::HashSet<(usize, usize)> {
+pub fn maximum_weight_perfect_matching_compatible(
+    node_num: usize,
+    weighted_edges: Vec<(usize, usize, f64)>,
+) -> std::collections::HashSet<(usize, usize)> {
     // blossom V is minimum weight perfect matching, this function is maximum
-    let weighted_edges: Vec::<(usize, usize, f64)> = weighted_edges.iter().map(|(a, b, w)| (*a, *b, -*w)).collect();
+    let weighted_edges: Vec<(usize, usize, f64)> = weighted_edges.iter().map(|(a, b, w)| (*a, *b, -*w)).collect();
     let output = safe_minimum_weight_perfect_matching(node_num, weighted_edges);
     let mut matched = std::collections::HashSet::new();
-    for i in 0..node_num {
-        if output[i] as usize > i {
-            matched.insert((i, output[i] as usize));
+    for (i, &value) in output.iter().enumerate().take(node_num) {
+        if value > i {
+            matched.insert((i, value));
         }
     }
     matched
 }
-

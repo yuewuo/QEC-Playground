@@ -1,26 +1,22 @@
 #![allow(non_snake_case)]
 
-#[cfg(feature="python_binding")]
-use super::pyo3::prelude::*;
-#[cfg(feature="python_binding")]
-use super::pyo3::types::{IntoPyDict};
 use super::blossom_v;
+#[cfg(feature = "python_binding")]
+use super::pyo3::prelude::*;
+#[cfg(feature = "python_binding")]
+use super::pyo3::types::IntoPyDict;
 use crate::cli::*;
-
 
 impl TestCommands {
     pub fn run(self) {
         match self {
-            Self::DebugTests => {
-                debug_tests()
-            },
-            Self::ArchivedDebugTests => {
-                archived_debug_tests()
-            },
-            Self::All => {  // remember to add new test functions here
+            Self::DebugTests => debug_tests(),
+            Self::ArchivedDebugTests => archived_debug_tests(),
+            Self::All => {
+                // remember to add new test functions here
                 debug_tests();
                 archived_debug_tests();
-            },
+            }
         }
     }
 }
@@ -58,7 +54,8 @@ fn archived_debug_tests() {
             println!("[error] compiling feature `python_binding` not enabled")
         }
     }
-    {  // call blossom V matching
+    {
+        // call blossom V matching
         let weighted_edges = vec![
             (0, 1, -3.),
             (1, 2, -2.),
@@ -75,5 +72,4 @@ fn archived_debug_tests() {
     }
 }
 
-fn debug_tests() {
-}
+fn debug_tests() {}

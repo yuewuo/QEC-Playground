@@ -17,7 +17,7 @@ if (is_mock) {
 if (typeof Vue === 'undefined') {
     global.Vue = await import('vue')
 }
-const { ref, reactive, watch, computed } = Vue
+const { ref, watch } = Vue
 
 // fetch visualization data
 const urlParams = new URLSearchParams(window.location.search)
@@ -63,6 +63,7 @@ const App = {
             noise_model_info: ref(null),
             selected_hypergraph_info: ref(null),
             selected_model_graph_info: ref(null),
+            selected_tailored_info: ref(null),
             // display options
             display_qubits: gui3d.display_qubits,
             display_idle_sticks: gui3d.display_idle_sticks,
@@ -75,13 +76,21 @@ const App = {
             model_graph_region_display: gui3d.model_graph_region_display,
             existed_model_hypergraph: gui3d.existed_model_hypergraph,
             display_model_hypergraph: gui3d.display_model_hypergraph,
+            existed_tailored_model_graph: gui3d.existed_tailored_model_graph,
+            display_tailored_model_graph: gui3d.display_tailored_model_graph,
+            tailored_model_graph_region_display: gui3d.tailored_model_graph_region_display,
+            display_tailored_unfixed_stabilizer: gui3d.display_tailored_unfixed_stabilizer,
+            existed_tailored_unfixed_stabilizer: gui3d.existed_tailored_unfixed_stabilizer,
             existed_noise_model: gui3d.existed_noise_model,
             display_noise_model_pauli: gui3d.display_noise_model_pauli,
             display_noise_model_erasure: gui3d.display_noise_model_erasure,
+            display_matchings: gui3d.display_matchings,
+            log_matchings_display: gui3d.log_matchings_display,
             t_range: gui3d.t_range,
             t_length: gui3d.t_length,
             non_zero_color: "red",
             zero_color: "grey",
+            sequential_colors: gui3d.sequential_colors,
         }
     },
     async mounted() {
@@ -107,7 +116,7 @@ const App = {
         // load case
         this.show_case(0)  // load the first case
         this.case_num = qecp_data.cases.length
-        for (let idx=0; idx < qecp_data.cases.length; idx++) {
+        for (let idx = 0; idx < qecp_data.cases.length; idx++) {
             let this_case = qecp_data.cases[idx]
             this.case_labels.push(`[${idx}]`)
         }
@@ -284,11 +293,13 @@ const App = {
                 let neighbor_edges = []
                 for (let edge_index of incident_edges) {
                     const [defect_vertices_str, hyperedge_group] = qecp_data.model_hypergraph.weighted_edges[edge_index]
-                    const defect_vertices = gui3d.get_defect_vertices(defect_vertices_str).map(x => { return {
-                        vertex_index: qecp_data.model_hypergraph.vertex_indices[gui3d.to_position_str(x)],
-                        position_str: gui3d.to_position_str(x),
-                        tij: x,
-                    }})
+                    const defect_vertices = gui3d.get_defect_vertices(defect_vertices_str).map(x => {
+                        return {
+                            vertex_index: qecp_data.model_hypergraph.vertex_indices[gui3d.to_position_str(x)],
+                            position_str: gui3d.to_position_str(x),
+                            tij: x,
+                        }
+                    })
                     neighbor_edges.push({
                         edge_index: edge_index,
                         probability: hyperedge_group.hyperedge.p,
@@ -304,11 +315,13 @@ const App = {
             if (this.current_selected.type == "model_hypergraph_edge") {
                 let edge_index = this.current_selected.edge_index
                 let [defect_vertices_str, hyperedge_group] = qecp_data.model_hypergraph.weighted_edges[edge_index]
-                const defect_vertices = gui3d.get_defect_vertices(defect_vertices_str).map(x => { return {
-                    vertex_index: qecp_data.model_hypergraph.vertex_indices[gui3d.to_position_str(x)],
-                    position_str: gui3d.to_position_str(x),
-                    tij: x,
-                }})
+                const defect_vertices = gui3d.get_defect_vertices(defect_vertices_str).map(x => {
+                    return {
+                        vertex_index: qecp_data.model_hypergraph.vertex_indices[gui3d.to_position_str(x)],
+                        position_str: gui3d.to_position_str(x),
+                        tij: x,
+                    }
+                })
                 let all_hyperedges = []
                 for (const hyperedge of hyperedge_group.all_hyperedges) {
                     let error_pattern = []
@@ -346,9 +359,8 @@ const App = {
                 let edges = {}
                 let vec_mesh_idx = 0
                 for (let [peer_position_str, edge] of Object.entries(model_graph_node.edges)) {
-                    edges[peer_position_str] = { ...model_graph_node.edges[peer_position_str] }
+                    edges[peer_position_str] = { ...edge }
                     edges[peer_position_str].userData = gui3d.model_graph_edge_vec_meshes[t][i][j][vec_mesh_idx].userData
-                    console.log(edges[peer_position_str].userData)
                     vec_mesh_idx += 1
                 }
                 let boundary = { ...model_graph_node.boundary }
@@ -356,9 +368,131 @@ const App = {
                     edges, boundary
                 }
             }
+            if (this.current_selected.type == "model_graph_edge" || this.current_selected.type == "model_graph_boundary") {
+                const { t, i, j, peer, edge, boundary } = this.current_selected
+                const vertex_user_data = gui3d.model_graph_vertex_meshes[t][i][j].userData
+                let peer_user_data = null
+                if (peer != null) {
+                    const { i: pi, j: pj, t: pt } = gui3d.get_position(peer)
+                    peer_user_data = gui3d.model_graph_vertex_meshes[pt][pi][pj].userData
+                }
+                const all_edges = []
+                const model_graph_node = qecp_data.model_graph.nodes[t][i][j]
+                if (edge != null) {
+                    for (const edge of model_graph_node.all_edges[peer]) {
+                        let error_pattern = []
+                        for (const position_str in edge.e) {
+                            error_pattern.push({
+                                position_str: position_str,
+                                type: edge.e[position_str],
+                            })
+                        }
+                        let correction = []
+                        for (const position_str in edge.c) {
+                            correction.push({
+                                position_str: position_str,
+                                type: edge.c[position_str],
+                            })
+                        }
+                        all_edges.push({
+                            probability: edge.p,
+                            weight: edge.w,
+                            error_pattern: error_pattern,
+                            correction: correction,
+                        })
+                    }
+                } else {
+                    for (const edge of model_graph_node.all_boundaries) {
+                        let error_pattern = []
+                        for (const position_str in edge.e) {
+                            error_pattern.push({
+                                position_str: position_str,
+                                type: edge.e[position_str],
+                            })
+                        }
+                        let correction = []
+                        for (const position_str in edge.c) {
+                            correction.push({
+                                position_str: position_str,
+                                type: edge.c[position_str],
+                            })
+                        }
+                        all_edges.push({
+                            probability: edge.p,
+                            weight: edge.w,
+                            error_pattern: error_pattern,
+                            correction: correction,
+                        })
+                    }
+                }
+                this.selected_model_graph_info = {
+                    vertex_user_data, peer_user_data,
+                    probability: edge ? edge.p : boundary.p,
+                    weight: edge ? edge.w : boundary.w,
+                    all_edges
+                }
+            }
+            if (this.current_selected.type == "tailored_vertex") {
+                const { t, i, j, is_corner, corner_pair } = this.current_selected
+                const triple_tailored_node = qecp_data.tailored_model_graph.nodes[t][i][j]
+                const triple_edges = [{}, {}, {}]
+                let vec_mesh_idx = 0
+                for (let tsg = 0; tsg < 3; tsg++) {
+                    const edges = triple_edges[tsg]
+                    const tailored_node = triple_tailored_node[tsg]
+                    for (let [peer_position_str, edge] of Object.entries(tailored_node.edges)) {
+                        edges[peer_position_str] = { ...edge }
+                        edges[peer_position_str].userData = gui3d.tailored_model_graph_edge_vec_meshes[t][i][j][vec_mesh_idx].userData
+                        vec_mesh_idx += 1
+                    }
+                }
+                this.selected_tailored_info = {
+                    triple_edges, corner_pair
+                }
+                if (is_corner) {
+                    this.selected_tailored_info.corner_pair_user_data = gui3d
+                        .tailored_model_graph_vertex_meshes[corner_pair.t][corner_pair.i][corner_pair.j].userData
+                }
+            }
+            if (this.current_selected.type == "tailored_edge") {
+                const { t, i, j, tsg, peer, edge } = this.current_selected
+                const { i: pi, j: pj, t: pt } = gui3d.get_position(peer)
+                const vertex_user_data = gui3d.tailored_model_graph_vertex_meshes[t][i][j].userData
+                const peer_user_data = gui3d.tailored_model_graph_vertex_meshes[pt][pi][pj].userData
+                const all_edges = []
+                const tailored_node = qecp_data.tailored_model_graph.nodes[t][i][j][tsg]
+                for (const edge of tailored_node.all_edges[peer]) {
+                    let error_pattern = []
+                    for (const position_str in edge.e) {
+                        error_pattern.push({
+                            position_str: position_str,
+                            type: edge.e[position_str],
+                        })
+                    }
+                    let correction = []
+                    for (const position_str in edge.c) {
+                        correction.push({
+                            position_str: position_str,
+                            type: edge.c[position_str],
+                        })
+                    }
+                    all_edges.push({
+                        probability: edge.p,
+                        weight: edge.w,
+                        error_pattern: error_pattern,
+                        correction: correction,
+                    })
+                }
+                this.selected_tailored_info = {
+                    vertex_user_data, peer_user_data,
+                    probability: edge.p,
+                    weight: edge.w,
+                    all_edges,
+                }
+            }
         },
         async update_mathjax() {
-            for (let i=0; i<100; ++i) await Vue.nextTick()
+            for (let i = 0; i < 100; ++i) await Vue.nextTick()
             await MathJax.typesetPromise()
         },
         build_data_pos(pos_str) {
@@ -382,7 +516,7 @@ const App = {
         async ref_btn_click(pos_str) {
             await this.jump_to("idle_gate", this.build_data_pos(pos_str), true)
         },
-        async jump_to(type, data, is_click=true) {
+        async jump_to(type, data, is_click = true) {
             let current_ref = is_click ? gui3d.current_selected : gui3d.current_hover
             await Vue.nextTick()
             if (type == null) {
@@ -397,8 +531,8 @@ const App = {
         update_export_resolutions() {
             this.export_resolution_options.splice(0, this.export_resolution_options.length)
             let exists_in_new_resolution = false
-            for (let i=-100; i<100; ++i) {
-                let scale = 1 * Math.pow(10, i/10)
+            for (let i = -100; i < 100; ++i) {
+                let scale = 1 * Math.pow(10, i / 10)
                 let width = Math.round(this.sizes.canvas_width * scale)
                 let height = Math.round(this.sizes.canvas_height * scale)
                 if (width > 5000 || height > 5000) {  // to large, likely exceeds WebGL maximum buffer size
@@ -508,8 +642,25 @@ const App = {
         model_graph_region_options() {
             let regions = gui3d.model_graph_regions.value
             let options = []
-            for (let i=0; i<regions; ++i) {
-                options.push({ label: (i==0?"regions: ":"") + `${i}`, value: i, color: gui3d.sequential_colors[i][0] })
+            for (let i = 0; i < regions; ++i) {
+                options.push({ label: (i == 0 ? "regions: " : "") + `${i}`, value: i, color: gui3d.sequential_colors[i][0] })
+            }
+            return options
+        },
+        tailored_model_graph_region_options() {
+            const labels = ["positive", "negative", "neutral"]
+            let options = []
+            for (let i = 0; i < 3; ++i) {
+                options.push({ label: labels[i] + ":", value: i, color: gui3d.sequential_colors[i + 1][0] })
+            }
+            return options
+        },
+        log_matchings_options() {
+            const log_matchings_name_vec = gui3d.log_matchings_name_vec.value
+            let options = []
+            for (let i = 0; i < log_matchings_name_vec.length; ++i) {
+                let log_matchings = log_matchings_name_vec[i]
+                options.push({ label: log_matchings.name + ":", value: i, color: gui3d.sequential_colors[i][0] })
             }
             return options
         },
@@ -529,7 +680,7 @@ if (!is_mock) {
     while (!patch_done.value) {
         await sleep(50)
     }
-    for (let i=0; i<10; ++i) {
+    for (let i = 0; i < 10; ++i) {
         await sleep(10)
         await Vue.nextTick()
     }

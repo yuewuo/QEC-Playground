@@ -1,11 +1,11 @@
+use crate::clap::builder::{StringValueParser, TypedValueParser, ValueParser};
+use crate::clap::error::{ContextKind, ContextValue, ErrorKind};
+use crate::clap::{Parser, Subcommand};
 use crate::code_builder;
 use crate::noise_model_builder;
-use crate::tool;
-use crate::clap::{Parser, Subcommand};
-use crate::clap::builder::{ValueParser, TypedValueParser, StringValueParser};
-use crate::clap::error::{ErrorKind, ContextKind, ContextValue};
-use crate::serde::{Serialize, Deserialize};
+use crate::serde::{Deserialize, Serialize};
 use crate::serde_json;
+use crate::tool;
 
 #[derive(Parser, Clone)]
 #[clap(author = clap::crate_authors!(", "))]
@@ -59,7 +59,12 @@ pub enum ToolCommands {
 struct VecUsizeParser;
 impl TypedValueParser for VecUsizeParser {
     type Value = Vec<usize>;
-    fn parse_ref(&self, cmd: &clap::Command, arg: Option<&clap::Arg>, value: &std::ffi::OsStr) -> Result<Self::Value, clap::Error> {
+    fn parse_ref(
+        &self,
+        cmd: &clap::Command,
+        arg: Option<&clap::Arg>,
+        value: &std::ffi::OsStr,
+    ) -> Result<Self::Value, clap::Error> {
         let inner = StringValueParser::new();
         let val = inner.parse_ref(cmd, arg, value)?;
         match serde_json::from_str::<Vec<usize>>(&val) {
@@ -69,11 +74,12 @@ impl TypedValueParser for VecUsizeParser {
                 if let Some(arg) = arg {
                     err.insert(ContextKind::InvalidArg, ContextValue::String(arg.to_string()));
                 }
-                err.insert(ContextKind::InvalidValue, ContextValue::String(
-                    format!("should be like [1,2,3], parse error: {}", error.to_string())
-                ));
+                err.insert(
+                    ContextKind::InvalidValue,
+                    ContextValue::String(format!("should be like [1,2,3], parse error: {}", error)),
+                );
                 Err(err)
-            },
+            }
         }
     }
 }
@@ -82,7 +88,12 @@ impl TypedValueParser for VecUsizeParser {
 struct VecF64Parser;
 impl TypedValueParser for VecF64Parser {
     type Value = Vec<f64>;
-    fn parse_ref(&self, cmd: &clap::Command, arg: Option<&clap::Arg>, value: &std::ffi::OsStr) -> Result<Self::Value, clap::Error> {
+    fn parse_ref(
+        &self,
+        cmd: &clap::Command,
+        arg: Option<&clap::Arg>,
+        value: &std::ffi::OsStr,
+    ) -> Result<Self::Value, clap::Error> {
         let inner = StringValueParser::new();
         let val = inner.parse_ref(cmd, arg, value)?;
         match serde_json::from_str::<Vec<f64>>(&val) {
@@ -92,11 +103,12 @@ impl TypedValueParser for VecF64Parser {
                 if let Some(arg) = arg {
                     err.insert(ContextKind::InvalidArg, ContextValue::String(arg.to_string()));
                 }
-                err.insert(ContextKind::InvalidValue, ContextValue::String(
-                    format!("should be like [0.1,0.2,0.3], parse error: {}", error.to_string())
-                ));
+                err.insert(
+                    ContextKind::InvalidValue,
+                    ContextValue::String(format!("should be like [0.1,0.2,0.3], parse error: {error}")),
+                );
                 Err(err)
-            },
+            }
         }
     }
 }
@@ -105,7 +117,12 @@ impl TypedValueParser for VecF64Parser {
 struct SerdeJsonParser;
 impl TypedValueParser for SerdeJsonParser {
     type Value = serde_json::Value;
-    fn parse_ref(&self, cmd: &clap::Command, arg: Option<&clap::Arg>, value: &std::ffi::OsStr) -> Result<Self::Value, clap::Error> {
+    fn parse_ref(
+        &self,
+        cmd: &clap::Command,
+        arg: Option<&clap::Arg>,
+        value: &std::ffi::OsStr,
+    ) -> Result<Self::Value, clap::Error> {
         let inner = StringValueParser::new();
         let val = inner.parse_ref(cmd, arg, value)?;
         match serde_json::from_str::<serde_json::Value>(&val) {
@@ -115,11 +132,12 @@ impl TypedValueParser for SerdeJsonParser {
                 if let Some(arg) = arg {
                     err.insert(ContextKind::InvalidArg, ContextValue::String(arg.to_string()));
                 }
-                err.insert(ContextKind::InvalidValue, ContextValue::String(
-                    format!("should be like {{\"a\":1}}, parse error: {}", error.to_string())
-                ));
+                err.insert(
+                    ContextKind::InvalidValue,
+                    ContextValue::String(format!("should be like {{\"a\":1}}, parse error: {error}")),
+                );
                 Err(err)
-            },
+            }
         }
     }
 }
@@ -225,6 +243,9 @@ pub struct BenchmarkParameters {
     /// include model hypergraph in the visualizer file
     #[clap(long, action)]
     pub visualizer_model_hypergraph: bool,
+    /// include the three tailored mwpm model graph in the visualizer file
+    #[clap(long, action)]
+    pub visualizer_tailored_model_graph: bool,
     /// fusion blossom syndrome export configuration
     #[clap(long, default_value_t = ("./tmp/fusion.syndromes").to_string())]
     pub fusion_blossom_syndrome_export_filename: String,
@@ -240,6 +261,9 @@ pub struct BenchmarkParameters {
     /// note that this optimizes memory but sacrifices speed, since all the error sources are generated dynamically on the fly
     #[clap(long, requires = "use_compact_simulator")]
     pub use_compact_simulator_compressed: bool,
+    /// use deterministic seed for debugging purpose
+    #[clap(long)]
+    pub deterministic_seed: Option<u64>,
 }
 
 #[derive(Parser, Clone)]

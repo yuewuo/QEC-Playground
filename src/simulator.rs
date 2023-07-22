@@ -1,24 +1,23 @@
 //! General purpose Pauli group simulator optimized for surface code
-//! 
-#[cfg(feature="python_binding")]
-use crate::pyo3::prelude::*;
-use std::cmp::Ordering;
-use super::types::*;
-use serde::{Serialize, Deserialize, Serializer, Deserializer};
-use serde::de::{Visitor, MapAccess, SeqAccess};
-use serde::ser::{SerializeMap, SerializeSeq};
+//!
 use super::code_builder::*;
-use super::util_macros::*;
-use super::reproducible_rand::Xoroshiro128StarStar;
-use super::noise_model::*;
-use ErrorType::*;
-use std::sync::Arc;
-use std::collections::{HashMap, HashSet, BTreeSet, BTreeMap};
-use super::serde_hashkey;
 use super::erasure_graph::*;
-use crate::visualize::*;
+use super::noise_model::*;
+use super::reproducible_rand::Xoroshiro128StarStar;
+use super::serde_hashkey;
+use super::types::*;
+use super::util_macros::*;
+#[cfg(feature = "python_binding")]
+use crate::pyo3::prelude::*;
 use crate::simulator_compact::*;
-
+use crate::visualize::*;
+use serde::de::{MapAccess, SeqAccess, Visitor};
+use serde::ser::{SerializeMap, SerializeSeq};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::cmp::Ordering;
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::sync::Arc;
+use ErrorType::*;
 
 #[enum_dispatch]
 #[derive(Clone)]
@@ -31,6 +30,7 @@ pub enum GeneralSimulator {
 #[enum_dispatch(GeneralSimulator)]
 /// any struct that implements this generic can be used in the simulation cli
 pub trait SimulatorGenerics: Clone {
+    fn set_rng(&mut self, rng: Xoroshiro128StarStar);
     fn generate_random_errors(&mut self, noise_model: &NoiseModel) -> (usize, usize);
     fn generate_sparse_detected_erasures(&self) -> SparseErasures;
     fn generate_sparse_error_pattern(&self) -> SparseErrorPattern;
@@ -38,28 +38,41 @@ pub trait SimulatorGenerics: Clone {
     fn validate_correction(&mut self, correction: &SparseCorrection) -> (bool, bool);
 }
 
-#[cfg(feature="python_binding")]
+#[cfg(feature = "python_binding")]
 #[macro_export]
 macro_rules! bind_trait_simulator_generics {
     ($struct_name:ident) => {
         #[pymethods]
         impl $struct_name {
-            fn __repr__(&self) -> String { format!("{:?}", self) }
+            fn __repr__(&self) -> String {
+                format!("{:?}", self)
+            }
             #[pyo3(name = "generate_random_errors")]
-            fn trait_generate_random_errors(&mut self, noise_model: &NoiseModel) -> (usize, usize) { self.generate_random_errors(noise_model) }
+            fn trait_generate_random_errors(&mut self, noise_model: &NoiseModel) -> (usize, usize) {
+                self.generate_random_errors(noise_model)
+            }
             #[pyo3(name = "generate_sparse_detected_erasures")]
-            fn trait_generate_sparse_detected_erasures(&mut self) -> SparseErasures { self.generate_sparse_detected_erasures() }
+            fn trait_generate_sparse_detected_erasures(&mut self) -> SparseErasures {
+                self.generate_sparse_detected_erasures()
+            }
             #[pyo3(name = "generate_sparse_error_pattern")]
-            fn trait_generate_sparse_error_pattern(&mut self) -> SparseErrorPattern { self.generate_sparse_error_pattern() }
+            fn trait_generate_sparse_error_pattern(&mut self) -> SparseErrorPattern {
+                self.generate_sparse_error_pattern()
+            }
             #[pyo3(name = "generate_sparse_measurement")]
-            fn trait_generate_sparse_measurement(&mut self) -> SparseMeasurement { self.generate_sparse_measurement() }
+            fn trait_generate_sparse_measurement(&mut self) -> SparseMeasurement {
+                self.generate_sparse_measurement()
+            }
             #[pyo3(name = "validate_correction")]
-            fn trait_validate_correction(&mut self, correction: &SparseCorrection) -> (bool, bool) { self.validate_correction(correction) }
+            fn trait_validate_correction(&mut self, correction: &SparseCorrection) -> (bool, bool) {
+                self.validate_correction(correction)
+            }
         }
     };
 }
-#[cfg(feature="python_binding")]
-#[allow(unused_imports)] pub use bind_trait_simulator_generics;
+#[cfg(feature = "python_binding")]
+#[allow(unused_imports)]
+pub use bind_trait_simulator_generics;
 
 /// general simulator for two-dimensional code with circuit-level implementation of stabilizer measurements
 #[derive(Debug, Serialize)]
@@ -80,7 +93,7 @@ pub struct Simulator {
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub horizontal: usize,
     /// nodes array, because some rotated code can easily have more than half of the nodes non-existing, existing nodes are stored on heap
-    pub nodes: Vec::< Vec::< Vec::< Option<Box <SimulatorNode> > > > >,
+    pub nodes: Vec<Vec<Vec<Option<Box<SimulatorNode>>>>>,
     /// use embedded random number generator
     pub rng: Xoroshiro128StarStar,
     /// how many cycles is there a round of measurements; default to 1
@@ -141,7 +154,7 @@ pub struct Position {
 }
 
 /// each node represents a location `[i][j]` at a specific time point `[t]`, this location has some probability of having Pauli error or erasure error.
-/// we could have single-qubit or two-qubit gate in a node, and errors are added **after applying this gate** (e.g. if the gate is measurement, then 
+/// we could have single-qubit or two-qubit gate in a node, and errors are added **after applying this gate** (e.g. if the gate is measurement, then
 /// errors at this node will have no impact on the measurement because errors are applied after the measurement).
 /// we also maintain "virtual nodes" at the boundary of a code, these virtual nodes are missing stabilizers at the boundary of a open-boundary surface code.
 #[derive(Debug, Clone, Serialize)]
@@ -150,7 +163,7 @@ pub struct Position {
 pub struct SimulatorNode {
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub qubit_type: QubitType,
-    /// single-qubit or two-qubit gate applied 
+    /// single-qubit or two-qubit gate applied
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub gate_type: GateType,
     pub gate_peer: Option<Arc<Position>>,
@@ -177,13 +190,15 @@ pub struct SimulatorNode {
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl SimulatorNode {
     #[cfg(feature = "python_binding")]
-    fn __repr__(&self) -> String { format!("{:?}", self) }
+    fn __repr__(&self) -> String {
+        format!("{:?}", self)
+    }
     /// create a new simulator node
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new(qubit_type: QubitType, gate_type: GateType, gate_peer: Option<Position>) -> Self {
         Self {
-            qubit_type: qubit_type,
-            gate_type: gate_type,
+            qubit_type,
+            gate_type,
             gate_peer: gate_peer.map(Arc::new),
             error: I,
             has_erasure: false,
@@ -193,13 +208,13 @@ impl SimulatorNode {
             miscellaneous: None,
         }
     }
-    #[cfg_attr(feature="python_binding", setter)]
+    #[cfg_attr(feature = "python_binding", setter)]
     pub fn set_gate_peer(&mut self, pos: Position) {
         self.gate_peer = Option::Some(pos).map(Arc::new);
     }
-    #[cfg_attr(feature="python_binding", getter)]
+    #[cfg_attr(feature = "python_binding", getter)]
     pub fn get_gate_peer(&self) -> Position {
-       (**self.gate_peer.as_ref().unwrap()).clone()
+        (**self.gate_peer.as_ref().unwrap()).clone()
     }
     pub fn set_error_temp(&mut self, error: &ErrorType) {
         debug_assert!(!self.is_virtual || error == &I, "should not add errors at virtual nodes");
@@ -217,7 +232,7 @@ impl SimulatorNode {
 
     /// quick initialization to set miscellaneous information
     pub fn with_miscellaneous(mut self, miscellaneous: Option<serde_json::Value>) -> Self {
-        self.miscellaneous = miscellaneous.map(|x| Arc::new(x));
+        self.miscellaneous = miscellaneous.map(Arc::new);
         self
     }
 }
@@ -252,7 +267,9 @@ pub enum GateType {
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl GateType {
     #[cfg(feature = "python_binding")]
-    fn __repr__(&self) -> String { format!("{:?}", self) }
+    fn __repr__(&self) -> String {
+        format!("{:?}", self)
+    }
 
     pub fn is_initialization(&self) -> bool {
         self == &GateType::InitializeZ || self == &GateType::InitializeX
@@ -264,10 +281,16 @@ impl GateType {
     pub fn stabilizer_measurement(&self, propagated: &ErrorType) -> bool {
         match self {
             // not sensitive to Z
-            GateType::MeasureZ => { if matches!(propagated, X | Y) { true } else { false } }
+            GateType::MeasureZ => {
+                matches!(propagated, X | Y)
+            }
             // not sensitive to X
-            GateType::MeasureX => { if matches!(propagated, Z | Y) { true } else { false } }
-            _ => { panic!("stabilizer measurement behavior not specified") }
+            GateType::MeasureX => {
+                matches!(propagated, Z | Y)
+            }
+            _ => {
+                panic!("stabilizer measurement behavior not specified")
+            }
         }
     }
     /// single-qubit gate doesn't have peer, including idle gate
@@ -282,22 +305,58 @@ impl GateType {
     pub fn propagate_peer(&self, propagated: &ErrorType) -> ErrorType {
         match self {
             // cx control not sensitive to Z, propagate as X
-            GateType::CXGateControl => { if matches!(propagated, X | Y) { X } else { I } }
+            GateType::CXGateControl => {
+                if matches!(propagated, X | Y) {
+                    X
+                } else {
+                    I
+                }
+            }
             // cx target not sensitive to X, propagate as Z
-            GateType::CXGateTarget => { if matches!(propagated, Z | Y) { Z } else { I } }
+            GateType::CXGateTarget => {
+                if matches!(propagated, Z | Y) {
+                    Z
+                } else {
+                    I
+                }
+            }
             // cy control not sensitive to Z, propagate as Y
-            GateType::CYGateControl => { if matches!(propagated, X | Y) { Y } else { I } }
+            GateType::CYGateControl => {
+                if matches!(propagated, X | Y) {
+                    Y
+                } else {
+                    I
+                }
+            }
             // cy target not sensitive to Y, propagate as Z
-            GateType::CYGateTarget => { if matches!(propagated, Z | X) { Z } else { I } }
+            GateType::CYGateTarget => {
+                if matches!(propagated, Z | X) {
+                    Z
+                } else {
+                    I
+                }
+            }
             // cz not sensitive to Z, propagate as Z
-            GateType::CZGate => { if matches!(propagated, X | Y) { Z } else { I } }
-            _ => { panic!("gate propagation behavior not specified") }
+            GateType::CZGate => {
+                if matches!(propagated, X | Y) {
+                    Z
+                } else {
+                    I
+                }
+            }
+            _ => {
+                panic!("gate propagation behavior not specified")
+            }
         }
     }
     /// check if a measurement gate is corresponding to the initialization
     pub fn is_corresponding_initialization(&self, other: &GateType) -> bool {
-        if self == &GateType::MeasureX && other == &GateType::InitializeX { return true }
-        if self == &GateType::MeasureZ && other == &GateType::InitializeZ { return true }
+        if self == &GateType::MeasureX && other == &GateType::InitializeX {
+            return true;
+        }
+        if self == &GateType::MeasureZ && other == &GateType::InitializeZ {
+            return true;
+        }
         false
     }
     /// the expected gate type of peer if this is a two-qubit gate, otherwise return `GateType::None`.
@@ -316,19 +375,19 @@ impl GateType {
     }
 }
 
-#[cfg(feature="python_binding")]
-bind_trait_simulator_generics!{Simulator}
+#[cfg(feature = "python_binding")]
+bind_trait_simulator_generics! {Simulator}
 
 impl Clone for Simulator {
     fn clone(&self) -> Self {
         Self {
-            code_type: self.code_type.clone(),
+            code_type: self.code_type,
             code_size: self.code_size.clone(),
             height: self.height,
             vertical: self.vertical,
             horizontal: self.horizontal,
             nodes: self.nodes.clone(),
-            rng: Xoroshiro128StarStar::new(),  // do not copy random number generator, otherwise parallel simulation may give same result
+            rng: Xoroshiro128StarStar::new(), // do not copy random number generator, otherwise parallel simulation may give same result
             measurement_cycles: self.measurement_cycles,
         }
     }
@@ -341,8 +400,8 @@ impl Simulator {
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new(code_type: CodeType, code_size: CodeSize) -> Self {
         let mut simulator = Self {
-            code_type: code_type,
-            code_size: code_size,
+            code_type,
+            code_size,
             height: 0,
             vertical: 0,
             horizontal: 0,
@@ -354,13 +413,9 @@ impl Simulator {
         simulator
     }
 
-    pub fn set_nodes(&mut self, position: Position, error: ErrorType){
+    pub fn set_nodes(&mut self, position: Position, error: ErrorType) {
         let node = self.get_node_mut_unwrap(&position);
         node.set_error_temp(&error);
-    }
-
-    pub fn clone(&self) -> Self {
-       Clone::clone(self)
     }
 
     pub fn volume(&self) -> usize {
@@ -382,20 +437,20 @@ impl Simulator {
     /// check if this node is a real node, i.e. physically exist in the simulation
     #[inline]
     pub fn is_node_real(&self, position: &Position) -> bool {
-        self.is_node_exist(position) && self.get_node_unwrap(position).is_virtual == false
+        self.is_node_exist(position) && !self.get_node_unwrap(position).is_virtual
     }
 
     /// check if this node is a virtual node, i.e. non-existing but just work as a virtual boundary
     /// (they can be viewed as the missing stabilizers on the boundary)
     #[inline]
     pub fn is_node_virtual(&self, position: &Position) -> bool {
-        self.is_node_exist(position) && self.get_node_unwrap(position).is_virtual == true
+        self.is_node_exist(position) && self.get_node_unwrap(position).is_virtual
     }
 
     /// check if this node is a virtual node, i.e. non-existing but just work as a virtual boundary
     pub fn set_error_rates(&mut self, noise_model: &mut NoiseModel, px: f64, py: f64, pz: f64, pe: f64) {
         assert!(px + py + pz <= 1. && px >= 0. && py >= 0. && pz >= 0.);
-        assert!(pe <= 1. && pe >= 0.);
+        assert!((0. ..=1.).contains(&pe));
         if self.measurement_cycles == 1 {
             println!("[warning] setting error rates of unknown code, no perfect measurement protection is enabled");
         }
@@ -405,7 +460,7 @@ impl Simulator {
         noise_model_node.pauli_error_rates.error_rate_Z = pz;
         noise_model_node.erasure_error_rate = pe;
         let noise_model_node = Arc::new(noise_model_node);
-        for t in 0 .. self.height - self.measurement_cycles {
+        for t in 0..self.height - self.measurement_cycles {
             simulator_iter_mut_real!(self, position, node, t => t, {  // only add errors on real node
                 // bug fix 2022.11.12: the first layer default to no measurement errors
                 if t != 0 || node.qubit_type == QubitType::Data {
@@ -445,21 +500,21 @@ impl Simulator {
     pub fn compress_error_rates(&mut self, noise_model: &mut NoiseModel) {
         let mut arc_set: HashSet<*const NoiseModelNode> = HashSet::new();
         // since f64 typed error rates are not hashable by default, here I first serialize the them and then use OrderedFloatPolicy for hashing
-        let mut node_map: HashMap<serde_hashkey::Key<serde_hashkey::OrderedFloatPolicy>, Arc<NoiseModelNode>> = HashMap::new();
+        let mut node_map: HashMap<serde_hashkey::Key<serde_hashkey::OrderedFloatPolicy>, Arc<NoiseModelNode>> =
+            HashMap::new();
         simulator_iter_mut!(self, position, _node, {
             let node_arc: Arc<NoiseModelNode> = noise_model.get_node_unwrap_arc(position);
             let node_pointer: *const NoiseModelNode = Arc::as_ptr(&node_arc);
-            if arc_set.contains(&node_pointer) {  // already found this pointer, good!
-                continue
+            if arc_set.contains(&node_pointer) {
+                // already found this pointer, good!
+                continue;
             }
             // find in hash map
             let hash_key = serde_hashkey::to_key_with_ordered_float(&node_arc).expect("hash");
-            match node_map.get(&hash_key) {
-                Some(existing_arc) => {
-                    // println!("found same noise model node, compressing it...");
-                    noise_model.set_node(position, Some(existing_arc.clone()));
-                    continue
-                }, None => { }
+            if let Some(existing_arc) = node_map.get(&hash_key) {
+                // println!("found same noise model node, compressing it...");
+                noise_model.set_node(position, Some(existing_arc.clone()));
+                continue;
             }
             // if not found, this is a new value
             arc_set.insert(node_pointer);
@@ -467,7 +522,6 @@ impl Simulator {
             // println!("found new noise model and added");
         });
     }
-
 
     /// clear all pauli and erasure errors and also propagated errors, returning to a clean state
     pub fn clear_all_errors(&mut self) {
@@ -514,21 +568,24 @@ impl Simulator {
     /// when a error (other than Identity) propagates to the peer, it returns the position of the peer.
     #[inline]
     pub fn propagate_error_from(&mut self, position: &Position) -> Option<Position> {
-        debug_assert!(position.t < self.height - 1, "propagate error from final layer is meaningless, because it doesn't have any next layer");
+        debug_assert!(
+            position.t < self.height - 1,
+            "propagate error from final layer is meaningless, because it doesn't have any next layer"
+        );
         let node = self.get_node_unwrap(position);
         // propagation from virtual to real is forbidden
         let propagate_to_peer_forbidden = node.is_virtual && !node.is_peer_virtual;
         // error will propagated to itself at `t+1`, this will initialize `propagated` at `t+1`
-        let node_propagated = node.propagated.clone();
+        let node_propagated = node.propagated;
         let node_gate_peer = node.gate_peer.clone();
         let propagate_to_next = node.error.multiply(&node_propagated);
-        let gate_type = node.gate_type.clone();
+        let gate_type = node.gate_type;
         let next_position = &mut position.clone();
         next_position.t += 1;
         let next_node = self.get_node_mut_unwrap(next_position);
-        next_node.propagated = next_node.propagated.multiply(&propagate_to_next);  // multiply the propagated error
+        next_node.propagated = next_node.propagated.multiply(&propagate_to_next); // multiply the propagated error
         if gate_type.is_initialization() {
-            next_node.propagated = I;  // no error after initialization
+            next_node.propagated = I; // no error after initialization
         }
         // propagate error to gate peer
         if !propagate_to_peer_forbidden && gate_type.is_two_qubit_gate() {
@@ -538,7 +595,7 @@ impl Simulator {
                 next_peer_position.t += 1;
                 let peer_node = self.get_node_mut_unwrap(&next_peer_position);
                 peer_node.propagated = peer_node.propagated.multiply(&propagate_to_peer);
-                return Some(next_peer_position)
+                return Some(next_peer_position);
             }
         }
         None
@@ -575,12 +632,16 @@ impl Simulator {
     }
 
     #[inline(never)]
-    pub fn fast_measurement_given_few_errors(&mut self, sparse_errors: &SparseErrorPattern) -> (SparseCorrection, SparseMeasurement, SparseMeasurement) {
-        if sparse_errors.len() == 0 {
+    pub fn fast_measurement_given_few_errors(
+        &mut self,
+        sparse_errors: &SparseErrorPattern,
+    ) -> (SparseCorrection, SparseMeasurement, SparseMeasurement) {
+        if sparse_errors.is_empty() {
             println!("[warning] why calling fast measurement given no error?");
-            return (SparseCorrection::new(), SparseMeasurement::new(), SparseMeasurement::new())
+            return (SparseCorrection::new(), SparseMeasurement::new(), SparseMeasurement::new());
         }
-        debug_assert!({  // fast measurement requires no errors at first
+        debug_assert!({
+            // fast measurement requires no errors at first
             let mut dirty = false;
             simulator_iter!(self, position, node, {
                 if node.error != I || node.propagated != I || node.has_erasure {
@@ -608,21 +669,22 @@ impl Simulator {
         let mut sparse_measurement_real = SparseMeasurement::new();
         let mut sparse_measurement_virtual = SparseMeasurement::new();
         let mut accumulated_clean_measurements = 0;
-        let early_break_accumulated_clean_measurements = 2;  // 1 is not enough, consider increasing this if still not enough
-        for t in min_t + 1 .. self.height {
+        let early_break_accumulated_clean_measurements = 2; // 1 is not enough, consider increasing this if still not enough
+        for t in min_t + 1..self.height {
             let mut pending_interested_region = Vec::new();
             for &(i, j) in interested_region.iter() {
                 let propagated_neighbor = self.propagate_error_from(&pos!(t - 1, i, j));
-                match propagated_neighbor {
-                    Some(peer) => pending_interested_region.push((peer.i, peer.j)),
-                    None => { },
+                if let Some(peer) = propagated_neighbor {
+                    pending_interested_region.push((peer.i, peer.j));
                 }
             }
             for (i, j) in pending_interested_region.drain(..) {
                 interested_region.insert((i, j));
             }
-            if t != 0 && t % self.measurement_cycles == 0 {  // it's a layer of measurement
-                if t > max_t {  // accumulate only after the reaching the original max_t
+            if t != 0 && t % self.measurement_cycles == 0 {
+                // it's a layer of measurement
+                if t > max_t {
+                    // accumulate only after the reaching the original max_t
                     accumulated_clean_measurements += 1;
                 }
                 for &(i, j) in interested_region.iter() {
@@ -631,12 +693,18 @@ impl Simulator {
                     if node.gate_type.is_measurement() {
                         let this_result = node.gate_type.stabilizer_measurement(&node.propagated);
                         let mut previous_position = position.clone();
-                        loop {  // usually this loop execute only once because the previous measurement is found immediately
-                            debug_assert!(previous_position.t >= self.measurement_cycles, "cannot find the previous measurement cycle");
+                        loop {
+                            // usually this loop execute only once because the previous measurement is found immediately
+                            debug_assert!(
+                                previous_position.t >= self.measurement_cycles,
+                                "cannot find the previous measurement cycle"
+                            );
                             previous_position.t -= self.measurement_cycles;
                             let previous_node = self.get_node_unwrap(&previous_position);
-                            if previous_node.gate_type.is_measurement() {  // found previous measurement
-                                let previous_result = previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
+                            if previous_node.gate_type.is_measurement() {
+                                // found previous measurement
+                                let previous_result =
+                                    previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
                                 if this_result != previous_result {
                                     if node.is_virtual {
                                         sparse_measurement_virtual.insert_defect_measurement(position);
@@ -645,7 +713,7 @@ impl Simulator {
                                     }
                                     accumulated_clean_measurements = 0;
                                 }
-                                break
+                                break;
                             }
                             // println!("[warning] no measurement found in previous round, continue searching...")
                             // Yue 2022.7.11 removed warning, because some code may just remove measurement in the middle
@@ -657,7 +725,7 @@ impl Simulator {
                 max_t = t;
                 // if no more defect measurements, break early
                 if accumulated_clean_measurements >= early_break_accumulated_clean_measurements {
-                    break
+                    break;
                 }
             }
         }
@@ -672,14 +740,15 @@ impl Simulator {
         });
         // println!("min_t: {}, max_t: {}, interested_region: {:?}, sparse_measurement_real: {:?}", min_t, max_t, interested_region, sparse_measurement_real);
         // clear errors in interested region
-        for t in min_t .. max_t + 1 {
+        for t in min_t..max_t + 1 {
             for &(i, j) in interested_region.iter() {
                 let node = self.get_node_mut_unwrap(&pos!(t, i, j));
                 node.error = ErrorType::I;
                 node.propagated = ErrorType::I;
             }
         }
-        debug_assert!({  // fast measurement should recover the errors before return
+        debug_assert!({
+            // fast measurement should recover the errors before return
             let mut dirty = false;
             simulator_iter!(self, position, node, {
                 if node.error != I || node.propagated != I || node.has_erasure {
@@ -703,27 +772,40 @@ impl Simulator {
             // println!("sparse_measurement_virtual: {:?}, standard_measurements_virtual: {:?}", sparse_measurement_virtual, standard_measurements_virtual);
             let mut measurements_equal = sparse_measurement_real.defects.len() == standard_measurements_real.defects.len()
                 && sparse_measurement_virtual.defects.len() == standard_measurements_virtual.defects.len();
-            if measurements_equal {  // further check for each element
+            if measurements_equal {
+                // further check for each element
                 for position in standard_measurements_real.defects.iter() {
                     if !sparse_measurement_real.defects.contains(position) {
                         measurements_equal = false;
-                        println!("[error] defect measurement happens at {} but optimized code doesn't correctly detect it", position);
+                        println!(
+                            "[error] defect measurement happens at {} but optimized code doesn't correctly detect it",
+                            position
+                        );
                     }
                 }
                 for position in standard_measurements_virtual.defects.iter() {
                     if !sparse_measurement_virtual.defects.contains(position) {
                         measurements_equal = false;
-                        println!("[error] defect measurement happens at {} but optimized code doesn't correctly detect it", position);
+                        println!(
+                            "[error] defect measurement happens at {} but optimized code doesn't correctly detect it",
+                            position
+                        );
                     }
                 }
             }
             // println!("sparse_correction: {:?}, standard_correction: {:?}", sparse_correction, standard_correction);
             let mut correction_equal = sparse_correction.len() == standard_correction.len();
-            if correction_equal {  // further check for each element
+            if correction_equal {
+                // further check for each element
                 for (position, error) in standard_correction.iter() {
                     if sparse_correction.get(position) != Some(error) {
                         correction_equal = false;
-                        println!("[error] sparse correction not equal at {}, {} != {:?}", position, error, sparse_correction.get(position));
+                        println!(
+                            "[error] sparse correction not equal at {}, {} != {:?}",
+                            position,
+                            error,
+                            sparse_correction.get(position)
+                        );
                     }
                 }
             }
@@ -742,10 +824,12 @@ impl Simulator {
         });
         sparse_correction
     }
-
 }
 
 impl SimulatorGenerics for Simulator {
+    fn set_rng(&mut self, rng: Xoroshiro128StarStar) {
+        self.rng = rng;
+    }
 
     fn generate_random_errors(&mut self, noise_model: &NoiseModel) -> (usize, usize) {
         // this size is small compared to the simulator itself
@@ -754,7 +838,7 @@ impl SimulatorGenerics for Simulator {
         let mut pending_erasure_errors = Vec::<Position>::with_capacity(allocate_size);
         // let mut pending_pauli_errors = Vec::<(Position, ErrorType)>::new();
         // let mut pending_erasure_errors = Vec::<Position>::new();
-        let mut rng = self.rng.clone();  // avoid mutable borrow
+        let mut rng = self.rng.clone(); // avoid mutable borrow
         let mut error_count = 0;
         let mut erasure_count = 0;
         // first apply single-qubit and two-qubit correlated errors
@@ -764,7 +848,9 @@ impl SimulatorGenerics for Simulator {
             if random_pauli < noise_model_node.pauli_error_rates.error_rate_X {
                 node.set_error_temp(&X);
                 // println!("X error at {} {} {}",node.i, node.j, node.t);
-            } else if random_pauli < noise_model_node.pauli_error_rates.error_rate_X + noise_model_node.pauli_error_rates.error_rate_Z {
+            } else if random_pauli
+                < noise_model_node.pauli_error_rates.error_rate_X + noise_model_node.pauli_error_rates.error_rate_Z
+            {
                 node.set_error_temp(&Z);
                 // println!("Z error at {} {} {}",node.i, node.j, node.t);
             } else if random_pauli < noise_model_node.pauli_error_rates.error_probability() {
@@ -778,7 +864,7 @@ impl SimulatorGenerics for Simulator {
             }
             let random_erasure = rng.next_f64();
             node.has_erasure = false;
-            node.propagated = I;  // clear propagated errors
+            node.propagated = I; // clear propagated errors
             if random_erasure < noise_model_node.erasure_error_rate {
                 pending_erasure_errors.push(position.clone());
             }
@@ -792,27 +878,34 @@ impl SimulatorGenerics for Simulator {
                     }
                     let peer_error = correlated_pauli_error_type.peer_error();
                     if peer_error != I {
-                        let gate_peer = node.gate_peer.as_ref().expect("correlated pauli error must corresponds to a two-qubit gate");
+                        let gate_peer = node
+                            .gate_peer
+                            .as_ref()
+                            .expect("correlated pauli error must corresponds to a two-qubit gate");
                         pending_pauli_errors.push(((**gate_peer).clone(), peer_error));
                     }
-                },
-                None => { },
+                }
+                None => {}
             }
             match &noise_model_node.correlated_erasure_error_rates {
                 Some(correlated_erasure_error_rates) => {
                     let random_erasure = rng.next_f64();
-                    let correlated_erasure_error_type = correlated_erasure_error_rates.generate_random_erasure_error(random_erasure);
+                    let correlated_erasure_error_type =
+                        correlated_erasure_error_rates.generate_random_erasure_error(random_erasure);
                     let my_error = correlated_erasure_error_type.my_error();
                     if my_error {
                         pending_erasure_errors.push(position.clone());
                     }
                     let peer_error = correlated_erasure_error_type.peer_error();
                     if peer_error {
-                        let gate_peer = node.gate_peer.as_ref().expect("correlated erasure error must corresponds to a two-qubit gate");
+                        let gate_peer = node
+                            .gate_peer
+                            .as_ref()
+                            .expect("correlated erasure error must corresponds to a two-qubit gate");
                         pending_erasure_errors.push((**gate_peer).clone());
                     }
-                },
-                None => { },
+                }
+                None => {}
             }
         });
         // then apply additional noises
@@ -829,19 +922,20 @@ impl SimulatorGenerics for Simulator {
         }
         // apply pending pauli errors
         for (position, peer_error) in pending_pauli_errors.iter() {
-            let node = self.get_node_mut_unwrap(&position);
+            let node = self.get_node_mut_unwrap(position);
             if node.error != I {
                 error_count -= 1;
             }
-            node.set_error_temp(&node.error.multiply(&peer_error));
+            node.set_error_temp(&node.error.multiply(peer_error));
             if node.error != I {
                 error_count += 1;
             }
         }
         // apply pending erasure errors, amd generate random pauli error because of those erasures
         for position in pending_erasure_errors.iter() {
-            let mut node = self.get_node_mut_unwrap(&position);
-            if !node.has_erasure {  // only counts new erasures; there might be duplicated pending erasure
+            let node = self.get_node_mut_unwrap(position);
+            if !node.has_erasure {
+                // only counts new erasures; there might be duplicated pending erasure
                 erasure_count += 1;
             }
             node.has_erasure = true;
@@ -849,16 +943,23 @@ impl SimulatorGenerics for Simulator {
                 error_count -= 1;
             }
             let random_erasure = rng.next_f64();
-            node.set_error_temp(&(if random_erasure < 0.25 { X }
-                else if random_erasure < 0.5 { Z }
-                else if random_erasure < 0.75 { Y }
-                else { I }
-            ));
+            node.set_error_temp(
+                &(if random_erasure < 0.25 {
+                    X
+                } else if random_erasure < 0.5 {
+                    Z
+                } else if random_erasure < 0.75 {
+                    Y
+                } else {
+                    I
+                }),
+            );
             if node.error != I {
                 error_count += 1;
             };
         }
-        debug_assert!({  // the above code avoids iterating the code multiple times when error rate is low (~1%), check correctness in debug mode
+        debug_assert!({
+            // the above code avoids iterating the code multiple times when error rate is low (~1%), check correctness in debug mode
             let sparse_error_pattern = self.generate_sparse_error_pattern();
             sparse_error_pattern.len() == error_count
         });
@@ -866,7 +967,7 @@ impl SimulatorGenerics for Simulator {
             let sparse_detected_erasures = self.generate_sparse_detected_erasures();
             sparse_detected_erasures.len() == erasure_count
         });
-        self.rng = rng;  // save the random number generator
+        self.rng = rng; // save the random number generator
         self.propagate_errors();
         (error_count, erasure_count)
     }
@@ -928,65 +1029,107 @@ impl SimulatorGenerics for Simulator {
     #[inline(never)]
     fn validate_correction(&mut self, correction: &SparseCorrection) -> (bool, bool) {
         if let Some((logical_i, logical_j)) = code_builder_validate_correction(self, correction) {
-            return (logical_i, logical_j)
+            return (logical_i, logical_j);
         }
         unimplemented!("correction validation method not found for this code");
     }
-
 }
 
 impl Simulator {
     /// get `self.nodes[t][i][j]` without position check when compiled in release mode
     #[inline]
     pub fn get_node(&'_ self, position: &Position) -> &'_ Option<Box<SimulatorNode>> {
-        debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
-            , position, self.height, self.vertical, self.horizontal);
+        debug_assert!(
+            self.is_valid_position(position),
+            "position {} is invalid in a simulator with size [{}][{}][{}]",
+            position,
+            self.height,
+            self.vertical,
+            self.horizontal
+        );
         &self.nodes[position.t][position.i][position.j]
     }
 
     /// get mutable `self.nodes[t][i][j]` without position check when compiled in release mode
     #[inline]
     pub fn get_node_mut(&'_ mut self, position: &Position) -> &'_ mut Option<Box<SimulatorNode>> {
-        debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
-            , position, self.height, self.vertical, self.horizontal);
+        debug_assert!(
+            self.is_valid_position(position),
+            "position {} is invalid in a simulator with size [{}][{}][{}]",
+            position,
+            self.height,
+            self.vertical,
+            self.horizontal
+        );
         &mut self.nodes[position.t][position.i][position.j]
     }
 
     /// get mutable `self.nodes[t][i][j]` and unwrap without position check when compiled in release mode
     #[inline]
     pub fn get_node_mut_unwrap(&'_ mut self, position: &Position) -> &'_ mut SimulatorNode {
-        debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
-            , position, self.height, self.vertical, self.horizontal);
-        debug_assert!(self.is_node_exist(position), "position {} does not exist in the simulator with size [{}][{}][{}]"
-            , position, self.height, self.vertical, self.horizontal);
+        debug_assert!(
+            self.is_valid_position(position),
+            "position {} is invalid in a simulator with size [{}][{}][{}]",
+            position,
+            self.height,
+            self.vertical,
+            self.horizontal
+        );
+        debug_assert!(
+            self.is_node_exist(position),
+            "position {} does not exist in the simulator with size [{}][{}][{}]",
+            position,
+            self.height,
+            self.vertical,
+            self.horizontal
+        );
         self.get_node_mut(position).as_mut().unwrap()
     }
 
     /// get `self.nodes[t][i][j]` and then unwrap without position check when compiled in release mode
     #[inline]
     pub fn get_node_unwrap(&'_ self, position: &Position) -> &'_ SimulatorNode {
-        debug_assert!(self.is_valid_position(position), "position {} is invalid in a simulator with size [{}][{}][{}]"
-            , position, self.height, self.vertical, self.horizontal);
-        debug_assert!(self.is_node_exist(position), "position {} does not exist in the simulator with size [{}][{}][{}]"
-            , position, self.height, self.vertical, self.horizontal);
+        debug_assert!(
+            self.is_valid_position(position),
+            "position {} is invalid in a simulator with size [{}][{}][{}]",
+            position,
+            self.height,
+            self.vertical,
+            self.horizontal
+        );
+        debug_assert!(
+            self.is_node_exist(position),
+            "position {} does not exist in the simulator with size [{}][{}][{}]",
+            position,
+            self.height,
+            self.vertical,
+            self.horizontal
+        );
         self.get_node(position).as_ref().unwrap()
     }
 
-    pub fn set_erasure_check_result(&mut self, noise_model: &NoiseModel, position: &Position, has_erasure: bool) -> Result<(), String> {
-        if has_erasure == false {
+    pub fn set_erasure_check_result(
+        &mut self,
+        noise_model: &NoiseModel,
+        position: &Position,
+        has_erasure: bool,
+    ) -> Result<(), String> {
+        if !has_erasure {
             self.get_node_mut_unwrap(position).has_erasure = false;
-            return Ok(())
+            return Ok(());
         }
         let mut possible = false;
         if cfg!(debug_assertions) {
             let noise_model_node = noise_model.get_node_unwrap(position);
             let node = self.get_node_unwrap(position);
             possible |= noise_model_node.erasure_error_rate > 0.;
-            possible |= noise_model_node.correlated_erasure_error_rates.is_some();  // weak check
-            if !possible {  // check peer only if still not possible
+            possible |= noise_model_node.correlated_erasure_error_rates.is_some(); // weak check
+            if !possible {
+                // check peer only if still not possible
                 if let Some(peer_position) = node.gate_peer.as_ref() {
                     let peer_noise_model_node = noise_model.get_node_unwrap(peer_position);
-                    possible |= peer_noise_model_node.correlated_erasure_error_rates.is_some();  // weak check
+                    possible |= peer_noise_model_node.correlated_erasure_error_rates.is_some();
+                    // weak check
                 }
             }
         } else {
@@ -1000,13 +1143,17 @@ impl Simulator {
     }
 
     /// load detected erasures back to the simulator
-    pub fn load_sparse_detected_erasures(&mut self, sparse_detected_erasures: &SparseErasures, noise_model: &NoiseModel) -> Result<(), String> {
+    pub fn load_sparse_detected_erasures(
+        &mut self,
+        sparse_detected_erasures: &SparseErasures,
+        noise_model: &NoiseModel,
+    ) -> Result<(), String> {
         simulator_iter_mut!(self, position, node, {
             node.has_erasure = false;
         });
         for position in sparse_detected_erasures.iter() {
             if !self.is_node_exist(position) {
-                return Err(format!("invalid erasure at position {}", position))
+                return Err(format!("invalid erasure at position {}", position));
             }
             self.set_erasure_check_result(noise_model, position, true)?;
         }
@@ -1016,29 +1163,48 @@ impl Simulator {
         Ok(())
     }
 
-    pub fn set_error_check_result(&mut self, noise_model: &NoiseModel, position: &Position, error: &ErrorType) -> Result<(), String> {
+    pub fn set_error_check_result(
+        &mut self,
+        noise_model: &NoiseModel,
+        position: &Position,
+        error: &ErrorType,
+    ) -> Result<(), String> {
         if error == &ErrorType::I {
             self.get_node_mut_unwrap(position).set_error_temp(error);
-            return Ok(())
+            return Ok(());
         }
         let mut possible = false;
         if cfg!(debug_assertions) {
             let noise_model_node = noise_model.get_node_unwrap(position);
             let node = self.get_node_unwrap(position);
             match error {
-                ErrorType::X => if noise_model_node.pauli_error_rates.error_rate_X > 0. { possible = true; },
-                ErrorType::Y => if noise_model_node.pauli_error_rates.error_rate_Y > 0. { possible = true; },
-                ErrorType::Z => if noise_model_node.pauli_error_rates.error_rate_Z > 0. { possible = true; },
+                ErrorType::X => {
+                    if noise_model_node.pauli_error_rates.error_rate_X > 0. {
+                        possible = true;
+                    }
+                }
+                ErrorType::Y => {
+                    if noise_model_node.pauli_error_rates.error_rate_Y > 0. {
+                        possible = true;
+                    }
+                }
+                ErrorType::Z => {
+                    if noise_model_node.pauli_error_rates.error_rate_Z > 0. {
+                        possible = true;
+                    }
+                }
                 _ => unreachable!(),
             }
             possible |= noise_model_node.erasure_error_rate > 0.;
-            possible |= noise_model_node.correlated_pauli_error_rates.is_some();  // weak check
-            possible |= noise_model_node.correlated_erasure_error_rates.is_some();  // weak check
-            if !possible {  // check peer only if still not possible
+            possible |= noise_model_node.correlated_pauli_error_rates.is_some(); // weak check
+            possible |= noise_model_node.correlated_erasure_error_rates.is_some(); // weak check
+            if !possible {
+                // check peer only if still not possible
                 if let Some(peer_position) = node.gate_peer.as_ref() {
                     let peer_noise_model_node = noise_model.get_node_unwrap(peer_position);
-                    possible |= peer_noise_model_node.correlated_pauli_error_rates.is_some();  // weak check
-                    possible |= peer_noise_model_node.correlated_erasure_error_rates.is_some();  // weak check
+                    possible |= peer_noise_model_node.correlated_pauli_error_rates.is_some(); // weak check
+                    possible |= peer_noise_model_node.correlated_erasure_error_rates.is_some();
+                    // weak check
                 }
             }
         } else {
@@ -1052,13 +1218,17 @@ impl Simulator {
     }
 
     /// load an error pattern
-    pub fn load_sparse_error_pattern(&mut self, sparse_error_pattern: &SparseErrorPattern, noise_model: &NoiseModel) -> Result<(), String> {
+    pub fn load_sparse_error_pattern(
+        &mut self,
+        sparse_error_pattern: &SparseErrorPattern,
+        noise_model: &NoiseModel,
+    ) -> Result<(), String> {
         simulator_iter_mut!(self, position, node, {
             node.error = I;
         });
         for (position, error) in sparse_error_pattern.iter() {
             if !self.is_node_exist(position) {
-                return Err(format!("invalid error at position {}", position))
+                return Err(format!("invalid error at position {}", position));
             }
             self.set_error_check_result(noise_model, position, error)?;
         }
@@ -1113,13 +1283,11 @@ impl Ord for Position {
         match self.t.cmp(&other.t) {
             Ordering::Less => Ordering::Less,
             Ordering::Greater => Ordering::Greater,
-            Ordering::Equal => {
-                match self.i.cmp(&other.i) {
-                    Ordering::Less => Ordering::Less,
-                    Ordering::Greater => Ordering::Greater,
-                    Ordering::Equal => self.j.cmp(&other.j),
-                }
-            }
+            Ordering::Equal => match self.i.cmp(&other.i) {
+                Ordering::Less => Ordering::Less,
+                Ordering::Greater => Ordering::Greater,
+                Ordering::Equal => self.j.cmp(&other.j),
+            },
         }
     }
 }
@@ -1134,17 +1302,17 @@ impl PartialOrd for Position {
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl Position {
     #[cfg(feature = "python_binding")]
-    fn __repr__(&self) -> String { format!("{:?}", self) }
+    fn __repr__(&self) -> String {
+        format!("{:?}", self)
+    }
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new(t: usize, i: usize, j: usize) -> Self {
-        Self {
-            t: t,
-            i: i,
-            j: j,
-        }
+        Self { t, i, j }
     }
     pub fn distance(&self, other: &Self) -> usize {
-        ((self.t as isize - other.t as isize).abs() + (self.i as isize - other.i as isize).abs() + (self.j as isize - other.j as isize).abs()) as usize
+        ((self.t as isize - other.t as isize).abs()
+            + (self.i as isize - other.i as isize).abs()
+            + (self.j as isize - other.j as isize).abs()) as usize
     }
 }
 
@@ -1161,7 +1329,10 @@ impl std::fmt::Debug for Position {
 }
 
 impl Serialize for Position {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer, {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         serializer.serialize_str(format!("[{}][{}][{}]", self.t, self.i, self.j).as_str())
     }
 }
@@ -1172,47 +1343,59 @@ impl<'de> Visitor<'de> for PositionVisitor {
     type Value = Position;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "{}", r#"position should look like "[0][10][13]""#)
+        write!(formatter, r#"position should look like "[0][10][13]""#)
     }
 
-    fn visit_str<E>(self, s: &str) -> Result<Self::Value, E> where E: serde::de::Error, {
+    fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
         if s.get(0..1) != Some("[") {
-            return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self))
+            return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self));
         }
-        if s.get(s.len()-1..s.len()) != Some("]") {
-            return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self))
+        if s.get(s.len() - 1..s.len()) != Some("]") {
+            return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self));
         }
-        let splitted = s.get(1..s.len()-1).unwrap().split("][").collect::<Vec<&str>>();
+        let splitted = s.get(1..s.len() - 1).unwrap().split("][").collect::<Vec<&str>>();
         if splitted.len() != 3 {
-            return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self))
+            return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self));
         }
         let t = match splitted[0].to_string().parse::<usize>() {
             Ok(t) => t,
-            Err(_) => { return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self)) }
+            Err(_) => return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self)),
         };
         let i = match splitted[1].to_string().parse::<usize>() {
             Ok(t) => t,
-            Err(_) => { return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self)) }
+            Err(_) => return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self)),
         };
         let j = match splitted[2].to_string().parse::<usize>() {
             Ok(t) => t,
-            Err(_) => { return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self)) }
+            Err(_) => return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self)),
         };
         Ok(Position::new(t, i, j))
     }
 }
 
 impl<'de> Deserialize<'de> for Position {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>, {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
         // the new-ed position just works like a helper type that implements Visitor trait, not optimized for efficiency
-        deserializer.deserialize_str(PositionVisitor{})
+        deserializer.deserialize_str(PositionVisitor {})
     }
 }
 
 impl std::fmt::Display for SimulatorNode {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "SimulatorNode{} {{ qubit_type: {:?}, gate_type: {:?}, gate_peer: {:?} }}"
-            , if self.is_virtual{ "(virtual)" } else { "" }, self.qubit_type, self.gate_type, self.gate_peer)
+        write!(
+            f,
+            "SimulatorNode{} {{ qubit_type: {:?}, gate_type: {:?}, gate_peer: {:?} }}",
+            if self.is_virtual { "(virtual)" } else { "" },
+            self.qubit_type,
+            self.gate_type,
+            self.gate_peer
+        )
     }
 }
 
@@ -1226,8 +1409,11 @@ pub struct SparseMeasurement {
 }
 
 impl Serialize for SparseMeasurement {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer, {
-        let mut seq = serializer.serialize_seq(Some(self.len()))?;  // known length
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(Some(self.len()))?; // known length
         for erasure in self.iter() {
             seq.serialize_element(erasure)?;
         }
@@ -1239,10 +1425,16 @@ impl<'de> Visitor<'de> for SparseMeasurement {
     type Value = SparseMeasurement;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "{}", r#"sparse measurement like ["[0][10][13]","[0][10][7]","[0][10][8]"]"#)
+        write!(
+            formatter,
+            r#"sparse measurement like ["[0][10][13]","[0][10][7]","[0][10][8]"]"#
+        )
     }
 
-    fn visit_seq<M>(self, mut access: M) -> Result<Self::Value, M::Error> where M: SeqAccess<'de>, {
+    fn visit_seq<M>(self, mut access: M) -> Result<Self::Value, M::Error>
+    where
+        M: SeqAccess<'de>,
+    {
         let mut sparse_measurement = SparseMeasurement::new();
         while let Some(position) = access.next_element()? {
             sparse_measurement.insert_defect_measurement(&position);
@@ -1252,9 +1444,18 @@ impl<'de> Visitor<'de> for SparseMeasurement {
 }
 
 impl<'de> Deserialize<'de> for SparseMeasurement {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>, {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
         // the new-ed error pattern just works like a helper type that implements Visitor trait, not optimized for efficiency
         deserializer.deserialize_seq(SparseMeasurement::new())
+    }
+}
+
+impl Default for SparseMeasurement {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -1262,9 +1463,13 @@ impl<'de> Deserialize<'de> for SparseMeasurement {
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl SparseMeasurement {
     #[cfg(feature = "python_binding")]
-    fn __repr__(&self) -> String { format!("{:?}", self) }
+    fn __repr__(&self) -> String {
+        format!("{:?}", self)
+    }
     #[cfg(feature = "python_binding")]
-    fn to_json(&self) -> PyObject { crate::util::json_to_pyobject(json!(self)) }
+    fn to_json(&self) -> PyObject {
+        crate::util::json_to_pyobject(json!(self))
+    }
     /// create a new clean measurement without defect measurements
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new() -> Self {
@@ -1285,25 +1490,29 @@ impl SparseMeasurement {
     pub fn len(&self) -> usize {
         self.defects.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.defects.is_empty()
+    }
 }
 
 impl SparseMeasurement {
     pub fn new_set(defects: BTreeSet<Position>) -> Self {
-        Self {
-            defects
-        }
+        Self { defects }
     }
     /// convert vector to sparse measurement
-    pub fn from_vec(defects: &Vec<Position>) -> Self {
+    pub fn from_vec(defects: &[Position]) -> Self {
         let mut sparse_measurement = Self::new();
         for position in defects.iter() {
-            debug_assert!(!sparse_measurement.defects.contains(position), "duplicate defect measurement forbidden");
+            debug_assert!(
+                !sparse_measurement.defects.contains(position),
+                "duplicate defect measurement forbidden"
+            );
             sparse_measurement.insert_defect_measurement(position);
         }
         sparse_measurement
     }
     /// iterator
-    pub fn iter<'a>(&'a self) -> std::collections::btree_set::Iter<'a, Position> {
+    pub fn iter(&self) -> std::collections::btree_set::Iter<Position> {
         self.defects.iter()
     }
 }
@@ -1319,8 +1528,11 @@ pub struct SparseErasures {
 }
 
 impl Serialize for SparseErasures {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer, {
-        let mut seq = serializer.serialize_seq(Some(self.len()))?;  // known length
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(Some(self.len()))?; // known length
         for erasure in self.iter() {
             seq.serialize_element(erasure)?;
         }
@@ -1332,10 +1544,16 @@ impl<'de> Visitor<'de> for SparseErasures {
     type Value = SparseErasures;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "{}", r#"sparse detected erasure like ["[0][10][13]","[0][10][7]","[0][10][8]"]"#)
+        write!(
+            formatter,
+            r#"sparse detected erasure like ["[0][10][13]","[0][10][7]","[0][10][8]"]"#
+        )
     }
 
-    fn visit_seq<M>(self, mut access: M) -> Result<Self::Value, M::Error> where M: SeqAccess<'de>, {
+    fn visit_seq<M>(self, mut access: M) -> Result<Self::Value, M::Error>
+    where
+        M: SeqAccess<'de>,
+    {
         let mut sparse_detected_erasures = SparseErasures::new();
         while let Some(position) = access.next_element()? {
             sparse_detected_erasures.insert_erasure(&position);
@@ -1345,9 +1563,18 @@ impl<'de> Visitor<'de> for SparseErasures {
 }
 
 impl<'de> Deserialize<'de> for SparseErasures {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>, {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
         // the new-ed error pattern just works like a helper type that implements Visitor trait, not optimized for efficiency
         deserializer.deserialize_seq(SparseErasures::new())
+    }
+}
+
+impl Default for SparseErasures {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -1355,9 +1582,13 @@ impl<'de> Deserialize<'de> for SparseErasures {
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl SparseErasures {
     #[cfg(feature = "python_binding")]
-    fn __repr__(&self) -> String { format!("{:?}", self) }
+    fn __repr__(&self) -> String {
+        format!("{:?}", self)
+    }
     #[cfg(feature = "python_binding")]
-    fn to_json(&self) -> PyObject { crate::util::json_to_pyobject(json!(self)) }
+    fn to_json(&self) -> PyObject {
+        crate::util::json_to_pyobject(json!(self))
+    }
     /// create a new clean measurement without defect measurements
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new() -> Self {
@@ -1368,6 +1599,9 @@ impl SparseErasures {
     /// the length of defect measurements
     pub fn len(&self) -> usize {
         self.erasures.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.erasures.is_empty()
     }
     /// contains element
     pub fn contains(&self, key: &Position) -> bool {
@@ -1382,7 +1616,7 @@ impl SparseErasures {
 
 impl SparseErasures {
     /// iterator
-    pub fn iter<'a>(&'a self) -> std::collections::btree_set::Iter<'a, Position> {
+    pub fn iter(&self) -> std::collections::btree_set::Iter<Position> {
         self.erasures.iter()
     }
     /// compute the edges that are re-weighted to 0 because of these erasures
@@ -1408,19 +1642,27 @@ pub struct SparseErrorPattern {
     pub errors: BTreeMap<Position, ErrorType>,
 }
 
+impl Default for SparseErrorPattern {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl SparseErrorPattern {
     #[cfg(feature = "python_binding")]
-    fn __repr__(&self) -> String { format!("{:?}", self) }
+    fn __repr__(&self) -> String {
+        format!("{:?}", self)
+    }
     #[cfg(feature = "python_binding")]
-    fn to_json(&self) -> PyObject { crate::util::json_to_pyobject(json!(self)) }
+    fn to_json(&self) -> PyObject {
+        crate::util::json_to_pyobject(json!(self))
+    }
     /// create an empty error pattern
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new() -> Self {
-        Self {
-            errors: BTreeMap::new(),
-        }
+        Self { errors: BTreeMap::new() }
     }
     /// extend an error pattern using another error pattern
     #[allow(dead_code)]
@@ -1441,6 +1683,9 @@ impl SparseErrorPattern {
     pub fn len(&self) -> usize {
         self.errors.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.errors.is_empty()
+    }
     pub fn to_vec(&self) -> Vec<(Position, ErrorType)> {
         self.iter().map(|(position, error)| ((*position).clone(), *error)).collect()
     }
@@ -1448,16 +1693,14 @@ impl SparseErrorPattern {
 
 impl SparseErrorPattern {
     pub fn new_map(errors: BTreeMap<Position, ErrorType>) -> Self {
-        Self {
-            errors,
-        }
+        Self { errors }
     }
     /// iterator
-    pub fn iter<'a>(&'a self) -> std::collections::btree_map::Iter<'a, Position, ErrorType> {
+    pub fn iter(&self) -> std::collections::btree_map::Iter<Position, ErrorType> {
         self.errors.iter()
     }
     /// iterator
-    pub fn iter_mut<'a>(&'a mut self) -> std::collections::btree_map::IterMut<'a, Position, ErrorType> {
+    pub fn iter_mut(&mut self) -> std::collections::btree_map::IterMut<Position, ErrorType> {
         self.errors.iter_mut()
     }
     /// get element
@@ -1467,8 +1710,11 @@ impl SparseErrorPattern {
 }
 
 impl Serialize for SparseErrorPattern {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer, {
-        let mut map = serializer.serialize_map(Some(self.len()))?;  // known length
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map = serializer.serialize_map(Some(self.len()))?; // known length
         for (position, error) in self.iter() {
             map.serialize_entry(position, error)?;
         }
@@ -1480,10 +1726,16 @@ impl<'de> Visitor<'de> for SparseErrorPattern {
     type Value = SparseErrorPattern;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "{}", r#"sparse error pattern like {"[0][10][13]":"Z","[0][10][7]":"X","[0][10][8]":"Y"}"#)
+        write!(
+            formatter,
+            r#"sparse error pattern like {{"[0][10][13]":"Z","[0][10][7]":"X","[0][10][8]":"Y"}}"#
+        )
     }
 
-    fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error> where M: MapAccess<'de>, {
+    fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
+    where
+        M: MapAccess<'de>,
+    {
         let mut error_pattern = SparseErrorPattern::new();
         while let Some((key, value)) = access.next_entry()? {
             error_pattern.add(key, value);
@@ -1493,7 +1745,10 @@ impl<'de> Visitor<'de> for SparseErrorPattern {
 }
 
 impl<'de> Deserialize<'de> for SparseErrorPattern {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>, {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
         // the new-ed error pattern just works like a helper type that implements Visitor trait, not optimized for efficiency
         deserializer.deserialize_map(SparseErrorPattern::new())
     }
@@ -1505,13 +1760,23 @@ impl<'de> Deserialize<'de> for SparseErrorPattern {
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub struct SparseCorrection(SparseErrorPattern);
 
+impl Default for SparseCorrection {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl SparseCorrection {
     #[cfg(feature = "python_binding")]
-    fn __repr__(&self) -> String { format!("{:?}", self) }
+    fn __repr__(&self) -> String {
+        format!("{:?}", self)
+    }
     #[cfg(feature = "python_binding")]
-    fn to_json(&self) -> PyObject { crate::util::json_to_pyobject(json!(self)) }
+    fn to_json(&self) -> PyObject {
+        crate::util::json_to_pyobject(json!(self))
+    }
     /// create an empty correction
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new() -> Self {
@@ -1525,19 +1790,30 @@ impl SparseCorrection {
     }
     /// add an correction Pauli operator at some position, if an error already presents, then multiply them
     pub fn add(&mut self, position: Position, operator: ErrorType) {
-        debug_assert!({  // check `t` are the same
-            // no need to iterate them all, because every call to this function will be checked
-            let check_passed = self.0.iter().next().map(|(key, _value)| key.t == position.t).unwrap_or(true);
-            if !check_passed {
-                eprintln!("correction should also have the same `t`, violating: {} and {}", self.0.iter().next().unwrap().0, position);
-            }
-            check_passed
-        }, "correction must have the same t");
+        debug_assert!(
+            {
+                // check `t` are the same
+                // no need to iterate them all, because every call to this function will be checked
+                let check_passed = self.0.iter().next().map(|(key, _value)| key.t == position.t).unwrap_or(true);
+                if !check_passed {
+                    eprintln!(
+                        "correction should also have the same `t`, violating: {} and {}",
+                        self.0.iter().next().unwrap().0,
+                        position
+                    );
+                }
+                check_passed
+            },
+            "correction must have the same t"
+        );
         self.0.add(position, operator);
     }
     /// length
     pub fn len(&self) -> usize {
         self.0.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
     pub fn to_vec(&self) -> Vec<(Position, ErrorType)> {
         self.0.to_vec()
@@ -1546,11 +1822,11 @@ impl SparseCorrection {
 
 impl SparseCorrection {
     /// iterator
-    pub fn iter<'a>(&'a self) -> std::collections::btree_map::Iter<'a, Position, ErrorType> {
+    pub fn iter(&self) -> std::collections::btree_map::Iter<Position, ErrorType> {
         self.0.iter()
     }
     /// iterator
-    pub fn iter_mut<'a>(&'a mut self) -> std::collections::btree_map::IterMut<'a, Position, ErrorType> {
+    pub fn iter_mut(&mut self) -> std::collections::btree_map::IterMut<Position, ErrorType> {
         self.0.iter_mut()
     }
     /// get element
@@ -1560,7 +1836,10 @@ impl SparseCorrection {
 }
 
 impl Serialize for SparseCorrection {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer, {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         Serialize::serialize(&self.0, serializer)
     }
 }
@@ -1570,7 +1849,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn simulator_basics() {  // cargo test simulator_basics -- --nocapture
+    fn simulator_basics() {
+        // cargo test simulator_basics -- --nocapture
         let di = 5;
         let dj = 5;
         let noisy_measurements = 5;
@@ -1580,16 +1860,22 @@ mod tests {
         let nonexisting_position = pos!(0, 0, 0);
         assert!(simulator.is_valid_position(&nonexisting_position), "valid position");
         assert!(!simulator.is_node_exist(&nonexisting_position), "nonexisting position");
-        println!("std::mem::size_of::<SimulatorNode>() = {}", std::mem::size_of::<SimulatorNode>());
-        println!("std::mem::size_of::<NoiseModelNode>() = {}", std::mem::size_of::<NoiseModelNode>());
-        if std::mem::size_of::<SimulatorNode>() > 32 {  // ArmV8 data cache line is 64 bytes
+        println!(
+            "std::mem::size_of::<SimulatorNode>() = {}",
+            std::mem::size_of::<SimulatorNode>()
+        );
+        println!(
+            "std::mem::size_of::<NoiseModelNode>() = {}",
+            std::mem::size_of::<NoiseModelNode>()
+        );
+        if std::mem::size_of::<SimulatorNode>() > 32 {
+            // ArmV8 data cache line is 64 bytes
             panic!("SimulatorNode which is unexpectedly large, check if anything wrong");
         }
     }
-
 }
 
-#[cfg(feature="python_binding")]
+#[cfg(feature = "python_binding")]
 #[pyfunction]
 pub(crate) fn register(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<Simulator>()?;

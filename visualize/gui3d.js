@@ -64,16 +64,16 @@ if (is_mock) {
 }
 
 export const scene = new THREE.Scene()
-scene.background = new THREE.Color( 0xffffff )  // for better image output
-scene.add( new THREE.AmbientLight( 0xffffff ) )
+scene.background = new THREE.Color(0xffffff)  // for better image output
+scene.add(new THREE.AmbientLight(0xffffff))
 window.scene = scene
-export const perspective_camera = new THREE.PerspectiveCamera( 75, sizes.canvas_width / sizes.canvas_height, 0.1, 10000 )
+export const perspective_camera = new THREE.PerspectiveCamera(75, sizes.canvas_width / sizes.canvas_height, 0.1, 10000)
 const orthogonal_camera_init_scale = 6
-export const orthogonal_camera = new THREE.OrthographicCamera( sizes.canvas_width / sizes.canvas_height * (-orthogonal_camera_init_scale)
-    , sizes.canvas_width / sizes.canvas_height * orthogonal_camera_init_scale, orthogonal_camera_init_scale, -orthogonal_camera_init_scale, 0.1, 100000 )
+export const orthogonal_camera = new THREE.OrthographicCamera(sizes.canvas_width / sizes.canvas_height * (-orthogonal_camera_init_scale)
+    , sizes.canvas_width / sizes.canvas_height * orthogonal_camera_init_scale, orthogonal_camera_init_scale, -orthogonal_camera_init_scale, 0.1, 100000)
 export const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, context: webgl_renderer_context() })
 
-document.body.appendChild( renderer.domElement )
+document.body.appendChild(renderer.domElement)
 
 watch(sizes, () => {
     perspective_camera.aspect = sizes.canvas_width / sizes.canvas_height
@@ -81,9 +81,9 @@ watch(sizes, () => {
     orthogonal_camera.left = sizes.canvas_width / sizes.canvas_height * (-orthogonal_camera_init_scale)
     orthogonal_camera.right = sizes.canvas_width / sizes.canvas_height * (orthogonal_camera_init_scale)
     orthogonal_camera.updateProjectionMatrix()
-    renderer.setSize( sizes.canvas_width, sizes.canvas_height, false )
+    renderer.setSize(sizes.canvas_width, sizes.canvas_height, false)
     const ratio = window.devicePixelRatio  // looks better on devices with a high pixel ratio, such as iPhones with Retina displays
-    renderer.setPixelRatio( ratio )
+    renderer.setPixelRatio(ratio)
     const canvas = renderer.domElement
     canvas.width = sizes.canvas_width * ratio
     canvas.height = sizes.canvas_height * ratio
@@ -91,8 +91,8 @@ watch(sizes, () => {
     canvas.style.height = `${sizes.canvas_height}px`
 }, { immediate: true })
 
-export const orbit_control_perspective = new OrbitControls( perspective_camera, renderer.domElement )
-export const orbit_control_orthogonal = new OrbitControls( orthogonal_camera, renderer.domElement )
+export const orbit_control_perspective = new OrbitControls(perspective_camera, renderer.domElement)
+export const orbit_control_orthogonal = new OrbitControls(orthogonal_camera, renderer.domElement)
 export const enable_control = ref(true)
 watch(enable_control, (enabled) => {
     orbit_control_perspective.enabled = enabled
@@ -109,7 +109,7 @@ export const orbit_control = computed(() => {
     return use_perspective_camera.value ? orbit_control_perspective : orbit_control_orthogonal
 })
 
-export function reset_camera_position(direction="top") {
+export function reset_camera_position(direction = "top") {
     for (let [camera, control, distance] of [[perspective_camera, orbit_control_perspective, 8], [orthogonal_camera, orbit_control_orthogonal, 1000]]) {
         control.reset()
         camera.position.x = (direction == "left" ? -distance : 0)
@@ -128,7 +128,7 @@ export const show_stats = ref(false)
 if (!is_mock) {
     stats = Stats()
     document.body.appendChild(stats.dom)
-    watch(show_stats, function() {
+    watch(show_stats, function () {
         if (show_stats.value) {
             stats.dom.style.display = "block"
         } else {
@@ -142,22 +142,27 @@ if (!is_mock) {
 }
 
 export function animate() {
-    requestAnimationFrame( animate )
+    requestAnimationFrame(animate)
     orbit_control.value.update()
-    renderer.render( scene, camera.value )
+    renderer.render(scene, camera.value)
     if (stats) stats.update()
 }
 
 // commonly used vectors
-const zero_vector = new THREE.Vector3( 0, 0, 0 )
-const unit_up_vector = new THREE.Vector3( 0, 1, 0 )
-export const t_scale = parseFloat(urlParams.get('t_scale') || 1/3)
+const zero_vector = new THREE.Vector3(0, 0, 0)
+const unit_up_vector = new THREE.Vector3(0, 1, 0)
+export const t_scale = parseFloat(urlParams.get('t_scale') || 1 / 3)
 
 // currently displaying elements within a range
 export const t_length = ref(1)
 export const t_range = ref({ min: 0, max: 0 })
 export function in_t_range(t) {
     return t >= t_range.value.min && t < t_range.value.max
+}
+export function in_t_range_any(t1, t2) {
+    const ts = Math.min(t1, t2)
+    const te = Math.max(t1, t2)
+    return !(ts >= t_range.value.max || te < t_range.value.min)
 }
 
 // create common geometries
@@ -167,21 +172,21 @@ export const qubit_radius_scale = ref(1)
 const scaled_qubit_radius = computed(() => {
     return qubit_radius * qubit_radius_scale.value
 })
-const qubit_geometry = new THREE.SphereGeometry( qubit_radius, segment, segment )
+const qubit_geometry = new THREE.SphereGeometry(qubit_radius, segment, segment)
 const idle_gate_radius = parseFloat(urlParams.get('idle_gate_radius') || 0.025)
 const idle_gate_radius_scale = ref(1)
-const idle_gate_geometry = new THREE.CylinderGeometry( idle_gate_radius, idle_gate_radius, 1, segment, 1, true )
+const idle_gate_geometry = new THREE.CylinderGeometry(idle_gate_radius, idle_gate_radius, 1, segment, 1, true)
 idle_gate_geometry.translate(0, 0.5, 0)
-const initialization_geometry = new THREE.ConeBufferGeometry( 0.1, 0.15, 32 )
-const control_qubit_geometry = new THREE.SphereBufferGeometry( 0.05, 12, 6 )
+const initialization_geometry = new THREE.ConeBufferGeometry(0.1, 0.15, 32)
+const control_qubit_geometry = new THREE.SphereBufferGeometry(0.05, 12, 6)
 const control_line_radius = 0.02
-const control_line_geometry = new THREE.CylinderGeometry( control_line_radius, control_line_radius, 1, segment, 1, true )
+const control_line_geometry = new THREE.CylinderGeometry(control_line_radius, control_line_radius, 1, segment, 1, true)
 control_line_geometry.translate(0, 0.5, 0)
 const CX_target_radius = 0.15
 const CX_target_geometries = [
-    new THREE.TorusBufferGeometry( CX_target_radius, control_line_radius, 16, 32 ),
-    new THREE.CylinderBufferGeometry( control_line_radius, control_line_radius, 2 * CX_target_radius, 6 ),
-    new THREE.CylinderBufferGeometry( control_line_radius, control_line_radius, 2 * CX_target_radius, 6 ),
+    new THREE.TorusBufferGeometry(CX_target_radius, control_line_radius, 16, 32),
+    new THREE.CylinderBufferGeometry(control_line_radius, control_line_radius, 2 * CX_target_radius, 6),
+    new THREE.CylinderBufferGeometry(control_line_radius, control_line_radius, 2 * CX_target_radius, 6),
 ]
 CX_target_geometries[0].rotateX(Math.PI / 2)
 CX_target_geometries[1].rotateX(Math.PI / 2)
@@ -189,16 +194,16 @@ CX_target_geometries[2].rotateZ(Math.PI / 2)
 const CY_target_radius = 0.2
 const CY_target_Y_length = 0.12
 const CY_target_geometries = [
-    new THREE.TorusBufferGeometry( CY_target_radius, control_line_radius, 16, 4 ),
-    new THREE.CylinderBufferGeometry( control_line_radius, control_line_radius, CY_target_Y_length, 6 ),
-    new THREE.CylinderBufferGeometry( control_line_radius, control_line_radius, CY_target_Y_length, 6 ),
-    new THREE.CylinderBufferGeometry( control_line_radius, control_line_radius, CY_target_Y_length, 6 ),
+    new THREE.TorusBufferGeometry(CY_target_radius, control_line_radius, 16, 4),
+    new THREE.CylinderBufferGeometry(control_line_radius, control_line_radius, CY_target_Y_length, 6),
+    new THREE.CylinderBufferGeometry(control_line_radius, control_line_radius, CY_target_Y_length, 6),
+    new THREE.CylinderBufferGeometry(control_line_radius, control_line_radius, CY_target_Y_length, 6),
 ]
 CY_target_geometries[0].rotateX(Math.PI / 2)
 CY_target_geometries[0].rotateY(Math.PI / 4)
-CY_target_geometries[1].translate(0, CY_target_Y_length/2, 0)
-CY_target_geometries[2].translate(0, CY_target_Y_length/2, 0)
-CY_target_geometries[3].translate(0, CY_target_Y_length/2, 0)
+CY_target_geometries[1].translate(0, CY_target_Y_length / 2, 0)
+CY_target_geometries[2].translate(0, CY_target_Y_length / 2, 0)
+CY_target_geometries[3].translate(0, CY_target_Y_length / 2, 0)
 CY_target_geometries[1].rotateX(Math.PI / 2)
 CY_target_geometries[1].rotateY(- 5 * Math.PI / 6)
 CY_target_geometries[2].rotateX(Math.PI / 2)
@@ -206,22 +211,22 @@ CY_target_geometries[2].rotateY(5 * Math.PI / 6)
 CY_target_geometries[3].rotateX(Math.PI / 2)
 const model_graph_edge_radius = parseFloat(urlParams.get('model_graph_edge_radius') || 0.03)
 const model_graph_edge_scale = ref(1)
-const model_graph_edge_geometry = new THREE.CylinderGeometry( model_graph_edge_radius, model_graph_edge_radius, 1, segment, 1, true )
+const model_graph_edge_geometry = new THREE.CylinderGeometry(model_graph_edge_radius, model_graph_edge_radius, 1, segment, 1, true)
 model_graph_edge_geometry.translate(0, 0.5, 0)
 const model_graph_vertex_radius = parseFloat(urlParams.get('model_graph_vertex_radius') || 0.12)
 const model_graph_vertex_scale = ref(1)
-const model_graph_vertex_geometry = new THREE.SphereGeometry( model_graph_vertex_radius, segment, segment )
-const noise_model_pauli_geometry = new THREE.CapsuleGeometry( 0.05, 0.04, 8, 16 )
+const model_graph_vertex_geometry = new THREE.SphereGeometry(model_graph_vertex_radius, segment, segment)
+const noise_model_pauli_geometry = new THREE.CapsuleGeometry(0.05, 0.04, 8, 16)
 noise_model_pauli_geometry.translate(0, t_scale * 0.3, 0)
-const noise_model_erasure_geometry = new THREE.CapsuleGeometry( 0.05, 0.04, 8, 16 )
+const noise_model_erasure_geometry = new THREE.CapsuleGeometry(0.05, 0.04, 8, 16)
 noise_model_erasure_geometry.translate(0, t_scale * 0.65, 0)
-const singular_hyperedge_geometry = new THREE.CylinderGeometry( model_graph_vertex_radius * 2, model_graph_vertex_radius * 2, 0.01, segment, 1, false )
+const singular_hyperedge_geometry = new THREE.CylinderGeometry(model_graph_vertex_radius * 2, model_graph_vertex_radius * 2, 0.01, segment, 1, false)
 // singular_hyperedge_geometry.translate(0, -model_graph_vertex_radius, 0)
-const normal_hyperedge_geometry = new THREE.CylinderGeometry( model_graph_edge_radius, model_graph_edge_radius, 1, segment, 1, true )
+const normal_hyperedge_geometry = new THREE.CylinderGeometry(model_graph_edge_radius, model_graph_edge_radius, 1, segment, 1, true)
 normal_hyperedge_geometry.translate(0, 0.5, 0)
-const tri_hyperedge_geometry = new THREE.CylinderGeometry( model_graph_edge_radius * 1.5, model_graph_edge_radius * 1.5, 1, segment, 1, true )
+const tri_hyperedge_geometry = new THREE.CylinderGeometry(model_graph_edge_radius * 1.5, model_graph_edge_radius * 1.5, 1, segment, 1, true)
 tri_hyperedge_geometry.translate(0, 0.5, 0)
-const quad_hyperedge_geometry = new THREE.CylinderGeometry( model_graph_edge_radius * 2, model_graph_edge_radius * 2, 1, segment, 1, true )
+const quad_hyperedge_geometry = new THREE.CylinderGeometry(model_graph_edge_radius * 2, model_graph_edge_radius * 2, 1, segment, 1, true)
 quad_hyperedge_geometry.translate(0, 0.5, 0)
 const hyperedge_geometries = [
     singular_hyperedge_geometry,
@@ -230,25 +235,31 @@ const hyperedge_geometries = [
     quad_hyperedge_geometry,
 ]
 function get_hyperedge_geometry(hyperedge_degree) {
-    if (hyperedge_degree-1 < hyperedge_geometries.length) return hyperedge_geometries[hyperedge_degree-1]
-    return hyperedge_geometries[hyperedge_geometries.length-1]
+    if (hyperedge_degree - 1 < hyperedge_geometries.length) return hyperedge_geometries[hyperedge_degree - 1]
+    return hyperedge_geometries[hyperedge_geometries.length - 1]
 }
+const matching_edge_radius = parseFloat(urlParams.get('matching_edge_radius') || 0.06)
+const matching_edge_geometry = new THREE.CylinderGeometry(matching_edge_radius, matching_edge_radius, 1, segment, 1, true)
+matching_edge_geometry.translate(0, 0.5, 0)
+const tailored_unfixed_stabilizer_radius = parseFloat(urlParams.get('tailored_unfixed_stabilizer_radius') || 0.2)
+const tailored_unfixed_stabilizer_geometry = new THREE.TorusKnotGeometry(tailored_unfixed_stabilizer_radius, 0.03, segment, 16)
+tailored_unfixed_stabilizer_geometry.rotateX(Math.PI / 2)
 
 // measurement bits
 const measurement_radius = parseFloat(urlParams.get('measurement_radius') || 0.06)
 export const measurement_radius_scale = ref(1)
-const measurement_geometry = new THREE.SphereGeometry( measurement_radius, segment, segment )
+const measurement_geometry = new THREE.SphereGeometry(measurement_radius, segment, segment)
 const defect_measurement_radius = parseFloat(urlParams.get('defect_measurement_radius') || 0.15)
 export const defect_measurement_radius_scale = ref(1)
-const defect_measurement_geometry = new THREE.SphereGeometry( defect_measurement_radius, segment, segment )
+const defect_measurement_geometry = new THREE.SphereGeometry(defect_measurement_radius, segment, segment)
 
 // error pattern geometries
 const error_line_radius = 0.04
 const error_X_radius = 0.3
 const error_X_geometries = [
-    new THREE.TorusBufferGeometry( error_X_radius, error_line_radius, 16, 32 ),
-    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, 2 * error_X_radius, 6 ),
-    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, 2 * error_X_radius, 6 ),
+    new THREE.TorusBufferGeometry(error_X_radius, error_line_radius, 16, 32),
+    new THREE.CylinderBufferGeometry(error_line_radius, error_line_radius, 2 * error_X_radius, 6),
+    new THREE.CylinderBufferGeometry(error_line_radius, error_line_radius, 2 * error_X_radius, 6),
 ]
 error_X_geometries[0].rotateX(Math.PI / 2)
 error_X_geometries[1].rotateX(Math.PI / 2)
@@ -258,16 +269,16 @@ error_X_geometries[2].rotateY(Math.PI / 4)
 const error_Y_radius = 0.4
 const error_Y_length = 0.24
 const error_Y_geometries = [
-    new THREE.TorusBufferGeometry( error_Y_radius, error_line_radius, 16, 4 ),
-    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Y_length, 6 ),
-    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Y_length, 6 ),
-    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Y_length, 6 ),
+    new THREE.TorusBufferGeometry(error_Y_radius, error_line_radius, 16, 4),
+    new THREE.CylinderBufferGeometry(error_line_radius, error_line_radius, error_Y_length, 6),
+    new THREE.CylinderBufferGeometry(error_line_radius, error_line_radius, error_Y_length, 6),
+    new THREE.CylinderBufferGeometry(error_line_radius, error_line_radius, error_Y_length, 6),
 ]
 error_Y_geometries[0].rotateX(Math.PI / 2)
 error_Y_geometries[0].rotateY(Math.PI / 4)
-error_Y_geometries[1].translate(0, error_Y_length/2, 0)
-error_Y_geometries[2].translate(0, error_Y_length/2, 0)
-error_Y_geometries[3].translate(0, error_Y_length/2, 0)
+error_Y_geometries[1].translate(0, error_Y_length / 2, 0)
+error_Y_geometries[2].translate(0, error_Y_length / 2, 0)
+error_Y_geometries[3].translate(0, error_Y_length / 2, 0)
 error_Y_geometries[1].rotateX(Math.PI / 2)
 error_Y_geometries[1].rotateY(- 5 * Math.PI / 6)
 error_Y_geometries[2].rotateX(Math.PI / 2)
@@ -276,10 +287,10 @@ error_Y_geometries[3].rotateX(Math.PI / 2)
 const error_Z_radius = 0.4
 const error_Z_length = 0.3
 const error_Z_geometries = [
-    new THREE.TorusBufferGeometry( error_Z_radius, error_line_radius, 16, 4 ),
-    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Z_length, 6 ),
-    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Z_length, 6 ),
-    new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Z_length * Math.sqrt(61)/5, 6 ),
+    new THREE.TorusBufferGeometry(error_Z_radius, error_line_radius, 16, 4),
+    new THREE.CylinderBufferGeometry(error_line_radius, error_line_radius, error_Z_length, 6),
+    new THREE.CylinderBufferGeometry(error_line_radius, error_line_radius, error_Z_length, 6),
+    new THREE.CylinderBufferGeometry(error_line_radius, error_line_radius, error_Z_length * Math.sqrt(61) / 5, 6),
     // new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Z_length, 6 ),
     // new THREE.CylinderBufferGeometry( error_line_radius, error_line_radius, error_Z_length, 6 ),
 ]
@@ -287,13 +298,13 @@ error_Z_geometries[0].rotateX(Math.PI / 2)
 error_Z_geometries[0].rotateY(Math.PI / 4)
 // error_Z_geometries[1].rotateX(Math.PI / 2)
 error_Z_geometries[1].rotateZ(Math.PI / 2)
-error_Z_geometries[1].translate(0, 0, error_Z_length*0.6)
+error_Z_geometries[1].translate(0, 0, error_Z_length * 0.6)
 error_Z_geometries[2].rotateZ(Math.PI / 2)
-error_Z_geometries[2].translate(0, 0, -error_Z_length*0.6)
+error_Z_geometries[2].translate(0, 0, -error_Z_length * 0.6)
 error_Z_geometries[3].rotateZ(Math.PI / 2)
 error_Z_geometries[3].rotateY(1.0)
 const detected_erasure_radius = 0.5
-const detected_erasure_geometry = new THREE.TorusBufferGeometry( detected_erasure_radius, error_line_radius, 16, 4 )
+const detected_erasure_geometry = new THREE.TorusBufferGeometry(detected_erasure_radius, error_line_radius, 16, 4)
 detected_erasure_geometry.rotateX(Math.PI / 2)
 detected_erasure_geometry.rotateY(Math.PI / 4)
 
@@ -396,6 +407,19 @@ export const model_hypergraph_edge_material = new THREE.MeshStandardMaterial({
     transparent: true,
     side: THREE.FrontSide,
 })
+export const tailored_model_graph_vertex_material = build_solid_material("black")
+export const tailored_model_graph_virtual_vertex_material = build_solid_material(0xff9800)
+export const tailored_model_graph_corner_vertex_material = build_solid_material(0xf44336)
+export const tailored_model_graph_edge_material_vec = []
+for (let i = 0; i < 3; ++i) {
+    tailored_model_graph_edge_material_vec.push(build_solid_material(sequential_colors[i + 1][1]))
+}
+export const tailored_unfixed_stabilizer_material = new THREE.MeshStandardMaterial({
+    color: 0xe91e63,
+    opacity: 1,
+    transparent: true,
+    side: THREE.FrontSide,
+})
 
 build_solid_material(0x006699)
 export const idle_gate_material = new THREE.MeshStandardMaterial({
@@ -456,6 +480,9 @@ export var noise_model_pauli_meshes = []
 export var noise_model_erasure_meshes = []
 export var model_hypergraph_vertex_meshes = []
 export var model_hypergraph_edge_vec_meshes = []
+export var tailored_model_graph_vertex_meshes = []
+export var tailored_model_graph_edge_vec_meshes = []
+export var tailored_unfixed_stabilizer_meshes = []
 
 // meshes of a specific case
 export var defect_measurement_meshes = []
@@ -464,26 +491,27 @@ export var error_pattern_vec_meshes = []
 export var correction_vec_meshes = []
 export var contributed_noise_sources = []
 export var detected_erasure_meshes = []
+export var matching_meshes = []
 
 // update the sizes of objects
 watch(qubit_radius_scale, (newVal, oldVal) => {
-    qubit_geometry.scale(1/oldVal, 1/oldVal, 1/oldVal)
+    qubit_geometry.scale(1 / oldVal, 1 / oldVal, 1 / oldVal)
     qubit_geometry.scale(newVal, newVal, newVal)
 })
 watch(idle_gate_radius_scale, (newVal, oldVal) => {
-    idle_gate_geometry.scale(1/oldVal, 1, 1/oldVal)
+    idle_gate_geometry.scale(1 / oldVal, 1, 1 / oldVal)
     idle_gate_geometry.scale(newVal, 1, newVal)
 })
 watch(model_graph_edge_scale, (newVal, oldVal) => {
-    model_graph_edge_geometry.scale(1/oldVal, 1, 1/oldVal)
+    model_graph_edge_geometry.scale(1 / oldVal, 1, 1 / oldVal)
     model_graph_edge_geometry.scale(newVal, 1, newVal)
 })
 watch(model_graph_vertex_scale, (newVal, oldVal) => {
-    model_graph_vertex_geometry.scale(1/oldVal, 1, 1/oldVal)
+    model_graph_vertex_geometry.scale(1 / oldVal, 1, 1 / oldVal)
     model_graph_vertex_geometry.scale(newVal, 1, newVal)
 })
 watch(defect_measurement_radius_scale, (newVal, oldVal) => {
-    defect_measurement_geometry.scale(1/oldVal, 1/oldVal, 1/oldVal)
+    defect_measurement_geometry.scale(1 / oldVal, 1 / oldVal, 1 / oldVal)
     defect_measurement_geometry.scale(newVal, newVal, newVal)
 })
 function update_mesh_outline(mesh) {
@@ -499,7 +527,7 @@ watch([outline_ratio, measurement_radius_scale], () => {
 
 // helper functions
 export function compute_vector3(data_position) {
-    let vector = new THREE.Vector3( 0, 0, 0 )
+    let vector = new THREE.Vector3(0, 0, 0)
     load_position(vector, data_position)
     return vector
 }
@@ -509,12 +537,12 @@ export function load_position(mesh_position, data_position) {
     mesh_position.y = data_position.t * t_scale
 }
 
-function build_2d_array(vertical, horizontal, value=(i,j)=>null) {
+function build_2d_array(vertical, horizontal, value = (i, j) => null) {
     let array = []
-    for (let i=0; i<vertical; ++i) {
+    for (let i = 0; i < vertical; ++i) {
         let row = []
-        for (let j=0; j<horizontal; ++j) {
-            row.push(value(i,j))
+        for (let j = 0; j < horizontal; ++j) {
+            row.push(value(i, j))
         }
         array.push(row)
     }
@@ -525,20 +553,20 @@ function dispose_mesh_2d_array(array) {
     for (let row of array) {
         for (let mesh of row) {
             if (mesh != null) {
-                scene.remove( mesh )
+                scene.remove(mesh)
             }
         }
     }
 }
 
-function build_3d_array(height, vertical, horizontal, value=(t,i,j)=>null) {
+function build_3d_array(height, vertical, horizontal, value = (t, i, j) => null) {
     let array = []
-    for (let t=0; t<height; ++t) {
+    for (let t = 0; t < height; ++t) {
         let layer = []
-        for (let i=0; i<vertical; ++i) {
+        for (let i = 0; i < vertical; ++i) {
             let row = []
-            for (let j=0; j<horizontal; ++j) {
-                row.push(value(t,i,j))
+            for (let j = 0; j < horizontal; ++j) {
+                row.push(value(t, i, j))
             }
             layer.push(row)
         }
@@ -554,10 +582,10 @@ function dispose_mesh_3d_array(array) {
                 if (mesh != null) {
                     if (Array.isArray(mesh)) {
                         for (let sub_mesh of mesh) {
-                            scene.remove( sub_mesh )
+                            scene.remove(sub_mesh)
                         }
                     } else {
-                        scene.remove( mesh )
+                        scene.remove(mesh)
                     }
                 }
             }
@@ -569,10 +597,10 @@ function dispose_mesh_1d_array(array) {
     for (let mesh of array) {
         if (Array.isArray(mesh)) {
             for (let sub_mesh of mesh) {
-                scene.remove( sub_mesh )
+                scene.remove(sub_mesh)
             }
         } else {
-            scene.remove( mesh )
+            scene.remove(mesh)
         }
     }
 }
@@ -598,7 +626,7 @@ export function get_defect_vertices(defect_vertices_str) {
     return defect_vertices
 }
 
-function get_url_bool(name, default_value=true) {
+function get_url_bool(name, default_value = true) {
     let value = urlParams.get(name)
     if (value == null) {
         return default_value
@@ -610,8 +638,8 @@ function get_url_bool(name, default_value=true) {
 export const display_qubits = ref(get_url_bool("display_qubits", true))
 export function update_visible_qubit() {
     const qecp_data = active_qecp_data.value
-    for (let i=0; i<qecp_data.simulator.vertical; ++i) {
-        for (let j=0; j<qecp_data.simulator.horizontal; ++j) {
+    for (let i = 0; i < qecp_data.simulator.vertical; ++i) {
+        for (let j = 0; j < qecp_data.simulator.horizontal; ++j) {
             if (qubit_meshes[i][j]) qubit_meshes[i][j].visible = display_qubits.value
             if (qubit_outline_meshes[i][j]) {
                 qubit_outline_meshes[i][j].visible = display_qubits.value
@@ -624,9 +652,9 @@ watch([display_qubits, outline_ratio], update_visible_qubit)
 export const display_idle_sticks = ref(get_url_bool("display_idle_sticks", true))
 export function update_visible_idle_sticks() {
     const qecp_data = active_qecp_data.value
-    for (let t=0; t<qecp_data.simulator.height; ++t) {
-        for (let i=0; i<qecp_data.simulator.vertical; ++i) {
-            for (let j=0; j<qecp_data.simulator.horizontal; ++j) {
+    for (let t = 0; t < qecp_data.simulator.height; ++t) {
+        for (let i = 0; i < qecp_data.simulator.vertical; ++i) {
+            for (let j = 0; j < qecp_data.simulator.horizontal; ++j) {
                 if (idle_gate_meshes[t][i][j]) idle_gate_meshes[t][i][j].visible = display_idle_sticks.value && in_t_range(t)
             }
         }
@@ -637,9 +665,9 @@ watch([display_idle_sticks, t_range], update_visible_idle_sticks, { deep: true }
 export const display_gates = ref(get_url_bool("display_gates", true))
 export function update_visible_gates() {
     const qecp_data = active_qecp_data.value
-    for (let t=0; t<qecp_data.simulator.height; ++t) {
-        for (let i=0; i<qecp_data.simulator.vertical; ++i) {
-            for (let j=0; j<qecp_data.simulator.horizontal; ++j) {
+    for (let t = 0; t < qecp_data.simulator.height; ++t) {
+        for (let i = 0; i < qecp_data.simulator.vertical; ++i) {
+            for (let j = 0; j < qecp_data.simulator.horizontal; ++j) {
                 if (gate_vec_meshes[t][i][j]) {
                     for (const mesh of gate_vec_meshes[t][i][j]) {
                         mesh.visible = display_gates.value && in_t_range(t)
@@ -654,7 +682,7 @@ watch([display_gates, t_range], update_visible_gates, { deep: true })
 export const display_measurements = ref(get_url_bool("display_measurements", true))
 export function update_visible_defect_measurement() {
     console.assert(defect_measurement_meshes.length == defect_measurement_outline_meshes.length)
-    for (let i=0; i<defect_measurement_meshes.length; ++i) {
+    for (let i = 0; i < defect_measurement_meshes.length; ++i) {
         const mesh = defect_measurement_meshes[i]
         const outline_mesh = defect_measurement_outline_meshes[i]
         const t = mesh.userData.t
@@ -704,9 +732,9 @@ export const model_graph_region_display = ref([])
 export function update_visible_model_graph() {
     const active_regions = {}
     for (const active_region of Object.values(model_graph_region_display.value)) active_regions[active_region] = true
-    for (let t=0; t<qecp_data.simulator.height; ++t) {
-        for (let i=0; i<qecp_data.simulator.vertical; ++i) {
-            for (let j=0; j<qecp_data.simulator.horizontal; ++j) {
+    for (let t = 0; t < qecp_data.simulator.height; ++t) {
+        for (let i = 0; i < qecp_data.simulator.vertical; ++i) {
+            for (let j = 0; j < qecp_data.simulator.horizontal; ++j) {
                 const mesh = model_graph_vertex_meshes[t][i][j]
                 if (mesh != null) {
                     const region_idx = mesh.userData.region_idx
@@ -727,12 +755,12 @@ export const display_model_hypergraph = ref(get_url_bool("display_model_hypergra
 export function update_visible_model_hypergraph() {
     if (qecp_data.model_hypergraph == null) return
     // if any defect vertices is in the range, display the corresponding edge
-    for (let vertex_index=0; vertex_index<qecp_data.model_hypergraph.vertex_positions.length; ++vertex_index) {
+    for (let vertex_index = 0; vertex_index < qecp_data.model_hypergraph.vertex_positions.length; ++vertex_index) {
         let mesh = model_hypergraph_vertex_meshes[vertex_index]
         const tij = get_position(qecp_data.model_hypergraph.vertex_positions[vertex_index])
         mesh.visible = display_model_hypergraph.value && in_t_range(tij.t)
     }
-    for (let edge_index=0; edge_index<qecp_data.model_hypergraph.weighted_edges.length; ++edge_index) {
+    for (let edge_index = 0; edge_index < qecp_data.model_hypergraph.weighted_edges.length; ++edge_index) {
         const [min_t, max_t] = qecp_data.model_hypergraph.edge_min_max_t[edge_index]
         const visible = display_model_hypergraph.value && min_t <= t_range.value.max && max_t >= t_range.value.min
         for (let mesh of model_hypergraph_edge_vec_meshes[edge_index]) {
@@ -741,14 +769,46 @@ export function update_visible_model_hypergraph() {
     }
 }
 watch([display_model_hypergraph, t_range], update_visible_model_hypergraph, { deep: true })
+// tailored model graph
+export const existed_tailored_model_graph = ref(false)
+export const display_tailored_model_graph = ref(get_url_bool("display_tailored_model_graph", false))
+export const tailored_model_graph_region_display = ref([0, 1, 2])  // by default display all three graphs
+export const existed_tailored_unfixed_stabilizer = ref(false)
+export const display_tailored_unfixed_stabilizer = ref(false)
+export function update_visible_tailored_model_graph() {
+    const active_regions = {}
+    for (const active_region of Object.values(tailored_model_graph_region_display.value)) active_regions[active_region] = true
+    for (let t = 0; t < qecp_data.simulator.height; ++t) {
+        for (let i = 0; i < qecp_data.simulator.vertical; ++i) {
+            for (let j = 0; j < qecp_data.simulator.horizontal; ++j) {
+                const mesh = tailored_model_graph_vertex_meshes[t][i][j]
+                if (mesh != null) {
+                    mesh.visible = display_tailored_model_graph.value && in_t_range(t)
+                    for (const edge_mesh of tailored_model_graph_edge_vec_meshes[t][i][j]) {
+                        let tsg = edge_mesh.userData.tsg
+                        const visible = display_tailored_model_graph.value && active_regions[tsg] == true
+                        edge_mesh.visible = visible && in_t_range(t)
+                    }
+                }
+            }
+        }
+    }
+    for (let mesh of tailored_unfixed_stabilizer_meshes) {
+        mesh.visible = display_tailored_unfixed_stabilizer.value && in_t_range(mesh.userData.t)
+    }
+}
+watch([tailored_model_graph_region_display,
+    display_tailored_model_graph,
+    t_range, display_tailored_unfixed_stabilizer], update_visible_tailored_model_graph, { deep: true })
+
 // noise model
 export const existed_noise_model = ref(false)
 export const display_noise_model_pauli = ref(get_url_bool("display_noise_model_pauli", true))
 export const display_noise_model_erasure = ref(get_url_bool("display_noise_model_erasure", true))
 export function update_visible_noise_model() {
-    for (let t=0; t<qecp_data.simulator.height; ++t) {
-        for (let i=0; i<qecp_data.simulator.vertical; ++i) {
-            for (let j=0; j<qecp_data.simulator.horizontal; ++j) {
+    for (let t = 0; t < qecp_data.simulator.height; ++t) {
+        for (let i = 0; i < qecp_data.simulator.vertical; ++i) {
+            for (let j = 0; j < qecp_data.simulator.horizontal; ++j) {
                 const pauli_mesh = noise_model_pauli_meshes[t][i][j]
                 if (pauli_mesh != null) {
                     pauli_mesh.visible = display_noise_model_pauli.value && in_t_range(t)
@@ -770,13 +830,12 @@ export async function refresh_qecp_data() {
         const nodes = qecp_data.simulator.nodes
         // clear hover and select
         current_hover.value = null
-        let current_selected_value = JSON.parse(JSON.stringify(current_selected.value))
         current_selected.value = null
         await Vue.nextTick()
         await Vue.nextTick()
         // constants
         const height = qecp_data.simulator.height
-        const t_bias = -height/2
+        const t_bias = -height / 2
         const vertical = qecp_data.simulator.vertical
         const horizontal = qecp_data.simulator.horizontal
         // update t range
@@ -788,8 +847,8 @@ export async function refresh_qecp_data() {
         dispose_mesh_2d_array(qubit_outline_meshes)
         qubit_meshes = build_2d_array(vertical, horizontal)
         qubit_outline_meshes = build_2d_array(vertical, horizontal)
-        for (let i=0; i<vertical; ++i) {
-            for (let j=0; j<horizontal; ++j) {
+        for (let i = 0; i < vertical; ++i) {
+            for (let j = 0; j < horizontal; ++j) {
                 const qubit = nodes[0][i][j]
                 if (qubit != null && !qubit.v) {
                     const position = qecp_data.simulator.positions[i][j]
@@ -800,21 +859,21 @@ export async function refresh_qecp_data() {
                     }
                     // qubit
                     const qubit_material = get_qubit_material(qubit.q)
-                    const qubit_mesh = new THREE.Mesh( qubit_geometry, qubit_material )
+                    const qubit_mesh = new THREE.Mesh(qubit_geometry, qubit_material)
                     qubit_mesh.userData = {
                         type: "qubit",
                         qubit_type: qubit.q,
                         i: i,
                         j: j,
                     }
-                    scene.add( qubit_mesh )
+                    scene.add(qubit_mesh)
                     load_position(qubit_mesh.position, display_position)
                     qubit_meshes[i][j] = qubit_mesh
                     // qubit outline
-                    const qubit_outline_mesh = new THREE.Mesh( qubit_geometry, qubit_outline_material )
+                    const qubit_outline_mesh = new THREE.Mesh(qubit_geometry, qubit_outline_material)
                     load_position(qubit_outline_mesh.position, display_position,)
                     update_mesh_outline(qubit_outline_mesh)
-                    scene.add( qubit_outline_mesh )
+                    scene.add(qubit_outline_mesh)
                     qubit_outline_meshes[i][j] = qubit_outline_mesh
                 }
             }
@@ -823,19 +882,21 @@ export async function refresh_qecp_data() {
         // draw idle gates
         dispose_mesh_3d_array(idle_gate_meshes)
         idle_gate_meshes = build_3d_array(height, vertical, horizontal)
-        for (let t=0; t<height; ++t) {
-            for (let i=0; i<vertical; ++i) {
-                for (let j=0; j<horizontal; ++j) {
+        for (let t = 0; t < height; ++t) {
+            for (let i = 0; i < vertical; ++i) {
+                for (let j = 0; j < horizontal; ++j) {
                     const node = nodes[t][i][j]
-                    const next_node = nodes[t+1]?.[i]?.[j]
-                    if ((t == height-1 && node != null && !node.v) || (next_node != null && !next_node.v && !(next_node.gt == "InitializeX" || next_node.gt == "InitializeZ"))) {
+                    const next_node = nodes[t + 1]?.[i]?.[j]
+                    if ((t == height - 1 && node != null && !node.v) || (
+                        next_node != null && !next_node.v && !(next_node.gt == "InitializeX" || next_node.gt == "InitializeZ")
+                    )) {
                         const position = qecp_data.simulator.positions[i][j]
                         const display_position = {
                             t: t + t_bias,  // idle gate is before every real gate
                             x: position.x,
                             y: position.y,
                         }
-                        const idle_gate_mesh = new THREE.Mesh( idle_gate_geometry, idle_gate_material )
+                        const idle_gate_mesh = new THREE.Mesh(idle_gate_geometry, idle_gate_material)
                         idle_gate_mesh.userData = {
                             type: "idle_gate",
                             t: t,
@@ -845,7 +906,7 @@ export async function refresh_qecp_data() {
                         }
                         load_position(idle_gate_mesh.position, display_position)
                         idle_gate_mesh.scale.set(1, t_scale, 1)
-                        scene.add( idle_gate_mesh )
+                        scene.add(idle_gate_mesh)
                         idle_gate_meshes[t][i][j] = idle_gate_mesh
                     }
                 }
@@ -855,9 +916,9 @@ export async function refresh_qecp_data() {
         // draw gates
         dispose_mesh_3d_array(gate_vec_meshes)
         gate_vec_meshes = build_3d_array(height, vertical, horizontal)
-        for (let t=0; t<height; ++t) {
-            for (let i=0; i<vertical; ++i) {
-                for (let j=0; j<horizontal; ++j) {
+        for (let t = 0; t < height; ++t) {
+            for (let i = 0; i < vertical; ++i) {
+                for (let j = 0; j < horizontal; ++j) {
                     const node = nodes[t][i][j]
                     if (node != null && !node.v && !node.pv && node.gt != "None") {
                         const gate_material = get_gate_material(node.gt)
@@ -866,28 +927,28 @@ export async function refresh_qecp_data() {
                         const gate_vec_mesh = []
                         gate_vec_meshes[t][i][j] = gate_vec_mesh
                         if (node.gt == "InitializeX" || node.gt == "InitializeZ") {
-                            const gate_mesh = new THREE.Mesh( initialization_geometry, gate_material )
+                            const gate_mesh = new THREE.Mesh(initialization_geometry, gate_material)
                             load_position(gate_mesh.position, display_position)
-                            scene.add( gate_mesh )
+                            scene.add(gate_mesh)
                             gate_vec_mesh.push(gate_mesh)
                         } else if (node.gt == "MeasureX" || node.gt == "MeasureZ") {
                             if (t != 0) {  // the first measurement is always noiseless, thus no need to draw it
-                                const gate_mesh = new THREE.Mesh( measurement_geometry, gate_material )
+                                const gate_mesh = new THREE.Mesh(measurement_geometry, gate_material)
                                 load_position(gate_mesh.position, display_position)
-                                scene.add( gate_mesh )
+                                scene.add(gate_mesh)
                                 gate_vec_mesh.push(gate_mesh)
                             }
                         } else if (node.gt == "CXGateControl" || node.gt == "CYGateControl" || node.gt == "CZGate") {
                             // dot
-                            const dot_mesh = new THREE.Mesh( control_qubit_geometry, gate_material )
+                            const dot_mesh = new THREE.Mesh(control_qubit_geometry, gate_material)
                             load_position(dot_mesh.position, display_position)
-                            scene.add( dot_mesh )
+                            scene.add(dot_mesh)
                             gate_vec_mesh.push(dot_mesh)
                             // line
                             const peer = get_position(node.gp)
                             const peer_position = qecp_data.simulator.positions[peer.i][peer.j]
                             const peer_display_position = { t: t + t_bias, x: peer_position.x, y: peer_position.y }
-                            const line_mesh = new THREE.Mesh( control_line_geometry, gate_material )
+                            const line_mesh = new THREE.Mesh(control_line_geometry, gate_material)
                             const relative = compute_vector3(peer_display_position).add(compute_vector3(display_position).multiplyScalar(-1))
                             const direction = relative.clone().normalize()
                             const quaternion = new THREE.Quaternion()
@@ -895,22 +956,22 @@ export async function refresh_qecp_data() {
                             load_position(line_mesh.position, display_position)
                             line_mesh.scale.set(1, relative.length() / 2, 1)
                             line_mesh.setRotationFromQuaternion(quaternion)
-                            scene.add( line_mesh )
+                            scene.add(line_mesh)
                             gate_vec_mesh.push(line_mesh)
                         } else if (node.gt == "CXGateTarget") {
                             // X gate
-                            for (let k=0; k < CX_target_geometries.length; ++k) {
+                            for (let k = 0; k < CX_target_geometries.length; ++k) {
                                 const geometry = CX_target_geometries[k]
                                 let mesh = new THREE.Mesh(geometry, gate_material)
                                 load_position(mesh.position, display_position)
-                                scene.add( mesh )
+                                scene.add(mesh)
                                 gate_vec_mesh.push(mesh)
                             }
                             // line
                             const peer = get_position(node.gp)
                             const peer_position = qecp_data.simulator.positions[peer.i][peer.j]
                             const peer_display_position = { t: t + t_bias, x: peer_position.x, y: peer_position.y }
-                            const line_mesh = new THREE.Mesh( control_line_geometry, gate_material )
+                            const line_mesh = new THREE.Mesh(control_line_geometry, gate_material)
                             const relative = compute_vector3(peer_display_position).add(compute_vector3(display_position).multiplyScalar(-1))
                             const direction = relative.clone().normalize()
                             const quaternion = new THREE.Quaternion()
@@ -918,15 +979,15 @@ export async function refresh_qecp_data() {
                             load_position(line_mesh.position, display_position)
                             line_mesh.scale.set(1, relative.length() / 2, 1)
                             line_mesh.setRotationFromQuaternion(quaternion)
-                            scene.add( line_mesh )
+                            scene.add(line_mesh)
                             gate_vec_mesh.push(line_mesh)
                         } else if (node.gt == "CYGateTarget") {
                             // Y gate
-                            for (let k=0; k < CY_target_geometries.length; ++k) {
+                            for (let k = 0; k < CY_target_geometries.length; ++k) {
                                 const geometry = CY_target_geometries[k]
                                 let mesh = new THREE.Mesh(geometry, gate_material)
                                 load_position(mesh.position, display_position)
-                                scene.add( mesh )
+                                scene.add(mesh)
                                 gate_vec_mesh.push(mesh)
                             }
                             // line
@@ -937,16 +998,16 @@ export async function refresh_qecp_data() {
                             const direction = relative.clone().normalize()
                             const quaternion = new THREE.Quaternion()
                             quaternion.setFromUnitVectors(unit_up_vector, direction)
-                            let edge_length = relative.length()/2 - CY_target_radius / Math.sqrt(2)
+                            let edge_length = relative.length() / 2 - CY_target_radius / Math.sqrt(2)
                             if (edge_length > 0) {
                                 const biased_position = compute_vector3(display_position)
-                                    .add(relative.clone().multiplyScalar((relative.length()/2 - edge_length) / relative.length()))
+                                    .add(relative.clone().multiplyScalar((relative.length() / 2 - edge_length) / relative.length()))
                                 // console.log(compute_vector3(display_position), biased_display_position)
-                                const line_mesh = new THREE.Mesh( control_line_geometry, gate_material )
+                                const line_mesh = new THREE.Mesh(control_line_geometry, gate_material)
                                 line_mesh.position.copy(biased_position)
                                 line_mesh.scale.set(1, edge_length, 1)
                                 line_mesh.setRotationFromQuaternion(quaternion)
-                                scene.add( line_mesh )
+                                scene.add(line_mesh)
                                 gate_vec_mesh.push(line_mesh)
                             }
                         } else {
@@ -967,9 +1028,9 @@ export async function refresh_qecp_data() {
             // first calculate region
             let model_graph_vertex_positions = []
             let model_graph_vertex_indices = {}
-            for (let t=0; t<height; ++t) {
-                for (let i=0; i<vertical; ++i) {
-                    for (let j=0; j<horizontal; ++j) {
+            for (let t = 0; t < height; ++t) {
+                for (let i = 0; i < vertical; ++i) {
+                    for (let j = 0; j < horizontal; ++j) {
                         const model_graph_node = qecp_data.model_graph.nodes[t][i][j]
                         if (model_graph_node != null) {
                             model_graph_vertex_indices[model_graph_node.p] = model_graph_vertex_positions.length
@@ -979,7 +1040,7 @@ export async function refresh_qecp_data() {
                 }
             }
             let union_find = new UnionFind(model_graph_vertex_positions.length)
-            for (let vertex_index=0; vertex_index < model_graph_vertex_positions.length; ++vertex_index) {
+            for (let vertex_index = 0; vertex_index < model_graph_vertex_positions.length; ++vertex_index) {
                 let { t, i, j } = get_position(model_graph_vertex_positions[vertex_index])
                 const model_graph_node = qecp_data.model_graph.nodes[t][i][j]
                 for (let [peer_position_str, edge] of Object.entries(model_graph_node.edges)) {
@@ -990,7 +1051,7 @@ export async function refresh_qecp_data() {
             }
             let regions = []
             let regions_union_indices = {}
-            for (let vertex_index=0; vertex_index < model_graph_vertex_positions.length; ++vertex_index) {
+            for (let vertex_index = 0; vertex_index < model_graph_vertex_positions.length; ++vertex_index) {
                 const union_index = union_find.find(vertex_index)
                 if (!(union_index in regions_union_indices)) {
                     regions_union_indices[union_index] = regions.length
@@ -999,9 +1060,9 @@ export async function refresh_qecp_data() {
             }
             model_graph_regions.value = regions.length
             // add geometries
-            for (let t=0; t<height; ++t) {
-                for (let i=0; i<vertical; ++i) {
-                    for (let j=0; j<horizontal; ++j) {
+            for (let t = 0; t < height; ++t) {
+                for (let i = 0; i < vertical; ++i) {
+                    for (let j = 0; j < horizontal; ++j) {
                         const model_graph_node = qecp_data.model_graph.nodes[t][i][j]
                         if (model_graph_node != null) {
                             const position = qecp_data.simulator.positions[i][j]
@@ -1012,7 +1073,7 @@ export async function refresh_qecp_data() {
                             const region_idx = regions_union_indices[union_index]
                             model_graph_node.region_idx = region_idx
                             // vertices
-                            const vertex_mesh = new THREE.Mesh( model_graph_vertex_geometry, model_graph_vertex_material_vec[model_graph_node.region_idx] )
+                            const vertex_mesh = new THREE.Mesh(model_graph_vertex_geometry, model_graph_vertex_material_vec[model_graph_node.region_idx])
                             load_position(vertex_mesh.position, display_position)
                             vertex_mesh.userData = {
                                 type: "model_graph_vertex",
@@ -1021,7 +1082,7 @@ export async function refresh_qecp_data() {
                                 j: j,
                                 region_idx: model_graph_node.region_idx,
                             }
-                            scene.add( vertex_mesh )
+                            scene.add(vertex_mesh)
                             model_graph_vertex_meshes[t][i][j] = vertex_mesh
                             // edges
                             const model_graph_edge_vec_mesh = []
@@ -1031,7 +1092,7 @@ export async function refresh_qecp_data() {
                                 const { i: pi, j: pj, t: pt } = get_position(peer_position_str)
                                 const peer_position = qecp_data.simulator.positions[pi][pj]
                                 const peer_display_position = { t: pt + t_bias, x: peer_position.x, y: peer_position.y }
-                                const line_mesh = new THREE.Mesh( model_graph_edge_geometry, model_graph_edge_material )
+                                const line_mesh = new THREE.Mesh(model_graph_edge_geometry, model_graph_edge_material)
                                 line_mesh.userData = {
                                     type: "model_graph_edge",
                                     t: t,
@@ -1049,13 +1110,13 @@ export async function refresh_qecp_data() {
                                 load_position(line_mesh.position, display_position)
                                 line_mesh.scale.set(1, relative.length() / 2, 1)
                                 line_mesh.setRotationFromQuaternion(quaternion)
-                                scene.add( line_mesh )
+                                scene.add(line_mesh)
                                 model_graph_edge_vec_mesh.push(line_mesh)
                                 vec_mesh_idx += 1
                             }
                             // there might be some duplicate boundary edges, deduplicate them
                             let boundary_peers = {}
-                            for (let [boundary_idx, boundary] of model_graph_node.all_boundaries.entries())  {
+                            for (let [boundary_idx, boundary] of model_graph_node.all_boundaries.entries()) {
                                 let [vpi, vpj, vpt] = [i, j, t - qecp_data.simulator.measurement_cycles]
                                 if (boundary.v != null) {
                                     const vp = get_position(boundary.v)
@@ -1068,7 +1129,7 @@ export async function refresh_qecp_data() {
                                 boundary_peers[id] = true  // mark exist
                                 const peer_position = qecp_data.simulator.positions[vpi][vpj]
                                 const peer_display_position = { t: vpt + t_bias, x: peer_position.x, y: peer_position.y }
-                                const line_mesh = new THREE.Mesh( model_graph_edge_geometry, model_graph_edge_material )
+                                const line_mesh = new THREE.Mesh(model_graph_edge_geometry, model_graph_edge_material)
                                 line_mesh.userData = {
                                     type: "model_graph_boundary",
                                     t: t,
@@ -1086,7 +1147,7 @@ export async function refresh_qecp_data() {
                                 load_position(line_mesh.position, display_position)
                                 line_mesh.scale.set(1, relative.length(), 1)
                                 line_mesh.setRotationFromQuaternion(quaternion)
-                                scene.add( line_mesh )
+                                scene.add(line_mesh)
                                 model_graph_edge_vec_mesh.push(line_mesh)
                                 vec_mesh_idx += 1
                             }
@@ -1095,7 +1156,7 @@ export async function refresh_qecp_data() {
                 }
             }
             let default_region_display = []
-            for (let i=0; i<model_graph_regions.value; ++i) default_region_display.push(i)
+            for (let i = 0; i < model_graph_regions.value; ++i) default_region_display.push(i)
             model_graph_region_display.value = default_region_display
         } else {
             display_model_graph.value = null  // show intermediate state
@@ -1108,35 +1169,35 @@ export async function refresh_qecp_data() {
             dispose_mesh_1d_array(model_hypergraph_vertex_meshes)
             model_hypergraph_vertex_meshes = []
             qecp_data.model_hypergraph.incident_edges = []  // compute incident edges for each vertex for visualization
-            for (let vertex_index=0; vertex_index<qecp_data.model_hypergraph.vertex_positions.length; ++vertex_index) {
+            for (let vertex_index = 0; vertex_index < qecp_data.model_hypergraph.vertex_positions.length; ++vertex_index) {
                 qecp_data.model_hypergraph.incident_edges.push([])
                 let position_str = qecp_data.model_hypergraph.vertex_positions[vertex_index]
                 const tij = get_position(position_str)
                 const position = qecp_data.simulator.positions[tij.i][tij.j]
                 const display_position = { t: tij.t + t_bias, x: position.x, y: position.y }
-                const vertex_mesh = new THREE.Mesh( model_graph_vertex_geometry, model_graph_vertex_material_vec[1] )
+                const vertex_mesh = new THREE.Mesh(model_graph_vertex_geometry, model_graph_vertex_material_vec[1])
                 load_position(vertex_mesh.position, display_position)
                 vertex_mesh.userData = {
                     type: "model_hypergraph_vertex",
                     vertex_index: vertex_index,
                 }
-                scene.add( vertex_mesh )
+                scene.add(vertex_mesh)
                 model_hypergraph_vertex_meshes.push(vertex_mesh)
             }
             // add geometries for each hyperedge
             dispose_mesh_1d_array(model_hypergraph_edge_vec_meshes)
             model_hypergraph_edge_vec_meshes = []
             qecp_data.model_hypergraph.edge_min_max_t = []
-            for (let edge_index=0; edge_index<qecp_data.model_hypergraph.weighted_edges.length; ++edge_index) {
+            for (let edge_index = 0; edge_index < qecp_data.model_hypergraph.weighted_edges.length; ++edge_index) {
                 let [defect_vertices_str, hyperedge_group] = qecp_data.model_hypergraph.weighted_edges[edge_index]
                 const defect_vertices = get_defect_vertices(defect_vertices_str)
                 let edge_vec_mesh = []
                 // calculate hyperedge center
-                let sum_position = new THREE.Vector3( 0, 0, 0 )
+                let sum_position = new THREE.Vector3(0, 0, 0)
                 let visual_positions = []
                 let max_t = null
                 let min_t = null
-                for (let j=0; j<defect_vertices.length; ++j) {
+                for (let j = 0; j < defect_vertices.length; ++j) {
                     const tij = defect_vertices[j]
                     if (j == 0) max_t = tij.t
                     if (j == 0) min_t = tij.t
@@ -1153,8 +1214,8 @@ export async function refresh_qecp_data() {
                 }
                 qecp_data.model_hypergraph.edge_min_max_t.push([min_t, max_t])
                 const center_position = sum_position.multiplyScalar(1 / defect_vertices.length)
-                for (let j=0; j<defect_vertices.length; ++j) {
-                    const edge_mesh = new THREE.Mesh( get_hyperedge_geometry(defect_vertices.length), model_hypergraph_edge_material )
+                for (let j = 0; j < defect_vertices.length; ++j) {
+                    const edge_mesh = new THREE.Mesh(get_hyperedge_geometry(defect_vertices.length), model_hypergraph_edge_material)
                     edge_mesh.userData = {
                         type: "model_hypergraph_edge",
                         edge_index: edge_index,
@@ -1175,13 +1236,127 @@ export async function refresh_qecp_data() {
                     if (defect_vertices.length != 1 && distance == 0) {
                         edge_mesh.visible = false
                     }
-                    scene.add( edge_mesh )
+                    scene.add(edge_mesh)
                     edge_vec_mesh.push(edge_mesh)
                 }
                 model_hypergraph_edge_vec_meshes.push(edge_vec_mesh)
             }
         }
         update_visible_model_hypergraph()
+        // draw tailored model graph
+        dispose_mesh_3d_array(tailored_model_graph_edge_vec_meshes)
+        tailored_model_graph_edge_vec_meshes = build_3d_array(height, vertical, horizontal)
+        dispose_mesh_3d_array(tailored_model_graph_vertex_meshes)
+        tailored_model_graph_vertex_meshes = build_3d_array(height, vertical, horizontal)
+        dispose_mesh_1d_array(tailored_unfixed_stabilizer_meshes)
+        tailored_unfixed_stabilizer_meshes = []
+        if (qecp_data.tailored_model_graph != null) {
+            existed_tailored_model_graph.value = true
+            // add geometries
+            for (let t = 0; t < height; ++t) {
+                for (let i = 0; i < vertical; ++i) {
+                    for (let j = 0; j < horizontal; ++j) {
+                        const triple_tailored_node = qecp_data.tailored_model_graph.nodes[t][i][j]
+                        if (triple_tailored_node != null) {
+                            const position = qecp_data.simulator.positions[i][j]
+                            const display_position = { t: t + t_bias, x: position.x, y: position.y }
+                            // vertices
+                            const vertex_mesh = new THREE.Mesh(
+                                model_graph_vertex_geometry,
+                                tailored_model_graph_vertex_material
+                            )
+                            load_position(vertex_mesh.position, display_position)
+                            vertex_mesh.userData = {
+                                type: "tailored_vertex",
+                                t: t,
+                                i: i,
+                                j: j,
+                                color: "black",
+                            }
+                            scene.add(vertex_mesh)
+                            tailored_model_graph_vertex_meshes[t][i][j] = vertex_mesh
+                            // edges
+                            const tailored_model_graph_edge_vec_mesh = []
+                            tailored_model_graph_edge_vec_meshes[t][i][j] = tailored_model_graph_edge_vec_mesh
+                            let vec_mesh_idx = 0
+                            for (let tsg = 0; tsg < 3; ++tsg) {  // tailored subgraph
+                                const tailored_node = triple_tailored_node[tsg]
+                                for (let [peer_position_str, edge] of Object.entries(tailored_node.edges)) {
+                                    const { i: pi, j: pj, t: pt } = get_position(peer_position_str)
+                                    const peer_position = qecp_data.simulator.positions[pi][pj]
+                                    const peer_display_position = { t: pt + t_bias, x: peer_position.x, y: peer_position.y }
+                                    const line_mesh = new THREE.Mesh(
+                                        model_graph_edge_geometry,
+                                        tailored_model_graph_edge_material_vec[tsg]
+                                    )
+                                    line_mesh.userData = {
+                                        type: "tailored_edge",
+                                        t: t,
+                                        i: i,
+                                        j: j,
+                                        peer: peer_position_str,
+                                        edge: edge,
+                                        tsg: tsg,
+                                        vec_mesh_idx: vec_mesh_idx,
+                                    }
+                                    const relative = compute_vector3(peer_display_position).add(compute_vector3(display_position).multiplyScalar(-1))
+                                    const direction = relative.clone().normalize()
+                                    const quaternion = new THREE.Quaternion()
+                                    quaternion.setFromUnitVectors(unit_up_vector, direction)
+                                    load_position(line_mesh.position, display_position)
+                                    line_mesh.scale.set(1, relative.length() / 2, 1)
+                                    line_mesh.setRotationFromQuaternion(quaternion)
+                                    scene.add(line_mesh)
+                                    tailored_model_graph_edge_vec_mesh.push(line_mesh)
+                                    vec_mesh_idx += 1
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // modify materials
+            for (const position_str of qecp_data.tailored_model_graph.virtual_nodes) {
+                const { t, i, j } = get_position(position_str)
+                const vertex_mesh = tailored_model_graph_vertex_meshes[t][i][j]
+                vertex_mesh.material = tailored_model_graph_virtual_vertex_material
+                vertex_mesh.userData.is_virtual = true
+                vertex_mesh.userData.color = "orange"
+            }
+            for (const position_str_pair of qecp_data.tailored_model_graph.corner_virtual_nodes) {
+                for (let k = 0; k < 2; ++k) {
+                    const { t, i, j } = get_position(position_str_pair[k])
+                    const vertex_mesh = tailored_model_graph_vertex_meshes[t][i][j]
+                    vertex_mesh.material = tailored_model_graph_corner_vertex_material
+                    vertex_mesh.userData.is_corner = true
+                    vertex_mesh.userData.corner_pair = get_position(position_str_pair[(k + 1) % 2])
+                    vertex_mesh.userData.color = "red"
+                }
+            }
+            // create geometries for unfixed stabilizers
+            existed_tailored_unfixed_stabilizer.value = qecp_data.tailored_model_graph.unfixed_stabilizers.length != 0
+            for (const position_str in qecp_data.tailored_model_graph.unfixed_stabilizers) {
+                const { t, i, j } = get_position(position_str)
+                const position = qecp_data.simulator.positions[i][j]
+                const display_position = { t: t + t_bias, x: position.x, y: position.y }
+                // vertices
+                const unfixed_mesh = new THREE.Mesh(
+                    tailored_unfixed_stabilizer_geometry,
+                    tailored_unfixed_stabilizer_material
+                )
+                load_position(unfixed_mesh.position, display_position)
+                unfixed_mesh.userData = {
+                    type: "tailored_vertex",
+                    t: t,
+                    i: i,
+                    j: j,
+                    color: "black",
+                }
+                scene.add(unfixed_mesh)
+                tailored_unfixed_stabilizer_meshes.push(unfixed_mesh)
+            }
+            update_visible_tailored_model_graph()
+        }
         // draw noise model: Pauli and erasure errors probabilities
         dispose_mesh_3d_array(noise_model_pauli_meshes)
         noise_model_pauli_meshes = build_3d_array(height, vertical, horizontal)
@@ -1202,9 +1377,9 @@ export async function refresh_qecp_data() {
                 return sum
             }
             // iterate through in-place noises
-            for (let t=0; t<height; ++t) {
-                for (let i=0; i<vertical; ++i) {
-                    for (let j=0; j<horizontal; ++j) {
+            for (let t = 0; t < height; ++t) {
+                for (let i = 0; i < vertical; ++i) {
+                    for (let j = 0; j < horizontal; ++j) {
                         const noise_model_node = qecp_data.noise_model.nodes[t][i][j]
                         if (noise_model_node != null) {
                             // 1e-300 is typically used for supporting decoding erasure errors or mimic infinitely small error rate
@@ -1244,7 +1419,7 @@ export async function refresh_qecp_data() {
                 }
             }
             // iterate through additional noises
-            for (let ai=0; ai<qecp_data.noise_model.additional_noise.length; ++ai) {
+            for (let ai = 0; ai < qecp_data.noise_model.additional_noise.length; ++ai) {
                 const noise = qecp_data.noise_model.additional_noise[ai]
                 if (noise.p > 2e-300) {
                     for (const position_str in noise.pe) {  // pe: { pos1: err1, pos2: err2 }
@@ -1262,9 +1437,9 @@ export async function refresh_qecp_data() {
                 }
             }
             // add geometries
-            for (let t=0; t<height; ++t) {
-                for (let i=0; i<vertical; ++i) {
-                    for (let j=0; j<horizontal; ++j) {
+            for (let t = 0; t < height; ++t) {
+                for (let i = 0; i < vertical; ++i) {
+                    for (let j = 0; j < horizontal; ++j) {
                         const node = qecp_data.simulator.nodes[t][i][j]
                         const noise_model_node = qecp_data.noise_model.nodes[t][i][j]
                         if (noise_model_node != null) {
@@ -1272,7 +1447,7 @@ export async function refresh_qecp_data() {
                             const display_position = { t: t + t_bias, x: position.x, y: position.y }
                             // non-zero Pauli errors
                             if (noise_model_node.display_pauli) {
-                                const pauli_mesh = new THREE.Mesh( noise_model_pauli_geometry, noise_model_pauli_material )
+                                const pauli_mesh = new THREE.Mesh(noise_model_pauli_geometry, noise_model_pauli_material)
                                 load_position(pauli_mesh.position, display_position)
                                 pauli_mesh.userData = {
                                     type: "noise_model_node_pauli",
@@ -1281,12 +1456,12 @@ export async function refresh_qecp_data() {
                                     j: j,
                                     gate_peer: node.gp,
                                 }
-                                scene.add( pauli_mesh )
+                                scene.add(pauli_mesh)
                                 noise_model_pauli_meshes[t][i][j] = pauli_mesh
                             }
                             // non-zero erasure errors
                             if (noise_model_node.display_erasure) {
-                                const erasure_mesh = new THREE.Mesh( noise_model_erasure_geometry, noise_model_erasure_material )
+                                const erasure_mesh = new THREE.Mesh(noise_model_erasure_geometry, noise_model_erasure_material)
                                 load_position(erasure_mesh.position, display_position)
                                 erasure_mesh.userData = {
                                     type: "noise_model_node_erasure",
@@ -1295,7 +1470,7 @@ export async function refresh_qecp_data() {
                                     j: j,
                                     gate_peer: node.gp,
                                 }
-                                scene.add( erasure_mesh )
+                                scene.add(erasure_mesh)
                                 noise_model_erasure_meshes[t][i][j] = erasure_mesh
                             }
                         }
@@ -1307,10 +1482,28 @@ export async function refresh_qecp_data() {
         // refresh active case as well
         await refresh_case()
         // if provided in url, then apply the selection
-        for (let i=0; i<3; ++i) await Vue.nextTick()
+        for (let i = 0; i < 3; ++i) await Vue.nextTick()
         current_selected.value = JSON.parse(urlParams.get('current_selected'))
     }
 }
+
+export const log_matchings_name_vec = ref([])
+export const log_matchings_display = ref([])
+export const display_matchings = ref(true)
+export function update_visible_matchings() {
+    const active_matchings = {}
+    for (const matching_index of Object.values(log_matchings_display.value)) active_matchings[matching_index] = true
+    for (let i = 0; i < matching_meshes.length; i++) {
+        const mesh_vec = matching_meshes[i]
+        for (let j = 0; j < mesh_vec.length; j++) {
+            const edge_mesh = mesh_vec[j]
+            const is_active = display_matchings.value && active_matchings[i] == true
+            const in_range = in_t_range_any(edge_mesh.userData.t1, edge_mesh.userData.t2)
+            edge_mesh.visible = is_active && in_range
+        }
+    }
+}
+watch([log_matchings_display, display_matchings, t_range], update_visible_matchings, { deep: true })
 
 export const active_qecp_data = shallowRef(null)
 export const active_case_idx = ref(0)
@@ -1328,15 +1521,13 @@ export async function refresh_case() {
         await Vue.nextTick()
         // constants
         const height = qecp_data.simulator.height
-        const t_bias = -height/2
-        const vertical = qecp_data.simulator.vertical
-        const horizontal = qecp_data.simulator.horizontal
+        const t_bias = -height / 2
         // draw measurements
         dispose_mesh_1d_array(defect_measurement_meshes)
         dispose_mesh_1d_array(defect_measurement_outline_meshes)
         defect_measurement_meshes = []
         defect_measurement_outline_meshes = []
-        for (let defect_idx=0; defect_idx<active_case.measurement.length; ++defect_idx) {
+        for (let defect_idx = 0; defect_idx < active_case.measurement.length; ++defect_idx) {
             const defect_position = active_case.measurement[defect_idx]
             const { t, i, j } = get_position(defect_position)
             const position = qecp_data.simulator.positions[i][j]
@@ -1346,7 +1537,7 @@ export async function refresh_case() {
                 y: position.y,
             }
             // defect measurement
-            const defect_measurement_mesh = new THREE.Mesh( defect_measurement_geometry, defect_measurement_material )
+            const defect_measurement_mesh = new THREE.Mesh(defect_measurement_geometry, defect_measurement_material)
             defect_measurement_mesh.userData = {
                 type: "defect",
                 defect_idx: defect_idx,
@@ -1354,14 +1545,14 @@ export async function refresh_case() {
                 i: i,
                 j: j,
             }
-            scene.add( defect_measurement_mesh )
+            scene.add(defect_measurement_mesh)
             load_position(defect_measurement_mesh.position, display_position)
             defect_measurement_meshes.push(defect_measurement_mesh)
             // defect measurement outline
-            const defect_measurement_outline_mesh = new THREE.Mesh( defect_measurement_geometry, defect_measurement_outline_material )
+            const defect_measurement_outline_mesh = new THREE.Mesh(defect_measurement_geometry, defect_measurement_outline_material)
             load_position(defect_measurement_outline_mesh.position, display_position,)
             update_mesh_outline(defect_measurement_outline_mesh)
-            scene.add( defect_measurement_outline_mesh )
+            scene.add(defect_measurement_outline_mesh)
             defect_measurement_outline_meshes.push(defect_measurement_outline_mesh)
         }
         update_visible_defect_measurement()
@@ -1379,7 +1570,6 @@ export async function refresh_case() {
                 y: position.y,
             }
             const error_pattern_vec_mesh = []
-            error_pattern_vec_meshes.push(error_pattern_vec_mesh)
             let error_geometries = []
             if (error == "X") {
                 error_geometries = error_X_geometries
@@ -1390,7 +1580,7 @@ export async function refresh_case() {
             } else if (error == "I") { } else {
                 console.error(`unknown error type: ${error}`)
             }
-            for (let k=0; k < error_geometries.length; ++k) {
+            for (let k = 0; k < error_geometries.length; ++k) {
                 const geometry = error_geometries[k]
                 let mesh = new THREE.Mesh(geometry, error_materials[error])
                 load_position(mesh.position, display_position)
@@ -1401,9 +1591,10 @@ export async function refresh_case() {
                     i: i,
                     j: j,
                 }
-                scene.add( mesh )
+                scene.add(mesh)
                 error_pattern_vec_mesh.push(mesh)
             }
+            error_pattern_vec_meshes.push(error_pattern_vec_mesh)
         }
         if (active_case.detected_erasures) {
             for (let [idx, position_str] of Object.entries(active_case.detected_erasures)) {
@@ -1423,7 +1614,7 @@ export async function refresh_case() {
                     i: i,
                     j: j,
                 }
-                scene.add( mesh )
+                scene.add(mesh)
                 detected_erasure_meshes.push(mesh)
             }
         }
@@ -1452,7 +1643,7 @@ export async function refresh_case() {
                 } else if (error == "I") { } else {
                     console.error(`unknown error type: ${error}`)
                 }
-                for (let k=0; k < error_geometries.length; ++k) {
+                for (let k = 0; k < error_geometries.length; ++k) {
                     const geometry = error_geometries[k]
                     let mesh = new THREE.Mesh(geometry, error_materials[error])
                     load_position(mesh.position, display_position)
@@ -1463,12 +1654,59 @@ export async function refresh_case() {
                         i: i,
                         j: j,
                     }
-                    scene.add( mesh )
+                    scene.add(mesh)
                     correction_vec_mesh.push(mesh)
                 }
             }
         }
         update_visible_correction()
+        // draw matchings
+        dispose_mesh_2d_array(matching_meshes)
+        matching_meshes = []
+        log_matchings_name_vec.value = []
+        if (active_case.runtime_statistics?.log_matchings) {
+            const name_vec = []
+            const log_matchings = active_case.runtime_statistics.log_matchings
+            for (let i = 0; i < log_matchings.length; i++) {
+                const log_matching = log_matchings[i]
+                name_vec.push({
+                    name: log_matching.name,
+                    desc: log_matching.description,
+                })
+                const mesh_vec = []
+                for (let j = 0; j < log_matching.edges.length; ++j) {
+                    const [position_str_1, position_str_2] = log_matching.edges[j]
+                    const { t: t1, i: i1, j: j1 } = get_position(position_str_1)
+                    const { t: t2, i: i2, j: j2 } = get_position(position_str_2)
+                    const position_1 = qecp_data.simulator.positions[i1][j1]
+                    const position_2 = qecp_data.simulator.positions[i2][j2]
+                    const display_position_1 = { t: t1 + t_bias, x: position_1.x, y: position_1.y }
+                    const display_position_2 = { t: t2 + t_bias, x: position_2.x, y: position_2.y }
+                    const line_mesh = new THREE.Mesh(
+                        matching_edge_geometry,
+                        model_graph_vertex_material_vec[i]
+                    )
+                    line_mesh.userData = {
+                        type: "matching_edge",
+                        t1, t2,
+                        matching_idx: i,
+                        edge_idx: j,
+                    }
+                    const relative = compute_vector3(display_position_2).add(compute_vector3(display_position_1).multiplyScalar(-1))
+                    const direction = relative.clone().normalize()
+                    const quaternion = new THREE.Quaternion()
+                    quaternion.setFromUnitVectors(unit_up_vector, direction)
+                    load_position(line_mesh.position, display_position_1)
+                    line_mesh.scale.set(1, relative.length(), 1)
+                    line_mesh.setRotationFromQuaternion(quaternion)
+                    scene.add(line_mesh)
+                    mesh_vec.push(line_mesh)
+                }
+                matching_meshes.push(mesh_vec)
+            }
+            log_matchings_name_vec.value = name_vec
+        }
+        update_visible_matchings()
         // reset select
         await Vue.nextTick()
         if (is_user_data_valid(current_selected_value)) {
@@ -1484,7 +1722,7 @@ export function show_case(case_idx, qecp_data) {
 }
 
 // configurations
-const gui = new GUI( { width: 400, title: "render configurations" } )
+const gui = new GUI({ width: 400, title: "render configurations" })
 export const show_config = ref(false)
 watch(show_config, () => {
     if (show_config.value) {
@@ -1499,72 +1737,25 @@ watch(sizes, () => {  // move render configuration GUI to 3D canvas
 }, { immediate: true })
 const conf = {
     scene_background: scene.background,
-    // defect_vertex_color: defect_vertex_material.color,
-    // defect_vertex_opacity: defect_vertex_material.opacity,
-    // disabled_mirror_vertex_color: disabled_mirror_vertex_material.color,
-    // disabled_mirror_vertex_opacity: disabled_mirror_vertex_material.opacity,
-    // real_vertex_color: real_vertex_material.color,
-    // real_vertex_opacity: real_vertex_material.opacity,
-    // virtual_vertex_color: virtual_vertex_material.color,
-    // virtual_vertex_opacity: virtual_vertex_material.opacity,
-    // defect_vertex_outline_color: defect_vertex_outline_material.color,
-    // defect_vertex_outline_opacity: defect_vertex_outline_material.opacity,
-    // real_vertex_outline_color: real_vertex_outline_material.color,
-    // real_vertex_outline_opacity: real_vertex_outline_material.opacity,
-    // virtual_vertex_outline_color: virtual_vertex_outline_material.color,
-    // virtual_vertex_outline_opacity: virtual_vertex_outline_material.opacity,
-    // edge_color: edge_material.color,
-    // edge_opacity: edge_material.opacity,
-    // edge_side: edge_material.side,
-    // grown_edge_color: grown_edge_material.color,
-    // grown_edge_opacity: grown_edge_material.opacity,
-    // grown_edge_side: grown_edge_material.side,
-    // subgraph_edge_color: subgraph_edge_material.color,
-    // subgraph_edge_opacity: subgraph_edge_material.opacity,
-    // subgraph_edge_side: subgraph_edge_material.side,
     outline_ratio: outline_ratio.value,
     qubit_radius_scale: qubit_radius_scale.value,
     idle_gate_radius_scale: idle_gate_radius_scale.value,
     defect_measurement_radius_scale: defect_measurement_radius_scale.value,
 }
-const side_options = { "FrontSide": THREE.FrontSide, "BackSide": THREE.BackSide, "DoubleSide": THREE.DoubleSide } 
+const side_options = { "FrontSide": THREE.FrontSide, "BackSide": THREE.BackSide, "DoubleSide": THREE.DoubleSide }
 export const controller = {}
 window.controller = controller
-controller.scene_background = gui.addColor( conf, 'scene_background' ).onChange( function ( value ) { scene.background = value } )
-const size_folder = gui.addFolder( 'size' )
-controller.outline_ratio = size_folder.add( conf, 'outline_ratio', 0.99, 2 ).onChange( function ( value ) { outline_ratio.value = Number(value) } )
-controller.qubit_radius_scale = size_folder.add( conf, 'qubit_radius_scale', 0.1, 5 ).onChange( function ( value ) { qubit_radius_scale.value = Number(value) } )
-controller.idle_gate_radius_scale = size_folder.add( conf, 'idle_gate_radius_scale', 0.1, 10 ).onChange( function ( value ) { idle_gate_radius_scale.value = Number(value) } )
-controller.defect_measurement_radius_scale = size_folder.add( conf, 'defect_measurement_radius_scale', 0.1, 10 ).onChange( function ( value ) { defect_measurement_radius_scale.value = Number(value) } )
-// controller.defect_vertex_color = vertex_folder.addColor( conf, 'defect_vertex_color' ).onChange( function ( value ) { defect_vertex_material.color = value } )
-// controller.defect_vertex_opacity = vertex_folder.add( conf, 'defect_vertex_opacity', 0, 1 ).onChange( function ( value ) { defect_vertex_material.opacity = Number(value) } )
-// controller.disabled_mirror_vertex_color = vertex_folder.addColor( conf, 'disabled_mirror_vertex_color' ).onChange( function ( value ) { disabled_mirror_vertex_material.color = value } )
-// controller.disabled_mirror_vertex_opacity = vertex_folder.add( conf, 'disabled_mirror_vertex_opacity', 0, 1 ).onChange( function ( value ) { disabled_mirror_vertex_material.opacity = Number(value) } )
-// controller.real_vertex_color = vertex_folder.addColor( conf, 'real_vertex_color' ).onChange( function ( value ) { real_vertex_material.color = value } )
-// controller.real_vertex_opacity = vertex_folder.add( conf, 'real_vertex_opacity', 0, 1 ).onChange( function ( value ) { real_vertex_material.opacity = Number(value) } )
-// controller.virtual_vertex_color = vertex_folder.addColor( conf, 'virtual_vertex_color' ).onChange( function ( value ) { virtual_vertex_material.color = value } )
-// controller.virtual_vertex_opacity = vertex_folder.add( conf, 'virtual_vertex_opacity', 0, 1 ).onChange( function ( value ) { virtual_vertex_material.opacity = Number(value) } )
-// const vertex_outline_folder = gui.addFolder( 'vertex outline' )
-// controller.vertex_outline_color = vertex_outline_folder.addColor( conf, 'defect_vertex_outline_color' ).onChange( function ( value ) { defect_vertex_outline_material.color = value } )
-// controller.vertex_outline_opacity = vertex_outline_folder.add( conf, 'defect_vertex_outline_opacity', 0, 1 ).onChange( function ( value ) { defect_vertex_outline_material.opacity = Number(value) } )
-// controller.vertex_outline_color = vertex_outline_folder.addColor( conf, 'real_vertex_outline_color' ).onChange( function ( value ) { real_vertex_outline_material.color = value } )
-// controller.vertex_outline_opacity = vertex_outline_folder.add( conf, 'real_vertex_outline_opacity', 0, 1 ).onChange( function ( value ) { real_vertex_outline_material.opacity = Number(value) } )
-// controller.virtual_vertex_outline_color = vertex_outline_folder.addColor( conf, 'virtual_vertex_outline_color' ).onChange( function ( value ) { virtual_vertex_outline_material.color = value } )
-// controller.virtual_vertex_outline_opacity = vertex_outline_folder.add( conf, 'virtual_vertex_outline_opacity', 0, 1 ).onChange( function ( value ) { virtual_vertex_outline_material.opacity = Number(value) } )
-// const edge_folder = gui.addFolder( 'edge' )
-// controller.edge_color = edge_folder.addColor( conf, 'edge_color' ).onChange( function ( value ) { edge_material.color = value } )
-// controller.edge_opacity = edge_folder.add( conf, 'edge_opacity', 0, 1 ).onChange( function ( value ) { edge_material.opacity = Number(value) } )
-// controller.edge_side = edge_folder.add( conf, 'edge_side', side_options ).onChange( function ( value ) { edge_material.side = Number(value) } )
-// controller.grown_edge_color = edge_folder.addColor( conf, 'grown_edge_color' ).onChange( function ( value ) { grown_edge_material.color = value } )
-// controller.grown_edge_opacity = edge_folder.add( conf, 'grown_edge_opacity', 0, 1 ).onChange( function ( value ) { grown_edge_material.opacity = Number(value) } )
-// controller.grown_edge_side = edge_folder.add( conf, 'grown_edge_side', side_options ).onChange( function ( value ) { grown_edge_material.side = Number(value) } )
-// controller.subgraph_edge_color = edge_folder.addColor( conf, 'subgraph_edge_color' ).onChange( function ( value ) { subgraph_edge_material.color = value } )
-// controller.subgraph_edge_opacity = edge_folder.add( conf, 'subgraph_edge_opacity', 0, 1 ).onChange( function ( value ) { subgraph_edge_material.opacity = Number(value) } )
-// controller.subgraph_edge_side = edge_folder.add( conf, 'subgraph_edge_side', side_options ).onChange( function ( value ) { subgraph_edge_material.side = Number(value) } )
-// const size_folder = gui.addFolder( 'size' )
-// controller.outline_ratio = size_folder.add( conf, 'outline_ratio', 0.99, 2 ).onChange( function ( value ) { outline_ratio.value = Number(value) } )
-// controller.vertex_radius_scale = size_folder.add( conf, 'vertex_radius_scale', 0.1, 5 ).onChange( function ( value ) { vertex_radius_scale.value = Number(value) } )
-// controller.edge_radius_scale = size_folder.add( conf, 'edge_radius_scale', 0.1, 10 ).onChange( function ( value ) { edge_radius_scale.value = Number(value) } )
+controller.scene_background = gui.addColor(conf, 'scene_background').onChange(
+    function (value) { scene.background = value })
+const size_folder = gui.addFolder('size')
+controller.outline_ratio = size_folder.add(conf, 'outline_ratio', 0.99, 2).onChange(
+    function (value) { outline_ratio.value = Number(value) })
+controller.qubit_radius_scale = size_folder.add(conf, 'qubit_radius_scale', 0.1, 5).onChange(
+    function (value) { qubit_radius_scale.value = Number(value) })
+controller.idle_gate_radius_scale = size_folder.add(conf, 'idle_gate_radius_scale', 0.1, 10).onChange(
+    function (value) { idle_gate_radius_scale.value = Number(value) })
+controller.defect_measurement_radius_scale = size_folder.add(conf, 'defect_measurement_radius_scale', 0.1, 10).onChange(
+    function (value) { defect_measurement_radius_scale.value = Number(value) })
 watch(sizes, () => {
     gui.domElement.style.transform = `scale(${sizes.scale})`
     gui.domElement.style["transform-origin"] = "right top"
@@ -1683,6 +1874,20 @@ function set_material_with_user_data(user_data, material) {  // return the previ
         mesh.material = material
         return previous_material
     }
+    if (user_data.type == "tailored_vertex") {
+        const { t, i, j } = user_data
+        let mesh = tailored_model_graph_vertex_meshes[t][i][j]
+        let previous_material = mesh.material
+        mesh.material = material
+        return previous_material
+    }
+    if (user_data.type == "tailored_edge") {
+        const { t, i, j, vec_mesh_idx } = user_data
+        let mesh = tailored_model_graph_edge_vec_meshes[t][i][j][vec_mesh_idx]
+        let previous_material = mesh.material
+        mesh.material = material
+        return previous_material
+    }
     console.error(`unknown type ${user_data.type}`)
 }
 watch(current_hover, (newVal, oldVal) => {
@@ -1710,10 +1915,10 @@ watch(current_selected, (newVal, oldVal) => {
     })
 })
 function on_mouse_change(event, is_click) {
-    mouse.x = ( event.clientX / sizes.canvas_width ) * 2 - 1
-    mouse.y = - ( event.clientY / sizes.canvas_height ) * 2 + 1
-    raycaster.setFromCamera( mouse, camera.value )
-    const intersects = raycaster.intersectObjects( scene.children, false )
+    mouse.x = (event.clientX / sizes.canvas_width) * 2 - 1
+    mouse.y = - (event.clientY / sizes.canvas_height) * 2 + 1
+    raycaster.setFromCamera(mouse, camera.value)
+    const intersects = raycaster.intersectObjects(scene.children, false)
     for (let intersect of intersects) {
         if (!intersect.object.visible) continue  // don't select invisible object
         let user_data = intersect.object.userData
@@ -1739,37 +1944,37 @@ function on_mouse_change(event, is_click) {
 }
 var mousedown_position = null
 var is_mouse_currently_down = false
-window.addEventListener( 'mousedown', (event) => {
+window.addEventListener('mousedown', (event) => {
     if (event.clientX > sizes.canvas_width) return  // don't care events on control panel
     mousedown_position = {
         clientX: event.clientX,
         clientY: event.clientY,
     }
     is_mouse_currently_down = true
-} )
-window.addEventListener( 'mouseup', (event) => {
+})
+window.addEventListener('mouseup', (event) => {
     if (event.clientX > sizes.canvas_width) return  // don't care events on control panel
     // to prevent triggering select while moving camera
     if (mousedown_position != null && mousedown_position.clientX == event.clientX && mousedown_position.clientY == event.clientY) {
         on_mouse_change(event, true)
     }
     is_mouse_currently_down = false
-} )
-window.addEventListener( 'mousemove', (event) => {
+})
+window.addEventListener('mousemove', (event) => {
     if (event.clientX > sizes.canvas_width) return  // don't care events on control panel
     // to prevent triggering hover while moving camera
     if (!is_mouse_currently_down) {
         on_mouse_change(event, false)
     }
-} )
+})
 
 // export current scene to high-resolution png, useful when generating figures for publication
 // (I tried svg renderer but it doesn't work very well... shaders are poorly supported)
-export function render_png(scale=1) {
+export function render_png(scale = 1) {
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true, context: webgl_renderer_context() })
-    renderer.setSize( sizes.canvas_width * scale, sizes.canvas_height * scale, false )
-    renderer.setPixelRatio( window.devicePixelRatio * scale )
-    renderer.render( scene, camera.value )
+    renderer.setSize(sizes.canvas_width * scale, sizes.canvas_height * scale, false)
+    renderer.setPixelRatio(window.devicePixelRatio * scale)
+    renderer.render(scene, camera.value)
     return renderer.domElement.toDataURL()
 }
 window.render_png = render_png
@@ -1796,21 +2001,21 @@ export async function nodejs_render_png() {  // works only in nodejs
     let context = webgl_renderer_context()
     var pixels = new Uint8Array(context.drawingBufferWidth * context.drawingBufferHeight * 4)
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false, preserveDrawingBuffer: true, context })
-    renderer.setSize( sizes.canvas_width, sizes.canvas_height, false )
-    renderer.setPixelRatio( window.devicePixelRatio )
-    renderer.render( scene, camera.value )
+    renderer.setSize(sizes.canvas_width, sizes.canvas_height, false)
+    renderer.setPixelRatio(window.devicePixelRatio)
+    renderer.render(scene, camera.value)
     context.readPixels(0, 0, context.drawingBufferWidth, context.drawingBufferHeight, context.RGBA, context.UNSIGNED_BYTE, pixels)
     return pixels
 }
 
 // wait several Vue ticks to make sure all changes have been applied
 export async function wait_changes() {
-    for (let i=0; i<5; ++i) await Vue.nextTick()
+    for (let i = 0; i < 5; ++i) await Vue.nextTick()
 }
 
 // https://www.npmjs.com/package/base64-arraybuffer
 var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-function base64_encode (arraybuffer) {
+function base64_encode(arraybuffer) {
     var bytes = new Uint8Array(arraybuffer), i, len = bytes.length, base64 = ''
     for (i = 0; i < len; i += 3) {
         base64 += chars[bytes[i] >> 2]

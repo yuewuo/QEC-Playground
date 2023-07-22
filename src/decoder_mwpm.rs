@@ -1,17 +1,16 @@
 //! minimum-weight perfect matching decoder
-//! 
+//!
 
-use serde::{Serialize, Deserialize};
-use super::simulator::*;
-use super::noise_model::*;
-use super::model_graph::*;
-use super::complete_model_graph::*;
-use super::serde_json;
-use std::sync::{Arc};
-use std::time::Instant;
 use super::blossom_v;
+use super::complete_model_graph::*;
 use super::erasure_graph::*;
-
+use super::model_graph::*;
+use super::noise_model::*;
+use super::serde_json;
+use super::simulator::*;
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use std::time::Instant;
 
 /// MWPM decoder, initialized and cloned for multiple threads
 #[derive(Debug, Clone, Serialize)]
@@ -33,35 +32,59 @@ pub struct MWPMDecoder {
 pub struct MWPMDecoderConfig {
     /// build complete model graph at first, but this will consume O(N^2) memory and increase initialization time,
     /// disable this when you're simulating large code
-    #[serde(alias = "pcmg")]  // abbreviation
+    #[serde(alias = "pcmg")] // abbreviation
     #[serde(default = "mwpm_default_configs::precompute_complete_model_graph")]
     pub precompute_complete_model_graph: bool,
     /// weight function, by default using [`WeightFunction::AutotuneImproved`]
-    #[serde(alias = "wf")]  // abbreviation
+    #[serde(alias = "wf")] // abbreviation
     #[serde(default = "mwpm_default_configs::weight_function")]
     pub weight_function: WeightFunction,
     /// combined probability can improve accuracy, but will cause probabilities differ a lot even in the case of i.i.d. noise model
-    #[serde(alias = "ucp")]  // abbreviation
+    #[serde(alias = "ucp")] // abbreviation
     #[serde(default = "mwpm_default_configs::use_combined_probability")]
     pub use_combined_probability: bool,
+    #[serde(default = "mwpm_default_configs::log_matchings")]
+    pub log_matchings: bool,
 }
 
 pub mod mwpm_default_configs {
     use super::*;
-    pub fn precompute_complete_model_graph() -> bool { false }  // save for erasure noise model and also large code distance
-    pub fn weight_function() -> WeightFunction { WeightFunction::AutotuneImproved }
-    pub fn use_combined_probability() -> bool { true }  // default use combined probability for better accuracy
+    pub fn precompute_complete_model_graph() -> bool {
+        false
+    } // save for erasure noise model and also large code distance
+    pub fn weight_function() -> WeightFunction {
+        WeightFunction::AutotuneImproved
+    }
+    pub fn use_combined_probability() -> bool {
+        true
+    } // default use combined probability for better accuracy
+    pub fn log_matchings() -> bool {
+        false
+    }
 }
 
 impl MWPMDecoder {
     /// create a new MWPM decoder with decoder configuration
-    pub fn new(simulator: &Simulator, noise_model: Arc<NoiseModel>, decoder_configuration: &serde_json::Value, parallel: usize, use_brief_edge: bool) -> Self {
+    pub fn new(
+        simulator: &Simulator,
+        noise_model: Arc<NoiseModel>,
+        decoder_configuration: &serde_json::Value,
+        parallel: usize,
+        use_brief_edge: bool,
+    ) -> Self {
         // read attribute of decoder configuration
         let config: MWPMDecoderConfig = serde_json::from_value(decoder_configuration.clone()).unwrap();
         // build model graph
         let mut simulator = simulator.clone();
         let mut model_graph = ModelGraph::new(&simulator);
-        model_graph.build(&mut simulator, Arc::clone(&noise_model), &config.weight_function, parallel, config.use_combined_probability, use_brief_edge);
+        model_graph.build(
+            &mut simulator,
+            Arc::clone(&noise_model),
+            &config.weight_function,
+            parallel,
+            config.use_combined_probability,
+            use_brief_edge,
+        );
         let model_graph = Arc::new(model_graph);
         // build erasure graph
         let mut erasure_graph = ErasureGraph::new(&simulator);
@@ -71,10 +94,10 @@ impl MWPMDecoder {
         let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
         complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph, parallel);
         Self {
-            model_graph: model_graph,
-            erasure_graph: erasure_graph,
-            complete_model_graph: complete_model_graph,
-            config: config,
+            model_graph,
+            erasure_graph,
+            complete_model_graph,
+            config,
             simulator: Arc::new(simulator),
         }
     }
@@ -86,9 +109,13 @@ impl MWPMDecoder {
     }
 
     /// decode given measurement results and detected erasures
-    pub fn decode_with_erasure(&mut self, sparse_measurement: &SparseMeasurement, sparse_detected_erasures: &SparseErasures) -> (SparseCorrection, serde_json::Value) {
-        if sparse_detected_erasures.len() > 0 {
-            assert!(self.config.precompute_complete_model_graph == false, "if erasure happens, the precomputed complete graph is invalid; please disable `precompute_complete_model_graph` or `pcmg` in the decoder configuration");
+    pub fn decode_with_erasure(
+        &mut self,
+        sparse_measurement: &SparseMeasurement,
+        sparse_detected_erasures: &SparseErasures,
+    ) -> (SparseCorrection, serde_json::Value) {
+        if !sparse_detected_erasures.is_empty() {
+            assert!(!self.config.precompute_complete_model_graph, "if erasure happens, the precomputed complete graph is invalid; please disable `precompute_complete_model_graph` or `pcmg` in the decoder configuration");
         }
         let mut correction = SparseCorrection::new();
         // list nontrivial measurements to be matched
@@ -96,18 +123,20 @@ impl MWPMDecoder {
         let mut time_prepare_graph = 0.;
         let mut time_blossom_v = 0.;
         let mut time_build_correction = 0.;
-        if to_be_matched.len() > 0 {
+        let mut matching_edges: Vec<(Position, Position)> = Vec::with_capacity(0);
+        if !to_be_matched.is_empty() {
             // println!{"to_be_matched: {:?}", to_be_matched};
             let begin = Instant::now();
             // add the edges to the graph
-            let m_len = to_be_matched.len();  // virtual boundary of `i` is `i + m_len`
+            let m_len = to_be_matched.len(); // virtual boundary of `i` is `i + m_len`
             let node_num = m_len * 2;
             // Z (X) stabilizers are (fully) connected, boundaries are fully connected
             // stabilizer to boundary is one-to-one connected
             let mut weighted_edges = Vec::<(usize, usize, f64)>::new();
             // update model graph weights to consider erasure information
             let mut erasure_graph_modifier = ErasureGraphModifier::<f64>::new();
-            if sparse_detected_erasures.len() > 0 {  // if erasure exists, the model graph will be duplicated on demand
+            if !sparse_detected_erasures.is_empty() {
+                // if erasure exists, the model graph will be duplicated on demand
                 let erasure_edges = sparse_detected_erasures.get_erasure_edges(&self.erasure_graph);
                 let model_graph_mut = self.complete_model_graph.get_model_graph_mut();
                 for erasure_edge in erasure_edges.iter() {
@@ -116,20 +145,24 @@ impl MWPMDecoder {
                             let node1 = model_graph_mut.get_node_mut_unwrap(position1);
                             let edge12 = node1.edges.get_mut(position2).expect("neighbor must exist");
                             let original_weight12 = edge12.weight;
-                            edge12.weight = 0.;  // set to 0 because of erasure
+                            edge12.weight = 0.; // set to 0 because of erasure
                             let node2 = model_graph_mut.get_node_mut_unwrap(position2);
                             let edge21 = node2.edges.get_mut(position1).expect("neighbor must exist");
                             assert_eq!(original_weight12, edge21.weight, "model graph edge must be symmetric");
-                            edge21.weight = 0.;  // set to 0 because of erasure
-                            erasure_graph_modifier.push_modified_edge(ErasureEdge::Connection(position1.clone(), position2.clone()), original_weight12);
-                        },
+                            edge21.weight = 0.; // set to 0 because of erasure
+                            erasure_graph_modifier.push_modified_edge(
+                                ErasureEdge::Connection(position1.clone(), position2.clone()),
+                                original_weight12,
+                            );
+                        }
                         ErasureEdge::Boundary(position) => {
                             let node = model_graph_mut.get_node_mut_unwrap(position);
                             let boundary = node.boundary.as_mut().expect("boundary must exist").as_mut();
                             let original_weight = boundary.weight;
                             boundary.weight = 0.;
-                            erasure_graph_modifier.push_modified_edge(ErasureEdge::Boundary(position.clone()), original_weight);
-                        },
+                            erasure_graph_modifier
+                                .push_modified_edge(ErasureEdge::Boundary(position.clone()), original_weight);
+                        }
                     }
                 }
                 self.complete_model_graph.model_graph_changed(&self.simulator);
@@ -139,19 +172,18 @@ impl MWPMDecoder {
             for i in 0..m_len {
                 let position = &to_be_matched[i];
                 let (edges, boundary) = self.complete_model_graph.get_edges(position, &to_be_matched);
-                match boundary {
-                    Some(weight) => {
-                        // eprintln!{"boundary {} {} ", i, weight};
-                        weighted_edges.push((i, i + m_len, weight));
-                    }, None => { }
+                if let Some(weight) = boundary {
+                    // eprintln!{"boundary {} {} ", i, weight};
+                    weighted_edges.push((i, i + m_len, weight));
                 }
                 for &(j, weight) in edges.iter() {
-                    if i < j {  // remove duplicated edges
+                    if i < j {
+                        // remove duplicated edges
                         // eprintln!{"edge {} {} {} ", i, j, weight};
                         weighted_edges.push((i, j, weight));
                     }
                 }
-                for j in (i+1)..m_len {
+                for j in (i + 1)..m_len {
                     // virtual boundaries are always fully connected
                     weighted_edges.push((i + m_len, j + m_len, 0.));
                 }
@@ -165,21 +197,46 @@ impl MWPMDecoder {
             let begin = Instant::now();
             for i in 0..m_len {
                 let j = matching[i];
-                let a = &to_be_matched[i];
-                if j < i {  // only add correction if j < i, so that the same correction is not applied twice
+                let a: &Position = &to_be_matched[i];
+                if j < i {
+                    // only add correction if j < i, so that the same correction is not applied twice
                     // println!("match peer {:?} {:?}", to_be_matched[i], to_be_matched[j]);
                     let b = &to_be_matched[j];
                     let matching_correction = self.complete_model_graph.build_correction_matching(a, b);
                     correction.extend(&matching_correction);
-                } else if j >= m_len {  // matched with boundary
+                } else if j >= m_len {
+                    // matched with boundary
                     // println!("match boundary {:?}", to_be_matched[i]);
                     let boundary_correction = self.complete_model_graph.build_correction_boundary(a);
                     correction.extend(&boundary_correction);
                 }
+                if self.config.log_matchings {
+                    let peer_position = if j < i {
+                        Some(to_be_matched[j].clone())
+                    } else if j >= m_len {
+                        Some(
+                            self.complete_model_graph
+                                .get_node_unwrap(a)
+                                .precomputed
+                                .as_ref()
+                                .unwrap()
+                                .boundary
+                                .as_ref()
+                                .unwrap()
+                                .next
+                                .clone(),
+                        )
+                    } else {
+                        None
+                    };
+                    if let Some(peer_position) = peer_position {
+                        matching_edges.push((a.clone(), peer_position));
+                    }
+                }
             }
             time_build_correction += begin.elapsed().as_secs_f64();
             // recover the modified edges
-            if sparse_detected_erasures.len() > 0 {
+            if !sparse_detected_erasures.is_empty() {
                 let model_graph_mut = self.complete_model_graph.get_model_graph_mut();
                 while erasure_graph_modifier.has_modified_edges() {
                     let (erasure_edge, weight) = erasure_graph_modifier.pop_modified_edge();
@@ -188,49 +245,60 @@ impl MWPMDecoder {
                             let node1 = model_graph_mut.get_node_mut_unwrap(&position1);
                             let edge12 = node1.edges.get_mut(&position2).expect("neighbor must exist");
                             assert_eq!(edge12.weight, 0., "why a non-zero edge needs to be recovered");
-                            edge12.weight = weight;  // recover the weight
+                            edge12.weight = weight; // recover the weight
                             let node2 = model_graph_mut.get_node_mut_unwrap(&position2);
                             let edge21 = node2.edges.get_mut(&position1).expect("neighbor must exist");
                             assert_eq!(edge21.weight, 0., "why a non-zero edge needs to be recovered");
-                            edge21.weight = weight;  // recover the weight
-                        },
+                            edge21.weight = weight; // recover the weight
+                        }
                         ErasureEdge::Boundary(position) => {
                             let node = model_graph_mut.get_node_mut_unwrap(&position);
                             let boundary = node.boundary.as_mut().expect("boundary must exist").as_mut();
                             assert_eq!(boundary.weight, 0., "why a non-zero edge needs to be recovered");
                             boundary.weight = weight;
-                        },
+                        }
                     }
                 }
                 // need to call here because if next round there are no erasure errors, the complete mode graph must still be in a consistent state
                 self.complete_model_graph.model_graph_changed(&self.simulator);
             }
         }
-        (correction, json!({
+        let mut runtime_statistics = json!({
             "to_be_matched": to_be_matched.len(),
             "time_prepare_graph": time_prepare_graph,
             "time_blossom_v": time_blossom_v,
             "time_build_correction": time_build_correction,
-        }))
+        });
+        if self.config.log_matchings {
+            let runtime_statistics = runtime_statistics.as_object_mut().unwrap();
+            runtime_statistics.insert(
+                "log_matchings".to_string(),
+                json!([{
+                    "name": "matching",
+                    "description": "minimum-weight perfect matching",
+                    "edges": matching_edges,
+                }]),
+            );
+        }
+        (correction, runtime_statistics)
     }
-
 }
-
 
 #[cfg(feature = "blossom_v")]
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::code_builder::*;
     use super::super::noise_model_builder::*;
-    
+    use super::*;
+
     // 2022.6.16: mwpm decoder should correct this pattern because UF decoder does
     // {"[0][1][5]":"Z","[0][2][6]":"Z","[0][4][4]":"X","[0][5][7]":"X","[0][9][7]":"Y"}, {"erasures":["[0][1][3]","[0][1][5]","[0][2][6]","[0][4][4]","[0][5][7]","[0][6][6]","[0][9][7]"]}
     // cargo run --release -- tool benchmark [5] [0] [0] --pes [0.1] --max_repeats 0 --min_failed_cases 10 --time_budget 60 --decoder mwpm --code_type StandardPlanarCode --noise_model erasure-only-phenomenological -p0 --debug_print failed-error-pattern
     #[test]
-    fn mwpm_decoder_debug_1() {  // cargo test mwpm_decoder_debug_1 -- --nocapture
+    fn mwpm_decoder_debug_1() {
+        // cargo test mwpm_decoder_debug_1 -- --nocapture
         let d = 5;
-        let noisy_measurements = 0;  // perfect measurement
+        let noisy_measurements = 0; // perfect measurement
         let p = 0.;
         let pe = 0.1;
         // build simulator
@@ -245,20 +313,41 @@ mod tests {
         let noise_model = Arc::new(noise_model);
         // build decoder
         let decoder_config = json!({});
-        let mut mwpm_decoder = MWPMDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&noise_model), &decoder_config, 1, false);
+        let mut mwpm_decoder = MWPMDecoder::new(
+            &Arc::new(simulator.clone()),
+            Arc::clone(&noise_model),
+            &decoder_config,
+            1,
+            false,
+        );
         // load errors onto the simulator
-        let sparse_error_pattern: SparseErrorPattern = serde_json::from_value(json!({"[0][1][5]":"Z","[0][2][6]":"Z","[0][4][4]":"X","[0][5][7]":"X","[0][9][7]":"Y"})).unwrap();
-        let sparse_detected_erasures: SparseErasures = serde_json::from_value(json!(["[0][1][3]","[0][1][5]","[0][2][6]","[0][4][4]","[0][5][7]","[0][6][6]","[0][9][7]"])).unwrap();
-        simulator.load_sparse_error_pattern(&sparse_error_pattern, &noise_model).expect("success");
-        simulator.load_sparse_detected_erasures(&sparse_detected_erasures, &noise_model).expect("success");
+        let sparse_error_pattern: SparseErrorPattern =
+            serde_json::from_value(json!({"[0][1][5]":"Z","[0][2][6]":"Z","[0][4][4]":"X","[0][5][7]":"X","[0][9][7]":"Y"}))
+                .unwrap();
+        let sparse_detected_erasures: SparseErasures = serde_json::from_value(json!([
+            "[0][1][3]",
+            "[0][1][5]",
+            "[0][2][6]",
+            "[0][4][4]",
+            "[0][5][7]",
+            "[0][6][6]",
+            "[0][9][7]"
+        ]))
+        .unwrap();
+        simulator
+            .load_sparse_error_pattern(&sparse_error_pattern, &noise_model)
+            .expect("success");
+        simulator
+            .load_sparse_detected_erasures(&sparse_detected_erasures, &noise_model)
+            .expect("success");
         simulator.propagate_errors();
         let sparse_measurement = simulator.generate_sparse_measurement();
         println!("sparse_measurement: {:?}", sparse_measurement);
         let sparse_detected_erasures = simulator.generate_sparse_detected_erasures();
-        let (correction, _runtime_statistics) = mwpm_decoder.decode_with_erasure(&sparse_measurement, &sparse_detected_erasures);
+        let (correction, _runtime_statistics) =
+            mwpm_decoder.decode_with_erasure(&sparse_measurement, &sparse_detected_erasures);
         code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
         let (logical_i, logical_j) = simulator.validate_correction(&correction);
         assert!(!logical_i && !logical_j);
     }
-
 }

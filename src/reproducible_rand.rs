@@ -5,11 +5,11 @@
 //! We use Xoroshiro128StarStar from <https://docs.rs/crate/rand_xoshiro/0.6.0/source/src/xoroshiro128starstar.rs>
 //! The code is mostly copied here so that I can do the same in JavaScript and test it.
 
-use rand_core::le::read_u64_into;
-use rand_core::impls::fill_bytes_via_next;
-use rand_core::{RngCore, SeedableRng};
-use super::serde::{Serialize, Deserialize};
 use super::rand::prelude::*;
+use super::serde::{Deserialize, Serialize};
+use rand_core::impls::fill_bytes_via_next;
+use rand_core::le::read_u64_into;
+use rand_core::{RngCore, SeedableRng};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Xoroshiro128StarStar {
@@ -83,10 +83,7 @@ impl SeedableRng for Xoroshiro128StarStar {
         }
         let mut s = [0; 2];
         read_u64_into(&seed, &mut s);
-        Self {
-            s0: s[0],
-            s1: s[1],
-        }
+        Self { s0: s[0], s1: s[1] }
     }
 
     /// Seed a `Xoroshiro128StarStar` from a `u64` using `SplitMix64`.
@@ -94,10 +91,7 @@ impl SeedableRng for Xoroshiro128StarStar {
         let mut rng = SplitMix64::seed_from_u64(seed);
         let s0 = rng.next_u64();
         let s1 = rng.next_u64();
-        Self {
-            s0: s0,
-            s1: s1,
-        }
+        Self { s0, s1 }
     }
 }
 
@@ -121,9 +115,7 @@ impl SeedableRng for SplitMix64 {
     fn from_seed(seed: [u8; 8]) -> SplitMix64 {
         let mut state = [0; 1];
         read_u64_into(&seed, &mut state);
-        SplitMix64 {
-            x: state[0],
-        }
+        SplitMix64 { x: state[0] }
     }
 
     /// Seed a `SplitMix64` from a `u64`.
@@ -173,5 +165,4 @@ impl SplitMix64 {
     pub fn next_f64(&mut self) -> f64 {
         f64::from_bits(0x3FF << 52 | self.next_u64() >> 12) - 1.
     }
-
 }
