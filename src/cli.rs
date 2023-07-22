@@ -261,6 +261,9 @@ pub struct BenchmarkParameters {
     /// include model hypergraph in the visualizer file
     #[clap(long, action)]
     pub visualizer_model_hypergraph: bool,
+    /// include the three tailored mwpm model graph in the visualizer file
+    #[clap(long, action)]
+    pub visualizer_tailored_model_graph: bool,
     /// fusion blossom syndrome export configuration
     #[clap(long, default_value_t = ("./tmp/fusion.syndromes").to_string())]
     pub fusion_blossom_syndrome_export_filename: String,

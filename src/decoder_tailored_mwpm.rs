@@ -25,10 +25,6 @@ pub struct TailoredMWPMDecoder {
     pub tailored_complete_model_graph: TailoredCompleteModelGraph,
     /// normal MWPM decoder to handle residual decoding
     pub mwpm_decoder: MWPMDecoder,
-    /// virtual nodes for correction
-    pub virtual_nodes: Arc<Vec<Position>>,
-    /// corner virtual nodes, required for residual decoding
-    pub corner_virtual_nodes: Arc<Vec<(Position, Position)>>,
     /// base simulator, which is immutable but can be used to check code information
     #[serde(skip)]
     pub simulator: Arc<Simulator>,
@@ -48,6 +44,10 @@ pub struct TailoredMWPMDecoderConfig {
     #[serde(alias = "wf")] // abbreviation
     #[serde(default = "mwpm_default_configs::weight_function")]
     pub weight_function: WeightFunction,
+    /// combined probability can improve accuracy, but will cause probabilities differ a lot even in the case of i.i.d. noise model
+    #[serde(alias = "ucp")] // abbreviation
+    #[serde(default = "mwpm_default_configs::use_combined_probability")]
+    pub use_combined_probability: bool,
     /// whether use naive residual decoding, it seems the complex residual decoding doesn't help much...
     #[serde(alias = "nrd")] // abbreviation
     #[serde(default = "tailored_mwpm_default_configs::naive_residual_decoding")]
@@ -97,6 +97,7 @@ impl TailoredMWPMDecoder {
             &mut simulator,
             noise_model.as_ref(),
             &config.weight_function,
+            config.use_combined_probability,
         );
         let tailored_model_graph = Arc::new(tailored_model_graph);
         // build complete model graph
@@ -107,30 +108,6 @@ impl TailoredMWPMDecoder {
             config.precompute_complete_model_graph,
             parallel,
         );
-        // build virtual nodes for decoding use
-        let mut virtual_nodes = Vec::new();
-        simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if tailored_model_graph.is_node_exist(position) {
-            let node = simulator.get_node_unwrap(position);
-            if node.is_virtual {
-                virtual_nodes.push(position.clone());
-            }
-        });
-        // build corner virtual nodes for residual decoding, see https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.124.130501
-        // corner virtual nodes, in my understanding, is those having connection with only one real node
-        let mut corner_virtual_nodes = Vec::<(Position, Position)>::new();
-        simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if tailored_model_graph.is_node_exist(position) {
-            let node = simulator.get_node_unwrap(position);
-            if node.is_virtual {
-                if let Some(miscellaneous) = &node.miscellaneous {
-                    if miscellaneous.get("is_corner") == Some(&json!(true)) {
-                        let peer_corner = miscellaneous.get("peer_corner").expect("corner must appear in pair, either in standard or rotated tailored surface code");
-                        let peer_position = serde_json::from_value(peer_corner.clone()).unwrap();
-                        corner_virtual_nodes.push((position.clone(), peer_position));
-                    }
-                }
-            }
-        });
-        // println!("corner_virtual_nodes: {:?}", corner_virtual_nodes);
         // build MWPM decoder
         let mwpm_decoder = MWPMDecoder::new(
             &simulator,
@@ -146,8 +123,6 @@ impl TailoredMWPMDecoder {
             tailored_model_graph: tailored_model_graph,
             tailored_complete_model_graph: tailored_complete_model_graph,
             mwpm_decoder: mwpm_decoder,
-            virtual_nodes: Arc::new(virtual_nodes),
-            corner_virtual_nodes: Arc::new(corner_virtual_nodes),
             simulator: Arc::new(simulator),
             config: config,
         }
@@ -171,11 +146,11 @@ impl TailoredMWPMDecoder {
             // vertices layout: [positive real nodes] [positive virtual nodes] [negative real nodes] [negative virtual nodes]
             // since positive and negative nodes have the same position, only ([positive real nodes] [positive virtual nodes]) is saved in `to_be_matched`
             let real_len = to_be_matched.len();
-            let virtual_len = self.virtual_nodes.len();
+            let virtual_len = self.tailored_model_graph.virtual_nodes.len();
             // append virtual nodes behind real ones
             let mut tailored_to_be_matched = to_be_matched.clone();
             for i in 0..virtual_len {
-                tailored_to_be_matched.push(self.virtual_nodes[i].clone());
+                tailored_to_be_matched.push(self.tailored_model_graph.virtual_nodes[i].clone());
             }
             let tailored_to_be_matched = tailored_to_be_matched; // change to immutable
                                                                  // eprintln!("tailored_to_be_matched: {:?}", tailored_to_be_matched);
@@ -436,7 +411,7 @@ impl TailoredMWPMDecoder {
                     }
                     let residual_real_cluster_len = residual_to_be_matched_cluster_root.len();
                     // foreach corner vertex at each time step where no stabilizer is applied, add virtual cluster to graph
-                    for ci in 0..self.corner_virtual_nodes.len() {
+                    for ci in 0..self.tailored_model_graph.corner_virtual_nodes.len() {
                         residual_to_be_matched_cluster_root.push(ci);
                     }
                     // foreach cluster pair in graph do
@@ -451,7 +426,8 @@ impl TailoredMWPMDecoder {
                                 .collect()
                         } else {
                             let ci = residual_to_be_matched_cluster_root[index];
-                            let (pos1, pos2) = self.corner_virtual_nodes[ci].clone();
+                            let (pos1, pos2) =
+                                self.tailored_model_graph.corner_virtual_nodes[ci].clone();
                             vec![pos1, pos2]
                         }
                     };
@@ -521,8 +497,8 @@ impl TailoredMWPMDecoder {
                     // those corner clusters should be connected with zero weight: this is not in the paper but otherwise they'll mess up the weights
                     if !self.config.original_residual_corner_weights {
                         // edges already added if enable original residual corner weights
-                        for i in 0..self.corner_virtual_nodes.len() {
-                            for j in i + 1..self.corner_virtual_nodes.len() {
+                        for i in 0..self.tailored_model_graph.corner_virtual_nodes.len() {
+                            for j in i + 1..self.tailored_model_graph.corner_virtual_nodes.len() {
                                 residual_weighted_edges.push((
                                     residual_real_cluster_len + i,
                                     residual_real_cluster_len + j,
@@ -536,7 +512,7 @@ impl TailoredMWPMDecoder {
                         // add virtual cluster to graph with zero weight edge to each virtual cluster
                         let additional_virtual_index = residual_to_be_matched_cluster_root.len();
                         residual_to_be_matched_cluster_root.push(usize::MAX);
-                        for ci in 0..self.corner_virtual_nodes.len() {
+                        for ci in 0..self.tailored_model_graph.corner_virtual_nodes.len() {
                             residual_weighted_edges.push((
                                 residual_real_cluster_len + ci,
                                 additional_virtual_index,
@@ -676,7 +652,8 @@ impl TailoredMWPMDecoder {
                                             // match `charged_j` with this virtual cluster
                                             let ck = k - residual_real_cluster_len;
                                             let (pos1, pos2) =
-                                                self.corner_virtual_nodes[ck].clone();
+                                                self.tailored_model_graph.corner_virtual_nodes[ck]
+                                                    .clone();
                                             apply_correction_with_merged_cluster(
                                                 self,
                                                 &mut correction,
@@ -721,7 +698,8 @@ impl TailoredMWPMDecoder {
                                 // good, match to virtual node
                                 // eprintln!("residual match {} to virtual {}", i, j);
                                 let cj = j - residual_real_cluster_len;
-                                let (pos1, pos2) = self.corner_virtual_nodes[cj].clone();
+                                let (pos1, pos2) =
+                                    self.tailored_model_graph.corner_virtual_nodes[cj].clone();
                                 apply_correction_with_merged_cluster(
                                     self,
                                     &mut correction,

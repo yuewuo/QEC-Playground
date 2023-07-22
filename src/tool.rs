@@ -605,7 +605,12 @@ impl BenchmarkParameters {
                     serde_json::from_value(self.decoder_config.clone())
                         .map_err(|x| x.to_string())?;
                 let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
-                tailored_model_graph.build(simulator, noise_model, &config.weight_function);
+                tailored_model_graph.build(
+                    simulator,
+                    noise_model,
+                    &config.weight_function,
+                    config.use_combined_probability,
+                );
                 return Ok(Some(format!(
                     "{}\n",
                     serde_json::to_string(&tailored_model_graph.to_json(&simulator)).unwrap()
@@ -616,7 +621,12 @@ impl BenchmarkParameters {
                     serde_json::from_value(self.decoder_config.clone())
                         .map_err(|x| x.to_string())?;
                 let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
-                tailored_model_graph.build(simulator, noise_model, &config.weight_function);
+                tailored_model_graph.build(
+                    simulator,
+                    noise_model,
+                    &config.weight_function,
+                    config.use_combined_probability,
+                );
                 let tailored_model_graph = Arc::new(tailored_model_graph);
                 let mut complete_tailored_model_graph =
                     TailoredCompleteModelGraph::new(&simulator, Arc::clone(&tailored_model_graph));
@@ -698,6 +708,21 @@ impl BenchmarkParameters {
                     .add_component(&model_hypergraph)
                     .map_err(|x| x.to_string())?;
             }
+            if self.visualizer_tailored_model_graph {
+                let config: BenchmarkDebugPrintDecoderConfig =
+                    serde_json::from_value(self.decoder_config.clone())
+                        .map_err(|x| x.to_string())?;
+                let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
+                tailored_model_graph.build(
+                    simulator,
+                    noise_model_graph.as_ref(),
+                    &config.weight_function,
+                    config.use_combined_probability,
+                );
+                new_visualizer
+                    .add_component(&tailored_model_graph)
+                    .map_err(|x| x.to_string())?;
+            }
             new_visualizer.end_component().map_err(|x| x.to_string())?; // make sure the visualization file is valid even user exit the benchmark
             visualizer = Some(Arc::new(Mutex::new(new_visualizer)));
         }
@@ -752,130 +777,6 @@ impl BenchmarkParameters {
         let mut handlers = Vec::new();
         let mut threads_debugger: Vec<Arc<Mutex<BenchmarkThreadDebugger>>> = Vec::new();
         let mut threads_ended = Vec::new(); // keep updating progress bar until all threads ends
-                                            // <<<<<<< HEAD
-                                            //         for _parallel_idx in 0..parallel {
-                                            //             let benchmark_control = Arc::clone(&benchmark_control);
-                                            //             let mut simulator: Simulator = simulator.clone();
-                                            //             let noise_model = Arc::clone(&noise_model);
-                                            //             let debug_print = Arc::clone(&debug_print);
-                                            //             let log_runtime_statistics_file = log_runtime_statistics_file.clone();
-                                            //             let visualizer = visualizer.clone();
-                                            //             let mut mwpm_decoder = mwpm_decoder.clone();
-                                            //             let mut fusion_decoder = fusion_decoder.clone();
-                                            //             let mut tailored_mwpm_decoder = tailored_mwpm_decoder.clone();
-                                            //             let mut union_find_decoder = union_find_decoder.clone();
-                                            //             let mut hyper_union_find_decoder = hyper_union_find_decoder.clone();
-                                            //             let thread_ended = Arc::new(AtomicBool::new(false));
-                                            //             threads_ended.push(Arc::clone(&thread_ended));
-                                            //             let thread_debugger = Arc::new(Mutex::new(BenchmarkThreadDebugger::new()));
-                                            //             threads_debugger.push(thread_debugger.clone());
-                                            //             handlers.push(std::thread::spawn(move || {
-                                            //                 for thread_counter in 0..usize::MAX {
-                                            //                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().update_thread_counter(thread_counter); }
-                                            //                     // generate random errors and the corresponding measurement
-                                            //                     let begin = Instant::now();
-                                            //                     let (error_count, erasure_count) = simulator.generate_random_errors(&noise_model);
-                                            //                     let sparse_detected_erasures = if erasure_count != 0 { simulator.generate_sparse_detected_erasures() } else { SparseErasures::new() };
-                                            //                     if thread_timeout >= 0. {
-                                            //                         let mut thread_debugger = thread_debugger.lock().unwrap();
-                                            //                         thread_debugger.error_pattern = Some(simulator.generate_sparse_error_pattern());
-                                            //                         thread_debugger.detected_erasures = Some(sparse_detected_erasures.clone());
-                                            //                     }  // runtime debug: find deadlock cases
-                                            //                     if matches!(*debug_print, Some(BenchmarkDebugPrint::AllErrorPattern)) {
-                                            //                         let sparse_error_pattern = simulator.generate_sparse_error_pattern();
-                                            //                         eprint!("{}", serde_json::to_string(&sparse_error_pattern).expect("serialize should success"));
-                                            //                         if sparse_detected_erasures.len() > 0 {  // has detected erasures, report as well
-                                            //                             eprintln!(", {}", serde_json::to_string(&sparse_detected_erasures).expect("serialize should success"));
-                                            //                         } else {
-                                            //                             eprintln!("");
-                                            //                         }
-                                            //                     }
-                                            //                     let sparse_measurement = if error_count != 0 { simulator.generate_sparse_measurement() } else { SparseMeasurement::new() };
-                                            //                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().measurement = Some(sparse_measurement.clone()); }  // runtime debug: find deadlock cases
-                                            //                     let simulate_elapsed = begin.elapsed().as_secs_f64();
-                                            //                     // decode
-                                            //                     let begin = Instant::now();
-                                            //                     let (correction, mut runtime_statistics) = match decoder {
-                                            //                         BenchmarkDecoder::None => {
-                                            //                             (SparseCorrection::new(), json!({}))
-                                            //                         },
-                                            //                         BenchmarkDecoder::MWPM => {
-                                            //                             mwpm_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
-                                            //                         },
-                                            //                         BenchmarkDecoder::Fusion => {
-                                            //                             fusion_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
-                                            //                         },
-                                            //                         BenchmarkDecoder::TailoredMWPM => {
-                                            //                             assert!(sparse_detected_erasures.len() == 0, "tailored MWPM decoder doesn't support erasures");
-                                            //                             tailored_mwpm_decoder.as_mut().unwrap().decode(&sparse_measurement)
-                                            //                         },
-                                            //                         BenchmarkDecoder::UnionFind => {
-                                            //                             union_find_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
-                                            //                         }
-                                            //                         BenchmarkDecoder::HyperUnionFind => {
-                                            //                             hyper_union_find_decoder.as_mut().unwrap().decode_with_erasure(&sparse_measurement, &sparse_detected_erasures)
-                                            //                         }
-                                            //                     };
-                                            //                     if thread_timeout >= 0. { thread_debugger.lock().unwrap().correction = Some(correction.clone()); }  // runtime debug: find deadlock cases
-                                            //                     let decode_elapsed = begin.elapsed().as_secs_f64();
-                                            //                     // validate correction
-                                            //                     let begin = Instant::now();
-                                            //                     let mut is_qec_failed = false;
-                                            //                     let (logical_i, logical_j) = simulator.validate_correction(&correction);
-                                            //                     if logical_i && !ignore_logical_i {
-                                            //                         is_qec_failed = true;
-                                            //                     }
-                                            //                     if logical_j && !ignore_logical_j {
-                                            //                         is_qec_failed = true;
-                                            //                     }
-                                            //                     let validate_elapsed = begin.elapsed().as_secs_f64();
-                                            //                     if is_qec_failed && matches!(*debug_print, Some(BenchmarkDebugPrint::FailedErrorPattern)) {
-                                            //                         let sparse_error_pattern = simulator.generate_sparse_error_pattern();
-                                            //                         eprint!("{}", serde_json::to_string(&sparse_error_pattern).expect("serialize should success"));
-                                            //                         if sparse_detected_erasures.len() > 0 {  // has detected erasures, report as well
-                                            //                             eprintln!(", erasure: {}", serde_json::to_string(&sparse_detected_erasures).expect("serialize should success"));
-                                            //                         } else {
-                                            //                             eprintln!("");
-                                            //                         }
-                                            //                     }
-                                            //                     // update statistic information
-                                            //                     if let Some(log_runtime_statistics_file) = &log_runtime_statistics_file {
-                                            //                         runtime_statistics["qec_failed"] = json!(is_qec_failed);
-                                            //                         if log_error_pattern_when_logical_error && is_qec_failed {
-                                            //                             runtime_statistics["error_pattern"] = json!(simulator.generate_sparse_error_pattern());
-                                            //                         }
-                                            //                         runtime_statistics["elapsed"] = json!({
-                                            //                             "simulate": simulate_elapsed,
-                                            //                             "decode": decode_elapsed,
-                                            //                             "validate": validate_elapsed,
-                                            //                         });
-                                            //                         let to_be_written = format!("{}\n", runtime_statistics.to_string());
-                                            //                         let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
-                                            //                         log_runtime_statistics_file.write(to_be_written.as_bytes()).unwrap();
-                                            //                     }
-                                            //                     // update visualizer
-                                            //                     if let Some(visualizer) = &visualizer {
-                                            //                         if !visualizer_skip_success_cases || is_qec_failed {
-                                            //                             let case = json!({
-                                            //                                 "error_pattern": simulator.generate_sparse_error_pattern(),
-                                            //                                 "measurement": sparse_measurement,
-                                            //                                 "detected_erasures": sparse_detected_erasures,
-                                            //                                 "correction": correction,
-                                            //                                 "qec_failed": is_qec_failed,
-                                            //                                 "elapsed": {
-                                            //                                     "simulate": simulate_elapsed,
-                                            //                                     "decode": decode_elapsed,
-                                            //                                     "validate": validate_elapsed,
-                                            //                                 },
-                                            //                             });
-                                            //                             let mut visualizer = visualizer.lock().unwrap();
-                                            //                             visualizer.add_case(case).unwrap();
-                                            //                         }
-                                            //                     }
-                                            //                     // update simulation counters, then break the loop if benchmark should terminate
-                                            //                     if benchmark_control.lock().unwrap().update_data_should_terminate(is_qec_failed, max_repeats, min_failed_cases) {
-                                            //                         break
-                                            // =======
         let general_simulator: GeneralSimulator = if self.use_compact_simulator {
             let first = SimulatorCompact::from_simulator(
                 simulator,

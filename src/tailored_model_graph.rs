@@ -1,13 +1,14 @@
 //! build model graph from simulator and measurement results
 //!
 
-use super::either::Either;
-use super::float_cmp;
-use super::model_graph::*;
-use super::noise_model::*;
-use super::simulator::*;
-use super::types::*;
-use super::util_macros::*;
+use crate::model_graph::*;
+use crate::noise_model::*;
+use crate::simulator::*;
+use crate::types::*;
+use crate::util_macros::*;
+use crate::visualize::QecpVisualizer;
+use either::Either;
+use float_cmp;
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -17,6 +18,50 @@ use std::sync::Arc;
 pub struct TailoredModelGraph {
     /// `(positive_node, negative_node, neutral_node)`, where neutral node only contains
     pub nodes: Vec<Vec<Vec<Option<Box<TripleTailoredModelGraphNode>>>>>,
+    /// virtual nodes in the primary decoding part
+    pub virtual_nodes: Vec<Position>,
+    /// virtual nodes in the residual decoding part
+    pub corner_virtual_nodes: Vec<(Position, Position)>,
+}
+
+impl QecpVisualizer for TailoredModelGraph {
+    fn component_info(&self, abbrev: bool) -> (String, serde_json::Value) {
+        let name = "tailored_model_graph";
+        let info = json!({
+            "nodes": (0..self.nodes.len()).map(|t| {
+                (0..self.nodes[t].len()).map(|i| {
+                    (0..self.nodes[t][i].len()).map(|j| {
+                        let position = &pos!(t, i, j);
+                        if self.is_node_exist(position) {
+                            let triple_node = self.get_node_unwrap(position);
+                            let mut triple_json = vec![];
+                            for i in 0..3 {
+                                let node = &triple_node[i];
+                                let mut edges = serde_json::Map::with_capacity(node.edges.len());
+                                for (peer_position, edge) in node.edges.iter() {
+                                    edges.insert(peer_position.to_string(), edge.component_edge_info(abbrev));
+                                }
+                                let mut all_edges = serde_json::Map::with_capacity(node.all_edges.len());
+                                for (peer_position, all_edge) in node.all_edges.iter() {
+                                    let components: Vec<_> = all_edge.iter().map(|edge| edge.component_edge_info(abbrev)).collect();
+                                    all_edges.insert(peer_position.to_string(), json!(components));
+                                }
+                                triple_json.push(json!({
+                                    if abbrev { "p" } else { "position" }: position,  // for readability
+                                    "all_edges": all_edges,
+                                    "edges": edges,
+                                }))
+                            }
+                            Some(json!(triple_json))
+                        } else {
+                            None
+                        }
+                    }).collect::<Vec<Option<serde_json::Value>>>()
+                }).collect::<Vec<Vec<Option<serde_json::Value>>>>()
+            }).collect::<Vec<Vec<Vec<Option<serde_json::Value>>>>>(),
+        });
+        (name.to_string(), info)
+    }
 }
 
 /// only defined for measurement nodes (including virtual measurement nodes)
@@ -41,6 +86,17 @@ pub struct TailoredModelGraphEdge {
     pub error_pattern: Arc<SparseErrorPattern>,
     /// the correction pattern that can recover this error
     pub correction: Arc<SparseCorrection>,
+}
+
+impl TailoredModelGraphEdge {
+    fn component_edge_info(&self, abbrev: bool) -> serde_json::Value {
+        json!({
+            if abbrev { "p" } else { "probability" }: self.probability,
+            if abbrev { "w" } else { "weight" }: self.weight,
+            if abbrev { "e" } else { "error_pattern" }: self.error_pattern,
+            if abbrev { "c" } else { "correction" }: self.correction,
+        })
+    }
 }
 
 impl TailoredModelGraph {
@@ -89,6 +145,8 @@ impl TailoredModelGraph {
                         .collect()
                 })
                 .collect(),
+            virtual_nodes: vec![],
+            corner_virtual_nodes: vec![],
         }
     }
 
@@ -126,19 +184,27 @@ impl TailoredModelGraph {
         simulator: &mut Simulator,
         noise_model: &NoiseModel,
         weight_function: &WeightFunction,
+        use_combined_probability: bool,
     ) {
         match weight_function {
-            WeightFunction::Autotune => {
-                self.build_with_weight_function(simulator, noise_model, weight_function::autotune)
-            }
+            WeightFunction::Autotune => self.build_with_weight_function(
+                simulator,
+                noise_model,
+                weight_function::autotune,
+                use_combined_probability,
+            ),
             WeightFunction::AutotuneImproved => self.build_with_weight_function(
                 simulator,
                 noise_model,
                 weight_function::autotune_improved,
+                use_combined_probability,
             ),
-            WeightFunction::Unweighted => {
-                self.build_with_weight_function(simulator, noise_model, weight_function::unweighted)
-            }
+            WeightFunction::Unweighted => self.build_with_weight_function(
+                simulator,
+                noise_model,
+                weight_function::unweighted,
+                use_combined_probability,
+            ),
         }
     }
 
@@ -148,6 +214,7 @@ impl TailoredModelGraph {
         simulator: &mut Simulator,
         noise_model: &NoiseModel,
         weight_of: F,
+        use_combined_probability: bool,
     ) where
         F: Fn(f64) -> f64 + Copy,
     {
@@ -385,10 +452,38 @@ impl TailoredModelGraph {
                 }
             }
         });
-        self.elect_edges(simulator, true, weight_of); // by default use combined probability
+        self.elect_edges(simulator, use_combined_probability, weight_of); // by default use combined probability
+
+        // build virtual nodes for decoding use
+        let mut virtual_nodes = Vec::new();
+        simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if self.is_node_exist(position) {
+            let node = simulator.get_node_unwrap(position);
+            if node.is_virtual {
+                virtual_nodes.push(position.clone());
+            }
+        });
+        self.virtual_nodes = virtual_nodes;
+
+        // build corner virtual nodes for residual decoding, see https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.124.130501
+        // corner virtual nodes, in my understanding, is those having connection with only one real node
+        let mut corner_virtual_nodes = Vec::<(Position, Position)>::new();
+        simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if self.is_node_exist(position) {
+            let node = simulator.get_node_unwrap(position);
+            if node.is_virtual {
+                if let Some(miscellaneous) = &node.miscellaneous {
+                    if miscellaneous.get("is_corner") == Some(&json!(true)) {
+                        let peer_corner = miscellaneous.get("peer_corner").expect("corner must appear in pair, either in standard or rotated tailored surface code");
+                        let peer_position = serde_json::from_value(peer_corner.clone()).unwrap();
+                        corner_virtual_nodes.push((position.clone(), peer_position));
+                    }
+                }
+            }
+        });
+        self.corner_virtual_nodes = corner_virtual_nodes;
     }
 
-    /// add asymmetric edge from `source` to `target` in positive direction; in order to create symmetric edge, call this function twice with reversed input
+    /// add asymmetric edge from `source` to `target` in positive direction;
+    /// in order to create symmetric edge, call this function twice with reversed input
     pub fn add_one_edge(
         &mut self,
         source: &Position,
