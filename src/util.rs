@@ -31,6 +31,7 @@ pub fn getFileContentFromMultiplePlaces(folders: &Vec<String>, filename: &String
 // a much simpler but super fast hasher, only suitable for `ftqec::Index`!!!
 pub mod simple_hasher {
     use std::hash::Hasher;
+    #[derive(Default)]
     pub struct SimpleHasher(u64);
 
     #[inline]
@@ -43,20 +44,6 @@ pub mod simple_hasher {
         }
         data.to_le()
     }
-
-    impl Default for SimpleHasher {
-        #[inline]
-        fn default() -> SimpleHasher {
-            SimpleHasher(0)
-        }
-    }
-
-    // impl SimpleHasher {
-    //     #[inline]
-    //     pub fn set_u64(&mut self, value: u64) {
-    //         self.0 = value;
-    //     }
-    // }
 
     impl Hasher for SimpleHasher {
         #[inline]
@@ -106,10 +93,7 @@ pub fn local_get_temporary_store(resource_id: usize) -> Option<String> {
             Err(_) => None,
         }
     } else {
-        match temporary_store.memory_store.get(&resource_id) {
-            Some(value) => Some(value.clone()),
-            None => None,
-        }
+        temporary_store.memory_store.get(&resource_id).cloned()
     }
 }
 
@@ -130,19 +114,15 @@ pub fn local_put_temporary_store(value: String) -> Option<usize> {
                 continue;
             }
             let path = path.unwrap().path();
-            if path.extension() != Some(&std::ffi::OsStr::new("dat")) {
+            if path.extension() != Some(std::ffi::OsStr::new("dat")) {
                 continue;
             }
-            match path.file_stem() {
-                Some(file_stem) => match file_stem.to_string_lossy().parse::<usize>() {
-                    Ok(this_key) => {
-                        if this_key >= insert_key {
-                            insert_key = this_key + 1;
-                        }
+            if let Some(file_stem) = path.file_stem() {
+                if let Ok(this_key) = file_stem.to_string_lossy().parse::<usize>() {
+                    if this_key >= insert_key {
+                        insert_key = this_key + 1;
                     }
-                    Err(_) => {}
-                },
-                None => {}
+                }
             }
         }
         if fs::write(
@@ -155,7 +135,7 @@ pub fn local_put_temporary_store(value: String) -> Option<usize> {
         }
     } else {
         let keys: Vec<usize> = temporary_store.memory_store.keys().cloned().collect();
-        if keys.len() > 0 {
+        if !keys.is_empty() {
             insert_key = keys[keys.len() - 1] + 1
         }
         if keys.len() >= TEMPORARY_STORE_MAX_COUNT {
@@ -308,13 +288,13 @@ mod tests {
     #[test]
     fn temporary_store_read_files() {
         // cargo test temporary_store_read_files -- --nocapture
-        let resource_id_1 = local_put_temporary_store(format!("hello")).unwrap();
-        let resource_id_2 = local_put_temporary_store(format!("world")).unwrap();
+        let resource_id_1 = local_put_temporary_store("hello".to_string()).unwrap();
+        let resource_id_2 = local_put_temporary_store("world".to_string()).unwrap();
         // println!("{:?}", resource_id_1);
         // println!("{:?}", resource_id_2);
         let read_1 = local_get_temporary_store(resource_id_1);
         let read_2 = local_get_temporary_store(resource_id_2);
-        assert_eq!(read_1, Some(format!("hello")));
-        assert_eq!(read_2, Some(format!("world")));
+        assert_eq!(read_1, Some("hello".to_string()));
+        assert_eq!(read_2, Some("world".to_string()));
     }
 }

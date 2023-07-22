@@ -229,12 +229,12 @@ impl NoiseModelBuilder {
                 let config = config_cloned
                     .as_object_mut()
                     .expect("noise_model_configuration must be JSON object");
-                config
-                    .remove("initialization_error_rate")
-                    .map(|value| initialization_error_rate = value.as_f64().expect("f64"));
-                config
-                    .remove("measurement_error_rate")
-                    .map(|value| measurement_error_rate = value.as_f64().expect("f64"));
+                if let Some(value) = config.remove("initialization_error_rate") {
+                    initialization_error_rate = value.as_f64().expect("f64")
+                }
+                if let Some(value) = config.remove("measurement_error_rate") {
+                    measurement_error_rate = value.as_f64().expect("f64");
+                }
                 if !config.is_empty() {
                     panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>());
                 }
@@ -253,9 +253,9 @@ impl NoiseModelBuilder {
                 let cphase_node = Arc::new(cphase_node);
                 // CZ gate with measurement error
                 let mut cphase_measurement_error_node: NoiseModelNode = (*cphase_node).clone();
-                cphase_measurement_error_node.pauli_error_rates.error_rate_X = initialization_error_rate / bias_eta;
-                cphase_measurement_error_node.pauli_error_rates.error_rate_Z = initialization_error_rate;
-                cphase_measurement_error_node.pauli_error_rates.error_rate_Y = initialization_error_rate / bias_eta;
+                cphase_measurement_error_node.pauli_error_rates.error_rate_X = measurement_error_rate / bias_eta;
+                cphase_measurement_error_node.pauli_error_rates.error_rate_Z = measurement_error_rate;
+                cphase_measurement_error_node.pauli_error_rates.error_rate_Y = measurement_error_rate / bias_eta;
                 let cphase_measurement_error_node = Arc::new(cphase_measurement_error_node);
                 // CX gate node
                 let mut cx_node = NoiseModelNode::new();
@@ -278,9 +278,9 @@ impl NoiseModelBuilder {
                 let cx_node = Arc::new(cx_node);
                 // CX gate with measurement error
                 let mut cx_measurement_error_node: NoiseModelNode = (*cx_node).clone();
-                cx_measurement_error_node.pauli_error_rates.error_rate_X = initialization_error_rate / bias_eta;
-                cx_measurement_error_node.pauli_error_rates.error_rate_Z = initialization_error_rate;
-                cx_measurement_error_node.pauli_error_rates.error_rate_Y = initialization_error_rate / bias_eta;
+                cx_measurement_error_node.pauli_error_rates.error_rate_X = measurement_error_rate / bias_eta;
+                cx_measurement_error_node.pauli_error_rates.error_rate_Z = measurement_error_rate;
+                cx_measurement_error_node.pauli_error_rates.error_rate_Y = measurement_error_rate / bias_eta;
                 let cx_measurement_error_node = Arc::new(cx_measurement_error_node);
                 // iterate over all nodes
                 simulator_iter_real!(simulator, position, node, {
@@ -606,24 +606,26 @@ impl NoiseModelBuilder {
                 let config = config_cloned
                     .as_object_mut()
                     .expect("noise_model_configuration must be JSON object");
-                config
-                    .remove("initialization_error_rate")
-                    .map(|value| initialization_error_rate = value.as_f64().expect("f64"));
-                config
-                    .remove("measurement_error_rate")
-                    .map(|value| measurement_error_rate = value.as_f64().expect("f64"));
-                config
-                    .remove("use_correlated_erasure")
-                    .map(|value| use_correlated_erasure = value.as_bool().expect("bool"));
-                config
-                    .remove("use_correlated_pauli")
-                    .map(|value| use_correlated_pauli = value.as_bool().expect("bool"));
-                config
-                    .remove("before_pauli_bug_fix")
-                    .map(|value| before_pauli_bug_fix = value.as_bool().expect("bool"));
-                config
-                    .remove("erasure_delay_cycle")
-                    .map(|value| erasure_delay_cycle = value.as_u64().expect("u64") as usize); // erasures that are not corrected immediately, instead an erasure may stay for `delay_cycle` cycles and all qubits that are related will be effected.
+                if let Some(value) = config.remove("initialization_error_rate") {
+                    initialization_error_rate = value.as_f64().expect("f64");
+                }
+                if let Some(value) = config.remove("measurement_error_rate") {
+                    measurement_error_rate = value.as_f64().expect("f64");
+                }
+                if let Some(value) = config.remove("use_correlated_erasure") {
+                    use_correlated_erasure = value.as_bool().expect("bool");
+                }
+                if let Some(value) = config.remove("use_correlated_pauli") {
+                    use_correlated_pauli = value.as_bool().expect("bool");
+                }
+                if let Some(value) = config.remove("before_pauli_bug_fix") {
+                    before_pauli_bug_fix = value.as_bool().expect("bool");
+                }
+                if let Some(value) = config.remove("erasure_delay_cycle") {
+                    // erasures that are not corrected immediately, instead an erasure may stay
+                    // for `delay_cycle` cycles and all qubits that are related will be effected.
+                    erasure_delay_cycle = value.as_u64().expect("u64") as usize;
+                }
                 if !config.is_empty() {
                     panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>());
                 }
@@ -668,14 +670,14 @@ impl NoiseModelBuilder {
                             // errors everywhere
                             let mut this_position_use_correlated_pauli = false;
                             let mut error_node = NoiseModelNode::new(); // it's perfectly fine to instantiate an error node for each node: just memory inefficient at large code distances
-                            if use_correlated_pauli {
-                                if node.gate_type.is_two_qubit_gate() {
-                                    if node.qubit_type != QubitType::Data {
-                                        // this is ancilla
-                                        this_position_use_correlated_pauli = use_correlated_pauli;
-                                    }
-                                }
+                            if use_correlated_pauli
+                                && node.gate_type.is_two_qubit_gate()
+                                && node.qubit_type != QubitType::Data
+                            {
+                                // this is ancilla
+                                this_position_use_correlated_pauli = use_correlated_pauli;
                             }
+
                             if erasure_delay_cycle > 0 {
                                 error_node.erasure_error_rate = 1e-300; // single erasure exists, but just never triggered; for decoders
                                 let mut erased_qubits = BTreeSet::new();
@@ -722,23 +724,21 @@ impl NoiseModelBuilder {
                                         erasures,
                                     })
                                 }
+                            } else if use_correlated_erasure
+                                && node.gate_type.is_two_qubit_gate()
+                                && node.qubit_type != QubitType::Data
+                            {
+                                // this is ancilla
+                                // better check whether peer is indeed data qubit, but it's hard here due to Rust's borrow check
+                                let mut correlated_erasure_error_rates =
+                                    CorrelatedErasureErrorRates::default_with_probability(0.);
+                                correlated_erasure_error_rates.error_rate_EE = pe;
+                                correlated_erasure_error_rates.sanity_check();
+                                error_node.correlated_erasure_error_rates = Some(correlated_erasure_error_rates);
                             } else {
-                                if use_correlated_erasure {
-                                    if node.gate_type.is_two_qubit_gate() {
-                                        if node.qubit_type != QubitType::Data {
-                                            // this is ancilla
-                                            // better check whether peer is indeed data qubit, but it's hard here due to Rust's borrow check
-                                            let mut correlated_erasure_error_rates =
-                                                CorrelatedErasureErrorRates::default_with_probability(0.);
-                                            correlated_erasure_error_rates.error_rate_EE = pe;
-                                            correlated_erasure_error_rates.sanity_check();
-                                            error_node.correlated_erasure_error_rates = Some(correlated_erasure_error_rates);
-                                        }
-                                    }
-                                } else {
-                                    error_node.erasure_error_rate = pe;
-                                }
+                                error_node.erasure_error_rate = pe;
                             }
+
                             // this bug is hard to find without visualization tool...
                             // so I develop such a tool at https://qec.wuyue98.cn/NoiseModelViewer2D.html
                             // to compare: (in url, %20 is space, %22 is double quote)
@@ -750,12 +750,10 @@ impl NoiseModelBuilder {
                                 } else {
                                     (p / 3., p / 3., p / 3.)
                                 }
+                            } else if use_correlated_pauli {
+                                (0., 0., 0.)
                             } else {
-                                if use_correlated_pauli {
-                                    (0., 0., 0.)
-                                } else {
-                                    (p / 3., p / 3., p / 3.)
-                                }
+                                (p / 3., p / 3., p / 3.)
                             };
                             if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1
                                 && node.qubit_type != QubitType::Data
@@ -810,18 +808,18 @@ impl NoiseModelBuilder {
                 let config = config_cloned
                     .as_object_mut()
                     .expect("noise_model_configuration must be JSON object");
-                config
-                    .remove("after_clifford_depolarization")
-                    .map(|value| after_clifford_depolarization = value.as_f64().expect("f64"));
-                config
-                    .remove("before_round_data_depolarization")
-                    .map(|value| before_round_data_depolarization = value.as_f64().expect("f64"));
-                config
-                    .remove("before_measure_flip_probability")
-                    .map(|value| before_measure_flip_probability = value.as_f64().expect("f64"));
-                config
-                    .remove("after_reset_flip_probability")
-                    .map(|value| after_reset_flip_probability = value.as_f64().expect("f64"));
+                if let Some(value) = config.remove("after_clifford_depolarization") {
+                    after_clifford_depolarization = value.as_f64().expect("f64")
+                }
+                if let Some(value) = config.remove("before_round_data_depolarization") {
+                    before_round_data_depolarization = value.as_f64().expect("f64");
+                }
+                if let Some(value) = config.remove("before_measure_flip_probability") {
+                    before_measure_flip_probability = value.as_f64().expect("f64")
+                }
+                if let Some(value) = config.remove("after_reset_flip_probability") {
+                    after_reset_flip_probability = value.as_f64().expect("f64")
+                }
                 if !config.is_empty() {
                     panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>());
                 }
@@ -873,22 +871,20 @@ impl NoiseModelBuilder {
                         }
                         _ => {
                             let mut error_node = noiseless_node.clone();
-                            if node.gate_type.is_two_qubit_gate() {
-                                if node.qubit_type == QubitType::Data && !node.is_peer_virtual {
-                                    // this is data qubit with actual 2-qubit gate
-                                    error_node = depolarize_2_node.clone();
-                                }
+                            if node.gate_type.is_two_qubit_gate()
+                                && node.qubit_type == QubitType::Data
+                                && !node.is_peer_virtual
+                            {
+                                // this is data qubit with actual 2-qubit gate
+                                error_node = depolarize_2_node.clone();
                             }
                             if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1 {
                                 if node.qubit_type != QubitType::Data {
                                     error_node = measure_flip_node.clone();
-                                } else {
-                                    if position.t == simulator.height - simulator.measurement_cycles - 2 {
-                                        let mut new_error_node = error_node.as_ref().clone();
-                                        new_error_node.pauli_error_rates =
-                                            data_qubit_depolarize_node.pauli_error_rates.clone();
-                                        error_node = Arc::new(new_error_node);
-                                    }
+                                } else if position.t == simulator.height - simulator.measurement_cycles - 2 {
+                                    let mut new_error_node = error_node.as_ref().clone();
+                                    new_error_node.pauli_error_rates = data_qubit_depolarize_node.pauli_error_rates.clone();
+                                    error_node = Arc::new(new_error_node);
                                 }
                             }
                             noise_model.set_node(position, Some(error_node));
@@ -975,71 +971,72 @@ impl NoiseModelBuilder {
         noise_model: &mut NoiseModel,
         modifier: &serde_json::Value,
     ) -> Result<(), String> {
-        if modifier.get("code_type").ok_or(format!("missing field: code_type"))? != &json!(simulator.code_type) {
-            return Err(format!("mismatch: code_type"));
+        if modifier.get("code_type").ok_or("missing field: code_type")? != &json!(simulator.code_type) {
+            return Err("mismatch: code_type".to_string());
         }
-        if modifier.get("height").ok_or(format!("missing field: height"))? != &json!(simulator.height) {
-            return Err(format!("mismatch: height"));
+        if modifier.get("height").ok_or("missing field: height")? != &json!(simulator.height) {
+            return Err("mismatch: height".to_string());
         }
-        if modifier.get("vertical").ok_or(format!("missing field: vertical"))? != &json!(simulator.vertical) {
-            return Err(format!("mismatch: vertical"));
+        if modifier.get("vertical").ok_or("missing field: vertical")? != &json!(simulator.vertical) {
+            return Err("mismatch: vertical".to_string());
         }
-        if modifier.get("horizontal").ok_or(format!("missing field: horizontal"))? != &json!(simulator.horizontal) {
-            return Err(format!("mismatch: horizontal"));
+        if modifier.get("horizontal").ok_or("missing field: horizontal")? != &json!(simulator.horizontal) {
+            return Err("mismatch: horizontal".to_string());
         }
         // iterate nodes
         let nodes = modifier
             .get("nodes")
-            .ok_or(format!("missing field: nodes"))?
+            .ok_or("missing field: nodes".to_string())?
             .as_array()
-            .ok_or(format!("format error: nodes"))?;
+            .ok_or("format error: nodes".to_string())?;
         if simulator.nodes.len() != nodes.len() {
-            return Err(format!("mismatch: nodes.len()"));
+            return Err("mismatch: nodes.len()".to_string());
         }
-        for t in 0..nodes.len() {
-            let nodes_row_0 = nodes[t].as_array().ok_or(format!("format error: nodes[{}]", t))?;
+        for (t, nodes_t) in nodes.iter().enumerate() {
+            let nodes_row_0 = nodes_t.as_array().ok_or(format!("format error: nodes[{}]", t))?;
             if nodes_row_0.len() != simulator.nodes[t].len() {
-                return Err(format!("mismatch: nodes[{}].len()", t));
+                return Err(format!("mimsatch: nodes[{}].len()", t));
             }
-            for i in 0..nodes_row_0.len() {
-                let nodes_row_1 = nodes_row_0[i]
-                    .as_array()
-                    .ok_or(format!("format error: nodes[{}][{}]", t, i))?;
+            for (i, nodes_i) in nodes_row_0.iter().enumerate() {
+                let nodes_row_1 = nodes_i.as_array().ok_or(format!("format error: nodes[{}][{}]", t, i))?;
                 if nodes_row_1.len() != simulator.nodes[t][i].len() {
                     return Err(format!("mismatch: nodes[{}][{}].len()", t, i));
                 }
-                for j in 0..nodes_row_1.len() {
-                    let node = &nodes_row_1[j];
+                for (j, node) in nodes_row_1.iter().enumerate() {
                     if node.is_null() != simulator.nodes[t][i][j].is_none() {
                         return Err(format!("mismatch: nodes[{}][{}][{}].is_none", t, i, j));
                     }
                     if !node.is_null() {
                         let self_node = simulator.nodes[t][i][j].as_mut().unwrap(); // already checked existance
-                        if node.get("position").ok_or(format!("missing field: position"))? != &json!(pos!(t, i, j)) {
+                        if node.get("position").ok_or("missing field: position".to_string())? != &json!(pos!(t, i, j)) {
                             return Err(format!("mismatch position [{}][{}][{}]", t, i, j));
                         }
-                        if node.get("qubit_type").ok_or(format!("missing field: qubit_type"))?
+                        if node.get("qubit_type").ok_or("missing field: qubit_type".to_string())?
                             != &json!(self_node.qubit_type)
                         {
                             return Err(format!("mismatch [{}][{}][{}]: qubit_type", t, i, j));
                         }
-                        if node.get("gate_type").ok_or(format!("missing field: gate_type"))? != &json!(self_node.gate_type) {
+                        if node.get("gate_type").ok_or("missing field: gate_type".to_string())?
+                            != &json!(self_node.gate_type)
+                        {
                             return Err(format!("mismatch [{}][{}][{}]: gate_type", t, i, j));
                         }
-                        if node.get("gate_peer").ok_or(format!("missing field: gate_peer"))? != &json!(self_node.gate_peer) {
+                        if node.get("gate_peer").ok_or("missing field: gate_peer".to_string())?
+                            != &json!(self_node.gate_peer)
+                        {
                             return Err(format!("mismatch [{}][{}][{}]: gate_peer", t, i, j));
                         }
                         // TODO: user can modify the 'is_virtual' attribute to manually discard a measurement event
                         let is_virtual = node
                             .get("is_virtual")
-                            .ok_or(format!("missing field: is_virtual"))?
+                            .ok_or("missing field: is_virtual".to_string())?
                             .as_bool()
-                            .ok_or(format!("wrong field: is_virtual"))?;
+                            .ok_or("wrong field: is_virtual".to_string())?;
                         let is_peer_virtual = node
                             .get("is_peer_virtual")
-                            .ok_or(format!("missing field: is_peer_virtual"))?
+                            .ok_or("missing field: is_peer_virtual".to_string())?
                             .as_bool()
-                            .ok_or(format!("wrong field: is_peer_virtual"))?;
+                            .ok_or("wrong field: is_peer_virtual".to_string())?;
                         assert_eq!(
                             is_virtual, self_node.is_virtual,
                             "is_virtual modification not implemented, needs sanity check"
@@ -1049,7 +1046,10 @@ impl NoiseModelBuilder {
                             "is_peer_virtual modification not implemented, needs sanity check"
                         );
                         // then copy error rate data
-                        let noise_model_node = node.get("noise_model").ok_or(format!("missing field: noise_model"))?.clone();
+                        let noise_model_node = node
+                            .get("noise_model")
+                            .ok_or("missing field: noise_model".to_string())?
+                            .clone();
                         let noise_model_node: NoiseModelNode =
                             serde_json::from_value(noise_model_node).map_err(|e| format!("{:?}", e))?;
                         noise_model.set_node(&pos!(t, i, j), Some(Arc::new(noise_model_node)));

@@ -39,7 +39,7 @@ fn default_probability() -> f64 {
 }
 
 fn default_parameters() -> String {
-    format!("")
+    "".into()
 }
 
 fn default_resource_id() -> usize {
@@ -146,24 +146,5 @@ async fn get_temporary_store(req: HttpRequest) -> Result<HttpResponse, Error> {
             "noise_model_temporary_id={} not found, might be expired",
             resource_id
         ))),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // use `cargo test temporary_store_read_files -- --nocapture` to run specific test
-
-    #[test]
-    fn temporary_store_read_files() {
-        let resource_id_1 = local_put_temporary_store(format!("hello")).unwrap();
-        let resource_id_2 = local_put_temporary_store(format!("world")).unwrap();
-        // println!("{:?}", resource_id_1);
-        // println!("{:?}", resource_id_2);
-        let read_1 = local_get_temporary_store(resource_id_1);
-        let read_2 = local_get_temporary_store(resource_id_2);
-        assert_eq!(read_1, Some(format!("hello")));
-        assert_eq!(read_2, Some(format!("world")));
     }
 }

@@ -29,20 +29,15 @@ impl QubitType {
 }
 
 /// Error type, corresponds to `ETYPE` in `FaultTolerantView.vue`
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Default, PartialEq, Clone, Copy, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub enum ErrorType {
+    #[default]
     I,
     X,
     Z,
     Y,
-}
-
-impl Default for ErrorType {
-    fn default() -> Self {
-        ErrorType::I // default to identity
-    }
 }
 
 impl std::fmt::Display for ErrorType {
@@ -184,7 +179,6 @@ impl std::fmt::Display for CorrelatedPauliErrorType {
                 Self::YZ => "YZ",
                 Self::YY => "YY",
             }
-            .to_string()
         )
     }
 }
@@ -199,10 +193,13 @@ pub struct PauliErrorRates {
     pub error_rate_Z: f64,
 }
 
-impl PauliErrorRates {
-    pub fn default() -> Self {
+impl Default for PauliErrorRates {
+    fn default() -> Self {
         Self::default_with_probability(0.)
     }
+}
+
+impl PauliErrorRates {
     pub fn default_with_probability(p: f64) -> Self {
         Self {
             error_rate_X: p,
@@ -261,10 +258,13 @@ pub struct CorrelatedPauliErrorRates {
     pub error_rate_YY: f64,
 }
 
-impl CorrelatedPauliErrorRates {
-    pub fn default() -> Self {
+impl Default for CorrelatedPauliErrorRates {
+    fn default() -> Self {
         Self::default_with_probability(0.)
     }
+}
+
+impl CorrelatedPauliErrorRates {
     pub fn default_with_probability(p: f64) -> Self {
         Self {
             error_rate_IX: p,
@@ -448,10 +448,13 @@ pub struct CorrelatedErasureErrorRates {
     pub error_rate_EE: f64,
 }
 
-impl CorrelatedErasureErrorRates {
-    pub fn default() -> Self {
+impl Default for CorrelatedErasureErrorRates {
+    fn default() -> Self {
         Self::default_with_probability(0.)
     }
+}
+
+impl CorrelatedErasureErrorRates {
     pub fn default_with_probability(p: f64) -> Self {
         Self {
             error_rate_IE: p,

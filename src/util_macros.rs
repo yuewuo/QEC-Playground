@@ -23,6 +23,7 @@ macro_rules! simulator_iter_loop {
                     if $position.i >= $simulator.vertical {
                         $position.i = 0;
                         $position.t += $delta_t;
+                        #[allow(clippy::all)]
                         if $position.t >= $end_t {
                             // invalid position, stop here
                             break;

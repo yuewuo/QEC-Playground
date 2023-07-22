@@ -36,10 +36,8 @@ impl QecpVisualizer for TailoredModelGraph {
                     (0..self.nodes[t][i].len()).map(|j| {
                         let position = &pos!(t, i, j);
                         if self.is_node_exist(position) {
-                            let triple_node = self.get_node_unwrap(position);
                             let mut triple_json = vec![];
-                            for i in 0..3 {
-                                let node = &triple_node[i];
+                            for node in self.get_node_unwrap(position).iter() {
                                 let mut edges = serde_json::Map::with_capacity(node.edges.len());
                                 for (peer_position, edge) in node.edges.iter() {
                                     edges.insert(peer_position.to_string(), edge.component_edge_info(abbrev));
@@ -203,15 +201,10 @@ impl TailoredModelGraph {
         simulator_iter!(simulator, position, node, {
             // here I omitted the condition `t % measurement_cycles == 0` for a stricter check
             if position.t != 0 && node.gate_type.is_measurement() {
-                let [positive_node, negative_node, neutral_node] = self.get_node_unwrap(position);
-                if positive_node.all_edges.len() > 0 || positive_node.edges.len() > 0 {
-                    state_clean = false;
-                }
-                if negative_node.all_edges.len() > 0 || negative_node.edges.len() > 0 {
-                    state_clean = false;
-                }
-                if neutral_node.all_edges.len() > 0 || neutral_node.edges.len() > 0 {
-                    state_clean = false;
+                for node in self.get_node_unwrap(position).iter() {
+                    if !node.all_edges.is_empty() || !node.edges.is_empty() {
+                        state_clean = false;
+                    }
                 }
             }
         });
@@ -310,7 +303,7 @@ impl TailoredModelGraph {
                     let mut sparse_errors = SparseErrorPattern::new();
                     match error {
                         Either::Left(error_type) => {
-                            sparse_errors.add(position.clone(), error_type.clone());
+                            sparse_errors.add(position.clone(), *error_type);
                         }
                         Either::Right(error_type) => {
                             sparse_errors.add(position.clone(), error_type.my_error());
@@ -328,7 +321,7 @@ impl TailoredModelGraph {
                     let sparse_correction = Arc::new(sparse_correction); // make it immutable and shared
                     let sparse_measurement_real = sparse_measurement_real.to_vec();
                     let sparse_measurement_virtual = sparse_measurement_virtual.to_vec();
-                    if sparse_measurement_real.len() == 0 {
+                    if sparse_measurement_real.is_empty() {
                         // no way to detect it, ignore
                         continue;
                     }
@@ -529,14 +522,14 @@ impl TailoredModelGraph {
     /// in order to create symmetric edge, call this function twice with reversed input
     pub fn add_one_edge(
         &mut self,
-        source: &Position,
-        target: &Position,
+        positions: (&Position, &Position),
         probability: f64,
         weight: f64,
         error_pattern: Arc<SparseErrorPattern>,
         correction: Arc<SparseCorrection>,
         idx: usize,
     ) {
+        let (source, target) = positions;
         let node = &mut self.get_node_mut_unwrap(source)[idx];
         if !node.all_edges.contains_key(target) {
             node.all_edges.insert(target.clone(), Vec::new());
@@ -560,8 +553,7 @@ impl TailoredModelGraph {
         correction: Arc<SparseCorrection>,
     ) {
         self.add_one_edge(
-            source,
-            target,
+            (source, target),
             probability,
             weight,
             error_pattern.clone(),
@@ -609,8 +601,7 @@ impl TailoredModelGraph {
         correction: Arc<SparseCorrection>,
     ) {
         self.add_one_edge(
-            source,
-            target,
+            (source, target),
             probability,
             weight,
             error_pattern.clone(),
@@ -658,8 +649,7 @@ impl TailoredModelGraph {
         correction: Arc<SparseCorrection>,
     ) {
         self.add_one_edge(
-            source,
-            target,
+            (source, target),
             probability,
             weight,
             error_pattern.clone(),

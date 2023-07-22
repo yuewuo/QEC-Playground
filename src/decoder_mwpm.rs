@@ -114,7 +114,7 @@ impl MWPMDecoder {
         sparse_measurement: &SparseMeasurement,
         sparse_detected_erasures: &SparseErasures,
     ) -> (SparseCorrection, serde_json::Value) {
-        if sparse_detected_erasures.len() > 0 {
+        if !sparse_detected_erasures.is_empty() {
             assert!(!self.config.precompute_complete_model_graph, "if erasure happens, the precomputed complete graph is invalid; please disable `precompute_complete_model_graph` or `pcmg` in the decoder configuration");
         }
         let mut correction = SparseCorrection::new();
@@ -135,7 +135,7 @@ impl MWPMDecoder {
             let mut weighted_edges = Vec::<(usize, usize, f64)>::new();
             // update model graph weights to consider erasure information
             let mut erasure_graph_modifier = ErasureGraphModifier::<f64>::new();
-            if sparse_detected_erasures.len() > 0 {
+            if !sparse_detected_erasures.is_empty() {
                 // if erasure exists, the model graph will be duplicated on demand
                 let erasure_edges = sparse_detected_erasures.get_erasure_edges(&self.erasure_graph);
                 let model_graph_mut = self.complete_model_graph.get_model_graph_mut();
@@ -236,7 +236,7 @@ impl MWPMDecoder {
             }
             time_build_correction += begin.elapsed().as_secs_f64();
             // recover the modified edges
-            if sparse_detected_erasures.len() > 0 {
+            if !sparse_detected_erasures.is_empty() {
                 let model_graph_mut = self.complete_model_graph.get_model_graph_mut();
                 while erasure_graph_modifier.has_modified_edges() {
                     let (erasure_edge, weight) = erasure_graph_modifier.pop_modified_edge();

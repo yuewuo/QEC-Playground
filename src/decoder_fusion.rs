@@ -132,13 +132,13 @@ impl FusionDecoder {
         if self.config.skip_decoding {
             return (SparseCorrection::new(), json!({}));
         }
-        assert!(sparse_detected_erasures.len() == 0, "fusion decoder doesn't support erasure error yet: we'll do it in the next version to support 0-weight edges and dynamic setting");
+        assert!(sparse_detected_erasures.is_empty(), "fusion decoder doesn't support erasure error yet: we'll do it in the next version to support 0-weight edges and dynamic setting");
         let mut correction = SparseCorrection::new();
         let mut time_fusion = 0.;
         let mut time_build_correction = 0.;
         let mut log_matchings = Vec::with_capacity(0);
         // list nontrivial measurements to be matched
-        if sparse_measurement.len() > 0 {
+        if !sparse_measurement.is_empty() {
             // run the Blossom algorithm
             let begin = Instant::now();
             let syndrome_pattern = self
@@ -324,7 +324,7 @@ impl FusionBlossomAdaptor {
         sparse_measurement: &SparseMeasurement,
         sparse_detected_erasures: &SparseErasures,
     ) -> SyndromePattern {
-        assert!(sparse_detected_erasures.len() == 0, "erasure not implemented");
+        assert!(sparse_detected_erasures.is_empty(), "erasure not implemented");
         let mut syndrome_pattern = SyndromePattern::new_empty();
         for defect_vertex in sparse_measurement.iter() {
             if self.position_to_vertex_mapping.contains_key(defect_vertex) {

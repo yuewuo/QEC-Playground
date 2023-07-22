@@ -3,8 +3,9 @@ all: test check build python
 fmt:
 	cargo fmt --check
 
+# A collection of lints to catch common mistakes and improve your Rust code.
 clippy:
-	cargo clippy -- -Dwarnings  # A collection of lints to catch common mistakes and improve your Rust code.
+	cargo clippy -- -Dwarnings
 
 clean:
 	cargo clean
@@ -12,12 +13,10 @@ clean:
 clean-env: clean fmt clippy
 
 test: clean-env
-	cargo clean
 	cargo test
 	cargo run --release -- test all
 
 build: clean-env
-	cargo clean
 	cargo test --no-run
 	cargo test --no-run --release
 	cargo build

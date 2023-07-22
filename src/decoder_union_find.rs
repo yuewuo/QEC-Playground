@@ -464,7 +464,7 @@ impl UnionFindDecoder {
             begin.elapsed().as_secs_f64()
         };
         // load the erasure information
-        if sparse_detected_erasures.len() > 0 {
+        if !sparse_detected_erasures.is_empty() {
             let erasure_edges = sparse_detected_erasures.get_erasure_edges(&self.erasure_graph);
             for erasure_edge in erasure_edges.iter() {
                 match erasure_edge {
@@ -487,7 +487,7 @@ impl UnionFindDecoder {
             self.run_single_iteration_optional_grow(true); // need to update the state of clusters after manually set the growth of each edge
         }
         // decode
-        let time_run_to_stable = if sparse_measurement.len() > 0 {
+        let time_run_to_stable = if !sparse_measurement.is_empty() {
             let begin = Instant::now();
             if true {
                 // set to false when debugging

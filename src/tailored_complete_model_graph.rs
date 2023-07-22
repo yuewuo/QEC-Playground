@@ -44,11 +44,9 @@ impl Clone for CompleteTailoredModelGraphNode {
             timestamp: self.timestamp,
             previous: None,
         };
-        if self.duplicate_on_clone {
-            if self.precomputed.is_some() {
-                // allocate new memory to copy the precomputed data
-                result.precomputed = Some(Arc::new((**self.precomputed.as_ref().unwrap()).clone()));
-            }
+        if self.duplicate_on_clone && self.precomputed.is_some() {
+            // allocate new memory to copy the precomputed data
+            result.precomputed = Some(Arc::new((**self.precomputed.as_ref().unwrap()).clone()));
         }
         result
     }
@@ -156,7 +154,7 @@ impl TailoredCompleteModelGraph {
     }
 
     /// get tailored matching edges in a batch manner to improve speed if need to run Dijkstra's algorithm on the fly;
-    pub fn get_tailored_matching_edges(&mut self, position: &Position, targets: &Vec<Position>) -> [Vec<(usize, f64)>; 2] {
+    pub fn get_tailored_matching_edges(&mut self, position: &Position, targets: &[Position]) -> [Vec<(usize, f64)>; 2] {
         if !self.precompute_complete_model_graph {
             self.precompute_dijkstra_subset(position, &mut [0, 1].into_iter());
         }
@@ -188,7 +186,7 @@ impl TailoredCompleteModelGraph {
 
     /// get neutral matching edges in a batch manner to improve speed if need to run Dijkstra's algorithm on the fly;
     /// note that this will also include zero weight edges
-    pub fn get_neutral_matching_edges(&mut self, position: &Position, targets: &Vec<Position>) -> Vec<(usize, f64)> {
+    pub fn get_neutral_matching_edges(&mut self, position: &Position, targets: &[Position]) -> Vec<(usize, f64)> {
         if !self.precompute_complete_model_graph {
             self.precompute_dijkstra_subset(position, &mut [2].into_iter());
         }
@@ -199,10 +197,8 @@ impl TailoredCompleteModelGraph {
         for (index, target) in targets.iter().enumerate() {
             if let Some(edge) = positive_precomputed.edges.get(target) {
                 neutral_edges.push((index, edge.weight));
-            } else {
-                if target == position {
-                    neutral_edges.push((index, 0.));
-                }
+            } else if target == position {
+                neutral_edges.push((index, 0.));
             }
         }
         if !self.precompute_complete_model_graph {
@@ -270,7 +266,7 @@ impl TailoredCompleteModelGraph {
             pq.push(position.clone(), PriorityElement::new(0., position.clone()));
             loop {
                 // until no more elements
-                if pq.len() == 0 {
+                if pq.is_empty() {
                     break;
                 }
                 let (
@@ -316,7 +312,7 @@ impl TailoredCompleteModelGraph {
                         let mut update = &edge_weight < existing_weight;
                         if &edge_weight == existing_weight {
                             let distance = target.distance(&next);
-                            let existing_distance = target.distance(&existing_next);
+                            let existing_distance = target.distance(existing_next);
                             // prevent loop by enforcing strong non-descending
                             if distance < existing_distance || (distance == existing_distance && &next < existing_next) {
                                 update = true;
@@ -325,7 +321,7 @@ impl TailoredCompleteModelGraph {
                         if update {
                             if !self.precompute_complete_model_graph {
                                 // need to record `previous`
-                                let node = &mut self.get_node_mut_unwrap(&neighbor)[idx];
+                                let node = &mut self.get_node_mut_unwrap(neighbor)[idx];
                                 node.previous = Some(Arc::new(target.clone()));
                                 // eprintln!("position:{}, neighbor: {}, target: {}", position, neighbor, target);
                             }
@@ -337,7 +333,7 @@ impl TailoredCompleteModelGraph {
                         if neighbor_node.timestamp != active_timestamp {
                             if !self.precompute_complete_model_graph {
                                 // need to record `previous`
-                                let node = &mut self.get_node_mut_unwrap(&neighbor)[idx];
+                                let node = &mut self.get_node_mut_unwrap(neighbor)[idx];
                                 node.previous = Some(Arc::new(target.clone()));
                                 // eprintln!("position:{}, neighbor: {}, target: {}", position, neighbor, target);
                             }
@@ -356,9 +352,8 @@ impl TailoredCompleteModelGraph {
         self.precompute_complete_model_graph = precompute_complete_model_graph;
         // clear existing state
         simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if self.is_node_exist(position) {
-            let double_node = self.get_node_mut_unwrap(position);
-            for idx in 0..3 {
-                double_node[idx].precomputed = Some(Arc::new(PrecomputedData {
+            for node in self.get_node_mut_unwrap(position).iter_mut() {
+                node.precomputed = Some(Arc::new(PrecomputedData {
                     edges: BTreeMap::new(),
                 }));
             }
@@ -409,8 +404,8 @@ impl TailoredCompleteModelGraph {
                     if self.is_node_exist(position) {
                         let instance = &instances[counter % parallel];
                         let mut instance = instance.lock().unwrap();
-                        let node = self.get_node_mut_unwrap(&position);
-                        let instance_node = instance.get_node_mut_unwrap(&position);
+                        let node = self.get_node_mut_unwrap(position);
+                        let instance_node = instance.get_node_mut_unwrap(position);
                         for idx in 0..3 {
                             node[idx].precomputed = instance_node[idx].precomputed.clone();
                         }

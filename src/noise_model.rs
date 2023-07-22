@@ -78,6 +78,12 @@ pub struct NoiseModelNode {
     pub correlated_erasure_error_rates: Option<CorrelatedErasureErrorRates>,
 }
 
+impl Default for NoiseModelNode {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl NoiseModelNode {
@@ -183,34 +189,31 @@ impl NoiseModel {
 /// check if error rates are not zero at perfect measurement ranges or at (always) virtual nodes,
 /// also check for error rate constrains on virtual nodes
 pub fn noise_model_sanity_check(simulator: &Simulator, noise_model: &NoiseModel) -> Result<(), String> {
-    match simulator.code_size {
-        CodeSize { noisy_measurements, .. } => {
-            // check that no errors present in the final perfect measurement rounds
-            let expected_height = simulator.measurement_cycles * (noisy_measurements + 1) + 1;
-            if simulator.height != expected_height {
-                return Err(format!(
-                    "height {} is not expected {}, don't know where is perfect measurement",
-                    simulator.height, expected_height
-                ));
-            }
-            for t in simulator.height - simulator.measurement_cycles..simulator.height {
-                simulator_iter!(simulator, position, _node, t => t, {
-                    let noise_model_node = noise_model.get_node_unwrap(position);
-                    if !noise_model_node.is_noiseless() {
-                        return Err(format!("detected noisy position {} within final perfect measurement", position))
-                    }
-                });
-            }
-            // check all no error rate at virtual nodes
-            simulator_iter_virtual!(simulator, position, _node, {
-                // only check for virtual nodes
-                let noise_model_node = noise_model.get_node_unwrap(position);
-                if !noise_model_node.is_noiseless() {
-                    return Err(format!("detected noisy position {} which is virtual node", position));
-                }
-            });
-        }
+    let CodeSize { noisy_measurements, .. } = simulator.code_size;
+    // check that no errors present in the final perfect measurement rounds
+    let expected_height = simulator.measurement_cycles * (noisy_measurements + 1) + 1;
+    if simulator.height != expected_height {
+        return Err(format!(
+            "height {} is not expected {}, don't know where is perfect measurement",
+            simulator.height, expected_height
+        ));
     }
+    for t in simulator.height - simulator.measurement_cycles..simulator.height {
+        simulator_iter!(simulator, position, _node, t => t, {
+            let noise_model_node = noise_model.get_node_unwrap(position);
+            if !noise_model_node.is_noiseless() {
+                return Err(format!("detected noisy position {} within final perfect measurement", position))
+            }
+        });
+    }
+    // check all no error rate at virtual nodes
+    simulator_iter_virtual!(simulator, position, _node, {
+        // only check for virtual nodes
+        let noise_model_node = noise_model.get_node_unwrap(position);
+        if !noise_model_node.is_noiseless() {
+            return Err(format!("detected noisy position {} which is virtual node", position));
+        }
+    });
     simulator_iter!(simulator, position, node, {
         let noise_model_node = noise_model.get_node_unwrap(position);
         if node.is_virtual {

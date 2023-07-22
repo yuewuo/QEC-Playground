@@ -232,7 +232,7 @@ impl SimulatorNode {
 
     /// quick initialization to set miscellaneous information
     pub fn with_miscellaneous(mut self, miscellaneous: Option<serde_json::Value>) -> Self {
-        self.miscellaneous = miscellaneous.map(|x| Arc::new(x));
+        self.miscellaneous = miscellaneous.map(Arc::new);
         self
     }
 }
@@ -282,19 +282,11 @@ impl GateType {
         match self {
             // not sensitive to Z
             GateType::MeasureZ => {
-                if matches!(propagated, X | Y) {
-                    true
-                } else {
-                    false
-                }
+                matches!(propagated, X | Y)
             }
             // not sensitive to X
             GateType::MeasureX => {
-                if matches!(propagated, Z | Y) {
-                    true
-                } else {
-                    false
-                }
+                matches!(propagated, Z | Y)
             }
             _ => {
                 panic!("stabilizer measurement behavior not specified")
@@ -389,7 +381,7 @@ bind_trait_simulator_generics! {Simulator}
 impl Clone for Simulator {
     fn clone(&self) -> Self {
         Self {
-            code_type: self.code_type.clone(),
+            code_type: self.code_type,
             code_size: self.code_size.clone(),
             height: self.height,
             vertical: self.vertical,
@@ -426,10 +418,6 @@ impl Simulator {
         node.set_error_temp(&error);
     }
 
-    pub fn clone(&self) -> Self {
-        Clone::clone(self)
-    }
-
     pub fn volume(&self) -> usize {
         self.height * self.vertical * self.horizontal
     }
@@ -449,20 +437,20 @@ impl Simulator {
     /// check if this node is a real node, i.e. physically exist in the simulation
     #[inline]
     pub fn is_node_real(&self, position: &Position) -> bool {
-        self.is_node_exist(position) && self.get_node_unwrap(position).is_virtual == false
+        self.is_node_exist(position) && !self.get_node_unwrap(position).is_virtual
     }
 
     /// check if this node is a virtual node, i.e. non-existing but just work as a virtual boundary
     /// (they can be viewed as the missing stabilizers on the boundary)
     #[inline]
     pub fn is_node_virtual(&self, position: &Position) -> bool {
-        self.is_node_exist(position) && self.get_node_unwrap(position).is_virtual == true
+        self.is_node_exist(position) && self.get_node_unwrap(position).is_virtual
     }
 
     /// check if this node is a virtual node, i.e. non-existing but just work as a virtual boundary
     pub fn set_error_rates(&mut self, noise_model: &mut NoiseModel, px: f64, py: f64, pz: f64, pe: f64) {
         assert!(px + py + pz <= 1. && px >= 0. && py >= 0. && pz >= 0.);
-        assert!(pe <= 1. && pe >= 0.);
+        assert!((0. ..=1.).contains(&pe));
         if self.measurement_cycles == 1 {
             println!("[warning] setting error rates of unknown code, no perfect measurement protection is enabled");
         }
@@ -523,13 +511,10 @@ impl Simulator {
             }
             // find in hash map
             let hash_key = serde_hashkey::to_key_with_ordered_float(&node_arc).expect("hash");
-            match node_map.get(&hash_key) {
-                Some(existing_arc) => {
-                    // println!("found same noise model node, compressing it...");
-                    noise_model.set_node(position, Some(existing_arc.clone()));
-                    continue;
-                }
-                None => {}
+            if let Some(existing_arc) = node_map.get(&hash_key) {
+                // println!("found same noise model node, compressing it...");
+                noise_model.set_node(position, Some(existing_arc.clone()));
+                continue;
             }
             // if not found, this is a new value
             arc_set.insert(node_pointer);
@@ -591,10 +576,10 @@ impl Simulator {
         // propagation from virtual to real is forbidden
         let propagate_to_peer_forbidden = node.is_virtual && !node.is_peer_virtual;
         // error will propagated to itself at `t+1`, this will initialize `propagated` at `t+1`
-        let node_propagated = node.propagated.clone();
+        let node_propagated = node.propagated;
         let node_gate_peer = node.gate_peer.clone();
         let propagate_to_next = node.error.multiply(&node_propagated);
-        let gate_type = node.gate_type.clone();
+        let gate_type = node.gate_type;
         let next_position = &mut position.clone();
         next_position.t += 1;
         let next_node = self.get_node_mut_unwrap(next_position);
@@ -651,7 +636,7 @@ impl Simulator {
         &mut self,
         sparse_errors: &SparseErrorPattern,
     ) -> (SparseCorrection, SparseMeasurement, SparseMeasurement) {
-        if sparse_errors.len() == 0 {
+        if sparse_errors.is_empty() {
             println!("[warning] why calling fast measurement given no error?");
             return (SparseCorrection::new(), SparseMeasurement::new(), SparseMeasurement::new());
         }
@@ -689,9 +674,8 @@ impl Simulator {
             let mut pending_interested_region = Vec::new();
             for &(i, j) in interested_region.iter() {
                 let propagated_neighbor = self.propagate_error_from(&pos!(t - 1, i, j));
-                match propagated_neighbor {
-                    Some(peer) => pending_interested_region.push((peer.i, peer.j)),
-                    None => {}
+                if let Some(peer) = propagated_neighbor {
+                    pending_interested_region.push((peer.i, peer.j));
                 }
             }
             for (i, j) in pending_interested_region.drain(..) {
@@ -938,18 +922,18 @@ impl SimulatorGenerics for Simulator {
         }
         // apply pending pauli errors
         for (position, peer_error) in pending_pauli_errors.iter() {
-            let node = self.get_node_mut_unwrap(&position);
+            let node = self.get_node_mut_unwrap(position);
             if node.error != I {
                 error_count -= 1;
             }
-            node.set_error_temp(&node.error.multiply(&peer_error));
+            node.set_error_temp(&node.error.multiply(peer_error));
             if node.error != I {
                 error_count += 1;
             }
         }
         // apply pending erasure errors, amd generate random pauli error because of those erasures
         for position in pending_erasure_errors.iter() {
-            let node = self.get_node_mut_unwrap(&position);
+            let node = self.get_node_mut_unwrap(position);
             if !node.has_erasure {
                 // only counts new erasures; there might be duplicated pending erasure
                 erasure_count += 1;
@@ -1130,7 +1114,7 @@ impl Simulator {
         position: &Position,
         has_erasure: bool,
     ) -> Result<(), String> {
-        if has_erasure == false {
+        if !has_erasure {
             self.get_node_mut_unwrap(position).has_erasure = false;
             return Ok(());
         }
@@ -1359,7 +1343,7 @@ impl<'de> Visitor<'de> for PositionVisitor {
     type Value = Position;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "{}", r#"position should look like "[0][10][13]""#)
+        write!(formatter, r#"position should look like "[0][10][13]""#)
     }
 
     fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
@@ -1443,7 +1427,6 @@ impl<'de> Visitor<'de> for SparseMeasurement {
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             formatter,
-            "{}",
             r#"sparse measurement like ["[0][10][13]","[0][10][7]","[0][10][8]"]"#
         )
     }
@@ -1467,6 +1450,12 @@ impl<'de> Deserialize<'de> for SparseMeasurement {
     {
         // the new-ed error pattern just works like a helper type that implements Visitor trait, not optimized for efficiency
         deserializer.deserialize_seq(SparseMeasurement::new())
+    }
+}
+
+impl Default for SparseMeasurement {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -1501,6 +1490,9 @@ impl SparseMeasurement {
     pub fn len(&self) -> usize {
         self.defects.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.defects.is_empty()
+    }
 }
 
 impl SparseMeasurement {
@@ -1508,7 +1500,7 @@ impl SparseMeasurement {
         Self { defects }
     }
     /// convert vector to sparse measurement
-    pub fn from_vec(defects: &Vec<Position>) -> Self {
+    pub fn from_vec(defects: &[Position]) -> Self {
         let mut sparse_measurement = Self::new();
         for position in defects.iter() {
             debug_assert!(
@@ -1520,7 +1512,7 @@ impl SparseMeasurement {
         sparse_measurement
     }
     /// iterator
-    pub fn iter<'a>(&'a self) -> std::collections::btree_set::Iter<'a, Position> {
+    pub fn iter(&self) -> std::collections::btree_set::Iter<Position> {
         self.defects.iter()
     }
 }
@@ -1554,7 +1546,6 @@ impl<'de> Visitor<'de> for SparseErasures {
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             formatter,
-            "{}",
             r#"sparse detected erasure like ["[0][10][13]","[0][10][7]","[0][10][8]"]"#
         )
     }
@@ -1581,6 +1572,12 @@ impl<'de> Deserialize<'de> for SparseErasures {
     }
 }
 
+impl Default for SparseErasures {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pymethods)]
 impl SparseErasures {
@@ -1603,6 +1600,9 @@ impl SparseErasures {
     pub fn len(&self) -> usize {
         self.erasures.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.erasures.is_empty()
+    }
     /// contains element
     pub fn contains(&self, key: &Position) -> bool {
         self.erasures.contains(key)
@@ -1616,7 +1616,7 @@ impl SparseErasures {
 
 impl SparseErasures {
     /// iterator
-    pub fn iter<'a>(&'a self) -> std::collections::btree_set::Iter<'a, Position> {
+    pub fn iter(&self) -> std::collections::btree_set::Iter<Position> {
         self.erasures.iter()
     }
     /// compute the edges that are re-weighted to 0 because of these erasures
@@ -1640,6 +1640,12 @@ pub struct SparseErrorPattern {
     /// error happening at position: Position (t, i, j)
     #[cfg_attr(feature = "python_binding", pyo3(get, set))]
     pub errors: BTreeMap<Position, ErrorType>,
+}
+
+impl Default for SparseErrorPattern {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[cfg_attr(feature = "python_binding", cfg_eval)]
@@ -1677,6 +1683,9 @@ impl SparseErrorPattern {
     pub fn len(&self) -> usize {
         self.errors.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.errors.is_empty()
+    }
     pub fn to_vec(&self) -> Vec<(Position, ErrorType)> {
         self.iter().map(|(position, error)| ((*position).clone(), *error)).collect()
     }
@@ -1687,11 +1696,11 @@ impl SparseErrorPattern {
         Self { errors }
     }
     /// iterator
-    pub fn iter<'a>(&'a self) -> std::collections::btree_map::Iter<'a, Position, ErrorType> {
+    pub fn iter(&self) -> std::collections::btree_map::Iter<Position, ErrorType> {
         self.errors.iter()
     }
     /// iterator
-    pub fn iter_mut<'a>(&'a mut self) -> std::collections::btree_map::IterMut<'a, Position, ErrorType> {
+    pub fn iter_mut(&mut self) -> std::collections::btree_map::IterMut<Position, ErrorType> {
         self.errors.iter_mut()
     }
     /// get element
@@ -1719,8 +1728,7 @@ impl<'de> Visitor<'de> for SparseErrorPattern {
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             formatter,
-            "{}",
-            r#"sparse error pattern like {"[0][10][13]":"Z","[0][10][7]":"X","[0][10][8]":"Y"}"#
+            r#"sparse error pattern like {{"[0][10][13]":"Z","[0][10][7]":"X","[0][10][8]":"Y"}}"#
         )
     }
 
@@ -1751,6 +1759,12 @@ impl<'de> Deserialize<'de> for SparseErrorPattern {
 #[derive(Debug, Clone, Deserialize)]
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub struct SparseCorrection(SparseErrorPattern);
+
+impl Default for SparseCorrection {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pymethods)]
@@ -1798,6 +1812,9 @@ impl SparseCorrection {
     pub fn len(&self) -> usize {
         self.0.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
     pub fn to_vec(&self) -> Vec<(Position, ErrorType)> {
         self.0.to_vec()
     }
@@ -1805,11 +1822,11 @@ impl SparseCorrection {
 
 impl SparseCorrection {
     /// iterator
-    pub fn iter<'a>(&'a self) -> std::collections::btree_map::Iter<'a, Position, ErrorType> {
+    pub fn iter(&self) -> std::collections::btree_map::Iter<Position, ErrorType> {
         self.0.iter()
     }
     /// iterator
-    pub fn iter_mut<'a>(&'a mut self) -> std::collections::btree_map::IterMut<'a, Position, ErrorType> {
+    pub fn iter_mut(&mut self) -> std::collections::btree_map::IterMut<Position, ErrorType> {
         self.0.iter_mut()
     }
     /// get element

@@ -240,8 +240,8 @@ impl SimulatorCompact {
                 handler.join().unwrap();
             }
             // move the data from instances (without additional large memory allocation)
-            for parallel_idx in 0..parallel {
-                let mut instance = instances[parallel_idx].lock().unwrap();
+            for instance in instances.iter() {
+                let mut instance = instance.lock().unwrap();
                 simulator_compact.error_sources.append(&mut instance.error_sources);
             }
         }
@@ -301,7 +301,7 @@ impl SimulatorCompact {
                     let mut sparse_errors = SparseErrorPattern::new();
                     match error {
                         Either::Left(error_type) => {
-                            sparse_errors.add(position.clone(), error_type.clone());
+                            sparse_errors.add(position.clone(), *error_type);
                         }
                         Either::Right(error_type) => {
                             sparse_errors.add(position.clone(), error_type.my_error());
@@ -317,7 +317,7 @@ impl SimulatorCompact {
                     let (sparse_correction, sparse_measurement_real, _sparse_measurement_virtual) =
                         simulator.fast_measurement_given_few_errors(&sparse_errors);
                     let sparse_measurement_real = sparse_measurement_real.to_vec();
-                    if sparse_measurement_real.len() == 0 {
+                    if sparse_measurement_real.is_empty() {
                         // no way to detect it, ignore
                         continue;
                     }
