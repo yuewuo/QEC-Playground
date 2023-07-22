@@ -773,6 +773,7 @@ watch([display_model_hypergraph, t_range], update_visible_model_hypergraph, { de
 export const existed_tailored_model_graph = ref(false)
 export const display_tailored_model_graph = ref(get_url_bool("display_tailored_model_graph", false))
 export const tailored_model_graph_region_display = ref([0, 1, 2])  // by default display all three graphs
+export const existed_tailored_unfixed_stabilizer = ref(false)
 export const display_tailored_unfixed_stabilizer = ref(false)
 export function update_visible_tailored_model_graph() {
     const active_regions = {}
@@ -1333,6 +1334,7 @@ export async function refresh_qecp_data() {
                 }
             }
             // create geometries for unfixed stabilizers
+            existed_tailored_unfixed_stabilizer.value = qecp_data.tailored_model_graph.unfixed_stabilizers.length != 0
             for (const position_str in qecp_data.tailored_model_graph.unfixed_stabilizers) {
                 const { t, i, j } = get_position(position_str)
                 const position = qecp_data.simulator.positions[i][j]
