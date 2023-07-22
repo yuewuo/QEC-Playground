@@ -47,7 +47,7 @@ impl Clone for FusionDecoder {
         };
         Self {
             adaptor: self.adaptor.clone(),
-            fusion_solver: fusion_solver,
+            fusion_solver,
             config: self.config.clone(),
         }
     }
@@ -72,6 +72,8 @@ pub struct FusionDecoderConfig {
     pub max_half_weight: usize,
     #[serde(default = "fusion_default_configs::skip_decoding")]
     pub skip_decoding: bool,
+    #[serde(default = "fusion_default_configs::log_matchings")]
+    pub log_matchings: bool,
 }
 
 pub mod fusion_default_configs {
@@ -82,6 +84,9 @@ pub mod fusion_default_configs {
         5000
     }
     pub fn skip_decoding() -> bool {
+        false
+    }
+    pub fn log_matchings() -> bool {
         false
     }
 }
@@ -114,8 +119,8 @@ impl FusionDecoder {
         let fusion_solver = fusion_blossom::mwpm_solver::SolverSerial::new(&adaptor.initializer);
         Self {
             adaptor: Arc::new(adaptor),
-            fusion_solver: fusion_solver,
-            config: config,
+            fusion_solver,
+            config,
         }
     }
 
@@ -141,6 +146,7 @@ impl FusionDecoder {
         let mut correction = SparseCorrection::new();
         let mut time_fusion = 0.;
         let mut time_build_correction = 0.;
+        let mut log_matchings = Vec::with_capacity(0);
         // list nontrivial measurements to be matched
         if sparse_measurement.len() > 0 {
             // run the Blossom algorithm
@@ -149,20 +155,60 @@ impl FusionDecoder {
                 .adaptor
                 .generate_syndrome_pattern(sparse_measurement, sparse_detected_erasures);
             self.fusion_solver.solve(&syndrome_pattern);
-            let subgraph = self.fusion_solver.subgraph();
+            let subgraph: Vec<usize> = self.fusion_solver.subgraph();
+            if self.config.log_matchings {
+                // log the subgraph
+                let mut subgraph_edges = vec![];
+                for &edge_index in subgraph.iter() {
+                    let (vertex_1, vertex_2, _) =
+                        self.adaptor.initializer.weighted_edges[edge_index];
+                    let position_1 = self.adaptor.vertex_to_position_mapping[vertex_1].clone();
+                    let position_2 = self.adaptor.vertex_to_position_mapping[vertex_2].clone();
+                    subgraph_edges.push((position_1, position_2));
+                }
+                log_matchings.push(json!({
+                    "name": "subgraph",
+                    "description": "elementary fault edges",
+                    "edges": subgraph_edges,
+                }));
+                // also log the perfect matching
+                let mut perfect_matching_edges = vec![];
+                let perfect_matching = self.fusion_solver.perfect_matching();
+                for (node_ptr_1, node_ptr_2) in perfect_matching.peer_matchings.iter() {
+                    let vertex_1 = node_ptr_1.get_representative_vertex();
+                    let vertex_2 = node_ptr_2.get_representative_vertex();
+                    let position_1 = self.adaptor.vertex_to_position_mapping[vertex_1].clone();
+                    let position_2 = self.adaptor.vertex_to_position_mapping[vertex_2].clone();
+                    perfect_matching_edges.push((position_1, position_2));
+                }
+                for (node_ptr, virtual_vertex) in perfect_matching.virtual_matchings.iter() {
+                    let vertex = node_ptr.get_representative_vertex();
+                    let position_1 = self.adaptor.vertex_to_position_mapping[vertex].clone();
+                    let position_2 =
+                        self.adaptor.vertex_to_position_mapping[*virtual_vertex].clone();
+                    perfect_matching_edges.push((position_1, position_2));
+                }
+                log_matchings.push(json!({
+                    "name": "perfect matching",
+                    "description": "the paths of the perfect matching",
+                    "edges": perfect_matching_edges,
+                }));
+            }
             self.fusion_solver.clear();
             time_fusion += begin.elapsed().as_secs_f64();
             correction = self.adaptor.subgraph_to_correction(&subgraph);
             time_build_correction += begin.elapsed().as_secs_f64();
         }
-        (
-            correction,
-            json!({
-                "to_be_matched": sparse_measurement.len(),
-                "time_fusion": time_fusion,
-                "time_build_correction": time_build_correction,
-            }),
-        )
+        let mut runtime_statistics = json!({
+            "to_be_matched": sparse_measurement.len(),
+            "time_fusion": time_fusion,
+            "time_build_correction": time_build_correction,
+        });
+        if self.config.log_matchings {
+            let runtime_statistics = runtime_statistics.as_object_mut().unwrap();
+            runtime_statistics.insert("log_matchings".to_string(), json!(log_matchings));
+        }
+        (correction, runtime_statistics)
     }
 }
 

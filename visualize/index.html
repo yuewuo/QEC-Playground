@@ -352,6 +352,15 @@
                             :label="display_error_pattern ? '&nbsp;→ Correction&nbsp;' : '→ Actual Error'"
                             @click="toggle_error_correction"></q-btn>
                     </div>
+                    <div class="display-options-row-left" v-if="log_matchings_options.length > 0">
+                        <div><q-toggle color="brown" left-label v-model="display_matchings" label="Matchings: "
+                                size="md" />
+                        </div>
+                        <div style="margin-top: 3px;">
+                            <q-option-group v-model="log_matchings_display" :options="log_matchings_options"
+                                color="green" type="toggle" inline left-label dense />
+                        </div>
+                    </div>
                 </div>
                 <q-card bordered class="select-info-div"
                     v-if="current_selected != null && current_selected.type == 'qubit'">

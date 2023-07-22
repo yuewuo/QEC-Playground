@@ -82,6 +82,8 @@ const App = {
             existed_noise_model: gui3d.existed_noise_model,
             display_noise_model_pauli: gui3d.display_noise_model_pauli,
             display_noise_model_erasure: gui3d.display_noise_model_erasure,
+            display_matchings: gui3d.display_matchings,
+            log_matchings_display: gui3d.log_matchings_display,
             t_range: gui3d.t_range,
             t_length: gui3d.t_length,
             non_zero_color: "red",
@@ -648,6 +650,15 @@ const App = {
             let options = []
             for (let i = 0; i < 3; ++i) {
                 options.push({ label: labels[i] + ":", value: i, color: gui3d.sequential_colors[i + 1][0] })
+            }
+            return options
+        },
+        log_matchings_options() {
+            const log_matchings_name_vec = gui3d.log_matchings_name_vec.value
+            let options = []
+            for (let i = 0; i < log_matchings_name_vec.length; ++i) {
+                let log_matchings = log_matchings_name_vec[i]
+                options.push({ label: log_matchings.name + ":", value: i, color: gui3d.sequential_colors[i][0] })
             }
             return options
         },

@@ -1315,6 +1315,7 @@ impl SimulationWorker {
                             "decode": decode_elapsed,
                             "validate": validate_elapsed,
                         },
+                        "runtime_statistics": runtime_statistics,
                     });
                     let mut visualizer = visualizer.lock().unwrap();
                     visualizer.add_case(case).unwrap();

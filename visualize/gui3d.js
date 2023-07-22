@@ -159,6 +159,11 @@ export const t_range = ref({ min: 0, max: 0 })
 export function in_t_range(t) {
     return t >= t_range.value.min && t < t_range.value.max
 }
+export function in_t_range_any(t1, t2) {
+    const ts = Math.min(t1, t2)
+    const te = Math.max(t1, t2)
+    return !(ts >= t_range.value.max || te < t_range.value.min)
+}
 
 // create common geometries
 const segment = parseInt(urlParams.get('segment') || 128)  // higher segment will consume more GPU resources
@@ -233,6 +238,9 @@ function get_hyperedge_geometry(hyperedge_degree) {
     if (hyperedge_degree - 1 < hyperedge_geometries.length) return hyperedge_geometries[hyperedge_degree - 1]
     return hyperedge_geometries[hyperedge_geometries.length - 1]
 }
+const matching_edge_radius = parseFloat(urlParams.get('matching_edge_radius') || 0.06)
+const matching_edge_geometry = new THREE.CylinderGeometry(matching_edge_radius, matching_edge_radius, 1, segment, 1, true)
+matching_edge_geometry.translate(0, 0.5, 0)
 
 // measurement bits
 const measurement_radius = parseFloat(urlParams.get('measurement_radius') || 0.06)
@@ -473,6 +481,7 @@ export var error_pattern_vec_meshes = []
 export var correction_vec_meshes = []
 export var contributed_noise_sources = []
 export var detected_erasure_meshes = []
+export var matching_meshes = []
 
 // update the sizes of objects
 watch(qubit_radius_scale, (newVal, oldVal) => {
@@ -803,7 +812,6 @@ export async function refresh_qecp_data() {
         const nodes = qecp_data.simulator.nodes
         // clear hover and select
         current_hover.value = null
-        let current_selected_value = JSON.parse(JSON.stringify(current_selected.value))
         current_selected.value = null
         await Vue.nextTick()
         await Vue.nextTick()
@@ -1436,6 +1444,24 @@ export async function refresh_qecp_data() {
     }
 }
 
+export const log_matchings_name_vec = ref([])
+export const log_matchings_display = ref([])
+export const display_matchings = ref(true)
+export function update_visible_matchings() {
+    const active_matchings = {}
+    for (const matching_index of Object.values(log_matchings_display.value)) active_matchings[matching_index] = true
+    for (let i = 0; i < matching_meshes.length; i++) {
+        const mesh_vec = matching_meshes[i]
+        for (let j = 0; j < mesh_vec.length; j++) {
+            const edge_mesh = mesh_vec[j]
+            const is_active = display_matchings.value && active_matchings[i] == true
+            const in_range = in_t_range_any(edge_mesh.userData.t1, edge_mesh.userData.t2)
+            edge_mesh.visible = is_active && in_range
+        }
+    }
+}
+watch([log_matchings_display, display_matchings, t_range], update_visible_matchings, { deep: true })
+
 export const active_qecp_data = shallowRef(null)
 export const active_case_idx = ref(0)
 export async function refresh_case() {
@@ -1453,8 +1479,6 @@ export async function refresh_case() {
         // constants
         const height = qecp_data.simulator.height
         const t_bias = -height / 2
-        const vertical = qecp_data.simulator.vertical
-        const horizontal = qecp_data.simulator.horizontal
         // draw measurements
         dispose_mesh_1d_array(defect_measurement_meshes)
         dispose_mesh_1d_array(defect_measurement_outline_meshes)
@@ -1593,6 +1617,53 @@ export async function refresh_case() {
             }
         }
         update_visible_correction()
+        // draw matchings
+        dispose_mesh_2d_array(matching_meshes)
+        matching_meshes = []
+        log_matchings_name_vec.value = []
+        if (active_case.runtime_statistics?.log_matchings) {
+            const name_vec = []
+            const log_matchings = active_case.runtime_statistics.log_matchings
+            for (let i = 0; i < log_matchings.length; i++) {
+                const log_matching = log_matchings[i]
+                name_vec.push({
+                    name: log_matching.name,
+                    desc: log_matching.description,
+                })
+                const mesh_vec = []
+                for (let j = 0; j < log_matching.edges.length; ++j) {
+                    const [position_str_1, position_str_2] = log_matching.edges[j]
+                    const { t: t1, i: i1, j: j1 } = get_position(position_str_1)
+                    const { t: t2, i: i2, j: j2 } = get_position(position_str_2)
+                    const position_1 = qecp_data.simulator.positions[i1][j1]
+                    const position_2 = qecp_data.simulator.positions[i2][j2]
+                    const display_position_1 = { t: t1 + t_bias, x: position_1.x, y: position_1.y }
+                    const display_position_2 = { t: t2 + t_bias, x: position_2.x, y: position_2.y }
+                    const line_mesh = new THREE.Mesh(
+                        matching_edge_geometry,
+                        model_graph_vertex_material_vec[i]
+                    )
+                    line_mesh.userData = {
+                        type: "matching_edge",
+                        t1, t2,
+                        matching_idx: i,
+                        edge_idx: j,
+                    }
+                    const relative = compute_vector3(display_position_2).add(compute_vector3(display_position_1).multiplyScalar(-1))
+                    const direction = relative.clone().normalize()
+                    const quaternion = new THREE.Quaternion()
+                    quaternion.setFromUnitVectors(unit_up_vector, direction)
+                    load_position(line_mesh.position, display_position_1)
+                    line_mesh.scale.set(1, relative.length(), 1)
+                    line_mesh.setRotationFromQuaternion(quaternion)
+                    scene.add(line_mesh)
+                    mesh_vec.push(line_mesh)
+                }
+                matching_meshes.push(mesh_vec)
+            }
+            log_matchings_name_vec.value = name_vec
+        }
+        update_visible_matchings()
         // reset select
         await Vue.nextTick()
         if (is_user_data_valid(current_selected_value)) {
