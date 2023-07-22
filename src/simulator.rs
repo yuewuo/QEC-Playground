@@ -840,7 +840,7 @@ impl SimulatorGenerics for Simulator {
         }
         // apply pending erasure errors, amd generate random pauli error because of those erasures
         for position in pending_erasure_errors.iter() {
-            let mut node = self.get_node_mut_unwrap(&position);
+            let node = self.get_node_mut_unwrap(&position);
             if !node.has_erasure {  // only counts new erasures; there might be duplicated pending erasure
                 erasure_count += 1;
             }
