@@ -336,8 +336,13 @@
                                 size="md" /></div>
                     </div>
                     <div class="display-options-row-left" v-if="existed_tailored_model_graph">
-                        <div><q-toggle left-label v-model="display_tailored_model_graph" label="Tailored Model Graph: "
+                        <div><q-toggle left-label v-model="display_tailored_model_graph" label="Tailored Graph: "
                                 size="md" /></div>
+                        <div style="margin-top: 3px;">
+                            <q-option-group v-model="tailored_model_graph_region_display"
+                                :options="tailored_model_graph_region_options" color="green" type="toggle" inline
+                                left-label dense />
+                        </div>
                     </div>
                     <div class="display-options-row-left" v-if="case_select > 0">
                         <span style="line-height: 42px;">Case [{{ case_select }}]: </span>

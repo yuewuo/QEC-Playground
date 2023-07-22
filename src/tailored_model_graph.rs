@@ -59,6 +59,8 @@ impl QecpVisualizer for TailoredModelGraph {
                     }).collect::<Vec<Option<serde_json::Value>>>()
                 }).collect::<Vec<Vec<Option<serde_json::Value>>>>()
             }).collect::<Vec<Vec<Vec<Option<serde_json::Value>>>>>(),
+            "virtual_nodes": self.virtual_nodes,
+            "corner_virtual_nodes": self.corner_virtual_nodes,
         });
         (name.to_string(), info)
     }

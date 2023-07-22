@@ -17,7 +17,7 @@ if (is_mock) {
 if (typeof Vue === 'undefined') {
     global.Vue = await import('vue')
 }
-const { ref, reactive, watch, computed } = Vue
+const { ref, watch } = Vue
 
 // fetch visualization data
 const urlParams = new URLSearchParams(window.location.search)
@@ -75,6 +75,9 @@ const App = {
             model_graph_region_display: gui3d.model_graph_region_display,
             existed_model_hypergraph: gui3d.existed_model_hypergraph,
             display_model_hypergraph: gui3d.display_model_hypergraph,
+            existed_tailored_model_graph: gui3d.existed_tailored_model_graph,
+            display_tailored_model_graph: gui3d.display_tailored_model_graph,
+            tailored_model_graph_region_display: gui3d.tailored_model_graph_region_display,
             existed_noise_model: gui3d.existed_noise_model,
             display_noise_model_pauli: gui3d.display_noise_model_pauli,
             display_noise_model_erasure: gui3d.display_noise_model_erasure,
@@ -514,6 +517,14 @@ const App = {
             let options = []
             for (let i = 0; i < regions; ++i) {
                 options.push({ label: (i == 0 ? "regions: " : "") + `${i}`, value: i, color: gui3d.sequential_colors[i][0] })
+            }
+            return options
+        },
+        tailored_model_graph_region_options() {
+            const labels = ["positive", "negative", "neutral"]
+            let options = []
+            for (let i = 0; i < 3; ++i) {
+                options.push({ label: labels[i] + ":", value: i, color: gui3d.sequential_colors[i + 1][0] })
             }
             return options
         },

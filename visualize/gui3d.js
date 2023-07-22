@@ -396,6 +396,13 @@ export const model_hypergraph_edge_material = new THREE.MeshStandardMaterial({
     transparent: true,
     side: THREE.FrontSide,
 })
+export const tailored_model_graph_vertex_material = build_solid_material("black")
+export const tailored_model_graph_virtual_vertex_material = build_solid_material(0xffeb3b)
+export const tailored_model_graph_corner_vertex_material = build_solid_material(0xf44336)
+export const tailored_model_graph_edge_material_vec = []
+for (let i = 0; i < 3; ++i) {
+    tailored_model_graph_edge_material_vec.push(build_solid_material(sequential_colors[i + 1][1]))
+}
 
 build_solid_material(0x006699)
 export const idle_gate_material = new THREE.MeshStandardMaterial({
@@ -456,6 +463,8 @@ export var noise_model_pauli_meshes = []
 export var noise_model_erasure_meshes = []
 export var model_hypergraph_vertex_meshes = []
 export var model_hypergraph_edge_vec_meshes = []
+export var tailored_model_graph_vertex_meshes = []
+export var tailored_model_graph_edge_vec_meshes = []
 
 // meshes of a specific case
 export var defect_measurement_meshes = []
@@ -741,6 +750,30 @@ export function update_visible_model_hypergraph() {
     }
 }
 watch([display_model_hypergraph, t_range], update_visible_model_hypergraph, { deep: true })
+// tailored model graph
+export const existed_tailored_model_graph = ref(false)
+export const display_tailored_model_graph = ref(get_url_bool("display_tailored_model_graph", false))
+export const tailored_model_graph_region_display = ref([0, 1, 2])  // by default display all three graphs
+export function update_visible_tailored_model_graph() {
+    const active_regions = {}
+    for (const active_region of Object.values(tailored_model_graph_region_display.value)) active_regions[active_region] = true
+    for (let t = 0; t < qecp_data.simulator.height; ++t) {
+        for (let i = 0; i < qecp_data.simulator.vertical; ++i) {
+            for (let j = 0; j < qecp_data.simulator.horizontal; ++j) {
+                const mesh = tailored_model_graph_vertex_meshes[t][i][j]
+                if (mesh != null) {
+                    mesh.visible = display_tailored_model_graph.value && in_t_range(t)
+                    for (const edge_mesh of tailored_model_graph_edge_vec_meshes[t][i][j]) {
+                        let tsg = edge_mesh.userData.tsg
+                        const visible = display_tailored_model_graph.value && active_regions[tsg] == true
+                        edge_mesh.visible = visible && in_t_range(t)
+                    }
+                }
+            }
+        }
+    }
+}
+watch([tailored_model_graph_region_display, display_tailored_model_graph, t_range], update_visible_tailored_model_graph, { deep: true })
 // noise model
 export const existed_noise_model = ref(false)
 export const display_noise_model_pauli = ref(get_url_bool("display_noise_model_pauli", true))
@@ -828,7 +861,9 @@ export async function refresh_qecp_data() {
                 for (let j = 0; j < horizontal; ++j) {
                     const node = nodes[t][i][j]
                     const next_node = nodes[t + 1]?.[i]?.[j]
-                    if ((t == height - 1 && node != null && !node.v) || (next_node != null && !next_node.v && !(next_node.gt == "InitializeX" || next_node.gt == "InitializeZ"))) {
+                    if ((t == height - 1 && node != null && !node.v) || (
+                        next_node != null && !next_node.v && !(next_node.gt == "InitializeX" || next_node.gt == "InitializeZ")
+                    )) {
                         const position = qecp_data.simulator.positions[i][j]
                         const display_position = {
                             t: t + t_bias,  // idle gate is before every real gate
@@ -1182,6 +1217,92 @@ export async function refresh_qecp_data() {
             }
         }
         update_visible_model_hypergraph()
+        // draw tailored model graph
+        dispose_mesh_3d_array(tailored_model_graph_edge_vec_meshes)
+        tailored_model_graph_edge_vec_meshes = build_3d_array(height, vertical, horizontal)
+        dispose_mesh_3d_array(tailored_model_graph_vertex_meshes)
+        tailored_model_graph_vertex_meshes = build_3d_array(height, vertical, horizontal)
+        if (qecp_data.tailored_model_graph != null) {
+            existed_tailored_model_graph.value = true
+            // add geometries
+            for (let t = 0; t < height; ++t) {
+                for (let i = 0; i < vertical; ++i) {
+                    for (let j = 0; j < horizontal; ++j) {
+                        const triple_tailored_node = qecp_data.tailored_model_graph.nodes[t][i][j]
+                        if (triple_tailored_node != null) {
+                            const position = qecp_data.simulator.positions[i][j]
+                            const display_position = { t: t + t_bias, x: position.x, y: position.y }
+                            // vertices
+                            const vertex_mesh = new THREE.Mesh(
+                                model_graph_vertex_geometry,
+                                tailored_model_graph_vertex_material
+                            )
+                            load_position(vertex_mesh.position, display_position)
+                            vertex_mesh.userData = {
+                                type: "tailored_vertex",
+                                t: t,
+                                i: i,
+                                j: j,
+                            }
+                            scene.add(vertex_mesh)
+                            tailored_model_graph_vertex_meshes[t][i][j] = vertex_mesh
+                            // edges
+                            const tailored_model_graph_edge_vec_mesh = []
+                            tailored_model_graph_edge_vec_meshes[t][i][j] = tailored_model_graph_edge_vec_mesh
+                            let vec_mesh_idx = 0
+                            for (let tsg = 0; tsg < 3; ++tsg) {  // tailored subgraph
+                                const tailored_node = triple_tailored_node[tsg]
+                                for (let [peer_position_str, edge] of Object.entries(tailored_node.edges)) {
+                                    const { i: pi, j: pj, t: pt } = get_position(peer_position_str)
+                                    const peer_position = qecp_data.simulator.positions[pi][pj]
+                                    const peer_display_position = { t: pt + t_bias, x: peer_position.x, y: peer_position.y }
+                                    const line_mesh = new THREE.Mesh(
+                                        model_graph_edge_geometry,
+                                        tailored_model_graph_edge_material_vec[tsg]
+                                    )
+                                    line_mesh.userData = {
+                                        type: "tailored_edge",
+                                        t: t,
+                                        i: i,
+                                        j: j,
+                                        peer: peer_position_str,
+                                        edge: edge,
+                                        tsg: tsg,
+                                        vec_mesh_idx: vec_mesh_idx,
+                                    }
+                                    const relative = compute_vector3(peer_display_position).add(compute_vector3(display_position).multiplyScalar(-1))
+                                    const direction = relative.clone().normalize()
+                                    const quaternion = new THREE.Quaternion()
+                                    quaternion.setFromUnitVectors(unit_up_vector, direction)
+                                    load_position(line_mesh.position, display_position)
+                                    line_mesh.scale.set(1, relative.length() / 2, 1)
+                                    line_mesh.setRotationFromQuaternion(quaternion)
+                                    scene.add(line_mesh)
+                                    tailored_model_graph_edge_vec_mesh.push(line_mesh)
+                                    vec_mesh_idx += 1
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // modify materials
+            for (const position_str of qecp_data.tailored_model_graph.virtual_nodes) {
+                const { t, i, j } = get_position(position_str)
+                const vertex_mesh = tailored_model_graph_vertex_meshes[t][i][j]
+                vertex_mesh.material = tailored_model_graph_virtual_vertex_material
+                vertex_mesh.userData.is_virtual = true
+            }
+            for (const position_str_pair of qecp_data.tailored_model_graph.corner_virtual_nodes) {
+                for (let k = 0; k < 2; ++k) {
+                    const { t, i, j } = get_position(position_str_pair[k])
+                    const vertex_mesh = tailored_model_graph_vertex_meshes[t][i][j]
+                    vertex_mesh.material = tailored_model_graph_corner_vertex_material
+                    vertex_mesh.userData.is_corner = true
+                    vertex_mesh.userData.corner_pair = get_position(position_str_pair[(k + 1) % 2])
+                }
+            }
+        }
         // draw noise model: Pauli and erasure errors probabilities
         dispose_mesh_3d_array(noise_model_pauli_meshes)
         noise_model_pauli_meshes = build_3d_array(height, vertical, horizontal)
@@ -1499,29 +1620,6 @@ watch(sizes, () => {  // move render configuration GUI to 3D canvas
 }, { immediate: true })
 const conf = {
     scene_background: scene.background,
-    // defect_vertex_color: defect_vertex_material.color,
-    // defect_vertex_opacity: defect_vertex_material.opacity,
-    // disabled_mirror_vertex_color: disabled_mirror_vertex_material.color,
-    // disabled_mirror_vertex_opacity: disabled_mirror_vertex_material.opacity,
-    // real_vertex_color: real_vertex_material.color,
-    // real_vertex_opacity: real_vertex_material.opacity,
-    // virtual_vertex_color: virtual_vertex_material.color,
-    // virtual_vertex_opacity: virtual_vertex_material.opacity,
-    // defect_vertex_outline_color: defect_vertex_outline_material.color,
-    // defect_vertex_outline_opacity: defect_vertex_outline_material.opacity,
-    // real_vertex_outline_color: real_vertex_outline_material.color,
-    // real_vertex_outline_opacity: real_vertex_outline_material.opacity,
-    // virtual_vertex_outline_color: virtual_vertex_outline_material.color,
-    // virtual_vertex_outline_opacity: virtual_vertex_outline_material.opacity,
-    // edge_color: edge_material.color,
-    // edge_opacity: edge_material.opacity,
-    // edge_side: edge_material.side,
-    // grown_edge_color: grown_edge_material.color,
-    // grown_edge_opacity: grown_edge_material.opacity,
-    // grown_edge_side: grown_edge_material.side,
-    // subgraph_edge_color: subgraph_edge_material.color,
-    // subgraph_edge_opacity: subgraph_edge_material.opacity,
-    // subgraph_edge_side: subgraph_edge_material.side,
     outline_ratio: outline_ratio.value,
     qubit_radius_scale: qubit_radius_scale.value,
     idle_gate_radius_scale: idle_gate_radius_scale.value,
@@ -1536,35 +1634,6 @@ controller.outline_ratio = size_folder.add(conf, 'outline_ratio', 0.99, 2).onCha
 controller.qubit_radius_scale = size_folder.add(conf, 'qubit_radius_scale', 0.1, 5).onChange(function (value) { qubit_radius_scale.value = Number(value) })
 controller.idle_gate_radius_scale = size_folder.add(conf, 'idle_gate_radius_scale', 0.1, 10).onChange(function (value) { idle_gate_radius_scale.value = Number(value) })
 controller.defect_measurement_radius_scale = size_folder.add(conf, 'defect_measurement_radius_scale', 0.1, 10).onChange(function (value) { defect_measurement_radius_scale.value = Number(value) })
-// controller.defect_vertex_color = vertex_folder.addColor( conf, 'defect_vertex_color' ).onChange( function ( value ) { defect_vertex_material.color = value } )
-// controller.defect_vertex_opacity = vertex_folder.add( conf, 'defect_vertex_opacity', 0, 1 ).onChange( function ( value ) { defect_vertex_material.opacity = Number(value) } )
-// controller.disabled_mirror_vertex_color = vertex_folder.addColor( conf, 'disabled_mirror_vertex_color' ).onChange( function ( value ) { disabled_mirror_vertex_material.color = value } )
-// controller.disabled_mirror_vertex_opacity = vertex_folder.add( conf, 'disabled_mirror_vertex_opacity', 0, 1 ).onChange( function ( value ) { disabled_mirror_vertex_material.opacity = Number(value) } )
-// controller.real_vertex_color = vertex_folder.addColor( conf, 'real_vertex_color' ).onChange( function ( value ) { real_vertex_material.color = value } )
-// controller.real_vertex_opacity = vertex_folder.add( conf, 'real_vertex_opacity', 0, 1 ).onChange( function ( value ) { real_vertex_material.opacity = Number(value) } )
-// controller.virtual_vertex_color = vertex_folder.addColor( conf, 'virtual_vertex_color' ).onChange( function ( value ) { virtual_vertex_material.color = value } )
-// controller.virtual_vertex_opacity = vertex_folder.add( conf, 'virtual_vertex_opacity', 0, 1 ).onChange( function ( value ) { virtual_vertex_material.opacity = Number(value) } )
-// const vertex_outline_folder = gui.addFolder( 'vertex outline' )
-// controller.vertex_outline_color = vertex_outline_folder.addColor( conf, 'defect_vertex_outline_color' ).onChange( function ( value ) { defect_vertex_outline_material.color = value } )
-// controller.vertex_outline_opacity = vertex_outline_folder.add( conf, 'defect_vertex_outline_opacity', 0, 1 ).onChange( function ( value ) { defect_vertex_outline_material.opacity = Number(value) } )
-// controller.vertex_outline_color = vertex_outline_folder.addColor( conf, 'real_vertex_outline_color' ).onChange( function ( value ) { real_vertex_outline_material.color = value } )
-// controller.vertex_outline_opacity = vertex_outline_folder.add( conf, 'real_vertex_outline_opacity', 0, 1 ).onChange( function ( value ) { real_vertex_outline_material.opacity = Number(value) } )
-// controller.virtual_vertex_outline_color = vertex_outline_folder.addColor( conf, 'virtual_vertex_outline_color' ).onChange( function ( value ) { virtual_vertex_outline_material.color = value } )
-// controller.virtual_vertex_outline_opacity = vertex_outline_folder.add( conf, 'virtual_vertex_outline_opacity', 0, 1 ).onChange( function ( value ) { virtual_vertex_outline_material.opacity = Number(value) } )
-// const edge_folder = gui.addFolder( 'edge' )
-// controller.edge_color = edge_folder.addColor( conf, 'edge_color' ).onChange( function ( value ) { edge_material.color = value } )
-// controller.edge_opacity = edge_folder.add( conf, 'edge_opacity', 0, 1 ).onChange( function ( value ) { edge_material.opacity = Number(value) } )
-// controller.edge_side = edge_folder.add( conf, 'edge_side', side_options ).onChange( function ( value ) { edge_material.side = Number(value) } )
-// controller.grown_edge_color = edge_folder.addColor( conf, 'grown_edge_color' ).onChange( function ( value ) { grown_edge_material.color = value } )
-// controller.grown_edge_opacity = edge_folder.add( conf, 'grown_edge_opacity', 0, 1 ).onChange( function ( value ) { grown_edge_material.opacity = Number(value) } )
-// controller.grown_edge_side = edge_folder.add( conf, 'grown_edge_side', side_options ).onChange( function ( value ) { grown_edge_material.side = Number(value) } )
-// controller.subgraph_edge_color = edge_folder.addColor( conf, 'subgraph_edge_color' ).onChange( function ( value ) { subgraph_edge_material.color = value } )
-// controller.subgraph_edge_opacity = edge_folder.add( conf, 'subgraph_edge_opacity', 0, 1 ).onChange( function ( value ) { subgraph_edge_material.opacity = Number(value) } )
-// controller.subgraph_edge_side = edge_folder.add( conf, 'subgraph_edge_side', side_options ).onChange( function ( value ) { subgraph_edge_material.side = Number(value) } )
-// const size_folder = gui.addFolder( 'size' )
-// controller.outline_ratio = size_folder.add( conf, 'outline_ratio', 0.99, 2 ).onChange( function ( value ) { outline_ratio.value = Number(value) } )
-// controller.vertex_radius_scale = size_folder.add( conf, 'vertex_radius_scale', 0.1, 5 ).onChange( function ( value ) { vertex_radius_scale.value = Number(value) } )
-// controller.edge_radius_scale = size_folder.add( conf, 'edge_radius_scale', 0.1, 10 ).onChange( function ( value ) { edge_radius_scale.value = Number(value) } )
 watch(sizes, () => {
     gui.domElement.style.transform = `scale(${sizes.scale})`
     gui.domElement.style["transform-origin"] = "right top"
