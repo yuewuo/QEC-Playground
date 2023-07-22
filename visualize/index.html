@@ -358,7 +358,8 @@
                             :label="display_error_pattern ? '&nbsp;→ Correction&nbsp;' : '→ Actual Error'"
                             @click="toggle_error_correction"></q-btn>
                     </div>
-                    <div class="display-options-row-left" v-if="log_matchings_options.length > 0">
+                    <div class="display-options-row-left"
+                        v-if="log_matchings_options != null && log_matchings_options.length > 0">
                         <div><q-toggle color="brown" left-label v-model="display_matchings" label="Matchings: "
                                 size="md" />
                         </div>
