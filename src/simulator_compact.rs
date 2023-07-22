@@ -112,6 +112,10 @@ impl ErrorSource {
 bind_trait_simulator_generics! {SimulatorCompact}
 
 impl SimulatorGenerics for SimulatorCompact {
+    fn set_rng(&mut self, rng: Xoroshiro128StarStar) {
+        self.rng = rng;
+    }
+
     fn generate_random_errors(&mut self, _noise_model: &NoiseModel) -> (usize, usize) {
         self.clear();
         let mut rng = self.rng.clone(); // avoid mutable borrow
@@ -422,6 +426,10 @@ impl SimulatorCompactCompressed {
 bind_trait_simulator_generics! {SimulatorCompactCompressed}
 
 impl SimulatorGenerics for SimulatorCompactCompressed {
+    fn set_rng(&mut self, rng: Xoroshiro128StarStar) {
+        self.extender.base.rng = rng;
+    }
+
     fn generate_random_errors(&mut self, _noise_model: &NoiseModel) -> (usize, usize) {
         self.clear();
         let mut rng = self.extender.base.rng.clone(); // avoid mutable borrow

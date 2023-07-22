@@ -1,35 +1,37 @@
 #![allow(non_snake_case)]
 
-use super::clap;
-use super::clap::ValueEnum;
-use super::code_builder::*;
-use super::complete_model_graph::*;
-#[cfg(feature = "fusion_blossom")]
-use super::decoder_fusion::*;
-#[cfg(feature = "hyperion")]
-use super::decoder_hyper_union_find::*;
-use super::decoder_mwpm::*;
-use super::decoder_tailored_mwpm::*;
-use super::decoder_union_find::*;
-use super::erasure_graph::*;
-use super::model_graph::*;
-use super::model_hypergraph::*;
-use super::noise_model::*;
-use super::noise_model_builder::*;
-use super::num_cpus;
-use super::pbr::ProgressBar;
-#[cfg(feature = "python_binding")]
-use super::pyo3::prelude::*;
-use super::serde_json;
-use super::serde_json::json;
-use super::simulator::*;
-use super::tailored_complete_model_graph::*;
-use super::tailored_model_graph::*;
-use super::util::local_get_temporary_store;
-use super::visualize::*;
 use crate::cli::*;
+use crate::code_builder::*;
+use crate::complete_model_graph::*;
+#[cfg(feature = "fusion_blossom")]
+use crate::decoder_fusion::*;
+#[cfg(feature = "hyperion")]
+use crate::decoder_hyper_union_find::*;
+use crate::decoder_mwpm::*;
+use crate::decoder_tailored_mwpm::*;
+use crate::decoder_union_find::*;
+use crate::erasure_graph::*;
+use crate::model_graph::*;
+use crate::model_hypergraph::*;
+use crate::noise_model::*;
+use crate::noise_model_builder::*;
+use crate::reproducible_rand::Xoroshiro128StarStar;
+use crate::simulator::*;
 use crate::simulator_compact::*;
+use crate::tailored_complete_model_graph::*;
+use crate::tailored_model_graph::*;
+use crate::util::local_get_temporary_store;
+use crate::visualize::*;
+use clap;
+use clap::ValueEnum;
+use num_cpus;
+use pbr::ProgressBar;
+#[cfg(feature = "python_binding")]
+use pyo3::prelude::*;
+use rand_core::SeedableRng;
 use serde::{Deserialize, Serialize};
+use serde_json;
+use serde_json::json;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
@@ -243,6 +245,7 @@ pub struct SimulationConfigs {
     parallel: usize,
     parallel_init: usize,
     noise_model_modifier: Option<serde_json::Value>,
+    deterministic_seed: Option<u64>,
 }
 
 impl SimulationConfigs {
@@ -259,6 +262,7 @@ impl SimulationConfigs {
         parallel: usize,
         parallel_init: usize,
         noise_model_modifier: Option<serde_json::Value>,
+        deterministic_seed: Option<u64>,
     ) -> Self {
         Self {
             dis,
@@ -273,6 +277,7 @@ impl SimulationConfigs {
             parallel,
             parallel_init,
             noise_model_modifier,
+            deterministic_seed,
         }
     }
 }
@@ -425,6 +430,7 @@ impl BenchmarkParameters {
             parallel,
             parallel_init,
             noise_model_modifier,
+            self.deterministic_seed.clone(),
         ))
     }
 
@@ -814,7 +820,6 @@ impl BenchmarkParameters {
                         let generated =
                             extender.generate(simulator_compact_extender_noisy_measurements);
                         GeneralSimulator::SimulatorCompact(generated)
-                        // >>>>>>> c71260ab747dcecc950d8f7cbbabf29a29e4b950
                     }
                 }
             } else {
@@ -823,14 +828,19 @@ impl BenchmarkParameters {
         } else {
             GeneralSimulator::Simulator(simulator)
         };
-        for _parallel_idx in 0..configs.parallel {
+        for parallel_idx in 0..configs.parallel {
             let thread_debugger = Arc::new(Mutex::new(BenchmarkThreadDebugger::new()));
             threads_debugger.push(thread_debugger.clone());
             let thread_ended = Arc::new(AtomicBool::new(false));
             threads_ended.push(Arc::clone(&thread_ended));
+            let mut thread_general_simulator = general_simulator.clone();
+            if let Some(deterministic_seed) = configs.deterministic_seed {
+                let seed: u64 = deterministic_seed + parallel_idx as u64;
+                thread_general_simulator.set_rng(Xoroshiro128StarStar::seed_from_u64(seed));
+            }
             let mut worker_state = SimulationWorker {
                 benchmark_control: benchmark_control.clone(),
-                general_simulator: general_simulator.clone(),
+                general_simulator: thread_general_simulator,
                 noise_model: noise_model.clone(),
                 log_runtime_statistics_file: log_runtime_statistics_file.clone(),
                 visualizer: visualizer.clone(),

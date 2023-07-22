@@ -279,6 +279,9 @@ pub struct BenchmarkParameters {
     /// note that this optimizes memory but sacrifices speed, since all the error sources are generated dynamically on the fly
     #[clap(long, requires = "use_compact_simulator")]
     pub use_compact_simulator_compressed: bool,
+    /// use deterministic seed for debugging purpose
+    #[clap(long)]
+    pub deterministic_seed: Option<u64>,
 }
 
 #[derive(Parser, Clone)]

@@ -30,6 +30,7 @@ pub enum GeneralSimulator {
 #[enum_dispatch(GeneralSimulator)]
 /// any struct that implements this generic can be used in the simulation cli
 pub trait SimulatorGenerics: Clone {
+    fn set_rng(&mut self, rng: Xoroshiro128StarStar);
     fn generate_random_errors(&mut self, noise_model: &NoiseModel) -> (usize, usize);
     fn generate_sparse_detected_erasures(&self) -> SparseErasures;
     fn generate_sparse_error_pattern(&self) -> SparseErrorPattern;
@@ -874,6 +875,10 @@ impl Simulator {
 }
 
 impl SimulatorGenerics for Simulator {
+    fn set_rng(&mut self, rng: Xoroshiro128StarStar) {
+        self.rng = rng;
+    }
+
     fn generate_random_errors(&mut self, noise_model: &NoiseModel) -> (usize, usize) {
         // this size is small compared to the simulator itself
         let allocate_size = self.height * self.vertical * self.horizontal;
