@@ -718,6 +718,160 @@
                         </div>
                     </q-card-section>
                 </q-card>
+                <q-card bordered class="select-info-div"
+                    v-if="current_selected != null && (
+                        current_selected.type == 'model_graph_edge' || current_selected.type == 'model_graph_boundary')">
+                    <q-card-section class="text-white bg-teal">
+                        <div class="text-h6">Edge
+                            <q-btn color="green" no-caps unelevated
+                                @mouseenter="ref_btn_hover_general('model_graph_vertex', selected_model_graph_info.vertex_user_data)"
+                                @mouseleave="ref_btn_leave()"
+                                @click="jump_to('model_graph_vertex', selected_model_graph_info.vertex_user_data)"
+                                style="margin-left: 0; position: relative; bottom: 2px;" padding="8px 12px" size="20px">
+                                [{{ current_selected.t }}][{{ current_selected.i }}][{{ current_selected.j }}]
+                            </q-btn>
+                            <span v-if="selected_model_graph_info.peer_user_data != null">
+                                to <q-btn color="green" no-caps unelevated
+                                    @mouseenter="ref_btn_hover_general('model_graph_vertex', selected_model_graph_info.peer_user_data)"
+                                    @mouseleave="ref_btn_leave()"
+                                    @click="jump_to('model_graph_vertex', selected_model_graph_info.peer_user_data)"
+                                    style="margin-left: 0; position: relative; bottom: 2px;" padding="8px 12px"
+                                    size="20px">
+                                    {{ current_selected.peer }}
+                                </q-btn>
+                            </span>
+                        </div>
+                    </q-card-section>
+                    <q-separator inset></q-separator>
+                    <q-card-section>
+                        <div style="margin-bottom: 10px;">
+                            probability: {{ Number.parseFloat(selected_model_graph_info.probability).toExponential(2)
+                            }},&nbsp;&nbsp;
+                            weight: {{ Number.parseFloat(selected_model_graph_info.weight).toExponential(2) }}
+                        </div>
+                        <div class="text-h6">Contributing Independent Errors:</div>
+                        <div v-for="edge of selected_model_graph_info.all_edges" style="margin-top: 15px;">
+                            p: {{ Number.parseFloat(edge.probability).toExponential(2) }},
+                            <span class="bg-red-2"
+                                style="padding: 14px 5px; border-radius: 5px; line-height: 45px;">Error =
+                                [<q-btn color="red" no-caps unelevated v-for="error of edge.error_pattern"
+                                    style="margin-left: 5px; position: relative; bottom: 2px;" padding="2px 4px"
+                                    size="12px" @mouseover="ref_btn_hover(error.position_str)"
+                                    @mouseleave="ref_btn_leave()" @click="ref_btn_click(error.position_str)">{{
+                                    error.position_str }}<br>{{ error.type }}</q-btn>
+                                ]</span>,
+                            <span class="bg-orange-2"
+                                style="padding: 14px 5px; border-radius: 5px; line-height: 45px;">Correction =
+                                [<q-btn color="orange" no-caps unelevated v-for="correction of edge.correction"
+                                    style="margin-left: 5px; position: relative; bottom: 2px;" padding="2px 4px"
+                                    size="12px" @mouseover="ref_btn_hover(correction.position_str)"
+                                    @mouseleave="ref_btn_leave()" @click="ref_btn_click(correction.position_str)">{{
+                                    correction.position_str }}<br>{{ correction.type }}</q-btn>
+                                ]</span>,
+                        </div>
+                    </q-card-section>
+                </q-card>
+                <q-card bordered class="select-info-div"
+                    v-if="current_selected != null && current_selected.type == 'tailored_vertex'">
+                    <q-card-section class="bg-blue text-white">
+                        <div class="text-h6">Vertex [{{ current_selected.t }}][{{ current_selected.i }}][{{
+                            current_selected.j }}]
+                            <span v-if="current_selected.is_virtual"> (virtual)</span>
+                            <span v-if="current_selected.is_corner"> (corner <q-btn color="red" no-caps unelevated
+                                    @mouseenter="ref_btn_hover_general('tailored_vertex', selected_tailored_info.corner_pair_user_data)"
+                                    @mouseleave="ref_btn_leave()"
+                                    @click="jump_to('tailored_vertex', selected_tailored_info.corner_pair_user_data)"
+                                    style="margin-left: 0; position: relative; bottom: 2px;" padding="8px 12px"
+                                    size="20px">
+                                    [{{ current_selected.corner_pair.t }}][{{ current_selected.corner_pair.i }}][{{
+                                    current_selected.corner_pair.j }}]
+                                </q-btn>)</span>
+                        </div>
+                    </q-card-section>
+                    <div v-for="tsg of Object.values(tailored_model_graph_region_display)">
+                        <q-separator inset></q-separator>
+                        <q-card-section>
+                            <div v-for="(edge, peer_position_str) of selected_tailored_info.triple_edges[tsg]"
+                                style="margin-top: 5px;">
+                                <q-btn :color="sequential_colors[tsg + 1][0]" no-caps size="12px" rounded
+                                    padding="none md"
+                                    @mouseenter="ref_btn_hover_general('tailored_edge', edge.userData)"
+                                    @mouseleave="ref_btn_leave()" @click="jump_to('tailored_edge', edge.userData)">
+                                    <div class="text-center">
+                                        Edge</span><br>{{ peer_position_str }}
+                                    </div>
+                                </q-btn>
+                                <div class="text-center"
+                                    style="display: inline-block; font-size: 15px; position: relative; top: 10px; margin-left: 10px;">
+                                    probability: {{ Number.parseFloat(edge.p).toExponential(3) }}<br>weight: {{
+                                    Number.parseFloat(edge.w).toExponential(3) }}
+                                </div>,
+                                <div
+                                    style="display: inline-block; font-size: 15px; position: relative; top: 10px; margin-left: 10px;">
+                                    error pattern: <span v-for="(error_type, position_str) of edge.e"
+                                        @mouseover="ref_btn_hover(position_str)" @mouseleave="ref_btn_leave()"
+                                        @click="ref_btn_click(position_str)">
+                                        {{ error_type }}({{ position_str }})
+                                    </span><br>correction: <span v-for="(error_type, position_str) of edge.c"
+                                        @mouseover="ref_btn_hover(position_str)" @mouseleave="ref_btn_leave()"
+                                        @click="ref_btn_click(position_str)">
+                                        {{ error_type }}({{ position_str }})
+                                    </span>
+                                </div>
+                            </div>
+                        </q-card-section>
+                    </div>
+                </q-card>
+                <q-card bordered class="select-info-div"
+                    v-if="current_selected != null && current_selected.type == 'tailored_edge'">
+                    <q-card-section class="text-white" :class="{ 'bg-green': current_selected.tsg == 0
+                        , 'bg-deep-purple': current_selected.tsg == 1
+                        , 'bg-brown': current_selected.tsg == 2 }">
+                        <div class="text-h6">Edge
+                            <q-btn :color="selected_tailored_info.vertex_user_data.color" no-caps unelevated
+                                @mouseenter="ref_btn_hover_general('tailored_vertex', selected_tailored_info.vertex_user_data)"
+                                @mouseleave="ref_btn_leave()"
+                                @click="jump_to('tailored_vertex', selected_tailored_info.vertex_user_data)"
+                                style="margin-left: 0; position: relative; bottom: 2px;" padding="8px 12px" size="20px">
+                                [{{ current_selected.t }}][{{ current_selected.i }}][{{ current_selected.j }}]
+                            </q-btn> to <q-btn :color="selected_tailored_info.peer_user_data.color" no-caps unelevated
+                                @mouseenter="ref_btn_hover_general('tailored_vertex', selected_tailored_info.peer_user_data)"
+                                @mouseleave="ref_btn_leave()"
+                                @click="jump_to('tailored_vertex', selected_tailored_info.peer_user_data)"
+                                style="margin-left: 0; position: relative; bottom: 2px;" padding="8px 12px" size="20px">
+                                {{ current_selected.peer }}
+                            </q-btn>
+                        </div>
+                    </q-card-section>
+                    <q-separator inset></q-separator>
+                    <q-card-section>
+                        <div style="margin-bottom: 10px;">
+                            probability: {{ Number.parseFloat(selected_tailored_info.probability).toExponential(2)
+                            }},&nbsp;&nbsp;
+                            weight: {{ Number.parseFloat(selected_tailored_info.weight).toExponential(2) }}
+                        </div>
+                        <div class="text-h6">Contributing Independent Errors:</div>
+                        <div v-for="edge of selected_tailored_info.all_edges" style="margin-top: 15px;">
+                            p: {{ Number.parseFloat(edge.probability).toExponential(2) }},
+                            <span class="bg-red-2"
+                                style="padding: 14px 5px; border-radius: 5px; line-height: 45px;">Error =
+                                [<q-btn color="red" no-caps unelevated v-for="error of edge.error_pattern"
+                                    style="margin-left: 5px; position: relative; bottom: 2px;" padding="2px 4px"
+                                    size="12px" @mouseover="ref_btn_hover(error.position_str)"
+                                    @mouseleave="ref_btn_leave()" @click="ref_btn_click(error.position_str)">{{
+                                    error.position_str }}<br>{{ error.type }}</q-btn>
+                                ]</span>,
+                            <span class="bg-orange-2"
+                                style="padding: 14px 5px; border-radius: 5px; line-height: 45px;">Correction =
+                                [<q-btn color="orange" no-caps unelevated v-for="correction of edge.correction"
+                                    style="margin-left: 5px; position: relative; bottom: 2px;" padding="2px 4px"
+                                    size="12px" @mouseover="ref_btn_hover(correction.position_str)"
+                                    @mouseleave="ref_btn_leave()" @click="ref_btn_click(correction.position_str)">{{
+                                    correction.position_str }}<br>{{ correction.type }}</q-btn>
+                                ]</span>,
+                        </div>
+                    </q-card-section>
+                </q-card>
             </q-scroll-area>
         </div>
         <div class="range-select">

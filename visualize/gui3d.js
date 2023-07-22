@@ -397,7 +397,7 @@ export const model_hypergraph_edge_material = new THREE.MeshStandardMaterial({
     side: THREE.FrontSide,
 })
 export const tailored_model_graph_vertex_material = build_solid_material("black")
-export const tailored_model_graph_virtual_vertex_material = build_solid_material(0xffeb3b)
+export const tailored_model_graph_virtual_vertex_material = build_solid_material(0xff9800)
 export const tailored_model_graph_corner_vertex_material = build_solid_material(0xf44336)
 export const tailored_model_graph_edge_material_vec = []
 for (let i = 0; i < 3; ++i) {
@@ -1243,6 +1243,7 @@ export async function refresh_qecp_data() {
                                 t: t,
                                 i: i,
                                 j: j,
+                                color: "black",
                             }
                             scene.add(vertex_mesh)
                             tailored_model_graph_vertex_meshes[t][i][j] = vertex_mesh
@@ -1292,6 +1293,7 @@ export async function refresh_qecp_data() {
                 const vertex_mesh = tailored_model_graph_vertex_meshes[t][i][j]
                 vertex_mesh.material = tailored_model_graph_virtual_vertex_material
                 vertex_mesh.userData.is_virtual = true
+                vertex_mesh.userData.color = "orange"
             }
             for (const position_str_pair of qecp_data.tailored_model_graph.corner_virtual_nodes) {
                 for (let k = 0; k < 2; ++k) {
@@ -1300,6 +1302,7 @@ export async function refresh_qecp_data() {
                     vertex_mesh.material = tailored_model_graph_corner_vertex_material
                     vertex_mesh.userData.is_corner = true
                     vertex_mesh.userData.corner_pair = get_position(position_str_pair[(k + 1) % 2])
+                    vertex_mesh.userData.color = "red"
                 }
             }
         }
@@ -1628,12 +1631,17 @@ const conf = {
 const side_options = { "FrontSide": THREE.FrontSide, "BackSide": THREE.BackSide, "DoubleSide": THREE.DoubleSide }
 export const controller = {}
 window.controller = controller
-controller.scene_background = gui.addColor(conf, 'scene_background').onChange(function (value) { scene.background = value })
+controller.scene_background = gui.addColor(conf, 'scene_background').onChange(
+    function (value) { scene.background = value })
 const size_folder = gui.addFolder('size')
-controller.outline_ratio = size_folder.add(conf, 'outline_ratio', 0.99, 2).onChange(function (value) { outline_ratio.value = Number(value) })
-controller.qubit_radius_scale = size_folder.add(conf, 'qubit_radius_scale', 0.1, 5).onChange(function (value) { qubit_radius_scale.value = Number(value) })
-controller.idle_gate_radius_scale = size_folder.add(conf, 'idle_gate_radius_scale', 0.1, 10).onChange(function (value) { idle_gate_radius_scale.value = Number(value) })
-controller.defect_measurement_radius_scale = size_folder.add(conf, 'defect_measurement_radius_scale', 0.1, 10).onChange(function (value) { defect_measurement_radius_scale.value = Number(value) })
+controller.outline_ratio = size_folder.add(conf, 'outline_ratio', 0.99, 2).onChange(
+    function (value) { outline_ratio.value = Number(value) })
+controller.qubit_radius_scale = size_folder.add(conf, 'qubit_radius_scale', 0.1, 5).onChange(
+    function (value) { qubit_radius_scale.value = Number(value) })
+controller.idle_gate_radius_scale = size_folder.add(conf, 'idle_gate_radius_scale', 0.1, 10).onChange(
+    function (value) { idle_gate_radius_scale.value = Number(value) })
+controller.defect_measurement_radius_scale = size_folder.add(conf, 'defect_measurement_radius_scale', 0.1, 10).onChange(
+    function (value) { defect_measurement_radius_scale.value = Number(value) })
 watch(sizes, () => {
     gui.domElement.style.transform = `scale(${sizes.scale})`
     gui.domElement.style["transform-origin"] = "right top"
@@ -1748,6 +1756,20 @@ function set_material_with_user_data(user_data, material) {  // return the previ
     if (user_data.type == "model_graph_vertex") {
         const { t, i, j } = user_data
         let mesh = model_graph_vertex_meshes[t][i][j]
+        let previous_material = mesh.material
+        mesh.material = material
+        return previous_material
+    }
+    if (user_data.type == "tailored_vertex") {
+        const { t, i, j } = user_data
+        let mesh = tailored_model_graph_vertex_meshes[t][i][j]
+        let previous_material = mesh.material
+        mesh.material = material
+        return previous_material
+    }
+    if (user_data.type == "tailored_edge") {
+        const { t, i, j, vec_mesh_idx } = user_data
+        let mesh = tailored_model_graph_edge_vec_meshes[t][i][j][vec_mesh_idx]
         let previous_material = mesh.material
         mesh.material = material
         return previous_material

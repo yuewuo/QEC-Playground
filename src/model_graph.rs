@@ -35,8 +35,15 @@ impl QecpVisualizer for ModelGraph {
                             for (peer_position, edge) in node.edges.iter() {
                                 edges.insert(peer_position.to_string(), edge.component_edge_info(abbrev));
                             }
+                            let mut all_edges = serde_json::Map::with_capacity(node.all_edges.len());
+                            for (peer_position, all_edge) in node.all_edges.iter() {
+                                let (edges, _) = all_edge;
+                                let components: Vec<_> = edges.iter().map(|edge| edge.component_edge_info(abbrev)).collect();
+                                all_edges.insert(peer_position.to_string(), json!(components));
+                            }
                             Some(json!({
                                 if abbrev { "p" } else { "position" }: position,  // for readability
+                                "all_edges": all_edges,
                                 "edges": edges,
                                 "all_boundaries": node.all_boundaries.iter().map(|boundary| boundary.component_edge_info(abbrev)).collect::<Vec<_>>(),
                                 "boundary": node.boundary.as_ref().map(|boundary| boundary.component_edge_info(abbrev)),

@@ -63,6 +63,7 @@ const App = {
             noise_model_info: ref(null),
             selected_hypergraph_info: ref(null),
             selected_model_graph_info: ref(null),
+            selected_tailored_info: ref(null),
             // display options
             display_qubits: gui3d.display_qubits,
             display_idle_sticks: gui3d.display_idle_sticks,
@@ -85,6 +86,7 @@ const App = {
             t_length: gui3d.t_length,
             non_zero_color: "red",
             zero_color: "grey",
+            sequential_colors: gui3d.sequential_colors,
         }
     },
     async mounted() {
@@ -353,14 +355,135 @@ const App = {
                 let edges = {}
                 let vec_mesh_idx = 0
                 for (let [peer_position_str, edge] of Object.entries(model_graph_node.edges)) {
-                    edges[peer_position_str] = { ...model_graph_node.edges[peer_position_str] }
+                    edges[peer_position_str] = { ...edge }
                     edges[peer_position_str].userData = gui3d.model_graph_edge_vec_meshes[t][i][j][vec_mesh_idx].userData
-                    console.log(edges[peer_position_str].userData)
                     vec_mesh_idx += 1
                 }
                 let boundary = { ...model_graph_node.boundary }
                 this.selected_model_graph_info = {
                     edges, boundary
+                }
+            }
+            if (this.current_selected.type == "model_graph_edge" || this.current_selected.type == "model_graph_boundary") {
+                const { t, i, j, peer, edge, boundary } = this.current_selected
+                const vertex_user_data = gui3d.model_graph_vertex_meshes[t][i][j].userData
+                let peer_user_data = null
+                if (peer != null) {
+                    const { i: pi, j: pj, t: pt } = gui3d.get_position(peer)
+                    peer_user_data = gui3d.model_graph_vertex_meshes[pt][pi][pj].userData
+                }
+                const all_edges = []
+                const model_graph_node = qecp_data.model_graph.nodes[t][i][j]
+                if (edge != null) {
+                    for (const edge of model_graph_node.all_edges[peer]) {
+                        let error_pattern = []
+                        for (const position_str in edge.e) {
+                            error_pattern.push({
+                                position_str: position_str,
+                                type: edge.e[position_str],
+                            })
+                        }
+                        let correction = []
+                        for (const position_str in edge.c) {
+                            correction.push({
+                                position_str: position_str,
+                                type: edge.c[position_str],
+                            })
+                        }
+                        all_edges.push({
+                            probability: edge.p,
+                            weight: edge.w,
+                            error_pattern: error_pattern,
+                            correction: correction,
+                        })
+                    }
+                } else {
+                    for (const edge of model_graph_node.all_boundaries) {
+                        let error_pattern = []
+                        for (const position_str in edge.e) {
+                            error_pattern.push({
+                                position_str: position_str,
+                                type: edge.e[position_str],
+                            })
+                        }
+                        let correction = []
+                        for (const position_str in edge.c) {
+                            correction.push({
+                                position_str: position_str,
+                                type: edge.c[position_str],
+                            })
+                        }
+                        all_edges.push({
+                            probability: edge.p,
+                            weight: edge.w,
+                            error_pattern: error_pattern,
+                            correction: correction,
+                        })
+                    }
+                }
+                this.selected_model_graph_info = {
+                    vertex_user_data, peer_user_data,
+                    probability: edge ? edge.p : boundary.p,
+                    weight: edge ? edge.w : boundary.w,
+                    all_edges
+                }
+            }
+            if (this.current_selected.type == "tailored_vertex") {
+                const { t, i, j, is_corner, corner_pair } = this.current_selected
+                const triple_tailored_node = qecp_data.tailored_model_graph.nodes[t][i][j]
+                const triple_edges = [{}, {}, {}]
+                let vec_mesh_idx = 0
+                for (let tsg = 0; tsg < 3; tsg++) {
+                    const edges = triple_edges[tsg]
+                    const tailored_node = triple_tailored_node[tsg]
+                    for (let [peer_position_str, edge] of Object.entries(tailored_node.edges)) {
+                        edges[peer_position_str] = { ...edge }
+                        edges[peer_position_str].userData = gui3d.tailored_model_graph_edge_vec_meshes[t][i][j][vec_mesh_idx].userData
+                        vec_mesh_idx += 1
+                    }
+                }
+                this.selected_tailored_info = {
+                    triple_edges, corner_pair
+                }
+                if (is_corner) {
+                    this.selected_tailored_info.corner_pair_user_data = gui3d
+                        .tailored_model_graph_vertex_meshes[corner_pair.t][corner_pair.i][corner_pair.j].userData
+                }
+            }
+            if (this.current_selected.type == "tailored_edge") {
+                const { t, i, j, tsg, peer, edge } = this.current_selected
+                const { i: pi, j: pj, t: pt } = gui3d.get_position(peer)
+                const vertex_user_data = gui3d.tailored_model_graph_vertex_meshes[t][i][j].userData
+                const peer_user_data = gui3d.tailored_model_graph_vertex_meshes[pt][pi][pj].userData
+                const all_edges = []
+                const tailored_node = qecp_data.tailored_model_graph.nodes[t][i][j][tsg]
+                for (const edge of tailored_node.all_edges[peer]) {
+                    let error_pattern = []
+                    for (const position_str in edge.e) {
+                        error_pattern.push({
+                            position_str: position_str,
+                            type: edge.e[position_str],
+                        })
+                    }
+                    let correction = []
+                    for (const position_str in edge.c) {
+                        correction.push({
+                            position_str: position_str,
+                            type: edge.c[position_str],
+                        })
+                    }
+                    all_edges.push({
+                        probability: edge.p,
+                        weight: edge.w,
+                        error_pattern: error_pattern,
+                        correction: correction,
+                    })
+                }
+                this.selected_tailored_info = {
+                    vertex_user_data, peer_user_data,
+                    probability: edge.p,
+                    weight: edge.w,
+                    all_edges,
                 }
             }
         },
