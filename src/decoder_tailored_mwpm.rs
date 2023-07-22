@@ -140,7 +140,7 @@ impl TailoredMWPMDecoder {
         let mut time_residual_decoding = 0.;
         let mut time_build_correction = 0.;
         let mut log_matchings = Vec::with_capacity(0);
-        if to_be_matched.len() > 0 {
+        if !to_be_matched.is_empty() {
             let begin = Instant::now();
             // vertices layout: [positive real nodes] [positive virtual nodes] [negative real nodes] [negative virtual nodes]
             // since positive and negative nodes have the same position, only ([positive real nodes] [positive virtual nodes]) is saved in `to_be_matched`
@@ -229,16 +229,14 @@ impl TailoredMWPMDecoder {
             // union-find tailored clusters
             let begin = Instant::now();
             let mut tailored_clusters = DefaultUnionFind::new(tailored_len);
-            for i in 0..tailored_len {
+            for (i, position) in tailored_to_be_matched.iter().enumerate() {
                 // set `cardinality` to 1 if the position is a StabY
-                let position = &tailored_to_be_matched[i];
                 let node = self.simulator.get_node_unwrap(position);
                 if node.qubit_type == QubitType::StabY {
                     tailored_clusters.payload[i].cardinality = 1;
                 }
             }
-            for i in 0..2 * tailored_len {
-                let j = tailored_matching[i];
+            for (i, &j) in tailored_matching.iter().enumerate() {
                 let base_i = i % tailored_len;
                 let base_j = j % tailored_len;
                 if base_i < base_j {
@@ -351,23 +349,22 @@ impl TailoredMWPMDecoder {
             } else if self.config.naive_residual_decoding {
                 // do naive residual decoding, instead of using the confusing method in the paper, I just match them together using normal graph
                 let mut residual_to_be_matched = Vec::new();
-                for i in 0..tailored_len {
+                for (i, position) in tailored_to_be_matched.iter().enumerate() {
                     // filtering out positions matched with itself
                     if tailored_clusters.get(i).set_size > 1 {
                         // only care about neutral clusters
                         // eprintln!("cluster {}: cardinality: {}", i, tailored_clusters.get(i).cardinality);
                         if tailored_clusters.get(i).cardinality % 2 == 1 {
                             // residual must be real node
-                            let position = tailored_to_be_matched[i].clone();
-                            let node = self.simulator.get_node_unwrap(&position);
+                            let node = self.simulator.get_node_unwrap(position);
                             if !node.is_virtual {
-                                residual_to_be_matched.push(position);
+                                residual_to_be_matched.push(position.clone());
                             }
                         }
                     }
                 }
                 // eprintln!("residual_to_be_matched: {:?}", residual_to_be_matched);
-                if residual_to_be_matched.len() > 0 {
+                if !residual_to_be_matched.is_empty() {
                     let (correction, mwpm_runtime_statistics) = self
                         .mwpm_decoder
                         .decode(&SparseMeasurement::from_vec(&residual_to_be_matched));
@@ -486,10 +483,8 @@ impl TailoredMWPMDecoder {
                                         if *weight < stab_x_min_weight {
                                             stab_x_min_weight = *weight;
                                         }
-                                    } else {
-                                        if *weight < stab_y_min_weight {
-                                            stab_y_min_weight = *weight;
-                                        }
+                                    } else if *weight < stab_y_min_weight {
+                                        stab_y_min_weight = *weight;
                                     }
                                 }
                             }
@@ -558,8 +553,8 @@ impl TailoredMWPMDecoder {
                          cluster_1: Vec<Position>,
                          cluster_2: Vec<Position>| {
                             let mut merged_to_be_matched = Vec::<Position>::with_capacity(cluster_1.len() + cluster_2.len());
-                            merged_to_be_matched.extend(cluster_1.into_iter());
-                            merged_to_be_matched.extend(cluster_2.into_iter());
+                            merged_to_be_matched.extend(cluster_1);
+                            merged_to_be_matched.extend(cluster_2);
                             let merged_to_be_matched = merged_to_be_matched; // change to immutable
                                                                              // eprintln!("merged_to_be_matched: {:?}", merged_to_be_matched);
                                                                              // first split into stabX and stabY
@@ -766,7 +761,7 @@ mod tests {
             1,
             false,
         );
-        if true || enable_all {
+        if enable_all {
             // debug 11: why cannot code distance 3 correct only 3 Z errors?
             simulator.clear_all_errors();
             simulator.set_error_check(&noise_model, &pos!(0, 1, 3), &Z);
@@ -814,7 +809,7 @@ mod tests {
             1,
             false,
         );
-        if false || enable_all {
+        if enable_all {
             // debug 7: residual decoding
             simulator.clear_all_errors();
             simulator.set_error_check(&noise_model, &pos!(0, 7, 5), &Z);
@@ -827,7 +822,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false || enable_all {
+        if enable_all {
             // debug 5: no edges in residual graph
             simulator.clear_all_errors();
             simulator.set_error_check(&noise_model, &pos!(0, 1, 5), &Z);
@@ -840,7 +835,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false || enable_all {
+        if enable_all {
             // debug 4
             simulator.clear_all_errors();
             simulator.set_error_check(&noise_model, &pos!(0, 5, 5), &Z);
@@ -855,7 +850,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false || enable_all {
+        if enable_all {
             // debug 3
             simulator.clear_all_errors();
             simulator.set_error_check(&noise_model, &pos!(0, 1, 5), &Z);
@@ -869,7 +864,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false || enable_all {
+        if enable_all {
             // debug 2.5
             simulator.clear_all_errors();
             simulator.set_error_check(&noise_model, &pos!(0, 7, 7), &Z);
@@ -884,7 +879,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false || enable_all {
+        if enable_all {
             // debug 2
             simulator.clear_all_errors();
             simulator.set_error_check(&noise_model, &pos!(0, 6, 6), &Z);
@@ -909,7 +904,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false || enable_all {
+        if enable_all {
             // debug 1
             simulator.clear_all_errors();
             simulator.set_error_check(&noise_model, &pos!(0, 4, 4), &Z);

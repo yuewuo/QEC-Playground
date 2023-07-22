@@ -319,7 +319,7 @@ impl ModelGraph {
                     let mut sparse_errors = SparseErrorPattern::new();
                     match error {
                         Either::Left(error_type) => {
-                            sparse_errors.add(position.clone(), error_type.clone());
+                            sparse_errors.add(position.clone(), *error_type);
                         }
                         Either::Right(error_type) => {
                             sparse_errors.add(position.clone(), error_type.my_error());
@@ -337,7 +337,7 @@ impl ModelGraph {
                     let sparse_correction = Arc::new(sparse_correction); // make it immutable and shared
                     let sparse_measurement_real = sparse_measurement_real.to_vec();
                     let sparse_measurement_virtual = sparse_measurement_virtual.to_vec();
-                    if sparse_measurement_real.len() == 0 {
+                    if sparse_measurement_real.is_empty() {
                         // no way to detect it, ignore
                         continue;
                     }
@@ -371,8 +371,7 @@ impl ModelGraph {
                         let is_same_type = node1.qubit_type == node2.qubit_type;
                         if is_same_type && (p > 0. || is_erasure) {
                             self.add_edge_between(
-                                position1,
-                                position2,
+                                (position1, position2),
                                 p,
                                 weight_of(p),
                                 sparse_errors.clone(),
@@ -405,7 +404,7 @@ impl ModelGraph {
                 // here I omitted the condition `t % measurement_cycles == 0` for a stricter check
                 if position.t != 0 && node.gate_type.is_measurement() && simulator.is_node_real(position) {
                     let model_graph_node = self.get_node_unwrap(position);
-                    if model_graph_node.all_edges.len() > 0 || model_graph_node.edges.len() > 0 {
+                    if !model_graph_node.all_edges.is_empty() || !model_graph_node.edges.is_empty() {
                         state_clean = false;
                     }
                 }
@@ -448,8 +447,8 @@ impl ModelGraph {
                 handler.join().unwrap();
             }
             // move the data from instances (without additional large memory allocation)
-            for parallel_idx in 0..parallel {
-                let mut instance = instances[parallel_idx].lock().unwrap();
+            for instance in instances.iter() {
+                let mut instance = instance.lock().unwrap();
                 simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if instance.is_node_exist(position) {
                     let instance_model_graph_node = instance.get_node_mut_unwrap(position);
                     let model_graph_node = self.get_node_mut_unwrap(position);
@@ -479,21 +478,33 @@ impl ModelGraph {
     /// add asymmetric edge from `source` to `target`; in order to create symmetric edge, call this function twice with reversed input
     pub fn add_edge(
         &mut self,
-        source: &Position,
-        target: &Position,
+        positions: (&Position, &Position),
         probability: f64,
         weight: f64,
         error_pattern: Arc<SparseErrorPattern>,
         correction: Arc<SparseCorrection>,
         use_brief_edge: bool,
     ) {
+        let (source, target) = positions;
         let node = self.get_node_mut_unwrap(source);
         if !node.all_edges.contains_key(target) {
             node.all_edges.insert(target.clone(), (Vec::new(), Vec::new()));
         }
         let (node_edges, node_brief_edges) = node.all_edges.get_mut(target).unwrap();
         if use_brief_edge {
-            if node_edges.len() < 1 {
+            if node_edges.is_empty() {
+                node_edges.push(ModelGraphEdge {
+                    probability,
+                    weight,
+                    error_pattern,
+                    correction,
+                });
+            } else if probability > node_edges[0].probability {
+                // replace it
+                node_brief_edges.push(BriefModelGraphEdge {
+                    probability: node_edges[0].probability,
+                    weight: node_edges[0].weight,
+                });
                 node_edges.push(ModelGraphEdge {
                     probability,
                     weight,
@@ -501,22 +512,8 @@ impl ModelGraph {
                     correction,
                 });
             } else {
-                if probability > node_edges[0].probability {
-                    // replace it
-                    node_brief_edges.push(BriefModelGraphEdge {
-                        probability: node_edges[0].probability,
-                        weight: node_edges[0].weight,
-                    });
-                    node_edges.push(ModelGraphEdge {
-                        probability,
-                        weight,
-                        error_pattern,
-                        correction,
-                    });
-                } else {
-                    // put it into brief node
-                    node_brief_edges.push(BriefModelGraphEdge { probability, weight });
-                }
+                // put it into brief node
+                node_brief_edges.push(BriefModelGraphEdge { probability, weight });
             }
         } else {
             node_edges.push(ModelGraphEdge {
@@ -531,8 +528,7 @@ impl ModelGraph {
     /// add symmetric edge between `source` and `target`
     pub fn add_edge_between(
         &mut self,
-        position1: &Position,
-        position2: &Position,
+        positions: (&Position, &Position),
         probability: f64,
         weight: f64,
         error_pattern: Arc<SparseErrorPattern>,
@@ -540,8 +536,7 @@ impl ModelGraph {
         use_brief_edge: bool,
     ) {
         self.add_edge(
-            position1,
-            position2,
+            positions,
             probability,
             weight,
             error_pattern.clone(),
@@ -549,8 +544,7 @@ impl ModelGraph {
             use_brief_edge,
         );
         self.add_edge(
-            position2,
-            position1,
+            (positions.1, positions.0),
             probability,
             weight,
             error_pattern.clone(),
@@ -561,13 +555,13 @@ impl ModelGraph {
 
     /// unlike [`CompleteModelGraph::build_correction_matching`], this function can only match between incident nodes
     pub fn build_correction_matching(&self, source: &Position, target: &Position) -> &SparseCorrection {
-        let node = self.get_node_unwrap(&source);
+        let node = self.get_node_unwrap(source);
         let edge = node.edges.get(target);
         &edge.as_ref().unwrap().correction
     }
 
     pub fn build_correction_boundary(&self, source: &Position) -> &SparseCorrection {
-        let node = self.get_node_unwrap(&source);
+        let node = self.get_node_unwrap(source);
         &node.boundary.as_ref().unwrap().correction
     }
 
@@ -596,8 +590,7 @@ impl ModelGraph {
                         elected_idx = i;  // set as best, use its
                     }
                 }
-                for i in 0..brief_edges.len() {
-                    let brief_edge = &brief_edges[i];
+                for brief_edge in brief_edges.iter() {
                     if use_combined_probability {
                         elected_probability = elected_probability * (1. - brief_edge.probability) + brief_edge.probability * (1. - elected_probability);  // XOR
                     }
@@ -613,7 +606,7 @@ impl ModelGraph {
                 model_graph_node.edges.insert(target.clone(), elected);
             }
             // elect boundary edge
-            if model_graph_node.all_boundaries.len() > 0 {
+            if !model_graph_node.all_boundaries.is_empty() {
                 let mut elected_idx = 0;
                 let mut elected_probability = model_graph_node.all_boundaries[0].probability;
                 for i in 1..model_graph_node.all_boundaries.len() {

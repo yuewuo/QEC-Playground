@@ -113,12 +113,12 @@ impl ErasureGraph {
                 for error in all_possible_errors.iter() {
                     // simulate the error and measure it
                     let mut sparse_errors = SparseErrorPattern::new();
-                    sparse_errors.add(position.clone(), error.clone());
+                    sparse_errors.add(position.clone(), *error);
                     let sparse_errors = Arc::new(sparse_errors); // make it immutable and shared
                     let (_sparse_correction, sparse_measurement_real, _sparse_measurement_virtual) =
                         simulator.fast_measurement_given_few_errors(&sparse_errors);
                     let sparse_measurement_real = sparse_measurement_real.to_vec();
-                    if sparse_measurement_real.len() == 0 {
+                    if sparse_measurement_real.is_empty() {
                         // no way to detect it, ignore
                         continue;
                     }
@@ -186,8 +186,8 @@ impl ErasureGraph {
                 handler.join().unwrap();
             }
             // move the data from instances (without additional large memory allocation)
-            for parallel_idx in 0..parallel {
-                let mut instance = instances[parallel_idx].lock().unwrap();
+            for instance in instances.iter() {
+                let mut instance = instance.lock().unwrap();
                 simulator_iter!(
                     simulator,
                     position,
@@ -196,7 +196,7 @@ impl ErasureGraph {
                             !self.is_node_exist(position),
                             "critical bug: two parallel tasks should not work on the same vertex"
                         );
-                        std::mem::swap(self.get_node_mut(position), &mut instance.get_node_mut(position));
+                        std::mem::swap(self.get_node_mut(position), instance.get_node_mut(position));
                     }
                 );
             }
@@ -234,6 +234,12 @@ impl ErasureGraph {
 pub struct ErasureGraphModifier<Weight> {
     /// edge with 0 weighted caused by the erasure, used by UF decoder or (indirectly) by MWPM decoder
     pub modified: Vec<(ErasureEdge, Weight)>,
+}
+
+impl<Weight> Default for ErasureGraphModifier<Weight> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<Weight> ErasureGraphModifier<Weight> {

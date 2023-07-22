@@ -228,7 +228,7 @@ impl FusionBlossomAdaptor {
         parallel_init: usize,
         use_brief_edge: bool,
     ) -> Self {
-        let mut model_graph = ModelGraph::new(&simulator);
+        let mut model_graph = ModelGraph::new(simulator);
         model_graph.build(
             simulator,
             noise_model_graph,
@@ -275,13 +275,13 @@ impl FusionBlossomAdaptor {
                 && !stabilizer_filter.ignore_node(node)
             {
                 let model_graph_node = model_graph.get_node_unwrap(position);
-                let vertex_index = position_to_vertex_mapping[&position];
+                let vertex_index = position_to_vertex_mapping[position];
                 if let Some(model_graph_boundary) = &model_graph_node.boundary {
                     let virtual_position = model_graph_boundary
                         .virtual_node
                         .as_ref()
                         .expect("virtual boundary required to plot properly in fusion blossom");
-                    let virtual_index = position_to_vertex_mapping[&virtual_position];
+                    let virtual_index = position_to_vertex_mapping[virtual_position];
                     weighted_edges_unscaled.push((vertex_index, virtual_index, model_graph_boundary.weight));
                     edge_to_correction_mapping.push(model_graph_boundary.correction.as_ref().clone());
                 }

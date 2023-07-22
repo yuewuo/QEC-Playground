@@ -115,7 +115,7 @@ impl MWPMDecoder {
         sparse_detected_erasures: &SparseErasures,
     ) -> (SparseCorrection, serde_json::Value) {
         if sparse_detected_erasures.len() > 0 {
-            assert!(self.config.precompute_complete_model_graph == false, "if erasure happens, the precomputed complete graph is invalid; please disable `precompute_complete_model_graph` or `pcmg` in the decoder configuration");
+            assert!(!self.config.precompute_complete_model_graph, "if erasure happens, the precomputed complete graph is invalid; please disable `precompute_complete_model_graph` or `pcmg` in the decoder configuration");
         }
         let mut correction = SparseCorrection::new();
         // list nontrivial measurements to be matched
@@ -124,7 +124,7 @@ impl MWPMDecoder {
         let mut time_blossom_v = 0.;
         let mut time_build_correction = 0.;
         let mut matching_edges: Vec<(Position, Position)> = Vec::with_capacity(0);
-        if to_be_matched.len() > 0 {
+        if !to_be_matched.is_empty() {
             // println!{"to_be_matched: {:?}", to_be_matched};
             let begin = Instant::now();
             // add the edges to the graph
@@ -172,12 +172,9 @@ impl MWPMDecoder {
             for i in 0..m_len {
                 let position = &to_be_matched[i];
                 let (edges, boundary) = self.complete_model_graph.get_edges(position, &to_be_matched);
-                match boundary {
-                    Some(weight) => {
-                        // eprintln!{"boundary {} {} ", i, weight};
-                        weighted_edges.push((i, i + m_len, weight));
-                    }
-                    None => {}
+                if let Some(weight) = boundary {
+                    // eprintln!{"boundary {} {} ", i, weight};
+                    weighted_edges.push((i, i + m_len, weight));
                 }
                 for &(j, weight) in edges.iter() {
                     if i < j {

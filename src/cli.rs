@@ -76,7 +76,7 @@ impl TypedValueParser for VecUsizeParser {
                 }
                 err.insert(
                     ContextKind::InvalidValue,
-                    ContextValue::String(format!("should be like [1,2,3], parse error: {}", error.to_string())),
+                    ContextValue::String(format!("should be like [1,2,3], parse error: {}", error)),
                 );
                 Err(err)
             }
@@ -105,7 +105,7 @@ impl TypedValueParser for VecF64Parser {
                 }
                 err.insert(
                     ContextKind::InvalidValue,
-                    ContextValue::String(format!("should be like [0.1,0.2,0.3], parse error: {}", error.to_string())),
+                    ContextValue::String(format!("should be like [0.1,0.2,0.3], parse error: {error}")),
                 );
                 Err(err)
             }
@@ -134,7 +134,7 @@ impl TypedValueParser for SerdeJsonParser {
                 }
                 err.insert(
                     ContextKind::InvalidValue,
-                    ContextValue::String(format!("should be like {{\"a\":1}}, parse error: {}", error.to_string())),
+                    ContextValue::String(format!("should be like {{\"a\":1}}, parse error: {error}")),
                 );
                 Err(err)
             }

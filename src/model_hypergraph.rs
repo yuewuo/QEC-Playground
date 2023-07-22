@@ -61,7 +61,6 @@ impl<'de> Visitor<'de> for DefectVerticesVisitor {
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             formatter,
-            "{}",
             r#"defect vertices should look like "[0][10][13]+[0][10][15]+[6][10][13]""#
         )
     }
@@ -69,7 +68,7 @@ impl<'de> Visitor<'de> for DefectVerticesVisitor {
     where
         E: serde::de::Error,
     {
-        let split = s.split("+");
+        let split = s.split('+');
         let mut positions = vec![];
         for position in split {
             let position_visitor = PositionVisitor {};
@@ -94,20 +93,20 @@ impl<'de> Deserialize<'de> for DefectVertices {
 
 impl Ord for DefectVertices {
     fn cmp(&self, other: &Self) -> Ordering {
-        if self.0.len() > other.0.len() {
-            Ordering::Greater
-        } else if self.0.len() < other.0.len() {
-            Ordering::Less
-        } else {
-            for i in 0..self.0.len() {
-                if self.0[i] > other.0[i] {
-                    return Ordering::Greater;
+        match self.0.len().cmp(&other.0.len()) {
+            Ordering::Greater => Ordering::Greater,
+            Ordering::Less => Ordering::Less,
+            Ordering::Equal => {
+                for i in 0..self.0.len() {
+                    if self.0[i] > other.0[i] {
+                        return Ordering::Greater;
+                    }
+                    if self.0[i] < other.0[i] {
+                        return Ordering::Less;
+                    }
                 }
-                if self.0[i] < other.0[i] {
-                    return Ordering::Less;
-                }
+                Ordering::Equal
             }
-            Ordering::Equal
         }
     }
 }
@@ -163,12 +162,10 @@ impl ModelHyperedgeGroup {
         let new_probability = if use_combined_probability {
             hyperedge.probability * (1. - self.hyperedge.probability)
                 + self.hyperedge.probability * (1. - hyperedge.probability) // XOR
+        } else if is_new_edge_better {
+            hyperedge.probability
         } else {
-            if is_new_edge_better {
-                hyperedge.probability
-            } else {
-                self.hyperedge.probability
-            }
+            self.hyperedge.probability
         };
         if is_new_edge_better {
             self.hyperedge = hyperedge.clone();
@@ -275,13 +272,13 @@ impl ModelHypergraph {
         simulator: &mut Simulator,
         noise_model: Arc<NoiseModel>,
         weight_of: F,
-        t_start: usize,
-        t_end: usize,
+        t_range: (usize, usize),
         use_combined_probability: bool,
         use_brief_edge: bool,
     ) where
         F: Fn(f64) -> f64 + Copy,
     {
+        let (t_start, t_end) = t_range;
         // calculate all possible errors to be iterated
         let mut all_possible_errors: Vec<Either<ErrorType, CorrelatedPauliErrorType>> = Vec::new();
         for error_type in ErrorType::all_possible_errors().drain(..) {
@@ -328,7 +325,7 @@ impl ModelHypergraph {
                     let mut sparse_errors = SparseErrorPattern::new();
                     match error {
                         Either::Left(error_type) => {
-                            sparse_errors.add(position.clone(), error_type.clone());
+                            sparse_errors.add(position.clone(), *error_type);
                         }
                         Either::Right(error_type) => {
                             sparse_errors.add(position.clone(), error_type.my_error());
@@ -345,7 +342,7 @@ impl ModelHypergraph {
                         simulator.fast_measurement_given_few_errors(&sparse_errors);
                     let sparse_correction = Arc::new(sparse_correction); // make it immutable and shared
                     let sparse_measurement = sparse_measurement.to_vec();
-                    if sparse_measurement.len() == 0 {
+                    if sparse_measurement.is_empty() {
                         // no way to detect it, ignore
                         continue;
                     }
@@ -403,8 +400,7 @@ impl ModelHypergraph {
                 simulator,
                 noise_model,
                 weight_of,
-                0,
-                simulator.height,
+                (0, simulator.height),
                 use_combined_probability,
                 use_brief_edge,
             );
@@ -429,8 +425,7 @@ impl ModelHypergraph {
                         &mut simulator,
                         noise_model,
                         weight_of,
-                        t_start,
-                        t_end,
+                        (t_start, t_end),
                         use_combined_probability,
                         use_brief_edge,
                     );
@@ -440,8 +435,8 @@ impl ModelHypergraph {
                 handler.join().unwrap();
             }
             // move the data from instances (without additional large memory allocation)
-            for parallel_idx in 0..parallel {
-                let mut instance = instances[parallel_idx].lock().unwrap();
+            for instance in instances.iter() {
+                let mut instance = instance.lock().unwrap();
                 // copy vertex positions
                 for position in instance.vertex_positions.iter() {
                     if !self.vertex_indices.contains_key(position) {

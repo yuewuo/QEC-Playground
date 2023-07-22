@@ -224,7 +224,7 @@ impl UnionFindDecoder {
         simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if model_graph.is_node_exist(position) {
             let index = nodes.len();
             let node = UnionFindDecoderNode {
-                index: index,
+                index,
                 is_error_syndrome: false,
                 neighbors: Vec::new(),  // updated later
                 boundary_length: None,  // updated later
@@ -241,8 +241,7 @@ impl UnionFindDecoder {
             index_to_position.shuffle(&mut thread_rng());
             // eprintln!("index_to_position: {:?}", index_to_position);
         }
-        for index in 0..nodes.len() {
-            let position = index_to_position[index].clone();
+        for (index, position) in index_to_position.iter().cloned().enumerate() {
             position_to_index.insert(position, index);
         }
         // calculate scaling factor of edges
@@ -372,7 +371,7 @@ impl UnionFindDecoder {
     }
 
     pub fn clear_shrunk_boundaries_static(
-        nodes: &mut Vec<UnionFindDecoderNode>,
+        nodes: &mut [UnionFindDecoderNode],
         shrunk_boundaries_active_timestamp: &mut usize,
     ) -> usize {
         if *shrunk_boundaries_active_timestamp == usize::MAX {
@@ -512,9 +511,7 @@ impl UnionFindDecoder {
                 for position in sparse_measurement.iter() {
                     let index = self.position_to_index[position];
                     let root = self.union_find.find(index);
-                    if !cluster_nodes.contains_key(&root) {
-                        cluster_nodes.insert(root, vec![]);
-                    }
+                    cluster_nodes.entry(root).or_insert_with(Vec::new);
                     cluster_nodes.get_mut(&root).unwrap().push(index);
                 }
                 // then build correction based on each correction
@@ -620,7 +617,7 @@ impl UnionFindDecoder {
                     let color = if node.boundary_increased > 0 { "\x1b[93m" } else { "" };
                     format!("{}b({}/{})\x1b[0m", color, node.boundary_increased, boundary_length)
                 }
-                None => format!("      "),
+                None => "      ".to_string(),
             };
             let neighbors_len = node.neighbors.len();
             let mut neighbor_string = String::new();
@@ -660,64 +657,58 @@ impl UnionFindDecoder {
 
     #[inline(never)]
     fn run_single_iteration_get_grow_step(&mut self) -> usize {
-        let grow_step = if !self.config.use_real_weighted {
-            1
-        } else {
-            // compute the maximum safe length to growth
-            let mut maximum_safe_length = usize::MAX;
-            for &odd_cluster in self.odd_clusters.iter() {
+        if !self.config.use_real_weighted {
+            return 1;
+        }
+        // compute the maximum safe length to growth
+        let mut maximum_safe_length = usize::MAX;
+        for &odd_cluster in self.odd_clusters.iter() {
+            self.count_memory_access += 1;
+            let boundaries_vec = &self.cluster_boundaries[odd_cluster];
+            for &boundary in boundaries_vec.iter() {
                 self.count_memory_access += 1;
-                let boundaries_vec = &self.cluster_boundaries[odd_cluster];
-                for &boundary in boundaries_vec.iter() {
-                    self.count_memory_access += 1;
-                    let neighbor_len = self.nodes[boundary].neighbors.len();
-                    for i in 0..neighbor_len {
-                        let (neighbor_index, edge_ptr) = &self.nodes[boundary].neighbors[i];
-                        self.count_memory_access += 2;
-                        let edge = edge_ptr.read_recursive();
-                        self.count_memory_access += 2;
-                        if edge.increased < edge.length {
-                            // not grown
-                            let mut safe_length = edge.length - edge.increased;
-                            // judge if peer needs to grow as well, if so, the safe length is halved
-                            let neighbor_root = self.union_find.find(*neighbor_index);
+                let neighbor_len = self.nodes[boundary].neighbors.len();
+                for i in 0..neighbor_len {
+                    let (neighbor_index, edge_ptr) = &self.nodes[boundary].neighbors[i];
+                    self.count_memory_access += 2;
+                    let edge = edge_ptr.read_recursive();
+                    self.count_memory_access += 2;
+                    if edge.increased < edge.length {
+                        // not grown
+                        let mut safe_length = edge.length - edge.increased;
+                        // judge if peer needs to grow as well, if so, the safe length is halved
+                        let neighbor_root = self.union_find.find(*neighbor_index);
+                        self.count_memory_access += 1;
+                        if self.has_odd_clusters_set(neighbor_root) {
                             self.count_memory_access += 1;
-                            if self.has_odd_clusters_set(neighbor_root) {
-                                self.count_memory_access += 1;
-                                safe_length = (safe_length + 1) / 2; // at least fully grown, to avoid another growth of 1
-                            }
-                            if safe_length < maximum_safe_length {
-                                maximum_safe_length = safe_length;
-                            }
+                            safe_length = (safe_length + 1) / 2; // at least fully grown, to avoid another growth of 1
+                        }
+                        if safe_length < maximum_safe_length {
+                            maximum_safe_length = safe_length;
                         }
                     }
-                    // grow to the code boundary if it has
+                }
+                // grow to the code boundary if it has
+                self.count_memory_access += 1;
+                if let Some(boundary_length) = self.nodes[boundary].boundary_length {
+                    let boundary_increased = &mut self.nodes[boundary].boundary_increased;
                     self.count_memory_access += 1;
-                    match self.nodes[boundary].boundary_length {
-                        Some(boundary_length) => {
-                            let boundary_increased = &mut self.nodes[boundary].boundary_increased;
-                            self.count_memory_access += 1;
-                            if *boundary_increased < boundary_length {
-                                let safe_length = boundary_length - *boundary_increased;
-                                if safe_length < maximum_safe_length {
-                                    maximum_safe_length = safe_length;
-                                }
-                            }
+                    if *boundary_increased < boundary_length {
+                        let safe_length = boundary_length - *boundary_increased;
+                        if safe_length < maximum_safe_length {
+                            maximum_safe_length = safe_length;
                         }
-                        None => {} // do nothing
                     }
                 }
             }
-            // grow step cannot be 0
-            assert_ne!(maximum_safe_length, usize::MAX, "should find at least one un-grown edge");
-            if maximum_safe_length != 0 {
-                maximum_safe_length
-            } else {
-                1
-            }
-        };
-        // eprintln!("grow_step: {}", grow_step);
-        grow_step
+        }
+        // grow step cannot be 0
+        assert_ne!(maximum_safe_length, usize::MAX, "should find at least one un-grown edge");
+        if maximum_safe_length != 0 {
+            maximum_safe_length
+        } else {
+            1
+        }
     }
 
     /// grow and update cluster boundaries
@@ -750,17 +741,16 @@ impl UnionFindDecoder {
                             if edge.increased >= edge.length {
                                 is_fusion = true;
                             }
-                        } else {
-                            if edge.increased < edge.length {
-                                // not grown
-                                self.count_memory_access += 1; // write
-                                edge.increased += grow_step; // may over-grown, but ok as long as weight is much smaller than usize::MAX
-                                if edge.increased >= edge.length {
-                                    // found new grown edge
-                                    is_fusion = true;
-                                }
+                        } else if edge.increased < edge.length {
+                            // not grown
+                            self.count_memory_access += 1; // write
+                            edge.increased += grow_step; // may over-grown, but ok as long as weight is much smaller than usize::MAX
+                            if edge.increased >= edge.length {
+                                // found new grown edge
+                                is_fusion = true;
                             }
                         }
+
                         (is_fusion, *neighbor_index)
                     };
                     if is_fusion {
@@ -771,31 +761,26 @@ impl UnionFindDecoder {
                 }
                 // grow to the code boundary if it has
                 self.count_memory_access += 1;
-                match node.boundary_length {
-                    Some(boundary_length) => {
-                        let boundary_increased = &mut self.nodes[boundary].boundary_increased;
-                        self.count_memory_access += 1;
-                        if no_growing {
-                            if *boundary_increased >= boundary_length {
-                                let union_find_node = self.union_find.get_mut(boundary);
-                                union_find_node.is_touching_boundary = true; // this set is touching the boundary
-                                union_find_node.touching_boundary_index = boundary;
-                            }
-                        } else {
-                            if *boundary_increased < boundary_length {
-                                *boundary_increased += grow_step;
-                                self.count_memory_access += 1; // write
-                                if *boundary_increased >= boundary_length {
-                                    let union_find_node = self.union_find.get_mut(boundary);
-                                    self.count_memory_access += 1;
-                                    union_find_node.is_touching_boundary = true; // this set is touching the boundary
-                                    union_find_node.touching_boundary_index = boundary;
-                                    self.count_memory_access += 2;
-                                }
-                            }
+                if let Some(boundary_length) = node.boundary_length {
+                    let boundary_increased = &mut self.nodes[boundary].boundary_increased;
+                    self.count_memory_access += 1;
+                    if no_growing {
+                        if *boundary_increased >= boundary_length {
+                            let union_find_node = self.union_find.get_mut(boundary);
+                            union_find_node.is_touching_boundary = true; // this set is touching the boundary
+                            union_find_node.touching_boundary_index = boundary;
+                        }
+                    } else if *boundary_increased < boundary_length {
+                        *boundary_increased += grow_step;
+                        self.count_memory_access += 1; // write
+                        if *boundary_increased >= boundary_length {
+                            let union_find_node = self.union_find.get_mut(boundary);
+                            self.count_memory_access += 1;
+                            union_find_node.is_touching_boundary = true; // this set is touching the boundary
+                            union_find_node.touching_boundary_index = boundary;
+                            self.count_memory_access += 2;
                         }
                     }
-                    None => {} // do nothing
                 }
                 if !self.nodes[boundary].node_visited {
                     // collect statistics
@@ -833,22 +818,26 @@ impl UnionFindDecoder {
                 );
                 let appending = if to_be_appended == a { b } else { a }; // the other one
                                                                          // avoid memory allocation here, by using slice cleverly
-                if appending > to_be_appended {
-                    let (left, right) = self.cluster_boundaries.split_at_mut(appending);
-                    let appending_boundaries_vec = &right[0];
-                    let to_be_appended_boundaries_vec = &mut left[to_be_appended];
-                    // append the boundary
-                    to_be_appended_boundaries_vec.extend(appending_boundaries_vec.iter());
-                    self.count_memory_access += appending_boundaries_vec.len();
-                } else if appending < to_be_appended {
-                    let (left, right) = self.cluster_boundaries.split_at_mut(to_be_appended);
-                    let appending_boundaries_vec = &left[appending];
-                    let to_be_appended_boundaries_vec = &mut right[0];
-                    // append the boundary
-                    to_be_appended_boundaries_vec.extend(appending_boundaries_vec.iter());
-                    self.count_memory_access += appending_boundaries_vec.len();
-                } else {
-                    panic!("shouldn't happen")
+                match appending.cmp(&to_be_appended) {
+                    std::cmp::Ordering::Greater => {
+                        let (left, right) = self.cluster_boundaries.split_at_mut(appending);
+                        let appending_boundaries_vec = &right[0];
+                        let to_be_appended_boundaries_vec = &mut left[to_be_appended];
+                        // append the boundary
+                        to_be_appended_boundaries_vec.extend(appending_boundaries_vec.iter());
+                        self.count_memory_access += appending_boundaries_vec.len();
+                    }
+                    std::cmp::Ordering::Less => {
+                        let (left, right) = self.cluster_boundaries.split_at_mut(to_be_appended);
+                        let appending_boundaries_vec = &left[appending];
+                        let to_be_appended_boundaries_vec = &mut right[0];
+                        // append the boundary
+                        to_be_appended_boundaries_vec.extend(appending_boundaries_vec.iter());
+                        self.count_memory_access += appending_boundaries_vec.len();
+                    }
+                    std::cmp::Ordering::Equal => {
+                        panic!("shouldn't happen")
+                    }
                 }
             }
         }
@@ -900,14 +889,11 @@ impl UnionFindDecoder {
                 }
                 let boundary_node = &self.nodes[boundary];
                 self.count_memory_access += 1;
-                match boundary_node.boundary_length {
-                    Some(boundary_length) => {
-                        self.count_memory_access += 1;
-                        if boundary_node.boundary_increased < boundary_length {
-                            all_grown = false;
-                        }
+                if let Some(boundary_length) = boundary_node.boundary_length {
+                    self.count_memory_access += 1;
+                    if boundary_node.boundary_increased < boundary_length {
+                        all_grown = false;
                     }
-                    None => {} // do nothing
                 }
                 if !all_grown {
                     let not_present = {
@@ -1092,7 +1078,7 @@ mod tests {
             1,
             false,
         );
-        if true || enable_all {
+        if enable_all {
             // debug 5
             simulator.clear_all_errors();
             // {"[0][4][6]":"Z","[0][5][9]":"Z","[0][7][1]":"Z","[0][9][1]":"Z"}
@@ -1108,7 +1094,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false || enable_all {
+        if enable_all {
             // debug 4, should fail
             simulator.clear_all_errors();
             // {"[0][1][5]":"Z","[0][5][3]":"Z","[0][5][7]":"Z","[0][7][7]":"Z"}
@@ -1122,7 +1108,7 @@ mod tests {
             // println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
         }
-        if false || enable_all {
+        if enable_all {
             // debug 3
             simulator.clear_all_errors();
             // {"[0][6][6]":"Z","[0][8][2]":"Z","[0][8][4]":"Z"}
@@ -1137,7 +1123,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false || enable_all {
+        if enable_all {
             // debug 2
             simulator.clear_all_errors();
             // {"[0][3][9]":"Z","[0][8][8]":"Z"}
@@ -1151,7 +1137,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false || enable_all {
+        if enable_all {
             // debug 1
             simulator.clear_all_errors();
             simulator.set_error_check(&noise_model, &pos!(0, 6, 4), &Z);

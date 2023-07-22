@@ -46,11 +46,9 @@ impl Clone for CompleteModelGraphNode {
             timestamp: self.timestamp,
             previous: None,
         };
-        if self.duplicate_on_clone {
-            if self.precomputed.is_some() {
-                // allocate new memory to copy the precomputed data
-                result.precomputed = Some(Arc::new((**self.precomputed.as_ref().unwrap()).clone()));
-            }
+        if self.duplicate_on_clone && self.precomputed.is_some() {
+            // allocate new memory to copy the precomputed data
+            result.precomputed = Some(Arc::new((**self.precomputed.as_ref().unwrap()).clone()));
         }
         result
     }
@@ -176,19 +174,11 @@ impl CompleteModelGraph {
     /// compute the boundary sum given two positions
     pub fn get_boundary_sum(&self, position1: &Position, position2: &Position) -> Option<f64> {
         let node1 = self.get_node_unwrap(position1);
-        if node1.precomputed.is_none() {
-            return None;
-        }
-        if node1.precomputed.as_ref().unwrap().boundary.is_none() {
-            return None;
-        }
+        node1.precomputed.as_ref()?;
+        node1.precomputed.as_ref().unwrap().boundary.as_ref()?;
         let node2 = self.get_node_unwrap(position2);
-        if node2.precomputed.is_none() {
-            return None;
-        }
-        if node2.precomputed.as_ref().unwrap().boundary.is_none() {
-            return None;
-        }
+        node2.precomputed.as_ref()?;
+        node2.precomputed.as_ref().unwrap().boundary.as_ref()?;
         Some(
             node1.precomputed.as_ref().unwrap().boundary.as_ref().unwrap().weight
                 + node2.precomputed.as_ref().unwrap().boundary.as_ref().unwrap().weight,
@@ -196,7 +186,7 @@ impl CompleteModelGraph {
     }
 
     /// get edges in a batch manner to improve speed if need to run Dijkstra's algorithm on the fly;
-    pub fn get_edges(&mut self, position: &Position, targets: &Vec<Position>) -> (Vec<(usize, f64)>, Option<f64>) {
+    pub fn get_edges(&mut self, position: &Position, targets: &[Position]) -> (Vec<(usize, f64)>, Option<f64>) {
         if !self.precompute_complete_model_graph {
             self.precompute_dijkstra(position);
         }
@@ -305,7 +295,7 @@ impl CompleteModelGraph {
         pq.push(position.clone(), PriorityElement::new(0., position.clone()));
         loop {
             // until no more elements
-            if pq.len() == 0 {
+            if pq.is_empty() {
                 break;
             }
             let (
@@ -360,7 +350,7 @@ impl CompleteModelGraph {
                     let mut update = &edge_weight < existing_weight;
                     if &edge_weight == existing_weight {
                         let distance = target.distance(&next);
-                        let existing_distance = target.distance(&existing_next);
+                        let existing_distance = target.distance(existing_next);
                         // prevent loop by enforcing strong non-descending
                         if distance < existing_distance || (distance == existing_distance && &next < existing_next) {
                             update = true;
@@ -397,7 +387,7 @@ impl CompleteModelGraph {
         let mut pq = PriorityQueue::<Position, PriorityElement>::new();
         // create initial priority queue and clear existing state (this function might be called multiple times on the fly)
         simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if self.is_node_exist(position) {
-            Arc::get_mut(self.get_node_mut_unwrap(&position).precomputed.as_mut().unwrap()).unwrap().boundary = None;
+            Arc::get_mut(self.get_node_mut_unwrap(position).precomputed.as_mut().unwrap()).unwrap().boundary = None;
             let model_graph_node = model_graph.get_node_unwrap(position);
             if let Some(boundary) = &model_graph_node.boundary {
                 pq.push(position.clone(), PriorityElement::new(boundary.weight, position.clone()));
@@ -405,7 +395,7 @@ impl CompleteModelGraph {
         });
         loop {
             // until no more elements
-            if pq.len() == 0 {
+            if pq.is_empty() {
                 break;
             }
             let (
@@ -509,8 +499,8 @@ impl CompleteModelGraph {
                     if self.is_node_exist(position) {
                         let instance = &instances[counter % parallel];
                         let mut instance = instance.lock().unwrap();
-                        let node = self.get_node_mut_unwrap(&position);
-                        let instance_node = instance.get_node_mut_unwrap(&position);
+                        let node = self.get_node_mut_unwrap(position);
+                        let instance_node = instance.get_node_mut_unwrap(position);
                         node.precomputed = instance_node.precomputed.clone();
                         counter += 1;
                     }
@@ -577,7 +567,7 @@ impl std::cmp::PartialEq for PriorityElement {
 impl std::cmp::PartialOrd for PriorityElement {
     #[inline]
     fn partial_cmp(&self, other: &PriorityElement) -> Option<std::cmp::Ordering> {
-        other.weight.partial_cmp(&self.weight) // reverse `self` and `other` to prioritize smaller weight
+        Some(self.cmp(other))
     }
 }
 
