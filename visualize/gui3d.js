@@ -241,6 +241,9 @@ function get_hyperedge_geometry(hyperedge_degree) {
 const matching_edge_radius = parseFloat(urlParams.get('matching_edge_radius') || 0.06)
 const matching_edge_geometry = new THREE.CylinderGeometry(matching_edge_radius, matching_edge_radius, 1, segment, 1, true)
 matching_edge_geometry.translate(0, 0.5, 0)
+const tailored_unfixed_stabilizer_radius = parseFloat(urlParams.get('tailored_unfixed_stabilizer_radius') || 0.2)
+const tailored_unfixed_stabilizer_geometry = new THREE.TorusKnotGeometry(tailored_unfixed_stabilizer_radius, 0.03, segment, 16)
+tailored_unfixed_stabilizer_geometry.rotateX(Math.PI / 2)
 
 // measurement bits
 const measurement_radius = parseFloat(urlParams.get('measurement_radius') || 0.06)
@@ -411,6 +414,12 @@ export const tailored_model_graph_edge_material_vec = []
 for (let i = 0; i < 3; ++i) {
     tailored_model_graph_edge_material_vec.push(build_solid_material(sequential_colors[i + 1][1]))
 }
+export const tailored_unfixed_stabilizer_material = new THREE.MeshStandardMaterial({
+    color: 0xe91e63,
+    opacity: 1,
+    transparent: true,
+    side: THREE.FrontSide,
+})
 
 build_solid_material(0x006699)
 export const idle_gate_material = new THREE.MeshStandardMaterial({
@@ -473,6 +482,7 @@ export var model_hypergraph_vertex_meshes = []
 export var model_hypergraph_edge_vec_meshes = []
 export var tailored_model_graph_vertex_meshes = []
 export var tailored_model_graph_edge_vec_meshes = []
+export var tailored_unfixed_stabilizer_meshes = []
 
 // meshes of a specific case
 export var defect_measurement_meshes = []
@@ -763,6 +773,7 @@ watch([display_model_hypergraph, t_range], update_visible_model_hypergraph, { de
 export const existed_tailored_model_graph = ref(false)
 export const display_tailored_model_graph = ref(get_url_bool("display_tailored_model_graph", false))
 export const tailored_model_graph_region_display = ref([0, 1, 2])  // by default display all three graphs
+export const display_tailored_unfixed_stabilizer = ref(false)
 export function update_visible_tailored_model_graph() {
     const active_regions = {}
     for (const active_region of Object.values(tailored_model_graph_region_display.value)) active_regions[active_region] = true
@@ -781,8 +792,14 @@ export function update_visible_tailored_model_graph() {
             }
         }
     }
+    for (let mesh of tailored_unfixed_stabilizer_meshes) {
+        mesh.visible = display_tailored_unfixed_stabilizer.value && in_t_range(mesh.userData.t)
+    }
 }
-watch([tailored_model_graph_region_display, display_tailored_model_graph, t_range], update_visible_tailored_model_graph, { deep: true })
+watch([tailored_model_graph_region_display,
+    display_tailored_model_graph,
+    t_range, display_tailored_unfixed_stabilizer], update_visible_tailored_model_graph, { deep: true })
+
 // noise model
 export const existed_noise_model = ref(false)
 export const display_noise_model_pauli = ref(get_url_bool("display_noise_model_pauli", true))
@@ -1230,6 +1247,8 @@ export async function refresh_qecp_data() {
         tailored_model_graph_edge_vec_meshes = build_3d_array(height, vertical, horizontal)
         dispose_mesh_3d_array(tailored_model_graph_vertex_meshes)
         tailored_model_graph_vertex_meshes = build_3d_array(height, vertical, horizontal)
+        dispose_mesh_1d_array(tailored_unfixed_stabilizer_meshes)
+        tailored_unfixed_stabilizer_meshes = []
         if (qecp_data.tailored_model_graph != null) {
             existed_tailored_model_graph.value = true
             // add geometries
@@ -1313,6 +1332,29 @@ export async function refresh_qecp_data() {
                     vertex_mesh.userData.color = "red"
                 }
             }
+            // create geometries for unfixed stabilizers
+            for (const position_str of qecp_data.tailored_model_graph.unfixed_stabilizers) {
+                const { t, i, j } = get_position(position_str)
+                const position = qecp_data.simulator.positions[i][j]
+                const display_position = { t: t + t_bias, x: position.x, y: position.y }
+                // vertices
+                const unfixed_mesh = new THREE.Mesh(
+                    tailored_unfixed_stabilizer_geometry,
+                    tailored_unfixed_stabilizer_material
+                )
+                load_position(unfixed_mesh.position, display_position)
+                unfixed_mesh.userData = {
+                    type: "tailored_vertex",
+                    t: t,
+                    i: i,
+                    j: j,
+                    color: "black",
+                }
+                console.log(unfixed_mesh)
+                scene.add(unfixed_mesh)
+                tailored_unfixed_stabilizer_meshes.push(unfixed_mesh)
+            }
+            update_visible_tailored_model_graph()
         }
         // draw noise model: Pauli and erasure errors probabilities
         dispose_mesh_3d_array(noise_model_pauli_meshes)
@@ -1527,7 +1569,6 @@ export async function refresh_case() {
                 y: position.y,
             }
             const error_pattern_vec_mesh = []
-            error_pattern_vec_meshes.push(error_pattern_vec_mesh)
             let error_geometries = []
             if (error == "X") {
                 error_geometries = error_X_geometries
@@ -1552,6 +1593,7 @@ export async function refresh_case() {
                 scene.add(mesh)
                 error_pattern_vec_mesh.push(mesh)
             }
+            error_pattern_vec_meshes.push(error_pattern_vec_mesh)
         }
         if (active_case.detected_erasures) {
             for (let [idx, position_str] of Object.entries(active_case.detected_erasures)) {
