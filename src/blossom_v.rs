@@ -40,8 +40,7 @@ pub fn safe_minimum_weight_perfect_matching_integer_weights(
     debug_assert!({
         let mut existing_edges = BTreeSet::new();
         let mut sanity_check_passed = true;
-        for idx in 0..edge_num {
-            let (i, j, _weight) = weighted_edges[idx];
+        for &(i, j, _weight) in weighted_edges.iter() {
             if i == j {
                 eprintln!("invalid edge between the same vertex {}", i);
                 sanity_check_passed = false;
@@ -56,8 +55,7 @@ pub fn safe_minimum_weight_perfect_matching_integer_weights(
         }
         sanity_check_passed
     });
-    for idx in 0..edge_num {
-        let (i, j, weight) = weighted_edges[idx];
+    for &(i, j, weight) in weighted_edges.iter() {
         edges.push(i as c_int);
         edges.push(j as c_int);
         assert!(i < node_num && j < node_num);
@@ -117,9 +115,9 @@ pub fn maximum_weight_perfect_matching_compatible(
         .collect();
     let output = safe_minimum_weight_perfect_matching(node_num, weighted_edges);
     let mut matched = std::collections::HashSet::new();
-    for i in 0..node_num {
-        if output[i] as usize > i {
-            matched.insert((i, output[i] as usize));
+    for (i, &value) in output.iter().enumerate().take(node_num) {
+        if value > i {
+            matched.insert((i, value));
         }
     }
     matched
