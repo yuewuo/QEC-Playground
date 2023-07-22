@@ -1,8 +1,7 @@
 use super::cfg_if;
 use super::libc;
-use libc::{c_int};
+use libc::c_int;
 use std::collections::BTreeSet;
-
 
 cfg_if::cfg_if! {
     if #[cfg(feature="blossom_v")] {
@@ -21,12 +20,16 @@ cfg_if::cfg_if! {
     }
 }
 
-pub fn safe_minimum_weight_perfect_matching_integer_weights(node_num: usize, input_weighted_edges: Vec<(usize, usize, c_int)>) -> Vec<usize> {
+pub fn safe_minimum_weight_perfect_matching_integer_weights(
+    node_num: usize,
+    input_weighted_edges: Vec<(usize, usize, c_int)>,
+) -> Vec<usize> {
     // reverse the nodes' indices
-    let weighted_edges = if cfg!(feature="MWPM_reverse_order") {
-        input_weighted_edges.iter().map(|(a, b, cost)| {
-            (node_num - 1 - a, node_num - 1 - b, *cost)
-        }).collect()
+    let weighted_edges = if cfg!(feature = "MWPM_reverse_order") {
+        input_weighted_edges
+            .iter()
+            .map(|(a, b, cost)| (node_num - 1 - a, node_num - 1 - b, *cost))
+            .collect()
     } else {
         input_weighted_edges
     };
@@ -62,15 +65,19 @@ pub fn safe_minimum_weight_perfect_matching_integer_weights(node_num: usize, inp
     }
     let mut output = Vec::with_capacity(node_num);
     unsafe {
-        minimum_weight_perfect_matching(node_num as c_int, edge_num as c_int, edges.as_ptr(), weights.as_ptr(), output.as_mut_ptr());
+        minimum_weight_perfect_matching(
+            node_num as c_int,
+            edge_num as c_int,
+            edges.as_ptr(),
+            weights.as_ptr(),
+            output.as_mut_ptr(),
+        );
         output.set_len(node_num);
     }
     let output: Vec<usize> = output.iter().map(|x| *x as usize).collect();
     // recover the nodes' indices
-    if cfg!(feature="MWPM_reverse_order") {
-        let mut result = output.iter().map(|a| {
-            node_num - 1 - a
-        }).collect::<Vec<_>>();
+    if cfg!(feature = "MWPM_reverse_order") {
+        let mut result = output.iter().map(|a| node_num - 1 - a).collect::<Vec<_>>();
         result.reverse();
         result
     } else {
@@ -78,7 +85,10 @@ pub fn safe_minimum_weight_perfect_matching_integer_weights(node_num: usize, inp
     }
 }
 
-pub fn safe_minimum_weight_perfect_matching(node_num: usize, input_weighted_edges: Vec<(usize, usize, f64)>) -> Vec<usize> {
+pub fn safe_minimum_weight_perfect_matching(
+    node_num: usize,
+    input_weighted_edges: Vec<(usize, usize, f64)>,
+) -> Vec<usize> {
     // scale all edges to integer values
     let mut maximum_weight = 0.;
     for (_, _, weight) in input_weighted_edges.iter() {
@@ -87,7 +97,8 @@ pub fn safe_minimum_weight_perfect_matching(node_num: usize, input_weighted_edge
         }
     }
     let scale: f64 = (c_int::MAX as f64) / 10. / ((node_num + 1) as f64) / maximum_weight;
-    let mut integer_weighted_edges = Vec::<(usize, usize, c_int)>::with_capacity(input_weighted_edges.len());
+    let mut integer_weighted_edges =
+        Vec::<(usize, usize, c_int)>::with_capacity(input_weighted_edges.len());
     for (i, j, weight) in input_weighted_edges.into_iter() {
         integer_weighted_edges.push((i, j, (weight * scale).ceil() as c_int));
     }
@@ -95,9 +106,15 @@ pub fn safe_minimum_weight_perfect_matching(node_num: usize, input_weighted_edge
 }
 
 // important: only takes non-positive inputs
-pub fn maximum_weight_perfect_matching_compatible(node_num: usize, weighted_edges: Vec<(usize, usize, f64)>) -> std::collections::HashSet<(usize, usize)> {
+pub fn maximum_weight_perfect_matching_compatible(
+    node_num: usize,
+    weighted_edges: Vec<(usize, usize, f64)>,
+) -> std::collections::HashSet<(usize, usize)> {
     // blossom V is minimum weight perfect matching, this function is maximum
-    let weighted_edges: Vec::<(usize, usize, f64)> = weighted_edges.iter().map(|(a, b, w)| (*a, *b, -*w)).collect();
+    let weighted_edges: Vec<(usize, usize, f64)> = weighted_edges
+        .iter()
+        .map(|(a, b, w)| (*a, *b, -*w))
+        .collect();
     let output = safe_minimum_weight_perfect_matching(node_num, weighted_edges);
     let mut matched = std::collections::HashSet::new();
     for i in 0..node_num {
@@ -107,4 +124,3 @@ pub fn maximum_weight_perfect_matching_compatible(node_num: usize, weighted_edge
     }
     matched
 }
-

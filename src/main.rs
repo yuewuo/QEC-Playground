@@ -1,21 +1,19 @@
 extern crate clap;
 extern crate pbr;
 
+use crate::clap::Parser;
 use qecp::cli::*;
 use qecp::web;
-use crate::clap::Parser;
-
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
     match Cli::parse().command {
         Commands::Test { command } => {
             command.run();
         }
         Commands::Tool { command } => {
             let output = command.run().unwrap();
-            print!("{}", output);  // outputs normally comes with \n
+            print!("{}", output); // outputs normally comes with \n
         }
         Commands::Server(server_parameters) => {
             let port = server_parameters.port;
@@ -29,5 +27,4 @@ async fn main() -> std::io::Result<()> {
     }
 
     Ok(())
-
 }

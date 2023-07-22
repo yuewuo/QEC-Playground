@@ -1,7 +1,6 @@
-use std::iter::FromIterator;
-use super::serde::{Serialize, Deserialize};
 use super::either::Either;
-
+use super::serde::{Deserialize, Serialize};
+use std::iter::FromIterator;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UnionFindGeneric<NodeType: UnionNodeTrait> {
@@ -14,7 +13,9 @@ pub struct UnionFindGeneric<NodeType: UnionNodeTrait> {
 }
 
 pub trait UnionNodeTrait {
-    fn union(left: &Self, right: &Self) -> Either<Self, Self> where Self: Sized;
+    fn union(left: &Self, right: &Self) -> Either<Self, Self>
+    where
+        Self: Sized;
     fn clear(&mut self);
 }
 
@@ -30,7 +31,6 @@ pub struct DefaultUnionNode {
 }
 
 impl UnionNodeTrait for DefaultUnionNode {
-
     #[inline]
     fn union(left: &Self, right: &Self) -> Either<Self, Self> {
         let lsize = left.set_size;
@@ -53,7 +53,6 @@ impl UnionNodeTrait for DefaultUnionNode {
         self.cardinality = 0;
         self.is_touching_boundary = false;
     }
-
 }
 
 impl Default for DefaultUnionNode {
@@ -61,8 +60,8 @@ impl Default for DefaultUnionNode {
     fn default() -> Self {
         Self {
             set_size: 1,
-            cardinality: 0,  // by default the cardinality is 0, set to 1 if needed
-            is_touching_boundary: false,  // is already touching the boundary
+            cardinality: 0, // by default the cardinality is 0, set to 1 if needed
+            is_touching_boundary: false, // is already touching the boundary
         }
     }
 }
@@ -149,7 +148,7 @@ impl<U: UnionNodeTrait> UnionFindGeneric<U> {
         }
         let root = k;
         for k in self.find_parent_list.iter() {
-            self.link_parent[*k] = root;  // path compression
+            self.link_parent[*k] = root; // path compression
         }
         self.find_parent_list.clear();
         root
@@ -193,16 +192,15 @@ impl<U: UnionNodeTrait> UnionFindGeneric<U> {
             node.clear();
         }
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn union_find_decoder_test_basic_algorithm() {  // cargo test union_find_decoder_test_basic_algorithm -- --nocapture
+    fn union_find_decoder_test_basic_algorithm() {
+        // cargo test union_find_decoder_test_basic_algorithm -- --nocapture
         let mut uf = DefaultUnionFind::new(100);
         // test from https://github.com/gifnksm/union-find-rs/blob/master/src/tests.rs
         assert_eq!(1, uf.get(0).set_size);
@@ -235,5 +233,4 @@ mod tests {
         assert_eq!(4, uf.get(100).set_size);
         assert_eq!(101, uf.size());
     }
-    
 }
