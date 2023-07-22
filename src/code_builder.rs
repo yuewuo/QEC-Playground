@@ -62,9 +62,9 @@ impl CodeSize {
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new(noisy_measurements: usize, di: usize, dj: usize) -> Self {
         CodeSize {
-            noisy_measurements: noisy_measurements,
-            di: di,
-            dj: dj,
+            noisy_measurements,
+            di,
+            dj,
         }
     }
 }
@@ -93,9 +93,7 @@ impl CodeType {
                     (i, j - 1)
                 }
             }
-            _ => unimplemented!(
-                "left position not implemented for this code type, please fill the implementation"
-            ),
+            _ => unimplemented!("left position not implemented for this code type, please fill the implementation"),
         }
     }
 
@@ -123,9 +121,7 @@ impl CodeType {
                     (i - 1, j)
                 }
             }
-            _ => unimplemented!(
-                "left position not implemented for this code type, please fill the implementation"
-            ),
+            _ => unimplemented!("left position not implemented for this code type, please fill the implementation"),
         }
     }
 
@@ -145,9 +141,7 @@ impl CodeType {
                     (i, j + 1)
                 }
             }
-            _ => unimplemented!(
-                "left position not implemented for this code type, please fill the implementation"
-            ),
+            _ => unimplemented!("left position not implemented for this code type, please fill the implementation"),
         }
     }
 
@@ -169,9 +163,7 @@ impl CodeType {
                     (i + 1, j)
                 }
             }
-            _ => unimplemented!(
-                "left position not implemented for this code type, please fill the implementation"
-            ),
+            _ => unimplemented!("left position not implemented for this code type, please fill the implementation"),
         }
     }
 
@@ -213,16 +205,8 @@ pub fn build_code(simulator: &mut Simulator) {
             assert!(dj > 0, "code distance must be positive integer");
             let is_rotated = matches!(code_type, CodeType::RotatedPlanarCode { .. });
             if is_rotated {
-                assert!(
-                    di % 2 == 1,
-                    "code distance must be odd integer, current: di = {}",
-                    di
-                );
-                assert!(
-                    dj % 2 == 1,
-                    "code distance must be odd integer, current: dj = {}",
-                    dj
-                );
+                assert!(di % 2 == 1, "code distance must be odd integer, current: di = {}", di);
+                assert!(dj % 2 == 1, "code distance must be odd integer, current: dj = {}", dj);
             }
             // println!("noisy_measurements: {}, di: {}, dj: {}, is_rotated: {}", noisy_measurements, di, dj, is_rotated);
             let (vertical, horizontal) = if is_rotated {
@@ -235,10 +219,8 @@ pub fn build_code(simulator: &mut Simulator) {
             let mut nodes = Vec::with_capacity(height);
             let is_real = |i: usize, j: usize| -> bool {
                 if is_rotated {
-                    let is_real_dj =
-                        |pi, pj| pi + pj < dj || (pi + pj == dj && pi % 2 == 0 && pi > 0);
-                    let is_real_di =
-                        |pi, pj| pi + pj < di || (pi + pj == di && pj % 2 == 0 && pj > 0);
+                    let is_real_dj = |pi, pj| pi + pj < dj || (pi + pj == dj && pi % 2 == 0 && pi > 0);
+                    let is_real_di = |pi, pj| pi + pj < di || (pi + pj == di && pj % 2 == 0 && pj > 0);
                     if i <= dj && j <= dj {
                         is_real_dj(dj - i, dj - j)
                     } else if i >= di && j >= di {
@@ -416,11 +398,10 @@ pub fn build_code(simulator: &mut Simulator) {
                                 _ => unreachable!(),
                             }
                             row_j.push(Some(Box::new(
-                                SimulatorNode::new(qubit_type, gate_type, gate_peer.clone())
-                                    .set_virtual(
-                                        is_virtual(i, j),
-                                        gate_peer.map_or(false, |peer| is_virtual(peer.i, peer.j)),
-                                    ),
+                                SimulatorNode::new(qubit_type, gate_type, gate_peer.clone()).set_virtual(
+                                    is_virtual(i, j),
+                                    gate_peer.map_or(false, |peer| is_virtual(peer.i, peer.j)),
+                                ),
                             )));
                         } else {
                             row_j.push(None);
@@ -435,9 +416,7 @@ pub fn build_code(simulator: &mut Simulator) {
             simulator.height = height;
             simulator.nodes = nodes;
         }
-        &CodeType::StandardTailoredCode
-        | &CodeType::RotatedTailoredCode
-        | &CodeType::RotatedTailoredCodeBellInit => {
+        &CodeType::StandardTailoredCode | &CodeType::RotatedTailoredCode | &CodeType::RotatedTailoredCodeBellInit => {
             let di = code_size.di;
             let dj = code_size.dj;
             let noisy_measurements = code_size.noisy_measurements;
@@ -448,16 +427,8 @@ pub fn build_code(simulator: &mut Simulator) {
                 || matches!(code_type, CodeType::RotatedTailoredCodeBellInit { .. });
             let is_bell_init = matches!(code_type, CodeType::RotatedTailoredCodeBellInit { .. });
             if is_rotated {
-                assert!(
-                    di % 2 == 1,
-                    "code distance must be odd integer, current: di = {}",
-                    di
-                );
-                assert!(
-                    dj % 2 == 1,
-                    "code distance must be odd integer, current: dj = {}",
-                    dj
-                );
+                assert!(di % 2 == 1, "code distance must be odd integer, current: di = {}", di);
+                assert!(dj % 2 == 1, "code distance must be odd integer, current: dj = {}", dj);
             }
             // println!("noisy_measurements: {}, di: {}, dj: {}, is_rotated: {}", noisy_measurements, di, dj, is_rotated);
             let (vertical, horizontal) = if is_rotated {
@@ -470,10 +441,8 @@ pub fn build_code(simulator: &mut Simulator) {
             let mut nodes = Vec::with_capacity(height);
             let is_real = |i: usize, j: usize| -> bool {
                 if is_rotated {
-                    let is_real_dj =
-                        |pi, pj| pi + pj < dj || (pi + pj == dj && pi % 2 == 0 && pi > 0);
-                    let is_real_di =
-                        |pi, pj| pi + pj < di || (pi + pj == di && pj % 2 == 0 && pj > 0);
+                    let is_real_dj = |pi, pj| pi + pj < dj || (pi + pj == dj && pi % 2 == 0 && pi > 0);
+                    let is_real_di = |pi, pj| pi + pj < di || (pi + pj == di && pj % 2 == 0 && pj > 0);
                     if i <= dj && j <= dj {
                         is_real_dj(dj - i, dj - j)
                     } else if i >= di && j >= di {
@@ -525,29 +494,19 @@ pub fn build_code(simulator: &mut Simulator) {
             };
             // some criteria for bell init
             let is_bell_init_anc = |i: usize, j: usize| -> bool {
-                is_real(i, j)
-                    && i < j + dj - 3
-                    && ((i % 4 == 1 && j % 4 == 0) || (i % 4 == 3 && j % 4 == 2))
+                is_real(i, j) && i < j + dj - 3 && ((i % 4 == 1 && j % 4 == 0) || (i % 4 == 3 && j % 4 == 2))
             };
             let is_bell_init_top = |i: usize, j: usize| -> bool {
-                is_real(i, j)
-                    && i < j + dj - 1
-                    && ((i % 4 == 0 && j % 4 == 0) || (i % 4 == 2 && j % 4 == 2))
+                is_real(i, j) && i < j + dj - 1 && ((i % 4 == 0 && j % 4 == 0) || (i % 4 == 2 && j % 4 == 2))
             };
             let is_bell_init_left = |i: usize, j: usize| -> bool {
-                is_real(i, j)
-                    && i < j + dj - 1
-                    && ((i % 4 == 1 && j % 4 == 3) || (i % 4 == 3 && j % 4 == 1))
+                is_real(i, j) && i < j + dj - 1 && ((i % 4 == 1 && j % 4 == 3) || (i % 4 == 3 && j % 4 == 1))
             };
             let is_bell_init_right = |i: usize, j: usize| -> bool {
-                is_real(i, j)
-                    && i < j + dj - 1
-                    && ((i % 4 == 1 && j % 4 == 1) || (i % 4 == 3 && j % 4 == 3))
+                is_real(i, j) && i < j + dj - 1 && ((i % 4 == 1 && j % 4 == 1) || (i % 4 == 3 && j % 4 == 3))
             };
             let is_bell_init_bot = |i: usize, j: usize| -> bool {
-                is_real(i, j)
-                    && i < j + dj - 1
-                    && ((i % 4 == 2 && j % 4 == 0) || (i % 4 == 0 && j % 4 == 2))
+                is_real(i, j) && i < j + dj - 1 && ((i % 4 == 2 && j % 4 == 0) || (i % 4 == 0 && j % 4 == 2))
             };
 
             for t in 0..height {
@@ -602,9 +561,7 @@ pub fn build_code(simulator: &mut Simulator) {
                                         if is_bell_init_anc(i, j) && is_bell_init_top(i - 1, j) {
                                             gate_type = GateType::CXGateControl;
                                             gate_peer = Some(pos!(t, i - 1, j));
-                                        } else if is_bell_init_top(i, j)
-                                            && is_bell_init_anc(i + 1, j)
-                                        {
+                                        } else if is_bell_init_top(i, j) && is_bell_init_anc(i + 1, j) {
                                             gate_type = GateType::CXGateTarget;
                                             gate_peer = Some(pos!(t, i + 1, j));
                                         } else {
@@ -798,9 +755,18 @@ pub fn build_code(simulator: &mut Simulator) {
                                     _ => unreachable!(),
                                 }
                             }
-                            row_j.push(Some(Box::new(SimulatorNode::new(qubit_type, gate_type, gate_peer.clone())
-                                .set_virtual(is_virtual(i, j), gate_peer.map_or(false, |peer| is_virtual(peer.i, peer.j)))
-                                .with_miscellaneous(if is_corner { Some(json!({ "is_corner": true, "peer_corner": peer_corner.unwrap() })) } else { None }))));
+                            row_j.push(Some(Box::new(
+                                SimulatorNode::new(qubit_type, gate_type, gate_peer.clone())
+                                    .set_virtual(
+                                        is_virtual(i, j),
+                                        gate_peer.map_or(false, |peer| is_virtual(peer.i, peer.j)),
+                                    )
+                                    .with_miscellaneous(if is_corner {
+                                        Some(json!({ "is_corner": true, "peer_corner": peer_corner.unwrap() }))
+                                    } else {
+                                        None
+                                    }),
+                            )));
                         } else {
                             row_j.push(None);
                         }
@@ -821,16 +787,8 @@ pub fn build_code(simulator: &mut Simulator) {
             simulator.measurement_cycles = 6;
             assert!(dp > 0, "code distance must be positive integer");
             assert!(dn > 0, "code distance must be positive integer");
-            assert!(
-                dp % 2 == 0,
-                "code distance must be even integer, current: dp = {}",
-                dp
-            );
-            assert!(
-                dn % 2 == 0,
-                "code distance must be even integer, current: dn = {}",
-                dn
-            );
+            assert!(dp % 2 == 0, "code distance must be even integer, current: dp = {}", dp);
+            assert!(dn % 2 == 0, "code distance must be even integer, current: dn = {}", dn);
             // println!("noisy_measurements: {}, dp: {}, dn: {}, is_rotated: {}", noisy_measurements, dp, dn);
             let di = dp - 1; // to use previously developed functions
             let dj = dn - 1;
@@ -988,11 +946,7 @@ pub fn build_code(simulator: &mut Simulator) {
                                 }
                                 _ => unreachable!(),
                             }
-                            row_j.push(Some(Box::new(SimulatorNode::new(
-                                qubit_type,
-                                gate_type,
-                                gate_peer.clone(),
-                            ))));
+                            row_j.push(Some(Box::new(SimulatorNode::new(qubit_type, gate_type, gate_peer.clone()))));
                         } else {
                             row_j.push(None);
                         }
@@ -1018,16 +972,8 @@ pub fn build_code(simulator: &mut Simulator) {
             assert!(dj > 0, "code distance must be positive integer");
             let is_rotated = matches!(code_type, CodeType::RotatedXZZXCode { .. });
             if is_rotated {
-                assert!(
-                    di % 2 == 1,
-                    "code distance must be odd integer, current: di = {}",
-                    di
-                );
-                assert!(
-                    dj % 2 == 1,
-                    "code distance must be odd integer, current: dj = {}",
-                    dj
-                );
+                assert!(di % 2 == 1, "code distance must be odd integer, current: di = {}", di);
+                assert!(dj % 2 == 1, "code distance must be odd integer, current: dj = {}", dj);
             }
             // println!("noisy_measurements: {}, di: {}, dj: {}, is_rotated: {}", noisy_measurements, di, dj, is_rotated);
             let (vertical, horizontal) = if is_rotated {
@@ -1040,10 +986,8 @@ pub fn build_code(simulator: &mut Simulator) {
             let mut nodes = Vec::with_capacity(height);
             let is_real = |i: usize, j: usize| -> bool {
                 if is_rotated {
-                    let is_real_dj =
-                        |pi, pj| pi + pj < dj || (pi + pj == dj && pi % 2 == 0 && pi > 0);
-                    let is_real_di =
-                        |pi, pj| pi + pj < di || (pi + pj == di && pj % 2 == 0 && pj > 0);
+                    let is_real_dj = |pi, pj| pi + pj < dj || (pi + pj == dj && pi % 2 == 0 && pi > 0);
+                    let is_real_di = |pi, pj| pi + pj < di || (pi + pj == di && pj % 2 == 0 && pj > 0);
                     if i <= dj && j <= dj {
                         is_real_dj(dj - i, dj - j)
                     } else if i >= di && j >= di {
@@ -1201,11 +1145,10 @@ pub fn build_code(simulator: &mut Simulator) {
                                 _ => unreachable!(),
                             }
                             row_j.push(Some(Box::new(
-                                SimulatorNode::new(qubit_type, gate_type, gate_peer.clone())
-                                    .set_virtual(
-                                        is_virtual(i, j),
-                                        gate_peer.map_or(false, |peer| is_virtual(peer.i, peer.j)),
-                                    ),
+                                SimulatorNode::new(qubit_type, gate_type, gate_peer.clone()).set_virtual(
+                                    is_virtual(i, j),
+                                    gate_peer.map_or(false, |peer| is_virtual(peer.i, peer.j)),
+                                ),
                             )));
                         } else {
                             row_j.push(None);
@@ -1288,8 +1231,13 @@ pub fn code_builder_sanity_check(simulator: &Simulator) -> Result<(), String> {
                             ));
                         }
                         if node.gate_type.peer_gate() != peer_node.gate_type {
-                            return Err(format!("{}, as the peer of {}, doesn't have correct peer gate {:?}, the correct one should be {:?}"
-                                , peer_position, position, node.gate_type.peer_gate(), peer_node.gate_type));
+                            return Err(format!(
+                                "{}, as the peer of {}, doesn't have correct peer gate {:?}, the correct one should be {:?}",
+                                peer_position,
+                                position,
+                                node.gate_type.peer_gate(),
+                                peer_node.gate_type
+                            ));
                         }
                     }
                     None => {
@@ -1302,10 +1250,7 @@ pub fn code_builder_sanity_check(simulator: &Simulator) -> Result<(), String> {
             }
             None => {
                 if !node.gate_type.is_single_qubit_gate() {
-                    return Err(format!(
-                        "two qubit gate {:?} should have peer",
-                        node.gate_type
-                    ));
+                    return Err(format!("two qubit gate {:?} should have peer", node.gate_type));
                 }
             }
         }
@@ -1331,17 +1276,11 @@ pub fn code_builder_sanity_check(simulator: &Simulator) -> Result<(), String> {
     Ok(())
 }
 
-pub fn code_builder_validate_correction(
-    simulator: &mut Simulator,
-    correction: &SparseCorrection,
-) -> Option<(bool, bool)> {
+pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &SparseCorrection) -> Option<(bool, bool)> {
     // apply the correction directly to the top layer
     let top_t = simulator.height - 1;
     for (position, error) in correction.iter() {
-        assert_eq!(
-            position.t, top_t,
-            "correction pattern must only be at top layer"
-        );
+        assert_eq!(position.t, top_t, "correction pattern must only be at top layer");
         let node = simulator.get_node_mut_unwrap(position);
         node.propagated = node.propagated.multiply(error);
     }
@@ -1532,10 +1471,7 @@ pub fn code_builder_sanity_check_correction(
     // apply the correction directly to the top layer
     let top_t = simulator.height - 1;
     for (position, error) in correction.iter() {
-        assert_eq!(
-            position.t, top_t,
-            "correction pattern must only be at top layer"
-        );
+        assert_eq!(position.t, top_t, "correction pattern must only be at top layer");
         let mut position = position.clone();
         position.t -= simulator.measurement_cycles; // apply it before the final perfect measurement
         let node = simulator.get_node_mut_unwrap(&position);
@@ -1612,10 +1548,7 @@ mod tests {
         let di = 7;
         let dj = 5;
         let noisy_measurements = 3;
-        let mut simulator = Simulator::new(
-            CodeType::StandardPlanarCode,
-            CodeSize::new(noisy_measurements, di, dj),
-        );
+        let mut simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
         {
             // count how many nodes
@@ -1635,10 +1568,7 @@ mod tests {
                 nodes_count,
                 layer_count * (each_layer_real_node_count + each_layer_virtual_node_count)
             );
-            assert_eq!(
-                virtual_nodes_count,
-                layer_count * each_layer_virtual_node_count
-            );
+            assert_eq!(virtual_nodes_count, layer_count * each_layer_virtual_node_count);
         }
         {
             // check individual qubit type
@@ -1695,31 +1625,19 @@ mod tests {
                 let node = simulator.get_node_unwrap(&pos!(2, 1, 1));
                 assert_eq!(node.is_peer_virtual, false);
                 assert_eq!(node.gate_type, GateType::CXGateTarget);
-                assert_eq!(
-                    node.gate_peer.as_ref().map(|x| (**x).clone()),
-                    Some(pos!(2, 2, 1))
-                );
+                assert_eq!(node.gate_peer.as_ref().map(|x| (**x).clone()), Some(pos!(2, 2, 1)));
                 let node = simulator.get_node_unwrap(&pos!(3, 1, 1));
                 assert_eq!(node.is_peer_virtual, false);
                 assert_eq!(node.gate_type, GateType::CXGateControl);
-                assert_eq!(
-                    node.gate_peer.as_ref().map(|x| (**x).clone()),
-                    Some(pos!(3, 1, 2))
-                );
+                assert_eq!(node.gate_peer.as_ref().map(|x| (**x).clone()), Some(pos!(3, 1, 2)));
                 let node = simulator.get_node_unwrap(&pos!(4, 1, 1));
                 assert_eq!(node.is_peer_virtual, true);
                 assert_eq!(node.gate_type, GateType::CXGateControl);
-                assert_eq!(
-                    node.gate_peer.as_ref().map(|x| (**x).clone()),
-                    Some(pos!(4, 1, 0))
-                );
+                assert_eq!(node.gate_peer.as_ref().map(|x| (**x).clone()), Some(pos!(4, 1, 0)));
                 let node = simulator.get_node_unwrap(&pos!(5, 1, 1));
                 assert_eq!(node.is_peer_virtual, true);
                 assert_eq!(node.gate_type, GateType::CXGateTarget);
-                assert_eq!(
-                    node.gate_peer.as_ref().map(|x| (**x).clone()),
-                    Some(pos!(5, 0, 1))
-                );
+                assert_eq!(node.gate_peer.as_ref().map(|x| (**x).clone()), Some(pos!(5, 0, 1)));
             }
         }
         {
@@ -1727,51 +1645,23 @@ mod tests {
             // data qubit at corner
             assert_measurement!(simulator, [(pos!(0, 1, 1), X)], [pos!(6, 1, 2)]);
             assert_measurement!(simulator, [(pos!(0, 1, 1), Z)], [pos!(6, 2, 1)]);
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 1, 1), Y)],
-                [pos!(6, 1, 2), pos!(6, 2, 1)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 1, 1), Y)], [pos!(6, 1, 2), pos!(6, 2, 1)]);
             // data qubit at center
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 2, 2), X)],
-                [pos!(6, 1, 2), pos!(6, 3, 2)]
-            );
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 2, 2), Z)],
-                [pos!(6, 2, 1), pos!(6, 2, 3)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 2, 2), X)], [pos!(6, 1, 2), pos!(6, 3, 2)]);
+            assert_measurement!(simulator, [(pos!(0, 2, 2), Z)], [pos!(6, 2, 1), pos!(6, 2, 3)]);
             assert_measurement!(
                 simulator,
                 [(pos!(0, 2, 2), Y)],
                 [pos!(6, 1, 2), pos!(6, 2, 1), pos!(6, 2, 3), pos!(6, 3, 2)]
             );
             // Z stabilizer measurement error
-            assert_measurement!(
-                simulator,
-                [(pos!(5, 1, 2), X)],
-                [pos!(6, 1, 2), pos!(12, 1, 2)]
-            );
+            assert_measurement!(simulator, [(pos!(5, 1, 2), X)], [pos!(6, 1, 2), pos!(12, 1, 2)]);
             assert_measurement!(simulator, [(pos!(5, 1, 2), Z)], []); // not sensitive to Z error
-            assert_measurement!(
-                simulator,
-                [(pos!(5, 1, 2), Y)],
-                [pos!(6, 1, 2), pos!(12, 1, 2)]
-            );
+            assert_measurement!(simulator, [(pos!(5, 1, 2), Y)], [pos!(6, 1, 2), pos!(12, 1, 2)]);
             // X stabilizer measurement error
             assert_measurement!(simulator, [(pos!(5, 2, 1), X)], []); // not sensitive to X error
-            assert_measurement!(
-                simulator,
-                [(pos!(5, 2, 1), Z)],
-                [pos!(6, 2, 1), pos!(12, 2, 1)]
-            );
-            assert_measurement!(
-                simulator,
-                [(pos!(5, 2, 1), Y)],
-                [pos!(6, 2, 1), pos!(12, 2, 1)]
-            );
+            assert_measurement!(simulator, [(pos!(5, 2, 1), Z)], [pos!(6, 2, 1), pos!(12, 2, 1)]);
+            assert_measurement!(simulator, [(pos!(5, 2, 1), Y)], [pos!(6, 2, 1), pos!(12, 2, 1)]);
         }
     }
 
@@ -1781,61 +1671,30 @@ mod tests {
         let di = 7;
         let dj = 5;
         let noisy_measurements = 3;
-        let mut simulator = Simulator::new(
-            CodeType::StandardTailoredCode,
-            CodeSize::new(noisy_measurements, di, dj),
-        );
+        let mut simulator = Simulator::new(CodeType::StandardTailoredCode, CodeSize::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
         {
             // check stabilizer measurements
             // data qubit at corner
             assert_measurement!(simulator, [(pos!(0, 1, 1), X)], [pos!(6, 1, 2)]);
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 1, 1), Z)],
-                [pos!(6, 1, 2), pos!(6, 2, 1)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 1, 1), Z)], [pos!(6, 1, 2), pos!(6, 2, 1)]);
             assert_measurement!(simulator, [(pos!(0, 1, 1), Y)], [pos!(6, 2, 1)]);
             // data qubit at center
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 2, 2), X)],
-                [pos!(6, 1, 2), pos!(6, 3, 2)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 2, 2), X)], [pos!(6, 1, 2), pos!(6, 3, 2)]);
             assert_measurement!(
                 simulator,
                 [(pos!(0, 2, 2), Z)],
                 [pos!(6, 1, 2), pos!(6, 2, 1), pos!(6, 2, 3), pos!(6, 3, 2)]
             );
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 2, 2), Y)],
-                [pos!(6, 2, 1), pos!(6, 2, 3)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 2, 2), Y)], [pos!(6, 2, 1), pos!(6, 2, 3)]);
             // Y stabilizer measurement error
             assert_measurement!(simulator, [(pos!(5, 1, 2), X)], []);
-            assert_measurement!(
-                simulator,
-                [(pos!(5, 1, 2), Z)],
-                [pos!(6, 1, 2), pos!(12, 1, 2)]
-            ); // not sensitive to Z error
-            assert_measurement!(
-                simulator,
-                [(pos!(5, 1, 2), Y)],
-                [pos!(6, 1, 2), pos!(12, 1, 2)]
-            );
+            assert_measurement!(simulator, [(pos!(5, 1, 2), Z)], [pos!(6, 1, 2), pos!(12, 1, 2)]); // not sensitive to Z error
+            assert_measurement!(simulator, [(pos!(5, 1, 2), Y)], [pos!(6, 1, 2), pos!(12, 1, 2)]);
             // X stabilizer measurement error
             assert_measurement!(simulator, [(pos!(5, 2, 1), X)], []); // not sensitive to X error
-            assert_measurement!(
-                simulator,
-                [(pos!(5, 2, 1), Z)],
-                [pos!(6, 2, 1), pos!(12, 2, 1)]
-            );
-            assert_measurement!(
-                simulator,
-                [(pos!(5, 2, 1), Y)],
-                [pos!(6, 2, 1), pos!(12, 2, 1)]
-            );
+            assert_measurement!(simulator, [(pos!(5, 2, 1), Z)], [pos!(6, 2, 1), pos!(12, 2, 1)]);
+            assert_measurement!(simulator, [(pos!(5, 2, 1), Y)], [pos!(6, 2, 1), pos!(12, 2, 1)]);
         }
     }
 
@@ -1853,85 +1712,45 @@ mod tests {
         {
             // check stabilizer measurements
             // data qubit at center
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 1, 5), X)],
-                [pos!(6, 1, 4), pos!(6, 1, 6)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 1, 5), X)], [pos!(6, 1, 4), pos!(6, 1, 6)]);
             assert_measurement!(
                 simulator,
                 [(pos!(0, 1, 5), Z)],
                 [pos!(6, 0, 5), pos!(6, 1, 4), pos!(6, 1, 6), pos!(6, 2, 5)]
             );
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 1, 5), Y)],
-                [pos!(6, 0, 5), pos!(6, 2, 5)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 1, 5), Y)], [pos!(6, 0, 5), pos!(6, 2, 5)]);
             // data qubit at periodic boundary
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 6, 0), X)],
-                [pos!(6, 1, 6), pos!(6, 5, 0)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 6, 0), X)], [pos!(6, 1, 6), pos!(6, 5, 0)]);
             assert_measurement!(
                 simulator,
                 [(pos!(0, 6, 0), Z)],
                 [pos!(6, 0, 5), pos!(6, 1, 6), pos!(6, 5, 0), pos!(6, 6, 1)]
             );
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 6, 0), Y)],
-                [pos!(6, 0, 5), pos!(6, 6, 1)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 6, 0), Y)], [pos!(6, 0, 5), pos!(6, 6, 1)]);
             // data qubit at periodic boundary
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 7, 1), X)],
-                [pos!(6, 1, 6), pos!(6, 7, 2)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 7, 1), X)], [pos!(6, 1, 6), pos!(6, 7, 2)]);
             assert_measurement!(
                 simulator,
                 [(pos!(0, 7, 1), Z)],
                 [pos!(6, 1, 6), pos!(6, 2, 7), pos!(6, 6, 1), pos!(6, 7, 2)]
             );
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 7, 1), Y)],
-                [pos!(6, 2, 7), pos!(6, 6, 1)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 7, 1), Y)], [pos!(6, 2, 7), pos!(6, 6, 1)]);
             // data qubit at periodic boundary
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 13, 7), X)],
-                [pos!(6, 5, 0), pos!(6, 7, 12)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 13, 7), X)], [pos!(6, 5, 0), pos!(6, 7, 12)]);
             assert_measurement!(
                 simulator,
                 [(pos!(0, 13, 7), Z)],
                 [pos!(6, 0, 5), pos!(6, 5, 0), pos!(6, 7, 12), pos!(6, 12, 7)]
             );
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 13, 7), Y)],
-                [pos!(6, 0, 5), pos!(6, 12, 7)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 13, 7), Y)], [pos!(6, 0, 5), pos!(6, 12, 7)]);
             // data qubit at periodic boundary
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 8, 12), X)],
-                [pos!(6, 1, 4), pos!(6, 7, 12)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 8, 12), X)], [pos!(6, 1, 4), pos!(6, 7, 12)]);
             assert_measurement!(
                 simulator,
                 [(pos!(0, 8, 12), Z)],
                 [pos!(6, 0, 5), pos!(6, 1, 4), pos!(6, 7, 12), pos!(6, 8, 11)]
             );
-            assert_measurement!(
-                simulator,
-                [(pos!(0, 8, 12), Y)],
-                [pos!(6, 0, 5), pos!(6, 8, 11)]
-            );
+            assert_measurement!(simulator, [(pos!(0, 8, 12), Y)], [pos!(6, 0, 5), pos!(6, 8, 11)]);
         }
     }
 
@@ -1943,13 +1762,9 @@ mod tests {
         let di = 7;
         let dj = 5;
         let noisy_measurements = 0;
-        let simulator = Simulator::new(
-            CodeType::StandardPlanarCode,
-            CodeSize::new(noisy_measurements, di, dj),
-        );
+        let simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
-        let mut visualizer =
-            Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
         visualizer.add_component(&simulator).unwrap();
     }
 
@@ -1961,13 +1776,9 @@ mod tests {
         let di = 7;
         let dj = 5;
         let noisy_measurements = 0;
-        let simulator = Simulator::new(
-            CodeType::RotatedPlanarCode,
-            CodeSize::new(noisy_measurements, di, dj),
-        );
+        let simulator = Simulator::new(CodeType::RotatedPlanarCode, CodeSize::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
-        let mut visualizer =
-            Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
         visualizer.add_component(&simulator).unwrap();
     }
 
@@ -1979,13 +1790,9 @@ mod tests {
         let di = 5;
         let dj = 5;
         let noisy_measurements = 2;
-        let simulator = Simulator::new(
-            CodeType::StandardPlanarCode,
-            CodeSize::new(noisy_measurements, di, dj),
-        );
+        let simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
-        let mut visualizer =
-            Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
         visualizer.add_component(&simulator).unwrap();
     }
 
@@ -1997,13 +1804,9 @@ mod tests {
         let di = 5;
         let dj = 5;
         let noisy_measurements = 2;
-        let simulator = Simulator::new(
-            CodeType::RotatedPlanarCode,
-            CodeSize::new(noisy_measurements, di, dj),
-        );
+        let simulator = Simulator::new(CodeType::RotatedPlanarCode, CodeSize::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
-        let mut visualizer =
-            Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
         visualizer.add_component(&simulator).unwrap();
     }
 
@@ -2015,13 +1818,9 @@ mod tests {
         let di = 7;
         let dj = 5;
         let noisy_measurements = 0;
-        let simulator = Simulator::new(
-            CodeType::StandardXZZXCode,
-            CodeSize::new(noisy_measurements, di, dj),
-        );
+        let simulator = Simulator::new(CodeType::StandardXZZXCode, CodeSize::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
-        let mut visualizer =
-            Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
         visualizer.add_component(&simulator).unwrap();
     }
 
@@ -2033,13 +1832,9 @@ mod tests {
         let di = 7;
         let dj = 5;
         let noisy_measurements = 0;
-        let simulator = Simulator::new(
-            CodeType::RotatedXZZXCode,
-            CodeSize::new(noisy_measurements, di, dj),
-        );
+        let simulator = Simulator::new(CodeType::RotatedXZZXCode, CodeSize::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
-        let mut visualizer =
-            Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
         visualizer.add_component(&simulator).unwrap();
     }
 
@@ -2051,13 +1846,9 @@ mod tests {
         let di = 7;
         let dj = 5;
         let noisy_measurements = 0;
-        let simulator = Simulator::new(
-            CodeType::StandardTailoredCode,
-            CodeSize::new(noisy_measurements, di, dj),
-        );
+        let simulator = Simulator::new(CodeType::StandardTailoredCode, CodeSize::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
-        let mut visualizer =
-            Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
         visualizer.add_component(&simulator).unwrap();
     }
 
@@ -2069,13 +1860,9 @@ mod tests {
         let di = 7;
         let dj = 5;
         let noisy_measurements = 0;
-        let simulator = Simulator::new(
-            CodeType::RotatedTailoredCode,
-            CodeSize::new(noisy_measurements, di, dj),
-        );
+        let simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, di, dj));
         code_builder_sanity_check(&simulator).unwrap();
-        let mut visualizer =
-            Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualize_filename.as_str())).unwrap();
         visualizer.add_component(&simulator).unwrap();
     }
 }

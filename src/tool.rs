@@ -127,12 +127,7 @@ impl BenchmarkControl {
             external_termination: false,
         }
     }
-    fn update_data_should_terminate(
-        &mut self,
-        is_qec_failed: bool,
-        max_repeats: usize,
-        min_failed_cases: usize,
-    ) -> bool {
+    fn update_data_should_terminate(&mut self, is_qec_failed: bool, max_repeats: usize, min_failed_cases: usize) -> bool {
         self.total_repeats += 1;
         if is_qec_failed {
             self.qec_failed += 1;
@@ -140,9 +135,7 @@ impl BenchmarkControl {
         self.should_terminate(max_repeats, min_failed_cases)
     }
     fn should_terminate(&self, max_repeats: usize, min_failed_cases: usize) -> bool {
-        self.external_termination
-            || self.total_repeats >= max_repeats
-            || self.qec_failed >= min_failed_cases
+        self.external_termination || self.total_repeats >= max_repeats || self.qec_failed >= min_failed_cases
     }
     fn set_external_terminate(&mut self) {
         self.external_termination = true;
@@ -187,10 +180,7 @@ impl BenchmarkThreadDebugger {
         }
         if self.detected_erasures.is_some() {
             simulator
-                .load_sparse_detected_erasures(
-                    &self.detected_erasures.as_ref().unwrap(),
-                    noise_model,
-                )
+                .load_sparse_detected_erasures(&self.detected_erasures.as_ref().unwrap(), noise_model)
                 .expect("success");
         }
         // propagate the errors and erasures
@@ -210,15 +200,7 @@ pub struct SingleSimulationConfig {
 }
 
 impl SingleSimulationConfig {
-    pub fn new(
-        di: usize,
-        dj: usize,
-        noisy_measurements: usize,
-        p: f64,
-        pe: f64,
-        p_graph: f64,
-        pe_graph: f64,
-    ) -> Self {
+    pub fn new(di: usize, dj: usize, noisy_measurements: usize, p: f64, pe: f64, p_graph: f64, pe_graph: f64) -> Self {
         Self {
             di,
             dj,
@@ -285,11 +267,10 @@ impl BenchmarkParameters {
     pub fn run(&self) -> Result<String, String> {
         let configs = self.fill_in_default_parameters()?;
         // create runtime statistics file object if given file path
-        let log_runtime_statistics_file = self.log_runtime_statistics.clone().map(|filename| {
-            Arc::new(Mutex::new(
-                File::create(filename.as_str()).expect("cannot create file"),
-            ))
-        });
+        let log_runtime_statistics_file = self
+            .log_runtime_statistics
+            .clone()
+            .map(|filename| Arc::new(Mutex::new(File::create(filename.as_str()).expect("cannot create file"))));
         let simulation_configuration = json!({
             "configs": configs,
             "parameters": self,
@@ -324,8 +305,7 @@ impl BenchmarkParameters {
             // append runtime statistics data
             match &log_runtime_statistics_file {
                 Some(log_runtime_statistics_file) => {
-                    let mut log_runtime_statistics_file =
-                        log_runtime_statistics_file.lock().unwrap();
+                    let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
                     log_runtime_statistics_file.write_all(b"# ").unwrap();
                     log_runtime_statistics_file
                         .write_all(json!(config).to_string().as_bytes())
@@ -354,11 +334,7 @@ impl BenchmarkParameters {
         let pes_graph = self.pes_graph.clone().unwrap_or(pes.clone());
         assert_eq!(pes.len(), ps.len(), "pe and p should be matched");
         assert_eq!(ps_graph.len(), ps.len(), "ps_graph and p should be matched");
-        assert_eq!(
-            pes_graph.len(),
-            ps.len(),
-            "pes_graph and p should be matched"
-        );
+        assert_eq!(pes_graph.len(), ps.len(), "pes_graph and p should be matched");
         let mut max_repeats: usize = self.max_repeats;
         if max_repeats == 0 {
             max_repeats = usize::MAX;
@@ -377,19 +353,17 @@ impl BenchmarkParameters {
         // noise model modifier, might from `load_noise_model_from_temporary_store` or `load_noise_model_from_file`
         let mut noise_model_modifier_str: Option<String> = None;
         match self.load_noise_model_from_temporary_store {
-            Some(noise_model_temporary_id) => {
-                match local_get_temporary_store(noise_model_temporary_id) {
-                    Some(value) => {
-                        noise_model_modifier_str = Some(value);
-                    }
-                    None => {
-                        return Err(format!(
-                            "[error] temporary id not found (may expire): {}",
-                            noise_model_temporary_id
-                        ))
-                    }
+            Some(noise_model_temporary_id) => match local_get_temporary_store(noise_model_temporary_id) {
+                Some(value) => {
+                    noise_model_modifier_str = Some(value);
                 }
-            }
+                None => {
+                    return Err(format!(
+                        "[error] temporary id not found (may expire): {}",
+                        noise_model_temporary_id
+                    ))
+                }
+            },
             None => {}
         }
         match &self.load_noise_model_from_file {
@@ -397,23 +371,14 @@ impl BenchmarkParameters {
                 Ok(value) => {
                     noise_model_modifier_str = Some(value);
                 }
-                Err(_) => {
-                    return Err(format!(
-                        "[error] noise model file cannot open: {}",
-                        noise_model_filepath
-                    ))
-                }
+                Err(_) => return Err(format!("[error] noise model file cannot open: {}", noise_model_filepath)),
             },
             None => {}
         }
         let noise_model_modifier: Option<serde_json::Value> = match noise_model_modifier_str {
             Some(value) => match serde_json::from_str(&value) {
                 Ok(noise_model_modifier) => Some(noise_model_modifier),
-                Err(_) => {
-                    return Err(format!(
-                        "[error] noise model cannot recognize, please check file format"
-                    ))
-                }
+                Err(_) => return Err(format!("[error] noise model cannot recognize, please check file format")),
             },
             None => None,
         };
@@ -441,10 +406,7 @@ impl BenchmarkParameters {
         Ok(())
     }
 
-    pub fn extract_simulation_configurations(
-        &self,
-        configs: &SimulationConfigs,
-    ) -> Vec<SingleSimulationConfig> {
+    pub fn extract_simulation_configurations(&self, configs: &SimulationConfigs) -> Vec<SingleSimulationConfig> {
         let mut configurations = Vec::new();
         for (di_idx, &di) in configs.dis.iter().enumerate() {
             let noisy_measurements = configs.nms[di_idx];
@@ -457,10 +419,7 @@ impl BenchmarkParameters {
                 assert!(p >= 0. && p <= 1.0, "invalid probability value");
                 assert!(p_graph >= 0. && p_graph <= 1.0, "invalid probability value");
                 assert!(pe >= 0. && pe <= 1.0, "invalid probability value");
-                assert!(
-                    pe_graph >= 0. && pe_graph <= 1.0,
-                    "invalid probability value"
-                );
+                assert!(pe_graph >= 0. && pe_graph <= 1.0, "invalid probability value");
                 configurations.push(SingleSimulationConfig::new(
                     di,
                     dj,
@@ -483,16 +442,8 @@ impl BenchmarkParameters {
         use_p_graph: bool,
     ) -> Result<Arc<NoiseModel>, String> {
         let mut noise_model: NoiseModel = NoiseModel::new(&simulator);
-        let p = if use_p_graph {
-            config.p_graph
-        } else {
-            config.p
-        };
-        let pe = if use_p_graph {
-            config.pe_graph
-        } else {
-            config.pe
-        };
+        let p = if use_p_graph { config.p_graph } else { config.p };
+        let pe = if use_p_graph { config.pe_graph } else { config.pe };
         let px = p / (1. + self.bias_eta) / 2.;
         let py = px;
         let pz = p - 2. * px;
@@ -511,12 +462,8 @@ impl BenchmarkParameters {
         // apply noise model modifier
         match &configs.noise_model_modifier {
             Some(modifier) => {
-                NoiseModelBuilder::apply_noise_model_modifier(
-                    simulator,
-                    &mut noise_model,
-                    &modifier,
-                )
-                .map_err(|e| format!("apply noise model failed: {e}"))?;
+                NoiseModelBuilder::apply_noise_model_modifier(simulator, &mut noise_model, &modifier)
+                    .map_err(|e| format!("apply noise model failed: {e}"))?;
             }
             None => {}
         }
@@ -564,8 +511,7 @@ impl BenchmarkParameters {
             }
             Some(BenchmarkDebugPrint::ModelGraph) => {
                 let config: BenchmarkDebugPrintDecoderConfig =
-                    serde_json::from_value(self.decoder_config.clone())
-                        .map_err(|x| x.to_string())?;
+                    serde_json::from_value(self.decoder_config.clone()).map_err(|x| x.to_string())?;
                 let mut model_graph = ModelGraph::new(&simulator);
                 model_graph.build(
                     simulator,
@@ -582,8 +528,7 @@ impl BenchmarkParameters {
             }
             Some(BenchmarkDebugPrint::CompleteModelGraph) => {
                 let config: BenchmarkDebugPrintDecoderConfig =
-                    serde_json::from_value(self.decoder_config.clone())
-                        .map_err(|x| x.to_string())?;
+                    serde_json::from_value(self.decoder_config.clone()).map_err(|x| x.to_string())?;
                 let mut model_graph = ModelGraph::new(&simulator);
                 model_graph.build(
                     simulator,
@@ -594,13 +539,8 @@ impl BenchmarkParameters {
                     self.use_brief_edge,
                 );
                 let model_graph = Arc::new(model_graph);
-                let mut complete_model_graph =
-                    CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
-                complete_model_graph.precompute(
-                    &simulator,
-                    config.precompute_complete_model_graph,
-                    configs.parallel_init,
-                );
+                let mut complete_model_graph = CompleteModelGraph::new(&simulator, Arc::clone(&model_graph));
+                complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph, configs.parallel_init);
                 return Ok(Some(format!(
                     "{}\n",
                     serde_json::to_string(&complete_model_graph.to_json(&simulator)).unwrap()
@@ -608,8 +548,7 @@ impl BenchmarkParameters {
             }
             Some(BenchmarkDebugPrint::TailoredModelGraph) => {
                 let config: BenchmarkDebugPrintDecoderConfig =
-                    serde_json::from_value(self.decoder_config.clone())
-                        .map_err(|x| x.to_string())?;
+                    serde_json::from_value(self.decoder_config.clone()).map_err(|x| x.to_string())?;
                 let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
                 tailored_model_graph.build(
                     simulator,
@@ -624,8 +563,7 @@ impl BenchmarkParameters {
             }
             Some(BenchmarkDebugPrint::TailoredCompleteModelGraph) => {
                 let config: BenchmarkDebugPrintDecoderConfig =
-                    serde_json::from_value(self.decoder_config.clone())
-                        .map_err(|x| x.to_string())?;
+                    serde_json::from_value(self.decoder_config.clone()).map_err(|x| x.to_string())?;
                 let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
                 tailored_model_graph.build(
                     simulator,
@@ -643,8 +581,7 @@ impl BenchmarkParameters {
                 );
                 return Ok(Some(format!(
                     "{}\n",
-                    serde_json::to_string(&complete_tailored_model_graph.to_json(&simulator))
-                        .unwrap()
+                    serde_json::to_string(&complete_tailored_model_graph.to_json(&simulator)).unwrap()
                 )));
             }
             Some(BenchmarkDebugPrint::ErasureGraph) => {
@@ -670,20 +607,16 @@ impl BenchmarkParameters {
         let mut visualizer = None;
         if self.enable_visualizer {
             print_visualize_link(self.visualizer_filename.clone());
-            let mut new_visualizer: Visualizer = Visualizer::new(Some(
-                visualize_data_folder() + self.visualizer_filename.as_str(),
-            ))
-            .map_err(|x| x.to_string())?;
-            new_visualizer
-                .add_component(simulator)
-                .map_err(|x| x.to_string())?;
+            let mut new_visualizer: Visualizer =
+                Visualizer::new(Some(visualize_data_folder() + self.visualizer_filename.as_str()))
+                    .map_err(|x| x.to_string())?;
+            new_visualizer.add_component(simulator).map_err(|x| x.to_string())?;
             new_visualizer
                 .add_component(noise_model.as_ref())
                 .map_err(|x| x.to_string())?;
             if self.visualizer_model_graph {
                 let config: BenchmarkDebugPrintDecoderConfig =
-                    serde_json::from_value(self.decoder_config.clone())
-                        .map_err(|x| x.to_string())?;
+                    serde_json::from_value(self.decoder_config.clone()).map_err(|x| x.to_string())?;
                 let mut model_graph = ModelGraph::new(&simulator);
                 model_graph.build(
                     simulator,
@@ -693,14 +626,11 @@ impl BenchmarkParameters {
                     config.use_combined_probability,
                     self.use_brief_edge,
                 );
-                new_visualizer
-                    .add_component(&model_graph)
-                    .map_err(|x| x.to_string())?;
+                new_visualizer.add_component(&model_graph).map_err(|x| x.to_string())?;
             }
             if self.visualizer_model_hypergraph {
                 let config: BenchmarkDebugPrintDecoderConfig =
-                    serde_json::from_value(self.decoder_config.clone())
-                        .map_err(|x| x.to_string())?;
+                    serde_json::from_value(self.decoder_config.clone()).map_err(|x| x.to_string())?;
                 let mut model_hypergraph = ModelHypergraph::new(&simulator);
                 model_hypergraph.build(
                     simulator,
@@ -710,14 +640,11 @@ impl BenchmarkParameters {
                     config.use_combined_probability,
                     self.use_brief_edge,
                 );
-                new_visualizer
-                    .add_component(&model_hypergraph)
-                    .map_err(|x| x.to_string())?;
+                new_visualizer.add_component(&model_hypergraph).map_err(|x| x.to_string())?;
             }
             if self.visualizer_tailored_model_graph {
                 let config: BenchmarkDebugPrintDecoderConfig =
-                    serde_json::from_value(self.decoder_config.clone())
-                        .map_err(|x| x.to_string())?;
+                    serde_json::from_value(self.decoder_config.clone()).map_err(|x| x.to_string())?;
                 let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
                 tailored_model_graph.build(
                     simulator,
@@ -743,20 +670,13 @@ impl BenchmarkParameters {
         log_runtime_statistics_file: &Option<Arc<Mutex<File>>>,
     ) -> Result<String, String> {
         // first use p_graph and pe_graph to build decoder graph, then go back to real noise model for simulation; a mismatch between decoding graph and real noise model is realistic
-        let mut simulator = Simulator::new(
-            self.code_type,
-            CodeSize::new(config.noisy_measurements, config.di, config.dj),
-        );
-        let noise_model_graph =
-            self.construct_noise_model(&mut simulator, configs, config, true)?;
-        if let Some(terminate_message) =
-            self.execute_debug_print(configs, &mut simulator, &noise_model_graph)?
-        {
+        let mut simulator = Simulator::new(self.code_type, CodeSize::new(config.noisy_measurements, config.di, config.dj));
+        let noise_model_graph = self.construct_noise_model(&mut simulator, configs, config, true)?;
+        if let Some(terminate_message) = self.execute_debug_print(configs, &mut simulator, &noise_model_graph)? {
             return Ok(terminate_message); // debug print terminates
         }
         // build decoder instances
-        let general_decoder =
-            GeneralDecoder::from_parameters(self, configs, config, &simulator, &noise_model_graph)?;
+        let general_decoder = GeneralDecoder::from_parameters(self, configs, config, &simulator, &noise_model_graph)?;
         // prepare fusion blossom exporter
         cfg_if::cfg_if! { if #[cfg(feature="fusion_blossom")] {
             let mut fusion_blossom_syndrome_exporter = None;
@@ -772,8 +692,7 @@ impl BenchmarkParameters {
         // then prepare the real noise model
         let noise_model = self.construct_noise_model(&mut simulator, configs, config, false)?;
         // prepare visualizer
-        let visualizer =
-            self.prepare_visualizer(&mut simulator, &noise_model, &noise_model_graph, configs)?;
+        let visualizer = self.prepare_visualizer(&mut simulator, &noise_model, &noise_model_graph, configs)?;
         // prepare result variables for simulation
         let benchmark_control = Arc::new(Mutex::new(BenchmarkControl::new()));
         // setup progress bar
@@ -784,14 +703,8 @@ impl BenchmarkParameters {
         let mut threads_debugger: Vec<Arc<Mutex<BenchmarkThreadDebugger>>> = Vec::new();
         let mut threads_ended = Vec::new(); // keep updating progress bar until all threads ends
         let general_simulator: GeneralSimulator = if self.use_compact_simulator {
-            let first = SimulatorCompact::from_simulator(
-                simulator,
-                noise_model.clone(),
-                configs.parallel_init,
-            );
-            if let Some(simulator_compact_extender_noisy_measurements) =
-                self.simulator_compact_extender_noisy_measurements
-            {
+            let first = SimulatorCompact::from_simulator(simulator, noise_model.clone(), configs.parallel_init);
+            if let Some(simulator_compact_extender_noisy_measurements) = self.simulator_compact_extender_noisy_measurements {
                 self.assert_single_configuration(&configs)?;
                 if simulator_compact_extender_noisy_measurements < config.noisy_measurements {
                     return Err(format!("extender only works for larger noisy_measurement than nms[0], now {simulator_compact_extender_noisy_measurements} < {}", config.noisy_measurements));
@@ -800,25 +713,17 @@ impl BenchmarkParameters {
                         self.code_type,
                         CodeSize::new(config.noisy_measurements + 1, config.di, config.dj),
                     );
-                    let second_noise_model =
-                        self.construct_noise_model(&mut second_simulator, configs, config, false)?;
-                    let second = SimulatorCompact::from_simulator(
-                        second_simulator,
-                        second_noise_model,
-                        configs.parallel_init,
-                    );
-                    let extender =
-                        SimulatorCompactExtender::new(first, second, config.noisy_measurements);
+                    let second_noise_model = self.construct_noise_model(&mut second_simulator, configs, config, false)?;
+                    let second =
+                        SimulatorCompact::from_simulator(second_simulator, second_noise_model, configs.parallel_init);
+                    let extender = SimulatorCompactExtender::new(first, second, config.noisy_measurements);
                     if self.use_compact_simulator_compressed {
-                        GeneralSimulator::SimulatorCompactCompressed(
-                            SimulatorCompactCompressed::new(
-                                extender,
-                                simulator_compact_extender_noisy_measurements,
-                            ),
-                        )
+                        GeneralSimulator::SimulatorCompactCompressed(SimulatorCompactCompressed::new(
+                            extender,
+                            simulator_compact_extender_noisy_measurements,
+                        ))
                     } else {
-                        let generated =
-                            extender.generate(simulator_compact_extender_noisy_measurements);
+                        let generated = extender.generate(simulator_compact_extender_noisy_measurements);
                         GeneralSimulator::SimulatorCompact(generated)
                     }
                 }
@@ -863,9 +768,8 @@ impl BenchmarkParameters {
             let qec_failed = benchmark_control.qec_failed;
             // compute simulation results
             let error_rate = qec_failed as f64 / total_repeats as f64;
-            let confidence_interval_95_percent = 1.96
-                * (error_rate * (1. - error_rate) / (total_repeats as f64)).sqrt()
-                / error_rate;
+            let confidence_interval_95_percent =
+                1.96 * (error_rate * (1. - error_rate) / (total_repeats as f64)).sqrt() / error_rate;
             format!(
                 "{} {} {} {} {} {} {} {:.1e} {} ",
                 config.p,
@@ -962,10 +866,7 @@ impl BenchmarkParameters {
                     let handler = handlers.swap_remove(parallel_idx);
                     let thread_debugger = threads_debugger.swap_remove(parallel_idx);
                     if !thread_ended.load(Ordering::SeqCst) {
-                        eprintln!(
-                            "[error] thread {} doesn't terminate within timeout",
-                            parallel_idx
-                        );
+                        eprintln!("[error] thread {} doesn't terminate within timeout", parallel_idx);
                         eprintln!("{}", json!(thread_debugger.lock().unwrap().clone()));
                     } else {
                         // still join normal threads
@@ -989,10 +890,7 @@ impl BenchmarkParameters {
                 }
                 break;
             }
-            eprintln!(
-                "[info] waiting for all threads to end, time elapsed: {:.3}s",
-                time_elapsed
-            );
+            eprintln!("[info] waiting for all threads to end, time elapsed: {:.3}s", time_elapsed);
             std::thread::sleep(std::time::Duration::from_millis(1000));
         }
         pb.finish();
@@ -1059,12 +957,8 @@ impl GeneralDecoder {
                         );
                         let mut second_config = config.clone();
                         second_config.noisy_measurements += 1;
-                        let second_noise_model_graph = parameters.construct_noise_model(
-                            &mut second_simulator,
-                            configs,
-                            &second_config,
-                            true,
-                        )?;
+                        let second_noise_model_graph =
+                            parameters.construct_noise_model(&mut second_simulator, configs, &second_config, true)?;
                         let second = FusionDecoder::new(
                             &second_simulator,
                             second_noise_model_graph.clone(),
@@ -1078,12 +972,10 @@ impl GeneralDecoder {
                             Arc::try_unwrap(second.adaptor).unwrap(),
                             config.noisy_measurements,
                         );
-                        let generated = extender
-                            .generate(simulator_compact_extender_noisy_measurements, skip_decoding);
+                        let generated = extender.generate(simulator_compact_extender_noisy_measurements, skip_decoding);
                         let fusion_solver = if first.config.skip_decoding {
-                            fusion_blossom::mwpm_solver::SolverSerial::new(
-                                &extender.base.initializer,
-                            ) // no need to generate a large solver
+                            fusion_blossom::mwpm_solver::SolverSerial::new(&extender.base.initializer)
+                        // no need to generate a large solver
                         } else {
                             fusion_blossom::mwpm_solver::SolverSerial::new(&generated.initializer)
                         };
@@ -1099,19 +991,15 @@ impl GeneralDecoder {
             }
             #[cfg(not(feature = "fusion_blossom"))]
             BenchmarkDecoder::Fusion => {
-                return Err(
-                    "decoder is not available; try enable feature `fusion_blossom`".to_string(),
-                )
+                return Err("decoder is not available; try enable feature `fusion_blossom`".to_string())
             }
-            BenchmarkDecoder::TailoredMWPM => {
-                GeneralDecoder::TailoredMWPM(TailoredMWPMDecoder::new(
-                    &simulator,
-                    noise_model_graph.clone(),
-                    &parameters.decoder_config,
-                    configs.parallel_init,
-                    parameters.use_brief_edge,
-                ))
-            }
+            BenchmarkDecoder::TailoredMWPM => GeneralDecoder::TailoredMWPM(TailoredMWPMDecoder::new(
+                &simulator,
+                noise_model_graph.clone(),
+                &parameters.decoder_config,
+                configs.parallel_init,
+                parameters.use_brief_edge,
+            )),
             BenchmarkDecoder::UnionFind => GeneralDecoder::UnionFind(UnionFindDecoder::new(
                 &simulator,
                 noise_model_graph.clone(),
@@ -1120,15 +1008,13 @@ impl GeneralDecoder {
                 parameters.use_brief_edge,
             )),
             #[cfg(feature = "hyperion")]
-            BenchmarkDecoder::HyperUnionFind => {
-                GeneralDecoder::HyperUnionFind(HyperUnionFindDecoder::new(
-                    &simulator,
-                    noise_model_graph.clone(),
-                    &parameters.decoder_config,
-                    configs.parallel_init,
-                    parameters.use_brief_edge,
-                ))
-            }
+            BenchmarkDecoder::HyperUnionFind => GeneralDecoder::HyperUnionFind(HyperUnionFindDecoder::new(
+                &simulator,
+                noise_model_graph.clone(),
+                &parameters.decoder_config,
+                configs.parallel_init,
+                parameters.use_brief_edge,
+            )),
             #[cfg(not(feature = "hyperion"))]
             BenchmarkDecoder::HyperUnionFind => {
                 return Err("decoder is not available; try enable feature `hyperion`".to_string())
@@ -1143,13 +1029,9 @@ impl GeneralDecoder {
     ) -> (SparseCorrection, serde_json::Value) {
         match self {
             Self::None => (SparseCorrection::new(), json!({})),
-            Self::MWPM(mwpm_decoder) => {
-                mwpm_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
-            }
+            Self::MWPM(mwpm_decoder) => mwpm_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures),
             #[cfg(feature = "fusion_blossom")]
-            Self::Fusion(fusion_decoder) => {
-                fusion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
-            }
+            Self::Fusion(fusion_decoder) => fusion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures),
             Self::TailoredMWPM(tailored_mwpm_decoder) => {
                 assert!(
                     sparse_detected_erasures.len() == 0,
@@ -1161,8 +1043,9 @@ impl GeneralDecoder {
                 union_find_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
             }
             #[cfg(feature = "hyperion")]
-            Self::HyperUnionFind(hyper_union_find_decoder) => hyper_union_find_decoder
-                .decode_with_erasure(sparse_measurement, sparse_detected_erasures),
+            Self::HyperUnionFind(hyper_union_find_decoder) => {
+                hyper_union_find_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
+            }
         }
     }
 }
@@ -1186,16 +1069,11 @@ impl SimulationWorker {
         for thread_counter in 0..usize::MAX {
             let parameters = &self.parameters;
             if parameters.thread_timeout >= 0. {
-                self.thread_debugger
-                    .lock()
-                    .unwrap()
-                    .update_thread_counter(thread_counter);
+                self.thread_debugger.lock().unwrap().update_thread_counter(thread_counter);
             }
             // generate random errors and the corresponding measurement
             let begin = Instant::now();
-            let (error_count, erasure_count) = self
-                .general_simulator
-                .generate_random_errors(&self.noise_model);
+            let (error_count, erasure_count) = self.general_simulator.generate_random_errors(&self.noise_model);
             let sparse_detected_erasures = if erasure_count != 0 {
                 self.general_simulator.generate_sparse_detected_erasures()
             } else {
@@ -1203,14 +1081,10 @@ impl SimulationWorker {
             };
             if parameters.thread_timeout >= 0. {
                 let mut thread_debugger = self.thread_debugger.lock().unwrap();
-                thread_debugger.error_pattern =
-                    Some(self.general_simulator.generate_sparse_error_pattern());
+                thread_debugger.error_pattern = Some(self.general_simulator.generate_sparse_error_pattern());
                 thread_debugger.detected_erasures = Some(sparse_detected_erasures.clone());
             } // runtime debug: find deadlock cases
-            if matches!(
-                parameters.debug_print,
-                Some(BenchmarkDebugPrint::AllErrorPattern)
-            ) {
+            if matches!(parameters.debug_print, Some(BenchmarkDebugPrint::AllErrorPattern)) {
                 let sparse_error_pattern = self.general_simulator.generate_sparse_error_pattern();
                 eprint!(
                     "{}",
@@ -1220,8 +1094,7 @@ impl SimulationWorker {
                     // has detected erasures, report as well
                     eprintln!(
                         ", {}",
-                        serde_json::to_string(&sparse_detected_erasures)
-                            .expect("serialize should success")
+                        serde_json::to_string(&sparse_detected_erasures).expect("serialize should success")
                     );
                 } else {
                     eprintln!("");
@@ -1261,12 +1134,7 @@ impl SimulationWorker {
                 is_qec_failed = true;
             }
             let validate_elapsed = begin.elapsed().as_secs_f64();
-            if is_qec_failed
-                && matches!(
-                    parameters.debug_print,
-                    Some(BenchmarkDebugPrint::FailedErrorPattern)
-                )
-            {
+            if is_qec_failed && matches!(parameters.debug_print, Some(BenchmarkDebugPrint::FailedErrorPattern)) {
                 let sparse_error_pattern = self.general_simulator.generate_sparse_error_pattern();
                 eprint!(
                     "{}",
@@ -1276,8 +1144,7 @@ impl SimulationWorker {
                     // has detected erasures, report as well
                     eprintln!(
                         ", {}",
-                        serde_json::to_string(&sparse_detected_erasures)
-                            .expect("serialize should success")
+                        serde_json::to_string(&sparse_detected_erasures).expect("serialize should success")
                     );
                 } else {
                     eprintln!("");
@@ -1287,8 +1154,7 @@ impl SimulationWorker {
             if let Some(log_runtime_statistics_file) = &self.log_runtime_statistics_file {
                 runtime_statistics["qec_failed"] = json!(is_qec_failed);
                 if parameters.log_error_pattern_when_logical_error && is_qec_failed {
-                    runtime_statistics["error_pattern"] =
-                        json!(self.general_simulator.generate_sparse_error_pattern());
+                    runtime_statistics["error_pattern"] = json!(self.general_simulator.generate_sparse_error_pattern());
                 }
                 runtime_statistics["elapsed"] = json!({
                     "simulate": simulate_elapsed,
@@ -1297,9 +1163,7 @@ impl SimulationWorker {
                 });
                 let to_be_written = format!("{}\n", runtime_statistics.to_string());
                 let mut log_runtime_statistics_file = log_runtime_statistics_file.lock().unwrap();
-                log_runtime_statistics_file
-                    .write_all(to_be_written.as_bytes())
-                    .unwrap();
+                log_runtime_statistics_file.write_all(to_be_written.as_bytes()).unwrap();
             }
             // update visualizer
             if let Some(visualizer) = &self.visualizer {
@@ -1322,16 +1186,11 @@ impl SimulationWorker {
                 }
             }
             // update simulation counters, then break the loop if benchmark should terminate
-            if self
-                .benchmark_control
-                .lock()
-                .unwrap()
-                .update_data_should_terminate(
-                    is_qec_failed,
-                    parameters.max_repeats,
-                    parameters.min_failed_cases,
-                )
-            {
+            if self.benchmark_control.lock().unwrap().update_data_should_terminate(
+                is_qec_failed,
+                parameters.max_repeats,
+                parameters.min_failed_cases,
+            ) {
                 break;
             }
         }

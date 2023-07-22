@@ -23,9 +23,7 @@ impl QubitType {
         match self {
             Self::Data => None,
             Self::StabZ => Some(true),
-            Self::StabX | Self::StabXZZXLogicalX | Self::StabXZZXLogicalZ | Self::StabY => {
-                Some(false)
-            }
+            Self::StabX | Self::StabXZZXLogicalX | Self::StabXZZXLogicalZ | Self::StabY => Some(false),
         }
     }
 }
@@ -91,10 +89,7 @@ impl ErrorType {
         vec![Self::X, Self::Z, Self::Y]
     }
     //#[classmethod]
-    pub fn combine_probability(
-        p_xyz_1: (f64, f64, f64),
-        p_xyz_2: (f64, f64, f64),
-    ) -> (f64, f64, f64) {
+    pub fn combine_probability(p_xyz_1: (f64, f64, f64), p_xyz_2: (f64, f64, f64)) -> (f64, f64, f64) {
         let (px1, py1, pz1) = p_xyz_1;
         let (px2, py2, pz2) = p_xyz_2;
         let pi1 = 1. - px1 - py1 - pz1;
@@ -334,66 +329,21 @@ impl CorrelatedPauliErrorRates {
             self.no_error_probability() >= 0.,
             "sum of error rate should be no more than 1"
         );
-        assert!(
-            self.error_rate_IX >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_IZ >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_IY >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_XI >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_XX >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_XZ >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_XY >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_ZI >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_ZX >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_ZZ >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_ZY >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_YI >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_YX >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_YZ >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_YY >= 0.,
-            "error rate should be greater than 0"
-        );
+        assert!(self.error_rate_IX >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_IZ >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_IY >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_XI >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_XX >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_XZ >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_XY >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_ZI >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_ZX >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_ZZ >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_ZY >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_YI >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_YX >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_YZ >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_YY >= 0., "error rate should be greater than 0");
     }
     pub fn generate_random_error(&self, random_number: f64) -> CorrelatedPauliErrorType {
         let mut random_number = random_number;
@@ -528,18 +478,9 @@ impl CorrelatedErasureErrorRates {
             self.no_error_probability() >= 0.,
             "sum of error rate should be no more than 1"
         );
-        assert!(
-            self.error_rate_IE >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_EI >= 0.,
-            "error rate should be greater than 0"
-        );
-        assert!(
-            self.error_rate_EE >= 0.,
-            "error rate should be greater than 0"
-        );
+        assert!(self.error_rate_IE >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_EI >= 0., "error rate should be greater than 0");
+        assert!(self.error_rate_EE >= 0., "error rate should be greater than 0");
     }
     pub fn generate_random_erasure_error(&self, random_number: f64) -> CorrelatedErasureErrorType {
         let mut random_number = random_number;
@@ -607,9 +548,7 @@ impl From<String> for NoiseModelName {
             "ErasureOnlyPhenomenological" => Self::ErasureOnlyPhenomenological,
             "PauliZandErasurePhenomenological" => Self::PauliZandErasurePhenomenological,
             "OnlyGateErrorCircuitLevel" => Self::OnlyGateErrorCircuitLevel,
-            "OnlyGateErrorCircuitLevelCorrelatedErasure" => {
-                Self::OnlyGateErrorCircuitLevelCorrelatedErasure
-            }
+            "OnlyGateErrorCircuitLevelCorrelatedErasure" => Self::OnlyGateErrorCircuitLevelCorrelatedErasure,
             "Arxiv200404693" => Self::Arxiv200404693,
             "TailoredPhenomenological" => Self::TailoredPhenomenological,
             _ => panic!("unrecognized noise model"),
@@ -625,9 +564,7 @@ impl std::fmt::Display for NoiseModelName {
             Self::ErasureOnlyPhenomenological => "ErasureOnlyPhenomenological",
             Self::PauliZandErasurePhenomenological => "PauliZandErasurePhenomenological",
             Self::OnlyGateErrorCircuitLevel => "OnlyGateErrorCircuitLevel",
-            Self::OnlyGateErrorCircuitLevelCorrelatedErasure => {
-                "OnlyGateErrorCircuitLevelCorrelatedErasure"
-            }
+            Self::OnlyGateErrorCircuitLevelCorrelatedErasure => "OnlyGateErrorCircuitLevelCorrelatedErasure",
             Self::Arxiv200404693 => "Arxiv200404693",
             Self::TailoredPhenomenological => "TailoredPhenomenological",
         })?;

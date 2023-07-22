@@ -66,8 +66,7 @@ impl HyperUnionFindDecoder {
         use_brief_edge: bool,
     ) -> Self {
         // read attribute of decoder configuration
-        let config: HyperUnionFindDecoderConfig =
-            serde_json::from_value(decoder_configuration.clone()).unwrap();
+        let config: HyperUnionFindDecoderConfig = serde_json::from_value(decoder_configuration.clone()).unwrap();
         // build model graph
         let mut simulator = simulator.clone();
         let mut model_hypergraph = ModelHypergraph::new(&simulator);
@@ -80,8 +79,7 @@ impl HyperUnionFindDecoder {
             use_brief_edge,
         );
         let model_hypergraph = Arc::new(model_hypergraph);
-        let (vertex_num, weighted_edges) =
-            model_hypergraph.generate_mwps_hypergraph(config.max_weight);
+        let (vertex_num, weighted_edges) = model_hypergraph.generate_mwps_hypergraph(config.max_weight);
         let initializer = Arc::new(SolverInitializer::new(vertex_num, weighted_edges));
         let solver = SolverUnionFind::new(&initializer);
         Self {
@@ -94,10 +92,7 @@ impl HyperUnionFindDecoder {
 
     /// decode given measurement results
     #[allow(dead_code)]
-    pub fn decode(
-        &mut self,
-        sparse_measurement: &SparseMeasurement,
-    ) -> (SparseCorrection, serde_json::Value) {
+    pub fn decode(&mut self, sparse_measurement: &SparseMeasurement) -> (SparseCorrection, serde_json::Value) {
         self.decode_with_erasure(sparse_measurement, &SparseErasures::new())
     }
 
@@ -131,12 +126,7 @@ impl HyperUnionFindDecoder {
         let begin = Instant::now();
         let mut correction = SparseCorrection::new();
         for &edge_index in subgraph.iter() {
-            correction.extend(
-                &self.model_hypergraph.weighted_edges[edge_index]
-                    .1
-                    .hyperedge
-                    .correction,
-            );
+            correction.extend(&self.model_hypergraph.weighted_edges[edge_index].1.hyperedge.correction);
         }
         let time_build_correction = begin.elapsed().as_secs_f64();
         (
@@ -162,10 +152,7 @@ mod tests {
         let noisy_measurements = 0; // perfect measurement
         let p = 0.001;
         // build simulator
-        let mut simulator = Simulator::new(
-            CodeType::StandardPlanarCode,
-            CodeSize::new(noisy_measurements, d, d),
-        );
+        let mut simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build noise model
         let mut noise_model = NoiseModel::new(&simulator);
@@ -175,13 +162,8 @@ mod tests {
         let noise_model = Arc::new(noise_model);
         // build decoder
         let enable_all = true;
-        let mut hyper_union_find_decoder = HyperUnionFindDecoder::new(
-            &Arc::new(simulator.clone()),
-            Arc::clone(&noise_model),
-            &json!({}),
-            1,
-            false,
-        );
+        let mut hyper_union_find_decoder =
+            HyperUnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&noise_model), &json!({}), 1, false);
         if true || enable_all {
             // debug 5
             simulator.clear_all_errors();
@@ -192,8 +174,7 @@ mod tests {
             simulator.set_error_check(&noise_model, &pos!(0, 9, 1), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
-            let (correction, _runtime_statistics) =
-                hyper_union_find_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = hyper_union_find_decoder.decode(&sparse_measurement);
             // println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -209,8 +190,7 @@ mod tests {
             simulator.set_error_check(&noise_model, &pos!(0, 7, 7), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
-            let (correction, _runtime_statistics) =
-                hyper_union_find_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = hyper_union_find_decoder.decode(&sparse_measurement);
             // println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
         }
@@ -223,8 +203,7 @@ mod tests {
             simulator.set_error_check(&noise_model, &pos!(0, 8, 4), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
-            let (correction, _runtime_statistics) =
-                hyper_union_find_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = hyper_union_find_decoder.decode(&sparse_measurement);
             println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -238,8 +217,7 @@ mod tests {
             simulator.set_error_check(&noise_model, &pos!(0, 8, 8), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
-            let (correction, _runtime_statistics) =
-                hyper_union_find_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = hyper_union_find_decoder.decode(&sparse_measurement);
             // println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -253,8 +231,7 @@ mod tests {
             simulator.set_error_check(&noise_model, &pos!(0, 5, 7), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
-            let (correction, _runtime_statistics) =
-                hyper_union_find_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = hyper_union_find_decoder.decode(&sparse_measurement);
             // println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);

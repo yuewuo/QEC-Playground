@@ -11,10 +11,7 @@ use std::sync::RwLock;
 
 /// filename should contain .py, folders should end with slash
 #[allow(dead_code)]
-pub fn getFileContentFromMultiplePlaces(
-    folders: &Vec<String>,
-    filename: &String,
-) -> Result<String, String> {
+pub fn getFileContentFromMultiplePlaces(folders: &Vec<String>, filename: &String) -> Result<String, String> {
     for folder in folders {
         let path = Path::new(folder).join(filename.as_str());
         if path.exists() {
@@ -26,10 +23,7 @@ pub fn getFileContentFromMultiplePlaces(
             }
         }
     }
-    Err(format!(
-        "cannot find '{}' from folders {:?}",
-        filename, folders
-    ))
+    Err(format!("cannot find '{}' from folders {:?}", filename, folders))
 }
 
 // https://users.rust-lang.org/t/hashmap-performance/6476/8
@@ -107,11 +101,7 @@ pub fn local_get_temporary_store(resource_id: usize) -> Option<String> {
             Ok(_) => {}
             Err(_) => return None, // cannot open folder
         }
-        match fs::read_to_string(
-            temporary_store
-                .temporary_store_folder
-                .join(format!("{}.dat", resource_id)),
-        ) {
+        match fs::read_to_string(temporary_store.temporary_store_folder.join(format!("{}.dat", resource_id))) {
             Ok(value) => Some(value),
             Err(_) => None,
         }
@@ -156,9 +146,7 @@ pub fn local_put_temporary_store(value: String) -> Option<usize> {
             }
         }
         if fs::write(
-            temporary_store
-                .temporary_store_folder
-                .join(format!("{}.dat", insert_key)),
+            temporary_store.temporary_store_folder.join(format!("{}.dat", insert_key)),
             value.as_bytes(),
         )
         .is_err()
@@ -225,11 +213,7 @@ impl PyMut {
     pub fn __exit__(&mut self, _exc_type: PyObject, _exc_val: PyObject, _exc_tb: PyObject) {
         Python::with_gil(|py| {
             self.object
-                .setattr(
-                    py,
-                    self.attr_name.as_str(),
-                    self.attr_object.take().unwrap(),
-                )
+                .setattr(py, self.attr_name.as_str(), self.attr_object.take().unwrap())
                 .unwrap()
         })
     }
@@ -249,10 +233,7 @@ pub fn json_to_pyobject_locked<'py>(value: serde_json::Value, py: Python<'py>) -
         }
         serde_json::Value::String(value) => value.to_object(py).into(),
         serde_json::Value::Array(array) => {
-            let elements: Vec<PyObject> = array
-                .into_iter()
-                .map(|value| json_to_pyobject_locked(value, py))
-                .collect();
+            let elements: Vec<PyObject> = array.into_iter().map(|value| json_to_pyobject_locked(value, py)).collect();
             pyo3::types::PyList::new(py, elements).into()
         }
         serde_json::Value::Object(map) => {
@@ -303,9 +284,7 @@ pub fn pyobject_to_json_locked<'py>(value: PyObject, py: Python<'py>) -> serde_j
         }
         serde_json::Value::Object(json_map)
     } else {
-        unimplemented!(
-            "unsupported python type, should be (cascaded) dict, list and basic numerical types"
-        )
+        unimplemented!("unsupported python type, should be (cascaded) dict, list and basic numerical types")
     }
 }
 

@@ -93,8 +93,7 @@ impl TailoredMWPMDecoder {
         use_brief_edge: bool,
     ) -> Self {
         // read attribute of decoder configuration
-        let config: TailoredMWPMDecoderConfig =
-            serde_json::from_value(decoder_configuration.clone()).unwrap();
+        let config: TailoredMWPMDecoderConfig = serde_json::from_value(decoder_configuration.clone()).unwrap();
         // build model graph
         let mut simulator = simulator.clone();
         let mut tailored_model_graph = TailoredModelGraph::new(&simulator);
@@ -108,11 +107,7 @@ impl TailoredMWPMDecoder {
         // build complete model graph
         let mut tailored_complete_model_graph =
             TailoredCompleteModelGraph::new(&simulator, Arc::clone(&tailored_model_graph));
-        tailored_complete_model_graph.precompute(
-            &simulator,
-            config.precompute_complete_model_graph,
-            parallel,
-        );
+        tailored_complete_model_graph.precompute(&simulator, config.precompute_complete_model_graph, parallel);
         // build MWPM decoder
         let mwpm_decoder = MWPMDecoder::new(
             &simulator,
@@ -126,18 +121,15 @@ impl TailoredMWPMDecoder {
             use_brief_edge,
         );
         Self {
-            tailored_model_graph: tailored_model_graph,
-            tailored_complete_model_graph: tailored_complete_model_graph,
-            mwpm_decoder: mwpm_decoder,
+            tailored_model_graph,
+            tailored_complete_model_graph,
+            mwpm_decoder,
             simulator: Arc::new(simulator),
-            config: config,
+            config,
         }
     }
 
-    pub fn decode(
-        &mut self,
-        sparse_measurement: &SparseMeasurement,
-    ) -> (SparseCorrection, serde_json::Value) {
+    pub fn decode(&mut self, sparse_measurement: &SparseMeasurement) -> (SparseCorrection, serde_json::Value) {
         let mut correction = SparseCorrection::new();
         // list nontrivial measurements to be matched
         let to_be_matched = sparse_measurement.to_vec();
@@ -164,8 +156,7 @@ impl TailoredMWPMDecoder {
             let tailored_len = tailored_to_be_matched.len();
             debug_assert!(tailored_len == real_len + virtual_len);
             // invalidate previous cache to save memory
-            self.tailored_complete_model_graph
-                .invalidate_previous_dijkstra();
+            self.tailored_complete_model_graph.invalidate_previous_dijkstra();
             // construct edges
             let mut tailored_weighted_edges = Vec::<(usize, usize, f64)>::new();
             for i in 0..tailored_len {
@@ -211,10 +202,8 @@ impl TailoredMWPMDecoder {
                 }
                 all_edges_valid
             });
-            let tailored_matching = blossom_v::safe_minimum_weight_perfect_matching(
-                tailored_len * 2,
-                tailored_weighted_edges,
-            );
+            let tailored_matching =
+                blossom_v::safe_minimum_weight_perfect_matching(tailored_len * 2, tailored_weighted_edges);
             if self.config.log_matchings {
                 // log the tailored matching
                 for graph_index in 0..2 {
@@ -336,10 +325,7 @@ impl TailoredMWPMDecoder {
                             } else {
                                 let matching_correction = self
                                     .tailored_complete_model_graph
-                                    .build_correction_neutral_matching(
-                                        last_y.as_ref().unwrap(),
-                                        position,
-                                    );
+                                    .build_correction_neutral_matching(last_y.as_ref().unwrap(), position);
                                 correction.extend(&matching_correction);
                                 last_y = None;
                             }
@@ -350,10 +336,7 @@ impl TailoredMWPMDecoder {
                             } else {
                                 let matching_correction = self
                                     .tailored_complete_model_graph
-                                    .build_correction_neutral_matching(
-                                        last_x.as_ref().unwrap(),
-                                        position,
-                                    );
+                                    .build_correction_neutral_matching(last_x.as_ref().unwrap(), position);
                                 correction.extend(&matching_correction);
                                 last_x = None;
                             }
@@ -396,7 +379,8 @@ impl TailoredMWPMDecoder {
                             .unwrap()
                             .as_array()
                             .unwrap()
-                            .get(0).expect("since residual is not empty, mwpm should give at least one matching")
+                            .get(0)
+                            .expect("since residual is not empty, mwpm should give at least one matching")
                             .as_object()
                             .unwrap()
                             .get("edges")
@@ -443,10 +427,8 @@ impl TailoredMWPMDecoder {
                                 let second_index = first_index + 1;
                                 residual_weighted_edges.push((first_index, second_index, 0.));
                                 // for them to find peer quickly
-                                residual_index_peer_neutral_copied
-                                    .insert(first_index, second_index);
-                                residual_index_peer_neutral_copied
-                                    .insert(second_index, first_index);
+                                residual_index_peer_neutral_copied.insert(first_index, second_index);
+                                residual_index_peer_neutral_copied.insert(second_index, first_index);
                                 residual_to_be_matched_cluster_root.push(root_i);
                                 residual_to_be_matched_cluster_root.push(root_i);
                                 residual_roots.push(root_i);
@@ -468,29 +450,22 @@ impl TailoredMWPMDecoder {
                             // a real cluster
                             let root_i = residual_to_be_matched_cluster_root[index];
                             let cluster = &all_clusters[&root_i]; // can be either neutral or charged, doesn't matter
-                            cluster
-                                .iter()
-                                .map(|i| tailored_to_be_matched[*i].clone())
-                                .collect()
+                            cluster.iter().map(|i| tailored_to_be_matched[*i].clone()).collect()
                         } else {
                             let ci = residual_to_be_matched_cluster_root[index];
-                            let (pos1, pos2) =
-                                self.tailored_model_graph.corner_virtual_nodes[ci].clone();
+                            let (pos1, pos2) = self.tailored_model_graph.corner_virtual_nodes[ci].clone();
                             vec![pos1, pos2]
                         }
                     };
                     for i in 0..residual_to_be_matched_cluster_root.len() {
-                        if !self.config.original_residual_corner_weights
-                            && i >= residual_real_cluster_len
-                        {
+                        if !self.config.original_residual_corner_weights && i >= residual_real_cluster_len {
                             continue;
                         }
                         let cluster_positions_i = get_cluster_positions(i);
                         for j in i + 1..residual_to_be_matched_cluster_root.len() {
                             if i < residual_real_cluster_len
                                 && j < residual_real_cluster_len
-                                && residual_to_be_matched_cluster_root[i]
-                                    == residual_to_be_matched_cluster_root[j]
+                                && residual_to_be_matched_cluster_root[i] == residual_to_be_matched_cluster_root[j]
                             {
                                 // already added zero weight, skip
                                 continue;
@@ -501,8 +476,7 @@ impl TailoredMWPMDecoder {
                             let mut stab_x_min_weight = f64::MAX;
                             let mut stab_y_min_weight = f64::MAX;
                             for pi in cluster_positions_i.iter() {
-                                let is_stab_x = self.simulator.get_node_unwrap(pi).qubit_type
-                                    == QubitType::StabX;
+                                let is_stab_x = self.simulator.get_node_unwrap(pi).qubit_type == QubitType::StabX;
                                 let neutral_matching_edges = self
                                     .tailored_complete_model_graph
                                     .get_neutral_matching_edges(pi, &cluster_positions_j);
@@ -521,8 +495,14 @@ impl TailoredMWPMDecoder {
                             }
                             // it's ok that some corner clusters may not connect to all charged clusters
                             if j < residual_real_cluster_len {
-                                assert!(stab_x_min_weight != f64::MAX, "there should be at least one neutral edge between two clusters we're considering");
-                                assert!(stab_y_min_weight != f64::MAX, "there should be at least one neutral edge between two clusters we're considering");
+                                assert!(
+                                    stab_x_min_weight != f64::MAX,
+                                    "there should be at least one neutral edge between two clusters we're considering"
+                                );
+                                assert!(
+                                    stab_y_min_weight != f64::MAX,
+                                    "there should be at least one neutral edge between two clusters we're considering"
+                                );
                             }
                             if stab_x_min_weight != f64::MAX && stab_y_min_weight != f64::MAX {
                                 // take the bigger one as the final weight (this should benefit)
@@ -561,11 +541,7 @@ impl TailoredMWPMDecoder {
                         let additional_virtual_index = residual_to_be_matched_cluster_root.len();
                         residual_to_be_matched_cluster_root.push(usize::MAX);
                         for ci in 0..self.tailored_model_graph.corner_virtual_nodes.len() {
-                            residual_weighted_edges.push((
-                                residual_real_cluster_len + ci,
-                                additional_virtual_index,
-                                0.,
-                            ));
+                            residual_weighted_edges.push((residual_real_cluster_len + ci, additional_virtual_index, 0.));
                         }
                     }
                     // eprintln!("residual_weighted_edges: {:?}", residual_weighted_edges);
@@ -581,8 +557,7 @@ impl TailoredMWPMDecoder {
                          correction: &mut SparseCorrection,
                          cluster_1: Vec<Position>,
                          cluster_2: Vec<Position>| {
-                            let mut merged_to_be_matched =
-                                Vec::<Position>::with_capacity(cluster_1.len() + cluster_2.len());
+                            let mut merged_to_be_matched = Vec::<Position>::with_capacity(cluster_1.len() + cluster_2.len());
                             merged_to_be_matched.extend(cluster_1.into_iter());
                             merged_to_be_matched.extend(cluster_2.into_iter());
                             let merged_to_be_matched = merged_to_be_matched; // change to immutable
@@ -598,14 +573,8 @@ impl TailoredMWPMDecoder {
                                     stab_y_positions.push(position.clone());
                                 }
                             }
-                            assert!(
-                                stab_x_positions.len() % 2 == 0,
-                                "merged cluster should be neutral"
-                            );
-                            assert!(
-                                stab_y_positions.len() % 2 == 0,
-                                "merged cluster should be neutral"
-                            );
+                            assert!(stab_x_positions.len() % 2 == 0, "merged cluster should be neutral");
+                            assert!(stab_y_positions.len() % 2 == 0, "merged cluster should be neutral");
                             for positions in [stab_x_positions, stab_y_positions].iter() {
                                 for i in (0..positions.len()).step_by(2) {
                                     let position_1 = &positions[i];
@@ -633,8 +602,7 @@ impl TailoredMWPMDecoder {
                             let cluster_i = &all_clusters[&root_i];
                             if j < residual_real_cluster_len {
                                 let root_j = residual_to_be_matched_cluster_root[j];
-                                let was_neutral_j =
-                                    tailored_clusters.get(root_j).cardinality % 2 == 0;
+                                let was_neutral_j = tailored_clusters.get(root_j).cardinality % 2 == 0;
                                 if !was_neutral_j {
                                     // good, we can stop here
                                     assert!(
@@ -648,14 +616,8 @@ impl TailoredMWPMDecoder {
                                     apply_correction_with_merged_cluster(
                                         self,
                                         &mut correction,
-                                        cluster_i
-                                            .iter()
-                                            .map(|i| tailored_to_be_matched[*i].clone())
-                                            .collect(),
-                                        cluster_j
-                                            .iter()
-                                            .map(|i| tailored_to_be_matched[*i].clone())
-                                            .collect(),
+                                        cluster_i.iter().map(|i| tailored_to_be_matched[*i].clone()).collect(),
+                                        cluster_j.iter().map(|i| tailored_to_be_matched[*i].clone()).collect(),
                                     );
                                 } else {
                                     // have to do it in a chain... until peer becomes virtual or charged
@@ -669,29 +631,24 @@ impl TailoredMWPMDecoder {
                                         let mut charged_j = Vec::<usize>::new();
                                         for delete_type in [QubitType::StabX, QubitType::StabY] {
                                             for idx in 0..cluster_j1.len() {
-                                                let position_i =
-                                                    &tailored_to_be_matched[cluster_j1[idx]];
-                                                let node_i =
-                                                    self.simulator.get_node_unwrap(position_i);
+                                                let position_i = &tailored_to_be_matched[cluster_j1[idx]];
+                                                let node_i = self.simulator.get_node_unwrap(position_i);
                                                 if node_i.qubit_type == delete_type {
                                                     charged_j.push(cluster_j1[idx]);
                                                     break;
                                                 }
                                             }
                                         }
-                                        assert!(charged_j.len() == 2, "neutral clusters here must contain at least one X and one Y");
+                                        assert!(
+                                            charged_j.len() == 2,
+                                            "neutral clusters here must contain at least one X and one Y"
+                                        );
                                         // add shortest path of Y (X) operators to recovery between selected X-type (Y-type) defects from each cluster in pair
                                         apply_correction_with_merged_cluster(
                                             self,
                                             &mut correction,
-                                            charged_i
-                                                .iter()
-                                                .map(|i| tailored_to_be_matched[*i].clone())
-                                                .collect(),
-                                            charged_j
-                                                .iter()
-                                                .map(|i| tailored_to_be_matched[*i].clone())
-                                                .collect(),
+                                            charged_i.iter().map(|i| tailored_to_be_matched[*i].clone()).collect(),
+                                            charged_j.iter().map(|i| tailored_to_be_matched[*i].clone()).collect(),
                                         );
                                         // break if k is no longer neutral cluster, otherwise keep loop
                                         let j2 = residual_index_peer_neutral_copied[&j1];
@@ -699,23 +656,17 @@ impl TailoredMWPMDecoder {
                                         if k >= residual_real_cluster_len {
                                             // match `charged_j` with this virtual cluster
                                             let ck = k - residual_real_cluster_len;
-                                            let (pos1, pos2) =
-                                                self.tailored_model_graph.corner_virtual_nodes[ck]
-                                                    .clone();
+                                            let (pos1, pos2) = self.tailored_model_graph.corner_virtual_nodes[ck].clone();
                                             apply_correction_with_merged_cluster(
                                                 self,
                                                 &mut correction,
-                                                charged_j
-                                                    .iter()
-                                                    .map(|i| tailored_to_be_matched[*i].clone())
-                                                    .collect(),
+                                                charged_j.iter().map(|i| tailored_to_be_matched[*i].clone()).collect(),
                                                 vec![pos1, pos2],
                                             );
                                             break;
                                         }
                                         let root_k = residual_to_be_matched_cluster_root[k];
-                                        let was_neutral_k =
-                                            tailored_clusters.get(root_k).cardinality % 2 == 0;
+                                        let was_neutral_k = tailored_clusters.get(root_k).cardinality % 2 == 0;
                                         if !was_neutral_k {
                                             assert!(
                                                 !neutralized_charged_cluster.contains(&k),
@@ -727,14 +678,8 @@ impl TailoredMWPMDecoder {
                                             apply_correction_with_merged_cluster(
                                                 self,
                                                 &mut correction,
-                                                charged_j
-                                                    .iter()
-                                                    .map(|i| tailored_to_be_matched[*i].clone())
-                                                    .collect(),
-                                                cluster_k
-                                                    .iter()
-                                                    .map(|i| tailored_to_be_matched[*i].clone())
-                                                    .collect(),
+                                                charged_j.iter().map(|i| tailored_to_be_matched[*i].clone()).collect(),
+                                                cluster_k.iter().map(|i| tailored_to_be_matched[*i].clone()).collect(),
                                             );
                                             break;
                                         }
@@ -746,15 +691,11 @@ impl TailoredMWPMDecoder {
                                 // good, match to virtual node
                                 // eprintln!("residual match {} to virtual {}", i, j);
                                 let cj = j - residual_real_cluster_len;
-                                let (pos1, pos2) =
-                                    self.tailored_model_graph.corner_virtual_nodes[cj].clone();
+                                let (pos1, pos2) = self.tailored_model_graph.corner_virtual_nodes[cj].clone();
                                 apply_correction_with_merged_cluster(
                                     self,
                                     &mut correction,
-                                    cluster_i
-                                        .iter()
-                                        .map(|i| tailored_to_be_matched[*i].clone())
-                                        .collect(),
+                                    cluster_i.iter().map(|i| tailored_to_be_matched[*i].clone()).collect(),
                                     vec![pos1, pos2],
                                 );
                             }
@@ -802,10 +743,7 @@ mod tests {
         let p = 0.02;
         let bias_eta = 1e200;
         // build simulator
-        let mut simulator = Simulator::new(
-            CodeType::RotatedTailoredCode,
-            CodeSize::new(noisy_measurements, d, d),
-        );
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build noise model
         let mut noise_model = NoiseModel::new(&simulator);
@@ -836,8 +774,7 @@ mod tests {
             simulator.set_error_check(&noise_model, &pos!(0, 3, 5), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
-            let (correction, _runtime_statistics) =
-                tailored_mwpm_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
             println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -854,10 +791,7 @@ mod tests {
         let p = 0.005;
         let bias_eta = 1e6;
         // build simulator
-        let mut simulator = Simulator::new(
-            CodeType::RotatedTailoredCode,
-            CodeSize::new(noisy_measurements, d, d),
-        );
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build noise model
         let mut noise_model = NoiseModel::new(&simulator);
@@ -887,8 +821,7 @@ mod tests {
             simulator.set_error_check(&noise_model, &pos!(0, 5, 5), &Y);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
-            let (correction, _runtime_statistics) =
-                tailored_mwpm_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
             println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -901,8 +834,7 @@ mod tests {
             simulator.set_error_check(&noise_model, &pos!(0, 2, 4), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
-            let (correction, _runtime_statistics) =
-                tailored_mwpm_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
             // println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -917,8 +849,7 @@ mod tests {
             simulator.set_error_check(&noise_model, &pos!(0, 8, 4), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
-            let (correction, _runtime_statistics) =
-                tailored_mwpm_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
             // println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -932,8 +863,7 @@ mod tests {
             simulator.set_error_check(&noise_model, &pos!(0, 6, 8), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
-            let (correction, _runtime_statistics) =
-                tailored_mwpm_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
             // println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -948,8 +878,7 @@ mod tests {
             simulator.set_error_check(&noise_model, &pos!(0, 4, 4), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
-            let (correction, _runtime_statistics) =
-                tailored_mwpm_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
             // println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -974,8 +903,7 @@ mod tests {
                     pos!(6, 9, 6)
                 ]
             );
-            let (correction, _runtime_statistics) =
-                tailored_mwpm_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
             // println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -992,8 +920,7 @@ mod tests {
                 sparse_measurement.to_vec(),
                 vec![pos!(6, 3, 4), pos!(6, 4, 5), pos!(6, 5, 2), pos!(6, 6, 3)]
             );
-            let (correction, _runtime_statistics) =
-                tailored_mwpm_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
             // println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -1009,10 +936,7 @@ mod tests {
         let p = 0.01;
         let bias_eta = 10.;
         // build simulator
-        let mut simulator = Simulator::new(
-            CodeType::RotatedTailoredCode,
-            CodeSize::new(noisy_measurements, d, d),
-        );
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build noise model
         let mut noise_model = NoiseModel::new(&simulator);
@@ -1042,8 +966,7 @@ mod tests {
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             println!("sparse_measurement: {:?}", sparse_measurement);
-            let (correction, _runtime_statistics) =
-                tailored_mwpm_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
             println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -1058,8 +981,7 @@ mod tests {
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             println!("sparse_measurement: {:?}", sparse_measurement);
-            let (correction, _runtime_statistics) =
-                tailored_mwpm_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
             println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -1075,10 +997,7 @@ mod tests {
         let p = 0.05;
         let bias_eta = 10.;
         // build simulator
-        let mut simulator = Simulator::new(
-            CodeType::RotatedTailoredCode,
-            CodeSize::new(noisy_measurements, d, d),
-        );
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build noise model
         let mut noise_model = NoiseModel::new(&simulator);
@@ -1111,8 +1030,7 @@ mod tests {
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
             println!("sparse_measurement: {:?}", sparse_measurement);
-            let (correction, _runtime_statistics) =
-                tailored_mwpm_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
             println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -1128,10 +1046,7 @@ mod tests {
         let p = 1.99053585e-01;
         let bias_eta = 1e200;
         // build simulator
-        let mut simulator = Simulator::new(
-            CodeType::RotatedTailoredCode,
-            CodeSize::new(noisy_measurements, d, d),
-        );
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build noise model
         let mut noise_model = NoiseModel::new(&simulator);
@@ -1156,9 +1071,7 @@ mod tests {
         // let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[0][10][13]":"Z","[0][10][7]":"Z","[0][10][8]":"Z","[0][11][11]":"Z","[0][11][1]":"Z","[0][11][5]":"Z","[0][11][7]":"Z","[0][11][9]":"Z","[0][12][12]":"Z","[0][12][14]":"Z","[0][12][5]":"Z","[0][13][20]":"Z","[0][14][11]":"Z","[0][14][12]":"Z","[0][14][14]":"Z","[0][14][17]":"Z","[0][15][10]":"Z","[0][15][14]":"Z","[0][15][15]":"Z","[0][15][7]":"Z","[0][16][16]":"Z","[0][16][5]":"Z","[0][17][11]":"Z","[0][17][14]":"Z","[0][17][15]":"Z","[0][18][11]":"Z","[0][18][8]":"Z","[0][19][10]":"Z","[0][19][12]":"Z","[0][4][8]":"Z",,"[0][5][13]":"Z","[0][5][14]":"Z","[0][6][13]":"Z","[0][6][14]":"Z","[0][6][6]":"Z","[0][6][8]":"Z","[0][6][9]":"Z","[0][7][11]":"Z","[0][7][15]":"Z","[0][8][15]":"Z","[0][8][17]":"Z","[0][8][6]":"Z","[0][8][7]":"Z","[0][9][12]":"Z","[0][9][15]":"Z","[0][9][16]":"Z","[0][9][17]":"Z","[0][9][18]":"Z","[0][9][2]":"Z","[0][9][3]":"Z","[0][9][5]":"Z","[0][9][6]":"Z"}"#).unwrap();
         let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[0][11][13]":"Z","[0][11][15]":"Z","[0][11][3]":"Z","[0][12][12]":"Z","[0][12][16]":"Z","[0][12][18]":"Z","[0][13][11]":"Z","[0][13][7]":"Z","[0][13][9]":"Z","[0][14][10]":"Z","[0][14][14]":"Z","[0][14][18]":"Z","[0][14][4]":"Z","[0][14][6]":"Z","[0][15][11]":"Z","[0][15][15]":"Z","[0][16][10]":"Z","[0][16][14]":"Z","[0][17][11]":"Z","[0][17][9]":"Z","[0][1][11]":"Z","[0][20][12]":"Z","[0][21][11]":"Z","[0][4][10]":"Z","[0][6][12]":"Z","[0][7][15]":"Z","[0][7][9]":"Z","[0][8][12]":"Z","[0][9][15]":"Z"}"#).unwrap();
         // println!("{:?}", error_pattern);
-        simulator
-            .load_sparse_error_pattern(&error_pattern, &noise_model)
-            .unwrap();
+        simulator.load_sparse_error_pattern(&error_pattern, &noise_model).unwrap();
         simulator.propagate_errors();
         let sparse_measurement = simulator.generate_sparse_measurement();
         let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
@@ -1209,8 +1122,7 @@ mod tests {
             // simulator.set_error_check(&noise_model, &pos!(0, 4, 4), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
-            let (correction, _runtime_statistics) =
-                tailored_mwpm_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
             // println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -1258,8 +1170,7 @@ mod tests {
             simulator.set_error_check(&noise_model, &pos!(0, 8, 0), &Z);
             simulator.propagate_errors();
             let sparse_measurement = simulator.generate_sparse_measurement();
-            let (correction, _runtime_statistics) =
-                tailored_mwpm_decoder.decode(&sparse_measurement);
+            let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
             // println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
@@ -1275,10 +1186,7 @@ mod tests {
         let p = 0.05;
         let bias_eta = 1e300;
         // build simulator
-        let mut simulator = Simulator::new(
-            CodeType::RotatedTailoredCode,
-            CodeSize::new(noisy_measurements, d, d),
-        );
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build noise model
         let mut noise_model = NoiseModel::new(&simulator);
@@ -1300,11 +1208,12 @@ mod tests {
             1,
             false,
         );
-        let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[0][1][5]":"Z","[0][2][4]":"Z","[0][5][1]":"Z","[0][5][9]":"Z","[0][8][4]":"Z","[0][9][5]":"Z"}"#).unwrap();
+        let error_pattern: SparseErrorPattern = serde_json::from_str(
+            r#"{"[0][1][5]":"Z","[0][2][4]":"Z","[0][5][1]":"Z","[0][5][9]":"Z","[0][8][4]":"Z","[0][9][5]":"Z"}"#,
+        )
+        .unwrap();
         // println!("{:?}", error_pattern);
-        simulator
-            .load_sparse_error_pattern(&error_pattern, &noise_model)
-            .unwrap();
+        simulator.load_sparse_error_pattern(&error_pattern, &noise_model).unwrap();
         simulator.propagate_errors();
         let sparse_measurement = simulator.generate_sparse_measurement();
         let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
@@ -1325,10 +1234,7 @@ mod tests {
         let p = 0.00001;
         let bias_eta = 100.;
         // build simulator
-        let mut simulator = Simulator::new(
-            CodeType::RotatedTailoredCodeBellInit,
-            CodeSize::new(noisy_measurements, d, d),
-        );
+        let mut simulator = Simulator::new(CodeType::RotatedTailoredCodeBellInit, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build noise model
         let mut noise_model = NoiseModel::new(&simulator);
@@ -1338,20 +1244,12 @@ mod tests {
         simulator.set_error_rates(&mut noise_model, px, py, pz, 0.);
         let noise_model_builder = NoiseModelBuilder::TailoredScBellInitCircuit;
         let noise_model_configuration: serde_json::Value = json!({});
-        noise_model_builder.apply(
-            &mut simulator,
-            &mut noise_model,
-            &noise_model_configuration,
-            p,
-            bias_eta,
-            0.,
-        );
+        noise_model_builder.apply(&mut simulator, &mut noise_model, &noise_model_configuration, p, bias_eta, 0.);
         simulator.compress_error_rates(&mut noise_model);
         noise_model_sanity_check(&simulator, &noise_model).unwrap();
         let noise_model = Arc::new(noise_model);
         // visualize
-        let mut visualizer =
-            Visualizer::new(Some(visualize_data_folder() + visualizer_filename.as_str())).unwrap();
+        let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualizer_filename.as_str())).unwrap();
         visualizer.add_component(&simulator).unwrap();
         visualizer.add_component(noise_model.as_ref()).unwrap();
         visualizer.end_component().unwrap(); // make sure the visualization file is valid even user exit the benchmark
@@ -1366,12 +1264,9 @@ mod tests {
             1,
             false,
         );
-        let error_pattern: SparseErrorPattern =
-            serde_json::from_str(r#"{"[7][5][9]":"Z"}"#).unwrap();
+        let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[7][5][9]":"Z"}"#).unwrap();
         // println!("{:?}", error_pattern);
-        simulator
-            .load_sparse_error_pattern(&error_pattern, &noise_model)
-            .unwrap();
+        simulator.load_sparse_error_pattern(&error_pattern, &noise_model).unwrap();
         simulator.propagate_errors();
         let sparse_measurement = simulator.generate_sparse_measurement();
         let (correction, _runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);

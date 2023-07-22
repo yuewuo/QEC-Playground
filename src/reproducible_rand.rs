@@ -91,7 +91,7 @@ impl SeedableRng for Xoroshiro128StarStar {
         let mut rng = SplitMix64::seed_from_u64(seed);
         let s0 = rng.next_u64();
         let s1 = rng.next_u64();
-        Self { s0: s0, s1: s1 }
+        Self { s0, s1 }
     }
 }
 

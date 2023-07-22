@@ -109,14 +109,7 @@ macro_rules! include_visualize_file {
 fn generate_visualizer_website(py: Python<'_>) -> &pyo3::types::PyDict {
     use pyo3::types::IntoPyDict;
     let mut mapping = std::collections::BTreeMap::<String, String>::new();
-    include_visualize_file!(
-        mapping,
-        "gui3d.js",
-        "index.js",
-        "patches.js",
-        "cmd.js",
-        "mocker.js"
-    );
+    include_visualize_file!(mapping, "gui3d.js", "index.js", "patches.js", "cmd.js", "mocker.js");
     include_visualize_file!(mapping, "index.html", "icon.svg");
     include_visualize_file!(mapping, "package.json", "package-lock.json");
     mapping.into_py_dict(py)

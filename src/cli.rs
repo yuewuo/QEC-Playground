@@ -72,17 +72,11 @@ impl TypedValueParser for VecUsizeParser {
             Err(error) => {
                 let mut err = clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
                 if let Some(arg) = arg {
-                    err.insert(
-                        ContextKind::InvalidArg,
-                        ContextValue::String(arg.to_string()),
-                    );
+                    err.insert(ContextKind::InvalidArg, ContextValue::String(arg.to_string()));
                 }
                 err.insert(
                     ContextKind::InvalidValue,
-                    ContextValue::String(format!(
-                        "should be like [1,2,3], parse error: {}",
-                        error.to_string()
-                    )),
+                    ContextValue::String(format!("should be like [1,2,3], parse error: {}", error.to_string())),
                 );
                 Err(err)
             }
@@ -107,17 +101,11 @@ impl TypedValueParser for VecF64Parser {
             Err(error) => {
                 let mut err = clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
                 if let Some(arg) = arg {
-                    err.insert(
-                        ContextKind::InvalidArg,
-                        ContextValue::String(arg.to_string()),
-                    );
+                    err.insert(ContextKind::InvalidArg, ContextValue::String(arg.to_string()));
                 }
                 err.insert(
                     ContextKind::InvalidValue,
-                    ContextValue::String(format!(
-                        "should be like [0.1,0.2,0.3], parse error: {}",
-                        error.to_string()
-                    )),
+                    ContextValue::String(format!("should be like [0.1,0.2,0.3], parse error: {}", error.to_string())),
                 );
                 Err(err)
             }
@@ -142,17 +130,11 @@ impl TypedValueParser for SerdeJsonParser {
             Err(error) => {
                 let mut err = clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
                 if let Some(arg) = arg {
-                    err.insert(
-                        ContextKind::InvalidArg,
-                        ContextValue::String(arg.to_string()),
-                    );
+                    err.insert(ContextKind::InvalidArg, ContextValue::String(arg.to_string()));
                 }
                 err.insert(
                     ContextKind::InvalidValue,
-                    ContextValue::String(format!(
-                        "should be like {{\"a\":1}}, parse error: {}",
-                        error.to_string()
-                    )),
+                    ContextValue::String(format!("should be like {{\"a\":1}}, parse error: {}", error.to_string())),
                 );
                 Err(err)
             }

@@ -13,14 +13,17 @@ pub async fn run_server(port: i32, addr: String, root_url: String) -> std::io::R
             .app_data(web::Data::new(web::JsonConfig::default().limit(1024 * 1024 * 50)))
             .wrap(actix_cors::Cors::permissive())
             .service(
-                web::scope(root_url.as_str().trim_end_matches('/'))  // must remove trailing slashes from scope, see https://actix.rs/actix-web/actix_web/struct.Scope.html
+                web::scope(root_url.as_str().trim_end_matches('/')) // must remove trailing slashes from scope, see https://actix.rs/actix-web/actix_web/struct.Scope.html
                     .service(web::resource("hello").route(web::get().to(get_hello)))
                     .service(web::resource("version").route(web::get().to(get_version)))
                     .service(web::resource("view_noise_model").route(web::get().to(view_noise_model)))
                     .service(web::resource("new_temporary_store").route(web::post().to(new_temporary_store)))
-                    .service(web::resource("get_temporary_store/{resource_id}").route(web::get().to(get_temporary_store)))
+                    .service(web::resource("get_temporary_store/{resource_id}").route(web::get().to(get_temporary_store))),
             )
-        }).bind(format!("{}:{}", addr, port))?.run().await
+    })
+    .bind(format!("{}:{}", addr, port))?
+    .run()
+    .await
 }
 
 async fn get_hello() -> Result<HttpResponse, Error> {
@@ -90,19 +93,12 @@ async fn view_noise_model(info: web::Query<ViewNoiseModelQuery>) -> Result<HttpR
     }
     tokens.append(&mut match crate::shlex::split(&info.parameters) {
         Some(mut t) => t,
-        None => {
-            return Ok(
-                HttpResponse::BadRequest().body(format!("building tokens from parameters failed"))
-            )
-        }
+        None => return Ok(HttpResponse::BadRequest().body(format!("building tokens from parameters failed"))),
     });
     // println!("full_command: {:?}", tokens);
     use crate::clap::CommandFactory;
     use crate::cli::*;
-    let cli = match Cli::command()
-        .color(clap::ColorChoice::Never)
-        .try_get_matches_from(tokens)
-    {
+    let cli = match Cli::command().color(clap::ColorChoice::Never).try_get_matches_from(tokens) {
         Ok(matches) => match Cli::from_arg_matches(&matches) {
             Ok(cli) => cli,
             Err(error) => return Ok(HttpResponse::BadRequest().body(format!("{:?}", error))),
@@ -135,9 +131,7 @@ async fn new_temporary_store(form: web::Json<NewTemporaryStore>) -> Result<HttpR
             // println!("[web] inserted a temporary store with key: {}, length: {}", insert_key, form.value.len());
             Ok(HttpResponse::Ok().body(format!("{}", insert_key)))
         }
-        None => {
-            Ok(HttpResponse::InternalServerError().body(format!("temporary store not available")))
-        }
+        None => Ok(HttpResponse::InternalServerError().body(format!("temporary store not available"))),
     }
 }
 

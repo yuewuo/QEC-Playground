@@ -57,14 +57,7 @@ impl NoiseModelBuilder {
         let noise_model_configuration = noise_model_configuration
             .map(|v| crate::util::pyobject_to_json(v))
             .unwrap_or(json!({}));
-        self.apply(
-            simulator,
-            noise_model,
-            &noise_model_configuration,
-            p,
-            bias_eta,
-            pe,
-        )
+        self.apply(simulator, noise_model, &noise_model_configuration, p, bias_eta, pe)
     }
 }
 
@@ -92,9 +85,7 @@ impl NoiseModelBuilder {
         // commonly used pure measurement error node
         let mut pm = p;
         if let Some(value) = noise_model_configuration.get("measurement_error_rate") {
-            pm = value
-                .as_f64()
-                .expect("measurement_error_rate must be `f64`");
+            pm = value.as_f64().expect("measurement_error_rate must be `f64`");
         }
         let mut pure_measurement_node = NoiseModelNode::new();
         pure_measurement_node.pauli_error_rates.error_rate_Y = pm; // Y error will cause pure measurement error for StabX (X basis), StabZ (Z basis), StabY (X basis)
@@ -116,14 +107,10 @@ impl NoiseModelBuilder {
                         // no error at the final perfect measurement round
                         continue;
                     }
-                    if position.t % simulator.measurement_cycles == 0
-                        && node.qubit_type == QubitType::Data
-                    {
+                    if position.t % simulator.measurement_cycles == 0 && node.qubit_type == QubitType::Data {
                         noise_model.set_node(position, Some(biased_node.clone()));
                     }
-                    if (position.t + 1) % simulator.measurement_cycles == 0
-                        && node.qubit_type != QubitType::Data
-                    {
+                    if (position.t + 1) % simulator.measurement_cycles == 0 && node.qubit_type != QubitType::Data {
                         // measurement error must happen before measurement round
                         noise_model.set_node(position, Some(pure_measurement_node.clone()));
                     }
@@ -162,22 +149,16 @@ impl NoiseModelBuilder {
                 let messed_measurement_node = Arc::new(messed_measurement_node);
                 simulator_iter_real!(simulator, position, node, {
                     noise_model.set_node(position, Some(noiseless_node.clone())); // clear existing noise model
-                    if position.t == simulator.measurement_cycles - 1
-                        && node.qubit_type == QubitType::StabY
-                    {
+                    if position.t == simulator.measurement_cycles - 1 && node.qubit_type == QubitType::StabY {
                         noise_model.set_node(position, Some(messed_measurement_node.clone()))
                     } else if position.t >= simulator.measurement_cycles {
                         // no error before the first round
                         if position.t < simulator.height - simulator.measurement_cycles {
                             // no error at the final perfect measurement round
-                            if position.t % simulator.measurement_cycles == 0
-                                && node.qubit_type == QubitType::Data
-                            {
+                            if position.t % simulator.measurement_cycles == 0 && node.qubit_type == QubitType::Data {
                                 noise_model.set_node(position, Some(biased_node.clone()));
                             }
-                            if (position.t + 1) % simulator.measurement_cycles == 0
-                                && node.qubit_type != QubitType::Data
-                            {
+                            if (position.t + 1) % simulator.measurement_cycles == 0 && node.qubit_type != QubitType::Data {
                                 // measurement error must happen before measurement round
                                 noise_model.set_node(position, Some(pure_measurement_node.clone()));
                             }
@@ -229,14 +210,10 @@ impl NoiseModelBuilder {
                         // no error before the first round
                         if position.t < simulator.height - simulator.measurement_cycles {
                             // no error at the final perfect measurement round
-                            if position.t % simulator.measurement_cycles == 0
-                                && node.qubit_type == QubitType::Data
-                            {
+                            if position.t % simulator.measurement_cycles == 0 && node.qubit_type == QubitType::Data {
                                 noise_model.set_node(position, Some(biased_node.clone()));
                             }
-                            if (position.t + 1) % simulator.measurement_cycles == 0
-                                && node.qubit_type != QubitType::Data
-                            {
+                            if (position.t + 1) % simulator.measurement_cycles == 0 && node.qubit_type != QubitType::Data {
                                 // measurement error must happen before measurement round
                                 noise_model.set_node(position, Some(pure_measurement_node.clone()));
                             }
@@ -259,100 +236,51 @@ impl NoiseModelBuilder {
                     .remove("measurement_error_rate")
                     .map(|value| measurement_error_rate = value.as_f64().expect("f64"));
                 if !config.is_empty() {
-                    panic!(
-                        "unknown keys: {:?}",
-                        config.keys().collect::<Vec<&String>>()
-                    );
+                    panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>());
                 }
                 // normal biased node
                 let mut normal_biased_node = NoiseModelNode::new();
-                normal_biased_node.pauli_error_rates.error_rate_X =
-                    initialization_error_rate / bias_eta;
+                normal_biased_node.pauli_error_rates.error_rate_X = initialization_error_rate / bias_eta;
                 normal_biased_node.pauli_error_rates.error_rate_Z = initialization_error_rate;
-                normal_biased_node.pauli_error_rates.error_rate_Y =
-                    initialization_error_rate / bias_eta;
+                normal_biased_node.pauli_error_rates.error_rate_Y = initialization_error_rate / bias_eta;
                 let normal_biased_node = Arc::new(normal_biased_node);
                 // CZ gate node
                 let mut cphase_node = NoiseModelNode::new();
-                cphase_node.correlated_pauli_error_rates = Some(
-                    CorrelatedPauliErrorRates::default_with_probability(p / bias_eta),
-                );
-                cphase_node
-                    .correlated_pauli_error_rates
-                    .as_mut()
-                    .unwrap()
-                    .error_rate_ZI = p;
-                cphase_node
-                    .correlated_pauli_error_rates
-                    .as_mut()
-                    .unwrap()
-                    .error_rate_IZ = p;
+                cphase_node.correlated_pauli_error_rates =
+                    Some(CorrelatedPauliErrorRates::default_with_probability(p / bias_eta));
+                cphase_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZI = p;
+                cphase_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IZ = p;
                 let cphase_node = Arc::new(cphase_node);
                 // CZ gate with measurement error
                 let mut cphase_measurement_error_node: NoiseModelNode = (*cphase_node).clone();
-                cphase_measurement_error_node.pauli_error_rates.error_rate_X =
-                    initialization_error_rate / bias_eta;
-                cphase_measurement_error_node.pauli_error_rates.error_rate_Z =
-                    initialization_error_rate;
-                cphase_measurement_error_node.pauli_error_rates.error_rate_Y =
-                    initialization_error_rate / bias_eta;
+                cphase_measurement_error_node.pauli_error_rates.error_rate_X = initialization_error_rate / bias_eta;
+                cphase_measurement_error_node.pauli_error_rates.error_rate_Z = initialization_error_rate;
+                cphase_measurement_error_node.pauli_error_rates.error_rate_Y = initialization_error_rate / bias_eta;
                 let cphase_measurement_error_node = Arc::new(cphase_measurement_error_node);
                 // CX gate node
                 let mut cx_node = NoiseModelNode::new();
-                cx_node.correlated_pauli_error_rates = Some(
-                    CorrelatedPauliErrorRates::default_with_probability(p / bias_eta),
-                );
-                cx_node
-                    .correlated_pauli_error_rates
-                    .as_mut()
-                    .unwrap()
-                    .error_rate_ZI = p;
+                cx_node.correlated_pauli_error_rates =
+                    Some(CorrelatedPauliErrorRates::default_with_probability(p / bias_eta));
+                cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZI = p;
                 match self {
                     Self::GenericBiasedWithStandardCX => {
-                        cx_node
-                            .correlated_pauli_error_rates
-                            .as_mut()
-                            .unwrap()
-                            .error_rate_IZ = 0.375 * p;
-                        cx_node
-                            .correlated_pauli_error_rates
-                            .as_mut()
-                            .unwrap()
-                            .error_rate_ZZ = 0.375 * p;
-                        cx_node
-                            .correlated_pauli_error_rates
-                            .as_mut()
-                            .unwrap()
-                            .error_rate_IY = 0.125 * p;
-                        cx_node
-                            .correlated_pauli_error_rates
-                            .as_mut()
-                            .unwrap()
-                            .error_rate_ZY = 0.125 * p;
+                        cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IZ = 0.375 * p;
+                        cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZZ = 0.375 * p;
+                        cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IY = 0.125 * p;
+                        cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZY = 0.125 * p;
                     }
                     Self::GenericBiasedWithBiasedCX => {
-                        cx_node
-                            .correlated_pauli_error_rates
-                            .as_mut()
-                            .unwrap()
-                            .error_rate_IZ = 0.5 * p;
-                        cx_node
-                            .correlated_pauli_error_rates
-                            .as_mut()
-                            .unwrap()
-                            .error_rate_ZZ = 0.5 * p;
+                        cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IZ = 0.5 * p;
+                        cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZZ = 0.5 * p;
                     }
                     _ => {}
                 }
                 let cx_node = Arc::new(cx_node);
                 // CX gate with measurement error
                 let mut cx_measurement_error_node: NoiseModelNode = (*cx_node).clone();
-                cx_measurement_error_node.pauli_error_rates.error_rate_X =
-                    initialization_error_rate / bias_eta;
-                cx_measurement_error_node.pauli_error_rates.error_rate_Z =
-                    initialization_error_rate;
-                cx_measurement_error_node.pauli_error_rates.error_rate_Y =
-                    initialization_error_rate / bias_eta;
+                cx_measurement_error_node.pauli_error_rates.error_rate_X = initialization_error_rate / bias_eta;
+                cx_measurement_error_node.pauli_error_rates.error_rate_Z = initialization_error_rate;
+                cx_measurement_error_node.pauli_error_rates.error_rate_Y = initialization_error_rate / bias_eta;
                 let cx_measurement_error_node = Arc::new(cx_measurement_error_node);
                 // iterate over all nodes
                 simulator_iter_real!(simulator, position, node, {
@@ -417,10 +345,8 @@ impl NoiseModelBuilder {
                 // a bunch of function for determining qubit type during init, copied from code_builder.rs
                 let (di, dj) = (dp, dp);
                 let is_real = |i: usize, j: usize| -> bool {
-                    let is_real_dj =
-                        |pi, pj| pi + pj < dj || (pi + pj == dj && pi % 2 == 0 && pi > 0);
-                    let is_real_di =
-                        |pi, pj| pi + pj < di || (pi + pj == di && pj % 2 == 0 && pj > 0);
+                    let is_real_dj = |pi, pj| pi + pj < dj || (pi + pj == dj && pi % 2 == 0 && pi > 0);
+                    let is_real_di = |pi, pj| pi + pj < di || (pi + pj == di && pj % 2 == 0 && pj > 0);
                     if i <= dj && j <= dj {
                         is_real_dj(dj - i, dj - j)
                     } else if i >= di && j >= di {
@@ -435,29 +361,19 @@ impl NoiseModelBuilder {
                 };
                 // some criteria for bell init
                 let is_bell_init_anc = |i: usize, j: usize| -> bool {
-                    is_real(i, j)
-                        && i < j + dj - 3
-                        && ((i % 4 == 1 && j % 4 == 0) || (i % 4 == 3 && j % 4 == 2))
+                    is_real(i, j) && i < j + dj - 3 && ((i % 4 == 1 && j % 4 == 0) || (i % 4 == 3 && j % 4 == 2))
                 };
                 let is_bell_init_top = |i: usize, j: usize| -> bool {
-                    is_real(i, j)
-                        && i < j + dj - 1
-                        && ((i % 4 == 0 && j % 4 == 0) || (i % 4 == 2 && j % 4 == 2))
+                    is_real(i, j) && i < j + dj - 1 && ((i % 4 == 0 && j % 4 == 0) || (i % 4 == 2 && j % 4 == 2))
                 };
                 let is_bell_init_left = |i: usize, j: usize| -> bool {
-                    is_real(i, j)
-                        && i < j + dj - 1
-                        && ((i % 4 == 1 && j % 4 == 3) || (i % 4 == 3 && j % 4 == 1))
+                    is_real(i, j) && i < j + dj - 1 && ((i % 4 == 1 && j % 4 == 3) || (i % 4 == 3 && j % 4 == 1))
                 };
                 let is_bell_init_right = |i: usize, j: usize| -> bool {
-                    is_real(i, j)
-                        && i < j + dj - 1
-                        && ((i % 4 == 1 && j % 4 == 1) || (i % 4 == 3 && j % 4 == 3))
+                    is_real(i, j) && i < j + dj - 1 && ((i % 4 == 1 && j % 4 == 1) || (i % 4 == 3 && j % 4 == 3))
                 };
                 let is_bell_init_bot = |i: usize, j: usize| -> bool {
-                    is_real(i, j)
-                        && i < j + dj - 1
-                        && ((i % 4 == 2 && j % 4 == 0) || (i % 4 == 0 && j % 4 == 2))
+                    is_real(i, j) && i < j + dj - 1 && ((i % 4 == 2 && j % 4 == 0) || (i % 4 == 0 && j % 4 == 2))
                 };
                 let is_bell_init_unfixed = |i: usize, j: usize| -> bool {
                     is_real(i, j) && ((i % 4 == 3 && j % 4 == 0) || (i % 4 == 1 && j % 4 == 2))
@@ -467,18 +383,15 @@ impl NoiseModelBuilder {
                 let initialization_error_rate = p;
                 // normal bias nodes
                 let mut normal_biased_node = NoiseModelNode::new();
-                normal_biased_node.pauli_error_rates.error_rate_X =
-                    initialization_error_rate / bias_eta;
+                normal_biased_node.pauli_error_rates.error_rate_X = initialization_error_rate / bias_eta;
                 normal_biased_node.pauli_error_rates.error_rate_Z = initialization_error_rate;
-                normal_biased_node.pauli_error_rates.error_rate_Y =
-                    initialization_error_rate / bias_eta;
+                normal_biased_node.pauli_error_rates.error_rate_Y = initialization_error_rate / bias_eta;
                 let normal_biased_node = Arc::new(normal_biased_node);
 
                 // normal bias + cx node (for init)
                 let mut normal_biased_with_cx_node = (*normal_biased_node).clone();
-                normal_biased_with_cx_node.correlated_pauli_error_rates = Some(
-                    CorrelatedPauliErrorRates::default_with_probability(p / bias_eta),
-                );
+                normal_biased_with_cx_node.correlated_pauli_error_rates =
+                    Some(CorrelatedPauliErrorRates::default_with_probability(p / bias_eta));
                 normal_biased_with_cx_node
                     .correlated_pauli_error_rates
                     .as_mut()
@@ -498,56 +411,27 @@ impl NoiseModelBuilder {
 
                 // biased CX gate node; CX & CY have same noise model if using bias-preserving gate
                 let mut cx_node = NoiseModelNode::new();
-                cx_node.correlated_pauli_error_rates = Some(
-                    CorrelatedPauliErrorRates::default_with_probability(p / bias_eta),
-                );
-                cx_node
-                    .correlated_pauli_error_rates
-                    .as_mut()
-                    .unwrap()
-                    .error_rate_ZI = p;
-                cx_node
-                    .correlated_pauli_error_rates
-                    .as_mut()
-                    .unwrap()
-                    .error_rate_IZ = 0.5 * p;
-                cx_node
-                    .correlated_pauli_error_rates
-                    .as_mut()
-                    .unwrap()
-                    .error_rate_ZZ = 0.5 * p;
+                cx_node.correlated_pauli_error_rates =
+                    Some(CorrelatedPauliErrorRates::default_with_probability(p / bias_eta));
+                cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZI = p;
+                cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IZ = 0.5 * p;
+                cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZZ = 0.5 * p;
                 let cx_node = Arc::new(cx_node);
 
                 // reversed CX gate node, for convinience
                 let mut rev_cx_node = NoiseModelNode::new();
-                rev_cx_node.correlated_pauli_error_rates = Some(
-                    CorrelatedPauliErrorRates::default_with_probability(p / bias_eta),
-                );
-                rev_cx_node
-                    .correlated_pauli_error_rates
-                    .as_mut()
-                    .unwrap()
-                    .error_rate_IZ = p;
-                rev_cx_node
-                    .correlated_pauli_error_rates
-                    .as_mut()
-                    .unwrap()
-                    .error_rate_ZI = 0.5 * p;
-                rev_cx_node
-                    .correlated_pauli_error_rates
-                    .as_mut()
-                    .unwrap()
-                    .error_rate_ZZ = 0.5 * p;
+                rev_cx_node.correlated_pauli_error_rates =
+                    Some(CorrelatedPauliErrorRates::default_with_probability(p / bias_eta));
+                rev_cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_IZ = p;
+                rev_cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZI = 0.5 * p;
+                rev_cx_node.correlated_pauli_error_rates.as_mut().unwrap().error_rate_ZZ = 0.5 * p;
                 let rev_cx_node = Arc::new(rev_cx_node);
 
                 // CX gate with measurement error
                 let mut cx_measurement_error_node: NoiseModelNode = (*cx_node).clone();
-                cx_measurement_error_node.pauli_error_rates.error_rate_X =
-                    initialization_error_rate / bias_eta;
-                cx_measurement_error_node.pauli_error_rates.error_rate_Z =
-                    initialization_error_rate;
-                cx_measurement_error_node.pauli_error_rates.error_rate_Y =
-                    initialization_error_rate / bias_eta;
+                cx_measurement_error_node.pauli_error_rates.error_rate_X = initialization_error_rate / bias_eta;
+                cx_measurement_error_node.pauli_error_rates.error_rate_Z = initialization_error_rate;
+                cx_measurement_error_node.pauli_error_rates.error_rate_Y = initialization_error_rate / bias_eta;
                 let cx_measurement_error_node = Arc::new(cx_measurement_error_node);
 
                 let simulator = &*simulator; // force simulator to be immutable, to avoid unexpected changes
@@ -572,13 +456,9 @@ impl NoiseModelBuilder {
                                 // if is_bell_init_anc: normal+cx
                                 // else: normal
                                 if is_bell_init_anc(i, j) && is_bell_init_top(i - 1, j) {
-                                    noise_model.set_node(
-                                        position,
-                                        Some(normal_biased_with_cx_node.clone()),
-                                    );
+                                    noise_model.set_node(position, Some(normal_biased_with_cx_node.clone()));
                                 } else {
-                                    noise_model
-                                        .set_node(position, Some(normal_biased_node.clone()));
+                                    noise_model.set_node(position, Some(normal_biased_node.clone()));
                                 }
                             }
                             2 => {
@@ -609,14 +489,10 @@ impl NoiseModelBuilder {
                                 // if is_bell_init_anc: cx
                                 // if is_bell_init_unfixed: z
                                 if is_bell_init_anc(i, j) && is_bell_init_bot(i + 1, j) {
-                                    noise_model.set_node(
-                                        position,
-                                        Some(cx_measurement_error_node.clone()),
-                                    );
+                                    noise_model.set_node(position, Some(cx_measurement_error_node.clone()));
                                 }
                                 if is_bell_init_unfixed(i, j) {
-                                    noise_model
-                                        .set_node(position, Some(messed_measurement_node.clone()));
+                                    noise_model.set_node(position, Some(messed_measurement_node.clone()));
                                 }
                             }
                             _ => {
@@ -636,13 +512,11 @@ impl NoiseModelBuilder {
                             }
                             _ => {
                                 // gate things
-                                let has_measurement_error = position.t
-                                    % simulator.measurement_cycles
+                                let has_measurement_error = position.t % simulator.measurement_cycles
                                     == simulator.measurement_cycles - 1
                                     && node.qubit_type != QubitType::Data; // && position.t < (noisy_measurements - 2) * simulator.measurement_cycles - 2;
                                                                            // println!("position.t: {:?}; err: {:?}", position.t, has_measurement_error);
-                                if (node.gate_type == GateType::CXGateControl
-                                    || node.gate_type == GateType::CYGateControl)
+                                if (node.gate_type == GateType::CXGateControl || node.gate_type == GateType::CYGateControl)
                                     && node.qubit_type != QubitType::Data
                                 {
                                     //an ancilla
@@ -682,9 +556,7 @@ impl NoiseModelBuilder {
                         if node.qubit_type == QubitType::Data {
                             noise_model.set_node(position, Some(erasure_node.clone()));
                         }
-                    } else if position.t % simulator.measurement_cycles
-                        == simulator.measurement_cycles - 1
-                    {
+                    } else if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1 {
                         // the round before measurement, add erasures
                         if node.qubit_type != QubitType::Data {
                             noise_model.set_node(position, Some(erasure_node.clone()));
@@ -714,9 +586,7 @@ impl NoiseModelBuilder {
                         if node.qubit_type == QubitType::Data {
                             noise_model.set_node(position, Some(noise_node.clone()));
                         }
-                    } else if position.t % simulator.measurement_cycles
-                        == simulator.measurement_cycles - 1
-                    {
+                    } else if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1 {
                         // the round before measurement, add erasures
                         if node.qubit_type != QubitType::Data {
                             noise_model.set_node(position, Some(noise_node.clone()));
@@ -725,10 +595,7 @@ impl NoiseModelBuilder {
                 });
             }
             Self::OnlyGateErrorCircuitLevel => {
-                assert_eq!(
-                    bias_eta, 0.5,
-                    "bias not supported yet, please use the default value 0.5"
-                );
+                assert_eq!(bias_eta, 0.5, "bias not supported yet, please use the default value 0.5");
                 let mut initialization_error_rate = 0.;
                 let mut measurement_error_rate = 0.;
                 let mut use_correlated_erasure = false;
@@ -758,10 +625,7 @@ impl NoiseModelBuilder {
                     .remove("erasure_delay_cycle")
                     .map(|value| erasure_delay_cycle = value.as_u64().expect("u64") as usize); // erasures that are not corrected immediately, instead an erasure may stay for `delay_cycle` cycles and all qubits that are related will be effected.
                 if !config.is_empty() {
-                    panic!(
-                        "unknown keys: {:?}",
-                        config.keys().collect::<Vec<&String>>()
-                    );
+                    panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>());
                 }
                 // initialization node
                 let mut initialization_node = NoiseModelNode::new();
@@ -816,9 +680,7 @@ impl NoiseModelBuilder {
                                 error_node.erasure_error_rate = 1e-300; // single erasure exists, but just never triggered; for decoders
                                 let mut erased_qubits = BTreeSet::new();
                                 if use_correlated_erasure {
-                                    if node.gate_type.is_two_qubit_gate()
-                                        && node.qubit_type != QubitType::Data
-                                    {
+                                    if node.gate_type.is_two_qubit_gate() && node.qubit_type != QubitType::Data {
                                         let gate_peer = node.gate_peer.as_ref().unwrap();
                                         erased_qubits.insert((position.i, position.j));
                                         erased_qubits.insert((gate_peer.i, gate_peer.j));
@@ -843,18 +705,13 @@ impl NoiseModelBuilder {
                                         }
                                         let mut next_erased_qubits = BTreeSet::new();
                                         for &(i, j) in erased_qubits.iter() {
-                                            let next_node =
-                                                simulator.get_node_unwrap(&pos!(nt, i, j));
+                                            let next_node = simulator.get_node_unwrap(&pos!(nt, i, j));
                                             if !next_node.gate_type.is_initialization() {
                                                 next_erased_qubits.insert((i, j));
                                             }
-                                            if next_node.gate_type.is_two_qubit_gate()
-                                                && !next_node.is_peer_virtual
-                                            {
-                                                let gate_peer =
-                                                    next_node.gate_peer.as_ref().unwrap();
-                                                next_erased_qubits
-                                                    .insert((gate_peer.i, gate_peer.j));
+                                            if next_node.gate_type.is_two_qubit_gate() && !next_node.is_peer_virtual {
+                                                let gate_peer = next_node.gate_peer.as_ref().unwrap();
+                                                next_erased_qubits.insert((gate_peer.i, gate_peer.j));
                                             }
                                         }
                                         erased_qubits = next_erased_qubits;
@@ -862,7 +719,7 @@ impl NoiseModelBuilder {
                                     noise_model.additional_noise.push(AdditionalNoise {
                                         probability: pe,
                                         pauli_errors: SparseErrorPattern::new(),
-                                        erasures: erasures,
+                                        erasures,
                                     })
                                 }
                             } else {
@@ -871,11 +728,11 @@ impl NoiseModelBuilder {
                                         if node.qubit_type != QubitType::Data {
                                             // this is ancilla
                                             // better check whether peer is indeed data qubit, but it's hard here due to Rust's borrow check
-                                            let mut correlated_erasure_error_rates = CorrelatedErasureErrorRates::default_with_probability(0.);
+                                            let mut correlated_erasure_error_rates =
+                                                CorrelatedErasureErrorRates::default_with_probability(0.);
                                             correlated_erasure_error_rates.error_rate_EE = pe;
                                             correlated_erasure_error_rates.sanity_check();
-                                            error_node.correlated_erasure_error_rates =
-                                                Some(correlated_erasure_error_rates);
+                                            error_node.correlated_erasure_error_rates = Some(correlated_erasure_error_rates);
                                         }
                                     }
                                 } else {
@@ -900,8 +757,7 @@ impl NoiseModelBuilder {
                                     (p / 3., p / 3., p / 3.)
                                 }
                             };
-                            if position.t % simulator.measurement_cycles
-                                == simulator.measurement_cycles - 1
+                            if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1
                                 && node.qubit_type != QubitType::Data
                             {
                                 // add additional measurement error
@@ -938,8 +794,7 @@ impl NoiseModelBuilder {
                                 let correlated_pauli_error_rates =
                                     CorrelatedPauliErrorRates::default_with_probability(p / 15.); // 15 possible errors equally probable
                                 correlated_pauli_error_rates.sanity_check();
-                                error_node.correlated_pauli_error_rates =
-                                    Some(correlated_pauli_error_rates);
+                                error_node.correlated_pauli_error_rates = Some(correlated_pauli_error_rates);
                             }
                             noise_model.set_node(position, Some(Arc::new(error_node)));
                         }
@@ -968,37 +823,26 @@ impl NoiseModelBuilder {
                     .remove("after_reset_flip_probability")
                     .map(|value| after_reset_flip_probability = value.as_f64().expect("f64"));
                 if !config.is_empty() {
-                    panic!(
-                        "unknown keys: {:?}",
-                        config.keys().collect::<Vec<&String>>()
-                    );
+                    panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>());
                 }
                 // correlated depolarize_2 node
                 let mut depolarize_2_node = NoiseModelNode::new();
                 let correlated_pauli_error_rates =
-                    CorrelatedPauliErrorRates::default_with_probability(
-                        after_clifford_depolarization / 15.,
-                    ); // 15 possible errors equally probable
+                    CorrelatedPauliErrorRates::default_with_probability(after_clifford_depolarization / 15.); // 15 possible errors equally probable
                 correlated_pauli_error_rates.sanity_check();
                 depolarize_2_node.correlated_pauli_error_rates = Some(correlated_pauli_error_rates);
                 let depolarize_2_node = Arc::new(depolarize_2_node);
                 // data qubit before round depolarization node
                 let mut data_qubit_depolarize_node = NoiseModelNode::new();
-                data_qubit_depolarize_node.pauli_error_rates.error_rate_X =
-                    before_round_data_depolarization / 3.;
-                data_qubit_depolarize_node.pauli_error_rates.error_rate_Y =
-                    before_round_data_depolarization / 3.;
-                data_qubit_depolarize_node.pauli_error_rates.error_rate_Z =
-                    before_round_data_depolarization / 3.;
+                data_qubit_depolarize_node.pauli_error_rates.error_rate_X = before_round_data_depolarization / 3.;
+                data_qubit_depolarize_node.pauli_error_rates.error_rate_Y = before_round_data_depolarization / 3.;
+                data_qubit_depolarize_node.pauli_error_rates.error_rate_Z = before_round_data_depolarization / 3.;
                 let data_qubit_depolarize_node = Arc::new(data_qubit_depolarize_node);
                 // measurement flip node: whatever basis is the stabilizer, there is always `before_measure_flip_probability` probability to be flipped
                 let mut measure_flip_node = NoiseModelNode::new();
-                measure_flip_node.pauli_error_rates.error_rate_X =
-                    before_measure_flip_probability / 2.;
-                measure_flip_node.pauli_error_rates.error_rate_Y =
-                    before_measure_flip_probability / 2.;
-                measure_flip_node.pauli_error_rates.error_rate_Z =
-                    before_measure_flip_probability / 2.;
+                measure_flip_node.pauli_error_rates.error_rate_X = before_measure_flip_probability / 2.;
+                measure_flip_node.pauli_error_rates.error_rate_Y = before_measure_flip_probability / 2.;
+                measure_flip_node.pauli_error_rates.error_rate_Z = before_measure_flip_probability / 2.;
                 let measure_flip_node = Arc::new(measure_flip_node);
                 // reset flip node: whatever basis is the stabilizer, there is always `after_reset_flip_probability` probability to be flipped
                 let mut reset_flip_node = NoiseModelNode::new();
@@ -1021,8 +865,7 @@ impl NoiseModelBuilder {
                             if node.qubit_type != QubitType::Data {
                                 noise_model.set_node(position, Some(reset_flip_node.clone()));
                             } else {
-                                noise_model
-                                    .set_node(position, Some(data_qubit_depolarize_node.clone()));
+                                noise_model.set_node(position, Some(data_qubit_depolarize_node.clone()));
                             }
                         }
                         0 => { // measurement
@@ -1036,15 +879,11 @@ impl NoiseModelBuilder {
                                     error_node = depolarize_2_node.clone();
                                 }
                             }
-                            if position.t % simulator.measurement_cycles
-                                == simulator.measurement_cycles - 1
-                            {
+                            if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1 {
                                 if node.qubit_type != QubitType::Data {
                                     error_node = measure_flip_node.clone();
                                 } else {
-                                    if position.t
-                                        == simulator.height - simulator.measurement_cycles - 2
-                                    {
+                                    if position.t == simulator.height - simulator.measurement_cycles - 2 {
                                         let mut new_error_node = error_node.as_ref().clone();
                                         new_error_node.pauli_error_rates =
                                             data_qubit_depolarize_node.pauli_error_rates.clone();
@@ -1063,10 +902,7 @@ impl NoiseModelBuilder {
                     .as_object_mut()
                     .expect("noise_model_configuration must be JSON object");
                 if !config.is_empty() {
-                    panic!(
-                        "unknown keys: {:?}",
-                        config.keys().collect::<Vec<&String>>()
-                    );
+                    panic!("unknown keys: {:?}", config.keys().collect::<Vec<&String>>());
                 }
                 // depolarizing node
                 let mut depolarizing_node = NoiseModelNode::new();
@@ -1082,18 +918,14 @@ impl NoiseModelBuilder {
                 let double_depolarizing_node = Arc::new(double_depolarizing_node);
                 // two qubit depolarizing node
                 let mut correlated_depolarizing_node = NoiseModelNode::new();
-                let correlated_pauli_error_rates =
-                    CorrelatedPauliErrorRates::default_with_probability(p / 15.); // 15 possible errors equally probable
-                correlated_depolarizing_node.correlated_pauli_error_rates =
-                    Some(correlated_pauli_error_rates);
+                let correlated_pauli_error_rates = CorrelatedPauliErrorRates::default_with_probability(p / 15.); // 15 possible errors equally probable
+                correlated_depolarizing_node.correlated_pauli_error_rates = Some(correlated_pauli_error_rates);
                 let correlated_depolarizing_node = Arc::new(correlated_depolarizing_node);
                 // iterate over all nodes
                 simulator_iter_real!(simulator, position, node, {
                     // first clear error rate
                     noise_model.set_node(position, Some(noiseless_node.clone()));
-                    if position.t == 0
-                        || position.t >= simulator.height - simulator.measurement_cycles
-                    {
+                    if position.t == 0 || position.t >= simulator.height - simulator.measurement_cycles {
                         // no error on the top, as a perfect measurement round
                         continue;
                     }
@@ -1112,24 +944,18 @@ impl NoiseModelBuilder {
                         }
                         _ => {
                             if node.is_peer_virtual || node.gate_peer.is_none() {
-                                if position.t % simulator.measurement_cycles
-                                    == simulator.measurement_cycles - 1
+                                if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1
                                     && node.qubit_type != QubitType::Data
                                 {
-                                    noise_model
-                                        .set_node(position, Some(double_depolarizing_node.clone()));
+                                    noise_model.set_node(position, Some(double_depolarizing_node.clone()));
                                 } else {
                                     noise_model.set_node(position, Some(depolarizing_node.clone()));
                                 }
                             } else {
                                 if node.qubit_type == QubitType::Data {
-                                    noise_model.set_node(
-                                        position,
-                                        Some(correlated_depolarizing_node.clone()),
-                                    );
+                                    noise_model.set_node(position, Some(correlated_depolarizing_node.clone()));
                                 }
-                                if position.t % simulator.measurement_cycles
-                                    == simulator.measurement_cycles - 1
+                                if position.t % simulator.measurement_cycles == simulator.measurement_cycles - 1
                                     && node.qubit_type != QubitType::Data
                                 {
                                     noise_model.set_node(position, Some(depolarizing_node.clone()));
@@ -1149,32 +975,16 @@ impl NoiseModelBuilder {
         noise_model: &mut NoiseModel,
         modifier: &serde_json::Value,
     ) -> Result<(), String> {
-        if modifier
-            .get("code_type")
-            .ok_or(format!("missing field: code_type"))?
-            != &json!(simulator.code_type)
-        {
+        if modifier.get("code_type").ok_or(format!("missing field: code_type"))? != &json!(simulator.code_type) {
             return Err(format!("mismatch: code_type"));
         }
-        if modifier
-            .get("height")
-            .ok_or(format!("missing field: height"))?
-            != &json!(simulator.height)
-        {
+        if modifier.get("height").ok_or(format!("missing field: height"))? != &json!(simulator.height) {
             return Err(format!("mismatch: height"));
         }
-        if modifier
-            .get("vertical")
-            .ok_or(format!("missing field: vertical"))?
-            != &json!(simulator.vertical)
-        {
+        if modifier.get("vertical").ok_or(format!("missing field: vertical"))? != &json!(simulator.vertical) {
             return Err(format!("mismatch: vertical"));
         }
-        if modifier
-            .get("horizontal")
-            .ok_or(format!("missing field: horizontal"))?
-            != &json!(simulator.horizontal)
-        {
+        if modifier.get("horizontal").ok_or(format!("missing field: horizontal"))? != &json!(simulator.horizontal) {
             return Err(format!("mismatch: horizontal"));
         }
         // iterate nodes
@@ -1187,9 +997,7 @@ impl NoiseModelBuilder {
             return Err(format!("mismatch: nodes.len()"));
         }
         for t in 0..nodes.len() {
-            let nodes_row_0 = nodes[t]
-                .as_array()
-                .ok_or(format!("format error: nodes[{}]", t))?;
+            let nodes_row_0 = nodes[t].as_array().ok_or(format!("format error: nodes[{}]", t))?;
             if nodes_row_0.len() != simulator.nodes[t].len() {
                 return Err(format!("mismatch: nodes[{}].len()", t));
             }
@@ -1207,32 +1015,18 @@ impl NoiseModelBuilder {
                     }
                     if !node.is_null() {
                         let self_node = simulator.nodes[t][i][j].as_mut().unwrap(); // already checked existance
-                        if node
-                            .get("position")
-                            .ok_or(format!("missing field: position"))?
-                            != &json!(pos!(t, i, j))
-                        {
+                        if node.get("position").ok_or(format!("missing field: position"))? != &json!(pos!(t, i, j)) {
                             return Err(format!("mismatch position [{}][{}][{}]", t, i, j));
                         }
-                        if node
-                            .get("qubit_type")
-                            .ok_or(format!("missing field: qubit_type"))?
+                        if node.get("qubit_type").ok_or(format!("missing field: qubit_type"))?
                             != &json!(self_node.qubit_type)
                         {
                             return Err(format!("mismatch [{}][{}][{}]: qubit_type", t, i, j));
                         }
-                        if node
-                            .get("gate_type")
-                            .ok_or(format!("missing field: gate_type"))?
-                            != &json!(self_node.gate_type)
-                        {
+                        if node.get("gate_type").ok_or(format!("missing field: gate_type"))? != &json!(self_node.gate_type) {
                             return Err(format!("mismatch [{}][{}][{}]: gate_type", t, i, j));
                         }
-                        if node
-                            .get("gate_peer")
-                            .ok_or(format!("missing field: gate_peer"))?
-                            != &json!(self_node.gate_peer)
-                        {
+                        if node.get("gate_peer").ok_or(format!("missing field: gate_peer"))? != &json!(self_node.gate_peer) {
                             return Err(format!("mismatch [{}][{}][{}]: gate_peer", t, i, j));
                         }
                         // TODO: user can modify the 'is_virtual' attribute to manually discard a measurement event
@@ -1255,13 +1049,9 @@ impl NoiseModelBuilder {
                             "is_peer_virtual modification not implemented, needs sanity check"
                         );
                         // then copy error rate data
-                        let noise_model_node = node
-                            .get("noise_model")
-                            .ok_or(format!("missing field: noise_model"))?
-                            .clone();
+                        let noise_model_node = node.get("noise_model").ok_or(format!("missing field: noise_model"))?.clone();
                         let noise_model_node: NoiseModelNode =
-                            serde_json::from_value(noise_model_node)
-                                .map_err(|e| format!("{:?}", e))?;
+                            serde_json::from_value(noise_model_node).map_err(|e| format!("{:?}", e))?;
                         noise_model.set_node(&pos!(t, i, j), Some(Arc::new(noise_model_node)));
                     }
                 }

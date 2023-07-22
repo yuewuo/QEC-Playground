@@ -197,8 +197,8 @@ impl SimulatorNode {
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new(qubit_type: QubitType, gate_type: GateType, gate_peer: Option<Position>) -> Self {
         Self {
-            qubit_type: qubit_type,
-            gate_type: gate_type,
+            qubit_type,
+            gate_type,
             gate_peer: gate_peer.map(Arc::new),
             error: I,
             has_erasure: false,
@@ -217,10 +217,7 @@ impl SimulatorNode {
         (**self.gate_peer.as_ref().unwrap()).clone()
     }
     pub fn set_error_temp(&mut self, error: &ErrorType) {
-        debug_assert!(
-            !self.is_virtual || error == &I,
-            "should not add errors at virtual nodes"
-        );
+        debug_assert!(!self.is_virtual || error == &I, "should not add errors at virtual nodes");
         self.error = *error;
     }
 }
@@ -411,8 +408,8 @@ impl Simulator {
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new(code_type: CodeType, code_size: CodeSize) -> Self {
         let mut simulator = Self {
-            code_type: code_type,
-            code_size: code_size,
+            code_type,
+            code_size,
             height: 0,
             vertical: 0,
             horizontal: 0,
@@ -463,14 +460,7 @@ impl Simulator {
     }
 
     /// check if this node is a virtual node, i.e. non-existing but just work as a virtual boundary
-    pub fn set_error_rates(
-        &mut self,
-        noise_model: &mut NoiseModel,
-        px: f64,
-        py: f64,
-        pz: f64,
-        pe: f64,
-    ) {
+    pub fn set_error_rates(&mut self, noise_model: &mut NoiseModel, px: f64, py: f64, pz: f64, pe: f64) {
         assert!(px + py + pz <= 1. && px >= 0. && py >= 0. && pz >= 0.);
         assert!(pe <= 1. && pe >= 0.);
         if self.measurement_cycles == 1 {
@@ -493,38 +483,23 @@ impl Simulator {
     }
 
     /// set error with sanity check
-    pub fn set_error_check(
-        &mut self,
-        noise_model: &NoiseModel,
-        position: &Position,
-        error: &ErrorType,
-    ) {
-        self.set_error_check_result(noise_model, position, error)
-            .unwrap()
+    pub fn set_error_check(&mut self, noise_model: &NoiseModel, position: &Position, error: &ErrorType) {
+        self.set_error_check_result(noise_model, position, error).unwrap()
     }
 
-    pub fn set_erasure_check(
-        &mut self,
-        noise_model: &NoiseModel,
-        position: &Position,
-        has_erasure: bool,
-    ) {
-        self.set_erasure_check_result(noise_model, position, has_erasure)
-            .unwrap()
+    pub fn set_erasure_check(&mut self, noise_model: &NoiseModel, position: &Position, has_erasure: bool) {
+        self.set_erasure_check_result(noise_model, position, has_erasure).unwrap()
     }
 
     /// expand the correlated error rates, useful when exporting the data structure for other applications to modify
     pub fn expand_error_rates(&mut self, noise_model: &mut NoiseModel) {
         simulator_iter_mut!(self, position, _node, {
-            let mut noise_model_node: NoiseModelNode =
-                noise_model.get_node_unwrap(position).clone();
+            let mut noise_model_node: NoiseModelNode = noise_model.get_node_unwrap(position).clone();
             if noise_model_node.correlated_pauli_error_rates.is_none() {
-                noise_model_node.correlated_pauli_error_rates =
-                    Some(CorrelatedPauliErrorRates::default());
+                noise_model_node.correlated_pauli_error_rates = Some(CorrelatedPauliErrorRates::default());
             }
             if noise_model_node.correlated_erasure_error_rates.is_none() {
-                noise_model_node.correlated_erasure_error_rates =
-                    Some(CorrelatedErasureErrorRates::default());
+                noise_model_node.correlated_erasure_error_rates = Some(CorrelatedErasureErrorRates::default());
             }
             noise_model.set_node(position, Some(Arc::new(noise_model_node)));
         });
@@ -537,10 +512,8 @@ impl Simulator {
     pub fn compress_error_rates(&mut self, noise_model: &mut NoiseModel) {
         let mut arc_set: HashSet<*const NoiseModelNode> = HashSet::new();
         // since f64 typed error rates are not hashable by default, here I first serialize the them and then use OrderedFloatPolicy for hashing
-        let mut node_map: HashMap<
-            serde_hashkey::Key<serde_hashkey::OrderedFloatPolicy>,
-            Arc<NoiseModelNode>,
-        > = HashMap::new();
+        let mut node_map: HashMap<serde_hashkey::Key<serde_hashkey::OrderedFloatPolicy>, Arc<NoiseModelNode>> =
+            HashMap::new();
         simulator_iter_mut!(self, position, _node, {
             let node_arc: Arc<NoiseModelNode> = noise_model.get_node_unwrap_arc(position);
             let node_pointer: *const NoiseModelNode = Arc::as_ptr(&node_arc);
@@ -593,9 +566,7 @@ impl Simulator {
                 }
             });
             if !propagated_clean {
-                println!(
-                    "[warning] propagate state must be clean before calling `propagate_errors`"
-                );
+                println!("[warning] propagate state must be clean before calling `propagate_errors`");
                 println!("    note that `generate_random_errors` automatically cleared it, otherwise you need to manually call `clear_propagate_errors`");
             }
             propagated_clean
@@ -612,7 +583,10 @@ impl Simulator {
     /// when a error (other than Identity) propagates to the peer, it returns the position of the peer.
     #[inline]
     pub fn propagate_error_from(&mut self, position: &Position) -> Option<Position> {
-        debug_assert!(position.t < self.height - 1, "propagate error from final layer is meaningless, because it doesn't have any next layer");
+        debug_assert!(
+            position.t < self.height - 1,
+            "propagate error from final layer is meaningless, because it doesn't have any next layer"
+        );
         let node = self.get_node_unwrap(position);
         // propagation from virtual to real is forbidden
         let propagate_to_peer_forbidden = node.is_virtual && !node.is_peer_virtual;
@@ -679,11 +653,7 @@ impl Simulator {
     ) -> (SparseCorrection, SparseMeasurement, SparseMeasurement) {
         if sparse_errors.len() == 0 {
             println!("[warning] why calling fast measurement given no error?");
-            return (
-                SparseCorrection::new(),
-                SparseMeasurement::new(),
-                SparseMeasurement::new(),
-            );
+            return (SparseCorrection::new(), SparseMeasurement::new(), SparseMeasurement::new());
         }
         debug_assert!({
             // fast measurement requires no errors at first
@@ -749,13 +719,11 @@ impl Simulator {
                             let previous_node = self.get_node_unwrap(&previous_position);
                             if previous_node.gate_type.is_measurement() {
                                 // found previous measurement
-                                let previous_result = previous_node
-                                    .gate_type
-                                    .stabilizer_measurement(&previous_node.propagated);
+                                let previous_result =
+                                    previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
                                 if this_result != previous_result {
                                     if node.is_virtual {
-                                        sparse_measurement_virtual
-                                            .insert_defect_measurement(position);
+                                        sparse_measurement_virtual.insert_defect_measurement(position);
                                     } else {
                                         sparse_measurement_real.insert_defect_measurement(position);
                                     }
@@ -818,22 +786,26 @@ impl Simulator {
             self.clear_all_errors();
             // println!("sparse_measurement_real: {:?}, standard_measurements_real: {:?}", sparse_measurement_real, standard_measurements_real);
             // println!("sparse_measurement_virtual: {:?}, standard_measurements_virtual: {:?}", sparse_measurement_virtual, standard_measurements_virtual);
-            let mut measurements_equal = sparse_measurement_real.defects.len()
-                == standard_measurements_real.defects.len()
-                && sparse_measurement_virtual.defects.len()
-                    == standard_measurements_virtual.defects.len();
+            let mut measurements_equal = sparse_measurement_real.defects.len() == standard_measurements_real.defects.len()
+                && sparse_measurement_virtual.defects.len() == standard_measurements_virtual.defects.len();
             if measurements_equal {
                 // further check for each element
                 for position in standard_measurements_real.defects.iter() {
                     if !sparse_measurement_real.defects.contains(position) {
                         measurements_equal = false;
-                        println!("[error] defect measurement happens at {} but optimized code doesn't correctly detect it", position);
+                        println!(
+                            "[error] defect measurement happens at {} but optimized code doesn't correctly detect it",
+                            position
+                        );
                     }
                 }
                 for position in standard_measurements_virtual.defects.iter() {
                     if !sparse_measurement_virtual.defects.contains(position) {
                         measurements_equal = false;
-                        println!("[error] defect measurement happens at {} but optimized code doesn't correctly detect it", position);
+                        println!(
+                            "[error] defect measurement happens at {} but optimized code doesn't correctly detect it",
+                            position
+                        );
                     }
                 }
             }
@@ -855,11 +827,7 @@ impl Simulator {
             }
             measurements_equal && correction_equal
         });
-        (
-            sparse_correction,
-            sparse_measurement_real,
-            sparse_measurement_virtual,
-        )
+        (sparse_correction, sparse_measurement_real, sparse_measurement_virtual)
     }
 
     /// generate correction pattern using errors only at the top layer
@@ -897,8 +865,7 @@ impl SimulatorGenerics for Simulator {
                 node.set_error_temp(&X);
                 // println!("X error at {} {} {}",node.i, node.j, node.t);
             } else if random_pauli
-                < noise_model_node.pauli_error_rates.error_rate_X
-                    + noise_model_node.pauli_error_rates.error_rate_Z
+                < noise_model_node.pauli_error_rates.error_rate_X + noise_model_node.pauli_error_rates.error_rate_Z
             {
                 node.set_error_temp(&Z);
                 // println!("Z error at {} {} {}",node.i, node.j, node.t);
@@ -920,8 +887,7 @@ impl SimulatorGenerics for Simulator {
             match &noise_model_node.correlated_pauli_error_rates {
                 Some(correlated_pauli_error_rates) => {
                     let random_pauli = rng.next_f64();
-                    let correlated_pauli_error_type =
-                        correlated_pauli_error_rates.generate_random_error(random_pauli);
+                    let correlated_pauli_error_type = correlated_pauli_error_rates.generate_random_error(random_pauli);
                     let my_error = correlated_pauli_error_type.my_error();
                     if my_error != I {
                         pending_pauli_errors.push((position.clone(), my_error));
@@ -940,17 +906,18 @@ impl SimulatorGenerics for Simulator {
             match &noise_model_node.correlated_erasure_error_rates {
                 Some(correlated_erasure_error_rates) => {
                     let random_erasure = rng.next_f64();
-                    let correlated_erasure_error_type = correlated_erasure_error_rates
-                        .generate_random_erasure_error(random_erasure);
+                    let correlated_erasure_error_type =
+                        correlated_erasure_error_rates.generate_random_erasure_error(random_erasure);
                     let my_error = correlated_erasure_error_type.my_error();
                     if my_error {
                         pending_erasure_errors.push(position.clone());
                     }
                     let peer_error = correlated_erasure_error_type.peer_error();
                     if peer_error {
-                        let gate_peer = node.gate_peer.as_ref().expect(
-                            "correlated erasure error must corresponds to a two-qubit gate",
-                        );
+                        let gate_peer = node
+                            .gate_peer
+                            .as_ref()
+                            .expect("correlated erasure error must corresponds to a two-qubit gate");
                         pending_erasure_errors.push((**gate_peer).clone());
                     }
                 }
@@ -1177,19 +1144,15 @@ impl Simulator {
                 // check peer only if still not possible
                 if let Some(peer_position) = node.gate_peer.as_ref() {
                     let peer_noise_model_node = noise_model.get_node_unwrap(peer_position);
-                    possible |= peer_noise_model_node
-                        .correlated_erasure_error_rates
-                        .is_some(); // weak check
+                    possible |= peer_noise_model_node.correlated_erasure_error_rates.is_some();
+                    // weak check
                 }
             }
         } else {
             possible = true;
         }
         if !possible {
-            return Err(format!(
-                "setting erasure at {} with 0 probability is forbidden",
-                position
-            ));
+            return Err(format!("setting erasure at {} with 0 probability is forbidden", position));
         }
         self.get_node_mut_unwrap(position).has_erasure = has_erasure;
         Ok(())
@@ -1256,19 +1219,15 @@ impl Simulator {
                 if let Some(peer_position) = node.gate_peer.as_ref() {
                     let peer_noise_model_node = noise_model.get_node_unwrap(peer_position);
                     possible |= peer_noise_model_node.correlated_pauli_error_rates.is_some(); // weak check
-                    possible |= peer_noise_model_node
-                        .correlated_erasure_error_rates
-                        .is_some(); // weak check
+                    possible |= peer_noise_model_node.correlated_erasure_error_rates.is_some();
+                    // weak check
                 }
             }
         } else {
             possible = true;
         }
         if !possible {
-            return Err(format!(
-                "setting error at {} with 0 probability is forbidden",
-                position
-            ));
+            return Err(format!("setting error at {} with 0 probability is forbidden", position));
         }
         self.get_node_mut_unwrap(position).set_error_temp(error);
         Ok(())
@@ -1364,7 +1323,7 @@ impl Position {
     }
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new(t: usize, i: usize, j: usize) -> Self {
-        Self { t: t, i: i, j: j }
+        Self { t, i, j }
     }
     pub fn distance(&self, other: &Self) -> usize {
         ((self.t as isize - other.t as isize).abs()
@@ -1400,11 +1359,7 @@ impl<'de> Visitor<'de> for PositionVisitor {
     type Value = Position;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            formatter,
-            "{}",
-            r#"position should look like "[0][10][13]""#
-        )
+        write!(formatter, "{}", r#"position should look like "[0][10][13]""#)
     }
 
     fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
@@ -1412,54 +1367,26 @@ impl<'de> Visitor<'de> for PositionVisitor {
         E: serde::de::Error,
     {
         if s.get(0..1) != Some("[") {
-            return Err(serde::de::Error::invalid_value(
-                serde::de::Unexpected::Str(s),
-                &self,
-            ));
+            return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self));
         }
         if s.get(s.len() - 1..s.len()) != Some("]") {
-            return Err(serde::de::Error::invalid_value(
-                serde::de::Unexpected::Str(s),
-                &self,
-            ));
+            return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self));
         }
-        let splitted = s
-            .get(1..s.len() - 1)
-            .unwrap()
-            .split("][")
-            .collect::<Vec<&str>>();
+        let splitted = s.get(1..s.len() - 1).unwrap().split("][").collect::<Vec<&str>>();
         if splitted.len() != 3 {
-            return Err(serde::de::Error::invalid_value(
-                serde::de::Unexpected::Str(s),
-                &self,
-            ));
+            return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self));
         }
         let t = match splitted[0].to_string().parse::<usize>() {
             Ok(t) => t,
-            Err(_) => {
-                return Err(serde::de::Error::invalid_value(
-                    serde::de::Unexpected::Str(s),
-                    &self,
-                ))
-            }
+            Err(_) => return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self)),
         };
         let i = match splitted[1].to_string().parse::<usize>() {
             Ok(t) => t,
-            Err(_) => {
-                return Err(serde::de::Error::invalid_value(
-                    serde::de::Unexpected::Str(s),
-                    &self,
-                ))
-            }
+            Err(_) => return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self)),
         };
         let j = match splitted[2].to_string().parse::<usize>() {
             Ok(t) => t,
-            Err(_) => {
-                return Err(serde::de::Error::invalid_value(
-                    serde::de::Unexpected::Str(s),
-                    &self,
-                ))
-            }
+            Err(_) => return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self)),
         };
         Ok(Position::new(t, i, j))
     }
@@ -1729,9 +1656,7 @@ impl SparseErrorPattern {
     /// create an empty error pattern
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new() -> Self {
-        Self {
-            errors: BTreeMap::new(),
-        }
+        Self { errors: BTreeMap::new() }
     }
     /// extend an error pattern using another error pattern
     #[allow(dead_code)]
@@ -1753,9 +1678,7 @@ impl SparseErrorPattern {
         self.errors.len()
     }
     pub fn to_vec(&self) -> Vec<(Position, ErrorType)> {
-        self.iter()
-            .map(|(position, error)| ((*position).clone(), *error))
-            .collect()
+        self.iter().map(|(position, error)| ((*position).clone(), *error)).collect()
     }
 }
 
@@ -1768,9 +1691,7 @@ impl SparseErrorPattern {
         self.errors.iter()
     }
     /// iterator
-    pub fn iter_mut<'a>(
-        &'a mut self,
-    ) -> std::collections::btree_map::IterMut<'a, Position, ErrorType> {
+    pub fn iter_mut<'a>(&'a mut self) -> std::collections::btree_map::IterMut<'a, Position, ErrorType> {
         self.errors.iter_mut()
     }
     /// get element
@@ -1859,12 +1780,7 @@ impl SparseCorrection {
             {
                 // check `t` are the same
                 // no need to iterate them all, because every call to this function will be checked
-                let check_passed = self
-                    .0
-                    .iter()
-                    .next()
-                    .map(|(key, _value)| key.t == position.t)
-                    .unwrap_or(true);
+                let check_passed = self.0.iter().next().map(|(key, _value)| key.t == position.t).unwrap_or(true);
                 if !check_passed {
                     eprintln!(
                         "correction should also have the same `t`, violating: {} and {}",
@@ -1893,9 +1809,7 @@ impl SparseCorrection {
         self.0.iter()
     }
     /// iterator
-    pub fn iter_mut<'a>(
-        &'a mut self,
-    ) -> std::collections::btree_map::IterMut<'a, Position, ErrorType> {
+    pub fn iter_mut<'a>(&'a mut self) -> std::collections::btree_map::IterMut<'a, Position, ErrorType> {
         self.0.iter_mut()
     }
     /// get element
@@ -1923,24 +1837,12 @@ mod tests {
         let di = 5;
         let dj = 5;
         let noisy_measurements = 5;
-        let simulator = Simulator::new(
-            CodeType::StandardPlanarCode,
-            CodeSize::new(noisy_measurements, di, dj),
-        );
+        let simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, di, dj));
         let invalid_position = pos!(100, 100, 100);
-        assert!(
-            !simulator.is_valid_position(&invalid_position),
-            "invalid position"
-        );
+        assert!(!simulator.is_valid_position(&invalid_position), "invalid position");
         let nonexisting_position = pos!(0, 0, 0);
-        assert!(
-            simulator.is_valid_position(&nonexisting_position),
-            "valid position"
-        );
-        assert!(
-            !simulator.is_node_exist(&nonexisting_position),
-            "nonexisting position"
-        );
+        assert!(simulator.is_valid_position(&nonexisting_position), "valid position");
+        assert!(!simulator.is_node_exist(&nonexisting_position), "nonexisting position");
         println!(
             "std::mem::size_of::<SimulatorNode>() = {}",
             std::mem::size_of::<SimulatorNode>()

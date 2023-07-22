@@ -60,7 +60,7 @@ impl Default for DefaultUnionNode {
     fn default() -> Self {
         Self {
             set_size: 1,
-            cardinality: 0, // by default the cardinality is 0, set to 1 if needed
+            cardinality: 0,              // by default the cardinality is 0, set to 1 if needed
             is_touching_boundary: false, // is already touching the boundary
         }
     }

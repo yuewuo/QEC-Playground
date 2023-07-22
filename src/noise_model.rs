@@ -100,22 +100,12 @@ impl NoiseModelNode {
             return false;
         }
         if self.correlated_pauli_error_rates.is_some()
-            && self
-                .correlated_pauli_error_rates
-                .as_ref()
-                .unwrap()
-                .error_probability()
-                > 0.
+            && self.correlated_pauli_error_rates.as_ref().unwrap().error_probability() > 0.
         {
             return false;
         }
         if self.correlated_erasure_error_rates.is_some()
-            && self
-                .correlated_erasure_error_rates
-                .as_ref()
-                .unwrap()
-                .error_probability()
-                > 0.
+            && self.correlated_erasure_error_rates.as_ref().unwrap().error_probability() > 0.
         {
             return false;
         }
@@ -128,10 +118,7 @@ impl NoiseModelNode {
 impl NoiseModel {
     #[cfg_attr(feature = "python_binding", new)]
     pub fn new(simulator: &Simulator) -> Self {
-        assert!(
-            simulator.volume() > 0,
-            "cannot build noise model out of zero-sized simulator"
-        );
+        assert!(simulator.volume() > 0, "cannot build noise model out of zero-sized simulator");
         let default_noise_model_node = Arc::new(NoiseModelNode::new());
         Self {
             nodes: (0..simulator.height)
@@ -179,17 +166,12 @@ impl NoiseModel {
 
     /// get reference `self.nodes[t][i][j]` and then unwrap
     pub fn get_node_unwrap(&'_ self, position: &Position) -> &'_ NoiseModelNode {
-        self.nodes[position.t][position.i][position.j]
-            .as_ref()
-            .unwrap()
+        self.nodes[position.t][position.i][position.j].as_ref().unwrap()
     }
 
     /// get reference `self.nodes[t][i][j]` and then unwrap, returning a clone of the arc
     pub fn get_node_unwrap_arc(&'_ self, position: &Position) -> Arc<NoiseModelNode> {
-        self.nodes[position.t][position.i][position.j]
-            .as_ref()
-            .unwrap()
-            .clone()
+        self.nodes[position.t][position.i][position.j].as_ref().unwrap().clone()
     }
 
     /// each node is immutable, but one can assign a new node
@@ -200,14 +182,9 @@ impl NoiseModel {
 
 /// check if error rates are not zero at perfect measurement ranges or at (always) virtual nodes,
 /// also check for error rate constrains on virtual nodes
-pub fn noise_model_sanity_check(
-    simulator: &Simulator,
-    noise_model: &NoiseModel,
-) -> Result<(), String> {
+pub fn noise_model_sanity_check(simulator: &Simulator, noise_model: &NoiseModel) -> Result<(), String> {
     match simulator.code_size {
-        CodeSize {
-            noisy_measurements, ..
-        } => {
+        CodeSize { noisy_measurements, .. } => {
             // check that no errors present in the final perfect measurement rounds
             let expected_height = simulator.measurement_cycles * (noisy_measurements + 1) + 1;
             if simulator.height != expected_height {
@@ -229,10 +206,7 @@ pub fn noise_model_sanity_check(
                 // only check for virtual nodes
                 let noise_model_node = noise_model.get_node_unwrap(position);
                 if !noise_model_node.is_noiseless() {
-                    return Err(format!(
-                        "detected noisy position {} which is virtual node",
-                        position
-                    ));
+                    return Err(format!("detected noisy position {} which is virtual node", position));
                 }
             });
         }
@@ -253,9 +227,7 @@ pub fn noise_model_sanity_check(
                     position, noise_model_node.erasure_error_rate
                 ));
             }
-            if let Some(correlated_pauli_error_rates) =
-                &noise_model_node.correlated_pauli_error_rates
-            {
+            if let Some(correlated_pauli_error_rates) = &noise_model_node.correlated_pauli_error_rates {
                 if correlated_pauli_error_rates.error_probability() > 0. {
                     return Err(format!(
                         "virtual position at {} have non-zero correlated_pauli_error_rates: {:?}",
@@ -263,9 +235,7 @@ pub fn noise_model_sanity_check(
                     ));
                 }
             }
-            if let Some(correlated_erasure_error_rates) =
-                &noise_model_node.correlated_erasure_error_rates
-            {
+            if let Some(correlated_erasure_error_rates) = &noise_model_node.correlated_erasure_error_rates {
                 if correlated_erasure_error_rates.error_probability() > 0. {
                     return Err(format!(
                         "virtual position at {} have non-zero correlated_erasure_error_rates: {:?}",
@@ -276,18 +246,20 @@ pub fn noise_model_sanity_check(
         }
         if node.is_peer_virtual {
             // no correlated errors if peer position is virtual, because this two-qubit gate doesn't physically exist
-            if let Some(correlated_pauli_error_rates) =
-                &noise_model_node.correlated_pauli_error_rates
-            {
+            if let Some(correlated_pauli_error_rates) = &noise_model_node.correlated_pauli_error_rates {
                 if correlated_pauli_error_rates.error_probability() > 0. {
-                    return Err(format!("position at {} have virtual peer but non-zero correlated_pauli_error_rates: {:?}", position, correlated_pauli_error_rates));
+                    return Err(format!(
+                        "position at {} have virtual peer but non-zero correlated_pauli_error_rates: {:?}",
+                        position, correlated_pauli_error_rates
+                    ));
                 }
             }
-            if let Some(correlated_erasure_error_rates) =
-                &noise_model_node.correlated_erasure_error_rates
-            {
+            if let Some(correlated_erasure_error_rates) = &noise_model_node.correlated_erasure_error_rates {
                 if correlated_erasure_error_rates.error_probability() > 0. {
-                    return Err(format!("position at {} have virtual peer but non-zero correlated_erasure_error_rates: {:?}", position, correlated_erasure_error_rates));
+                    return Err(format!(
+                        "position at {} have virtual peer but non-zero correlated_erasure_error_rates: {:?}",
+                        position, correlated_erasure_error_rates
+                    ));
                 }
             }
         }

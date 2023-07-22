@@ -101,21 +101,14 @@ impl FusionDecoder {
         use_brief_edge: bool,
     ) -> Self {
         // read attribute of decoder configuration
-        let config: FusionDecoderConfig =
-            serde_json::from_value(decoder_configuration.clone()).unwrap();
+        let config: FusionDecoderConfig = serde_json::from_value(decoder_configuration.clone()).unwrap();
         let mut simulator = simulator.clone();
         // // build erasure graph
         // let mut erasure_graph = ErasureGraph::new(&simulator);
         // erasure_graph.build(&mut simulator, Arc::clone(&noise_model), parallel);
         // let erasure_graph = Arc::new(erasure_graph);
         // build solver
-        let adaptor = FusionBlossomAdaptor::new(
-            &config,
-            &mut simulator,
-            noise_model,
-            parallel,
-            use_brief_edge,
-        );
+        let adaptor = FusionBlossomAdaptor::new(&config, &mut simulator, noise_model, parallel, use_brief_edge);
         let fusion_solver = fusion_blossom::mwpm_solver::SolverSerial::new(&adaptor.initializer);
         Self {
             adaptor: Arc::new(adaptor),
@@ -126,10 +119,7 @@ impl FusionDecoder {
 
     /// decode given measurement results
     #[allow(dead_code)]
-    pub fn decode(
-        &mut self,
-        sparse_measurement: &SparseMeasurement,
-    ) -> (SparseCorrection, serde_json::Value) {
+    pub fn decode(&mut self, sparse_measurement: &SparseMeasurement) -> (SparseCorrection, serde_json::Value) {
         self.decode_with_erasure(sparse_measurement, &SparseErasures::new())
     }
 
@@ -160,8 +150,7 @@ impl FusionDecoder {
                 // log the subgraph
                 let mut subgraph_edges = vec![];
                 for &edge_index in subgraph.iter() {
-                    let (vertex_1, vertex_2, _) =
-                        self.adaptor.initializer.weighted_edges[edge_index];
+                    let (vertex_1, vertex_2, _) = self.adaptor.initializer.weighted_edges[edge_index];
                     let position_1 = self.adaptor.vertex_to_position_mapping[vertex_1].clone();
                     let position_2 = self.adaptor.vertex_to_position_mapping[vertex_2].clone();
                     subgraph_edges.push((position_1, position_2));
@@ -184,8 +173,7 @@ impl FusionDecoder {
                 for (node_ptr, virtual_vertex) in perfect_matching.virtual_matchings.iter() {
                     let vertex = node_ptr.get_representative_vertex();
                     let position_1 = self.adaptor.vertex_to_position_mapping[vertex].clone();
-                    let position_2 =
-                        self.adaptor.vertex_to_position_mapping[*virtual_vertex].clone();
+                    let position_2 = self.adaptor.vertex_to_position_mapping[*virtual_vertex].clone();
                     perfect_matching_edges.push((position_1, position_2));
                 }
                 log_matchings.push(json!({
@@ -262,10 +250,7 @@ impl FusionBlossomAdaptor {
         let mut position_to_vertex_mapping = PositionToVertexMap::new();
         simulator_iter!(simulator, position, node, {
             // first insert nodes and build mapping, different from decoder_fusion, here we add virtual nodes as well
-            if position.t != 0
-                && node.gate_type.is_measurement()
-                && !stabilizer_filter.ignore_node(node)
-            {
+            if position.t != 0 && node.gate_type.is_measurement() && !stabilizer_filter.ignore_node(node) {
                 let vertex_index = initializer.vertex_num;
                 if !simulator.is_node_real(position) {
                     initializer.virtual_vertices.push(vertex_index);
@@ -297,25 +282,15 @@ impl FusionBlossomAdaptor {
                         .as_ref()
                         .expect("virtual boundary required to plot properly in fusion blossom");
                     let virtual_index = position_to_vertex_mapping[&virtual_position];
-                    weighted_edges_unscaled.push((
-                        vertex_index,
-                        virtual_index,
-                        model_graph_boundary.weight,
-                    ));
-                    edge_to_correction_mapping
-                        .push(model_graph_boundary.correction.as_ref().clone());
+                    weighted_edges_unscaled.push((vertex_index, virtual_index, model_graph_boundary.weight));
+                    edge_to_correction_mapping.push(model_graph_boundary.correction.as_ref().clone());
                 }
                 for (peer_position, model_graph_edge) in model_graph_node.edges.iter() {
                     let peer_idx = position_to_vertex_mapping[peer_position];
                     if vertex_index < peer_idx {
                         // avoid duplicate edges
-                        weighted_edges_unscaled.push((
-                            vertex_index,
-                            peer_idx,
-                            model_graph_edge.weight,
-                        ));
-                        edge_to_correction_mapping
-                            .push(model_graph_edge.correction.as_ref().clone());
+                        weighted_edges_unscaled.push((vertex_index, peer_idx, model_graph_edge.weight));
+                        edge_to_correction_mapping.push(model_graph_edge.correction.as_ref().clone());
                     }
                 }
             }
@@ -331,13 +306,7 @@ impl FusionBlossomAdaptor {
             let scale: f64 = config.max_half_weight as f64 / maximum_weight;
             weighted_edges_unscaled
                 .iter()
-                .map(|(a, b, weight)| {
-                    (
-                        *a,
-                        *b,
-                        2 * (weight * scale).ceil() as fusion_blossom::util::Weight,
-                    )
-                })
+                .map(|(a, b, weight)| (*a, *b, 2 * (weight * scale).ceil() as fusion_blossom::util::Weight))
                 .collect()
         };
         Self {
@@ -355,10 +324,7 @@ impl FusionBlossomAdaptor {
         sparse_measurement: &SparseMeasurement,
         sparse_detected_erasures: &SparseErasures,
     ) -> SyndromePattern {
-        assert!(
-            sparse_detected_erasures.len() == 0,
-            "erasure not implemented"
-        );
+        assert!(sparse_detected_erasures.len() == 0, "erasure not implemented");
         let mut syndrome_pattern = SyndromePattern::new_empty();
         for defect_vertex in sparse_measurement.iter() {
             if self.position_to_vertex_mapping.contains_key(defect_vertex) {
@@ -396,9 +362,7 @@ impl FusionBlossomAdaptor {
             if self.initializer.weighted_edges[index] != other.initializer.weighted_edges[index] {
                 return Err(format!(
                     "the {}-th weighted edge differs: {:?} != {:?}",
-                    index,
-                    self.initializer.weighted_edges[index],
-                    other.initializer.weighted_edges[index]
+                    index, self.initializer.weighted_edges[index], other.initializer.weighted_edges[index]
                 ));
             }
         }
@@ -410,13 +374,10 @@ impl FusionBlossomAdaptor {
             ));
         }
         for index in 0..self.initializer.virtual_vertices.len() {
-            if self.initializer.virtual_vertices[index] != other.initializer.virtual_vertices[index]
-            {
+            if self.initializer.virtual_vertices[index] != other.initializer.virtual_vertices[index] {
                 return Err(format!(
                     "the {}-th virtual vertex differs: {:?} != {:?}",
-                    index,
-                    self.initializer.virtual_vertices[index],
-                    other.initializer.virtual_vertices[index]
+                    index, self.initializer.virtual_vertices[index], other.initializer.virtual_vertices[index]
                 ));
             }
         }
@@ -431,10 +392,7 @@ impl FusionBlossomAdaptor {
             let pos1 = &self.positions[index];
             let pos2 = &other.positions[index];
             if pos1.t != pos2.t || pos1.i != pos2.i || pos1.j != pos2.j {
-                return Err(format!(
-                    "the {}-th position differs: {:?} != {:?}",
-                    index, pos1, pos2
-                ));
+                return Err(format!("the {}-th position differs: {:?} != {:?}", index, pos1, pos2));
             }
         }
         if self.stabilizer_filter != other.stabilizer_filter {
@@ -451,9 +409,7 @@ impl FusionBlossomAdaptor {
             if self.vertex_to_position_mapping[index] != other.vertex_to_position_mapping[index] {
                 return Err(format!(
                     "the {}-th position differs: {:?} != {:?}",
-                    index,
-                    self.vertex_to_position_mapping[index],
-                    other.vertex_to_position_mapping[index]
+                    index, self.vertex_to_position_mapping[index], other.vertex_to_position_mapping[index]
                 ));
             }
         }
@@ -544,11 +500,7 @@ impl FusionBlossomSyndromeExporter {
             adaptor: fusion_decoder.adaptor.clone(),
         }
     }
-    pub fn add_syndrome(
-        &self,
-        sparse_measurement: &SparseMeasurement,
-        sparse_detected_erasures: &SparseErasures,
-    ) {
+    pub fn add_syndrome(&self, sparse_measurement: &SparseMeasurement, sparse_detected_erasures: &SparseErasures) {
         use fusion_blossom::mwpm_solver::*;
         let syndrome_pattern = self
             .adaptor
@@ -580,28 +532,28 @@ pub struct FusionBlossomAdaptorExtender {
 }
 
 impl FusionBlossomAdaptorExtender {
-    pub fn new(
-        first: FusionBlossomAdaptor,
-        second: FusionBlossomAdaptor,
-        noisy_measurements: usize,
-    ) -> Self {
+    pub fn new(first: FusionBlossomAdaptor, second: FusionBlossomAdaptor, noisy_measurements: usize) -> Self {
         assert!(
             second.initializer.weighted_edges.len() > first.initializer.weighted_edges.len(),
             "must differ"
         );
-        let edge_num_differ =
-            second.initializer.weighted_edges.len() - first.initializer.weighted_edges.len();
+        let edge_num_differ = second.initializer.weighted_edges.len() - first.initializer.weighted_edges.len();
         let edge_repeat_start = first.initializer.weighted_edges.len() / 2 - edge_num_differ / 2;
         let edge_repeat_end = edge_repeat_start + edge_num_differ;
         let (u1, v1, w1) = first.initializer.weighted_edges[edge_repeat_start];
         let (u2, v2, w2) = first.initializer.weighted_edges[edge_repeat_end];
-        assert_eq!(w1, w2, "should be the same edge at different cycles, consider increasing T to eliminate boundary effects");
-        assert_eq!(u2-u1, v2-v1, "should be the same edge at different cycles, consider increasing T to eliminate boundary effects");
+        assert_eq!(
+            w1, w2,
+            "should be the same edge at different cycles, consider increasing T to eliminate boundary effects"
+        );
+        assert_eq!(
+            u2 - u1,
+            v2 - v1,
+            "should be the same edge at different cycles, consider increasing T to eliminate boundary effects"
+        );
         let vertex_num_cycle = u2 - u1;
-        let virtual_num_differ =
-            second.initializer.virtual_vertices.len() - first.initializer.virtual_vertices.len();
-        let virtual_repeat_start =
-            first.initializer.virtual_vertices.len() / 2 - virtual_num_differ / 2;
+        let virtual_num_differ = second.initializer.virtual_vertices.len() - first.initializer.virtual_vertices.len();
+        let virtual_repeat_start = first.initializer.virtual_vertices.len() / 2 - virtual_num_differ / 2;
         let virtual_repeat_end = virtual_repeat_start + virtual_num_differ;
         assert_eq!(
             vertex_num_cycle,
@@ -615,8 +567,7 @@ impl FusionBlossomAdaptorExtender {
             second.positions.len() - first.positions.len(),
             "position number mismatch"
         );
-        let measurement_delta_t =
-            first.positions[position_repeat_end].t - first.positions[position_repeat_start].t;
+        let measurement_delta_t = first.positions[position_repeat_end].t - first.positions[position_repeat_start].t;
         let measurement_cycle = first.vertex_to_position_mapping[position_repeat_end].t
             - first.vertex_to_position_mapping[position_repeat_start].t;
         let extender = Self {
@@ -630,9 +581,7 @@ impl FusionBlossomAdaptorExtender {
             measurement_cycle,
         };
         // use the second simulator to verify the correctness (partially)
-        second
-            .assert_eq(&extender.generate(noisy_measurements + 1, false))
-            .unwrap();
+        second.assert_eq(&extender.generate(noisy_measurements + 1, false)).unwrap();
         // return the verified extender
         extender
     }
@@ -655,10 +604,7 @@ impl FusionBlossomAdaptorExtender {
             .initializer
             .weighted_edges
             .reserve_exact(repeat * (edge_repeat_end - edge_repeat_start));
-        result
-            .initializer
-            .virtual_vertices
-            .drain(virtual_repeat_end..);
+        result.initializer.virtual_vertices.drain(virtual_repeat_end..);
         result
             .initializer
             .virtual_vertices
@@ -667,11 +613,7 @@ impl FusionBlossomAdaptorExtender {
         result
             .positions
             .reserve_exact(repeat * (position_repeat_end - position_repeat_start));
-        assert_eq!(
-            base.vertex_to_position_mapping.len(),
-            base.positions.len(),
-            "should be equal"
-        );
+        assert_eq!(base.vertex_to_position_mapping.len(), base.positions.len(), "should be equal");
         if skip_decoding {
             result.vertex_to_position_mapping.drain(..);
             result.edge_to_correction_mapping.drain(..);
@@ -680,9 +622,7 @@ impl FusionBlossomAdaptorExtender {
             result
                 .edge_to_correction_mapping
                 .reserve_exact(repeat * (edge_repeat_end - edge_repeat_start));
-            result
-                .vertex_to_position_mapping
-                .drain(position_repeat_end..);
+            result.vertex_to_position_mapping.drain(position_repeat_end..);
             result
                 .vertex_to_position_mapping
                 .reserve_exact(repeat * (position_repeat_end - position_repeat_start));
@@ -696,11 +636,10 @@ impl FusionBlossomAdaptorExtender {
         for i in 1..repeat + 1 {
             for index in edge_repeat_start..edge_repeat_end {
                 let (u, v, w) = base.initializer.weighted_edges[index];
-                result.initializer.weighted_edges.push((
-                    u + i * vertex_num_cycle,
-                    v + i * vertex_num_cycle,
-                    w,
-                ));
+                result
+                    .initializer
+                    .weighted_edges
+                    .push((u + i * vertex_num_cycle, v + i * vertex_num_cycle, w));
                 if !skip_decoding {
                     result
                         .edge_to_correction_mapping
@@ -709,10 +648,7 @@ impl FusionBlossomAdaptorExtender {
             }
             for index in virtual_repeat_start..virtual_repeat_end {
                 let v = base.initializer.virtual_vertices[index];
-                result
-                    .initializer
-                    .virtual_vertices
-                    .push(v + i * vertex_num_cycle);
+                result.initializer.virtual_vertices.push(v + i * vertex_num_cycle);
             }
             for index in position_repeat_start..position_repeat_end {
                 let mut v = base.positions[index].clone();
@@ -720,10 +656,9 @@ impl FusionBlossomAdaptorExtender {
                 result.positions.push(v);
                 let mut p = base.vertex_to_position_mapping[index].clone();
                 p.t += i * self.measurement_cycle;
-                result.position_to_vertex_mapping.insert(
-                    p.clone(),
-                    i * (position_repeat_end - position_repeat_start) + index,
-                );
+                result
+                    .position_to_vertex_mapping
+                    .insert(p.clone(), i * (position_repeat_end - position_repeat_start) + index);
                 if !skip_decoding {
                     result.vertex_to_position_mapping.push(p);
                 }
@@ -731,11 +666,10 @@ impl FusionBlossomAdaptorExtender {
         }
         for index in edge_repeat_end..base.initializer.weighted_edges.len() {
             let (u, v, w) = base.initializer.weighted_edges[index];
-            result.initializer.weighted_edges.push((
-                u + repeat * vertex_num_cycle,
-                v + repeat * vertex_num_cycle,
-                w,
-            ));
+            result
+                .initializer
+                .weighted_edges
+                .push((u + repeat * vertex_num_cycle, v + repeat * vertex_num_cycle, w));
             if !skip_decoding {
                 result
                     .edge_to_correction_mapping
@@ -744,10 +678,7 @@ impl FusionBlossomAdaptorExtender {
         }
         for index in virtual_repeat_end..base.initializer.virtual_vertices.len() {
             let v = base.initializer.virtual_vertices[index];
-            result
-                .initializer
-                .virtual_vertices
-                .push(v + repeat * vertex_num_cycle);
+            result.initializer.virtual_vertices.push(v + repeat * vertex_num_cycle);
         }
         for index in position_repeat_end..base.positions.len() {
             let mut v = base.positions[index].clone();
@@ -755,10 +686,9 @@ impl FusionBlossomAdaptorExtender {
             result.positions.push(v);
             let mut p = base.vertex_to_position_mapping[index].clone();
             p.t += repeat * self.measurement_cycle;
-            result.position_to_vertex_mapping.insert(
-                p.clone(),
-                repeat * (position_repeat_end - position_repeat_start) + index,
-            );
+            result
+                .position_to_vertex_mapping
+                .insert(p.clone(), repeat * (position_repeat_end - position_repeat_start) + index);
             if !skip_decoding {
                 result.vertex_to_position_mapping.push(p);
             }
@@ -792,10 +722,7 @@ mod tests {
         let p = 0.;
         let pe = 0.1;
         // build simulator
-        let mut simulator = Simulator::new(
-            CodeType::StandardPlanarCode,
-            CodeSize::new(noisy_measurements, d, d),
-        );
+        let mut simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build noise model
         let mut noise_model = NoiseModel::new(&simulator);
@@ -814,7 +741,9 @@ mod tests {
             false,
         );
         // load errors onto the simulator
-        let sparse_error_pattern: SparseErrorPattern = serde_json::from_value(json!({"[0][1][5]":"Z","[0][2][6]":"Z","[0][4][4]":"X","[0][5][7]":"X","[0][9][7]":"Y"})).unwrap();
+        let sparse_error_pattern: SparseErrorPattern =
+            serde_json::from_value(json!({"[0][1][5]":"Z","[0][2][6]":"Z","[0][4][4]":"X","[0][5][7]":"X","[0][9][7]":"Y"}))
+                .unwrap();
         // let sparse_detected_erasures: SparseErasures = serde_json::from_value(json!({"erasures":["[0][1][3]","[0][1][5]","[0][2][6]","[0][4][4]","[0][5][7]","[0][6][6]","[0][9][7]"]})).unwrap();
         simulator
             .load_sparse_error_pattern(&sparse_error_pattern, &noise_model)
@@ -839,10 +768,7 @@ mod tests {
         let noisy_measurements = 0; // perfect measurement
         let p = 0.1;
         // build simulator
-        let mut simulator = Simulator::new(
-            CodeType::StandardPlanarCode,
-            CodeSize::new(noisy_measurements, d, d),
-        );
+        let mut simulator = Simulator::new(CodeType::StandardPlanarCode, CodeSize::new(noisy_measurements, d, d));
         code_builder_sanity_check(&simulator).unwrap();
         // build noise model
         let mut noise_model = NoiseModel::new(&simulator);
@@ -888,23 +814,12 @@ mod tests {
                 "use_combined_probability": false,
                 "max_half_weight": 500,
             });
-            let mut simulator = Simulator::new(
-                CodeType::RotatedPlanarCode,
-                CodeSize::new(noisy_measurements, di, dj),
-            );
+            let mut simulator = Simulator::new(CodeType::RotatedPlanarCode, CodeSize::new(noisy_measurements, di, dj));
             let mut noise_model = NoiseModel::new(&simulator);
-            NoiseModelBuilder::StimNoiseModel.apply(
-                &mut simulator,
-                &mut noise_model,
-                &json!({}),
-                p,
-                0.5,
-                0.,
-            );
+            NoiseModelBuilder::StimNoiseModel.apply(&mut simulator, &mut noise_model, &json!({}), p, 0.5, 0.);
             code_builder_sanity_check(&simulator).unwrap();
             noise_model_sanity_check(&simulator, &noise_model).unwrap();
-            let fusion_decoder =
-                FusionDecoder::new(&simulator, Arc::new(noise_model), &config, 1, true);
+            let fusion_decoder = FusionDecoder::new(&simulator, Arc::new(noise_model), &config, 1, true);
             Arc::try_unwrap(fusion_decoder.adaptor).unwrap()
         };
         let noisy_measurements = 4;

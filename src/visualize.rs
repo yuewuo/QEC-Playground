@@ -73,13 +73,7 @@ impl Visualizer {
         if let Some(file) = file.as_mut() {
             file.set_len(0)?; // truncate the file
             file.seek(SeekFrom::Start(0))?; // move the cursor to the front
-            file.write_all(
-                format!(
-                    "{{\"format\":\"qecp\",\"version\":\"{}\"}}",
-                    env!("CARGO_PKG_VERSION")
-                )
-                .as_bytes(),
-            )?;
+            file.write_all(format!("{{\"format\":\"qecp\",\"version\":\"{}\"}}", env!("CARGO_PKG_VERSION")).as_bytes())?;
             file.sync_all()?;
         }
         Ok(Self {
@@ -121,22 +115,13 @@ impl Visualizer {
 #[cfg(feature = "python_binding")]
 #[pymethods]
 impl Visualizer {
-    pub fn add_component_simulator(
-        &mut self,
-        simulator: &crate::simulator::Simulator,
-    ) -> std::io::Result<()> {
+    pub fn add_component_simulator(&mut self, simulator: &crate::simulator::Simulator) -> std::io::Result<()> {
         self.add_component(simulator)
     }
-    pub fn add_component_noise_model(
-        &mut self,
-        noise_model: &crate::noise_model::NoiseModel,
-    ) -> std::io::Result<()> {
+    pub fn add_component_noise_model(&mut self, noise_model: &crate::noise_model::NoiseModel) -> std::io::Result<()> {
         self.add_component(noise_model)
     }
-    pub fn add_component_model_graph(
-        &mut self,
-        model_graph: &crate::model_graph::ModelGraph,
-    ) -> std::io::Result<()> {
+    pub fn add_component_model_graph(&mut self, model_graph: &crate::model_graph::ModelGraph) -> std::io::Result<()> {
         self.add_component(model_graph)
     }
     pub fn add_component_model_hypergraph(
@@ -211,11 +196,7 @@ pub fn auto_visualize_data_filename() -> String {
 
 #[cfg_attr(feature = "python_binding", pyfunction)]
 pub fn print_visualize_link_with_parameters(filename: String, parameters: Vec<(String, String)>) {
-    let default_port = if cfg!(feature = "python_binding") {
-        51669
-    } else {
-        8069
-    };
+    let default_port = if cfg!(feature = "python_binding") { 51669 } else { 8069 };
     let mut link = format!("http://localhost:{}?filename={}", default_port, filename);
     for (key, value) in parameters.iter() {
         link.push('&');
@@ -224,7 +205,10 @@ pub fn print_visualize_link_with_parameters(filename: String, parameters: Vec<(S
         link.push_str(&urlencoding::encode(value));
     }
     if cfg!(feature = "python_binding") {
-        println!("opening link {} (use `fusion_blossom.open_visualizer(filename)` to start a server and open it in browser)", link)
+        println!(
+            "opening link {} (use `fusion_blossom.open_visualizer(filename)` to start a server and open it in browser)",
+            link
+        )
     } else {
         println!("opening link {} (start local server by running ./visualize/server.sh) or call `node index.js <link>` to render locally", link)
     }

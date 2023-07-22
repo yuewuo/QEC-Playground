@@ -72,10 +72,7 @@ impl ErasureGraph {
 
     /// get mutable `self.nodes[t][i][j]` without position check when compiled in release mode
     #[inline]
-    pub fn get_node_mut(
-        &'_ mut self,
-        position: &Position,
-    ) -> &'_ mut Option<Box<ErasureGraphNode>> {
+    pub fn get_node_mut(&'_ mut self, position: &Position) -> &'_ mut Option<Box<ErasureGraphNode>> {
         &mut self.nodes[position.t][position.i][position.j]
     }
 
@@ -97,15 +94,12 @@ impl ErasureGraph {
             }
             let noise_model_node = noise_model.get_node_unwrap(position);
             // whether it's possible to have erasure error at this node
-            let possible_erasure_error = noise_model_node.erasure_error_rate > 0.
-                || noise_model_node.correlated_erasure_error_rates.is_some()
-                || {
+            let possible_erasure_error =
+                noise_model_node.erasure_error_rate > 0. || noise_model_node.correlated_erasure_error_rates.is_some() || {
                     let node = simulator.get_node_unwrap(position);
                     if let Some(gate_peer) = node.gate_peer.as_ref() {
                         let peer_noise_model_node = noise_model.get_node_unwrap(gate_peer);
-                        if let Some(correlated_erasure_error_rates) =
-                            &peer_noise_model_node.correlated_erasure_error_rates
-                        {
+                        if let Some(correlated_erasure_error_rates) = &peer_noise_model_node.correlated_erasure_error_rates {
                             correlated_erasure_error_rates.error_probability() > 0.
                         } else {
                             false
@@ -142,27 +136,17 @@ impl ErasureGraph {
                         // edge only happen when qubit type is the same (to isolate X and Z decoding graph in CSS surface code)
                         let is_same_type = node1.qubit_type == node2.qubit_type;
                         if is_same_type {
-                            erasure_edges.push(ErasureEdge::Connection(
-                                position1.clone(),
-                                position2.clone(),
-                            ));
+                            erasure_edges.push(ErasureEdge::Connection(position1.clone(), position2.clone()));
                         }
                     }
                 }
-                self.nodes[position.t][position.i][position.j] = Some(Box::new(ErasureGraphNode {
-                    erasure_edges: erasure_edges,
-                }))
+                self.nodes[position.t][position.i][position.j] = Some(Box::new(ErasureGraphNode { erasure_edges }))
             }
         });
     }
 
     /// build erasure graph given the simulator and the noise model
-    pub fn build(
-        &mut self,
-        simulator: &mut Simulator,
-        noise_model: Arc<NoiseModel>,
-        parallel: usize,
-    ) {
+    pub fn build(&mut self, simulator: &mut Simulator, noise_model: Arc<NoiseModel>, parallel: usize) {
         debug_assert!({
             let mut state_clean = true;
             simulator_iter!(simulator, position, _node, {
@@ -212,10 +196,7 @@ impl ErasureGraph {
                             !self.is_node_exist(position),
                             "critical bug: two parallel tasks should not work on the same vertex"
                         );
-                        std::mem::swap(
-                            self.get_node_mut(position),
-                            &mut instance.get_node_mut(position),
-                        );
+                        std::mem::swap(self.get_node_mut(position), &mut instance.get_node_mut(position));
                     }
                 );
             }
@@ -257,9 +238,7 @@ pub struct ErasureGraphModifier<Weight> {
 
 impl<Weight> ErasureGraphModifier<Weight> {
     pub fn new() -> Self {
-        Self {
-            modified: Vec::new(),
-        }
+        Self { modified: Vec::new() }
     }
     /// record the modified edge
     pub fn push_modified_edge(&mut self, erasure_edge: ErasureEdge, original_weight: Weight) {
@@ -271,8 +250,8 @@ impl<Weight> ErasureGraphModifier<Weight> {
     }
     /// retrieve the last modified edge, panic if no more modified edges
     pub fn pop_modified_edge(&mut self) -> (ErasureEdge, Weight) {
-        self.modified.pop().expect(
-            "no more modified edges, please check `has_modified_edges` before calling this method",
-        )
+        self.modified
+            .pop()
+            .expect("no more modified edges, please check `has_modified_edges` before calling this method")
     }
 }

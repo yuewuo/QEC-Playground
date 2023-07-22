@@ -108,10 +108,7 @@ impl TailoredModelGraphEdge {
 impl TailoredModelGraph {
     /// initialize the structure corresponding to a `Simulator`
     pub fn new(simulator: &Simulator) -> Self {
-        assert!(
-            simulator.volume() > 0,
-            "cannot build graph out of zero-sized simulator"
-        );
+        assert!(simulator.volume() > 0, "cannot build graph out of zero-sized simulator");
         Self {
             nodes: (0..simulator.height)
                 .map(|t| {
@@ -121,10 +118,7 @@ impl TailoredModelGraph {
                                 .map(|j| {
                                     let position = &pos!(t, i, j);
                                     // tailored model graph contains both real node and virtual node at measurement round
-                                    if t != 0
-                                        && t % simulator.measurement_cycles == 0
-                                        && simulator.is_node_exist(position)
-                                    {
+                                    if t != 0 && t % simulator.measurement_cycles == 0 && simulator.is_node_exist(position) {
                                         let node = simulator.get_node_unwrap(position);
                                         if node.gate_type.is_measurement() {
                                             // only define model graph node for measurements
@@ -158,10 +152,7 @@ impl TailoredModelGraph {
     }
 
     /// any valid position of the simulator is a valid position in model graph, but only some of these positions corresponds a valid node in model graph
-    pub fn get_node(
-        &'_ self,
-        position: &Position,
-    ) -> &'_ Option<Box<TripleTailoredModelGraphNode>> {
+    pub fn get_node(&'_ self, position: &Position) -> &'_ Option<Box<TripleTailoredModelGraphNode>> {
         &self.nodes[position.t][position.i][position.j]
     }
 
@@ -176,13 +167,8 @@ impl TailoredModelGraph {
     }
 
     /// get mutable reference `self.nodes[t][i][j]` and unwrap
-    pub fn get_node_mut_unwrap(
-        &'_ mut self,
-        position: &Position,
-    ) -> &'_ mut TripleTailoredModelGraphNode {
-        self.nodes[position.t][position.i][position.j]
-            .as_mut()
-            .unwrap()
+    pub fn get_node_mut_unwrap(&'_ mut self, position: &Position) -> &'_ mut TripleTailoredModelGraphNode {
+        self.nodes[position.t][position.i][position.j].as_mut().unwrap()
     }
 
     /// build model graph given the simulator
@@ -194,12 +180,9 @@ impl TailoredModelGraph {
         use_combined_probability: bool,
     ) {
         match weight_function {
-            WeightFunction::Autotune => self.build_with_weight_function(
-                simulator,
-                noise_model,
-                weight_function::autotune,
-                use_combined_probability,
-            ),
+            WeightFunction::Autotune => {
+                self.build_with_weight_function(simulator, noise_model, weight_function::autotune, use_combined_probability)
+            }
             WeightFunction::AutotuneImproved => self.build_with_weight_function(
                 simulator,
                 noise_model,
@@ -242,11 +225,7 @@ impl TailoredModelGraph {
     /// unfixed, meaning there is a lot room for such optimization.
     /// Indeed, with this optimization, this tailored SC decoder will function just like a regular
     /// decoder in the depolarizing noise, which satisfy our expectation.
-    pub fn compute_unfixed_stabilizers(
-        &mut self,
-        simulator: &mut Simulator,
-        noise_model: &NoiseModel,
-    ) {
+    pub fn compute_unfixed_stabilizers(&mut self, simulator: &mut Simulator, noise_model: &NoiseModel) {
         let all_possible_errors = ErrorType::all_possible_errors();
         simulator.clear_all_errors();
         self.unfixed_stabilizers.clear();
@@ -302,15 +281,12 @@ impl TailoredModelGraph {
         simulator_iter!(simulator, position, {
             let noise_model_node = noise_model.get_node_unwrap(position);
             // whether it's possible to have erasure error at this node
-            let possible_erasure_error = noise_model_node.erasure_error_rate > 0.
-                || noise_model_node.correlated_erasure_error_rates.is_some()
-                || {
+            let possible_erasure_error =
+                noise_model_node.erasure_error_rate > 0. || noise_model_node.correlated_erasure_error_rates.is_some() || {
                     let node = simulator.get_node_unwrap(position);
                     if let Some(gate_peer) = node.gate_peer.as_ref() {
                         let peer_noise_model_node = noise_model.get_node_unwrap(gate_peer);
-                        if let Some(correlated_erasure_error_rates) =
-                            &peer_noise_model_node.correlated_erasure_error_rates
-                        {
+                        if let Some(correlated_erasure_error_rates) = &peer_noise_model_node.correlated_erasure_error_rates {
                             correlated_erasure_error_rates.error_probability() > 0.
                         } else {
                             false
@@ -321,17 +297,11 @@ impl TailoredModelGraph {
                 };
             for error in all_possible_errors.iter() {
                 let p = match error {
-                    Either::Left(error_type) => {
-                        noise_model_node.pauli_error_rates.error_rate(error_type)
-                    }
-                    Either::Right(error_type) => {
-                        match &noise_model_node.correlated_pauli_error_rates {
-                            Some(correlated_pauli_error_rates) => {
-                                correlated_pauli_error_rates.error_rate(error_type)
-                            }
-                            None => 0.,
-                        }
-                    }
+                    Either::Left(error_type) => noise_model_node.pauli_error_rates.error_rate(error_type),
+                    Either::Right(error_type) => match &noise_model_node.correlated_pauli_error_rates {
+                        Some(correlated_pauli_error_rates) => correlated_pauli_error_rates.error_rate(error_type),
+                        None => 0.,
+                    },
                 }; // probability of this error to occur
                 let is_erasure = possible_erasure_error && error.is_left();
                 if p > 0. || is_erasure {
@@ -379,9 +349,7 @@ impl TailoredModelGraph {
                         let mut sparse_correction = sparse_correction.deref().clone();
                         let mut fixed_positions = vec![];
                         for position in sparse_measurement_real.iter() {
-                            if let Some((errors, correction)) =
-                                self.unfixed_stabilizers.get(position)
-                            {
+                            if let Some((errors, correction)) = self.unfixed_stabilizers.get(position) {
                                 sparse_errors.extend(errors.deref());
                                 sparse_correction.extend(correction.deref());
                             } else {
@@ -457,29 +425,23 @@ impl TailoredModelGraph {
                             );
                             for y in 0..4 {
                                 for z in 0..4 {
-                                    if (sparse_measurement[y].i, sparse_measurement[y].j)
-                                        == left_down
-                                        && (sparse_measurement[z].i, sparse_measurement[z].j)
-                                            == right_down
+                                    if (sparse_measurement[y].i, sparse_measurement[y].j) == left_down
+                                        && (sparse_measurement[z].i, sparse_measurement[z].j) == right_down
                                     {
                                         up = Some(sparse_measurement[x].clone());
                                     }
                                     if (sparse_measurement[y].i, sparse_measurement[y].j) == left_up
-                                        && (sparse_measurement[z].i, sparse_measurement[z].j)
-                                            == right_up
+                                        && (sparse_measurement[z].i, sparse_measurement[z].j) == right_up
                                     {
                                         down = Some(sparse_measurement[x].clone());
                                     }
                                     if (sparse_measurement[y].i, sparse_measurement[y].j) == left_up
-                                        && (sparse_measurement[z].i, sparse_measurement[z].j)
-                                            == left_down
+                                        && (sparse_measurement[z].i, sparse_measurement[z].j) == left_down
                                     {
                                         right = Some(sparse_measurement[x].clone());
                                     }
-                                    if (sparse_measurement[y].i, sparse_measurement[y].j)
-                                        == right_up
-                                        && (sparse_measurement[z].i, sparse_measurement[z].j)
-                                            == right_down
+                                    if (sparse_measurement[y].i, sparse_measurement[y].j) == right_up
+                                        && (sparse_measurement[z].i, sparse_measurement[z].j) == right_down
                                     {
                                         left = Some(sparse_measurement[x].clone());
                                     }
@@ -579,15 +541,12 @@ impl TailoredModelGraph {
         if !node.all_edges.contains_key(target) {
             node.all_edges.insert(target.clone(), Vec::new());
         }
-        node.all_edges
-            .get_mut(target)
-            .unwrap()
-            .push(TailoredModelGraphEdge {
-                probability: probability,
-                weight: weight,
-                error_pattern: error_pattern,
-                correction: correction,
-            })
+        node.all_edges.get_mut(target).unwrap().push(TailoredModelGraphEdge {
+            probability,
+            weight,
+            error_pattern,
+            correction,
+        })
     }
 
     /// add asymmetric edge from `source` to `target` in positive direction; in order to create symmetric edge, call this function twice with reversed input
@@ -774,12 +733,8 @@ impl TailoredModelGraph {
     }
 
     /// if there are multiple edges connecting two stabilizer measurements, elect the best one
-    pub fn elect_edges<F>(
-        &mut self,
-        simulator: &Simulator,
-        use_combined_probability: bool,
-        weight_of: F,
-    ) where
+    pub fn elect_edges<F>(&mut self, simulator: &Simulator, use_combined_probability: bool, weight_of: F)
+    where
         F: Fn(f64) -> f64 + Copy,
     {
         simulator_iter!(simulator, position, delta_t => simulator.measurement_cycles, if self.is_node_exist(position) {
@@ -818,9 +773,7 @@ impl TailoredModelGraph {
         // sanity check, two nodes on one edge have the same edge information, should be a cheap sanity check
         debug_assert!({
             let mut sanity_check_passed = true;
-            for t in (simulator.measurement_cycles..simulator.height)
-                .step_by(simulator.measurement_cycles)
-            {
+            for t in (simulator.measurement_cycles..simulator.height).step_by(simulator.measurement_cycles) {
                 simulator_iter!(simulator, position, node, t => t, if node.gate_type.is_measurement() {
                     for idx in 0..3 {
                         let node = &self.get_node_unwrap(position)[idx];  // idx = 0: positive, 1: negative

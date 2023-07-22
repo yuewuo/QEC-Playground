@@ -35,10 +35,7 @@ pub struct DefectVertices(Vec<Position>);
 
 impl DefectVertices {
     pub fn new(mut defect_vertices: Vec<Position>) -> Self {
-        assert!(
-            !defect_vertices.is_empty(),
-            "defect vertices cannot be empty"
-        );
+        assert!(!defect_vertices.is_empty(), "defect vertices cannot be empty");
         defect_vertices.sort();
         Self(defect_vertices)
     }
@@ -79,10 +76,7 @@ impl<'de> Visitor<'de> for DefectVerticesVisitor {
             positions.push(position_visitor.visit_str(position)?);
         }
         if positions.is_empty() {
-            return Err(serde::de::Error::invalid_value(
-                serde::de::Unexpected::Str(s),
-                &self,
-            ));
+            return Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(s), &self));
         }
         Ok(DefectVertices::new(positions))
     }
@@ -158,16 +152,11 @@ impl ModelHyperedgeGroup {
     pub fn new(hyperedge: ModelHyperedge) -> Self {
         Self {
             all_hyperedges: vec![hyperedge.clone()],
-            hyperedge: hyperedge,
+            hyperedge,
         }
     }
-    pub fn add<F>(
-        &mut self,
-        hyperedge: ModelHyperedge,
-        use_combined_probability: bool,
-        use_brief_edge: bool,
-        weight_of: F,
-    ) where
+    pub fn add<F>(&mut self, hyperedge: ModelHyperedge, use_combined_probability: bool, use_brief_edge: bool, weight_of: F)
+    where
         F: Fn(f64) -> f64 + Copy,
     {
         let is_new_edge_better = hyperedge.probability > self.hyperedge.probability;
@@ -196,22 +185,12 @@ impl ModelHyperedgeGroup {
         self.hyperedge.probability = new_probability;
         self.hyperedge.weight = weight_of(new_probability);
     }
-    pub fn merge<F>(
-        &mut self,
-        other: Self,
-        use_combined_probability: bool,
-        use_brief_edge: bool,
-        weight_of: F,
-    ) where
+    pub fn merge<F>(&mut self, other: Self, use_combined_probability: bool, use_brief_edge: bool, weight_of: F)
+    where
         F: Fn(f64) -> f64 + Copy,
     {
         for hyperedge in other.all_hyperedges.into_iter() {
-            self.add(
-                hyperedge,
-                use_combined_probability,
-                use_brief_edge,
-                weight_of,
-            );
+            self.add(hyperedge, use_combined_probability, use_brief_edge, weight_of);
         }
     }
 }
@@ -243,10 +222,7 @@ impl ModelHyperedge {
 impl ModelHypergraph {
     /// initialize the structure corresponding to a `Simulator`
     pub fn new(simulator: &Simulator) -> Self {
-        assert!(
-            simulator.volume() > 0,
-            "cannot build model graph out of zero-sized simulator"
-        );
+        assert!(simulator.volume() > 0, "cannot build model graph out of zero-sized simulator");
         Self {
             vertex_indices: HashMap::new(),
             edge_indices: HashMap::new(),
@@ -323,15 +299,12 @@ impl ModelHypergraph {
             }
             let noise_model_node = noise_model.get_node_unwrap(position);
             // whether it's possible to have erasure error at this node
-            let possible_erasure_error = noise_model_node.erasure_error_rate > 0.
-                || noise_model_node.correlated_erasure_error_rates.is_some()
-                || {
+            let possible_erasure_error =
+                noise_model_node.erasure_error_rate > 0. || noise_model_node.correlated_erasure_error_rates.is_some() || {
                     let node = simulator.get_node_unwrap(position);
                     if let Some(gate_peer) = node.gate_peer.as_ref() {
                         let peer_noise_model_node = noise_model.get_node_unwrap(gate_peer);
-                        if let Some(correlated_erasure_error_rates) =
-                            &peer_noise_model_node.correlated_erasure_error_rates
-                        {
+                        if let Some(correlated_erasure_error_rates) = &peer_noise_model_node.correlated_erasure_error_rates {
                             correlated_erasure_error_rates.error_probability() > 0.
                         } else {
                             false
@@ -342,17 +315,11 @@ impl ModelHypergraph {
                 };
             for error in all_possible_errors.iter() {
                 let p = match error {
-                    Either::Left(error_type) => {
-                        noise_model_node.pauli_error_rates.error_rate(error_type)
-                    }
-                    Either::Right(error_type) => {
-                        match &noise_model_node.correlated_pauli_error_rates {
-                            Some(correlated_pauli_error_rates) => {
-                                correlated_pauli_error_rates.error_rate(error_type)
-                            }
-                            None => 0.,
-                        }
-                    }
+                    Either::Left(error_type) => noise_model_node.pauli_error_rates.error_rate(error_type),
+                    Either::Right(error_type) => match &noise_model_node.correlated_pauli_error_rates {
+                        Some(correlated_pauli_error_rates) => correlated_pauli_error_rates.error_rate(error_type),
+                        None => 0.,
+                    },
                 }; // probability of this error to occur
                 let is_erasure = possible_erasure_error && error.is_left();
                 if p > 0. || is_erasure {
@@ -385,8 +352,7 @@ impl ModelHypergraph {
                     // println!("{:?} at {} will cause syndrome {:?}", error, position, sparse_measurement);
                     for position in sparse_measurement.iter() {
                         if !self.vertex_indices.contains_key(position) {
-                            self.vertex_indices
-                                .insert(position.clone(), self.vertex_positions.len());
+                            self.vertex_indices.insert(position.clone(), self.vertex_positions.len());
                             self.vertex_positions.push(position.clone());
                         }
                     }
@@ -406,8 +372,7 @@ impl ModelHypergraph {
                             weight_of,
                         );
                     } else {
-                        self.edge_indices
-                            .insert(defect_vertices.clone(), self.weighted_edges.len());
+                        self.edge_indices.insert(defect_vertices.clone(), self.weighted_edges.len());
                         self.weighted_edges
                             .push((defect_vertices, ModelHyperedgeGroup::new(model_hyperedge)));
                     }
@@ -480,8 +445,7 @@ impl ModelHypergraph {
                 // copy vertex positions
                 for position in instance.vertex_positions.iter() {
                     if !self.vertex_indices.contains_key(position) {
-                        self.vertex_indices
-                            .insert(position.clone(), self.vertex_positions.len());
+                        self.vertex_indices.insert(position.clone(), self.vertex_positions.len());
                         self.vertex_positions.push(position.clone());
                     }
                 }
@@ -496,8 +460,7 @@ impl ModelHypergraph {
                             weight_of,
                         );
                     } else {
-                        self.edge_indices
-                            .insert(defect_vertices.clone(), self.weighted_edges.len());
+                        self.edge_indices.insert(defect_vertices.clone(), self.weighted_edges.len());
                         self.weighted_edges.push((defect_vertices, hyperedge_group));
                     }
                 }
@@ -509,9 +472,7 @@ impl ModelHypergraph {
         // scale all the edges
         let mut maximum_weight = 0.;
         for (_, hyperedge_group) in self.weighted_edges.iter() {
-            if hyperedge_group.hyperedge.probability > 0.
-                && hyperedge_group.hyperedge.weight > maximum_weight
-            {
+            if hyperedge_group.hyperedge.probability > 0. && hyperedge_group.hyperedge.weight > maximum_weight {
                 maximum_weight = hyperedge_group.hyperedge.weight;
             }
         }
@@ -519,20 +480,12 @@ impl ModelHypergraph {
         for (defect_vertices, hyperedge_group) in self.weighted_edges.iter() {
             if hyperedge_group.hyperedge.probability > 0. {
                 // only add those possible edges; for erasures, handle later
-                let scaled_weight =
-                    hyperedge_group.hyperedge.weight * max_weight as f64 / maximum_weight;
+                let scaled_weight = hyperedge_group.hyperedge.weight * max_weight as f64 / maximum_weight;
                 let int_weight = scaled_weight.round();
                 assert!(int_weight.is_finite(), "weight must be normal");
                 assert!(int_weight >= 0., "weight must be non-negative");
-                assert!(
-                    int_weight <= max_weight as f64,
-                    "weight must be smaller than max weight"
-                );
-                let vertex_indices: Vec<_> = defect_vertices
-                    .0
-                    .iter()
-                    .map(|x| self.vertex_indices[x])
-                    .collect();
+                assert!(int_weight <= max_weight as f64, "weight must be smaller than max weight");
+                let vertex_indices: Vec<_> = defect_vertices.0.iter().map(|x| self.vertex_indices[x]).collect();
                 weighted_edges.push((vertex_indices, int_weight as usize));
             }
         }
