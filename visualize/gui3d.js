@@ -1352,7 +1352,6 @@ export async function refresh_qecp_data() {
                     j: j,
                     color: "black",
                 }
-                console.log(unfixed_mesh)
                 scene.add(unfixed_mesh)
                 tailored_unfixed_stabilizer_meshes.push(unfixed_mesh)
             }
