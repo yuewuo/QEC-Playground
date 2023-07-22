@@ -1333,7 +1333,7 @@ export async function refresh_qecp_data() {
                 }
             }
             // create geometries for unfixed stabilizers
-            for (const position_str of qecp_data.tailored_model_graph.unfixed_stabilizers) {
+            for (const position_str in qecp_data.tailored_model_graph.unfixed_stabilizers) {
                 const { t, i, j } = get_position(position_str)
                 const position = qecp_data.simulator.positions[i][j]
                 const display_position = { t: t + t_bias, x: position.x, y: position.y }
