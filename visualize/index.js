@@ -107,7 +107,7 @@ const App = {
         // load case
         this.show_case(0)  // load the first case
         this.case_num = qecp_data.cases.length
-        for (let idx=0; idx < qecp_data.cases.length; idx++) {
+        for (let idx = 0; idx < qecp_data.cases.length; idx++) {
             let this_case = qecp_data.cases[idx]
             this.case_labels.push(`[${idx}]`)
         }
@@ -284,11 +284,13 @@ const App = {
                 let neighbor_edges = []
                 for (let edge_index of incident_edges) {
                     const [defect_vertices_str, hyperedge_group] = qecp_data.model_hypergraph.weighted_edges[edge_index]
-                    const defect_vertices = gui3d.get_defect_vertices(defect_vertices_str).map(x => { return {
-                        vertex_index: qecp_data.model_hypergraph.vertex_indices[gui3d.to_position_str(x)],
-                        position_str: gui3d.to_position_str(x),
-                        tij: x,
-                    }})
+                    const defect_vertices = gui3d.get_defect_vertices(defect_vertices_str).map(x => {
+                        return {
+                            vertex_index: qecp_data.model_hypergraph.vertex_indices[gui3d.to_position_str(x)],
+                            position_str: gui3d.to_position_str(x),
+                            tij: x,
+                        }
+                    })
                     neighbor_edges.push({
                         edge_index: edge_index,
                         probability: hyperedge_group.hyperedge.p,
@@ -304,11 +306,13 @@ const App = {
             if (this.current_selected.type == "model_hypergraph_edge") {
                 let edge_index = this.current_selected.edge_index
                 let [defect_vertices_str, hyperedge_group] = qecp_data.model_hypergraph.weighted_edges[edge_index]
-                const defect_vertices = gui3d.get_defect_vertices(defect_vertices_str).map(x => { return {
-                    vertex_index: qecp_data.model_hypergraph.vertex_indices[gui3d.to_position_str(x)],
-                    position_str: gui3d.to_position_str(x),
-                    tij: x,
-                }})
+                const defect_vertices = gui3d.get_defect_vertices(defect_vertices_str).map(x => {
+                    return {
+                        vertex_index: qecp_data.model_hypergraph.vertex_indices[gui3d.to_position_str(x)],
+                        position_str: gui3d.to_position_str(x),
+                        tij: x,
+                    }
+                })
                 let all_hyperedges = []
                 for (const hyperedge of hyperedge_group.all_hyperedges) {
                     let error_pattern = []
@@ -358,7 +362,7 @@ const App = {
             }
         },
         async update_mathjax() {
-            for (let i=0; i<100; ++i) await Vue.nextTick()
+            for (let i = 0; i < 100; ++i) await Vue.nextTick()
             await MathJax.typesetPromise()
         },
         build_data_pos(pos_str) {
@@ -382,7 +386,7 @@ const App = {
         async ref_btn_click(pos_str) {
             await this.jump_to("idle_gate", this.build_data_pos(pos_str), true)
         },
-        async jump_to(type, data, is_click=true) {
+        async jump_to(type, data, is_click = true) {
             let current_ref = is_click ? gui3d.current_selected : gui3d.current_hover
             await Vue.nextTick()
             if (type == null) {
@@ -397,8 +401,8 @@ const App = {
         update_export_resolutions() {
             this.export_resolution_options.splice(0, this.export_resolution_options.length)
             let exists_in_new_resolution = false
-            for (let i=-100; i<100; ++i) {
-                let scale = 1 * Math.pow(10, i/10)
+            for (let i = -100; i < 100; ++i) {
+                let scale = 1 * Math.pow(10, i / 10)
                 let width = Math.round(this.sizes.canvas_width * scale)
                 let height = Math.round(this.sizes.canvas_height * scale)
                 if (width > 5000 || height > 5000) {  // to large, likely exceeds WebGL maximum buffer size
@@ -508,8 +512,8 @@ const App = {
         model_graph_region_options() {
             let regions = gui3d.model_graph_regions.value
             let options = []
-            for (let i=0; i<regions; ++i) {
-                options.push({ label: (i==0?"regions: ":"") + `${i}`, value: i, color: gui3d.sequential_colors[i][0] })
+            for (let i = 0; i < regions; ++i) {
+                options.push({ label: (i == 0 ? "regions: " : "") + `${i}`, value: i, color: gui3d.sequential_colors[i][0] })
             }
             return options
         },
@@ -529,7 +533,7 @@ if (!is_mock) {
     while (!patch_done.value) {
         await sleep(50)
     }
-    for (let i=0; i<10; ++i) {
+    for (let i = 0; i < 10; ++i) {
         await sleep(10)
         await Vue.nextTick()
     }
