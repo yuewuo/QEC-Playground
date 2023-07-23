@@ -337,7 +337,7 @@ impl TailoredModelGraph {
                         .iter()
                         .filter(|pos| self.unfixed_stabilizers.contains_key(pos))
                         .count();
-                    if unfixed_count > 0 && sparse_measurement_real.len() - unfixed_count == 2 {
+                    if unfixed_count > 0 && (1..=2).contains(&(sparse_measurement_real.len() - unfixed_count)) {
                         let mut sparse_errors = sparse_errors.deref().clone();
                         let mut sparse_correction = sparse_correction.deref().clone();
                         let mut fixed_positions = vec![];
@@ -349,9 +349,25 @@ impl TailoredModelGraph {
                                 fixed_positions.push(position)
                             }
                         }
-                        assert!(fixed_positions.len() == 2);
                         let position1 = &fixed_positions[0];
-                        let position2 = &fixed_positions[1];
+                        let position2 = match fixed_positions.len() {
+                            1 => {
+                                let mut position2 = None;
+                                for position in sparse_measurement_real.iter() {
+                                    if let Some((errors, correction)) = self.unfixed_stabilizers.get(position) {
+                                        // remove the vertex
+                                        sparse_errors.extend(errors.deref());
+                                        sparse_correction.extend(correction.deref());
+                                        position2 = Some(position.clone());
+                                        break;
+                                    }
+                                }
+                                position2.unwrap()
+                            }
+                            2 => fixed_positions[1].clone(),
+                            _ => unreachable!(),
+                        };
+                        let position2 = &position2;
                         let node1 = simulator.get_node_unwrap(position1);
                         let node2 = simulator.get_node_unwrap(position2);
                         debug_assert!({
