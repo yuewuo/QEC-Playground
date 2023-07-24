@@ -17,3 +17,6 @@ cargo run --release -- tool benchmark '[9]' '[1]' '[0.10]' --bias-eta 1e100 --co
 
 # Tailored SC decoder: bell initialization with high bias
 cargo run --release -- tool benchmark '[9]' '[1]' '[0.10]' --bias-eta 1e100 --code-type rotated-tailored-code --decoder tailored-mwpm --decoder-config '{"pcmg":true,"naive_residual_decoding":true,"log_matchings":true}' --noise-model tailored-sc-bell-init-phenomenological --ignore-logical-j --enable-visualizer --visualizer-filename tailored-cc-bell-init-high-bias.json --visualizer-model-graph --visualizer-tailored-model-graph --visualizer-model-hypergraph --deterministic-seed 123 -m 200
+
+# Tailored SC decoder: code capacity with high bias
+cargo run --release -- tool benchmark '[7]' '[0]' '[0.10]' --bias-eta 1e100 --code-type rotated-tailored-code --decoder tailored-mwpm --decoder-config '{"pcmg":true,"naive_residual_decoding":true,"log_matchings":true}' --ignore-logical-j --enable-visualizer --visualizer-filename tailored-cc-no-init-high-bias.json --visualizer-model-graph --visualizer-tailored-model-graph --visualizer-model-hypergraph --deterministic-seed 123 -m 200
