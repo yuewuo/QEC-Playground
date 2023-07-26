@@ -63,6 +63,10 @@ pub struct TailoredMWPMDecoderConfig {
     pub original_residual_corner_weights: bool,
     #[serde(default = "tailored_mwpm_default_configs::log_matchings")]
     pub log_matchings: bool,
+    /// this is an optimization that is good for logical error rate at very small bias,
+    /// but will have negative effect at large bias
+    #[serde(default = "tailored_mwpm_default_configs::use_unfixed_stabilizer_edges")]
+    pub use_unfixed_stabilizer_edges: bool,
 }
 
 pub mod tailored_mwpm_default_configs {
@@ -79,6 +83,9 @@ pub mod tailored_mwpm_default_configs {
         false
     }
     pub fn log_matchings() -> bool {
+        false
+    }
+    pub fn use_unfixed_stabilizer_edges() -> bool {
         false
     }
 }
@@ -102,6 +109,7 @@ impl TailoredMWPMDecoder {
             noise_model.as_ref(),
             &config.weight_function,
             config.use_combined_probability,
+            config.use_unfixed_stabilizer_edges,
         );
         let tailored_model_graph = Arc::new(tailored_model_graph);
         // build complete model graph

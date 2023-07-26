@@ -29,3 +29,10 @@ cargo run --release -- tool benchmark '[3]' '[3]' '[0.01]' --code-type standard-
 cargo run --release -- tool benchmark '[5]' '[5]' '[0.01]' --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"log_matchings":true}' --enable-visualizer --visualizer-filename rotated-surface-code-decoding-graph-d5.json --visualizer-model-graph --visualizer-model-hypergraph --deterministic-seed 123 -m 200
 
 cargo run --release -- tool benchmark '[5]' '[5]' '[0.01]' --code-type standard-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"log_matchings":true}' --enable-visualizer --visualizer-filename standard-surface-code-decoding-graph-d5.json --visualizer-model-graph --visualizer-model-hypergraph --deterministic-seed 123 -m 200
+
+
+# test the new optimization flag: use_unfixed_stabilizer_edges
+
+cargo run --release -- tool benchmark '[7]' '[1]' '[0.10]' --bias-eta 1e300 --code-type rotated-tailored-code --decoder tailored-mwpm --decoder-config '{"pcmg":true,"naive_residual_decoding":true,"log_matchings":true,"use_unfixed_stabilizer_edges":true}' --noise-model tailored-sc-bell-init-phenomenological --ignore-logical-j --enable-visualizer --visualizer-filename tailored-cc-bell-init-with-opt.json --visualizer-model-graph --visualizer-tailored-model-graph --visualizer-model-hypergraph --deterministic-seed 123 -m 200
+
+cargo run --release -- tool benchmark '[7]' '[1]' '[0.10]' --bias-eta 1e300 --code-type rotated-tailored-code --decoder tailored-mwpm --decoder-config '{"pcmg":true,"naive_residual_decoding":true,"log_matchings":true}' --noise-model tailored-sc-bell-init-phenomenological --ignore-logical-j --enable-visualizer --visualizer-filename tailored-cc-bell-init-no-opt.json --visualizer-model-graph --visualizer-tailored-model-graph --visualizer-model-hypergraph --deterministic-seed 123 -m 200

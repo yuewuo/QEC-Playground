@@ -176,22 +176,29 @@ impl TailoredModelGraph {
         noise_model: &NoiseModel,
         weight_function: &WeightFunction,
         use_combined_probability: bool,
+        use_unfixed_stabilizer_edges: bool,
     ) {
         match weight_function {
-            WeightFunction::Autotune => {
-                self.build_with_weight_function(simulator, noise_model, weight_function::autotune, use_combined_probability)
-            }
+            WeightFunction::Autotune => self.build_with_weight_function(
+                simulator,
+                noise_model,
+                weight_function::autotune,
+                use_combined_probability,
+                use_unfixed_stabilizer_edges,
+            ),
             WeightFunction::AutotuneImproved => self.build_with_weight_function(
                 simulator,
                 noise_model,
                 weight_function::autotune_improved,
                 use_combined_probability,
+                use_unfixed_stabilizer_edges,
             ),
             WeightFunction::Unweighted => self.build_with_weight_function(
                 simulator,
                 noise_model,
                 weight_function::unweighted,
                 use_combined_probability,
+                use_unfixed_stabilizer_edges,
             ),
         }
     }
@@ -252,6 +259,7 @@ impl TailoredModelGraph {
         noise_model: &NoiseModel,
         weight_of: F,
         use_combined_probability: bool,
+        use_unfixed_stabilizer_edges: bool,
     ) where
         F: Fn(f64) -> f64 + Copy,
     {
@@ -337,7 +345,10 @@ impl TailoredModelGraph {
                         .iter()
                         .filter(|pos| self.unfixed_stabilizers.contains_key(pos))
                         .count();
-                    if unfixed_count > 0 && (1..=2).contains(&(sparse_measurement_real.len() - unfixed_count)) {
+                    if use_unfixed_stabilizer_edges
+                        && unfixed_count > 0
+                        && (1..=2).contains(&(sparse_measurement_real.len() - unfixed_count))
+                    {
                         let mut sparse_errors = sparse_errors.deref().clone();
                         let mut sparse_correction = sparse_correction.deref().clone();
                         let mut fixed_positions = vec![];

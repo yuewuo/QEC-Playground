@@ -89,6 +89,8 @@ pub struct BenchmarkDebugPrintDecoderConfig {
     #[serde(alias = "ucp")] // abbreviation
     #[serde(default = "mwpm_default_configs::use_combined_probability")]
     pub use_combined_probability: bool,
+    #[serde(default = "tailored_mwpm_default_configs::use_unfixed_stabilizer_edges")]
+    pub use_unfixed_stabilizer_edges: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Deserialize)]
@@ -514,6 +516,7 @@ impl BenchmarkParameters {
                     noise_model,
                     &config.weight_function,
                     config.use_combined_probability,
+                    config.use_unfixed_stabilizer_edges,
                 );
                 return Ok(Some(format!(
                     "{}\n",
@@ -529,6 +532,7 @@ impl BenchmarkParameters {
                     noise_model,
                     &config.weight_function,
                     config.use_combined_probability,
+                    config.use_unfixed_stabilizer_edges,
                 );
                 let tailored_model_graph = Arc::new(tailored_model_graph);
                 let mut complete_tailored_model_graph =
@@ -610,6 +614,7 @@ impl BenchmarkParameters {
                     noise_model_graph.as_ref(),
                     &config.weight_function,
                     config.use_combined_probability,
+                    config.use_unfixed_stabilizer_edges,
                 );
                 new_visualizer
                     .add_component(&tailored_model_graph)
