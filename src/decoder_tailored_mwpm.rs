@@ -216,7 +216,7 @@ impl TailoredMWPMDecoder {
                 // log the tailored matching
                 for graph_index in 0..2 {
                     let mut graphs_edges = vec![];
-                    for i in 0..real_len {
+                    for i in 0..tailored_len {
                         let j = tailored_matching[i + graph_index * tailored_len] % tailored_len;
                         if i < j {
                             // do not print matchings between virtual nodes
@@ -1349,5 +1349,79 @@ mod tests {
         // the logical error makes sense... it is the decoder design itself that causes this problem
         let (logical_i, logical_j) = simulator.validate_correction(&correction);
         assert!(!logical_i && !logical_j);
+    }
+
+    // There is 3 times higher if I enable the optimization `use_unfixed_stabilizer_edges`
+    // first find a case where w/ fails but wo/ succeed
+    // cargo run --release -- tool benchmark '[7]' '[1]' '[0.1]' --bias-eta 10000 --code-type rotated-tailored-code --decoder tailored-mwpm --decoder-config '{"pcmg":true,"naive_residual_decoding":true,"log_matchings":true,"use_unfixed_stabilizer_edges":true}' --noise-model tailored-sc-bell-init-phenomenological --ignore-logical-j --enable-visualizer --visualizer-filename tailored-cc-debug-bell-init-with-opt.json --visualizer-tailored-model-graph --deterministic-seed 234 -m 86 --debug-print failed-error-pattern
+    // cargo run --release -- tool benchmark '[7]' '[1]' '[0.1]' --bias-eta 10000 --code-type rotated-tailored-code --decoder tailored-mwpm --decoder-config '{"pcmg":true,"naive_residual_decoding":true,"log_matchings":true,"use_unfixed_stabilizer_edges":false}' --noise-model tailored-sc-bell-init-phenomenological --ignore-logical-j --enable-visualizer --visualizer-filename tailored-cc-debug-bell-init-without-opt.json --visualizer-tailored-model-graph --deterministic-seed 234 -m 86
+    // case 85 is w/ fails but wo/ succeed
+    // {"[5][5][8]":"Y","[5][7][6]":"Y","[5][7][10]":"Y","[5][9][8]":"Y","[5][11][6]":"Y","[6][4][8]":"Z","[6][5][3]":"Z","[6][6][4]":"Z","[6][6][10]":"Z","[6][8][12]":"Z","[6][11][7]":"Z","[6][13][7]":"Z"}
+    #[test]
+    fn tailored_mwpm_decoder_debug_4() {
+        // cargo test tailored_mwpm_decoder_debug_4_true -- --nocapture
+        // cargo test tailored_mwpm_decoder_debug_4_false -- --nocapture
+        for enable in [false, true] {
+            let visualizer_filename = format!("tailored_mwpm_decoder_debug_4_{enable}");
+            print_visualize_link(visualizer_filename.clone());
+            let d = 7;
+            let noisy_measurements = 1;
+            let p = 0.001;
+            let bias_eta = 1e300;
+            // build simulator
+            let mut simulator = Simulator::new(CodeType::RotatedTailoredCode, CodeSize::new(noisy_measurements, d, d));
+            code_builder_sanity_check(&simulator).unwrap();
+            // build noise model
+            let mut noise_model = NoiseModel::new(&simulator);
+            let px = p / (1. + bias_eta) / 2.;
+            let py = px;
+            let pz = p - 2. * px;
+            simulator.set_error_rates(&mut noise_model, px, py, pz, 0.);
+            let noise_model_builder = NoiseModelBuilder::TailoredScBellInitPhenomenological;
+            let noise_model_configuration: serde_json::Value = json!({});
+            noise_model_builder.apply(&mut simulator, &mut noise_model, &noise_model_configuration, p, bias_eta, 0.);
+            simulator.compress_error_rates(&mut noise_model);
+            noise_model_sanity_check(&simulator, &noise_model).unwrap();
+            let noise_model = Arc::new(noise_model);
+            let decoder_config = json!({
+                "precompute_complete_model_graph": true,
+                "naive_residual_decoding": true,
+                "log_matchings": true,
+                "use_unfixed_stabilizer_edges": enable,
+            });
+            let mut tailored_mwpm_decoder = TailoredMWPMDecoder::new(
+                &Arc::new(simulator.clone()),
+                Arc::clone(&noise_model),
+                &decoder_config,
+                1,
+                false,
+            );
+            // visualize
+            let mut visualizer = Visualizer::new(Some(visualize_data_folder() + visualizer_filename.as_str())).unwrap();
+            visualizer.add_component(&simulator).unwrap();
+            visualizer.add_component(noise_model.as_ref()).unwrap();
+            visualizer
+                .add_component(tailored_mwpm_decoder.tailored_model_graph.as_ref())
+                .unwrap();
+            visualizer.end_component().unwrap();
+            let error_pattern: SparseErrorPattern = serde_json::from_str(r#"{"[5][7][6]":"Y","[5][9][8]":"Y","[5][11][6]":"Y","[6][5][3]":"Z","[6][6][4]":"Z","[6][11][7]":"Z","[6][13][7]":"Z"}"#).unwrap();
+            // println!("{:?}", error_pattern);
+            simulator.load_sparse_error_pattern(&error_pattern, &noise_model).unwrap();
+            simulator.propagate_errors();
+            let sparse_measurement = simulator.generate_sparse_measurement();
+            let (correction, runtime_statistics) = tailored_mwpm_decoder.decode(&sparse_measurement);
+            println!("{:?}", correction);
+            let case = json!({
+                "error_pattern": simulator.generate_sparse_error_pattern(),
+                "measurement": sparse_measurement,
+                "correction": correction,
+                "runtime_statistics": runtime_statistics,
+            });
+            visualizer.add_case(case).unwrap();
+            // code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
+            // // the logical error makes sense... it is the decoder design itself that causes this problem
+            // let (logical_i, logical_j) = simulator.validate_correction(&correction);
+            // assert!(!logical_i && !logical_j);
+        }
     }
 }
