@@ -9,7 +9,6 @@ use crate::util_macros::*;
 use crate::visualize::QecpVisualizer;
 use either::Either;
 use float_cmp;
-use lazy_static::__Deref;
 use serde::Serialize;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
@@ -340,6 +339,7 @@ impl TailoredModelGraph {
                         .collect();
                     // println!("sparse_measurement.len(): {}", sparse_measurement.len());
                     // assert!(sparse_measurement.len() == 2 || sparse_measurement.len() == 4, "I don't know how to handle other cases, so strictly check it");
+
                     // Yue 2022.7.11: Bell init with circuit-level noise may generate 6 or 8 non-trivial measurements, so I removed this assertion
                     let unfixed_count = sparse_measurement_real
                         .iter()
@@ -349,13 +349,13 @@ impl TailoredModelGraph {
                         && unfixed_count > 0
                         && (1..=2).contains(&(sparse_measurement_real.len() - unfixed_count))
                     {
-                        let mut sparse_errors = sparse_errors.deref().clone();
-                        let mut sparse_correction = sparse_correction.deref().clone();
+                        let mut sparse_errors = sparse_errors.as_ref().clone();
+                        let mut sparse_correction = sparse_correction.as_ref().clone();
                         let mut fixed_positions = vec![];
                         for position in sparse_measurement_real.iter() {
                             if let Some((errors, correction)) = self.unfixed_stabilizers.get(position) {
-                                sparse_errors.extend(errors.deref());
-                                sparse_correction.extend(correction.deref());
+                                sparse_errors.extend(errors.as_ref());
+                                sparse_correction.extend(correction.as_ref());
                             } else {
                                 fixed_positions.push(position)
                             }
@@ -367,8 +367,8 @@ impl TailoredModelGraph {
                                 for position in sparse_measurement_real.iter() {
                                     if let Some((errors, correction)) = self.unfixed_stabilizers.get(position) {
                                         // remove the vertex
-                                        sparse_errors.extend(errors.deref());
-                                        sparse_correction.extend(correction.deref());
+                                        sparse_errors.extend(errors.as_ref());
+                                        sparse_correction.extend(correction.as_ref());
                                         position2 = Some(position.clone());
                                         break;
                                     }
@@ -381,18 +381,25 @@ impl TailoredModelGraph {
                         let position2 = &position2;
                         let node1 = simulator.get_node_unwrap(position1);
                         let node2 = simulator.get_node_unwrap(position2);
-                        debug_assert!({
-                            // qubit type should be the same (correct me if it's wrong)
-                            node1.qubit_type == node2.qubit_type
-                        });
-                        self.add_edge_between(
-                            position1,
-                            position2,
-                            p,
-                            weight_of(p),
-                            Arc::new(sparse_errors),
-                            Arc::new(sparse_correction),
-                        );
+                        if node1.qubit_type == node2.qubit_type {
+                            self.add_edge_between(
+                                position1,
+                                position2,
+                                p,
+                                weight_of(p),
+                                Arc::new(sparse_errors),
+                                Arc::new(sparse_correction),
+                            );
+                        } else {
+                            self.add_edge_no_residual_between(
+                                position1,
+                                position2,
+                                p,
+                                weight_of(p),
+                                Arc::new(sparse_errors),
+                                Arc::new(sparse_correction),
+                            );
+                        }
                     } else if sparse_measurement.len() == 2 {
                         let position1 = &sparse_measurement[0];
                         let position2 = &sparse_measurement[1];
@@ -713,7 +720,7 @@ impl TailoredModelGraph {
         );
     }
 
-    /// add asymmetric edge from `source` to `target`; in order to create symmetric edge, call this function twice with reversed input
+    /// add symmetric edge between `source` and `target`; in order to create symmetric edge, call this function twice with reversed input
     pub fn add_edge_between(
         &mut self,
         position1: &Position,
@@ -740,6 +747,34 @@ impl TailoredModelGraph {
             correction.clone(),
         );
         self.add_neutral_edge_between(
+            position2,
+            position1,
+            probability,
+            weight,
+            error_pattern.clone(),
+            correction.clone(),
+        );
+    }
+
+    /// add edges but do not add to residual graph
+    pub fn add_edge_no_residual_between(
+        &mut self,
+        position1: &Position,
+        position2: &Position,
+        probability: f64,
+        weight: f64,
+        error_pattern: Arc<SparseErrorPattern>,
+        correction: Arc<SparseCorrection>,
+    ) {
+        self.add_positive_edge_between(
+            position1,
+            position2,
+            probability,
+            weight,
+            error_pattern.clone(),
+            correction.clone(),
+        );
+        self.add_negative_edge_between(
             position2,
             position1,
             probability,
