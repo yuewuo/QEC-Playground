@@ -8,6 +8,8 @@ use super::simulator::*;
 use super::types::*;
 use super::util_macros::*;
 use super::visualize::*;
+#[cfg(feature = "hyperion")]
+use mwpf::util::HyperEdge;
 #[cfg(feature = "python_binding")]
 use pyo3::prelude::*;
 use serde::de::Visitor;
@@ -463,7 +465,8 @@ impl ModelHypergraph {
         }
     }
 
-    pub fn generate_mwps_hypergraph(&self, max_weight: usize) -> (usize, Vec<(Vec<usize>, usize)>) {
+    #[cfg(feature = "hyperion")]
+    pub fn generate_mwpf_hypergraph(&self, max_weight: usize) -> (usize, Vec<HyperEdge>) {
         // scale all the edges
         let mut maximum_weight = 0.;
         for (_, hyperedge_group) in self.weighted_edges.iter() {
@@ -481,7 +484,7 @@ impl ModelHypergraph {
                 assert!(int_weight >= 0., "weight must be non-negative");
                 assert!(int_weight <= max_weight as f64, "weight must be smaller than max weight");
                 let vertex_indices: Vec<_> = defect_vertices.0.iter().map(|x| self.vertex_indices[x]).collect();
-                weighted_edges.push((vertex_indices, int_weight as usize));
+                weighted_edges.push(HyperEdge::new(vertex_indices, int_weight as usize));
             }
         }
         (self.vertex_positions.len(), weighted_edges)

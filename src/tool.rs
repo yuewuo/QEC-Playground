@@ -7,6 +7,8 @@ use crate::complete_model_graph::*;
 use crate::decoder_fusion::*;
 #[cfg(feature = "hyperion")]
 use crate::decoder_hyper_union_find::*;
+#[cfg(feature = "hyperion")]
+use crate::decoder_hyperion::*;
 use crate::decoder_mwpm::*;
 use crate::decoder_tailored_mwpm::*;
 use crate::decoder_union_find::*;
@@ -109,6 +111,8 @@ pub enum BenchmarkDecoder {
     UnionFind,
     /// hypergraph union-find decoder
     HyperUnionFind,
+    /// hyperion decoder
+    Hyperion,
 }
 
 /// progress variable shared between threads to update information
@@ -868,6 +872,8 @@ pub enum GeneralDecoder {
     UnionFind(UnionFindDecoder),
     #[cfg(feature = "hyperion")]
     HyperUnionFind(HyperUnionFindDecoder),
+    #[cfg(feature = "hyperion")]
+    Hyperion(HyperionDecoder),
 }
 
 impl GeneralDecoder {
@@ -977,6 +983,16 @@ impl GeneralDecoder {
             BenchmarkDecoder::HyperUnionFind => {
                 return Err("decoder is not available; try enable feature `hyperion`".to_string())
             }
+            #[cfg(feature = "hyperion")]
+            BenchmarkDecoder::Hyperion => GeneralDecoder::Hyperion(HyperionDecoder::new(
+                &simulator,
+                noise_model_graph.clone(),
+                &parameters.decoder_config,
+                configs.parallel_init,
+                parameters.use_brief_edge,
+            )),
+            #[cfg(not(feature = "hyperion"))]
+            BenchmarkDecoder::Hyperion => return Err("decoder is not available; try enable feature `hyperion`".to_string()),
         })
     }
 
@@ -1003,6 +1019,10 @@ impl GeneralDecoder {
             #[cfg(feature = "hyperion")]
             Self::HyperUnionFind(hyper_union_find_decoder) => {
                 hyper_union_find_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
+            }
+            #[cfg(feature = "hyperion")]
+            Self::Hyperion(hyperion_decoder) => {
+                hyperion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
             }
         }
     }

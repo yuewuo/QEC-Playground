@@ -233,19 +233,19 @@ pub fn json_to_pyobject(value: serde_json::Value) -> PyObject {
 }
 
 #[cfg(feature = "python_binding")]
-pub fn pyobject_to_json_locked<'py>(value: PyObject, py: Python<'py>) -> serde_json::Value {
+pub fn pyobject_to_json_locked(value: PyObject, py: Python) -> serde_json::Value {
     let value: &PyAny = value.as_ref(py);
     if value.is_none() {
         serde_json::Value::Null
-    } else if value.is_instance_of::<pyo3::types::PyBool>().unwrap() {
+    } else if value.is_instance_of::<pyo3::types::PyBool>() {
         json!(value.extract::<bool>().unwrap())
-    } else if value.is_instance_of::<pyo3::types::PyInt>().unwrap() {
+    } else if value.is_instance_of::<pyo3::types::PyInt>() {
         json!(value.extract::<i64>().unwrap())
-    } else if value.is_instance_of::<pyo3::types::PyFloat>().unwrap() {
+    } else if value.is_instance_of::<pyo3::types::PyFloat>() {
         json!(value.extract::<f64>().unwrap())
-    } else if value.is_instance_of::<pyo3::types::PyString>().unwrap() {
+    } else if value.is_instance_of::<pyo3::types::PyString>() {
         json!(value.extract::<String>().unwrap())
-    } else if value.is_instance_of::<pyo3::types::PyList>().unwrap() {
+    } else if value.is_instance_of::<pyo3::types::PyList>() {
         let elements: Vec<serde_json::Value> = value
             .extract::<Vec<PyObject>>()
             .unwrap()
@@ -253,7 +253,7 @@ pub fn pyobject_to_json_locked<'py>(value: PyObject, py: Python<'py>) -> serde_j
             .map(|object| pyobject_to_json_locked(object, py))
             .collect();
         json!(elements)
-    } else if value.is_instance_of::<pyo3::types::PyDict>().unwrap() {
+    } else if value.is_instance_of::<pyo3::types::PyDict>() {
         let map: &pyo3::types::PyDict = value.downcast().unwrap();
         let mut json_map = serde_json::Map::new();
         for (key, value) in map.iter() {
