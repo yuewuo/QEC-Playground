@@ -264,6 +264,9 @@ pub struct BenchmarkParameters {
     /// use deterministic seed for debugging purpose
     #[clap(long)]
     pub deterministic_seed: Option<u64>,
+    /// specify the error pattern
+    #[clap(long, value_parser = ValueParser::new(SerdeJsonParser))]
+    pub error_pattern: Option<serde_json::Value>,
 }
 
 #[derive(Parser, Clone)]
