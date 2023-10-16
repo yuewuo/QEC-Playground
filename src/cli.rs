@@ -7,7 +7,7 @@ use crate::serde::{Deserialize, Serialize};
 use crate::serde_json;
 use crate::tool;
 
-#[derive(Parser, Clone)]
+#[derive(Parser, Clone, Debug)]
 #[clap(author = clap::crate_authors!(", "))]
 #[clap(version = env!("CARGO_PKG_VERSION"))]
 #[clap(about = "Quantum Error Correction Playground")]
@@ -20,7 +20,7 @@ pub struct Cli {
     pub command: Commands,
 }
 
-#[derive(Subcommand, Clone)]
+#[derive(Subcommand, Clone, Debug)]
 #[allow(clippy::large_enum_variant)]
 pub enum Commands {
     /// testing features
@@ -37,7 +37,7 @@ pub enum Commands {
     Server(ServerParameters),
 }
 
-#[derive(Subcommand, Clone)]
+#[derive(Subcommand, Clone, Debug)]
 #[allow(clippy::large_enum_variant)]
 pub enum TestCommands {
     /// test for debug
@@ -48,7 +48,7 @@ pub enum TestCommands {
     All,
 }
 
-#[derive(Subcommand, Clone)]
+#[derive(Subcommand, Clone, Debug)]
 #[allow(clippy::large_enum_variant)]
 pub enum ToolCommands {
     /// built-in tests
@@ -142,7 +142,7 @@ impl TypedValueParser for SerdeJsonParser {
     }
 }
 
-#[derive(Parser, Clone, Serialize, Deserialize)]
+#[derive(Parser, Clone, Serialize, Deserialize, Debug)]
 pub struct BenchmarkParameters {
     /// [di1,di2,di3,...,din] code distance of vertical axis
     #[clap(value_parser = ValueParser::new(VecUsizeParser))]
@@ -269,7 +269,7 @@ pub struct BenchmarkParameters {
     pub error_pattern: Option<serde_json::Value>,
 }
 
-#[derive(Parser, Clone)]
+#[derive(Parser, Clone, Debug)]
 pub struct ServerParameters {
     /// listening on <addr>:<port>, default to 8066
     #[clap(short = 'p', long, default_value_t = 8066)]
