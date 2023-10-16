@@ -5,8 +5,8 @@ use super::model_graph::*;
 use super::noise_model::*;
 use super::simulator::*;
 use crate::model_hypergraph::*;
-use crate::mwps::mwps_solver::*;
-use crate::mwps::util::*;
+use crate::mwpf::mwpf_solver::*;
+use crate::mwpf::util::*;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Instant;
@@ -17,7 +17,7 @@ pub struct HyperUnionFindDecoder {
     /// save configuration for later usage
     pub config: HyperUnionFindDecoderConfig,
     /// (approximate) minimum-weight parity subgraph solver
-    pub solver: SolverUnionFind,
+    pub solver: SolverSerialUnionFind,
     /// the initializer of the solver, used for customized clone
     pub initializer: Arc<SolverInitializer>,
 }
@@ -50,7 +50,7 @@ impl Clone for HyperUnionFindDecoder {
         Self {
             model_hypergraph: self.model_hypergraph.clone(),
             config: self.config.clone(),
-            solver: SolverUnionFind::new(&self.initializer),
+            solver: SolverSerialUnionFind::new(&self.initializer),
             initializer: self.initializer.clone(),
         }
     }
@@ -79,9 +79,9 @@ impl HyperUnionFindDecoder {
             use_brief_edge,
         );
         let model_hypergraph = Arc::new(model_hypergraph);
-        let (vertex_num, weighted_edges) = model_hypergraph.generate_mwps_hypergraph(config.max_weight);
+        let (vertex_num, weighted_edges) = model_hypergraph.generate_mwpf_hypergraph(config.max_weight);
         let initializer = Arc::new(SolverInitializer::new(vertex_num, weighted_edges));
-        let solver = SolverUnionFind::new(&initializer);
+        let solver = SolverSerialUnionFind::new(&initializer);
         Self {
             model_hypergraph,
             config,
@@ -102,7 +102,7 @@ impl HyperUnionFindDecoder {
         sparse_measurement: &SparseMeasurement,
         sparse_detected_erasures: &SparseErasures,
     ) -> (SparseCorrection, serde_json::Value) {
-        if sparse_detected_erasures.len() > 0 {
+        if !sparse_detected_erasures.is_empty() {
             unimplemented!()
         }
         // run decode
@@ -164,7 +164,7 @@ mod tests {
         let enable_all = true;
         let mut hyper_union_find_decoder =
             HyperUnionFindDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&noise_model), &json!({}), 1, false);
-        if true || enable_all {
+        if enable_all {
             // debug 5
             simulator.clear_all_errors();
             // {"[0][4][6]":"Z","[0][5][9]":"Z","[0][7][1]":"Z","[0][9][1]":"Z"}
@@ -180,7 +180,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false || enable_all {
+        if enable_all {
             // debug 4, should fail
             simulator.clear_all_errors();
             // {"[0][1][5]":"Z","[0][5][3]":"Z","[0][5][7]":"Z","[0][7][7]":"Z"}
@@ -194,7 +194,7 @@ mod tests {
             // println!("{:?}", correction);
             code_builder_sanity_check_correction(&mut simulator, &correction).unwrap();
         }
-        if false || enable_all {
+        if enable_all {
             // debug 3
             simulator.clear_all_errors();
             // {"[0][6][6]":"Z","[0][8][2]":"Z","[0][8][4]":"Z"}
@@ -209,7 +209,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false || enable_all {
+        if enable_all {
             // debug 2
             simulator.clear_all_errors();
             // {"[0][3][9]":"Z","[0][8][8]":"Z"}
@@ -223,7 +223,7 @@ mod tests {
             let (logical_i, logical_j) = simulator.validate_correction(&correction);
             assert!(!logical_i && !logical_j);
         }
-        if false || enable_all {
+        if enable_all {
             // debug 1
             simulator.clear_all_errors();
             simulator.set_error_check(&noise_model, &pos!(0, 6, 4), &Z);

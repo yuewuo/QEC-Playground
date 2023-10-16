@@ -1,14 +1,24 @@
 [package]
 name = "qecp"
-version = "0.2.3"
-authors = ["Yue Wu <yue.wu@yale.edu>", "Namitha Liyanage <namitha.liyanage@yale.edu>", "Neil He <neilhe6345@gmail.com>"]
+version = "0.2.4"
+authors = [
+    "Yue Wu <yue.wu@yale.edu>",
+    "Namitha Liyanage <namitha.liyanage@yale.edu>",
+    "Neil He <neilhe6345@gmail.com>",
+]
 license = "MIT"
 description = "Quantum Error Correction Playground for Surface Code Research"
 readme = "README.md"
 homepage = "https://yuewuo.github.io/QEC-Playground/"
 repository = "https://github.com/yuewuo/QEC-Playground"
 # documentation = ""  # use the default docs.rs page
-keywords = ["QEC", "quantum-computing", "error-correction", "simulation", "visualization"]
+keywords = [
+    "QEC",
+    "quantum-computing",
+    "error-correction",
+    "simulation",
+    "visualization",
+]
 categories = ["science"]
 edition = "2021"
 exclude = [
@@ -42,11 +52,13 @@ debug = true
 [features]
 # to enable a feature, use `--features xxx`
 default = ["fusion_blossom"]
-python_binding = ["pyo3"]  # by default to avoid using python interface, which includes `fpga_generator.rs`,
-blossom_v = []  # automatically enabled when file `blossomV/PerfectMatching.h` exists
-MWPM_reverse_order = []  # test the logical error rate arbitrariness of MWPM decoders, see articles/UFandMWPM.md
-# hyperion = ["mwps"]
+python_binding = ["pyo3"] # by default to avoid using python interface
+blossom_v = [
+] # automatically enabled when file `blossomV/PerfectMatching.h` exists
+MWPM_reverse_order = [
+] # test the logical error rate arbitrariness of MWPM decoders, see articles/UFandMWPM.md
 fusion_blossom = ["fusion-blossom"]
+# hyperion = ["mwpf"]
 
 [lib]
 name = "qecp"
@@ -68,7 +80,11 @@ clap = { version = "4.2.5", features = ["cargo", "derive"] }
 ndarray = "0.15.4"
 actix-web = "4.0.1"
 actix-cors = "0.6.1"
-pyo3 = { version =  "0.18.3", features = ["extension-module", "multiple-pymethods", "abi3-py37"], optional = true }
+pyo3 = { version = "0.19.2", features = [
+    "extension-module",
+    "multiple-pymethods",
+    "abi3-py38",
+], optional = true }
 libc = "0.2.81"
 petgraph = "0.6.0"
 pbr = "1.0.4"
@@ -84,16 +100,18 @@ float-cmp = "0.9.0"
 float-ord = "0.3.2"
 priority-queue = "1.2.1"
 parking_lot = "0.12.0"
-fusion-blossom = { version = "0.2.3", features = ["dangerous_pointer"], optional = true }
+fusion-blossom = { version = "0.2.3", features = [
+    "dangerous_pointer",
+], optional = true }
 chrono = "0.4.19"
 urlencoding = "2.1.0"
 enum_dispatch = "0.3.11"
-# mwps = { path = "../mwps", optional = true }
+# mwpf = { path = "../mwpf", version = "0.0.3", optional = true }
 
 
 [build-dependencies]
 cc = "1.0.66"
 
 [package.metadata.docs.rs]
-rustdoc-args = [ "--html-in-header", "katex-header.html" ]
+rustdoc-args = ["--html-in-header", "katex-header.html"]
 # to run locally: `RUSTDOCFLAGS="--html-in-header katex-header.html" cargo doc --no-deps`

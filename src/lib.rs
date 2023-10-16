@@ -28,7 +28,7 @@ extern crate float_ord;
 #[cfg(feature = "fusion_blossom")]
 extern crate fusion_blossom;
 #[cfg(feature = "hyperion")]
-extern crate mwps;
+extern crate mwpf;
 extern crate parking_lot;
 extern crate platform_dirs;
 extern crate priority_queue;
@@ -57,6 +57,8 @@ pub mod complete_model_graph;
 pub mod decoder_fusion;
 #[cfg(feature = "hyperion")]
 pub mod decoder_hyper_union_find;
+#[cfg(feature = "hyperion")]
+pub mod decoder_hyperion;
 pub mod decoder_mwpm;
 pub mod decoder_tailored_mwpm;
 pub mod decoder_union_find;
@@ -72,6 +74,7 @@ pub mod visualize;
 #[cfg(feature = "python_binding")]
 use pyo3::prelude::*;
 pub mod simulator_compact;
+pub mod simulator_file;
 
 #[cfg(feature = "python_binding")]
 #[pymodule]
