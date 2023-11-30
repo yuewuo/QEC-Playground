@@ -1,8 +1,9 @@
-set terminal postscript eps color "Arial, 28"
-set xlabel "Depolarizing Error Rate (p)" font "Arial, 28"
-set ylabel "Logical Error Rate (p_L)" font "Arial, 28"
+set terminal postscript eps color "Arial, 20"
+set title "Phenomenological Noise Rotated Surface Code"
+set xlabel "Depolarizing Error Rate (p)" font "Arial, 20"
+set ylabel "Logical Error Rate (p_L)" font "Arial, 20"
 set grid ytics
-set size 1,1
+set size 1,1.2
 
 set logscale x
 set xrange [0.00001:0.1]
