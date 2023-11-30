@@ -59,6 +59,7 @@ MWPM_reverse_order = [
 ] # test the logical error rate arbitrariness of MWPM decoders, see articles/UFandMWPM.md
 fusion_blossom = ["fusion-blossom"]
 # hyperion = ["mwpf"]
+include_different_type_edges = []
 
 [lib]
 name = "qecp"

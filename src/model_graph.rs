@@ -368,7 +368,11 @@ impl ModelGraph {
                         let node1 = simulator.get_node_unwrap(position1);
                         let node2 = simulator.get_node_unwrap(position2);
                         // edge only happen when qubit type is the same (to isolate X and Z decoding graph in CSS surface code)
-                        let is_same_type = node1.qubit_type == node2.qubit_type;
+                        let is_same_type = if cfg!(feature = "include_different_type_edges") {
+                            true
+                        } else {
+                            node1.qubit_type == node2.qubit_type
+                        };
                         if is_same_type && (p > 0. || is_erasure) {
                             self.add_edge_between(
                                 (position1, position2),
