@@ -19,7 +19,7 @@ if True:
     from slurm_distribute import cpu_hours as CH
 
 # rotated surface code only supports odd number code distances
-di_vec = [3, 5, 7]
+di_vec = [3, 5, 7, 9, 11, 13]
 p_vec = [0.5 * (10 ** (- i / 5)) for i in range(5 * 4 + 1)]
 p_vec[0] = 0.4
 min_error_cases = 40000
@@ -27,7 +27,7 @@ max_N = 100000000
 
 print(p_vec)
 
-slurm_distribute.SLURM_DISTRIBUTE_TIME = "12:20:00"
+slurm_distribute.SLURM_DISTRIBUTE_TIME = "1:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '8G'
 # for more usuable machines, use `SLURM_USE_SCAVENGE_PARTITION=1` flag
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12
