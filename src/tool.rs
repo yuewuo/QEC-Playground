@@ -20,6 +20,7 @@ use crate::noise_model_builder::*;
 use crate::reproducible_rand::Xoroshiro128StarStar;
 use crate::simulator::*;
 use crate::simulator_compact::*;
+use crate::simulator_file::*;
 use crate::tailored_complete_model_graph::*;
 use crate::tailored_model_graph::*;
 use crate::util::local_get_temporary_store;
@@ -49,7 +50,7 @@ impl ToolCommands {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Deserialize)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Deserialize, Debug)]
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub enum BenchmarkDebugPrint {
@@ -95,7 +96,7 @@ pub struct BenchmarkDebugPrintDecoderConfig {
     pub use_unfixed_stabilizer_edges: bool,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Deserialize)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Deserialize, Debug)]
 #[cfg_attr(feature = "python_binding", cfg_eval)]
 #[cfg_attr(feature = "python_binding", pyclass)]
 pub enum BenchmarkDecoder {
@@ -698,6 +699,10 @@ impl BenchmarkParameters {
             } else {
                 GeneralSimulator::SimulatorCompact(first)
             }
+        } else if let Some(error_pattern) = self.error_pattern.as_ref() {
+            let sparse_error_pattern: SparseErrorPattern = serde_json::from_value(error_pattern.clone()).unwrap();
+            let simulator_vec = SimulatorVec::from_simulator(simulator, vec![sparse_error_pattern]);
+            GeneralSimulator::SimulatorVec(simulator_vec)
         } else {
             GeneralSimulator::Simulator(simulator)
         };
@@ -973,7 +978,7 @@ impl GeneralDecoder {
             )),
             #[cfg(feature = "hyperion")]
             BenchmarkDecoder::HyperUnionFind => GeneralDecoder::HyperUnionFind(HyperUnionFindDecoder::new(
-                &simulator,
+                simulator,
                 noise_model_graph.clone(),
                 &parameters.decoder_config,
                 configs.parallel_init,
@@ -985,7 +990,7 @@ impl GeneralDecoder {
             }
             #[cfg(feature = "hyperion")]
             BenchmarkDecoder::Hyperion => GeneralDecoder::Hyperion(HyperionDecoder::new(
-                &simulator,
+                simulator,
                 noise_model_graph.clone(),
                 &parameters.decoder_config,
                 configs.parallel_init,

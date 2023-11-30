@@ -10,6 +10,7 @@ use super::util_macros::*;
 #[cfg(feature = "python_binding")]
 use crate::pyo3::prelude::*;
 use crate::simulator_compact::*;
+use crate::simulator_file::*;
 use crate::visualize::*;
 use serde::de::{MapAccess, SeqAccess, Visitor};
 use serde::ser::{SerializeMap, SerializeSeq};
@@ -25,6 +26,7 @@ pub enum GeneralSimulator {
     SimulatorCompactCompressed,
     SimulatorCompact,
     Simulator,
+    SimulatorVec,
 }
 
 #[enum_dispatch(GeneralSimulator)]
