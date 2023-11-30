@@ -74,6 +74,7 @@ pub mod visualize;
 #[cfg(feature = "python_binding")]
 use pyo3::prelude::*;
 pub mod simulator_compact;
+pub mod simulator_file;
 
 #[cfg(feature = "python_binding")]
 #[pymodule]
