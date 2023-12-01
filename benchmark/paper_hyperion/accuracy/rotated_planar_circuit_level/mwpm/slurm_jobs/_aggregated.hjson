@@ -1,0 +1,1136 @@
+[
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.4 3 3 79457 40006 0.5034924550385743 3 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 3 3 80232 40006 0.4986289759696879 3 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 3 3 80404 40008 0.4975871847171783 3 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 3 3 80942 40005 0.4942427911343925 3 7.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 3 3 86595 40006 0.4619897222703389 3 7.2e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 3 3 107983 40004 0.37046572145615514 3 7.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 3 3 163790 40006 0.24425178582331034 3 8.5e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 3 3 294544 40002 0.1358099299255799 3 9.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 3 3 597676 40000 0.06692589295872681 3 9.5e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 3 3 1286115 40001 0.03110219537133149 3 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 3 3 2984620 40000 0.01340204113086423 3 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00315478672 3 3 7186189 40000 0.005566232672143747 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00199053585 3 3 17396138 40000 0.0022993609271207208 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00125594322 3 3 42330916 40000 0.0009449358478328227 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000792446596 3 3 100000011 38103 0.0003810299580867046 3 1.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0005 3 3 100000011 15204 0.00015203998327560184 3 1.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000315478672 3 3 100000011 6179 0.00006178999320310075 3 2.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000199053585 3 3 100000011 2429 0.000024289997328100294 3 4.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000125594322 3 3 100000011 946 0.000009459998959400115 3 6.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000792446596 3 3 100000011 403 0.000004029999556700049 3 9.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[3]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00005 3 3 100000011 161 0.0000016099998229000195 3 1.5e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.4 5 5 80255 40005 0.4984736153510685 5 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 5 5 79963 40006 0.5003063917061641 5 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 5 5 79684 40004 0.502033030470358 5 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 5 5 80145 40005 0.4991577765300393 5 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 5 5 80123 40002 0.49925739176016876 5 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 5 5 81587 40006 0.4903477269663059 5 7.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 5 5 96482 40007 0.41465765635040736 5 7.5e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 5 5 158874 40004 0.2517970215390813 5 8.5e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 5 5 373918 40002 0.10698067490733262 5 9.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 5 5 1094956 40002 0.03653297484099818 5 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 5 5 3704357 40000 0.010798095323965806 5 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00315478672 5 5 13464458 40000 0.002970784267736585 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00199053585 5 5 51149461 40000 0.0007820219259006463 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00125594322 5 5 100000011 20427 0.00020426997753030248 5 1.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000792446596 5 5 100000011 5081 0.000050809994410900616 5 2.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0005 5 5 100000011 1337 0.000013369998529300162 5 5.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000315478672 5 5 100000011 337 0.000003369999629300041 5 1.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000199053585 5 5 100000011 92 0.0000009199998988000111 5 2.0e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000125594322 5 5 100000011 26 0.00000025999997140000316 5 3.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000792446596 5 5 100000011 9 0.0000000899999901000011 5 6.5e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[5]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00005 5 5 100000011 2 0.00000001999999780000024 5 1.4e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.4 7 7 80376 40006 0.4977356424803424 7 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 7 7 80013 40005 0.49998125304637997 7 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 7 7 79824 40003 0.5011400080176388 7 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 7 7 80090 40003 0.49947558996129354 7 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 7 7 80491 40004 0.49699966455877054 7 7.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 7 7 79532 40002 0.5029673590504451 7 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 7 7 81961 40005 0.4880979978282354 7 7.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 7 7 111839 40005 0.35770169618827063 7 7.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 7 7 267378 40004 0.1496158995878494 7 9.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 7 7 1046136 40001 0.03823690227656825 7 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 7 7 5273597 40000 0.0075849557711747785 7 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00315478672 7 7 30296713 40000 0.0013202752390993704 7 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00199053585 7 7 100000011 21760 0.00021759997606400264 7 1.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00125594322 7 7 98736112 3395 0.00003438458261350214 7 3.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000792446596 7 7 100000011 550 0.000005499999395000066 7 8.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0005 7 7 100000011 90 0.0000008999999010000109 7 2.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000315478672 7 7 100000011 10 0.00000009999998900000121 7 6.2e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000199053585 7 7 100000011 4 0.00000003999999560000048 7 9.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000125594322 7 7 100000011 1 0.00000000999999890000012 7 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000792446596 7 7 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[7]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00005 7 7 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.4 9 9 79849 40005 0.5010081528885771 9 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 9 9 80054 40003 0.4997002023634047 9 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 9 9 80092 40004 0.49947560305648503 9 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 9 9 80115 40005 0.49934469200524245 9 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 9 9 79726 40004 0.5017685573087826 9 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 9 9 79751 40004 0.5016112650625071 9 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 9 9 79853 40007 0.5010081023881382 9 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 9 9 91552 40003 0.4369429395316323 9 7.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 9 9 206993 40004 0.19326257409670858 9 8.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 9 9 1040090 40003 0.038461094712957535 9 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 9 9 8081170 40000 0.00494977831180386 9 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00315478672 9 9 35685112 18901 0.0005296606607259632 9 1.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00199053585 9 9 58438943 3176 0.0000543473211005887 9 3.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00125594322 9 9 62846526 360 0.00000572824025308893 9 1.0e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000792446596 9 9 75761181 45 0.0000005939717333603868 9 2.9e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0005 9 9 41087273 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000315478672 9 9 80247547 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000199053585 9 9 65076840 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000125594322 9 9 62380642 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000792446596 9 9 70992205 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[9]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00005 9 9 57568835 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.4 11 11 80311 40005 0.4981260350387867 11 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 11 11 80391 40004 0.4976178925501611 11 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 11 11 80239 40006 0.4985854758907763 11 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 11 11 80103 40006 0.4994319813240453 11 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 11 11 79955 40002 0.5003064223625789 11 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 11 11 80533 40005 0.49675288391094335 11 7.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 11 11 79728 40006 0.5017810555890027 11 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 11 11 83388 40006 0.4797572792248285 11 7.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 11 11 167600 40002 0.23867541766109784 11 8.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 11 11 1054972 40000 0.037915698236540875 11 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 11 11 12874048 40000 0.0031070258554263585 11 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00315478672 11 11 25228223 5147 0.0002040175401969453 11 2.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00199053585 11 11 28627570 339 0.000011841731589513187 11 1.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00125594322 11 11 34304172 18 0.0000005247175183240103 11 4.6e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000792446596 11 11 40619486 2 0.00000004923745219228033 11 1.4e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0005 11 11 42423785 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000315478672 11 11 44865503 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000199053585 11 11 35648863 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000125594322 11 11 37719973 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000792446596 11 11 40059417 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[11]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00005 11 11 33053667 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.4 13 13 80504 40005 0.49693182947431186 13 7.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 13 13 79886 40002 0.5007385524372231 13 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 13 13 79804 40009 0.5013407849230616 13 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 13 13 80227 40005 0.4986475874705523 13 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 13 13 79818 40005 0.5012027362249116 13 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 13 13 79795 40007 0.5013722664327339 13 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 13 13 80282 40004 0.49829351535836175 13 6.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 13 13 80765 40003 0.49530118244288984 13 7.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 13 13 141263 40004 0.28318809596284944 13 8.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 13 13 1089369 40001 0.0367194219773098 13 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 13 13 11273583 21380 0.001896468939821528 13 1.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00315478672 13 13 15945801 1229 0.00007707358194172873 13 5.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00199053585 13 13 19765505 40 0.000002023727701366598 13 3.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00125594322 13 13 20551475 2 0.00000009731661596065489 13 1.4e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000792446596 13 13 24685175 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0005 13 13 26265578 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000315478672 13 13 21950411 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000199053585 13 13 23135000 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000125594322 13 13 20908850 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000792446596 13 13 25348422 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[13]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i --time-budget 3000.0 --decoder fusion
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00005 13 13 27766765 0 0 13 NaN 0 
+
+      '''
+  ]
+]

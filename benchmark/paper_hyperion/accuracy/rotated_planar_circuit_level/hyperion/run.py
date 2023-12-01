@@ -4,8 +4,8 @@ import json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 if True:
-    from rotated_planar_code_capacity import common_evaluation, STO, CH, slurm_distribute, simulation_parameters
-    import rotated_planar_code_capacity
+    from rotated_planar_circuit_level import common_evaluation, STO, CH, slurm_distribute, simulation_parameters
+    import rotated_planar_circuit_level
 
 
 slurm_distribute.SLURM_DISTRIBUTE_TIME = "5:20:00"

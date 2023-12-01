@@ -25,6 +25,7 @@ slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '8G'
 # for more usuable machines, use `SLURM_USE_SCAVENGE_PARTITION=1` flag
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12
 
+simulation_parameters = f"""-p{STO(0)} --code-type rotated-planar-code --noise-model stim-noise-model --ignore-logical-i""".split(" ")
 
 # rotated surface code only supports odd number code distances
 di_vec = [3, 5, 7, 9, 11, 13]
@@ -47,7 +48,7 @@ def common_evaluation(directory, parameters):
             results = []
             for p in p_vec:
                 command = qec_playground_benchmark_simulator_runner_vec_command(
-                    [p], [di], [di], [0], parameters, max_N=max_N, min_error_cases=min_error_cases)
+                    [p], [di], [di], [di], parameters, max_N=max_N, min_error_cases=min_error_cases)
                 if slurm_commands_vec is not None:
                     slurm_commands_vec.sanity_checked_append(command)
                     continue
