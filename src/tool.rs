@@ -729,9 +729,14 @@ impl BenchmarkParameters {
                 thread_ended,
                 parameters: self.clone(),
             };
-            handlers.push(std::thread::spawn(move || {
-                worker_state.run();
-            }));
+            handlers.push(
+                std::thread::Builder::new()
+                    .stack_size(128 * 1024 * 1024)
+                    .spawn(move || {
+                        worker_state.run();
+                    })
+                    .unwrap(),
+            );
         }
         // monitor results and display them using progress bar
         let repeat_begin = Instant::now();

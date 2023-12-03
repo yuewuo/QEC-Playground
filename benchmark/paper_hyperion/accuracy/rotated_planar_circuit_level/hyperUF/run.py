@@ -7,18 +7,10 @@ if True:
     from rotated_planar_circuit_level import common_evaluation, STO, CH, slurm_distribute, simulation_parameters
     import rotated_planar_circuit_level
 
-
 slurm_distribute.SLURM_DISTRIBUTE_TIME = "5:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '32G'
 
-decoder_config = {
-    "hyperion_config": {
-        "primal": {
-            "timeout": 3,  # 3 sec
-        }
-    }
-}
-parameters = simulation_parameters + \
-    f"--time-budget {CH(50)} --decoder hyperion --decoder-config {json.dumps(decoder_config,separators=(',', ':'))}".split(" ")
+parameters = parameters = simulation_parameters + \
+    f"--time-budget {CH(10)} --decoder hyper-union-find".split(" ")
 
 common_evaluation(os.path.dirname(__file__), parameters)

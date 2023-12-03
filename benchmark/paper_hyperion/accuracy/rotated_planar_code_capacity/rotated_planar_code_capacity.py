@@ -62,13 +62,16 @@ def common_evaluation(directory, parameters):
                 # full result
                 full_result = stdout.strip(" \r\n").split("\n")[-1]
                 lst = full_result.split(" ")
-                total_rounds = int(lst[3])
-                error_count = int(lst[4])
-                error_rate = float(lst[5])
-                confidence_interval = float(lst[7])
+                if len(lst) < 7:
+                    print_result = f"# data missing"
+                else:
+                    total_rounds = int(lst[3])
+                    error_count = int(lst[4])
+                    error_rate = float(lst[5])
+                    confidence_interval = float(lst[7])
+                    print_result = f"{full_result}"
 
                 # record result
-                print_result = f"{full_result}"
                 results.append(print_result)
                 print(print_result)
 
