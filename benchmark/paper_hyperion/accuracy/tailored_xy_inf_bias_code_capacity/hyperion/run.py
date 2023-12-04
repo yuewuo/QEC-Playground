@@ -14,7 +14,7 @@ slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '32G'
 decoder_config = {
     "hyperion_config": {
         "primal": {
-            "timeout": 60,  # 1min
+            "timeout": 10 * 60,  # 10min
         }
     }
 }

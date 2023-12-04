@@ -1,0 +1,1131 @@
+[
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[4.50000000e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.45 3 0 105549 40004 0.3790088015992572 3 7.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[3.97164117e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.397164117 3 0 153628 40003 0.2603887312208712 3 8.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 3 0 338546 40003 0.11816119522900877 3 9.2e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[2.50593617e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.250593617 3 0 812119 40001 0.049255096851569785 3 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 3 0 2068834 40002 0.019335529095132815 3 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.58113883e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.158113883 3 0 5666324 40000 0.0070592504064363425 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 3 0 15879189 40001 0.0025190833108668207 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[9.97631157e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0997631157 3 0 45545084 40000 0.0008782506581829995 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 3 0 100000011 30131 0.00030130996685590365 3 1.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[6.29462706e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0629462706 3 0 100000011 9970 0.0000996999890330012 3 2.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 3 0 100000011 3297 0.000032969996373300397 3 3.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[3.97164117e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0397164117 3 0 100000011 1113 0.000011129998775700135 3 5.9e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 3 0 100000011 347 0.000003469999618300042 3 1.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[2.50593617e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0250593617 3 0 100000011 126 0.0000012599998614000152 3 1.7e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 3 0 100000011 34 0.0000003399999626000041 3 3.4e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.58113883e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0158113883 3 0 100000011 9 0.0000000899999901000011 3 6.5e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 3 0 100000011 1 0.00000000999999890000012 3 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[9.97631157e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00997631157 3 0 100000011 1 0.00000000999999890000012 3 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 3 0 100000011 0 0 3 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[6.29462706e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00629462706 3 0 100000011 0 0 3 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 3 0 100000011 0 0 3 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[4.50000000e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.45 5 0 130792 40005 0.30586733133524985 5 8.2e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[3.97164117e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.397164117 5 0 174240 25457 0.1461030762167126 5 1.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 5 0 276726 7374 0.02664729732659743 5 2.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[2.50593617e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.250593617 5 0 512185 1760 0.0034362583832013823 5 4.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    ""
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.58113883e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.158113883 5 0 1985073 66 0.000033248147549233706 5 2.4e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 5 0 4168990 15 0.00000359799375868016 5 5.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[9.97631157e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0997631157 5 0 9010252 3 0.00000033295406166220436 5 1.1e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 5 0 20333965 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[6.29462706e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0629462706 5 0 43390604 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 5 0 89739136 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[3.97164117e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0397164117 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[2.50593617e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0250593617 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.58113883e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0158113883 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[9.97631157e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00997631157 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[6.29462706e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00629462706 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[4.50000000e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.45 7 0 8380 2053 0.24498806682577565 7 3.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[3.97164117e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.397164117 7 0 10622 742 0.0698550178874035 7 6.9e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 7 0 18191 69 0.0037930844923313727 7 2.4e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[2.50593617e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.250593617 7 0 31466 4 0.00012712133731646857 7 9.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 7 0 58317 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.58113883e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.158113883 7 0 113089 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 7 0 274221 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[9.97631157e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0997631157 7 0 686241 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 7 0 1910972 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[6.29462706e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0629462706 7 0 5409974 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 7 0 14270621 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[3.97164117e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0397164117 7 0 36545728 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 7 0 85814190 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[2.50593617e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0250593617 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.58113883e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0158113883 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[9.97631157e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00997631157 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[6.29462706e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00629462706 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[4.50000000e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.45 9 0 1187 210 0.17691659646166807 9 1.2e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[3.97164117e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.397164117 9 0 1514 43 0.028401585204755615 9 2.9e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 9 0 2520 3 0.0011904761904761906 9 1.1e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[2.50593617e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.250593617 9 0 3775 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 9 0 4968 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.58113883e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.158113883 9 0 8448 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 9 0 20287 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[9.97631157e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0997631157 9 0 65881 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 9 0 210735 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[6.29462706e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0629462706 9 0 768288 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 9 0 2786851 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[3.97164117e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0397164117 9 0 10369714 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 9 0 34666103 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[2.50593617e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0250593617 9 0 91150803 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.58113883e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0158113883 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[9.97631157e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00997631157 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[6.29462706e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00629462706 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[4.50000000e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.45 11 0 308 51 0.16558441558441558 11 2.5e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[3.97164117e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.397164117 11 0 268 8 0.029850746268656716 11 6.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 11 0 416 2 0.004807692307692308 11 1.4e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[2.50593617e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.250593617 11 0 589 2 0.003395585738539898 11 1.4e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 11 0 739 1 0.0013531799729364006 11 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.58113883e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.158113883 11 0 1460 2 0.0013698630136986301 11 1.4e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 11 0 3232 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[9.97631157e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0997631157 11 0 9594 1 0.00010423181154888472 11 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 11 0 38773 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[6.29462706e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0629462706 11 0 160167 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 11 0 783144 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[3.97164117e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0397164117 11 0 3298037 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 11 0 12873166 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[2.50593617e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0250593617 11 0 41028810 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.58113883e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0158113883 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[9.97631157e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00997631157 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[6.29462706e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00629462706 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[4.50000000e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.45 13 0 249 43 0.17269076305220885 13 2.7e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[3.97164117e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.397164117 13 0 223 15 0.06726457399103139 13 4.9e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 13 0 164 7 0.042682926829268296 13 7.2e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[2.50593617e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.250593617 13 0 191 1 0.005235602094240838 13 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 13 0 263 3 0.011406844106463879 13 1.1e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.58113883e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.158113883 13 0 412 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 13 0 975 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[9.97631157e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0997631157 13 0 3736 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 13 0 14180 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[6.29462706e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0629462706 13 0 64395 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 13 0 272483 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[3.97164117e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0397164117 13 0 1416368 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 13 0 8072336 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[2.50593617e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0250593617 13 0 27411635 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 13 0 72503924 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.58113883e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0158113883 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[9.97631157e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00997631157 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[6.29462706e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00629462706 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder hyperion --decoder-config '{"hyperion_config":{"primal":{"timeout":600}}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+]

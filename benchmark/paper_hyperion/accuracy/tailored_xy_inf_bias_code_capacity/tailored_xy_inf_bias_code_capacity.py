@@ -29,8 +29,8 @@ simulation_parameters = f"-p{STO(0)} --bias-eta 1e200 --code-type rotated-tailor
 
 # rotated surface code only supports odd number code distances
 di_vec = [3, 5, 7, 9, 11, 13]
-p_vec = [0.5 * (10 ** (- i / 5)) for i in range(5 * 4 + 1)]
-p_vec[0] = 0.4
+p_vec = [0.5 * (10 ** (- i / 10)) for i in range(5 * 4 + 1)]
+p_vec[0] = 0.45
 min_error_cases = 40000
 max_N = 100000000
 

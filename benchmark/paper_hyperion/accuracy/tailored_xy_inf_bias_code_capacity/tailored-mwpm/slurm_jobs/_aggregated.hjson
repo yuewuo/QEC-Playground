@@ -1,0 +1,1136 @@
+[
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[4.50000000e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.45 3 0 100647 40006 0.39748825101592694 3 7.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[3.97164117e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.397164117 3 0 134822 40003 0.29670973579979526 3 8.2e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 3 0 258787 40002 0.15457499797130458 3 9.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[2.50593617e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.250593617 3 0 465093 40002 0.08600860473066677 3 9.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 3 0 933722 40001 0.04284037432983265 3 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.58113883e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.158113883 3 0 1935836 40001 0.020663423967732804 3 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 3 0 3916018 40000 0.010214457645496012 3 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[9.97631157e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0997631157 3 0 7862128 40000 0.005087681096008613 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 3 0 15873204 40001 0.0025200331325673127 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[6.29462706e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0629462706 3 0 79817846 40000 0.0005011410606094282 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 3 0 70352340 40000 0.000568566731397989 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[3.97164117e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0397164117 3 0 100000011 7682 0.00007681999154980094 3 2.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 3 0 100000011 13710 0.00013709998491900167 3 1.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[2.50593617e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0250593617 3 0 100000011 1420 0.000014199998438000172 3 5.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 3 0 100000011 511 0.000005109999437900062 3 8.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.58113883e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0158113883 3 0 100000011 1704 0.000017039998125600208 3 4.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 3 0 100000011 845 0.000008449999070500102 3 6.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[9.97631157e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00997631157 3 0 100000011 413 0.00000412999954570005 3 9.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 3 0 100000011 191 0.0000019099997899000232 3 1.4e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[6.29462706e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00629462706 3 0 100000011 110 0.0000010999998790000133 3 1.9e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 3 0 100000011 1 0.00000000999999890000012 3 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[4.50000000e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.45 5 0 111407 40004 0.3590797705709695 5 7.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[3.97164117e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.397164117 5 0 179263 40003 0.22315257470866828 5 8.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 5 0 490290 40001 0.08158640804421873 5 9.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[2.50593617e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.250593617 5 0 1526295 40000 0.02620725351259095 5 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 5 0 5885848 40000 0.006795962111152038 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.58113883e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.158113883 5 0 18879567 40000 0.002118692658576333 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 5 0 76067030 40000 0.0005258520018462664 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[9.97631157e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0997631157 5 0 100000011 11651 0.00011650998718390142 5 1.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 5 0 100000011 2919 0.00002918999678910035 5 3.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[6.29462706e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0629462706 5 0 100000011 754 0.0000075399991706000915 5 7.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 5 0 100000011 180 0.0000017999998020000219 5 1.5e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[3.97164117e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0397164117 5 0 100000011 29 0.00000028999996810000353 5 3.6e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 5 0 100000011 4 0.00000003999999560000048 5 9.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[2.50593617e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0250593617 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 5 0 100000011 1 0.00000000999999890000012 5 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.58113883e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0158113883 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[9.97631157e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00997631157 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[6.29462706e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00629462706 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 5 0 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[4.50000000e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.45 7 0 122450 40003 0.32668844426296445 7 8.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[3.97164117e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.397164117 7 0 234178 40002 0.17081877887760594 7 8.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 7 0 952645 40000 0.041988358727542786 7 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[2.50593617e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.250593617 7 0 5016135 40000 0.007974267040261078 7 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 7 0 32090287 40000 0.0012464830869228438 7 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.58113883e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.158113883 7 0 100000011 17401 0.0001740099808589021 7 1.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 7 0 100000011 2125 0.000021249997662500257 7 4.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[9.97631157e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0997631157 7 0 100000011 250 0.0000024999997250000304 7 1.2e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 7 0 100000011 22 0.00000021999997580000266 7 4.2e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[6.29462706e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0629462706 7 0 100000011 5 0.000000049999994500000606 7 8.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 7 0 100000011 1 0.00000000999999890000012 7 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[3.97164117e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0397164117 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[2.50593617e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0250593617 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.58113883e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0158113883 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[9.97631157e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00997631157 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[6.29462706e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00629462706 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 7 0 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[4.50000000e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.45 9 0 134597 40003 0.29720573266863304 9 8.2e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[3.97164117e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.397164117 9 0 292646 40000 0.13668391162018276 9 9.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 9 0 1895286 40000 0.021104994180297855 9 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[2.50593617e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.250593617 9 0 19257726 40000 0.0020770884371290772 9 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 9 0 100000011 20399 0.00020398997756110248 9 1.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.58113883e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.158113883 9 0 100000011 1385 0.000013849998476500167 9 5.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 9 0 100000011 87 0.0000008699999043000105 9 2.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[9.97631157e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0997631157 9 0 100000011 7 0.00000006999999230000085 9 7.4e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 9 0 100000011 1 0.00000000999999890000012 9 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[6.29462706e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0629462706 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[3.97164117e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0397164117 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[2.50593617e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0250593617 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.58113883e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0158113883 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[9.97631157e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00997631157 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[6.29462706e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00629462706 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 9 0 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[4.50000000e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.45 11 0 145463 40003 0.27500464035527933 11 8.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[3.97164117e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.397164117 11 0 370086 40001 0.10808568819139336 11 9.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 11 0 3494312 40000 0.011447174722806664 11 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[2.50593617e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.250593617 11 0 54742439 40000 0.0007306945165523224 11 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 11 0 100000011 2764 0.000027639996959600335 11 3.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.58113883e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.158113883 11 0 100000011 106 0.000001059999883400013 11 1.9e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 11 0 100000011 1 0.00000000999999890000012 11 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[9.97631157e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0997631157 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[6.29462706e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0629462706 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[3.97164117e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0397164117 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[2.50593617e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0250593617 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.58113883e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0158113883 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[9.97631157e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00997631157 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[6.29462706e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00629462706 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 11 0 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[4.50000000e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.45 13 0 155945 40004 0.2565263394145372 13 8.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[3.97164117e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.397164117 13 0 468990 40002 0.08529392950809185 13 9.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 13 0 7058251 40000 0.005667126317837096 13 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[2.50593617e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.250593617 13 0 67656754 13541 0.00020014261990754093 13 1.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 13 0 78614051 402 0.000005113589681315367 13 9.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.58113883e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.158113883 13 0 99104185 4 0.00000004036156495308447 13 9.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[9.97631157e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0997631157 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[6.29462706e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0629462706 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[3.97164117e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0397164117 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[2.50593617e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0250593617 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.58113883e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0158113883 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[9.97631157e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00997631157 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[6.29462706e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00629462706 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[0]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --bias-eta 1e200 --code-type rotated-tailored-code --time-budget 15000.0 --decoder tailored-mwpm --decoder-config '{"pcmg":true}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 13 0 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+]
