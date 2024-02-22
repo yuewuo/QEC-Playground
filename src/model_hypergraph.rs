@@ -33,7 +33,7 @@ pub struct ModelHypergraph {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct DefectVertices(Vec<Position>);
+pub struct DefectVertices(pub Vec<Position>);
 
 impl DefectVertices {
     pub fn new(mut defect_vertices: Vec<Position>) -> Self {

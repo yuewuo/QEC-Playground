@@ -8,17 +8,17 @@ if True:
     import rotated_planar_circuit_level
 
 
-slurm_distribute.SLURM_DISTRIBUTE_TIME = "5:20:00"
-slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '32G'
+slurm_distribute.SLURM_DISTRIBUTE_TIME = "10:20:00"
+slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = '96G'
 
 decoder_config = {
     "hyperion_config": {
         "primal": {
-            "timeout": 3,  # 3 sec
+            "timeout": 1,  # 1 sec for each cluster
         }
     }
 }
 parameters = simulation_parameters + \
-    f"--time-budget {CH(50)} --decoder hyperion --decoder-config {json.dumps(decoder_config,separators=(',', ':'))}".split(" ")
+    f"--time-budget {CH(100)} --decoder hyperion --decoder-config {json.dumps(decoder_config,separators=(',', ':'))}".split(" ")
 
 common_evaluation(os.path.dirname(__file__), parameters)
