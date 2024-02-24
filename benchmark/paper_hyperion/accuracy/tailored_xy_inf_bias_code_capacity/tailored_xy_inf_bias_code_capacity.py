@@ -6,9 +6,9 @@ import json
 qec_playground_root_dir = subprocess.run("git rev-parse --show-toplevel", cwd=os.path.dirname(os.path.abspath(
     __file__)), shell=True, check=True, capture_output=True).stdout.decode(sys.stdout.encoding).strip(" \r\n")
 rust_dir = os.path.join(qec_playground_root_dir, "backend", "rust")
-fault_toleran_MWPM_dir = os.path.join(
+fault_tolerant_MWPM_dir = os.path.join(
     qec_playground_root_dir, "benchmark", "fault_tolerant_MWPM")
-sys.path.insert(0, fault_toleran_MWPM_dir)
+sys.path.insert(0, fault_tolerant_MWPM_dir)
 
 if True:
     from automated_threshold_evaluation import qec_playground_benchmark_simulator_runner_vec_command
