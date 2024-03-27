@@ -8,6 +8,7 @@ use super::simulator::*;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
+use fusion_blossom::pointers::UnsafePtr;
 // use super::erasure_graph::*;
 use super::decoder_mwpm::*;
 use super::derivative::*;
@@ -45,6 +46,7 @@ impl Clone for FusionDecoder {
         } else {
             fusion_blossom::mwpm_solver::SolverSerial::new(&self.adaptor.initializer)
         };
+        fusion_solver.primal_module.write().max_tree_size = self.config.max_tree_size;
         Self {
             adaptor: self.adaptor.clone(),
             fusion_solver,
@@ -74,6 +76,8 @@ pub struct FusionDecoderConfig {
     pub skip_decoding: bool,
     #[serde(default = "fusion_default_configs::log_matchings")]
     pub log_matchings: bool,
+    #[serde(default = "fusion_default_configs::max_tree_size")]
+    pub max_tree_size: usize,
 }
 
 pub mod fusion_default_configs {
@@ -89,6 +93,7 @@ pub mod fusion_default_configs {
     pub fn log_matchings() -> bool {
         false
     }
+    pub fn max_tree_size() -> usize { usize::MAX }
 }
 
 impl FusionDecoder {
@@ -110,6 +115,7 @@ impl FusionDecoder {
         // build solver
         let adaptor = FusionBlossomAdaptor::new(&config, &mut simulator, noise_model, parallel, use_brief_edge);
         let fusion_solver = fusion_blossom::mwpm_solver::SolverSerial::new(&adaptor.initializer);
+        fusion_solver.primal_module.write().max_tree_size = config.max_tree_size;
         Self {
             adaptor: Arc::new(adaptor),
             fusion_solver,
