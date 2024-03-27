@@ -5,6 +5,7 @@ __pycache__
 history.tmp
 .env
 .vscode
+.idea
 
 target/
 tmp/
