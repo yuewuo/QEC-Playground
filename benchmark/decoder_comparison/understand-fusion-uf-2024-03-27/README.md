@@ -157,4 +157,23 @@ Some examples of the shared errors are below:
 
 ```
 
-Compare these two files we get the following logical error cases
+
+## Analyze
+
+I'm using the fusion blossom visualization tool to visualize the results.
+Make sure that you already have `fusion_only.syndrome`, etc., in your folder.
+
+Run the following command **in the `fusion_blossom` project folder**.
+It should be placed in the same level as the `QEC-Playground` project folder.
+
+```shell
+FUSION_FOLDER=../../../../fusion-blossom make visualize
+```
+
+Then you can click the links to visualize the run.
+
+There are a few observations:
+1. from all the cases where either fusion fails or uf fails alone, a cluster touches both boundaries
+2. from the cases where both of them fail, most of such cases will make MWPM decoder fails as well
+
+I'm not sure how to interpret this...
