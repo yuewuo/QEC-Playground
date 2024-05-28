@@ -16,7 +16,7 @@ pub struct HyperionDecoder {
     pub model_hypergraph: Arc<ModelHypergraph>,
     /// save configuration for later usage
     pub config: HyperionDecoderConfig,
-    /// (approximate) minimum-weight parity subgraph solver
+    /// (approximate) minimum-weight parity factor solver
     pub solver: SolverSerialJointSingleHair,
     /// the initializer of the solver, used for customized clone
     pub initializer: Arc<SolverInitializer>,
@@ -35,13 +35,18 @@ pub struct HyperionDecoderConfig {
     pub use_combined_probability: bool,
     /// the maximum integer weight after scaling
     #[serde(alias = "mhw")] // abbreviation
-    #[serde(default = "hyper_union_find_default_configs::max_weight")]
+    #[serde(default = "hyperion_default_configs::max_weight")]
     pub max_weight: usize,
+    #[serde(default = "hyperion_default_configs::default_hyperion_config")]
+    pub hyperion_config: serde_json::Value,
 }
 
-pub mod hyper_union_find_default_configs {
+pub mod hyperion_default_configs {
     pub fn max_weight() -> usize {
         1000000
+    }
+    pub fn default_hyperion_config() -> serde_json::Value {
+        json!({})
     }
 }
 
@@ -50,7 +55,7 @@ impl Clone for HyperionDecoder {
         Self {
             model_hypergraph: self.model_hypergraph.clone(),
             config: self.config.clone(),
-            solver: SolverSerialJointSingleHair::new(&self.initializer),
+            solver: SolverSerialJointSingleHair::new(&self.initializer, self.config.hyperion_config.clone()),
             initializer: self.initializer.clone(),
         }
     }
@@ -81,7 +86,7 @@ impl HyperionDecoder {
         let model_hypergraph = Arc::new(model_hypergraph);
         let (vertex_num, weighted_edges) = model_hypergraph.generate_mwpf_hypergraph(config.max_weight);
         let initializer = Arc::new(SolverInitializer::new(vertex_num, weighted_edges));
-        let solver = SolverSerialJointSingleHair::new(&initializer);
+        let solver = SolverSerialJointSingleHair::new(&initializer, config.hyperion_config.clone());
         Self {
             model_hypergraph,
             config,

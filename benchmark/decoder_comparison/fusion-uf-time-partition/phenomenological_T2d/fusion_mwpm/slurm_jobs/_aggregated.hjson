@@ -1,0 +1,1136 @@
+[
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.4 3 6 53524 40008 0.7474777669830357 3 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 3 6 53279 40008 0.7509149946508005 3 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 3 6 53782 40008 0.7438920084786732 3 5.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 3 6 56844 40005 0.7037682077264091 3 5.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 3 6 70216 40006 0.569756180927424 3 6.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 3 6 109803 40005 0.3643343078057977 3 7.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 3 6 206224 40002 0.193973543331523 3 8.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 3 6 443950 40001 0.09010248901903367 3 9.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 3 6 993538 40001 0.040261167665454164 3 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 3 6 2398069 40000 0.016680087186815726 3 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 3 6 5774652 40000 0.006926824335042181 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00315478672 3 6 14144026 40000 0.0028280491000228646 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00199053585 3 6 34933567 40000 0.0011450305089085234 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00125594322 3 6 87482274 40000 0.00045723548521383884 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000792446596 3 6 100000011 18014 0.0001801399801846022 3 1.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0005 3 6 100000011 7370 0.0000736999918930009 3 2.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000315478672 3 6 100000011 2908 0.000029079996801200352 3 3.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000199053585 3 6 100000011 1166 0.000011659998717400141 3 5.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000125594322 3 6 100000011 490 0.0000048999994610000594 3 8.9e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000792446596 3 6 100000011 198 0.000001979999782200024 3 1.4e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[6]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":112,"partitions":[[0,48],[64,112]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00005 3 6 100000011 73 0.0000007299999197000088 3 2.3e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.4 5 10 53326 40010 0.7502906649664329 5 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 5 10 53514 40006 0.7475800725043914 5 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 5 10 53454 40007 0.7484379092303663 5 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 5 10 53478 40011 0.7481768203747335 5 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 5 10 57852 40007 0.6915404826107999 5 5.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 5 10 89295 40007 0.448031804692312 5 7.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 5 10 219403 40002 0.18232202841346745 5 8.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 5 10 710051 40000 0.05633398164357208 5 9.5e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 5 10 2622191 40001 0.015254800279613498 5 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 5 10 10016443 40000 0.003993433597136229 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 5 10 34682084 34823 0.0010040630776397405 5 1.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00315478672 5 10 30880265 8097 0.0002622062990715915 5 2.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00199053585 5 10 34573703 2219 0.00006418172794508011 5 4.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00125594322 5 10 44213116 717 0.000016216907218210994 5 7.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000792446596 5 10 52405968 211 0.000004026258994013812 5 1.3e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0005 5 10 69450240 79 0.0000011375050683770136 5 2.2e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000315478672 5 10 80617555 15 0.0000001860636929512437 5 5.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000199053585 5 10 95305101 6 0.00000006295570685140977 5 8.0e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000125594322 5 10 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000792446596 5 10 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[10]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":396,"partitions":[[0,180],[216,396]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00005 5 10 100000011 0 0 5 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.4 7 14 53503 40007 0.7477524624787395 7 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 7 14 53228 40009 0.7516532651987675 7 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 7 14 53189 40009 0.7522044031660682 7 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 7 14 53066 40008 0.7539290694606716 7 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 7 14 54168 40010 0.7386279722345296 7 5.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 7 14 77833 40007 0.5140107666413989 7 6.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 7 14 253133 40002 0.15802759814010817 7 9.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 7 14 1346026 40001 0.029717850918184345 7 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 7 14 8443830 40000 0.004737186797934113 7 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 7 14 17575135 12615 0.0007177754253381268 7 1.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 7 14 19481377 2215 0.00011369832840871566 7 4.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00315478672 7 14 18441262 326 0.000017677748952322243 7 1.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00199053585 7 14 20863795 49 0.0000023485660207071626 7 2.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00125594322 7 14 21265212 14 0.0000006583522421502311 7 5.2e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000792446596 7 14 25701727 1 0.00000003890789128683843 7 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0005 7 14 28235386 1 0.000000035416551415305605 7 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000315478672 7 14 34572168 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000199053585 7 14 38061985 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000125594322 7 14 40732818 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000792446596 7 14 46262392 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[14]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":960,"partitions":[[0,448],[512,960]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00005 7 14 56409600 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.4 9 18 53479 40009 0.7481254324127228 9 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 9 18 53358 40008 0.7498032160125941 9 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 9 18 53226 40009 0.7516815090369369 9 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 9 18 53181 40007 0.7522799496060624 9 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 9 18 53765 40008 0.744127220310611 9 5.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 9 18 70384 40008 0.5684246419640827 9 6.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 9 18 294562 40004 0.13580842063809995 9 9.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 9 18 2706791 40000 0.014777646297774744 9 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 9 18 11289639 14954 0.0013245773403383404 9 1.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 9 18 13262268 1564 0.00011792854736459858 9 5.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 9 18 13133731 145 0.000011040274846500206 9 1.6e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00315478672 9 18 14308046 8 0.0000005591259631119441 9 6.9e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00199053585 9 18 13772011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00125594322 9 18 15113299 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000792446596 9 18 14702889 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0005 9 18 16199224 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000315478672 9 18 17635636 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000199053585 9 18 19314934 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000125594322 9 18 21312805 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000792446596 9 18 23559972 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[18]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":1900,"partitions":[[0,900],[1000,1900]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00005 9 18 26526227 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.4 11 22 53475 40008 0.7481626928471248 11 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 11 22 53362 40009 0.7497657509088864 11 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 11 22 53382 40008 0.7494661121726425 11 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 11 22 53330 40010 0.7502343896493531 11 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 11 22 53475 40009 0.7481813931743806 11 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 11 22 64865 40007 0.6167732983889617 11 6.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 11 22 343055 40002 0.11660520907726166 11 9.2e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 11 22 5491734 40000 0.007283673972555845 11 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 11 22 8067140 2865 0.00035514445020168236 11 3.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 11 22 8996766 154 0.00001711726191389217 11 1.6e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 11 22 9936542 9 0.0000009057476937147752 11 6.5e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00315478672 11 22 9347270 1 0.00000010698310843700888 11 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00199053585 11 22 10098619 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00125594322 11 22 9602366 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000792446596 11 22 17542361 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0005 11 22 18026373 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000315478672 11 22 12153781 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000199053585 11 22 11332541 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000125594322 11 22 19936937 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000792446596 11 22 16184174 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[22]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":3312,"partitions":[[0,1584],[1728,3312]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00005 11 22 15267420 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[4.00000000e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.4 13 26 53263 40010 0.7511781161406605 13 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[3.15478672e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.315478672 13 26 53405 40005 0.7490871641232094 13 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[1.99053585e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.199053585 13 26 53486 40009 0.7480275212205063 13 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[1.25594322e-01]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.125594322 13 26 53093 40010 0.7535833349029062 13 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[7.92446596e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0792446596 13 26 53360 40007 0.7497563718140929 13 4.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[5.00000000e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.05 13 26 61016 40007 0.6556804772518684 13 5.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[3.15478672e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0315478672 13 26 403540 40002 0.0991277196808247 13 9.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[1.99053585e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0199053585 13 26 4339031 15191 0.0035010120923312142 13 1.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[1.25594322e-02]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0125594322 13 26 7701220 741 0.00009621852122131298 13 7.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[7.92446596e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00792446596 13 26 8863755 19 0.0000021435610528494977 13 4.5e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[5.00000000e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.005 13 26 9424476 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[3.15478672e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00315478672 13 26 9565900 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[1.99053585e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00199053585 13 26 10275258 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[1.25594322e-03]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00125594322 13 26 10081796 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[7.92446596e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000792446596 13 26 10666767 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[5.00000000e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0005 13 26 10337520 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[3.15478672e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000315478672 13 26 7313734 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[1.99053585e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000199053585 13 26 7193842 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[1.25594322e-04]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000125594322 13 26 8314736 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[7.92446596e-05]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000792446596 13 26 8020788 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[26]' -m100000000 -e40000 '[5.00000000e-05]' -p12 --code-type rotated-planar-code --noise-model phenomenological --time-budget 3000.0 --decoder parallel-fusion --decoder-config '{"partition_config":{"vertex_num":5292,"partitions":[[0,2548],[2744,5292]],"fusions":[[0,1]]}}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00005 13 26 9034081 0 0 13 NaN 0 
+
+      '''
+  ]
+]

@@ -5,6 +5,8 @@ use crate::code_builder::*;
 use crate::complete_model_graph::*;
 #[cfg(feature = "fusion_blossom")]
 use crate::decoder_fusion::*;
+#[cfg(feature = "fusion_blossom")]
+use crate::decoder_parallel_fusion::*;
 #[cfg(feature = "hyperion")]
 use crate::decoder_hyper_union_find::*;
 #[cfg(feature = "hyperion")]
@@ -114,6 +116,8 @@ pub enum BenchmarkDecoder {
     HyperUnionFind,
     /// hyperion decoder
     Hyperion,
+    /// parallel fusion blossom
+    ParallelFusion,
 }
 
 /// progress variable shared between threads to update information
@@ -729,9 +733,14 @@ impl BenchmarkParameters {
                 thread_ended,
                 parameters: self.clone(),
             };
-            handlers.push(std::thread::spawn(move || {
-                worker_state.run();
-            }));
+            handlers.push(
+                std::thread::Builder::new()
+                    .stack_size(128 * 1024 * 1024)
+                    .spawn(move || {
+                        worker_state.run();
+                    })
+                    .unwrap(),
+            );
         }
         // monitor results and display them using progress bar
         let repeat_begin = Instant::now();
@@ -873,6 +882,8 @@ pub enum GeneralDecoder {
     MWPM(MWPMDecoder),
     #[cfg(feature = "fusion_blossom")]
     Fusion(FusionDecoder),
+    #[cfg(feature = "fusion_blossom")]
+    ParallelFusion(ParallelFusionDecoder),
     TailoredMWPM(TailoredMWPMDecoder),
     UnionFind(UnionFindDecoder),
     #[cfg(feature = "hyperion")]
@@ -962,6 +973,20 @@ impl GeneralDecoder {
             BenchmarkDecoder::Fusion => {
                 return Err("decoder is not available; try enable feature `fusion_blossom`".to_string())
             }
+            #[cfg(feature = "fusion_blossom")]
+            BenchmarkDecoder::ParallelFusion => {
+                GeneralDecoder::ParallelFusion(ParallelFusionDecoder::new(
+                    simulator,
+                    noise_model_graph.clone(),
+                    &parameters.decoder_config,
+                    configs.parallel_init,
+                    parameters.use_brief_edge,
+                ))
+            }
+            #[cfg(not(feature = "fusion_blossom"))]
+            BenchmarkDecoder::ParallelFusion => {
+                return Err("decoder is not available; try enable feature `fusion_blossom`".to_string())
+            }
             BenchmarkDecoder::TailoredMWPM => GeneralDecoder::TailoredMWPM(TailoredMWPMDecoder::new(
                 simulator,
                 noise_model_graph.clone(),
@@ -1011,6 +1036,8 @@ impl GeneralDecoder {
             Self::MWPM(mwpm_decoder) => mwpm_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures),
             #[cfg(feature = "fusion_blossom")]
             Self::Fusion(fusion_decoder) => fusion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures),
+            #[cfg(feature = "fusion_blossom")]
+            Self::ParallelFusion(fusion_decoder) => fusion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures),
             Self::TailoredMWPM(tailored_mwpm_decoder) => {
                 assert!(
                     sparse_detected_erasures.is_empty(),

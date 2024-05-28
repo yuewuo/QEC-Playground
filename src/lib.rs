@@ -55,6 +55,8 @@ pub mod util_macros;
 pub mod complete_model_graph;
 #[cfg(feature = "fusion_blossom")]
 pub mod decoder_fusion;
+#[cfg(feature = "fusion_blossom")]
+pub mod decoder_parallel_fusion;
 #[cfg(feature = "hyperion")]
 pub mod decoder_hyper_union_find;
 #[cfg(feature = "hyperion")]

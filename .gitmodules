@@ -1,0 +1,3 @@
+[submodule "qec-private"]
+	path = qec-private
+	url = git@github.com:yuewuo/qec-private.git
