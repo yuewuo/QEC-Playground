@@ -53,4 +53,14 @@ export async function micro_blossom_paper_stabilizer_circuit() {
             }
         }
     }
+    // change color to be consist with other plots
+    gui3d.get_qubit_material("Data").color = new THREE.Color(0x000000)
+    const color_x = new THREE.Color(0xEEFFEE)
+    gui3d.get_qubit_material("StabX").color = color_x
+    gui3d.get_gate_material("MeasureX").color = color_x
+    gui3d.get_gate_material("InitializeX").color = color_x
+    const color_z = new THREE.Color(0xCCDCF0)
+    gui3d.get_qubit_material("StabZ").color = color_z
+    gui3d.get_gate_material("MeasureZ").color = color_z
+    gui3d.get_gate_material("InitializeZ").color = color_z
 }
