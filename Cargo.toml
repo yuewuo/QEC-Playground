@@ -1,6 +1,6 @@
 [package]
 name = "qecp"
-version = "0.2.4"
+version = "0.2.5"
 authors = [
     "Yue Wu <yue.wu@yale.edu>",
     "Namitha Liyanage <namitha.liyanage@yale.edu>",
@@ -51,14 +51,14 @@ debug = true
 
 [features]
 # to enable a feature, use `--features xxx`
-default = ["fusion_blossom", "hyperion"]
+default = ["fusion_blossom"]
 python_binding = ["pyo3"] # by default to avoid using python interface
 blossom_v = [
 ] # automatically enabled when file `blossomV/PerfectMatching.h` exists
 MWPM_reverse_order = [
 ] # test the logical error rate arbitrariness of MWPM decoders, see articles/UFandMWPM.md
 fusion_blossom = ["fusion-blossom"]
-hyperion = ["mwpf"]
+# hyperion = ["mwpf"]
 include_different_type_edges = []
 
 [lib]
@@ -101,13 +101,13 @@ float-cmp = "0.9.0"
 float-ord = "0.3.2"
 priority-queue = "1.2.1"
 parking_lot = "0.12.0"
-fusion-blossom = { path = "../fusion-blossom", version = "0.2.9", features = [
+fusion-blossom = { version = "0.2.10", features = [
     "dangerous_pointer",
 ], optional = true }
 chrono = "0.4.19"
 urlencoding = "2.1.0"
 enum_dispatch = "0.3.11"
-mwpf = { path = "../mwpf", version = "0.0.4", optional = true }
+# mwpf = { path = "../mwpf", version = "0.0.4", optional = true }
 
 
 [build-dependencies]
