@@ -9,7 +9,7 @@ from helper import run_command_get_stdout
 n = 0 # number of noisy measurement rounds
 p = 0.05 # error rate
 max_tree_size_vec = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-d_vec = [11, 15, 17]
+d_vec = [11, 13]
 
 rust_dir = qec_playground_root_dir  # updated project structure
 decoder = "fusion"
