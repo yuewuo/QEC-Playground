@@ -24,7 +24,7 @@ class DecoderResult:
                     lst = line.split(" ")
                     assert len(lst) >= 7
                     error_count = int(lst[4])
-                    if error_count < 10:
+                    if error_count < 100:
                         continue
 
                     p_vec.append(float(lst[0]))
