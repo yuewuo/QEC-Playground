@@ -101,7 +101,7 @@ float-cmp = "0.9.0"
 float-ord = "0.3.2"
 priority-queue = "1.2.1"
 parking_lot = "0.12.0"
-fusion-blossom = { version = "=0.2.10", features = [
+fusion-blossom = { version = "0.2.11", features = [
     "dangerous_pointer",
 ], optional = true }
 chrono = "0.4.19"

@@ -724,9 +724,9 @@ dependencies = [
 
 [[package]]
 name = "fusion-blossom"
-version = "0.2.10"
+version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04909e6133ada7924a1e27037572a5d109c90bec3eed1a678662b29c7d5424a5"
+checksum = "a0fb3f952e1f7bc2261483f61b198c9a8d78972f2830e6492a0b5af41d9f0b50"
 dependencies = [
  "cc",
  "cfg-if",
