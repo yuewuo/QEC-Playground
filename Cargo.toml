@@ -1,6 +1,6 @@
 [package]
 name = "qecp"
-version = "0.2.6"
+version = "0.2.7"
 authors = [
     "Yue Wu <yue.wu@yale.edu>",
     "Namitha Liyanage <namitha.liyanage@yale.edu>",
