@@ -58,7 +58,7 @@ blossom_v = [
 MWPM_reverse_order = [
 ] # test the logical error rate arbitrariness of MWPM decoders, see articles/UFandMWPM.md
 fusion_blossom = ["fusion-blossom"]
-# hyperion = ["mwpf"]
+hyperion = ["mwpf"]
 include_different_type_edges = []
 
 [lib]
@@ -107,7 +107,9 @@ fusion-blossom = { version = "0.2.11", features = [
 chrono = "0.4.19"
 urlencoding = "2.1.0"
 enum_dispatch = "0.3.11"
-# mwpf = { path = "../mwpf", version = "0.0.4", optional = true }
+mwpf = { path = "../mwpf", version = "0.1.1", optional = true, features = [
+    "cluster_size_limit",
+] }
 
 
 [build-dependencies]
