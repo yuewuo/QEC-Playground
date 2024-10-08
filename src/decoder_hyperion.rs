@@ -39,6 +39,8 @@ pub struct HyperionDecoderConfig {
     pub max_weight: usize,
     #[serde(default = "hyperion_default_configs::default_hyperion_config")]
     pub hyperion_config: serde_json::Value,
+    #[serde(default = "hyperion_default_configs::substitute_with_simple_graph")]
+    pub substitute_with_simple_graph: bool,
 }
 
 pub mod hyperion_default_configs {
@@ -47,6 +49,9 @@ pub mod hyperion_default_configs {
     }
     pub fn default_hyperion_config() -> serde_json::Value {
         json!({})
+    }
+    pub fn substitute_with_simple_graph() -> bool {
+        false
     }
 }
 
@@ -75,14 +80,27 @@ impl HyperionDecoder {
         // build model graph
         let mut simulator = simulator.clone();
         let mut model_hypergraph = ModelHypergraph::new(&simulator);
-        model_hypergraph.build(
-            &mut simulator,
-            Arc::clone(&noise_model),
-            &config.weight_function,
-            parallel,
-            config.use_combined_probability,
-            use_brief_edge,
-        );
+        if config.substitute_with_simple_graph {
+            let mut model_graph = ModelGraph::new(&simulator);
+            model_graph.build(
+                &mut simulator,
+                noise_model,
+                &config.weight_function,
+                parallel,
+                config.use_combined_probability,
+                use_brief_edge,
+            );
+            model_hypergraph.load_from_model_graph(&model_graph);
+        } else {
+            model_hypergraph.build(
+                &mut simulator,
+                Arc::clone(&noise_model),
+                &config.weight_function,
+                parallel,
+                config.use_combined_probability,
+                use_brief_edge,
+            );
+        }
         let model_hypergraph = Arc::new(model_hypergraph);
         let (vertex_num, weighted_edges) = model_hypergraph.generate_mwpf_hypergraph(config.max_weight);
         let initializer = Arc::new(SolverInitializer::new(vertex_num, weighted_edges));
