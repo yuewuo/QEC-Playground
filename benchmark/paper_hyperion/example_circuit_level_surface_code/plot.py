@@ -16,8 +16,22 @@ for config in configurations:
     with open(dist_filename, "r", encoding="utf8") as f:
         distribution = TimeDistribution.from_line(f.read())
 
+    pL_filename = os.path.join(this_dir, f"{config.name}_{d}.txt")
+    # also print logical error rate
+    pL = None
+    confidence = None
+    with open(pL_filename, "r", encoding="utf8") as f:
+        for line in f.readlines():
+            if line.startswith("#"):
+                continue
+            line = line.strip("\r\n ")
+            spt = line.split(" ")
+            assert len(spt) == 4
+            pL = float(spt[2])
+            confidence = float(spt[3])
+
     print(
-        f"{config.name}: average decoding time: {distribution.average_latency():.3e}s"
+        f"{config.name}: average decoding time: {distribution.average_latency():.3e}s, pL = {pL:.3e} (confidence = {confidence:.2e})"
     )
 
     x_vec, y_vec = distribution.flatten()
