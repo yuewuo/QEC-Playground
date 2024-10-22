@@ -110,6 +110,9 @@ enum_dispatch = "0.3.11"
 mwpf = { path = "../mwpf", version = "0.1.1", optional = true, features = [
     "cluster_size_limit",
 ] }
+# mwpf = { path = "../mwpf", version = "0.1.1", optional = true, default-features = false, features = [
+#     "cluster_size_limit", "f64_weight", "cli", "qecp_integrate", "unsafe_pointer"
+# ] }
 
 
 [build-dependencies]
