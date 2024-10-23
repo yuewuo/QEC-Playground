@@ -56,6 +56,14 @@ configurations = [
         name="mwpf_simple_graph",
         decoder_parameter=f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"substitute_with_simple_graph":true,"hyperion_config":{{"tuning_cluster_size_limit":{tuning_cluster_size_limit}}}}}',
     ),
+    Configuration(
+        name="bp_mwpf",
+        decoder_parameter=f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"use_bp":true,"hyperion_config":{{"tuning_cluster_size_limit":{tuning_cluster_size_limit}}}}}',
+    ),
+    Configuration(
+        name="bp_mwpf_simple_graph",
+        decoder_parameter=f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"substitute_with_simple_graph":true,"use_bp":true,"hyperion_config":{{"tuning_cluster_size_limit":{tuning_cluster_size_limit}}}}}',
+    ),
 ]
 
 

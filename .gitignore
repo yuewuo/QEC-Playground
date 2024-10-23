@@ -7,7 +7,7 @@ history.tmp
 .vscode
 .idea
 
-target/
+**/target/
 tmp/
 *.bin
 *.json
@@ -24,3 +24,5 @@ flamegraph*.svg
 # nodejs packages
 node_modules/
 visualize/rendered.png
+
+*.log

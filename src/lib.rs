@@ -1,4 +1,5 @@
 #![cfg_attr(feature = "python_binding", feature(cfg_eval))]
+#![feature(get_mut_unchecked)]
 
 extern crate clap;
 #[macro_use]
@@ -55,13 +56,13 @@ pub mod util_macros;
 pub mod complete_model_graph;
 #[cfg(feature = "fusion_blossom")]
 pub mod decoder_fusion;
-#[cfg(feature = "fusion_blossom")]
-pub mod decoder_parallel_fusion;
 #[cfg(feature = "hyperion")]
 pub mod decoder_hyper_union_find;
 #[cfg(feature = "hyperion")]
 pub mod decoder_hyperion;
 pub mod decoder_mwpm;
+#[cfg(feature = "fusion_blossom")]
+pub mod decoder_parallel_fusion;
 pub mod decoder_tailored_mwpm;
 pub mod decoder_union_find;
 pub mod erasure_graph;

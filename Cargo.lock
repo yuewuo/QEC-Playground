@@ -388,6 +388,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "bp"
+version = "0.1.0"
+dependencies = [
+ "float-cmp 0.10.0",
+ "rand",
+]
+
+[[package]]
 name = "brotli"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -808,6 +816,15 @@ name = "float-cmp"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "98de4bbd547a563b716d8dfa9aad1cb19bfab00f4fa09a6a4ed21dbcf44ce9c4"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
+name = "float-cmp"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b09cf3155332e944990140d967ff5eceb70df778b34f77d8075db46e4704e6d8"
 dependencies = [
  "num-traits",
 ]
@@ -1328,6 +1345,7 @@ checksum = "1fafa6961cabd9c63bcd77a45d7e3b7f3b552b70417831fb0f56db717e72407e"
 name = "mwpf"
 version = "0.1.1"
 dependencies = [
+ "bp",
  "cfg-if",
  "chrono",
  "clap",
@@ -1721,7 +1739,7 @@ dependencies = [
  "derive_more",
  "either",
  "enum_dispatch",
- "float-cmp",
+ "float-cmp 0.9.0",
  "float-ord",
  "fusion-blossom",
  "lazy_static",
@@ -1761,7 +1779,7 @@ dependencies = [
  "derive_more",
  "either",
  "enum_dispatch",
- "float-cmp",
+ "float-cmp 0.9.0",
  "float-ord",
  "fusion-blossom",
  "lazy_static",
