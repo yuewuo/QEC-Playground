@@ -5,13 +5,13 @@ use crate::code_builder::*;
 use crate::complete_model_graph::*;
 #[cfg(feature = "fusion_blossom")]
 use crate::decoder_fusion::*;
-#[cfg(feature = "fusion_blossom")]
-use crate::decoder_parallel_fusion::*;
 #[cfg(feature = "hyperion")]
 use crate::decoder_hyper_union_find::*;
 #[cfg(feature = "hyperion")]
 use crate::decoder_hyperion::*;
 use crate::decoder_mwpm::*;
+#[cfg(feature = "fusion_blossom")]
+use crate::decoder_parallel_fusion::*;
 use crate::decoder_tailored_mwpm::*;
 use crate::decoder_union_find::*;
 use crate::erasure_graph::*;
@@ -974,15 +974,13 @@ impl GeneralDecoder {
                 return Err("decoder is not available; try enable feature `fusion_blossom`".to_string())
             }
             #[cfg(feature = "fusion_blossom")]
-            BenchmarkDecoder::ParallelFusion => {
-                GeneralDecoder::ParallelFusion(ParallelFusionDecoder::new(
-                    simulator,
-                    noise_model_graph.clone(),
-                    &parameters.decoder_config,
-                    configs.parallel_init,
-                    parameters.use_brief_edge,
-                ))
-            }
+            BenchmarkDecoder::ParallelFusion => GeneralDecoder::ParallelFusion(ParallelFusionDecoder::new(
+                simulator,
+                noise_model_graph.clone(),
+                &parameters.decoder_config,
+                configs.parallel_init,
+                parameters.use_brief_edge,
+            )),
             #[cfg(not(feature = "fusion_blossom"))]
             BenchmarkDecoder::ParallelFusion => {
                 return Err("decoder is not available; try enable feature `fusion_blossom`".to_string())
@@ -1037,7 +1035,9 @@ impl GeneralDecoder {
             #[cfg(feature = "fusion_blossom")]
             Self::Fusion(fusion_decoder) => fusion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures),
             #[cfg(feature = "fusion_blossom")]
-            Self::ParallelFusion(fusion_decoder) => fusion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures),
+            Self::ParallelFusion(fusion_decoder) => {
+                fusion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
+            }
             Self::TailoredMWPM(tailored_mwpm_decoder) => {
                 assert!(
                     sparse_detected_erasures.is_empty(),

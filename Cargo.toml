@@ -107,8 +107,8 @@ fusion-blossom = { version = "0.2.11", features = [
 chrono = "0.4.19"
 urlencoding = "2.1.0"
 enum_dispatch = "0.3.11"
-mwpf = { path = "../mwpf/current", version = "0.1.1", optional = true, features = [
-    "cluster_size_limit", "f64_weight", 
+mwpf = { path = "../mwpf", version = "0.1.1", optional = true, features = [
+    "cluster_size_limit",
 ] }
 # mwpf = { path = "../mwpf", version = "0.1.1", optional = true, default-features = false, features = [
 #     "cluster_size_limit", "f64_weight", "cli", "qecp_integrate", "unsafe_pointer"
