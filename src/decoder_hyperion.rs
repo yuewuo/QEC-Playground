@@ -202,20 +202,12 @@ impl HyperionDecoder {
 
             // solve the bp and update weights
             self.bp_decoder.as_mut().unwrap().decode(&syndrome_array);
-            let llrs = self.bp_decoder.as_ref().unwrap().log_prob_ratios.clone();
+            let mut llrs = self.bp_decoder.as_ref().unwrap().log_prob_ratios.clone();
 
             // note: honestly, this is not really needed. But it is a good practice to keep the model graph consistent, comment out if need more speed
             // note: unsafe, but sound if only one decoder is using this
-            let mut model_graph_arc = self.solver.get_model_graph();
-            let mut_model_graph = unsafe { Arc::get_mut_unchecked(&mut model_graph_arc) };
-            let mut_initializer = unsafe { Arc::get_mut_unchecked(&mut mut_model_graph.initializer) };
 
-            // note: can't and shouldn't scale anymore here
-            for (hyper_edge, new_weight) in mut_initializer.weighted_edges.iter_mut().zip(llrs.iter()) {
-                hyper_edge.weight = (*new_weight).round() as usize;
-            }
-
-            self.solver.update_weights(&llrs);
+            self.solver.update_weights(&mut llrs);
         }
 
         let time_decode_bp = decoder_begin.elapsed().as_secs_f64();
