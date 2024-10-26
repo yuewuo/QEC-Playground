@@ -217,44 +217,34 @@ pub fn build_code(simulator: &mut Simulator) {
             let height = simulator.measurement_cycles * (noisy_measurements + 1) + 1;
             // each measurement takes 6 time steps
             let mut nodes = Vec::with_capacity(height);
+            let rotated_is_real_or_virtual = |i: isize, j: isize| -> bool {
+                i - j <= dj as isize
+                    && j - i <= dj as isize
+                    && i + j >= dj as isize
+                    && i + j <= (2 * di as isize + dj as isize)
+            };
             let is_real = |i: usize, j: usize| -> bool {
                 if is_rotated {
-                    let is_real_dj = |pi, pj| pi + pj < dj || (pi + pj == dj && pi % 2 == 0 && pi > 0);
-                    let is_real_di = |pi, pj| pi + pj < di || (pi + pj == di && pj % 2 == 0 && pj > 0);
-                    if i <= dj && j <= dj {
-                        is_real_dj(dj - i, dj - j)
-                    } else if i >= di && j >= di {
-                        is_real_dj(i - di, j - di)
-                    } else if i >= dj && j <= di {
-                        is_real_di(i - dj, di - j)
-                    } else if i <= di && j >= dj {
-                        is_real_di(di - i, j - dj)
-                    } else {
-                        unreachable!()
+                    let i = i as isize;
+                    let j = j as isize;
+                    if !rotated_is_real_or_virtual(i, j) {
+                        return false;
                     }
+                    // check for boundary cases
+                    if (i - j == dj as isize || j - i == dj as isize) && i % 2 == 1 {
+                        return false;
+                    }
+                    if (i + j == dj as isize || i + j == (2 * di as isize + dj as isize)) && i % 2 == 0 {
+                        return false;
+                    }
+                    true
                 } else {
                     i > 0 && j > 0 && i < vertical - 1 && j < horizontal - 1
                 }
             };
             let is_virtual = |i: usize, j: usize| -> bool {
                 if is_rotated {
-                    let is_virtual_dj = |pi, pj| pi + pj == dj && (pi % 2 == 1 || pi == 0);
-                    let is_virtual_di = |pi, pj| pi + pj == di && (pj % 2 == 1 || pj == 0);
-                    if i <= dj && j <= dj {
-                        is_virtual_dj(dj - i, dj - j)
-                    } else if i >= di && j >= di {
-                        is_virtual_dj(i - di, j - di)
-                    } else if i >= dj && j <= di {
-                        is_virtual_di(i - dj, di - j)
-                    } else if i <= di && j >= dj {
-                        is_virtual_di(di - i, j - dj)
-                    } else {
-                        unreachable!()
-                    }
-                } else if i == 0 || i == vertical - 1 {
-                    j % 2 == 1
-                } else if j == 0 || j == horizontal - 1 {
-                    i % 2 == 1
+                    rotated_is_real_or_virtual(i as isize, j as isize) && !is_real(i, j)
                 } else {
                     false
                 }
