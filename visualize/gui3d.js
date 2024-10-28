@@ -904,7 +904,7 @@ export async function refresh_qecp_data() {
                             t: t,
                             i: i,
                             j: j,
-                            gate_peer: node.gp,
+                            gate_peer: node?.gp,
                         }
                         load_position(idle_gate_mesh.position, display_position)
                         idle_gate_mesh.scale.set(1, t_scale, 1)

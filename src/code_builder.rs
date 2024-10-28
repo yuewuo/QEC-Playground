@@ -39,6 +39,9 @@ pub enum CodeType {
     RotatedTailoredCodeBellInit,
     /// periodic boundary condition of rotated tailored surface code, code distances must be even number
     PeriodicRotatedTailoredCode,
+    /// example of lattice surgery rotated surface code
+    #[clap(hide(true))]
+    TwoQubitLatticeSurgeryExample,
     /// unknown code type, user must provide necessary information and build circuit-level implementation
     Customized,
 }
@@ -930,6 +933,9 @@ pub fn build_code(simulator: &mut Simulator) {
             simulator.height = height;
             simulator.nodes = nodes;
         }
+        CodeType::TwoQubitLatticeSurgeryExample => {
+            crate::examples::two_qubit_lattice_surgery_example::build_code(simulator);
+        }
         CodeType::Customized => {
             // skip user customized code
         }
@@ -1230,10 +1236,16 @@ pub fn code_builder_sanity_check(simulator: &Simulator) -> Result<(), String> {
 pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &SparseCorrection) -> Option<(bool, bool)> {
     // apply the correction directly to the top layer
     let top_t = simulator.height - 1;
+    let mut warned_top_node_not_exist = false;
     for (position, error) in correction.iter() {
         assert_eq!(position.t, top_t, "correction pattern must only be at top layer");
-        let node = simulator.get_node_mut_unwrap(position);
-        node.propagated = node.propagated.multiply(error);
+        if simulator.is_node_exist(position) {
+            let node = simulator.get_node_mut_unwrap(position);
+            node.propagated = node.propagated.multiply(error);
+        } else if !warned_top_node_not_exist {
+            warned_top_node_not_exist = true;
+            println!("[warning] code validation may not be correction because some of the qubits are missing at the top");
+        }
     }
     // validate the result
     let code_type = &simulator.code_type;
@@ -1403,12 +1415,17 @@ pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &
             let logical_n = left_cardinality % 2 != 0; // odd cardinality means there is a logical X error
             Some((logical_p, logical_n))
         }
+        &CodeType::TwoQubitLatticeSurgeryExample => {
+            crate::examples::two_qubit_lattice_surgery_example::validate_code(simulator, correction)
+        }
         _ => None,
     };
     // recover the errors
     for (position, error) in correction.iter() {
-        let node = simulator.get_node_mut_unwrap(position);
-        node.propagated = node.propagated.multiply(error);
+        if simulator.is_node_exist(position) {
+            let node = simulator.get_node_mut_unwrap(position);
+            node.propagated = node.propagated.multiply(error);
+        }
     }
     result
 }

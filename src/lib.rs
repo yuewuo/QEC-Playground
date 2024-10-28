@@ -40,17 +40,14 @@ extern crate enum_dispatch;
 
 pub mod blossom_v;
 pub mod cli;
+pub mod code_builder;
 pub mod reproducible_rand;
+pub mod simulator;
 pub mod test;
 pub mod tool;
 pub mod types;
 pub mod util;
 pub mod web;
-// pub mod distributed_uf_decoder;  TODO: migrate back
-// pub mod fpga_generator;  TODO: migrate back
-// pub mod fast_benchmark;  TODO: migrate back
-pub mod code_builder;
-pub mod simulator;
 #[macro_use]
 pub mod util_macros;
 pub mod complete_model_graph;
@@ -76,6 +73,7 @@ pub mod union_find;
 pub mod visualize;
 #[cfg(feature = "python_binding")]
 use pyo3::prelude::*;
+pub mod examples;
 pub mod simulator_compact;
 pub mod simulator_file;
 
