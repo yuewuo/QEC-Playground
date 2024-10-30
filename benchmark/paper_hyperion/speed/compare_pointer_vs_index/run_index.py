@@ -26,9 +26,19 @@ slurm_distribute.SLURM_DISTRIBUTE_TIME = "12:20:00"
 slurm_distribute.SLURM_DISTRIBUTE_MEM_PER_TASK = "8G"
 # for more usuable machines, use `SLURM_USE_SCAVENGE_PARTITION=1` flag
 slurm_distribute.SLURM_DISTRIBUTE_CPUS_PER_TASK = 12
-parameters = f"-p{STO(0)} --time-budget {3600*10} --code-type rotated-planar-code --noise-model stim-noise-model".split(
+parameters = f"-p{STO(num_threads)} --time-budget {3600*10} --code-type rotated-planar-code --noise-model stim-noise-model".split(
     " "
 )
+
+# check the Cargo.toml file is properly set up
+cargo_toml_path = os.path.join(qec_playground_root_dir, "Cargo.toml")
+with open(cargo_toml_path, "r", encoding="utf-8") as f:
+    expecting = """mwpf = { path = "../mwpf-pointer", version = "0.1.1", optional = true, default-features = false, features = [
+    "cluster_size_limit", "f64_weight", "cli", "qecp_integrate", "unsafe_pointer"
+] }"""
+    assert (
+        expecting in f.read()
+    ), f"Please ensure the following line to the Cargo.toml file:\n{expecting}"
 
 compile_code_if_necessary("--features=hyperion")
 
