@@ -33,9 +33,59 @@ When gathering at least 4000 logical errors, MWPF decoder at $d=7$ would need 2e
 is 278 hours on 10 CPU cores, which is roughly 2780 CPU hours.
 
 
-# to run this:
+## to run this:
 
 ```sh
 # under QEC-Playground
 cargo build --release --features hyperion
+# under this folder
+SLURM_USE_SCAVENGE_PARTITION=1 python3 run.py
+# if slurm failed, using the following command to gather the logical error rate data
+SLURM_USE_EXISTING_DATA=1 python3 run.py
+# gather the distribution data from profile files
+python3 gather_time_distribution.py
+# up to this point, all data has been gathered
+
+# plot into pdf files
+python3 plot.py
+```
+
+## example commands for debugging
+
+```sh
+cargo run --release --features hyperion -- benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":100}'
+```
+
+
+## study BP decoder logical error rate
+
+```sh
+# BP-MWPF
+cargo run --release --features hyperion -- tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":true,"hyperion_config":{"tuning_cluster_size_limit":50}}'
+   Compiling qecp v0.2.7 (/Users/wuyue/Documents/GitHub/QEC-Playground)
+    Finished release [optimized + debuginfo] target(s) in 13.73s
+     Running `target/release/qecp-cli tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":true,"hyperion_config":{"tuning_cluster_size_limit":50}}'`
+format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+0.001 7 7 21186 0 0 7 NaN 0 21186 / 100000000 [>] 0.11 % 517.77/s
+
+# MWPF
+cargo run --release --features hyperion -- tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":false,"hyperion_config":{"tuning_cluster_size_limit":50}}'
+    Finished release [optimized + debuginfo] target(s) in 0.40s
+     Running `target/release/qecp-cli tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":false,"hyperion_config":{"tuning_cluster_size_limit":50}}'`
+format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+0.001 7 7 926456 8 0.000008635056602796031 7 6.9e-1 0 926456 / 100000000 [>] 0.93 % 5230.66/s
+
+# HyperUF
+cargo run --release --features hyperion -- tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":false,"hyperion_config":{"tuning_cluster_size_limit":0}}'
+    Finished release [optimized + debuginfo] target(s) in 0.50s
+     Running `target/release/qecp-cli tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":false,"hyperion_config":{"tuning_cluster_size_limit":0}}'`
+format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+0.001 7 7 586385 14 0.00002387509912429547 7 5.2e-1 0 586385 / 100000000 [>] 1.64 % 17184.78/s
+
+# BP-HyperUF
+cargo run --release --features hyperion -- tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":true,"hyperion_config":{"tuning_cluster_size_limit":0}}' -e1000000000
+    Finished release [optimized + debuginfo] target(s) in 0.14s
+     Running `target/release/qecp-cli tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":true,"hyperion_config":{"tuning_cluster_size_limit":0}}' -e1000000000`
+format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+0.001 7 7 478299 29 0.00006063152964986337 7 3.6e-1 0 478299 / 100000000 [>] 0.48 % 509.87/s
 ```

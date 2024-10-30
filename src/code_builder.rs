@@ -39,9 +39,10 @@ pub enum CodeType {
     RotatedTailoredCodeBellInit,
     /// periodic boundary condition of rotated tailored surface code, code distances must be even number
     PeriodicRotatedTailoredCode,
-    /// example of lattice surgery rotated surface code
+    /// example of lattice surgery rotated surface code and individual two qubits examples
     #[clap(hide(true))]
     TwoQubitLatticeSurgeryExample,
+    TwoQubitIndividualExample,
     /// unknown code type, user must provide necessary information and build circuit-level implementation
     Customized,
 }
@@ -936,6 +937,9 @@ pub fn build_code(simulator: &mut Simulator) {
         CodeType::TwoQubitLatticeSurgeryExample => {
             crate::examples::two_qubit_lattice_surgery_example::build_code(simulator);
         }
+        CodeType::TwoQubitIndividualExample => {
+            crate::examples::two_qubit_individual_example::build_code(simulator);
+        }
         CodeType::Customized => {
             // skip user customized code
         }
@@ -1417,6 +1421,9 @@ pub fn code_builder_validate_correction(simulator: &mut Simulator, correction: &
         }
         &CodeType::TwoQubitLatticeSurgeryExample => {
             crate::examples::two_qubit_lattice_surgery_example::validate_code(simulator, correction)
+        }
+        &CodeType::TwoQubitIndividualExample => {
+            crate::examples::two_qubit_individual_example::validate_code(simulator, correction)
         }
         _ => None,
     };

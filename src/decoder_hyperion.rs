@@ -46,6 +46,8 @@ pub struct HyperionDecoderConfig {
     pub substitute_with_simple_graph: bool,
     #[serde(default = "hyperion_default_configs::use_bp")]
     pub use_bp: bool,
+    #[serde(default = "hyperion_default_configs::bp_iteration")]
+    pub bp_iteration: usize,
 }
 
 pub mod hyperion_default_configs {
@@ -60,6 +62,9 @@ pub mod hyperion_default_configs {
     }
     pub fn use_bp() -> bool {
         false
+    }
+    pub fn bp_iteration() -> usize {
+        1
     }
 }
 
@@ -125,10 +130,10 @@ impl HyperionDecoder {
         if config.use_bp {
             let mut pcm = BpSparse::new(vertex_num, check_size, 0);
             let mut initial_log_ratios = Vec::with_capacity(check_size);
-            let mut channel_probabilites = Vec::with_capacity(check_size);
+            let mut channel_probabilities = Vec::with_capacity(check_size);
 
             for (col_index, (defect_vertices, hyperedge_group)) in model_hypergraph.weighted_edges.iter().enumerate() {
-                channel_probabilites.push(hyperedge_group.hyperedge.probability);
+                channel_probabilities.push(hyperedge_group.hyperedge.probability);
                 for vertex_position in defect_vertices.0.iter() {
                     let row_index = model_hypergraph.vertex_indices.get(vertex_position).unwrap();
                     pcm.insert_entry(*row_index, col_index);
@@ -136,7 +141,7 @@ impl HyperionDecoder {
                 initial_log_ratios.push(hyperedge_group.hyperedge.weight as f64);
             }
 
-            let bp_decoder = BpDecoder::new_3(pcm, channel_probabilites, 1).unwrap();
+            let bp_decoder = BpDecoder::new_3(pcm, channel_probabilities, config.bp_iteration).unwrap();
 
             bp_decoder_option = Some(bp_decoder);
             initial_log_ratios_option = Some(initial_log_ratios);
@@ -207,6 +212,7 @@ impl HyperionDecoder {
             // note: honestly, this is not really needed. But it is a good practice to keep the model graph consistent, comment out if need more speed
             // note: unsafe, but sound if only one decoder is using this
 
+            // println!("{llrs:?}");
             self.solver.update_weights(&mut llrs);
         }
 

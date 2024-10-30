@@ -9,6 +9,7 @@ history.tmp
 
 **/target/
 tmp/
+tmp_*
 *.bin
 *.json
 !package.json
