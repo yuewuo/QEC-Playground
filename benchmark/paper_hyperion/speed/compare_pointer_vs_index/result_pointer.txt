@@ -1,2 +1,2 @@
 # <total samples> <total errors> <logical error rate> <confidence>
-599006 7 1.168603e-05 5.291e-01
+20000050 205 1.024997e-05 9.778e-02

@@ -35,11 +35,11 @@ for name in ["pointer", "index"]:
     )
 
     x_vec, y_vec = distribution.flatten()
+    plt.loglog(x_vec, y_vec, ".-", label=name)
 
-    plt.cla()
-    plt.loglog(x_vec, y_vec, ".-")
-    plt.xlim(1e-7, 10)
-    plt.ylim(0.5, 1e9)
-    plt.ylabel("Sample Count")
-    plt.xlabel("Decoding Latency (s)")
-    plt.savefig(f"{name}_{d}.pdf")
+plt.xlim(1e-7, 10)
+plt.ylim(0.5, 1e9)
+plt.ylabel("Sample Count")
+plt.xlabel("Decoding Latency (s)")
+plt.legend()
+plt.savefig(f"comparison.pdf")
