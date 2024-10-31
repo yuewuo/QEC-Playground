@@ -14,23 +14,28 @@ class RuntimeStatistics:
         # single simulation; currently we only support a single config
         self.local_config = None
         self.entries = []
-        with open(filename, "r", encoding="utf8") as f:
-            for line_idx, line in enumerate(f):
+        with open(filename, "r", encoding="utf8", buffering=65536) as f:
+            # first line for global config
+            line = f.readline()
+            line = line.strip("\r\n ")
+            assert line.startswith("#f ")
+            self.global_config = json.loads(line[3:])
+            # second line for local config
+            line = f.readline()
+            line = line.strip("\r\n ")
+            assert line.startswith("# ")
+            self.local_config = json.loads(line[2:])
+            # all the rest are entries
+            while True:
+                line = f.readline()
                 line = line.strip("\r\n ")
                 if line == "":
                     break
-                if line_idx == 0:
-                    assert line.startswith("#f ")
-                    self.global_config = json.loads(line[3:])
-                elif line_idx == 1:
-                    assert line.startswith("# ")
-                    self.local_config = json.loads(line[2:])
+                value = json.loads(line)
+                if apply_entries is None:
+                    self.entries.append(value)
                 else:
-                    value = json.loads(line)
-                    if apply_entries is None:
-                        self.entries.append(value)
-                    else:
-                        self.entries.append(apply_entries(value))
+                    self.entries.append(apply_entries(value))
         assert self.local_config is not None
 
     def __repr__(self):

@@ -156,6 +156,7 @@ impl BenchmarkControl {
 /// decoder might suffer from rare deadlock, and this controller will record the necessary information for debugging with low runtime overhead
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BenchmarkThreadDebugger {
+    thread_index: usize,
     thread_counter: usize,
     error_pattern: Option<SparseErrorPattern>,
     measurement: Option<SparseMeasurement>,
@@ -164,8 +165,9 @@ pub struct BenchmarkThreadDebugger {
 }
 
 impl BenchmarkThreadDebugger {
-    fn new() -> Self {
+    fn new(thread_index: usize) -> Self {
         Self {
+            thread_index,
             thread_counter: 0,
             error_pattern: None,
             measurement: None,
@@ -711,7 +713,7 @@ impl BenchmarkParameters {
             GeneralSimulator::Simulator(simulator)
         };
         for parallel_idx in 0..configs.parallel {
-            let thread_debugger = Arc::new(Mutex::new(BenchmarkThreadDebugger::new()));
+            let thread_debugger = Arc::new(Mutex::new(BenchmarkThreadDebugger::new(parallel_idx)));
             threads_debugger.push(thread_debugger.clone());
             let thread_ended = Arc::new(AtomicBool::new(false));
             threads_ended.push(Arc::clone(&thread_ended));
@@ -1146,18 +1148,22 @@ impl SimulationWorker {
             let validate_elapsed = begin.elapsed().as_secs_f64();
             if is_qec_failed && matches!(parameters.debug_print, Some(BenchmarkDebugPrint::FailedErrorPattern)) {
                 let sparse_error_pattern = self.general_simulator.generate_sparse_error_pattern();
-                eprint!(
+                println!(
+                    "# thread {}, counter: {thread_counter}",
+                    self.thread_debugger.lock().unwrap().thread_index
+                );
+                print!(
                     "{}",
                     serde_json::to_string(&sparse_error_pattern).expect("serialize should success")
                 );
                 if !sparse_detected_erasures.is_empty() {
                     // has detected erasures, report as well
-                    eprintln!(
+                    println!(
                         ", {}",
                         serde_json::to_string(&sparse_detected_erasures).expect("serialize should success")
                     );
                 } else {
-                    eprintln!();
+                    println!();
                 }
             }
             // update statistic information
