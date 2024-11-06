@@ -10,8 +10,8 @@ I run simulation with the same seed for both MWPF and BP-MWPF. Let's see what ar
 
 ```sh
 # BP-MWPF
-cargo run --release --features hyperion -- tool benchmark '[7]' --djs '[7]' '[7]' -m1000000 '[1.00000000e-03]' -p1 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":true,"bp_iteration":1,"hyperion_config":{"tuning_cluster_size_limit":50}}' --deterministic-seed 123 --debug-print failed-error-pattern >failed_bp_mwpm.txt
+cargo run --release --features hyperion -- tool benchmark '[7]' --djs '[7]' '[7]' -m1000000 '[1.00000000e-03]' -p1 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":true,"bp_iteration":1,"hyperion_config":{"cluster_node_limit":50}}' --deterministic-seed 123 --debug-print failed-error-pattern >failed_bp_mwpm.txt
 # MWPF
-cargo run --release --features hyperion -- tool benchmark '[7]' --djs '[7]' '[7]' -m1000000 '[1.00000000e-03]' -p1 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":false,"hyperion_config":{"tuning_cluster_size_limit":50}}' --deterministic-seed 123 --debug-print failed-error-pattern >failed_mwpm.txt
+cargo run --release --features hyperion -- tool benchmark '[7]' --djs '[7]' '[7]' -m1000000 '[1.00000000e-03]' -p1 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":false,"hyperion_config":{"cluster_node_limit":50}}' --deterministic-seed 123 --debug-print failed-error-pattern >failed_mwpm.txt
 
 ```

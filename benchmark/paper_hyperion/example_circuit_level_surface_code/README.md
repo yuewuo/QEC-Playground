@@ -61,31 +61,31 @@ cargo run --release --features hyperion -- benchmark '[7]' '[7]' '[0.001]' -p0 -
 
 ```sh
 # BP-MWPF
-cargo run --release --features hyperion -- tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":true,"hyperion_config":{"tuning_cluster_size_limit":50}}'
+cargo run --release --features hyperion -- tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":true,"hyperion_config":{"cluster_node_limit":50}}'
    Compiling qecp v0.2.7 (/Users/wuyue/Documents/GitHub/QEC-Playground)
     Finished release [optimized + debuginfo] target(s) in 13.73s
-     Running `target/release/qecp-cli tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":true,"hyperion_config":{"tuning_cluster_size_limit":50}}'`
+     Running `target/release/qecp-cli tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":true,"hyperion_config":{"cluster_node_limit":50}}'`
 format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
 0.001 7 7 21186 0 0 7 NaN 0 21186 / 100000000 [>] 0.11 % 517.77/s
 
 # MWPF
-cargo run --release --features hyperion -- tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":false,"hyperion_config":{"tuning_cluster_size_limit":50}}'
+cargo run --release --features hyperion -- tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":false,"hyperion_config":{"cluster_node_limit":50}}'
     Finished release [optimized + debuginfo] target(s) in 0.40s
-     Running `target/release/qecp-cli tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":false,"hyperion_config":{"tuning_cluster_size_limit":50}}'`
+     Running `target/release/qecp-cli tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":false,"hyperion_config":{"cluster_node_limit":50}}'`
 format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
 0.001 7 7 926456 8 0.000008635056602796031 7 6.9e-1 0 926456 / 100000000 [>] 0.93 % 5230.66/s
 
 # HyperUF
-cargo run --release --features hyperion -- tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":false,"hyperion_config":{"tuning_cluster_size_limit":0}}'
+cargo run --release --features hyperion -- tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":false,"hyperion_config":{"cluster_node_limit":0}}'
     Finished release [optimized + debuginfo] target(s) in 0.50s
-     Running `target/release/qecp-cli tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":false,"hyperion_config":{"tuning_cluster_size_limit":0}}'`
+     Running `target/release/qecp-cli tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":false,"hyperion_config":{"cluster_node_limit":0}}'`
 format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
 0.001 7 7 586385 14 0.00002387509912429547 7 5.2e-1 0 586385 / 100000000 [>] 1.64 % 17184.78/s
 
 # BP-HyperUF
-cargo run --release --features hyperion -- tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":true,"hyperion_config":{"tuning_cluster_size_limit":0}}' -e1000000000
+cargo run --release --features hyperion -- tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":true,"hyperion_config":{"cluster_node_limit":0}}' -e1000000000
     Finished release [optimized + debuginfo] target(s) in 0.14s
-     Running `target/release/qecp-cli tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":true,"hyperion_config":{"tuning_cluster_size_limit":0}}' -e1000000000`
+     Running `target/release/qecp-cli tool benchmark '[7]' '[7]' '[0.001]' -p0 --code-type rotated-planar-code --noise-model stim-noise-model --decoder hyperion --decoder-config '{"max_weight":100,"use_bp":true,"hyperion_config":{"cluster_node_limit":0}}' -e1000000000`
 format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
 0.001 7 7 478299 29 0.00006063152964986337 7 3.6e-1 0 478299 / 100000000 [>] 0.48 % 509.87/s
 ```

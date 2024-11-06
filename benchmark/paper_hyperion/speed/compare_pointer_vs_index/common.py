@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 
 max_half_weight = 100
-tuning_cluster_size_limit = 50  # for MWPF only
+cluster_node_limit = 50  # for MWPF only
 
 # for debugging
 p = 0.001
@@ -20,7 +20,7 @@ max_N = 1_000_000
 # max_N = 1_000_000_000_000
 
 
-decoder_parameter = f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"hyperion_config":{{"tuning_cluster_size_limit":{tuning_cluster_size_limit}}}}}'
+decoder_parameter = f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"hyperion_config":{{"cluster_node_limit":{cluster_node_limit}}}}}'
 
 
 profile_parent = os.path.dirname(__file__)
