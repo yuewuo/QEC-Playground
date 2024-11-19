@@ -193,7 +193,7 @@ impl HyperionDecoder {
             })
             .collect();
 
-        let mut syndrome_pattern = SyndromePattern::new(defect_vertices, vec![]);
+        let syndrome_pattern = SyndromePattern::new(defect_vertices, vec![]);
 
         let decoder_begin = Instant::now();
 
@@ -212,7 +212,7 @@ impl HyperionDecoder {
 
         let time_decode_bp = decoder_begin.elapsed().as_secs_f64();
 
-        self.solver.solve(&mut syndrome_pattern);
+        self.solver.solve(syndrome_pattern);
         let subgraph = self.solver.subgraph();
         self.solver.clear();
 
