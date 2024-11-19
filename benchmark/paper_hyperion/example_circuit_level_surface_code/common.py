@@ -64,21 +64,25 @@ configurations = [
     #     name="bp_huf",
     #     decoder_parameter=f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"use_bp":true,"hyperion_config":{{"cluster_node_limit":0}}}}',
     # ),
+    Configuration(
+        name="mwpf",
+        decoder_parameter=f'--decoder hyperion --decoder-config {{"use_bp":true,"bp_application_ratio":0.1,"hyperion_config":{{"cluster_node_limit":{cluster_node_limit}}}}}',
+    ),
 ]
 
 
 # trying to understand the number of iteration of BP
-for bp_iteration in [1, 2, 3, 5, 7, 10, 15, 20, 30, 50, 70, 100]:
-    configurations += [
-        Configuration(
-            name=f"bp_mwpf_it{bp_iteration}",
-            decoder_parameter=f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"use_bp":true,"bp_iteration":{bp_iteration},"hyperion_config":{{"cluster_node_limit":{cluster_node_limit}}}}}',
-        ),
-        Configuration(
-            name=f"bp_huf_it{bp_iteration}",
-            decoder_parameter=f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"use_bp":true,"bp_iteration":{bp_iteration},"hyperion_config":{{"cluster_node_limit":0}}}}',
-        ),
-    ]
+# for bp_iteration in [1, 2, 3, 5, 7, 10, 15, 20, 30, 50, 70, 100]:
+#     configurations += [
+#         Configuration(
+#             name=f"bp_mwpf_it{bp_iteration}",
+#             decoder_parameter=f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"use_bp":true,"bp_iteration":{bp_iteration},"hyperion_config":{{"cluster_node_limit":{cluster_node_limit}}}}}',
+#         ),
+#         Configuration(
+#             name=f"bp_huf_it{bp_iteration}",
+#             decoder_parameter=f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"use_bp":true,"bp_iteration":{bp_iteration},"hyperion_config":{{"cluster_node_limit":0}}}}',
+#         ),
+#     ]
 
 
 profile_parent = os.path.dirname(__file__)

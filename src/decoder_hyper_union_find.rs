@@ -33,18 +33,11 @@ pub struct HyperUnionFindDecoderConfig {
     #[serde(alias = "ucp")] // abbreviation
     #[serde(default = "mwpm_default_configs::use_combined_probability")]
     pub use_combined_probability: bool,
-    /// the maximum integer weight after scaling
-    #[serde(alias = "mhw")] // abbreviation
-    #[serde(default = "hyper_union_find_default_configs::max_weight")]
-    pub max_weight: usize,
     #[serde(default = "hyper_union_find_default_configs::default_hyperion_config")]
     pub hyperion_config: serde_json::Value,
 }
 
 pub mod hyper_union_find_default_configs {
-    pub fn max_weight() -> usize {
-        1000000
-    }
     pub fn default_hyperion_config() -> serde_json::Value {
         json!({})
     }
@@ -84,7 +77,7 @@ impl HyperUnionFindDecoder {
             use_brief_edge,
         );
         let model_hypergraph = Arc::new(model_hypergraph);
-        let (vertex_num, weighted_edges) = model_hypergraph.generate_mwpf_hypergraph(config.max_weight);
+        let (vertex_num, weighted_edges) = model_hypergraph.generate_mwpf_hypergraph();
         let initializer = Arc::new(SolverInitializer::new(vertex_num, weighted_edges));
         let solver = SolverSerialUnionFind::new(&initializer, config.hyperion_config.clone());
         Self {

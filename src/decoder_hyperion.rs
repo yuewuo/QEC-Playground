@@ -36,10 +36,6 @@ pub struct HyperionDecoderConfig {
     #[serde(alias = "ucp")] // abbreviation
     #[serde(default = "mwpm_default_configs::use_combined_probability")]
     pub use_combined_probability: bool,
-    /// the maximum integer weight after scaling
-    #[serde(alias = "mhw")] // abbreviation
-    #[serde(default = "hyperion_default_configs::max_weight")]
-    pub max_weight: usize,
     #[serde(default = "hyperion_default_configs::default_hyperion_config")]
     pub hyperion_config: serde_json::Value,
     #[serde(default = "hyperion_default_configs::substitute_with_simple_graph")]
@@ -48,12 +44,11 @@ pub struct HyperionDecoderConfig {
     pub use_bp: bool,
     #[serde(default = "hyperion_default_configs::bp_iteration")]
     pub bp_iteration: usize,
+    #[serde(default = "hyperion_default_configs::bp_application_ratio")]
+    pub bp_application_ratio: f64,
 }
 
 pub mod hyperion_default_configs {
-    pub fn max_weight() -> usize {
-        1000000
-    }
     pub fn default_hyperion_config() -> serde_json::Value {
         json!({})
     }
@@ -65,6 +60,9 @@ pub mod hyperion_default_configs {
     }
     pub fn bp_iteration() -> usize {
         1
+    }
+    pub fn bp_application_ratio() -> f64 {
+        0.1
     }
 }
 
@@ -117,7 +115,7 @@ impl HyperionDecoder {
             );
         }
         let model_hypergraph = Arc::new(model_hypergraph);
-        let (vertex_num, weighted_edges) = model_hypergraph.generate_mwpf_hypergraph(config.max_weight);
+        let (vertex_num, weighted_edges) = model_hypergraph.generate_mwpf_hypergraph();
 
         let check_size = weighted_edges.len();
 
@@ -209,11 +207,7 @@ impl HyperionDecoder {
             self.bp_decoder.as_mut().unwrap().decode(&syndrome_array);
             let mut llrs = self.bp_decoder.as_ref().unwrap().log_prob_ratios.clone();
 
-            // note: honestly, this is not really needed. But it is a good practice to keep the model graph consistent, comment out if need more speed
-            // note: unsafe, but sound if only one decoder is using this
-
-            // println!("{llrs:?}");
-            self.solver.update_weights(&mut llrs);
+            self.solver.update_weights_bp(&mut llrs, self.config.bp_application_ratio);
         }
 
         let time_decode_bp = decoder_begin.elapsed().as_secs_f64();

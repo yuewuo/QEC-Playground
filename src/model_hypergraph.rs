@@ -529,25 +529,17 @@ impl ModelHypergraph {
     }
 
     #[cfg(feature = "hyperion")]
-    pub fn generate_mwpf_hypergraph(&self, max_weight: usize) -> (usize, Vec<HyperEdge>) {
-        // scale all the edges
-        let mut maximum_weight = 0.;
-        for (_, hyperedge_group) in self.weighted_edges.iter() {
-            if hyperedge_group.hyperedge.probability > 0. && hyperedge_group.hyperedge.weight > maximum_weight {
-                maximum_weight = hyperedge_group.hyperedge.weight;
-            }
-        }
+    pub fn generate_mwpf_hypergraph(&self) -> (usize, Vec<HyperEdge>) {
         let mut weighted_edges = Vec::with_capacity(self.weighted_edges.len());
         for (defect_vertices, hyperedge_group) in self.weighted_edges.iter() {
             if hyperedge_group.hyperedge.probability > 0. {
                 // only add those possible edges; for erasures, handle later
-                let scaled_weight = hyperedge_group.hyperedge.weight * max_weight as f64 / maximum_weight;
-                let int_weight = scaled_weight.round();
-                assert!(int_weight.is_finite(), "weight must be normal");
-                assert!(int_weight >= 0., "weight must be non-negative");
-                assert!(int_weight <= max_weight as f64, "weight must be smaller than max weight");
+                let weight = hyperedge_group.hyperedge.weight;
+                assert!(weight.is_finite(), "weight must be normal");
+                // assert!(int_weight >= 0., "weight must be non-negative");
+                // assert!(int_weight <= max_weight as f64, "weight must be smaller than max weight");
                 let vertex_indices: Vec<_> = defect_vertices.0.iter().map(|x| self.vertex_indices[x]).collect();
-                weighted_edges.push(HyperEdge::new(vertex_indices, int_weight as usize));
+                weighted_edges.push(HyperEdge::new(vertex_indices, weight));
             }
         }
         (self.vertex_positions.len(), weighted_edges)
