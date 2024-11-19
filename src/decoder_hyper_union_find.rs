@@ -116,7 +116,7 @@ impl HyperUnionFindDecoder {
             })
             .collect();
         let syndrome_pattern = SyndromePattern::new(defect_vertices, vec![]);
-        self.solver.solve(syndrome_pattern);
+        self.solver.solve(&syndrome_pattern);
         let subgraph = self.solver.subgraph();
         self.solver.clear();
         let time_decode = begin.elapsed().as_secs_f64();

@@ -212,7 +212,7 @@ impl HyperionDecoder {
 
         let time_decode_bp = decoder_begin.elapsed().as_secs_f64();
 
-        self.solver.solve(syndrome_pattern);
+        self.solver.solve(&syndrome_pattern);
         let subgraph = self.solver.subgraph();
         self.solver.clear();
 
