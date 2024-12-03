@@ -536,10 +536,9 @@ impl ModelHypergraph {
                 // only add those possible edges; for erasures, handle later
                 let weight = hyperedge_group.hyperedge.weight;
                 assert!(weight.is_finite(), "weight must be normal");
-                // assert!(int_weight >= 0., "weight must be non-negative");
-                // assert!(int_weight <= max_weight as f64, "weight must be smaller than max weight");
                 let vertex_indices: Vec<_> = defect_vertices.0.iter().map(|x| self.vertex_indices[x]).collect();
-                weighted_edges.push(HyperEdge::new(vertex_indices, weight));
+                use num_traits::cast::FromPrimitive;
+                weighted_edges.push(HyperEdge::new(vertex_indices, mwpf::util::Weight::from_f64(weight).unwrap()));
             }
         }
         (self.vertex_positions.len(), weighted_edges)

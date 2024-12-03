@@ -6,6 +6,7 @@ use super::noise_model::*;
 use super::simulator::*;
 use crate::model_hypergraph::*;
 use crate::mwpf::{bp::bp::*, mwpf_solver::*, util::*};
+use num_traits::cast::FromPrimitive;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Instant;
@@ -205,14 +206,21 @@ impl HyperionDecoder {
 
             // solve the bp and update weights
             self.bp_decoder.as_mut().unwrap().decode(&syndrome_array);
-            let mut llrs = self.bp_decoder.as_ref().unwrap().log_prob_ratios.clone();
+            let llrs = self
+                .bp_decoder
+                .as_ref()
+                .unwrap()
+                .log_prob_ratios
+                .iter()
+                .map(|v| Weight::from_f64(*v).unwrap())
+                .collect();
 
-            self.solver.update_weights_bp(&mut llrs, self.config.bp_application_ratio);
+            self.solver.update_weights(llrs, self.config.bp_application_ratio);
         }
 
         let time_decode_bp = decoder_begin.elapsed().as_secs_f64();
 
-        self.solver.solve(&syndrome_pattern);
+        self.solver.solve(syndrome_pattern);
         let subgraph = self.solver.subgraph();
         self.solver.clear();
 

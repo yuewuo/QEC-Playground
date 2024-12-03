@@ -1362,7 +1362,7 @@ checksum = "1fafa6961cabd9c63bcd77a45d7e3b7f3b552b70417831fb0f56db717e72407e"
 
 [[package]]
 name = "mwpf"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "base64",
  "bp",
@@ -1478,6 +1478,7 @@ dependencies = [
  "num-bigint",
  "num-integer",
  "num-traits",
+ "serde",
 ]
 
 [[package]]
@@ -1765,6 +1766,7 @@ dependencies = [
  "libc",
  "mwpf",
  "ndarray",
+ "num-traits",
  "num_cpus",
  "parking_lot",
  "pbr",
