@@ -12,7 +12,6 @@ p = 0.001
 d = 7
 min_error_cases = 4000
 split_job = 100  # split the job by 100 pieces, each only responsible for finding 40 logical errors
-max_half_weight = 100
 cluster_node_limit = 50  # for MWPF only
 max_N = 1_000_000_000_000
 
@@ -36,26 +35,26 @@ configurations = [
     #     name="unweighted_uf",
     #     decoder_parameter=f'--decoder fusion --decoder-config {{"max_half_weight":1,"max_tree_size":0}}',
     # ),
-    # Configuration(
-    #     name="unweighted_hyper_uf",
-    #     decoder_parameter=f'--decoder hyperion --decoder-config {{"max_weight":1,"hyperion_config":{{"cluster_node_limit":0}}}}',
-    # ),
-    # Configuration(
-    #     name="hyper_uf",
-    #     decoder_parameter=f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"hyperion_config":{{"cluster_node_limit":0}}}}',
-    # ),
+    Configuration(
+        name="unweighted_hyper_uf",
+        decoder_parameter=f'--decoder hyperion --decoder-config {{"uniform_weights":true,"hyperion_config":{{"cluster_node_limit":0}}}}',
+    ),
+    Configuration(
+        name="hyper_uf",
+        decoder_parameter=f'--decoder hyperion --decoder-config {{"hyperion_config":{{"cluster_node_limit":0}}}}',
+    ),
     Configuration(
         name="mwpf",
         decoder_parameter=f'--decoder hyperion --decoder-config {{"hyperion_config":{{"cluster_node_limit":{cluster_node_limit}}}}}',
     ),
-    # Configuration(
-    #     name="hyper_uf_simple_graph",
-    #     decoder_parameter=f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"substitute_with_simple_graph":true,"hyperion_config":{{"cluster_node_limit":0}}}}',
-    # ),
-    # Configuration(
-    #     name="mwpf_simple_graph",
-    #     decoder_parameter=f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"substitute_with_simple_graph":true,"hyperion_config":{{"cluster_node_limit":{cluster_node_limit}}}}}',
-    # ),
+    Configuration(
+        name="hyper_uf_simple_graph",
+        decoder_parameter=f'--decoder hyperion --decoder-config {{"substitute_with_simple_graph":true,"hyperion_config":{{"cluster_node_limit":0}}}}',
+    ),
+    Configuration(
+        name="mwpf_simple_graph",
+        decoder_parameter=f'--decoder hyperion --decoder-config {{"substitute_with_simple_graph":true,"hyperion_config":{{"cluster_node_limit":{cluster_node_limit}}}}}',
+    ),
     # Configuration(
     #     name="bp_mwpf",
     #     decoder_parameter=f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"use_bp":true,"hyperion_config":{{"cluster_node_limit":{cluster_node_limit}}}}}',
@@ -65,7 +64,7 @@ configurations = [
     #     decoder_parameter=f'--decoder hyperion --decoder-config {{"max_weight":{max_half_weight},"use_bp":true,"hyperion_config":{{"cluster_node_limit":0}}}}',
     # ),
     # Configuration(
-    #     name="mwpf",
+    #     name="bp_mwpf_ratio",
     #     decoder_parameter=f'--decoder hyperion --decoder-config {{"use_bp":true,"bp_application_ratio":0.1,"hyperion_config":{{"cluster_node_limit":{cluster_node_limit}}}}}',
     # ),
 ]

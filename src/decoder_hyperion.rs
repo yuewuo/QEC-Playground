@@ -6,7 +6,7 @@ use super::noise_model::*;
 use super::simulator::*;
 use crate::model_hypergraph::*;
 use crate::mwpf::{bp::bp::*, mwpf_solver::*, util::*};
-use num_traits::cast::FromPrimitive;
+use num_traits::{FromPrimitive, One};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Instant;
@@ -37,6 +37,8 @@ pub struct HyperionDecoderConfig {
     #[serde(alias = "ucp")] // abbreviation
     #[serde(default = "mwpm_default_configs::use_combined_probability")]
     pub use_combined_probability: bool,
+    #[serde(default = "hyperion_default_configs::uniform_weights")]
+    pub uniform_weights: bool,
     #[serde(default = "hyperion_default_configs::default_hyperion_config")]
     pub hyperion_config: serde_json::Value,
     #[serde(default = "hyperion_default_configs::substitute_with_simple_graph")]
@@ -50,6 +52,9 @@ pub struct HyperionDecoderConfig {
 }
 
 pub mod hyperion_default_configs {
+    pub fn uniform_weights() -> bool {
+        false
+    }
     pub fn default_hyperion_config() -> serde_json::Value {
         json!({})
     }
@@ -120,7 +125,11 @@ impl HyperionDecoder {
 
         let check_size = weighted_edges.len();
 
-        let initializer = Arc::new(SolverInitializer::new(vertex_num, weighted_edges));
+        let mut initializer = SolverInitializer::new(vertex_num, weighted_edges);
+        if config.uniform_weights {
+            initializer.uniform_weights(Weight::one());
+        }
+        let initializer = Arc::new(initializer);
         let solver = SolverSerialJointSingleHair::new(&initializer, config.hyperion_config.clone());
 
         let mut bp_decoder_option = None;
