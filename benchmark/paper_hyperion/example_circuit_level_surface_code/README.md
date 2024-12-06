@@ -21,6 +21,15 @@ hyper_uf_simple_graph: average decoding time: 1.930e-04s, pL = 3.157e-05 (confid
 mwpf_simple_graph: average decoding time: 2.424e-04s, pL = 2.844e-05 (confidence = 2.21e-02)
 ```
 
+version 0.2.1:
+```sh
+unweighted_hyper_uf: average decoding time: 8.417e-04s, pL = 1.250e-04 (confidence = 2.21e-02)
+hyper_uf: average decoding time: 8.901e-04s, pL = 1.599e-05 (confidence = 2.21e-02)
+mwpf: average decoding time: 2.641e-03s, pL = 1.138e-05 (confidence = 2.21e-02)
+hyper_uf_simple_graph: average decoding time: 1.852e-04s, pL = 3.157e-05 (confidence = 2.21e-02)
+mwpf_simple_graph: average decoding time: 2.344e-04s, pL = 2.844e-05 (confidence = 2.21e-02)
+```
+
 Since the surface code is currently the most promising code, I want to use it as the example data points in the
 framework figure (the figure with 4 points representing MWPF, hyperUF, UF and MWPM on a speed/accuracy graph).
 The idea is to use the standard stim noise model and run each decoder at the same configuration.
