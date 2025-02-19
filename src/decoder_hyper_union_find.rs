@@ -115,7 +115,7 @@ impl HyperUnionFindDecoder {
                     .expect("measurement cannot happen at impossible position")
             })
             .collect();
-        let syndrome_pattern = SyndromePattern::new(defect_vertices, vec![]);
+        let syndrome_pattern = SyndromePattern::new_vertices(defect_vertices);
         self.solver.solve(syndrome_pattern);
         let subgraph = self.solver.subgraph();
         self.solver.clear();
