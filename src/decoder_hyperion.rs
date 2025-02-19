@@ -5,8 +5,8 @@ use super::model_graph::*;
 use super::noise_model::*;
 use super::simulator::*;
 use crate::model_hypergraph::*;
-use crate::mwpf::{bp::bp::*, mwpf_solver::*, util::*};
-use num_traits::{FromPrimitive, One};
+use crate::mwpf::{mwpf_solver::*, util::*};
+use num_traits::One;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Instant;
@@ -17,13 +17,9 @@ pub struct HyperionDecoder {
     /// save configuration for later usage
     pub config: HyperionDecoderConfig,
     /// (approximate) minimum-weight parity factor solver
-    pub solver: SolverSerialJointSingleHair,
+    pub solver: Box<dyn SolverTrait + Send>,
     /// the initializer of the solver, used for customized clone
     pub initializer: Arc<SolverInitializer>,
-    /// bp decoder if in use
-    pub bp_decoder: Option<BpDecoder>,
-    /// initial log ratios for bp decoder if in use
-    pub initial_log_ratios: Option<Vec<f64>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -77,10 +73,11 @@ impl Clone for HyperionDecoder {
         Self {
             model_hypergraph: self.model_hypergraph.clone(),
             config: self.config.clone(),
-            solver: SolverSerialJointSingleHair::new(&self.initializer, self.config.hyperion_config.clone()),
+            solver: Box::new(SolverSerialJointSingleHair::new(
+                &self.initializer,
+                self.config.hyperion_config.clone(),
+            )) as Box<dyn SolverTrait + Send>,
             initializer: self.initializer.clone(),
-            bp_decoder: self.bp_decoder.clone(),
-            initial_log_ratios: self.initial_log_ratios.clone(),
         }
     }
 }
@@ -123,36 +120,24 @@ impl HyperionDecoder {
         let model_hypergraph = Arc::new(model_hypergraph);
         let (vertex_num, weighted_edges) = model_hypergraph.generate_mwpf_hypergraph();
 
-        let check_size = weighted_edges.len();
-
         let mut initializer = SolverInitializer::new(vertex_num, weighted_edges);
         if config.uniform_weights {
             initializer.uniform_weights(Weight::one());
         }
         let initializer = Arc::new(initializer);
-        let solver = SolverSerialJointSingleHair::new(&initializer, config.hyperion_config.clone());
-
-        let mut bp_decoder_option = None;
-        let mut initial_log_ratios_option = None;
-
+        let mut solver: Box<dyn SolverTrait + Send> =
+            Box::new(SolverSerialJointSingleHair::new(&initializer, config.hyperion_config.clone()))
+                as Box<dyn SolverTrait + Send>;
         if config.use_bp {
-            let mut pcm = BpSparse::new(vertex_num, check_size, 0);
-            let mut initial_log_ratios = Vec::with_capacity(check_size);
-            let mut channel_probabilities = Vec::with_capacity(check_size);
-
-            for (col_index, (defect_vertices, hyperedge_group)) in model_hypergraph.weighted_edges.iter().enumerate() {
-                channel_probabilities.push(hyperedge_group.hyperedge.probability);
-                for vertex_position in defect_vertices.0.iter() {
-                    let row_index = model_hypergraph.vertex_indices.get(vertex_position).unwrap();
-                    pcm.insert_entry(*row_index, col_index);
-                }
-                initial_log_ratios.push(hyperedge_group.hyperedge.weight as f64);
-            }
-
-            let bp_decoder = BpDecoder::new_3(pcm, channel_probabilities, config.bp_iteration).unwrap();
-
-            bp_decoder_option = Some(bp_decoder);
-            initial_log_ratios_option = Some(initial_log_ratios);
+            solver = match SolverBPWrapper::new(solver.solver_base(), config.bp_iteration, config.bp_application_ratio)
+                .solver
+                .inner
+            {
+                SolverEnum::SolverSerialUnionFind(x) => Box::new(x) as Box<dyn SolverTrait + Send>,
+                SolverEnum::SolverSerialSingleHair(x) => Box::new(x) as Box<dyn SolverTrait + Send>,
+                SolverEnum::SolverSerialJointSingleHair(x) => Box::new(x) as Box<dyn SolverTrait + Send>,
+                SolverEnum::SolverErrorPatternLogger(_) => panic!("not supported"),
+            };
         }
 
         Self {
@@ -160,8 +145,6 @@ impl HyperionDecoder {
             config,
             solver,
             initializer,
-            bp_decoder: bp_decoder_option,
-            initial_log_ratios: initial_log_ratios_option,
         }
     }
 
@@ -183,11 +166,6 @@ impl HyperionDecoder {
         // run decode
         let begin = Instant::now();
 
-        let mut syndrome_array = vec![];
-        if self.config.use_bp {
-            syndrome_array = vec![0; self.model_hypergraph.vertex_indices.len()];
-        }
-
         let defect_vertices: Vec<_> = sparse_measurement
             .iter()
             .map(|position| {
@@ -196,9 +174,6 @@ impl HyperionDecoder {
                     .vertex_indices
                     .get(position)
                     .expect("measurement cannot happen at impossible position");
-                if self.config.use_bp {
-                    syndrome_array[temp] = 1;
-                }
                 temp
             })
             .collect();
@@ -206,26 +181,6 @@ impl HyperionDecoder {
         let syndrome_pattern = SyndromePattern::new_vertices(defect_vertices);
 
         let decoder_begin = Instant::now();
-
-        if self.config.use_bp {
-            self.bp_decoder
-                .as_mut()
-                .unwrap()
-                .set_log_domain_bp(&self.initial_log_ratios.as_ref().unwrap());
-
-            // solve the bp and update weights
-            self.bp_decoder.as_mut().unwrap().decode(&syndrome_array);
-            let llrs = self
-                .bp_decoder
-                .as_ref()
-                .unwrap()
-                .log_prob_ratios
-                .iter()
-                .map(|v| Weight::from_f64(*v).unwrap())
-                .collect();
-
-            self.solver.update_weights(llrs, self.config.bp_application_ratio.into());
-        }
 
         let time_decode_bp = decoder_begin.elapsed().as_secs_f64();
 
