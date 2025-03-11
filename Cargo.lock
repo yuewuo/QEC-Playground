@@ -996,6 +996,7 @@ dependencies = [
  "allocator-api2",
  "equivalent",
  "foldhash",
+ "serde",
 ]
 
 [[package]]
@@ -1362,13 +1363,14 @@ checksum = "1fafa6961cabd9c63bcd77a45d7e3b7f3b552b70417831fb0f56db717e72407e"
 
 [[package]]
 name = "mwpf"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "base64",
  "bp",
  "cfg-if",
  "chrono",
  "clap",
+ "core_affinity",
  "derivative",
  "flate2",
  "getrandom",
@@ -1384,12 +1386,14 @@ dependencies = [
  "num-traits",
  "parking_lot",
  "pbr",
+ "petgraph",
  "pheap",
  "prettytable-rs",
  "priority-queue 2.1.1",
  "qecp 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand",
  "rand_xoshiro",
+ "rayon",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
@@ -1397,6 +1401,7 @@ dependencies = [
  "sugar",
  "tempfile",
  "urlencoding",
+ "weak-table",
 ]
 
 [[package]]
@@ -1578,6 +1583,8 @@ checksum = "b4c5cc86750666a3ed20bdaf5ca2a0344f9c67674cae0515bec2da16fbaa47db"
 dependencies = [
  "fixedbitset",
  "indexmap 2.5.0",
+ "serde",
+ "serde_derive",
 ]
 
 [[package]]

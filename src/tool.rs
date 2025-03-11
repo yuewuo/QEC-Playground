@@ -9,6 +9,8 @@ use crate::decoder_fusion::*;
 use crate::decoder_hyper_union_find::*;
 #[cfg(feature = "hyperion")]
 use crate::decoder_hyperion::*;
+#[cfg(feature = "hyperion")]
+use crate::decoder_parallel_hyper_union_find::*;
 use crate::decoder_mwpm::*;
 #[cfg(feature = "fusion_blossom")]
 use crate::decoder_parallel_fusion::*;
@@ -37,6 +39,7 @@ use rand_core::SeedableRng;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use serde_json::json;
+use std::collections::BTreeSet;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
@@ -118,6 +121,8 @@ pub enum BenchmarkDecoder {
     Hyperion,
     /// parallel fusion blossom
     ParallelFusion,
+    /// parallel hypergraph union-find decoder
+    ParallelHyperUnionFind,
 }
 
 /// progress variable shared between threads to update information
@@ -892,6 +897,8 @@ pub enum GeneralDecoder {
     HyperUnionFind(HyperUnionFindDecoder),
     #[cfg(feature = "hyperion")]
     Hyperion(HyperionDecoder),
+    #[cfg(feature = "hyperion")]
+    ParallelHyperUnionFind(ParallelHyperUnionFindDecoder),
 }
 
 impl GeneralDecoder {
@@ -1023,6 +1030,18 @@ impl GeneralDecoder {
             )),
             #[cfg(not(feature = "hyperion"))]
             BenchmarkDecoder::Hyperion => return Err("decoder is not available; try enable feature `hyperion`".to_string()),
+            #[cfg(feature = "hyperion")]
+            BenchmarkDecoder::ParallelHyperUnionFind => GeneralDecoder::ParallelHyperUnionFind(ParallelHyperUnionFindDecoder::new(
+                simulator,
+                noise_model_graph.clone(),
+                &parameters.decoder_config,
+                configs.parallel_init,
+                parameters.use_brief_edge,
+            )),
+            #[cfg(not(feature = "hyperion"))]
+            BenchmarkDecoder::ParallelHyperUnionFind => {
+                return Err("decoder is not available; try enable feature `hyperion`".to_string())
+            }
         })
     }
 
@@ -1057,6 +1076,12 @@ impl GeneralDecoder {
             #[cfg(feature = "hyperion")]
             Self::Hyperion(hyperion_decoder) => {
                 hyperion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
+            }
+            #[cfg(feature = "hyperion")]
+            Self::ParallelHyperUnionFind(parallel_hyper_union_find_decoder) => {
+                // loads the solver again 
+                // parallel_hyper_union_find_decoder.config.partition_config.unwrap().defect_vertices = BTreeSet::from_iter(iter)
+                parallel_hyper_union_find_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
             }
         }
     }
@@ -1155,6 +1180,10 @@ impl SimulationWorker {
                 print!(
                     "{}",
                     serde_json::to_string(&sparse_error_pattern).expect("serialize should success")
+                );
+                println!(
+                    "\ncorrection generated: {:?}",
+                    correction
                 );
                 if !sparse_detected_erasures.is_empty() {
                     // has detected erasures, report as well

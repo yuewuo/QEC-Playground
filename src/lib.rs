@@ -56,6 +56,8 @@ pub mod decoder_fusion;
 #[cfg(feature = "hyperion")]
 pub mod decoder_hyper_union_find;
 #[cfg(feature = "hyperion")]
+pub mod decoder_parallel_hyper_union_find;
+#[cfg(feature = "hyperion")]
 pub mod decoder_hyperion;
 pub mod decoder_mwpm;
 #[cfg(feature = "fusion_blossom")]
