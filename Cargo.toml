@@ -51,7 +51,7 @@ debug = true
 
 [features]
 # to enable a feature, use `--features xxx`
-default = ["fusion_blossom"]
+default = ["fusion_blossom", "hyperion"]
 python_binding = ["pyo3"] # by default to avoid using python interface
 blossom_v = [
 ] # automatically enabled when file `blossomV/PerfectMatching.h` exists

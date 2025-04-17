@@ -1043,6 +1043,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 
 [[package]]
+name = "gxhash"
+version = "3.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3ce1bab7aa741d4e7042b2aae415b78741f267a98a7271ea226cd5ba6c43d7d"
+dependencies = [
+ "rustversion",
+]
+
+[[package]]
 name = "h2"
 version = "0.3.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1092,6 +1101,7 @@ dependencies = [
  "allocator-api2",
  "equivalent",
  "foldhash",
+ "serde",
 ]
 
 [[package]]
@@ -1482,7 +1492,7 @@ checksum = "1fafa6961cabd9c63bcd77a45d7e3b7f3b552b70417831fb0f56db717e72407e"
 
 [[package]]
 name = "mwpf"
-version = "0.2.8"
+version = "0.2.9"
 dependencies = [
  "base64",
  "bp",
@@ -1490,9 +1500,11 @@ dependencies = [
  "chrono",
  "ciborium",
  "clap 4.5.30",
+ "core_affinity",
  "derivative",
  "flate2",
  "getrandom 0.2.15",
+ "gxhash",
  "hashbrown 0.15.2",
  "heapz",
  "highs",
@@ -1506,12 +1518,14 @@ dependencies = [
  "num-traits",
  "parking_lot",
  "pbr",
+ "petgraph",
  "pheap",
  "prettytable-rs",
  "priority-queue 2.1.2",
  "qecp 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand",
  "rand_xoshiro",
+ "rayon",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
@@ -1521,6 +1535,7 @@ dependencies = [
  "tempfile",
  "thread-priority",
  "urlencoding",
+ "weak-table",
 ]
 
 [[package]]
@@ -1747,6 +1762,8 @@ checksum = "b4c5cc86750666a3ed20bdaf5ca2a0344f9c67674cae0515bec2da16fbaa47db"
 dependencies = [
  "fixedbitset",
  "indexmap 2.5.0",
+ "serde",
+ "serde_derive",
 ]
 
 [[package]]

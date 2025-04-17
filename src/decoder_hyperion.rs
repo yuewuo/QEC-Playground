@@ -137,6 +137,9 @@ impl HyperionDecoder {
                 SolverEnum::SolverSerialSingleHair(x) => Box::new(x) as Box<dyn SolverTrait + Send>,
                 SolverEnum::SolverSerialJointSingleHair(x) => Box::new(x) as Box<dyn SolverTrait + Send>,
                 SolverEnum::SolverErrorPatternLogger(_) => panic!("not supported"),
+                SolverEnum::SolverParallelUnionFind(x) => Box::new(x) as Box<dyn SolverTrait + Send>,
+                SolverEnum::SolverParallelSingleHair(x) => Box::new(x) as Box<dyn SolverTrait + Send>,
+                SolverEnum::SolverParallelJointSingleHair(x) => Box::new(x) as Box<dyn SolverTrait + Send>,
             };
         }
 

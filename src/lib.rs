@@ -60,6 +60,8 @@ pub mod decoder_hyperion;
 pub mod decoder_mwpm;
 #[cfg(feature = "fusion_blossom")]
 pub mod decoder_parallel_fusion;
+#[cfg(feature = "hyperion")]
+pub mod decoder_parallel_hyperion;
 pub mod decoder_tailored_mwpm;
 pub mod decoder_union_find;
 pub mod erasure_graph;

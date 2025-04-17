@@ -12,6 +12,7 @@ use crate::decoder_hyperion::*;
 use crate::decoder_mwpm::*;
 #[cfg(feature = "fusion_blossom")]
 use crate::decoder_parallel_fusion::*;
+use crate::decoder_parallel_hyperion::ParallelHyperionDecoder;
 use crate::decoder_tailored_mwpm::*;
 use crate::decoder_union_find::*;
 use crate::erasure_graph::*;
@@ -116,6 +117,7 @@ pub enum BenchmarkDecoder {
     HyperUnionFind,
     /// hyperion decoder
     Hyperion,
+    ParallelHyperion,
     /// parallel fusion blossom
     ParallelFusion,
 }
@@ -892,6 +894,8 @@ pub enum GeneralDecoder {
     HyperUnionFind(HyperUnionFindDecoder),
     #[cfg(feature = "hyperion")]
     Hyperion(HyperionDecoder),
+    #[cfg(feature = "hyperion")]
+    ParallelHyperion(ParallelHyperionDecoder),
 }
 
 impl GeneralDecoder {
@@ -1021,6 +1025,14 @@ impl GeneralDecoder {
                 configs.parallel_init,
                 parameters.use_brief_edge,
             )),
+            #[cfg(feature = "hyperion")]
+            BenchmarkDecoder::ParallelHyperion => GeneralDecoder::ParallelHyperion(ParallelHyperionDecoder::new(
+                simulator,
+                noise_model_graph.clone(),
+                &parameters.decoder_config,
+                configs.parallel_init,
+                parameters.use_brief_edge,
+            )),
             #[cfg(not(feature = "hyperion"))]
             BenchmarkDecoder::Hyperion => return Err("decoder is not available; try enable feature `hyperion`".to_string()),
         })
@@ -1057,6 +1069,10 @@ impl GeneralDecoder {
             #[cfg(feature = "hyperion")]
             Self::Hyperion(hyperion_decoder) => {
                 hyperion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
+            }
+            #[cfg(feature = "hyperion")]
+            Self::ParallelHyperion(parallel_hyperion_decoder) => {
+                parallel_hyperion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
             }
         }
     }
