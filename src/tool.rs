@@ -1127,9 +1127,10 @@ impl SimulationWorker {
                 }
             } }
             // decode
-            let begin = Instant::now();
+            let begin: Instant = Instant::now();
             let (correction, mut runtime_statistics) = self
                 .general_decoder
+                .clone() // TODO: debug: see if the panic comes from not clearing the decoder properly
                 .decode_with_erasure(&sparse_measurement, &sparse_detected_erasures);
             if parameters.thread_timeout >= 0. {
                 self.thread_debugger.lock().unwrap().correction = Some(correction.clone());
