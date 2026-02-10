@@ -20,5 +20,6 @@ decoder_config = {
 }
 parameters = simulation_parameters + \
     f"--time-budget {CH(100)} --decoder hyperion --decoder-config {json.dumps(decoder_config,separators=(',', ':'))}".split(" ")
+features = ["--features", "hyperion mwpf/unsafe_pointer"]
 
-common_evaluation(os.path.dirname(__file__), parameters)
+common_evaluation(os.path.dirname(__file__), parameters, features)

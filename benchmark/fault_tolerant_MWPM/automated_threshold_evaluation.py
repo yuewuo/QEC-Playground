@@ -21,6 +21,8 @@ import random
 import scipy.stats
 import numpy as np
 import tempfile
+import uuid
+import shutil
 
 import subprocess
 import sys
@@ -28,25 +30,34 @@ qec_playground_root_dir = subprocess.run("git rev-parse --show-toplevel", cwd=os
     __file__)), shell=True, check=True, capture_output=True).stdout.decode(sys.stdout.encoding).strip(" \r\n")
 # rust_dir = os.path.join(qec_playground_root_dir, "backend", "rust")
 rust_dir = qec_playground_root_dir  # updated project structure
-
+UNIQUE_TARGET_DIR = f"target_{uuid.uuid4().hex[:8]}"
+print(f"[Info] This run will compile into: {UNIQUE_TARGET_DIR}")
 
 def main():
-    # # test basic command runner
-    # random_error_rate, confidence_interval, full_result = qec_playground_fault_tolerant_MWPM_simulator_runner(0.005, (5, 5, 5), "-b10 -p0 --use_xzzx_code --bias_eta 100 --noise_model GenericBiasedWithBiasedCX".split(" "), True, True)
-    # print(random_error_rate, confidence_interval, full_result)
-    # exit(0)
+    try:
+        # # test basic command runner
+        # random_error_rate, confidence_interval, full_result = qec_playground_fault_tolerant_MWPM_simulator_runner(0.005, (5, 5, 5), "-b10 -p0 --use_xzzx_code --bias_eta 100 --noise_model GenericBiasedWithBiasedCX".split(" "), True, True)
+        # print(random_error_rate, confidence_interval, full_result)
+        # exit(0)
 
-    # UnionFind Decoder (max_half_weight = 10), XZZX code,
-    pair = [(4, 12, 12), (5, 15, 15)]  # (di, dj, T)
-    parameters = "-p0 --use_xzzx_code --bias_eta 10 --noise_model GenericBiasedWithBiasedCX".split(
-        " ")
-    evaluator = AutomatedThresholdEvaluator(pair, parameters=parameters)
-    threshold, relative_confidence_interval = evaluator.evaluate_threshold()
-    print("\n\nresult:")
-    print(f"pair: {pair}")
-    print(f"parameters: {parameters}")
-    print(f"threshold = {threshold}")
-    print(f"relative_confidence_interval = {relative_confidence_interval}")
+        # UnionFind Decoder (max_half_weight = 10), XZZX code,
+        pair = [(4, 12, 12), (5, 15, 15)]  # (di, dj, T)
+        parameters = "-p0 --use_xzzx_code --bias_eta 10 --noise_model GenericBiasedWithBiasedCX".split(
+            " ")
+        evaluator = AutomatedThresholdEvaluator(pair, parameters=parameters)
+        threshold, relative_confidence_interval = evaluator.evaluate_threshold()
+        print("\n\nresult:")
+        print(f"pair: {pair}")
+        print(f"parameters: {parameters}")
+        print(f"threshold = {threshold}")
+        print(f"relative_confidence_interval = {relative_confidence_interval}")
+    
+    finally:
+        # Cleanup the unique target directory
+        target_dir_path = os.path.join(rust_dir, UNIQUE_TARGET_DIR)
+        if os.path.exists(target_dir_path):
+            print(f"[Info] Removing temporary target directory: {target_dir_path}")
+            shutil.rmtree(target_dir_path)
 
 
 """
@@ -68,10 +79,12 @@ def compile_code_if_necessary(additional_build_parameters=None):
     if QEC_PLAYGROUND_COMPILATION_DONE is False:
         build_parameters = ["cargo", "build", "--release"]
         if additional_build_parameters is not None:
-            build_parameters.append(additional_build_parameters)
+            build_parameters.extend(additional_build_parameters)
         # print(build_parameters)
+        compilation_env = os.environ.copy()
+        compilation_env["CARGO_TARGET_DIR"] = UNIQUE_TARGET_DIR
         process = subprocess.Popen(build_parameters, universal_newlines=True,
-                                   stdout=sys.stdout, stderr=sys.stderr, cwd=rust_dir)
+                                   stdout=sys.stdout, stderr=sys.stderr, cwd=rust_dir, env=compilation_env)
         process.wait()
         assert process.returncode == 0, "compile has error"
         QEC_PLAYGROUND_COMPILATION_DONE = True
@@ -121,7 +134,7 @@ def qec_playground_benchmark_simulator_runner_vec_command(p_vec, di_vec, dj_vec,
     di_str = "[" + ",".join([str(e) for e in di_vec]) + "]"
     dj_str = "[" + ",".join([str(e) for e in dj_vec]) + "]"
     T_str = "[" + ",".join([str(e) for e in T_vec]) + "]"
-    qecp_path = os.path.join(rust_dir, "target", "release", "qecp-cli")
+    qecp_path = os.path.join(rust_dir, UNIQUE_TARGET_DIR, "release", "qecp-cli")
     command = [qecp_path, "tool", "benchmark", di_str, "--djs", dj_str,
                T_str, f"-m{max_N}", f"-e{min_error_cases}", p_str] + parameters
     if time_budget is not None:

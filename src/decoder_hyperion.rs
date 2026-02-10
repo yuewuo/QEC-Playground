@@ -122,8 +122,8 @@ impl HyperionDecoder {
                     .expect("measurement cannot happen at impossible position")
             })
             .collect();
-        let syndrome_pattern = SyndromePattern::new(defect_vertices, vec![]);
-        self.solver.solve(&syndrome_pattern);
+        let syndrome_pattern = SyndromePattern::new_vertices(defect_vertices);
+        self.solver.solve(syndrome_pattern);
         let subgraph = self.solver.subgraph();
         self.solver.clear();
         let time_decode = begin.elapsed().as_secs_f64();

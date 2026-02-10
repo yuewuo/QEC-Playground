@@ -35,9 +35,9 @@ min_error_cases = 40000
 max_N = 100000000
 
 
-def common_evaluation(directory, parameters):
+def common_evaluation(directory, parameters, features):
 
-    compile_code_if_necessary()
+    compile_code_if_necessary(features)
 
     @slurm_distribute.slurm_distribute_run(directory)
     def experiment(slurm_commands_vec=None, run_command_get_stdout=run_qec_playground_command_get_stdout):

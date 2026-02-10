@@ -10,6 +10,8 @@ use super::util_macros::*;
 use super::visualize::*;
 #[cfg(feature = "hyperion")]
 use mwpf::util::HyperEdge;
+#[cfg(feature = "hyperion")]
+use mwpf::ordered_float;
 #[cfg(feature = "python_binding")]
 use pyo3::prelude::*;
 use serde::de::Visitor;
@@ -484,7 +486,7 @@ impl ModelHypergraph {
                 assert!(int_weight >= 0., "weight must be non-negative");
                 assert!(int_weight <= max_weight as f64, "weight must be smaller than max weight");
                 let vertex_indices: Vec<_> = defect_vertices.0.iter().map(|x| self.vertex_indices[x]).collect();
-                weighted_edges.push(HyperEdge::new(vertex_indices, int_weight as usize));
+                weighted_edges.push(HyperEdge::new(vertex_indices, mwpf::ordered_float::OrderedFloat::from(int_weight)));
             }
         }
         (self.vertex_positions.len(), weighted_edges)
