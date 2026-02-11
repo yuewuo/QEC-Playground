@@ -35,7 +35,7 @@ min_error_cases = 40000
 max_N = 100000000
 
 
-def common_evaluation(directory, parameters, features):
+def common_evaluation(directory, parameters, features, customize_filename=None):
 
     compile_code_if_necessary(features)
 
@@ -43,7 +43,7 @@ def common_evaluation(directory, parameters, features):
     def experiment(slurm_commands_vec=None, run_command_get_stdout=run_qec_playground_command_get_stdout):
 
         for di in di_vec:
-            filename = os.path.join(directory, f"d_{di}.txt")
+            filename = os.path.join(directory, f"{customize_filename}_d_{di}.txt")
 
             results = []
             for p in p_vec:

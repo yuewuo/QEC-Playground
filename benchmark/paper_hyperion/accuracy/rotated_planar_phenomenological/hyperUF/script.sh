@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J rotated-planar-circuit-level-hyperion
+#SBATCH -J rotated-planar-phenomenological-hyperUF
 #SBATCH -p day
 #SBATCH -t 23:00:00
 #SBATCH --cpus-per-task=4
