@@ -39,6 +39,10 @@ pub enum NoiseModelBuilder {
     /// the noise model in stim: after_clifford_depolarization, before_round_data_depolarization, before_measure_flip_probability, after_reset_flip_probability;
     /// see https://github.com/quantumlib/Stim/blob/main/doc/python_api_reference_vDev.md#stim.Circuit.generated
     StimNoiseModel,
+    /// specialized noise for examples/two_qubit_lattice_surgery_example and two_qubit_individual_example
+    #[clap(hide(true))]
+    TwoQubitLatticeSurgeryExample,
+    TwoQubitIndividualExample,
 }
 
 #[cfg(feature = "python_binding")]
@@ -798,6 +802,26 @@ impl NoiseModelBuilder {
                         }
                     }
                 });
+            }
+            Self::TwoQubitLatticeSurgeryExample => {
+                crate::examples::two_qubit_lattice_surgery_example::apply_noise_model(
+                    simulator,
+                    noise_model,
+                    noise_model_configuration,
+                    p,
+                    bias_eta,
+                    pe,
+                );
+            }
+            Self::TwoQubitIndividualExample => {
+                crate::examples::two_qubit_individual_example::apply_noise_model(
+                    simulator,
+                    noise_model,
+                    noise_model_configuration,
+                    p,
+                    bias_eta,
+                    pe,
+                );
             }
             Self::StimNoiseModel => {
                 let mut after_clifford_depolarization = p;

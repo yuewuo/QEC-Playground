@@ -5,13 +5,15 @@ use crate::code_builder::*;
 use crate::complete_model_graph::*;
 #[cfg(feature = "fusion_blossom")]
 use crate::decoder_fusion::*;
-#[cfg(feature = "fusion_blossom")]
-use crate::decoder_parallel_fusion::*;
 #[cfg(feature = "hyperion")]
 use crate::decoder_hyper_union_find::*;
 #[cfg(feature = "hyperion")]
 use crate::decoder_hyperion::*;
+#[cfg(feature = "hyperion")]
+use crate::decoder_parallel_hyper_union_find::*;
 use crate::decoder_mwpm::*;
+#[cfg(feature = "fusion_blossom")]
+use crate::decoder_parallel_fusion::*;
 use crate::decoder_tailored_mwpm::*;
 use crate::decoder_union_find::*;
 use crate::erasure_graph::*;
@@ -37,6 +39,7 @@ use rand_core::SeedableRng;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use serde_json::json;
+use std::collections::BTreeSet;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
@@ -118,6 +121,8 @@ pub enum BenchmarkDecoder {
     Hyperion,
     /// parallel fusion blossom
     ParallelFusion,
+    /// parallel hypergraph union-find decoder
+    ParallelHyperUnionFind,
 }
 
 /// progress variable shared between threads to update information
@@ -156,6 +161,7 @@ impl BenchmarkControl {
 /// decoder might suffer from rare deadlock, and this controller will record the necessary information for debugging with low runtime overhead
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BenchmarkThreadDebugger {
+    thread_index: usize,
     thread_counter: usize,
     error_pattern: Option<SparseErrorPattern>,
     measurement: Option<SparseMeasurement>,
@@ -164,8 +170,9 @@ pub struct BenchmarkThreadDebugger {
 }
 
 impl BenchmarkThreadDebugger {
-    fn new() -> Self {
+    fn new(thread_index: usize) -> Self {
         Self {
+            thread_index,
             thread_counter: 0,
             error_pattern: None,
             measurement: None,
@@ -711,7 +718,7 @@ impl BenchmarkParameters {
             GeneralSimulator::Simulator(simulator)
         };
         for parallel_idx in 0..configs.parallel {
-            let thread_debugger = Arc::new(Mutex::new(BenchmarkThreadDebugger::new()));
+            let thread_debugger = Arc::new(Mutex::new(BenchmarkThreadDebugger::new(parallel_idx)));
             threads_debugger.push(thread_debugger.clone());
             let thread_ended = Arc::new(AtomicBool::new(false));
             threads_ended.push(Arc::clone(&thread_ended));
@@ -890,6 +897,8 @@ pub enum GeneralDecoder {
     HyperUnionFind(HyperUnionFindDecoder),
     #[cfg(feature = "hyperion")]
     Hyperion(HyperionDecoder),
+    #[cfg(feature = "hyperion")]
+    ParallelHyperUnionFind(ParallelHyperUnionFindDecoder),
 }
 
 impl GeneralDecoder {
@@ -974,15 +983,13 @@ impl GeneralDecoder {
                 return Err("decoder is not available; try enable feature `fusion_blossom`".to_string())
             }
             #[cfg(feature = "fusion_blossom")]
-            BenchmarkDecoder::ParallelFusion => {
-                GeneralDecoder::ParallelFusion(ParallelFusionDecoder::new(
-                    simulator,
-                    noise_model_graph.clone(),
-                    &parameters.decoder_config,
-                    configs.parallel_init,
-                    parameters.use_brief_edge,
-                ))
-            }
+            BenchmarkDecoder::ParallelFusion => GeneralDecoder::ParallelFusion(ParallelFusionDecoder::new(
+                simulator,
+                noise_model_graph.clone(),
+                &parameters.decoder_config,
+                configs.parallel_init,
+                parameters.use_brief_edge,
+            )),
             #[cfg(not(feature = "fusion_blossom"))]
             BenchmarkDecoder::ParallelFusion => {
                 return Err("decoder is not available; try enable feature `fusion_blossom`".to_string())
@@ -1023,6 +1030,18 @@ impl GeneralDecoder {
             )),
             #[cfg(not(feature = "hyperion"))]
             BenchmarkDecoder::Hyperion => return Err("decoder is not available; try enable feature `hyperion`".to_string()),
+            #[cfg(feature = "hyperion")]
+            BenchmarkDecoder::ParallelHyperUnionFind => GeneralDecoder::ParallelHyperUnionFind(ParallelHyperUnionFindDecoder::new(
+                simulator,
+                noise_model_graph.clone(),
+                &parameters.decoder_config,
+                configs.parallel_init,
+                parameters.use_brief_edge,
+            )),
+            #[cfg(not(feature = "hyperion"))]
+            BenchmarkDecoder::ParallelHyperUnionFind => {
+                return Err("decoder is not available; try enable feature `hyperion`".to_string())
+            }
         })
     }
 
@@ -1037,7 +1056,9 @@ impl GeneralDecoder {
             #[cfg(feature = "fusion_blossom")]
             Self::Fusion(fusion_decoder) => fusion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures),
             #[cfg(feature = "fusion_blossom")]
-            Self::ParallelFusion(fusion_decoder) => fusion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures),
+            Self::ParallelFusion(fusion_decoder) => {
+                fusion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
+            }
             Self::TailoredMWPM(tailored_mwpm_decoder) => {
                 assert!(
                     sparse_detected_erasures.is_empty(),
@@ -1055,6 +1076,12 @@ impl GeneralDecoder {
             #[cfg(feature = "hyperion")]
             Self::Hyperion(hyperion_decoder) => {
                 hyperion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
+            }
+            #[cfg(feature = "hyperion")]
+            Self::ParallelHyperUnionFind(parallel_hyper_union_find_decoder) => {
+                // loads the solver again 
+                // parallel_hyper_union_find_decoder.config.partition_config.unwrap().defect_vertices = BTreeSet::from_iter(iter)
+                parallel_hyper_union_find_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
             }
         }
     }
@@ -1146,18 +1173,26 @@ impl SimulationWorker {
             let validate_elapsed = begin.elapsed().as_secs_f64();
             if is_qec_failed && matches!(parameters.debug_print, Some(BenchmarkDebugPrint::FailedErrorPattern)) {
                 let sparse_error_pattern = self.general_simulator.generate_sparse_error_pattern();
-                eprint!(
+                println!(
+                    "# thread {}, counter: {thread_counter}",
+                    self.thread_debugger.lock().unwrap().thread_index
+                );
+                print!(
                     "{}",
                     serde_json::to_string(&sparse_error_pattern).expect("serialize should success")
                 );
+                println!(
+                    "\ncorrection generated: {:?}",
+                    correction
+                );
                 if !sparse_detected_erasures.is_empty() {
                     // has detected erasures, report as well
-                    eprintln!(
+                    println!(
                         ", {}",
                         serde_json::to_string(&sparse_detected_erasures).expect("serialize should success")
                     );
                 } else {
-                    eprintln!();
+                    println!();
                 }
             }
             // update statistic information

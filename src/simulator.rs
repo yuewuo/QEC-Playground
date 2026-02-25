@@ -584,10 +584,12 @@ impl Simulator {
         let gate_type = node.gate_type;
         let next_position = &mut position.clone();
         next_position.t += 1;
-        let next_node = self.get_node_mut_unwrap(next_position);
-        next_node.propagated = next_node.propagated.multiply(&propagate_to_next); // multiply the propagated error
-        if gate_type.is_initialization() {
-            next_node.propagated = I; // no error after initialization
+        if self.is_node_exist(next_position) {
+            let next_node = self.get_node_mut_unwrap(next_position);
+            next_node.propagated = next_node.propagated.multiply(&propagate_to_next); // multiply the propagated error
+            if gate_type.is_initialization() {
+                next_node.propagated = I; // no error after initialization
+            }
         }
         // propagate error to gate peer
         if !propagate_to_peer_forbidden && gate_type.is_two_qubit_gate() {
@@ -595,9 +597,11 @@ impl Simulator {
             if propagate_to_peer != I {
                 let mut next_peer_position: Position = (*node_gate_peer.unwrap()).clone();
                 next_peer_position.t += 1;
-                let peer_node = self.get_node_mut_unwrap(&next_peer_position);
-                peer_node.propagated = peer_node.propagated.multiply(&propagate_to_peer);
-                return Some(next_peer_position);
+                if self.is_node_exist(&next_peer_position) {
+                    let peer_node = self.get_node_mut_unwrap(&next_peer_position);
+                    peer_node.propagated = peer_node.propagated.multiply(&propagate_to_peer);
+                    return Some(next_peer_position);
+                }
             }
         }
         None
@@ -616,12 +620,16 @@ impl Simulator {
                     loop {  // usually this loop execute only once because the previous measurement is found immediately
                         debug_assert!(previous_position.t >= self.measurement_cycles, "cannot find the previous measurement cycle");
                         previous_position.t -= self.measurement_cycles;
-                        let previous_node = self.get_node_unwrap(&previous_position);
-                        if previous_node.gate_type.is_measurement() {  // found previous measurement
-                            let previous_result = previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
-                            if this_result != previous_result {
-                                sparse_measurement_virtual.insert_defect_measurement(position);
+                        if self.is_node_exist(&previous_position) {
+                            let previous_node = self.get_node_unwrap(&previous_position);
+                            if previous_node.gate_type.is_measurement() {  // found previous measurement
+                                let previous_result = previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
+                                if this_result != previous_result {
+                                    sparse_measurement_virtual.insert_defect_measurement(position);
+                                }
+                                break
                             }
+                        } else {
                             break
                         }
                         // println!("[warning] no measurement found in previous round, continue searching...")
@@ -675,9 +683,11 @@ impl Simulator {
         for t in min_t + 1..self.height {
             let mut pending_interested_region = Vec::new();
             for &(i, j) in interested_region.iter() {
-                let propagated_neighbor = self.propagate_error_from(&pos!(t - 1, i, j));
-                if let Some(peer) = propagated_neighbor {
-                    pending_interested_region.push((peer.i, peer.j));
+                if self.is_node_exist(&pos!(t - 1, i, j)) {
+                    let propagated_neighbor = self.propagate_error_from(&pos!(t - 1, i, j));
+                    if let Some(peer) = propagated_neighbor {
+                        pending_interested_region.push((peer.i, peer.j));
+                    }
                 }
             }
             for (i, j) in pending_interested_region.drain(..) {
@@ -691,6 +701,9 @@ impl Simulator {
                 }
                 for &(i, j) in interested_region.iter() {
                     let position = &pos!(t, i, j);
+                    if !self.is_node_exist(position) {
+                        continue;
+                    }
                     let node = self.get_node_unwrap(position);
                     if node.gate_type.is_measurement() {
                         let this_result = node.gate_type.stabilizer_measurement(&node.propagated);
@@ -702,21 +715,26 @@ impl Simulator {
                                 "cannot find the previous measurement cycle"
                             );
                             previous_position.t -= self.measurement_cycles;
-                            let previous_node = self.get_node_unwrap(&previous_position);
-                            if previous_node.gate_type.is_measurement() {
-                                // found previous measurement
-                                let previous_result =
-                                    previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
-                                if this_result != previous_result {
-                                    if node.is_virtual {
-                                        sparse_measurement_virtual.insert_defect_measurement(position);
-                                    } else {
-                                        sparse_measurement_real.insert_defect_measurement(position);
+                            if self.is_node_exist(&previous_position) {
+                                let previous_node = self.get_node_unwrap(&previous_position);
+                                if previous_node.gate_type.is_measurement() {
+                                    // found previous measurement
+                                    let previous_result =
+                                        previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
+                                    if this_result != previous_result {
+                                        if node.is_virtual {
+                                            sparse_measurement_virtual.insert_defect_measurement(position);
+                                        } else {
+                                            sparse_measurement_real.insert_defect_measurement(position);
+                                        }
+                                        accumulated_clean_measurements = 0;
                                     }
-                                    accumulated_clean_measurements = 0;
+                                    break;
                                 }
+                            } else {
                                 break;
                             }
+
                             // println!("[warning] no measurement found in previous round, continue searching...")
                             // Yue 2022.7.11 removed warning, because some code may just remove measurement in the middle
                         }
@@ -744,7 +762,11 @@ impl Simulator {
         // clear errors in interested region
         for t in min_t..max_t + 1 {
             for &(i, j) in interested_region.iter() {
-                let node = self.get_node_mut_unwrap(&pos!(t, i, j));
+                let position = &pos!(t, i, j);
+                if !self.is_node_exist(position) {
+                    continue;
+                }
+                let node = self.get_node_mut_unwrap(position);
                 node.error = ErrorType::I;
                 node.propagated = ErrorType::I;
             }
@@ -987,12 +1009,16 @@ impl SimulatorGenerics for Simulator {
                     loop {  // usually this loop execute only once because the previous measurement is found immediately
                         debug_assert!(previous_position.t >= self.measurement_cycles, "cannot find the previous measurement cycle");
                         previous_position.t -= self.measurement_cycles;
-                        let previous_node = self.get_node_unwrap(&previous_position);
-                        if previous_node.gate_type.is_measurement() {  // found previous measurement
-                            let previous_result = previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
-                            if this_result != previous_result {
-                                sparse_measurement.insert_defect_measurement(position);
+                        if self.is_node_exist(&previous_position) {
+                            let previous_node = self.get_node_unwrap(&previous_position);
+                            if previous_node.gate_type.is_measurement() {  // found previous measurement
+                                let previous_result = previous_node.gate_type.stabilizer_measurement(&previous_node.propagated);
+                                if this_result != previous_result {
+                                    sparse_measurement.insert_defect_measurement(position);
+                                }
+                                break
                             }
+                        } else {
                             break
                         }
                         // println!("[warning] no measurement found in previous round, continue searching...")

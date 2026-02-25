@@ -1,0 +1,2459 @@
+[
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 3 2 100000011 125 0.0000012499998625000152 3 1.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 3 2 100000011 294 0.0000029399996766000355 3 1.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 3 2 100000011 780 0.000007799999142000095 3 7.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 3 2 100000011 1847 0.000018469997968300224 3 4.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 3 2 100000011 4694 0.00004693999483660057 3 2.9e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 3 2 100000011 11623 0.0001162299872147014 3 1.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 3 2 100000011 29117 0.0002911699679713035 3 1.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 3 2 55645903 40000 0.0007188309982138308 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 3 2 22816867 40000 0.0017530890634546803 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 3 2 9006305 40001 0.004441444077232561 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 3 2 3790621 40000 0.010552360681798576 3 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 3 2 1644747 40000 0.02431984980060763 3 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 3 2 725148 40001 0.05516253233822613 3 9.5e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 5 4 100000011 1 0.00000000999999890000012 5 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 5 4 100000011 1 0.00000000999999890000012 5 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 5 4 100000011 15 0.0000001499999835000018 5 5.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 5 4 100000011 79 0.0000007899999131000096 5 2.2e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 5 4 100000011 273 0.000002729999699700033 5 1.2e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 5 4 100000011 1080 0.00001079999881200013 5 6.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 5 4 100000011 4559 0.00004558999498510055 5 2.9e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 5 4 100000011 17275 0.0001727499809975021 5 1.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 5 4 62792342 40000 0.0006370203551254706 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 5 4 16312328 40000 0.002452133135135586 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 5 4 4381490 40000 0.00912931445695414 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 5 4 1292513 40001 0.030948238044801096 5 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 5 4 411037 40001 0.0973172731408608 5 9.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 7 6 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 7 6 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 7 6 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 7 6 100000011 1 0.00000000999999890000012 7 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 7 6 100000011 17 0.00000016999998130000205 7 4.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 7 6 100000011 88 0.0000008799999032000106 7 2.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 7 6 100000011 442 0.000004419999513800053 7 9.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 7 6 100000011 2717 0.00002716999701130033 7 3.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 7 6 100000011 15451 0.00015450998300390188 7 1.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 7 6 40943564 40000 0.0009769545220831288 7 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 7 6 6943316 40000 0.00576093612907723 7 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 7 6 1311560 40001 0.030498795327701365 7 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 7 6 302171 40000 0.132375376856151 7 9.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 9 8 100000011 1 0.00000000999999890000012 9 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 9 8 100000011 27 0.00000026999997030000325 9 3.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 9 8 100000011 336 0.0000033599996304000407 9 1.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 9 8 100000011 3242 0.00003241999643380039 9 3.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 9 8 100000011 33905 0.0003390499627045041 9 1.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 9 8 12393313 40000 0.0032275469844100604 9 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 9 8 1494513 40000 0.026764571469100638 9 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 9 8 241820 40002 0.16542056074766356 9 9.0e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 11 10 100000011 47 0.0000004699999483000057 11 2.9e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 11 10 100000011 655 0.000006549999279500079 11 7.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 11 10 100000011 10587 0.00010586998835430129 11 1.9e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 11 10 23602290 40000 0.0016947508059599302 11 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 11 10 1740852 40000 0.02297725481545818 11 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 11 10 202178 40001 0.19785040904549456 11 8.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 13 12 100000011 6 0.00000005999999340000073 13 8.0e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 13 12 100000011 113 0.0000011299998757000137 13 1.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 13 12 100000011 3261 0.000032609996412900396 13 3.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 13 12 46838381 40000 0.0008540004830653732 13 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 13 12 2115154 40000 0.01891115256856002 13 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 13 12 175378 40002 0.22809018234898334 13 8.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 15 14 100000011 22 0.00000021999997580000266 15 4.2e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 15 14 100000011 899 0.000008989999011100109 15 6.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 15 14 94824094 40000 0.00042183371665011635 15 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 15 14 2600491 40001 0.015382095150492735 15 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 15 14 154630 40001 0.2586884821832762 15 8.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 3 2 100000011 137 0.0000013699998493000165 3 1.7e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 3 2 100000011 306 0.0000030599996634000372 3 1.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 3 2 100000011 707 0.000007069999222300085 3 7.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 3 2 100000011 1908 0.000019079997901200232 3 4.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 3 2 100000011 4735 0.000047349994791500575 3 2.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 3 2 100000011 11892 0.00011891998691880143 3 1.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 3 2 100000011 29796 0.0002979599672244036 3 1.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 3 2 54552086 40000 0.0007332441879491098 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 3 2 22771863 40000 0.0017565536908420712 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 3 2 8767824 40000 0.004562135371330447 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 3 2 3607463 40000 0.011088124812368138 3 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 3 2 1512601 40000 0.02644451511006538 3 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 3 2 672851 40002 0.05945149817715958 3 9.5e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 5 4 100000011 1 0.00000000999999890000012 5 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 5 4 100000011 4 0.00000003999999560000048 5 9.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 5 4 100000011 17 0.00000016999998130000205 5 4.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 5 4 100000011 77 0.0000007699999153000093 5 2.2e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 5 4 100000011 305 0.000003049999664500037 5 1.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 5 4 100000011 1153 0.000011529998731700139 5 5.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 5 4 100000011 4848 0.00004847999466720059 5 2.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 5 4 100000011 18996 0.0001899599791044023 5 1.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 5 4 58712555 40000 0.0006812852889812068 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 5 4 15403452 40000 0.002596820504910198 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 5 4 4075716 40000 0.009814226506459233 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 5 4 1200379 40000 0.03332280887952888 5 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 5 4 385837 40002 0.10367590459183541 5 9.3e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 7 6 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 7 6 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 7 6 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 7 6 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 7 6 100000011 13 0.00000012999998570000158 7 5.4e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 7 6 100000011 73 0.0000007299999197000088 7 2.3e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 7 6 100000011 480 0.000004799999472000058 7 8.9e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 7 6 100000011 3026 0.000030259996671400365 7 3.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 7 6 100000011 17406 0.00017405998085340212 7 1.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 7 6 37844003 40000 0.0010569706381219767 7 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 7 6 6255173 40000 0.006394707228720932 7 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 7 6 1184564 40001 0.03376854268743605 7 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 7 6 277021 40003 0.14440421484291804 7 9.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 9 8 100000011 4 0.00000003999999560000048 9 9.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 9 8 100000011 47 0.0000004699999483000057 9 2.9e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 9 8 100000011 412 0.00000411999954680005 9 9.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 9 8 100000011 3642 0.00003641999599380044 9 3.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 9 8 100000011 37523 0.00037522995872470453 9 1.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 9 8 10655050 40000 0.003754088436938353 9 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 9 8 1287933 40001 0.031058292628576175 9 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 9 8 217008 40004 0.18434343434343434 9 8.9e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 11 10 100000011 1 0.00000000999999890000012 11 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 11 10 100000011 50 0.000000499999945000006 11 2.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 11 10 100000011 668 0.000006679999265200081 11 7.6e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 11 10 100000011 12071 0.00012070998672190146 11 1.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 11 10 19175442 40000 0.0020860014595752213 11 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 11 10 1421103 40001 0.028147854166798606 11 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 11 10 175288 40004 0.22821870293459906 11 8.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 13 12 100000011 3 0.000000029999996700000365 13 1.1e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 13 12 100000011 149 0.000001489999836100018 13 1.6e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 13 12 100000011 3683 0.000036829995948700446 13 3.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 13 12 35790202 40000 0.0011176243151687158 13 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 13 12 1632204 40002 0.024507965916025203 13 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 13 12 148843 40004 0.26876641830653775 13 8.4e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 15 14 100000011 22 0.00000021999997580000266 15 4.2e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 15 14 100000011 1255 0.000012549998619500151 15 5.5e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 15 14 68357137 40000 0.0005851620146115833 15 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 15 14 1870478 40000 0.021384908028856797 15 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":7,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 15 14 127756 40003 0.31312032311593974 15 8.1e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 3 2 100000011 113 0.0000011299998757000137 3 1.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 3 2 100000011 360 0.0000035999996040000437 3 1.0e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 3 2 100000011 850 0.000008499999065000103 3 6.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 3 2 100000011 2118 0.000021179997670200256 3 4.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 3 2 100000011 5178 0.00005177999430420063 3 2.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 3 2 100000011 12942 0.00012941998576380156 3 1.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 3 2 100000011 32269 0.0003226899645041039 3 1.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 3 2 51151992 40000 0.0007819832314643778 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 3 2 20448113 40000 0.0019561707234305678 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 3 2 8425646 40000 0.004747410465618897 3 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 3 2 3503683 40000 0.01141655794773671 3 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 3 2 1494741 40000 0.02676048894089344 3 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[3]' --djs '[3]' '[2]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 3 2 666014 40000 0.060058797562813994 3 9.5e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 5 4 100000011 1 0.00000000999999890000012 5 2.0e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 5 4 100000011 8 0.00000007999999120000097 5 6.9e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 5 4 100000011 30 0.0000002999999670000036 5 3.6e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 5 4 100000011 112 0.0000011199998768000136 5 1.9e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 5 4 100000011 409 0.000004089999550100049 5 9.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 5 4 100000011 1635 0.0000163499982015002 5 4.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 5 4 100000011 6562 0.00006561999278180079 5 2.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 5 4 100000011 25222 0.000252219972255803 5 1.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 5 4 41159920 40000 0.0009718191872093046 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 5 4 10852104 40000 0.0036859211817358182 5 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 5 4 3065938 40000 0.013046578241308206 5 9.7e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 5 4 912720 40001 0.04382614602506793 5 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[5]' --djs '[5]' '[4]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 5 4 312107 40003 0.1281707875824637 5 9.2e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 7 6 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 7 6 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 7 6 100000011 0 0 7 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 7 6 100000011 3 0.000000029999996700000365 7 1.1e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 7 6 100000011 9 0.0000000899999901000011 7 6.5e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 7 6 100000011 121 0.0000012099998669000146 7 1.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 7 6 100000011 783 0.000007829999138700095 7 7.0e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 7 6 100000011 4839 0.00004838999467710059 7 2.8e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 7 6 100000011 29374 0.00029373996768860357 7 1.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 7 6 22734874 40000 0.001759411554249212 7 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 7 6 4048887 40000 0.009879258176382794 7 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 7 6 821209 40000 0.04870867221377262 7 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[7]' --djs '[7]' '[6]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 7 6 209881 40004 0.19060324660164568 7 8.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 9 8 100000011 0 0 9 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 9 8 100000011 4 0.00000003999999560000048 9 9.8e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 9 8 100000011 58 0.0000005799999362000071 9 2.6e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 9 8 100000011 705 0.000007049999224500086 9 7.4e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 9 8 100000011 7026 0.00007025999227140085 9 2.3e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 9 8 58660401 40000 0.0006818910085527715 9 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 9 8 6348639 40000 0.0063005630025585015 9 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 9 8 828517 40001 0.048280240477865874 9 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[9]' --djs '[9]' '[8]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 9 8 162277 40003 0.246510596079543 9 8.5e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 11 10 100000011 0 0 11 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 11 10 100000011 3 0.000000029999996700000365 11 1.1e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 11 10 100000011 100 0.000000999999890000012 11 2.0e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 11 10 100000011 1493 0.000014929998357700181 11 5.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 11 10 100000011 24791 0.000247909972729903 11 1.2e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 11 10 10612712 40000 0.0037690648723907707 11 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 11 10 881512 40000 0.045376580239406834 11 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[11]' --djs '[11]' '[10]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 11 10 132433 40002 0.30205462384753046 11 8.2e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 13 12 100000011 0 0 13 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 13 12 100000011 2 0.00000001999999780000024 13 1.4e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 13 12 100000011 12 0.00000011999998680000146 13 5.7e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 13 12 100000011 322 0.000003219999645800039 13 1.1e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 13 12 100000011 8418 0.00008417999074020101 13 2.1e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 13 12 18697236 40000 0.0021393536456404574 13 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 13 12 955722 40001 0.041854221206585177 13 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[13]' --djs '[13]' '[12]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 13 12 110999 40005 0.3604086523302012 13 7.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[3.98107171e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000398107171 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[6.30957344e-05]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0000630957344 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.00000000e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.0001 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.58489319e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000158489319 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[2.51188643e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000251188643 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[3.98107171e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000398107171 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[6.30957344e-04]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.000630957344 15 14 100000011 0 0 15 NaN 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.00000000e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.001 15 14 100000011 3 0.000000029999996700000365 15 1.1e0 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.58489319e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00158489319 15 14 100000011 62 0.0000006199999318000075 15 2.5e-1 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[2.51188643e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00251188643 15 14 100000011 2791 0.000027909996929900337 15 3.7e-2 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[3.98107171e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00398107171 15 14 33296155 40000 0.0012013399144736082 15 9.8e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[6.30957344e-03]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.00630957344 15 14 1019375 40000 0.03923973022685469 15 9.6e-3 0 
+
+      '''
+  ]
+  [
+    /gpfs/gibbs/project/lin_zhong/yw729/QEC-Playground/target/release/qecp-cli tool benchmark '[15]' --djs '[15]' '[14]' -m100000000 -e40000 '[1.00000000e-02]' -p12 --time-budget 36000 --code-type rotated-planar-code --noise-model stim-noise-model --decoder fusion --decoder-config '{"max_half_weight":1,"max_tree_size":0}'
+    
+      '''
+      format: <p> <di> <nm> <shots> <failed> <pL> <dj> <pL_dev> <pe>
+      0.01 15 14 96933 40006 0.4127180629919635 15 7.5e-3 0 
+
+      '''
+  ]
+]

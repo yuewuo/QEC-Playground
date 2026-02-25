@@ -1,18 +1,18 @@
 //! minimum-weight perfect matching decoder
 //!
 
+use super::decoder_mwpm::*;
+use super::derivative::*;
 use super::model_graph::*;
 use super::noise_model::*;
 use super::serde_json;
 use super::simulator::*;
+use crate::decoder_fusion::{FusionBlossomAdaptor, FusionDecoderConfig};
+use crate::fusion_blossom::mwpm_solver::*;
+use crate::fusion_blossom::util::*;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Instant;
-use crate::decoder_fusion::{FusionBlossomAdaptor, FusionDecoderConfig};
-use super::decoder_mwpm::*;
-use super::derivative::*;
-use crate::fusion_blossom::mwpm_solver::*;
-use crate::fusion_blossom::util::*;
 
 /// MWPM decoder based on fusion blossom algorithm, initialized and cloned for multiple threads
 #[derive(Derivative, Serialize)]
@@ -31,15 +31,28 @@ pub struct ParallelFusionDecoder {
 impl Clone for ParallelFusionDecoder {
     fn clone(&self) -> Self {
         // construct a new solver instance
-        let partition_info = self.config.partition_config.clone().unwrap_or(PartitionConfig::new(self.adaptor.vertex_to_position_mapping.len())).info();
+        let partition_info = self
+            .config
+            .partition_config
+            .clone()
+            .unwrap_or(PartitionConfig::new(self.adaptor.vertex_to_position_mapping.len()))
+            .info();
         let fusion_solver = if self.config.skip_decoding {
-            fusion_blossom::mwpm_solver::SolverParallel::new(&SolverInitializer {
-                vertex_num: 0,
-                weighted_edges: vec![],
-                virtual_vertices: vec![],
-            }, &partition_info, self.config.primal_dual_config.clone())
+            fusion_blossom::mwpm_solver::SolverParallel::new(
+                &SolverInitializer {
+                    vertex_num: 0,
+                    weighted_edges: vec![],
+                    virtual_vertices: vec![],
+                },
+                &partition_info,
+                self.config.primal_dual_config.clone(),
+            )
         } else {
-            fusion_blossom::mwpm_solver::SolverParallel::new(&self.adaptor.initializer, &partition_info, self.config.primal_dual_config.clone())
+            fusion_blossom::mwpm_solver::SolverParallel::new(
+                &self.adaptor.initializer,
+                &partition_info,
+                self.config.primal_dual_config.clone(),
+            )
         };
         Self {
             adaptor: self.adaptor.clone(),
@@ -91,8 +104,12 @@ pub mod parallel_fusion_default_configs {
     pub fn log_matchings() -> bool {
         false
     }
-    pub fn primal_dual_config() -> serde_json::Value { json!({}) }
-    pub fn partition_config() -> Option<PartitionConfig> { None }
+    pub fn primal_dual_config() -> serde_json::Value {
+        json!({})
+    }
+    pub fn partition_config() -> Option<PartitionConfig> {
+        None
+    }
 }
 
 impl ParallelFusionDecoder {
@@ -112,17 +129,31 @@ impl ParallelFusionDecoder {
         // erasure_graph.build(&mut simulator, Arc::clone(&noise_model), parallel);
         // let erasure_graph = Arc::new(erasure_graph);
         // build solver
-        let adaptor = FusionBlossomAdaptor::new(&FusionDecoderConfig {
-            weight_function: config.weight_function.clone(),
-            use_combined_probability: config.use_combined_probability,
-            only_stab_z: config.only_stab_z,
-            max_half_weight: config.max_half_weight,
-            skip_decoding: config.skip_decoding,
-            log_matchings: config.log_matchings,
-            max_tree_size: usize::MAX,
-        }, &mut simulator, noise_model, parallel, use_brief_edge);
-        let partition_info = config.partition_config.clone().unwrap_or(PartitionConfig::new(adaptor.vertex_to_position_mapping.len())).info();
-        let fusion_solver = fusion_blossom::mwpm_solver::SolverParallel::new(&adaptor.initializer, &partition_info, config.primal_dual_config.clone());
+        let adaptor = FusionBlossomAdaptor::new(
+            &FusionDecoderConfig {
+                weight_function: config.weight_function.clone(),
+                use_combined_probability: config.use_combined_probability,
+                only_stab_z: config.only_stab_z,
+                max_half_weight: config.max_half_weight,
+                skip_decoding: config.skip_decoding,
+                log_matchings: config.log_matchings,
+                max_tree_size: usize::MAX,
+            },
+            &mut simulator,
+            noise_model,
+            parallel,
+            use_brief_edge,
+        );
+        let partition_info = config
+            .partition_config
+            .clone()
+            .unwrap_or(PartitionConfig::new(adaptor.vertex_to_position_mapping.len()))
+            .info();
+        let fusion_solver = fusion_blossom::mwpm_solver::SolverParallel::new(
+            &adaptor.initializer,
+            &partition_info,
+            config.primal_dual_config.clone(),
+        );
         Self {
             adaptor: Arc::new(adaptor),
             fusion_solver,
@@ -212,8 +243,6 @@ impl ParallelFusionDecoder {
         (correction, runtime_statistics)
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {

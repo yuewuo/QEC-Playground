@@ -5,8 +5,8 @@ use super::model_graph::*;
 use super::noise_model::*;
 use super::simulator::*;
 use crate::model_hypergraph::*;
-use crate::mwpf::mwpf_solver::*;
-use crate::mwpf::util::*;
+use crate::mwpf::{bp::bp::*, mwpf_solver::*, util::*};
+use num_traits::{FromPrimitive, One};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Instant;
@@ -20,6 +20,10 @@ pub struct HyperionDecoder {
     pub solver: SolverSerialJointSingleHair,
     /// the initializer of the solver, used for customized clone
     pub initializer: Arc<SolverInitializer>,
+    /// bp decoder if in use
+    pub bp_decoder: Option<BpDecoder>,
+    /// initial log ratios for bp decoder if in use
+    pub initial_log_ratios: Option<Vec<f64>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -33,20 +37,38 @@ pub struct HyperionDecoderConfig {
     #[serde(alias = "ucp")] // abbreviation
     #[serde(default = "mwpm_default_configs::use_combined_probability")]
     pub use_combined_probability: bool,
-    /// the maximum integer weight after scaling
-    #[serde(alias = "mhw")] // abbreviation
-    #[serde(default = "hyperion_default_configs::max_weight")]
-    pub max_weight: usize,
+    #[serde(default = "hyperion_default_configs::uniform_weights")]
+    pub uniform_weights: bool,
     #[serde(default = "hyperion_default_configs::default_hyperion_config")]
     pub hyperion_config: serde_json::Value,
+    #[serde(default = "hyperion_default_configs::substitute_with_simple_graph")]
+    pub substitute_with_simple_graph: bool,
+    #[serde(default = "hyperion_default_configs::use_bp")]
+    pub use_bp: bool,
+    #[serde(default = "hyperion_default_configs::bp_iteration")]
+    pub bp_iteration: usize,
+    #[serde(default = "hyperion_default_configs::bp_application_ratio")]
+    pub bp_application_ratio: f64,
 }
 
 pub mod hyperion_default_configs {
-    pub fn max_weight() -> usize {
-        1000000
+    pub fn uniform_weights() -> bool {
+        false
     }
     pub fn default_hyperion_config() -> serde_json::Value {
         json!({})
+    }
+    pub fn substitute_with_simple_graph() -> bool {
+        false
+    }
+    pub fn use_bp() -> bool {
+        false
+    }
+    pub fn bp_iteration() -> usize {
+        1
+    }
+    pub fn bp_application_ratio() -> f64 {
+        0.1
     }
 }
 
@@ -57,6 +79,8 @@ impl Clone for HyperionDecoder {
             config: self.config.clone(),
             solver: SolverSerialJointSingleHair::new(&self.initializer, self.config.hyperion_config.clone()),
             initializer: self.initializer.clone(),
+            bp_decoder: self.bp_decoder.clone(),
+            initial_log_ratios: self.initial_log_ratios.clone(),
         }
     }
 }
@@ -75,23 +99,69 @@ impl HyperionDecoder {
         // build model graph
         let mut simulator = simulator.clone();
         let mut model_hypergraph = ModelHypergraph::new(&simulator);
-        model_hypergraph.build(
-            &mut simulator,
-            Arc::clone(&noise_model),
-            &config.weight_function,
-            parallel,
-            config.use_combined_probability,
-            use_brief_edge,
-        );
+        if config.substitute_with_simple_graph {
+            let mut model_graph = ModelGraph::new(&simulator);
+            model_graph.build(
+                &mut simulator,
+                noise_model,
+                &config.weight_function,
+                parallel,
+                config.use_combined_probability,
+                use_brief_edge,
+            );
+            model_hypergraph.load_from_model_graph(&model_graph);
+        } else {
+            model_hypergraph.build(
+                &mut simulator,
+                Arc::clone(&noise_model),
+                &config.weight_function,
+                parallel,
+                config.use_combined_probability,
+                use_brief_edge,
+            );
+        }
         let model_hypergraph = Arc::new(model_hypergraph);
-        let (vertex_num, weighted_edges) = model_hypergraph.generate_mwpf_hypergraph(config.max_weight);
-        let initializer = Arc::new(SolverInitializer::new(vertex_num, weighted_edges));
+        let (vertex_num, weighted_edges) = model_hypergraph.generate_mwpf_hypergraph();
+
+        let check_size = weighted_edges.len();
+
+        let mut initializer = SolverInitializer::new(vertex_num, weighted_edges);
+        if config.uniform_weights {
+            initializer.uniform_weights(Weight::one());
+        }
+        let initializer = Arc::new(initializer);
         let solver = SolverSerialJointSingleHair::new(&initializer, config.hyperion_config.clone());
+
+        let mut bp_decoder_option = None;
+        let mut initial_log_ratios_option = None;
+
+        if config.use_bp {
+            let mut pcm = BpSparse::new(vertex_num, check_size, 0);
+            let mut initial_log_ratios = Vec::with_capacity(check_size);
+            let mut channel_probabilities = Vec::with_capacity(check_size);
+
+            for (col_index, (defect_vertices, hyperedge_group)) in model_hypergraph.weighted_edges.iter().enumerate() {
+                channel_probabilities.push(hyperedge_group.hyperedge.probability);
+                for vertex_position in defect_vertices.0.iter() {
+                    let row_index = model_hypergraph.vertex_indices.get(vertex_position).unwrap();
+                    pcm.insert_entry(*row_index, col_index);
+                }
+                initial_log_ratios.push(hyperedge_group.hyperedge.weight as f64);
+            }
+
+            let bp_decoder = BpDecoder::new_3(pcm, channel_probabilities, config.bp_iteration).unwrap();
+
+            bp_decoder_option = Some(bp_decoder);
+            initial_log_ratios_option = Some(initial_log_ratios);
+        }
+
         Self {
             model_hypergraph,
             config,
             solver,
             initializer,
+            bp_decoder: bp_decoder_option,
+            initial_log_ratios: initial_log_ratios_option,
         }
     }
 
@@ -112,21 +182,60 @@ impl HyperionDecoder {
         }
         // run decode
         let begin = Instant::now();
+
+        let mut syndrome_array = vec![];
+        if self.config.use_bp {
+            syndrome_array = vec![0; self.model_hypergraph.vertex_indices.len()];
+        }
+
         let defect_vertices: Vec<_> = sparse_measurement
             .iter()
             .map(|position| {
-                *self
+                let temp = *self
                     .model_hypergraph
                     .vertex_indices
                     .get(position)
-                    .expect("measurement cannot happen at impossible position")
+                    .expect("measurement cannot happen at impossible position");
+                if self.config.use_bp {
+                    syndrome_array[temp] = 1;
+                }
+                temp
             })
             .collect();
+
         let syndrome_pattern = SyndromePattern::new_vertices(defect_vertices);
+
+        let decoder_begin = Instant::now();
+
+        if self.config.use_bp {
+            self.bp_decoder
+                .as_mut()
+                .unwrap()
+                .set_log_domain_bp(&self.initial_log_ratios.as_ref().unwrap());
+
+            // solve the bp and update weights
+            self.bp_decoder.as_mut().unwrap().decode(&syndrome_array);
+            let llrs = self
+                .bp_decoder
+                .as_ref()
+                .unwrap()
+                .log_prob_ratios
+                .iter()
+                .map(|v| Weight::from_f64(*v).unwrap())
+                .collect();
+
+            self.solver.update_weights(llrs, self.config.bp_application_ratio.into());
+        }
+
+        let time_decode_bp = decoder_begin.elapsed().as_secs_f64();
+
         self.solver.solve(syndrome_pattern);
         let subgraph = self.solver.subgraph();
         self.solver.clear();
+
+        let time_decode_mwpf = decoder_begin.elapsed().as_secs_f64() - time_decode_bp;
         let time_decode = begin.elapsed().as_secs_f64();
+
         // build correction
         let begin = Instant::now();
         let mut correction = SparseCorrection::new();
@@ -139,6 +248,8 @@ impl HyperionDecoder {
             json!({
                 "time_decode": time_decode,
                 "time_build_correction": time_build_correction,
+                "time_decode_bp": time_decode_bp,
+                "time_decode_mwpf": time_decode_mwpf,
             }),
         )
     }

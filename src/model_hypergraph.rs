@@ -232,6 +232,69 @@ impl ModelHypergraph {
         }
     }
 
+    /// load decoding hypergraph from simple graph
+    pub fn load_from_model_graph(&mut self, model_graph: &ModelGraph) {
+        // first build vertex indices, and maintain the vertex indices regardless of the edges
+        for (t, rows_i) in model_graph.nodes.iter().enumerate() {
+            for (i, rows_j) in rows_i.iter().enumerate() {
+                for (j, value) in rows_j.iter().enumerate() {
+                    if value.is_some() {
+                        let vertex_index = self.vertex_positions.len();
+                        let position = Position::new(t, i, j);
+                        self.vertex_positions.push(position.clone());
+                        self.vertex_indices.insert(position, vertex_index);
+                    }
+                }
+            }
+        }
+        // then add edges
+        for (t, rows_i) in model_graph.nodes.iter().enumerate() {
+            for (i, rows_j) in rows_i.iter().enumerate() {
+                for (j, value) in rows_j.iter().enumerate() {
+                    if let Some(node) = value {
+                        let position = Position::new(t, i, j);
+                        let vertex_index = *self.vertex_indices.get(&position).unwrap();
+                        // regular edges
+                        for (peer_position, edge) in node.edges.iter() {
+                            let peer_index = *self.vertex_indices.get(peer_position).unwrap();
+                            if peer_index < vertex_index {
+                                assert!(self
+                                    .edge_indices
+                                    .contains_key(&DefectVertices::new(vec![peer_position.clone(), position.clone()])));
+                                continue; // already added
+                            }
+                            let defect_vertices = DefectVertices::new(vec![position.clone(), peer_position.clone()]);
+                            let edge_index = self.weighted_edges.len();
+                            self.edge_indices.insert(defect_vertices.clone(), edge_index);
+                            let hyperedge = ModelHyperedge {
+                                probability: edge.probability,
+                                weight: edge.weight,
+                                error_pattern: edge.error_pattern.clone(),
+                                correction: edge.correction.clone(),
+                            };
+                            self.weighted_edges
+                                .push((defect_vertices, ModelHyperedgeGroup::new(hyperedge)));
+                        }
+                        // boundary edge
+                        if let Some(boundary) = node.boundary.as_ref() {
+                            let defect_vertices = DefectVertices::new(vec![position.clone()]);
+                            let edge_index = self.weighted_edges.len();
+                            self.edge_indices.insert(defect_vertices.clone(), edge_index);
+                            let hyperedge = ModelHyperedge {
+                                probability: boundary.probability,
+                                weight: boundary.weight,
+                                error_pattern: boundary.error_pattern.clone(),
+                                correction: boundary.correction.clone(),
+                            };
+                            self.weighted_edges
+                                .push((defect_vertices, ModelHyperedgeGroup::new(hyperedge)));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /// build model hypergraph given the simulator
     pub fn build(
         &mut self,
@@ -468,25 +531,16 @@ impl ModelHypergraph {
     }
 
     #[cfg(feature = "hyperion")]
-    pub fn generate_mwpf_hypergraph(&self, max_weight: usize) -> (usize, Vec<HyperEdge>) {
-        // scale all the edges
-        let mut maximum_weight = 0.;
-        for (_, hyperedge_group) in self.weighted_edges.iter() {
-            if hyperedge_group.hyperedge.probability > 0. && hyperedge_group.hyperedge.weight > maximum_weight {
-                maximum_weight = hyperedge_group.hyperedge.weight;
-            }
-        }
+    pub fn generate_mwpf_hypergraph(&self) -> (usize, Vec<HyperEdge>) {
         let mut weighted_edges = Vec::with_capacity(self.weighted_edges.len());
         for (defect_vertices, hyperedge_group) in self.weighted_edges.iter() {
             if hyperedge_group.hyperedge.probability > 0. {
                 // only add those possible edges; for erasures, handle later
-                let scaled_weight = hyperedge_group.hyperedge.weight * max_weight as f64 / maximum_weight;
-                let int_weight = scaled_weight.round();
-                assert!(int_weight.is_finite(), "weight must be normal");
-                assert!(int_weight >= 0., "weight must be non-negative");
-                assert!(int_weight <= max_weight as f64, "weight must be smaller than max weight");
+                let weight = hyperedge_group.hyperedge.weight;
+                assert!(weight.is_finite(), "weight must be normal");
                 let vertex_indices: Vec<_> = defect_vertices.0.iter().map(|x| self.vertex_indices[x]).collect();
-                weighted_edges.push(HyperEdge::new(vertex_indices, mwpf::ordered_float::OrderedFloat::from(int_weight)));
+                use num_traits::cast::FromPrimitive;
+                weighted_edges.push(HyperEdge::new(vertex_indices, mwpf::util::Weight::from_f64(weight).unwrap()));
             }
         }
         (self.vertex_positions.len(), weighted_edges)

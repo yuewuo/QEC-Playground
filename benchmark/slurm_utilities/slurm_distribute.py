@@ -87,7 +87,7 @@ class SlurmDistributeVec(list):
                     confirm_or_die(f"You're using `-p0` option in slurm enabled environment, which may create more threads than allocated to you; please use `slurm_threads_or` to access the allocated number of threads in this case")
         self.append(command)
 
-QECP_IDENT = "backend/rust/target/release/qecp"
+QECP_IDENT = "target/release/qecp-cli"
 def command_parse_qecp(command):  # used when match command
     command_lst = command.split(" ")
     if command_lst[0][-len(QECP_IDENT):] == QECP_IDENT:
