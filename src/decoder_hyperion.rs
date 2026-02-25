@@ -203,7 +203,7 @@ impl HyperionDecoder {
             })
             .collect();
 
-        let syndrome_pattern = SyndromePattern::new(defect_vertices, vec![]);
+        let syndrome_pattern = SyndromePattern::new_vertices(defect_vertices);
 
         let decoder_begin = Instant::now();
 
@@ -224,7 +224,7 @@ impl HyperionDecoder {
                 .map(|v| Weight::from_f64(*v).unwrap())
                 .collect();
 
-            self.solver.update_weights(llrs, self.config.bp_application_ratio);
+            self.solver.update_weights(llrs, self.config.bp_application_ratio.into());
         }
 
         let time_decode_bp = decoder_begin.elapsed().as_secs_f64();
