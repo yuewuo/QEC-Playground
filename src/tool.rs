@@ -11,6 +11,8 @@ use crate::decoder_hyper_union_find::*;
 use crate::decoder_hyperion::*;
 #[cfg(feature = "hyperion")]
 use crate::decoder_parallel_hyper_union_find::*;
+#[cfg(feature = "hyperion")]
+use crate::decoder_parallel_hyperion::*;
 use crate::decoder_mwpm::*;
 #[cfg(feature = "fusion_blossom")]
 use crate::decoder_parallel_fusion::*;
@@ -123,6 +125,8 @@ pub enum BenchmarkDecoder {
     ParallelFusion,
     /// parallel hypergraph union-find decoder
     ParallelHyperUnionFind,
+    /// parallel hyperion decoder
+    ParallelHyperion,
 }
 
 /// progress variable shared between threads to update information
@@ -899,6 +903,8 @@ pub enum GeneralDecoder {
     Hyperion(HyperionDecoder),
     #[cfg(feature = "hyperion")]
     ParallelHyperUnionFind(ParallelHyperUnionFindDecoder),
+    #[cfg(feature = "hyperion")]
+    ParallelHyperion(ParallelHyperionDecoder),
 }
 
 impl GeneralDecoder {
@@ -1042,6 +1048,18 @@ impl GeneralDecoder {
             BenchmarkDecoder::ParallelHyperUnionFind => {
                 return Err("decoder is not available; try enable feature `hyperion`".to_string())
             }
+            #[cfg(feature = "hyperion")]
+            BenchmarkDecoder::ParallelHyperion => GeneralDecoder::ParallelHyperion(ParallelHyperionDecoder::new(
+                simulator,
+                noise_model_graph.clone(),
+                &parameters.decoder_config,
+                configs.parallel_init,
+                parameters.use_brief_edge,
+            )),
+            #[cfg(not(feature = "hyperion"))]
+            BenchmarkDecoder::ParallelHyperion => {
+                return Err("decoder is not available; try enable feature `hyperion`".to_string())
+            }
         })
     }
 
@@ -1079,9 +1097,13 @@ impl GeneralDecoder {
             }
             #[cfg(feature = "hyperion")]
             Self::ParallelHyperUnionFind(parallel_hyper_union_find_decoder) => {
-                // loads the solver again 
+                // loads the solver again
                 // parallel_hyper_union_find_decoder.config.partition_config.unwrap().defect_vertices = BTreeSet::from_iter(iter)
                 parallel_hyper_union_find_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
+            }
+            #[cfg(feature = "hyperion")]
+            Self::ParallelHyperion(parallel_hyperion_decoder) => {
+                parallel_hyperion_decoder.decode_with_erasure(sparse_measurement, sparse_detected_erasures)
             }
         }
     }
