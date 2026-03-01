@@ -136,17 +136,17 @@ impl ParallelHyperUnionFindDecoder {
         let defect_vertices: Vec<_> = sparse_measurement
             .iter()
             .map(|position| {
-                *self
+                (0, *self
                     .model_hypergraph
                     .vertex_indices
                     .get(position)
-                    .expect("measurement cannot happen at impossible position")
+                    .expect("measurement cannot happen at impossible position"))
             })
             .collect();
         let syndrome_pattern = SyndromePattern::new_vertices(defect_vertices);
 
         if let Some(ref mut temp_partition_config) = self.config.partition_config {
-            temp_partition_config.defect_vertices = FastIterSet::from_iter(syndrome_pattern.defect_vertices.clone());
+            temp_partition_config.defect_vertices = FastIterSet::from_iter(syndrome_pattern.defect_vertices.iter().map(|v| v.1));
         }
         let partition_info = self.config.partition_config.clone().unwrap().info();
         self.solver = SolverParallelUnionFind::new(&self.initializer, &partition_info, self.config.hyperion_config.clone());

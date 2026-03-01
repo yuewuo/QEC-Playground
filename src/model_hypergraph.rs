@@ -538,7 +538,7 @@ impl ModelHypergraph {
                 // only add those possible edges; for erasures, handle later
                 let weight = hyperedge_group.hyperedge.weight;
                 assert!(weight.is_finite(), "weight must be normal");
-                let vertex_indices: Vec<_> = defect_vertices.0.iter().map(|x| self.vertex_indices[x]).collect();
+                let vertex_indices: Vec<_> = defect_vertices.0.iter().map(|x| (0, self.vertex_indices[x])).collect();
                 use num_traits::cast::FromPrimitive;
                 weighted_edges.push(HyperEdge::new(vertex_indices, mwpf::util::Weight::from_f64(weight).unwrap()));
             }

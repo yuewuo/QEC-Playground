@@ -108,11 +108,11 @@ impl HyperUnionFindDecoder {
         let defect_vertices: Vec<_> = sparse_measurement
             .iter()
             .map(|position| {
-                *self
+                (0, *self
                     .model_hypergraph
                     .vertex_indices
                     .get(position)
-                    .expect("measurement cannot happen at impossible position")
+                    .expect("measurement cannot happen at impossible position"))
             })
             .collect();
         let syndrome_pattern = SyndromePattern::new_vertices(defect_vertices);

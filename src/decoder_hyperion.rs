@@ -199,7 +199,7 @@ impl HyperionDecoder {
                 if self.config.use_bp {
                     syndrome_array[temp] = 1;
                 }
-                temp
+                (0, temp)
             })
             .collect();
 

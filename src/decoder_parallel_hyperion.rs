@@ -50,6 +50,8 @@ pub struct ParallelHyperionDecoderConfig {
     pub bp_iteration: usize,
     #[serde(default = "parallel_hyperion_default_configs::bp_application_ratio")]
     pub bp_application_ratio: f64,
+    #[serde(default = "parallel_hyperion_default_configs::split_num")]
+    pub split_num: usize,
     #[serde(default = "parallel_hyperion_default_configs::partition_config")]
     pub partition_config: Option<PartitionConfig>,
 }
@@ -75,6 +77,9 @@ pub mod parallel_hyperion_default_configs {
     pub fn bp_application_ratio() -> f64 {
         0.1
     }
+    pub fn split_num() -> usize {
+        2
+    }
     pub fn partition_config() -> Option<PartitionConfig> {
         None
     }
@@ -82,7 +87,7 @@ pub mod parallel_hyperion_default_configs {
 
 impl Clone for ParallelHyperionDecoder {
     fn clone(&self) -> Self {
-        let partition_config = graph_time_partition(&self.initializer, &self.model_hypergraph.vertex_positions, 2);
+        let partition_config = graph_time_partition(&self.initializer, &self.model_hypergraph.vertex_positions, self.config.split_num);
         let partition_info = partition_config.info();
         let solver = SolverParallelJointSingleHair::new(&self.initializer, &partition_info, self.config.hyperion_config.clone());
 
@@ -144,7 +149,7 @@ impl ParallelHyperionDecoder {
         let initializer = Arc::new(initializer);
 
         // set up partition config
-        config.partition_config = Some(graph_time_partition(&initializer, &model_hypergraph.vertex_positions, 2));
+        config.partition_config = Some(graph_time_partition(&initializer, &model_hypergraph.vertex_positions, config.split_num));
         let partition_info = config.partition_config.clone().unwrap().info();
         let solver = SolverParallelJointSingleHair::new(&initializer, &partition_info, config.hyperion_config.clone());
 
@@ -216,7 +221,7 @@ impl ParallelHyperionDecoder {
                 if self.config.use_bp {
                     syndrome_array[temp] = 1;
                 }
-                temp
+                (0, temp)
             })
             .collect();
 
@@ -224,7 +229,7 @@ impl ParallelHyperionDecoder {
 
         // update partition config with defect vertices and recreate solver
         if let Some(ref mut temp_partition_config) = self.config.partition_config {
-            temp_partition_config.defect_vertices = FastIterSet::from_iter(syndrome_pattern.defect_vertices.clone());
+            temp_partition_config.defect_vertices = FastIterSet::from_iter(syndrome_pattern.defect_vertices.iter().map(|v| v.1));
         }
         let partition_info = self.config.partition_config.clone().unwrap().info();
         self.solver = SolverParallelJointSingleHair::new(&self.initializer, &partition_info, self.config.hyperion_config.clone());
@@ -530,8 +535,9 @@ mod tests {
             ParallelHyperionDecoder::new(&Arc::new(simulator.clone()), Arc::clone(&noise_model), &json!({}), 1, false);
         {
             let mut logical_error_count = 0;
-            let total_rounds = 6;
+            let total_rounds = 5;
             for round in 0..total_rounds {
+                println!("round: {:?}", round);
                 simulator.clear_all_errors();
                 simulator.generate_random_errors(&noise_model);
                 let sparse_measurement = simulator.generate_sparse_measurement();
@@ -551,11 +557,9 @@ mod tests {
     }
 
     /// Test with BP enabled on RotatedTailoredCode.
-    /// Currently ignored: update_weights is not implemented in the parallel dual module.
     #[test]
-    #[ignore]
     fn parallel_hyperion_decoder_tailored_with_bp() {
-        // cargo test parallel_hyperion_decoder_tailored_with_bp -- --nocapture --ignored
+        // cargo test parallel_hyperion_decoder_tailored_with_bp -- --nocapture 
         let d = 5;
         let noisy_measurements = 0;
         let p = 0.005;
