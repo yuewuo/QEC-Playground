@@ -51,10 +51,9 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source ~/.bashrc  # this will add `~/.cargo/bin` to path
 ```
 
-After installing the Rust toolchain successfully, you can compile the backend by
+After installing the Rust toolchain successfully, you can compile the backend by running the following in the repository root:
 
 ```bash
-cd backend/rust/
 cargo build --release
 ```
 
