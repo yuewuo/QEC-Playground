@@ -121,7 +121,7 @@ impl CodeType {
                     (i - 1, j)
                 }
             }
-            _ => unimplemented!("left position not implemented for this code type, please fill the implementation"),
+            _ => unimplemented!("up position not implemented for this code type, please fill the implementation"),
         }
     }
 
@@ -141,7 +141,7 @@ impl CodeType {
                     (i, j + 1)
                 }
             }
-            _ => unimplemented!("left position not implemented for this code type, please fill the implementation"),
+            _ => unimplemented!("right position not implemented for this code type, please fill the implementation"),
         }
     }
 
@@ -163,7 +163,7 @@ impl CodeType {
                     (i + 1, j)
                 }
             }
-            _ => unimplemented!("left position not implemented for this code type, please fill the implementation"),
+            _ => unimplemented!("down position not implemented for this code type, please fill the implementation"),
         }
     }
 
@@ -185,7 +185,7 @@ impl CodeType {
         self.get_up(i, j, code_size)
     }
 
-    /// convenient call to get diagonal neighbor on the left down
+    /// convenient call to get diagonal neighbor on the right down
     pub fn get_right_down(&self, i: usize, j: usize, code_size: &CodeSize) -> (usize, usize) {
         let (i, j) = self.get_right(i, j, code_size);
         self.get_down(i, j, code_size)
