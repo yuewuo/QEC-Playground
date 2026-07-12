@@ -24,9 +24,7 @@ pip3 install networkx
 # Install the Rust Toolchain
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source ~/.bashrc  # this will add `~/.cargo/bin` to path
-cd backend/rust/
 cargo build --release
-cd ../../
 ```
 
 
@@ -35,7 +33,7 @@ cd ../../
 See the [QEC-Playground Documentation: CLI](https://yuewuo.github.io/QEC-Playground/guide/cli.html) for the detailed instructions.
 A brief example use case is below.
 
-Run `cargo run --release -- --help` under `backend/rust/` folder to get all provided commands of backend program.
+Run `cargo run --release -- --help` in the repository root to get all provided commands of backend program.
 The option `--help` prints out the information of this command, which can be helpful to find subcommands as well as to understand the purpose of each option.
 An example output is below.
 
