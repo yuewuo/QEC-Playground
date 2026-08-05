@@ -25,7 +25,7 @@ Here I give some decoder's **worst case complexity** (their average complexity i
 - C: MWPM decoder (using Blossom V with complexity $O(|V||E|\log{|V|})$):
   - $O(md^2 md^2 d)=O(m^2 d^5)$ when imperfect measurement
   - $O(md^2 d^2)=O(md^4)$ when perfect measurement
-  - $O(md^2 d)=O(md^3)$ when perfect mesurement + biased noise
+  - $O(md^2 d)=O(md^3)$ when perfect measurement + biased noise
 - D: Lin's assumed decoder (which is always $O(N^2)$ complexity, taking no information of noise model):
   - $O(N^2)=O(m^2d^4)$ when imperfect measurement
   - $O(N^2)=O(m^2d^4)$ when perfect measurement

@@ -4,5 +4,3 @@ It provides an interface to assign noise model with Python and run decoding benc
 
 Example code at `example.py`
 
-## API
-
