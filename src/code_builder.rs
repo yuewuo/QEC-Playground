@@ -35,7 +35,7 @@ pub enum CodeType {
     StandardTailoredCode,
     /// noisy measurement rounds (excluding the final perfect measurement cap), +i+j axis code distance, +i-j axis code distance
     RotatedTailoredCode,
-    /// same as RotatedTailoredCode but with first measurement cycle modified for bell state initialization
+    /// same as RotatedTailoredCode but with first measurement cycle modified for Bell state initialization
     RotatedTailoredCodeBellInit,
     /// periodic boundary condition of rotated tailored surface code, code distances must be even number
     PeriodicRotatedTailoredCode,
