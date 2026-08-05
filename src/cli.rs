@@ -28,7 +28,7 @@ pub enum Commands {
         #[clap(subcommand)]
         command: TestCommands,
     },
-    /// built-in tests
+    /// tools
     Tool {
         #[clap(subcommand)]
         command: ToolCommands,
@@ -51,7 +51,7 @@ pub enum TestCommands {
 #[derive(Subcommand, Clone, Debug)]
 #[allow(clippy::large_enum_variant)]
 pub enum ToolCommands {
-    /// built-in tests
+    /// benchmark surface code decoders
     Benchmark(BenchmarkParameters),
 }
 
@@ -216,7 +216,7 @@ pub struct BenchmarkParameters {
     /// wait for some time for threads to end, otherwise print out the unstopped threads and detach them; useful when debugging rare deadlock cases; if set to negative value, no timeout and no thread debug information recording for maximum performance
     #[clap(long, default_value_t = 60.)]
     pub thread_timeout: f64,
-    /// use brief edges in model graph to save memories; it will drop the error pattern and correction as long as another one is more probable
+    /// use brief edges in model graph to save memory; it will drop the error pattern and correction as long as another one is more probable
     #[clap(long, action)]
     pub use_brief_edge: bool,
     /// arbitrary label information
@@ -271,10 +271,10 @@ pub struct BenchmarkParameters {
 
 #[derive(Parser, Clone, Debug)]
 pub struct ServerParameters {
-    /// listening on <addr>:<port>, default to 8066
+    /// listening port, default to 8066
     #[clap(short = 'p', long, default_value_t = 8066)]
     pub port: i32,
-    /// listening on <addr>:<port>, default to "127.0.0.1"
+    /// listening address, default to "127.0.0.1"
     #[clap(short = 'a', long, default_value_t = ("127.0.0.1").to_string())]
     pub addr: String,
     /// root url
