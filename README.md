@@ -30,7 +30,7 @@ cargo build --release
 
 ## Command-line Interface
 
-See the [QEC-Playground Documentation: CLI](https://yuewuo.github.io/QEC-Playground/guide/cli.html) for the detailed instructions.
+See the [QEC-Playground Documentation](https://yuewuo.github.io/QEC-Playground/) for the detailed instructions.
 A brief example use case is below.
 
 Run `cargo run --release -- --help` in the repository root to get all provided commands of backend program.
@@ -38,19 +38,18 @@ The option `--help` prints out the information of this command, which can be hel
 An example output is below.
 
 ```init
-QECPlayground 0.1.6
+QECPlayground 0.2.4
 Yue Wu <yue.wu@yale.edu>, Namitha Liyanage (namitha.liyanage@yale.edu)
 Quantum Error Correction Playground
 
 USAGE:
-    qecp <SUBCOMMAND>
+    qecp-cli <COMMAND>
 
 OPTIONS:
     -h, --help       Print help information
     -V, --version    Print version information
 
 SUBCOMMANDS:
-    fpga_generator    fpga_generator
     help              Print this message or the help of the given subcommand(s)
     server            HTTP server for decoding information
     test              testing features
@@ -60,11 +59,11 @@ SUBCOMMANDS:
 To run a simulation to benchmark the logical error rate of decoder, run `cargo run --release -- tool benchmark --help`. An example output is below.
 
 ```bash
-qecp-tool-benchmark 0.1.6
+qecp-tool-benchmark 0.2.4
 benchmark surface code decoders
 
 USAGE:
-    qecp tool benchmark [OPTIONS] <dis> <nms> <ps>
+    qecp-cli tool benchmark [OPTIONS] <dis> <nms> <ps>
 
 ARGS:
     <dis>    [di1,di2,di3,...,din] code distance of vertical axis
