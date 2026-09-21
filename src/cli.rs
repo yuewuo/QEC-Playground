@@ -114,6 +114,32 @@ impl TypedValueParser for VecF64Parser {
 }
 
 #[derive(Clone)]
+struct PositiveF64Parser;
+impl TypedValueParser for PositiveF64Parser {
+    type Value = f64;
+    fn parse_ref(
+        &self,
+        cmd: &clap::Command,
+        arg: Option<&clap::Arg>,
+        value: &std::ffi::OsStr,
+    ) -> Result<Self::Value, clap::Error> {
+        let inner = StringValueParser::new();
+        let val = inner.parse_ref(cmd, arg, value)?;
+        let message = match val.parse::<f64>() {
+            Ok(number) if number > 0. => return Ok(number),
+            Ok(number) => format!("should be a positive number, got {number}"),
+            Err(error) => format!("should be a positive number, parse error: {error}"),
+        };
+        let mut err = clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
+        if let Some(arg) = arg {
+            err.insert(ContextKind::InvalidArg, ContextValue::String(arg.to_string()));
+        }
+        err.insert(ContextKind::InvalidValue, ContextValue::String(message));
+        Err(err)
+    }
+}
+
+#[derive(Clone)]
 struct SerdeJsonParser;
 impl TypedValueParser for SerdeJsonParser {
     type Value = serde_json::Value;
@@ -166,7 +192,7 @@ pub struct BenchmarkParameters {
     #[clap(long, value_parser = ValueParser::new(VecF64Parser))]
     pub pes_graph: Option<std::vec::Vec<f64>>,
     /// bias_eta = pz / (px + py) and px = py, px + py + pz = p. default to 1/2, which means px = pz = py
-    #[clap(long, default_value_t = 0.5)]
+    #[clap(long, default_value_t = 0.5, value_parser = ValueParser::new(PositiveF64Parser))]
     pub bias_eta: f64,
     /// maximum total repeats (previously known as `max_N`); 0 for infinity
     #[clap(short = 'm', long, default_value_t = 100000000)]
