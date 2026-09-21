@@ -144,6 +144,10 @@ pub enum WeightFunction {
 pub mod weight_function {
 
     pub fn autotune(p: f64) -> f64 {
+        assert!(
+            p <= 1.,
+            "autotune: error rate should be no more than 1, otherwise the weight is negative: {p}"
+        );
         if p > 0. {
             -p.ln()
         } else {
@@ -152,6 +156,10 @@ pub mod weight_function {
     }
 
     pub fn autotune_improved(p: f64) -> f64 {
+        assert!(
+            p <= 0.5,
+            "autotune_improved: error rate should be no more than 0.5, otherwise the weight is negative: {p}"
+        );
         if p > 0. {
             (1. - p).ln() - p.ln()
         } else {
