@@ -750,8 +750,14 @@ impl BenchmarkParameters {
             let qec_failed = benchmark_control.qec_failed;
             // compute simulation results
             let error_rate = qec_failed as f64 / total_repeats as f64;
-            let confidence_interval_95_percent =
-                1.96 * (error_rate * (1. - error_rate) / (total_repeats as f64)).sqrt() / error_rate;
+            // the interval is reported relative to the error rate, so it is undefined until a failure is observed;
+            // infinite relative uncertainty is the honest reading of "no failures yet", and unlike NaN it compares
+            // correctly against the thresholds downstream scripts filter on
+            let confidence_interval_95_percent = if qec_failed == 0 || total_repeats == 0 {
+                f64::INFINITY
+            } else {
+                1.96 * (error_rate * (1. - error_rate) / (total_repeats as f64)).sqrt() / error_rate
+            };
             format!(
                 "{} {} {} {} {} {} {} {:.1e} {} ",
                 config.p,
