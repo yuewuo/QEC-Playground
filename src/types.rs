@@ -222,6 +222,28 @@ impl PauliErrorRates {
             ErrorType::Y => self.error_rate_Y,
         }
     }
+    pub fn sanity_check(&self) {
+        assert!(
+            self.no_error_probability() >= 0.,
+            "sum of error rate should be no more than 1: {:?}",
+            self
+        );
+        assert!(
+            self.error_rate_X >= 0.,
+            "error rate should be greater than 0: {:?}",
+            self
+        );
+        assert!(
+            self.error_rate_Z >= 0.,
+            "error rate should be greater than 0: {:?}",
+            self
+        );
+        assert!(
+            self.error_rate_Y >= 0.,
+            "error rate should be greater than 0: {:?}",
+            self
+        );
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]

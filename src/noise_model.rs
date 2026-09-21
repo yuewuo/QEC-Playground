@@ -216,6 +216,9 @@ pub fn noise_model_sanity_check(simulator: &Simulator, noise_model: &NoiseModel)
     });
     simulator_iter!(simulator, position, node, {
         let noise_model_node = noise_model.get_node_unwrap(position);
+        // every noise model builder funnels through here, so this is the single place that can bound the rates
+        // whatever the builder and whatever the user put in `noise_model_configuration`
+        noise_model_node.pauli_error_rates.sanity_check();
         if node.is_virtual {
             // no errors on virtual node is allowed, because they don't physically exist
             if noise_model_node.pauli_error_rates.error_probability() > 0. {
